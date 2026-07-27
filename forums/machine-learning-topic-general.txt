@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>General</title>
+    <link>https://developer.apple.com/forums/topics/machine-learning-and-ai/machine-learning-topic-general</link>
+    <description>Explore the power of machine learning within apps. Discuss integrating machine learning features, share best practices, and explore the possibilities for your app.</description>
+    <item>
+      <title>Questions for Apple Support / Apple Vision Team</title>
+      <link>https://developer.apple.com/forums/thread/837386</link>
+      <content:encoded>Dear Apple Support,
+I would like to report a long-standing issue affecting Khmer text recognition in Live Text (Vision Framework/OCR). Based on my testing, this issue has persisted for more than two years, from iOS 17 through iOS 27 Beta 3, and is also reproducible on iPadOS and macOS.
+I would appreciate clarification on the following questions:
+Is Apple aware of an issue where Live Text (OCR/Text Recognition) incorrectly recognizes Khmer script as Thai script, causing copied text to become Thai characters instead of Khmer?
+Has this issue been officially logged as a bug within the Vision Frame...</content:encoded>
+      <pubDate>Thu, 09 Jul 2026 02:30:38 GMT</pubDate>
+      <author>SophatCHY</author>
+    </item>
+    <item>
+      <title>AI framework usage without user session</title>
+      <link>https://developer.apple.com/forums/thread/820379</link>
+      <content:encoded>We are evaluating various AI frameworks to use within our code, and are hoping to use some of the build-in frameworks in macOS including CoreML and Vision. However, we need to use these frameworks in a background process (system extension) that has no user session attached to it. (To be pedantic, we'll be using an XPC service that is spawned by the system extension, but neither would have an associated user session).
+Saying the daemon-safe frameworks list has not been updated in a while is an understatement, but it's all we have to go on. CoreGraphics isn't even listed--back then it part of Ap...</content:encoded>
+      <pubDate>Tue, 24 Mar 2026 20:26:29 GMT</pubDate>
+      <author>boilerla220</author>
+    </item>
+    <item>
+      <title>[iOS 27 DB3] Apple Intelligence and Spotlight Stuck at 85-90% - How to force completion via Ethernet and Console logs analysis</title>
+      <link>https://developer.apple.com/forums/thread/837613</link>
+      <content:encoded>Hey everyone,
+If your iPhone is stuck on "Optimizing Search and Siri" / Indexing at around 85-90% and hard resets or leaving it on wireless charging overnight isn't moving the needle, I found a definitive way to kickstart the daemon and force it to 100%.
+The Root Cause (Analyzed via macOS Console):
+By plugging the iPhone into a Mac and checking the Console logs, I noticed that spotlightknowledged and biomed get into an endless loop around Resolved entitled set identifiers to enumerate data resources. The system stalls on verifying developer entitlements and Apple Intelligence security tokens f...</content:encoded>
+      <pubDate>Sat, 11 Jul 2026 16:22:01 GMT</pubDate>
+      <author>Maciek11008</author>
+    </item>
+    <item>
+      <title>RDMA issue in using the thunderbolt port next to ethernet on M3 ultra mac studio</title>
+      <link>https://developer.apple.com/forums/thread/836897</link>
+      <content:encoded>I have a M3 Ultra Mac Studio running RDMA. However, the system is unable to connect all 6 thunderbolt ports when the ethernet cable is also connected. Can anyone help?</content:encoded>
+      <pubDate>Fri, 03 Jul 2026 17:54:46 GMT</pubDate>
+      <author>Binaire</author>
+    </item>
+    <item>
+      <title>Autocorrection and predictive text support for additional Cyrillic languages</title>
+      <link>https://developer.apple.com/forums/thread/833200</link>
+      <content:encoded>Hello Apple Keyboard / Internationalization team,
+I would like to ask about autocorrection and predictive text support for additional Cyrillic-based languages, especially Kazakh, Kyrgyz, Chuvash, and Ingush.
+These languages use Cyrillic scripts with their own letters, spelling rules, and word-frequency patterns. When users type in these languages, Russian-based autocorrection or missing language-specific correction can produce incorrect suggestions or replacements.
+My questions are:
+
+Are there plans to expand autocorrection and predictive text support for more Cyrillic-based languages?
+Is ther...</content:encoded>
+      <pubDate>Thu, 11 Jun 2026 17:59:38 GMT</pubDate>
+      <author>Agisight</author>
+    </item>
+    <item>
+      <title>Group AppIntents’ Searchable DynamicOptionsProvider in Sections</title>
+      <link>https://developer.apple.com/forums/thread/775988</link>
+      <content:encoded>I’m trying to group my EntityPropertyQuery selection into sections as well as making it searchable.
+I know that the EntityStringQuery is used to perform the text search via entities(matching string: String). That works well enough and results in this modal:
+
+Though, when I’m using a DynamicOptionsProvider to section my EntityPropertyQuery, it doesn’t allow for searching anymore and simply opens the sectioned list in a menu like so:
+
+How can I combine both? I’ve seen it in other apps, but can’t figure out why my code doesn’t allow to section the results and make it searchable? Any ideas?
+My cod...</content:encoded>
+      <pubDate>Thu, 06 Mar 2025 20:40:21 GMT</pubDate>
+      <author>alexander216</author>
+    </item>
+    <item>
+      <title>Voice to Text</title>
+      <link>https://developer.apple.com/forums/thread/829571</link>
+      <content:encoded>It has been over 3 years since you chose, to save Apple money, you changes voice to text, and it is worthless. Do you plan on fixing this, or going back to paying for cloud service, instead of being cheap, sacrificing our experience so you can save money your trillion dollar company does not need.</content:encoded>
+      <pubDate>Mon, 08 Jun 2026 21:23:02 GMT</pubDate>
+      <author>mmowels</author>
+    </item>
+    <item>
+      <title>Inquiry Regarding Siri–AI Integration Capabilities</title>
+      <link>https://developer.apple.com/forums/thread/808414</link>
+      <content:encoded>:
+Hello, I’m seeking clarification on whether Apple provides any framework or API that enables deep integration between Siri and advanced AI assistants (such as ChatGPT), including system-level functions like voice interaction, navigation, cross-platform syncing, and operational access similar to Siri’s own capabilities. If no such option exists today, I would appreciate guidance on the recommended path or approved third-party solutions for building a unified, voice-first experience across Apple’s ecosystem. Thank you for your time and insight.</content:encoded>
+      <pubDate>Wed, 26 Nov 2025 01:03:54 GMT</pubDate>
+      <author>Universalvictory</author>
+    </item>
+    <item>
+      <title>Why the waitlist I am a developer?</title>
+      <link>https://developer.apple.com/forums/thread/829572</link>
+      <content:encoded>Sorry I thought it would tell you in the description or in the forum but when I went to try to activate new Siri it says that I have to be on a waitlist and from all that I've checked I'm an Apple developer so I'm wondering if anybody else is waiting or if the system is so busy today. If anybody else is having this issue please let me know.</content:encoded>
+      <pubDate>Mon, 08 Jun 2026 22:41:53 GMT</pubDate>
+      <author>webwolf37</author>
+    </item>
+    <item>
+      <title>PerfomAll() doesn't run TrackObjectRequests in parallel:</title>
+      <link>https://developer.apple.com/forums/thread/828235</link>
+      <content:encoded>I see a linear slow down as more trackers are added in the loop below. According to the WWDC video I was hoping that performAll run all these request in parallel, but apparently not for TrackObjectRequest....
+#if DEBUG
+print("Frame processor: \(requests.count) tracking requests")
+var observationCount: Int = 0
+let trackingStart = Date()
+#endif
+for await observation in handler.performAll(requests) {
+    if case .trackObject(let request, let trackedBlock) = observation {
+        
+        #if DEBUG
+        observationCount += 1
+        #endif
+        
+        guard let trackedBlock = trackedBlock,...</content:encoded>
+      <pubDate>Mon, 01 Jun 2026 00:43:12 GMT</pubDate>
+      <author>Alundor</author>
+    </item>
+    <item>
+      <title>Will the upcomming Mac Book Pro M6 Max has at least 256GB RAM</title>
+      <link>https://developer.apple.com/forums/thread/822882</link>
+      <content:encoded>Hi Guys,
+I want to use the newest Mac Book Pro M6 (Max or Ultra) with at least 256GB RAM for AI development.
+Will my wish may come true? What do you think?
+One of Apples most advantage here is unified memory and with the privacy first approach, i want to run local modells and show it to my customer just on the macbook. That has much more magic then first plug the power supply for a sparc, connect a network cable and fiddling around. The perfect match would be a Max Book Pro, M6 Ultra, 512GB. But I guess this is just a dream :-(. Please let me know what you think abou that. Thanks</content:encoded>
+      <pubDate>Wed, 15 Apr 2026 01:17:04 GMT</pubDate>
+      <author>dbcb</author>
+    </item>
+    <item>
+      <title>Problem running NLContextualEmbeddingModel in simulator</title>
+      <link>https://developer.apple.com/forums/thread/799951</link>
+      <content:encoded>Environment
+MacOC 26
+Xcode Version 26.0 beta 7 (17A5305k)
+simulator: iPhone 16 pro
+iOS: iOS 26
+Problem
+NLContextualEmbedding.load() fails with the following error
+In simulator
+Failed to load embedding from MIL representation: filesystem error: in create_directories: Permission denied ["/var/db/com.apple.naturallanguaged/com.apple.e5rt.e5bundlecache"]
+filesystem error: in create_directories: Permission denied ["/var/db/com.apple.naturallanguaged/com.apple.e5rt.e5bundlecache"]
+Failed to load embedding model 'mul_Latn' - '5C45D94E-BAB4-4927-94B6-8B5745C46289'
+
+assetRequestFailed(Optional(Error Do...</content:encoded>
+      <pubDate>Thu, 11 Sep 2025 04:03:23 GMT</pubDate>
+      <author>kachebb</author>
+    </item>
+    <item>
+      <title>MPS backend reports ~40 GiB 'other allocations' on 48 GB M5 Pro under macOS 26.4.1, blocking large tensor operations (PyTorch)</title>
+      <link>https://developer.apple.com/forums/thread/824753</link>
+      <content:encoded>Product
+macOS
+Version
+macOS 26.4.1 (public release)
+Hardware
+Apple M5 Pro, 48 GB unified memory
+Summary
+On macOS 26.4.1, the MPS backend consistently reports approximately 40 GiB of “other allocations” on a 48 GB M5 Pro machine, even on a freshly rebooted system with minimal user applications running. This leaves insufficient memory for large GPU tensor operations that previously succeeded on earlier macOS versions.
+The failure manifests as:
+RuntimeError: MPS backend out of memory
+(MPS allocated: 17.60 GiB, other allocations: 40.17 GiB,
+max allowed: 63.65 GiB).
+Tried to allocate 7.63 GiB on pr...</content:encoded>
+      <pubDate>Wed, 29 Apr 2026 14:58:25 GMT</pubDate>
+      <author>JLNZ</author>
+    </item>
+    <item>
+      <title>Does the new API: BNNSGraph support quantization</title>
+      <link>https://developer.apple.com/forums/thread/824843</link>
+      <content:encoded>Hello, I spent some time going through the documentation and videos. I did not see how to implement quantized arithmetic for  my neural network using BNNSGraph. Could someone please help me.</content:encoded>
+      <pubDate>Thu, 30 Apr 2026 05:30:55 GMT</pubDate>
+      <author>kyer</author>
+    </item>
+    <item>
+      <title>VNRecognizeTextRequest .accurate model failing to load</title>
+      <link>https://developer.apple.com/forums/thread/824639</link>
+      <content:encoded>When I try to use VNRecognizeTextRequest in a simple program on apple silicon .accurate works, but when I add the same code to a helper process in a larger project, .accurate doesn’t return any results while only .fast works. This happens on apple silicon machines but not older intel ones. When I call VNRecognizeTextRequest I see the error [Espresso::handle_ex_plan] exception= in the logs along with (TextRecognition) Error loading network 0, -1. And when I catch the exception in lldb and print it I see Null bundleID. In the code, [[NSBundle mainBundle] returns null even though plutil -p on the...</content:encoded>
+      <pubDate>Tue, 28 Apr 2026 16:39:08 GMT</pubDate>
+      <author>macdev1</author>
+    </item>
+    <item>
+      <title>Official One-Click Local LLM Deployment for 2019 Mac Pro (7,1) Dual W6900X</title>
+      <link>https://developer.apple.com/forums/thread/820642</link>
+      <content:encoded>I am a professional user of the 2019 Mac Pro (7,1) with dual AMD Radeon Pro W6900X MPX modules (32GB VRAM each). This hardware is designed for high-performance compute, but it is currently crippled for modern local LLM/AI workloads under Linux due to Apple's EFI/PCIe routing restrictions.
+Core Issue:
+
+rocminfo reports "No HIP GPUs available" when attempting to use ROCm/amdgpu on Linux
+Apple's custom EFI firmware blocks full initialization of professional GPU compute assets
+The dual W6900X GPUs have 64GB combined VRAM and high-bandwidth Infinity Fabric Link, but cannot be fully utilized for loc...</content:encoded>
+      <pubDate>Thu, 26 Mar 2026 13:13:30 GMT</pubDate>
+      <author>hance</author>
+    </item>
+    <item>
+      <title>Is anyone working on jax-metal?</title>
+      <link>https://developer.apple.com/forums/thread/743350</link>
+      <content:encoded>Hi,
+I think many of us would love to be able to use our GPUs for Jax on the new Apple Silicon devices, but currently, the Jax-metal plugin is, for all effects and purposes, broken. Is it still under active development? Is there a planned release for a new version?
+thanks!</content:encoded>
+      <pubDate>Tue, 19 Dec 2023 20:29:45 GMT</pubDate>
+      <author>BVJ</author>
+    </item>
+    <item>
+      <title>How Is useful AI</title>
+      <link>https://developer.apple.com/forums/thread/822443</link>
+      <content:encoded>I want to introduce how is  usefully AI</content:encoded>
+      <pubDate>Sat, 11 Apr 2026 18:29:25 GMT</pubDate>
+      <author>Arifemarat</author>
+    </item>
+    <item>
+      <title>After loading my custom model - unsupportedTokenizer error</title>
+      <link>https://developer.apple.com/forums/thread/821088</link>
+      <content:encoded>In Oct25, using mlx_lm.lora I created an adapter and a fused model uploaded to Huggingface. I was able to incorporate this model into my SwiftUI app using the mlx package. MLX-libraries 2.25.8. My base LLM was mlx-community/Mistral-7B-Instruct-v0.3-4bit.
+Looking at LLMModelFactory.swift the current version 2.29.1 the only changes are the addition of a few models.
+The earlier model was called: pharmpk/pk-mistral-7b-v0.3-4bit
+The new model is called: pharmpk/pk-mistral-2026-03-29
+The base model (mlx-community/Mistral-7B-Instruct-v0.3-4bit.) must still be available. Could the error 'unsupportedTo...</content:encoded>
+      <pubDate>Mon, 30 Mar 2026 21:53:15 GMT</pubDate>
+      <author>dbourne5321</author>
+    </item>
+    <item>
+      <title>Shortcut - “Use Model” error handling?</title>
+      <link>https://developer.apple.com/forums/thread/813757</link>
+      <content:encoded>I have a series of shortcuts that I’ve written that use the “Use Model” action to do various things. For example, I have a shortcut “Clipboard Markdown to Notes” that takes the content of the clipboard, creates a new note in Notes, converts the markdown content to rich text, adds it to the note etc.
+One key step is to analyze the markdown content with “Use Model” and generate a short descriptive title for the note.
+I use the on-device model for this, but sometimes the content and prompt exceed the context window size and the action fails with an error message to that effect.
+In that case, I’d ...</content:encoded>
+      <pubDate>Sun, 25 Jan 2026 18:59:57 GMT</pubDate>
+      <author>Jimscard</author>
+    </item>
+  </channel>
+</rss>

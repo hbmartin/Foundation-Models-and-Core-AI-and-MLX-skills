@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>Evaluations</title>
+    <link>https://developer.apple.com/forums/topics/machine-learning-and-ai/machine-learning-and-ai-topic-evaluations</link>
+    <description>Discuss how to use Evaluations to design and run evaluation suites for LLM-based features in your apps.</description>
+    <item>
+      <title>Vision evaluations</title>
+      <link>https://developer.apple.com/forums/thread/833822</link>
+      <content:encoded>Are evaluations just for Text-text, or is there an efficient ways to evaluate image-text, like for MobileClip2, or YOLOE?
+At first blush, it seems like that would just be redoing training, testing, and validation of the dataset, or am I missing something? (newbe)</content:encoded>
+      <pubDate>Thu, 11 Jun 2026 23:35:30 GMT</pubDate>
+      <author>sfrunner</author>
+    </item>
+    <item>
+      <title>Evaluations for non-Swift languages</title>
+      <link>https://developer.apple.com/forums/thread/833729</link>
+      <content:encoded>Is Evaluations only for swift or does it support other languages like python and others?</content:encoded>
+      <pubDate>Thu, 11 Jun 2026 22:09:29 GMT</pubDate>
+      <author>ardysingh</author>
+    </item>
+    <item>
+      <title>Performance and customization of alternate options</title>
+      <link>https://developer.apple.com/forums/thread/832053</link>
+      <content:encoded>Performance wise what are trade-offs when running an MLX-backed model on-device compared to using the system's AFM Core model? Also semiconnected: How do I use the 'model judge evaluator' to compare the accuracy of a custom LoRA adapter against the system's private cloud compute models?</content:encoded>
+      <pubDate>Wed, 10 Jun 2026 20:08:06 GMT</pubDate>
+      <author>progressneverstops</author>
+    </item>
+  </channel>
+</rss>

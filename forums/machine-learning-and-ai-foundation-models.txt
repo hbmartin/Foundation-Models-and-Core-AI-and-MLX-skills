@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>Foundation Models</title>
+    <link>https://developer.apple.com/forums/topics/machine-learning-and-ai/machine-learning-and-ai-foundation-models</link>
+    <description>Discuss the Foundation Models framework which provides access to Apple’s on-device large language model that powers Apple Intelligence to help you perform intelligent tasks specific to your app.</description>
+    <item>
+      <title>Provide actionable feedback for the Foundation Models framework and the on-device LLM</title>
+      <link>https://developer.apple.com/forums/thread/791250</link>
+      <content:encoded>We are really excited to have introduced the Foundation Models framework in WWDC25. When using the framework, you might have feedback about how it can better fit your use cases.
+Starting in macOS/iOS 26 Beta 4, the best way to provide feedback is to use #Playground in Xcode. To do so:
+
+
+In Xcode, create a playground using #Playground. Fore more information, see Running code snippets using the playground macro.
+
+
+Reproduce the issue by setting up a session and generating a response with your prompt.
+
+
+In the canvas on the right, click the thumbs-up icon to the right of the response.
+
+
+Follow th...</content:encoded>
+      <pubDate>Tue, 01 Jul 2025 22:25:08 GMT</pubDate>
+    </item>
+    <item>
+      <title>Use of SpotlightSearchTool() returns "Model Catalog error: Error Domain=com.apple.UnifiedAssetFramework Code=5000" , although model is available</title>
+      <link>https://developer.apple.com/forums/thread/838904</link>
+      <content:encoded>On macOS Golden Gate Developer Beta 4 the following code:
+import CoreSpotlight
+import FoundationModels
+  
+let tool = SpotlightSearchTool()
+
+let session = LanguageModelSession(tools: [tool])
+
+let response = try await session.respond(to: "What hikes have I gone on?")
+
+, returns the following error:
+
+Model Catalog error: Error Domain=com.apple.UnifiedAssetFramework Code=5000 "There are no underlying assets (neither atomic instance nor asset roots) for consistency token for asset set com.apple.modelcatalog" UserInfo={NSLocalizedFailureReason=There are no underlying assets (neither atomic instance ...</content:encoded>
+      <pubDate>Wed, 22 Jul 2026 23:27:52 GMT</pubDate>
+      <author>BlueFox123</author>
+    </item>
+    <item>
+      <title>Foundation Models, image input and locating things within an image</title>
+      <link>https://developer.apple.com/forums/thread/838613</link>
+      <content:encoded>I'm trying to use Foundation Models to identify the things in an image. That part is easy and is working well.
+I'd like to also know where in the image the things are. This is where I'm hitting a wall.
+For example, if there's an image of a horse and a cow, I'd like to be told (even approximate) coordinates of where in the image the horse is and where the cow is.  Bounding boxes are fine for my needs. (Any coordinate system will work because it's easy enough to convert from one to another)
+The LanguageModelSession consistently lists the items in the image and gives me bounding boxes for their l...</content:encoded>
+      <pubDate>Mon, 20 Jul 2026 14:46:08 GMT</pubDate>
+      <author>jaywardell</author>
+    </item>
+    <item>
+      <title>Issue: Inflexible API Versioning Logic in Foundation Models framework utilities</title>
+      <link>https://developer.apple.com/forums/thread/838444</link>
+      <content:encoded>In the Foundation Models framework utilities package, the private method buildURLRequest in ChatCompletionsLanguageModel handles the construction of OpenAI-compatible API URLs:
+private func buildURLRequest(for request: ChatCompletionRequest) throws -&amp;gt; URLRequest {
+    let isVersioned = baseURL.pathComponents.contains("v1")
+    let endpoint = isVersioned ? "/chat/completions" : "/v1/chat/completions"
+    let url = baseURL.appendingPathComponent(endpoint)
+    ...
+  }
+
+
+Problem
+The current implementation hardcodes "v1" to determine if the baseURL already includes a version. This limits compati...</content:encoded>
+      <pubDate>Sat, 18 Jul 2026 13:28:56 GMT</pubDate>
+      <author>Stv-X</author>
+    </item>
+    <item>
+      <title>More Detailed Quota Usage for PCC</title>
+      <link>https://developer.apple.com/forums/thread/835974</link>
+      <content:encoded>Unless I'm missing something, it seems like the quota usage information for the Private Cloud Compute model is too limited.
+You can tell if you've reached your quota or are below it. If you are below your quota, you can tell if you're approaching the limit, but what does this actually mean? Am I over 50%, 90%, 99%?
+It would be nice to have actual numbers in the quota. For example, I can see my token usage for a session. If an app could keep track of that versus the quota, you could come up with something way more useful for the user. Example: You have 100,000 tokens per month, this app has mad...</content:encoded>
+      <pubDate>Wed, 24 Jun 2026 19:26:26 GMT</pubDate>
+      <author>Enderlyn</author>
+    </item>
+    <item>
+      <title>I did well on iOS a decade ago. So - no foundation models for me?</title>
+      <link>https://developer.apple.com/forums/thread/835897</link>
+      <content:encoded>I had a great run in the first decade of iOS development.
+Not so much since.
+I had 180k downloaded units in the last year - but I'm excluded from foundation models because I did well before 2015.
+That seems like an odd policy. Apart from anything else - it explicitly punishes long-term accounts...
+Lifetime downloads...</content:encoded>
+      <pubDate>Wed, 24 Jun 2026 12:14:30 GMT</pubDate>
+      <author>Confused Vorlon</author>
+    </item>
+    <item>
+      <title>TTS Advanced Speech Generation: Expressive voices</title>
+      <link>https://developer.apple.com/forums/thread/834149</link>
+      <content:encoded>During WWDC26 Keynote a second generation on-device model was announced with better speech generation capabilities.
+Is there a new API available for developers to generate speech?</content:encoded>
+      <pubDate>Fri, 12 Jun 2026 15:33:49 GMT</pubDate>
+      <author>juan.moya</author>
+    </item>
+    <item>
+      <title>Accessing Private Cloud Compute</title>
+      <link>https://developer.apple.com/forums/thread/834749</link>
+      <content:encoded>Hello,
+I recently learned about Private Cloud Compute (PCC):
+https://developer.apple.com/private-cloud-compute/
+I am currently using a standard Developer Program account, and it seems that I cannot apply for the program directly. Is there an alternative? Also, is there any additional fee for using this service?
+If I want to call PCC in the app, for example, using the following code:
+let session = LanguageModelSession(
+model: PrivateCloudComputeLanguageModel()
+)
+
+Do I need to apply for a specific plan to ensure that my App is successfully published on the App Store and available to users?
+Thank...</content:encoded>
+      <pubDate>Mon, 15 Jun 2026 10:46:24 GMT</pubDate>
+      <author>lijiaxu</author>
+    </item>
+    <item>
+      <title>Sensitive Content Error When Using Foundation Models</title>
+      <link>https://developer.apple.com/forums/thread/836285</link>
+      <content:encoded>I am using the following code in my iOS application.
+#Playground {
+let session = LanguageModelSession()
+
+let response = try await session.respond(to: "List all states of USA.")
+
+print(response.content)
+
+}
+And I get the following error:
+The operation couldn’t be completed. (com.apple.SensitiveContentAnalysisML error 15.)
+I have turned off Apple Intelligence and turned on again. No use. I am using Xcode 27 beta 2.
+any ideas?</content:encoded>
+      <pubDate>Sun, 28 Jun 2026 20:09:17 GMT</pubDate>
+      <author>azamsharp</author>
+    </item>
+    <item>
+      <title>Adapter Problem - compatibleAdapterNotFound</title>
+      <link>https://developer.apple.com/forums/thread/829108</link>
+      <content:encoded>Hello. I have a problem with the FoundationModels adapter and the Apple-hosted managed asset pack via TestFlight.
+I have created an adapter that works fine locally by creating a model via (fileURL: URL) on a real device, but I cannot create a model using background assets by downloading the adapter via TestFlight.
+
+Every time I try to get an adapter, the creation of the adapter is interrupted by the compatibleAdapterNotFound error.
+The aar. archive i created using a special command -
+xcrun ba-package foundation-models package 
+--adapter-path aurelius1.fmadapter 
+--asset-pack-id fmadapter-aurel...</content:encoded>
+      <pubDate>Thu, 04 Jun 2026 07:50:25 GMT</pubDate>
+      <author>alex_und3r</author>
+    </item>
+    <item>
+      <title>Recommended App Store distribution strategy for apps that require Foundation Models</title>
+      <link>https://developer.apple.com/forums/thread/836810</link>
+      <content:encoded>Hello,
+I'm evaluating Foundation Models announced at WWDC 2026 and have a question regarding App Store distribution.
+My understanding is that Foundation Models are only available on supported devices and operating system versions.
+For apps that rely on Foundation Models as their primary functionality (rather than offering AI as an optional feature), I'm trying to understand the recommended distribution strategy.
+Currently, iOS provides Required Device Capabilities to prevent users from installing apps that require hardware features such as GPS, ARKit, or NFC.
+However, I couldn't find an equiva...</content:encoded>
+      <pubDate>Fri, 03 Jul 2026 02:19:58 GMT</pubDate>
+      <author>a_okano</author>
+    </item>
+    <item>
+      <title>SpotlightSearchTool Not Invoked, Console Error</title>
+      <link>https://developer.apple.com/forums/thread/837226</link>
+      <content:encoded>I'm following along with the WWDC video on SpotlightSearchTool and hitting an error - looking for some guidance.
+I've configured SpotlightSearchTool and I'm sending it to the session.
+let session = LanguageModelSession(tools: [tool]) {
+    spotlightSearchInstructions
+}
+let response = try await session.respond(to: prompt, options: GenerationOptions(toolCallingMode: .required))
+
+I set the tool calling mode to required as a test - without it I don't get errors but the logging makes it seem like it's not calling the search tool and the responses would seem to confirm that (they're not grounded in ...</content:encoded>
+      <pubDate>Tue, 07 Jul 2026 21:49:01 GMT</pubDate>
+      <author>Hunter</author>
+    </item>
+    <item>
+      <title>Foundation models tied to Siri in Mac OS beta 2</title>
+      <link>https://developer.apple.com/forums/thread/836760</link>
+      <content:encoded>Since beta 2 I think, it seems Foundation models are not accessible if Siri AI is not enabled.
+I'm on Mac OS, and not sure how it works on iOS, but does that mean that Foundation Models will not be usable if Siri AI is not enabled (Europe)?</content:encoded>
+      <pubDate>Thu, 02 Jul 2026 12:49:41 GMT</pubDate>
+      <author>Gil</author>
+    </item>
+    <item>
+      <title>Foundation Models: Model-level refusal regression on iOS 27 beta for health app prompts (not guardrailViolation)</title>
+      <link>https://developer.apple.com/forums/thread/836673</link>
+      <content:encoded>I have a health app on the App Store that uses Foundation Models to generate brief narrative summaries from the user's own glucose and menstrual cycle data. No medical advice, just supportive summaries of their own numbers. This has been working reliably on iOS 26.x since early 2026.
+After updating to iOS 27 beta 2, every prompt is refused. The error is LanguageModelError ("The model refused to answer" / "May contain sensitive content"), not GenerationError.guardrailViolation.
+I've confirmed:
+
+Same device, same code, same prompts. Worked on iOS 26.x, fails on iOS 27 beta 2.
+Two independent fea...</content:encoded>
+      <pubDate>Wed, 01 Jul 2026 15:52:07 GMT</pubDate>
+      <author>rileygersh</author>
+    </item>
+    <item>
+      <title>Can any Apple Watch running WatchOS 27 access PCC via Foundation Models?</title>
+      <link>https://developer.apple.com/forums/thread/834652</link>
+      <content:encoded>Apologies, if I've missed the answer already here, I've searched around but can't find it.
+Foundation models and Private Cloud Compute require Apple Intelligence to be enabled in Settings as mentioned here.
+At the same time it says that Foundation Models PCC calls are supported on all Apple Watch models that run WatchOS 27.
+So, will there be a seperate Apple Intelligence setting in WatchOS 27 for those devices? Otherwise if a user has an Apple Watch Series 11 (which does support Apple Intelligence) paired with an iPhone 15 (which doesn't support Apple Intelligence), will they be unable to use ...</content:encoded>
+      <pubDate>Sun, 14 Jun 2026 15:36:20 GMT</pubDate>
+      <author>simonfromhelix</author>
+    </item>
+    <item>
+      <title>Bring an LLM provider to the Foundation Models, missing MLX dependencies</title>
+      <link>https://developer.apple.com/forums/thread/836264</link>
+      <content:encoded>On this talk:
+Bring an LLM provider to the Foundation Models framework
+URL:
+https://developer.apple.com/videos/play/wwdc2026/339/
+on the coding examples a very peculiar framework is shown:
+import MLXFoundationModels
+However I am not able to find it nowhere, there is even a code section with this framework as part of an example.
+Where is this framework, there are no BETA branches on the MLX framework either.
+Thanks!</content:encoded>
+      <pubDate>Sat, 27 Jun 2026 21:50:34 GMT</pubDate>
+      <author>jorgevmendoza</author>
+    </item>
+    <item>
+      <title>FoundationModels Framework on watchOS 27 Beta 2</title>
+      <link>https://developer.apple.com/forums/thread/835987</link>
+      <content:encoded>When importing FoundationModels in watchOS 27 Beta 2 this error appears:
+
+/Applications/Xcode-beta.app/Contents/Developer/Platforms/WatchOS.platform/Developer/SDKs/WatchOS27.0.sdk/System/Library/Frameworks/FoundationModels.framework/Modules/FoundationModels.swiftmodule/arm64e-apple-watchos.swiftinterface:6:15 Unable to resolve module dependency: 'CoreImage'
+
+Does anybody else have this issue?</content:encoded>
+      <pubDate>Wed, 24 Jun 2026 22:27:01 GMT</pubDate>
+      <author>arno_app</author>
+    </item>
+    <item>
+      <title>Feedback on Foundation Models context management wrapper</title>
+      <link>https://developer.apple.com/forums/thread/835927</link>
+      <content:encoded>I’ve been experimenting with Foundation Models and built a small Swift package that wraps LanguageModelSession with simple context management.
+The current approach checks the transcript token count using tokenCount(for:), compacts the transcript when it reaches a threshold, and retries once if exceededContextWindowSize is thrown.
+I’d appreciate feedback on whether this is a sensible use of Foundation Models APIs, especially around rebuilding a session from a compacted Transcript.
+GitHub:
+https://github.com/ricky-stone/FoundationContext</content:encoded>
+      <pubDate>Wed, 24 Jun 2026 16:09:48 GMT</pubDate>
+      <author>rickystone</author>
+    </item>
+    <item>
+      <title>Has something in FoundationModels guardrails changed recently?</title>
+      <link>https://developer.apple.com/forums/thread/835777</link>
+      <content:encoded>I have an app on the App Store that takes user content and creates a Generable struct out of it.
+In the last couple weeks I have started getting complains from my users that the part of the app leveraging FoundationModels isn't working properly.
+In my testing I noticed that the same request that would've worked a couple weeks ago is now getting errors with guardrails violation.
+I'm initializing my model this way
+LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations))
+// I'm aware that .permissiveContentTransformations does not apply to Generable, but I'd...</content:encoded>
+      <pubDate>Tue, 23 Jun 2026 14:50:08 GMT</pubDate>
+      <author>jamalK</author>
+    </item>
+    <item>
+      <title>SkillActivation Framework Fails to Build in Xcode 26 When Using foundation-models-utilities</title>
+      <link>https://developer.apple.com/forums/thread/835165</link>
+      <content:encoded>Hi Apple Team,
+I'm trying to use the SkillActivation framework from the Foundation Models Utilities repository:
+https://github.com/apple/foundation-models-utilities
+Environment:
+
+Xcode 26 Beta
+iPadOS/macOS 26 Beta
+Apple Intelligence enabled
+Foundation Models Utilities: latest version from GitHub
+
+Issue:
+As soon as I import or use SkillActivation-related APIs, Xcode reports build errors and the project fails to compile.
+The rest of the Foundation Models framework works correctly, but the problem appears specifically when SkillActivation is added.
+Steps to Reproduce:
+
+Create a new project.
+Add f...</content:encoded>
+      <pubDate>Thu, 18 Jun 2026 03:33:05 GMT</pubDate>
+      <author>TheTravis</author>
+    </item>
+    <item>
+      <title>Why is SystemLanguageModel.default.availability tied to user enabling talk / press side button for Siri?</title>
+      <link>https://developer.apple.com/forums/thread/835211</link>
+      <content:encoded>On iOS 27 Beta 1, it looks like the user must enable either "Siri"/"Hey Siri" or "Press Side Button for Siri" in iOS settings for SystemLanguageModel.default.availability to report true. Otherwise, it returns .appleIntelligenceNotEnabled.
+Is this expected behavior? This doesn't seem very intuitive. The user might very well want to use in-app AI functionalities without wanting to talk / press side button for Siri. Also, with the new "pull down for Siri" UX these are not the only way to interact with Siri anyway.</content:encoded>
+      <pubDate>Thu, 18 Jun 2026 08:00:24 GMT</pubDate>
+      <author>NSCruiser</author>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>Apple Intelligence</title>
+    <link>https://developer.apple.com/forums/topics/machine-learning-and-ai/machine-learning-and-ai-topic-apple-intelligence</link>
+    <description>Apple Intelligence is the personal intelligence system that puts powerful generative models right at the core of your iPhone, iPad, and Mac and powers incredible new features to help users communicate, work, and express themselves.</description>
+    <item>
+      <title>Siri AI broken</title>
+      <link>https://developer.apple.com/forums/thread/835554</link>
+      <content:encoded>Hi everyone,
+I’m testing the latest iOS 27 beta and I’ve noticed an issue with the new Siri. When I ask very simple questions that should be handled locally or through basic reasoning, Siri consistently responds with:
+“Uh oh, something went wrong.”
+For example, asking:
+“When is the next Friday the 13th?”
+results in the error message instead of an answer.
+I’ve reproduced this multiple times and it seems to happen with other straightforward informational queries as well. I’ve already tried restarting the device and checking my network connection, but the issue persists.
+Has anyone else experienc...</content:encoded>
+      <pubDate>Mon, 22 Jun 2026 19:50:15 GMT</pubDate>
+      <author>Gabi111</author>
+    </item>
+    <item>
+      <title>iPhone 16 Pro failing to install new Siri Beta</title>
+      <link>https://developer.apple.com/forums/thread/838984</link>
+      <content:encoded>I am currently on Apple's Dev Beta V4 for iOS 27. The first version I installed was the Dev Beta V2, I am desperate to try out the new Siri AI Beta, but it's just not installing for me.
+I have the ability to "turn siri off" then "on again" and find I get the 2024 Apple Intelligence version fine.
+But if I choose to try out the new AI Beta, I'm left with "Adding support for Siri is in progress. Siri will be unavailable until the update is complete." It's been in that state for over 48 hours in Beta 4 and I'm left with the OLD OLD Siri globe from pre-Apple intelligence.
+Am I being too keen and ju...</content:encoded>
+      <pubDate>Thu, 23 Jul 2026 14:53:36 GMT</pubDate>
+      <author>nitram1872</author>
+    </item>
+    <item>
+      <title>Siri Ai iPhone 12</title>
+      <link>https://developer.apple.com/forums/thread/838996</link>
+      <content:encoded>I wanted to activate the new Siri AI on my iPhone 12 running iOS 27 Developer Beta 4. I knew it didn't support Apple Intelligence features, but I switched the language to English anyway—and then I ran into this bug: I went into the Siri tab and saw this.</content:encoded>
+      <pubDate>Thu, 23 Jul 2026 17:06:29 GMT</pubDate>
+      <author>Nikto-17</author>
+    </item>
+    <item>
+      <title>Siri Ai iPhone 12</title>
+      <link>https://developer.apple.com/forums/thread/838997</link>
+      <content:encoded>I wanted to activate the new Siri AI on my iPhone 12 running iOS 27 Developer Beta 4. I knew it didn't support Apple Intelligence features, but I switched the language to English anyway—and then I ran into this bug: I went into the Siri tab and saw this.</content:encoded>
+      <pubDate>Thu, 23 Jul 2026 17:13:01 GMT</pubDate>
+      <author>Nikto-17</author>
+    </item>
+    <item>
+      <title>Suggestion for the SiriAI in European Union</title>
+      <link>https://developer.apple.com/forums/thread/838857</link>
+      <content:encoded>As a user from Bulgaria, I would also like to suggest a possible approach that could benefit both Apple and users in the European Union.
+Even if the new AI-powered Siri becomes available in the EU in the future, it is unlikely to support every European language immediately. For example, Siri AI does not currently support Bulgarian, which means many users like me would still be unable to use its full capabilities in our native language.
+Because of this, I believe users should have the option to choose their preferred AI assistant as the system assistant—for example Siri, ChatGPT, Gemini, or ano...</content:encoded>
+      <pubDate>Wed, 22 Jul 2026 14:50:39 GMT</pubDate>
+      <author>Anton_Todorov</author>
+    </item>
+    <item>
+      <title>Apple inteligente</title>
+      <link>https://developer.apple.com/forums/thread/838735</link>
+      <content:encoded>Gerstart Apple inteligente</content:encoded>
+      <pubDate>Tue, 21 Jul 2026 20:03:12 GMT</pubDate>
+      <author>Mariodasilva</author>
+    </item>
+    <item>
+      <title>Pls give me new siri</title>
+      <link>https://developer.apple.com/forums/thread/837184</link>
+      <content:encoded>Hi, so I just installed the 27 iOS beta and I use an iPad 4th generation or 10th and it was like a long time to start the update, but I’m OK with it. I just wanted to the Apple know if y’all could please give me the new Siri because last time when Apple Intelligence came I tried to install that update and it didn’t let me so I’m not forcing you that you’ll need to give it to me right now, but I was just seeing if y’all could please give it to me because I really need it. I don’t really need it, but I just want to test it out and for smarter use thank you Apple. If you have any questions, just ...</content:encoded>
+      <pubDate>Tue, 07 Jul 2026 15:22:38 GMT</pubDate>
+      <author>Danielortiz</author>
+    </item>
+    <item>
+      <title>Is &amp;#96;.appEntityIdentifier&amp;#96; + &amp;#96;Transferable&amp;#96; the intended way to let Siri send an on-screen image to another app? (iOS 27)</title>
+      <link>https://developer.apple.com/forums/thread/838329</link>
+      <content:encoded>I'm trying to make a third-party app's on-screen image available to Siri / Apple Intelligence so the user can say something like "send this to " and have the image handed off. And I'd like
+to confirm whether I'm using the intended mechanism or whether this particular case just isn't
+supported yet.
+What I'm trying to do
+My app shows a single image (it owns no photo library, the image is an in-app render). I want the
+user to be able to reference it as "this" and have Siri move it to another app.
+What I implemented (following Making onscreen content available to Siri and Apple Intelligence
+and WW...</content:encoded>
+      <pubDate>Fri, 17 Jul 2026 11:05:01 GMT</pubDate>
+      <author>FrankSchlegel</author>
+    </item>
+    <item>
+      <title>qwen3.5 free offline plugin for xcode</title>
+      <link>https://developer.apple.com/forums/thread/835482</link>
+      <content:encoded>I can't figure how to install it
+Here's google post:
+You can use the following free options directly inside Xcode 27:1. Built-in On-Device Predictive Code CompletionApple provides a free on-device, on-chip model that runs entirely locally on your Mac.Cost: 100% Free (no internet connection or subscription required).How it works: It uses Apple Silicon to predict and autocomplete your Swift code instantly as you type.Setup: Go to Xcode &amp;gt; Settings &amp;gt; Intelligence and ensure local code completion is toggled on.2. Free-Tier Cloud Models (ChatGPT, Claude, &amp;amp; Gemini)Xcode 27 explicitly featur...</content:encoded>
+      <pubDate>Sun, 21 Jun 2026 15:13:05 GMT</pubDate>
+      <author>PaulSheldon</author>
+    </item>
+    <item>
+      <title>Apple Intelligence</title>
+      <link>https://developer.apple.com/forums/thread/835603</link>
+      <content:encoded>I don’t even see the waitlist of the Apple Intelligence program, i think it’s lacking instruction’s how to apply, when it comes out etc.</content:encoded>
+      <pubDate>Mon, 22 Jun 2026 22:03:46 GMT</pubDate>
+      <author>VyreNQ</author>
+    </item>
+    <item>
+      <title>Machine learning</title>
+      <link>https://developer.apple.com/forums/thread/838031</link>
+      <content:encoded>Watch and learn the road to our future of anyone’s growing business</content:encoded>
+      <pubDate>Wed, 15 Jul 2026 05:16:15 GMT</pubDate>
+      <author>Josiahhov</author>
+    </item>
+    <item>
+      <title>New Apple Intelligence - Writing tools removal</title>
+      <link>https://developer.apple.com/forums/thread/837555</link>
+      <content:encoded>Hello,
+I have seen a great improvement of siri. However, my job requires a lot of communication though different languages, as mostly of those languages is not my primary language, the apple intelligence writing tool was a revolutionary tool that I have used on my daily bases.
+The tool remains there but attached to Siri, which takes out the advantage to use a shortcut for proofread which automatically replaces the entire text. Right now I need to copy and paste on Siri and copy the answer and paste. In my point of view we could just put back the writing tool, please &#x1f62d; separately as the previo...</content:encoded>
+      <pubDate>Fri, 10 Jul 2026 15:24:47 GMT</pubDate>
+      <author>feedback-</author>
+    </item>
+    <item>
+      <title>Writing tools</title>
+      <link>https://developer.apple.com/forums/thread/837566</link>
+      <content:encoded>Hello, I’ve noticed Siri has undergone significant updates. Previously, the dedicated tools functioned excellently as a separate, independent menu choice. Currently, app intelligence merges with Siri. This integration doesn’t operate reliably, affecting proofreading and the dedicated tools alike. The feature feels entirely unstable—sometimes available, sometimes not—appearing occasionally on the keyboard, at other times on the right-button menu, though it worked well when accessible through settings. Could we restore that setup?</content:encoded>
+      <pubDate>Fri, 10 Jul 2026 15:30:41 GMT</pubDate>
+      <author>feedback-</author>
+    </item>
+    <item>
+      <title>Having to zoom out for Siri to extract information</title>
+      <link>https://developer.apple.com/forums/thread/837612</link>
+      <content:encoded>I found I must zoom out the PDF so all area was displayed on the screen before Siri AI could scan the area and outline information from the PDF. If we have two pages, one page would be omitted by Siri AI. I am not sure if this the normal of Siri which it is supposed to be. Screenshot below.
+PS: Zooming out makes my human eyes unusable.</content:encoded>
+      <pubDate>Sat, 11 Jul 2026 14:07:23 GMT</pubDate>
+      <author>TomHsiung</author>
+    </item>
+    <item>
+      <title>Siri AI’s onscreen awareness can’t understand an AppEntity without a schema?</title>
+      <link>https://developer.apple.com/forums/thread/837249</link>
+      <content:encoded>Use Case
+I’m currently developing , a hiking and cycling app. I’d like to use Siri AI in iOS/watchOS 27 to create an experience like this:
+While users are recording an activity in app, they can raise their wrist or invoke Siri on iPhone and simply ask:
+“How much farther to the destination?”
+“How far have I already gone?”
+“How much elevation gain is left?”
+“How far is it to the next waypoint?”
+…
+Siri can then answer based on the app’s current workout context.
+Since there are many metrics like these, and it’s not convenient to look at the screen while cycling or trail running, this could be a re...</content:encoded>
+      <pubDate>Wed, 08 Jul 2026 03:22:46 GMT</pubDate>
+      <author>haozes</author>
+    </item>
+    <item>
+      <title>Can output images from imagePlaygroundSheet be used as input for third-party video generation APIs?</title>
+      <link>https://developer.apple.com/forums/thread/836435</link>
+      <content:encoded>I'm developing an iOS app that uses imagePlaygroundSheet to generate
+images based on AI-generated prompts (not user-typed text).
+I would like to confirm whether the following usage is permitted under
+the Apple Developer Program License Agreement:
+
+Generate an image using imagePlaygroundSheet within my app
+Pass the resulting image (obtained via the completion handler URL)
+as an input to a third-party video generation API (e.g., to create
+an image-to-video animation)
+Offer this video generation as a paid feature (consumable in-app
+purchase) within my app
+
+I've reviewed Section 3.2(8) of the ADPL...</content:encoded>
+      <pubDate>Tue, 30 Jun 2026 07:35:52 GMT</pubDate>
+      <author>Tkrt-M</author>
+    </item>
+    <item>
+      <title>I got old Siri UI instead</title>
+      <link>https://developer.apple.com/forums/thread/836451</link>
+      <content:encoded>I’m on a base iPhone 17 and I‘ve been approved from the waitlist over two weeks ago and when I use Siri, I get the old Siri from before Apple Intelligence was a thing (Glowy orb at the bottom). Inside Siri settings, it looks like it’s supposed to be set up for the new SirI as it shows the app settings. Here are my observations I have found from using beta 1 to 2.
+Beta 1:
+
+Whenever I have the new Siri “enabled”, there is no app
+I can type “siri://“ and it‘ll open the Siri open saying that’s there’s an update in progress. But if I type that in when I’m using the previous Siri, the app is there a...</content:encoded>
+      <pubDate>Tue, 30 Jun 2026 06:20:36 GMT</pubDate>
+      <author>CoolMan0771</author>
+    </item>
+    <item>
+      <title>iOS 27 ImagePlaygroundViewController.Delegate not working?</title>
+      <link>https://developer.apple.com/forums/thread/836316</link>
+      <content:encoded>In the WWDC 2026 sessions it was called out in code that the helper functions would still work, however they don't seem to be working either inside a UIViewRepresentable, nor as a UIKit View as below (also tried as a sheet, to no avail).
+Otherwise it works. Is there something else I'm missing?
+import SwiftUI
+import ImagePlayground
+
+@available(iOS 27.0, *)
+final class ImagePlaygroundPopupController: UIViewController {
+
+    var sourceImage: UIImage
+    var prompt: String
+    var onComplete: (URL) -&amp;gt; Void
+    var onCancel: () -&amp;gt; Void
+
+    private var didPresent = false
+    private var playg...</content:encoded>
+      <pubDate>Mon, 29 Jun 2026 04:21:39 GMT</pubDate>
+      <author>mikeaskew4</author>
+    </item>
+    <item>
+      <title>Where is my new siri??</title>
+      <link>https://developer.apple.com/forums/thread/836194</link>
+      <content:encoded>still no sign of the new siri no app no nothing im on the ios 27 beta 2 and iphone 15 pro max what is this apple</content:encoded>
+      <pubDate>Fri, 26 Jun 2026 20:53:31 GMT</pubDate>
+      <author>LV0</author>
+    </item>
+    <item>
+      <title>Joined waitlist for Siri AI</title>
+      <link>https://developer.apple.com/forums/thread/836118</link>
+      <content:encoded>Actually trick to change language to English UK, restart and change back to English US worked for me. After this in an hour notification showed up and Siri AI was ready.</content:encoded>
+      <pubDate>Thu, 25 Jun 2026 22:08:47 GMT</pubDate>
+      <author>Bobgreen66</author>
+    </item>
+  </channel>
+</rss>
