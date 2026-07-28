@@ -1,1 +1,4 @@
 .DS_Store
+
+# Third-party research clones (628M). Reproduce with scripts/clone-research-repos.sh
+repos/
