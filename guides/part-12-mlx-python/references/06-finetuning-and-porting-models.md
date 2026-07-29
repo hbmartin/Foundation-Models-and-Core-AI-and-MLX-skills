@@ -121,13 +121,11 @@ different checkout, grep for the symbol, not the line.
 | [10](#10-evaluating-the-result) | Evaluating the result |
 | [11](#11-mlx_lmfuse-and-what-it-costs-you) | `mlx_lm.fuse`, and what it costs you |
 | [12](#12-the-complete-worked-run) | The complete worked run |
-| [13](#13-porting-a-new-architecture-to-mlx-lm) | Porting a new architecture to mlx-lm |
-| [14](#14-verifying-parity-against-the-reference-implementation) | Verifying parity against the reference implementation |
-| [15](#15-silent-failures-consolidated) | Silent failures, consolidated |
-| [16](#16-declared-gaps) | Declared gaps |
-| [17](#17-where-to-go-next) | Where to go next |
 
 ---
+
+**Scope:** this reference intentionally ends at §12; architecture porting and parity verification
+belong to a separate guide. API spellings and CLI flags are pinned to the inspected mlx-lm revision.[^scope-source]
 
 ## 0. The frame: custom adapters are gone in OS 27
 
@@ -765,7 +763,7 @@ CONFIG_DEFAULTS = {
 | `--report-to` | str | `None` | `wandb`, `swanlab`, or `wandb,swanlab` |
 | `--project-name` | str | `None` | |
 | `-c` / `--config` | path | `None` | YAML; CLI flags win |
-| `--trust-remote-code` | flag | off | gates **both** tokenizer remote code and custom architectures — §13.8 |
+| `--trust-remote-code` | flag | off | gates **both** tokenizer remote code and custom architectures[^trust-source] |
 
 > ✅ All of the above read from `build_parser()` (`mlx_lm/lora.py:84-221`) and `CONFIG_DEFAULTS`.
 
@@ -2854,5 +2852,10 @@ it only implements basic security checks."* (✅ `notes/repos/mlx-lm.md` §2.6.)
 - **Behind a `LanguageModelSession`** — point `ChatCompletionsLanguageModel` at
   `http://localhost:8080/v1`. [Part 4](../../part-04-beyond-the-built-in-model/), and note C4:
   guided generation needs logits, which not every backend exposes.
+
+[^scope-source]: Source snapshot: [`ml-explore/mlx-lm` at `e5baded`](https://github.com/ml-explore/mlx-lm/tree/e5baded8c1d286754edb479ffbde4655a68e2758).
+[^trust-source]: The pinned [`lora.py` parser](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/lora.py#L210-L221)
+    defines the flag, and [`utils.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/utils.py#L301-L355)
+    gates custom architecture loading behind `trust_remote_code`.
 
 ---

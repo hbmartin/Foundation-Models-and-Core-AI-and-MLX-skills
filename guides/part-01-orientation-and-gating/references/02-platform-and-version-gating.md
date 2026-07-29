@@ -170,6 +170,8 @@ Beta at harvest time.
 | `iOS 27.0+ Beta … watchOS 27.0+ Beta` | Brand new in 2026 | everything in §2.3 |
 | `@backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4)` | Ships in *your* binary | `SystemLanguageModel.contextSize` |
 
+<a name="22--the-watchos-contradiction-you-must-plan-around"></a>
+
 ### 2.2 ⚠️ The watchOS contradiction you must plan around
 
 Read the first two rows again. `LanguageModelSession` is available on watchOS 27. `SystemLanguageModel`
@@ -328,6 +330,8 @@ if #available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *) {
 is set by that package's own build script; it is not a compiler builtin. This pattern is more
 portable than `canImport(_:_version:)` but shifts the detection burden onto your build system.
 
+<a name="33--the-empty-library-failure"></a>
+
 ### 3.3 ⚠️ The empty-library failure
 
 > ⚠️ **SILENT FAILURE** — When `#if canImport(FoundationModels, _version: 2)` is false, the guarded
@@ -364,6 +368,8 @@ fi
 ```
 
 ✅ **VERIFIED** — `.github/workflows/integration_tests.yml:21-42`.
+
+<a name="34--the-xcode-26--27-rebuild-changes-which-catch-fires"></a>
 
 ### 3.4 ⚠️ The Xcode 26 → 27 rebuild changes which `catch` fires
 
@@ -1018,6 +1024,8 @@ type and property names:
 
 ✅ **VERIFIED** — `/documentation/foundationmodels/supporting-languages-and-locales-with-foundation-models`.
 
+<a name="76--availability-is-not-a-promise"></a>
+
 ### 7.6 ⚠️ Availability is not a promise
 
 > ⚠️ **SILENT FAILURE** — `model.isAvailable` returning `true` does **not** mean a request will
@@ -1509,15 +1517,14 @@ request — treat the whole source as unreliable.
 | **"The 2M-download PCC limit is annual"** | Wrong. It is **cumulative/lifetime** first-time downloads across any of your apps. |
 | **"`developer.apple.com/apple-intelligence/private-cloud-compute/`"** | 404s. Use `developer.apple.com/private-cloud-compute/`. |
 
-One genuine, unresolved numeric discrepancy that is *not* fabrication and that you should know about:
+One formerly open discrepancy is now settled:
 
-> 🔴 **GAP — on-device context size.** Apple's documentation and WWDC26 session 319 both state **4K**
-> for `SystemLanguageModel` and **32K** for PCC. A comment in a shipping third-party app claims
-> *"iOS 26 reports 4K while the iOS 27 model reports 8K"* from real-device probing of
-> `contextSize`. That is **community-measured, one app, undated, and unconfirmed by Apple** — it is
-> reported here because the resolution matters, not because we endorse it. **The correct engineering
-> response is identical either way: read `SystemLanguageModel.default.contextSize` at runtime; never
-> hardcode 4096.** See [Part 3](../../part-03-context-profiles-agentic/).
+> ✅ **On-device context size is 4,096 tokens per session.** Apple Technical Note TN3193 states the
+> number and its scope directly.[^tn3193-context] A shipping third-party app still contains an
+> undated comment claiming an 8,192-token result on iOS 27, but no Apple source corroborates it.
+> Continue to read `SystemLanguageModel.default.contextSize` at runtime so model selection and future
+> OS changes remain explicit; do not present the third-party comment as a competing platform limit.
+> See [Part 3](../../part-03-context-profiles-agentic/).
 
 ---
 
@@ -1580,3 +1587,7 @@ in [§13](#13-known-bad-version-claims) is drawn as a negative example).
 - **Regression-testing across OS updates (the only answer to "no model pinning"):** [Part 6](../../part-06-evaluations/)
 - **Specialization, caching and `coreai-build`:** [Part 7](../../part-07-coreai-swift-runtime/)
 - **The 26 → 27 migration, in order:** [Part 17](../../part-17-migration-from-pre-ios-27/)
+
+[^tn3193-context]: Apple, [TN3193: Managing the on-device foundation model's context
+    window](https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window)
+    (4,096 tokens per `LanguageModelSession`).

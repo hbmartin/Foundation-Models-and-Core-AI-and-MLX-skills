@@ -3,11 +3,13 @@
 **Version floor:** deliberately mixed, and this is the part where version confusion costs the most. The
 *new* material floors at **iOS · iPadOS · macOS · visionOS 27 with Xcode 27** —
 `CaptureInputSequenceProvider`, `AnalyzerInputConverter`, `LongRunningIntent`, `ExecutionTargets`,
-`EntityIdentifier`, `SpotlightSearchTool`, `IndexedEntityQuery`, `RelevantEntities`. The machinery
+`SpotlightSearchTool`, `IndexedEntityQuery`, `RelevantEntities`. The machinery
 underneath it is much older and must not be version-confused with it: the `SpeechAnalyzer` pipeline is
 **26.0**, `SFCustomLanguageModelData` is **iOS 17.0 / macOS 14.0**, `StringSearchCriteria` is **iOS 17.2
 / macOS 14.2**, `SnippetIntent` is **26.0** and is routinely mis-reported as new this year,
-`Transferable` / `FileRepresentation` are iOS 16-era, and Core Spotlight predates all of it by years.
+`EntityIdentifier` is **iOS 16 / macOS 13**, `FileEntityIdentifier` is **iOS 18 / macOS 15** and
+supports draft documents that are not yet on disk, `Transferable` / `FileRepresentation` are iOS
+16-era, and Core Spotlight predates all of it by years.[^identifier-availability]
 16.5 has **no OS floor**: DNIKit is desktop Python (`>=3.7`, 3.9 recommended, **3.9.7 broken**).
 
 **Who this is for:** developers wiring an app *into* the system rather than running a model — speech in,
@@ -74,7 +76,7 @@ index content — into a shape Apple Intelligence can use, which is where integr
 | "My category isn't covered. What is left?" | [16.2 §8](references/02-app-schema-domains.md) | `.system.searchInApp`, with code. Works without domains or indexing |
 | "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](references/02-app-schema-domains.md) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
 | "Siri answers from my screen text and ignores my `AppEntity`" | [16.3 §1](references/03-onscreen-awareness.md) | Descriptive requests take the screenshot path and never call `entities(for:)` |
-| "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](references/03-onscreen-awareness.md) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**, needs a real file |
+| "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](references/03-onscreen-awareness.md) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**; the verified export path needs a real file, while draft identifiers cover pre-materialization identity[^identifier-availability] |
 | "Siri asks to clarify, or acts on the wrong item" | [16.3 §4, §8.2](references/03-onscreen-awareness.md) | A slow `displayRepresentations`; or per-row annotation on a scrolling list |
 | "My own model invents details for content I indexed" | [16.4 §7.3, §9](references/04-entities-spotlight-and-foundation-models.md) | The index is searchable, not readable. The hydration hook is the fix |
 | "What are *'indexed entities for Apple Intelligence'*?" | [16.4 §1](references/04-entities-spotlight-and-foundation-models.md) | `IndexedEntity` + `indexAppEntities(_:)`. Same index, different door |
@@ -101,8 +103,10 @@ Core AI runtime, cross-linked to Part 7.
 > time-range merging to append-only, and `bestAvailableAudioFormat` returning `nil` if you query it
 > before installing assets.
 
-> 🔴 **GAP — 25 declared unknowns**, more than any guide here, because the SpokenWord project that
+> 🔴 **GAP — 24 declared unknowns**, more than any guide here, because the SpokenWord project that
 > would settle most of them was never obtainable. §15 lists each with what would resolve it.
+> The former finish-method signature gap is resolved by Apple's current async declaration for
+> `cancelAndFinishNow()`.[^speech-cancel]
 
 ### [16.2 — App Schema Domains: the complete map of what Siri can actually do](references/02-app-schema-domains.md)
 The enumeration is the product: **all 23 domains in three tiers — roughly 177 intents, 73 entities and
@@ -141,8 +145,9 @@ that: `EntityIdentifier` and its five consumers, the four annotation shapes,
 > `@AppEntity(schema: .files.file)` + `FileEntityIdentifier.file(url:)` + **`FileRepresentation`** (not
 > `DataRepresentation`) is reported working on device on iOS 27 by a developer, not by Apple; Apple's
 > docs point elsewhere and its DTS engineer routed the underlying question to Feedback Assistant
-> (**FB23813341**) without answering it. Both appear side by side in §5.7, unreconciled. It needs a
-> real file on disk, so transient renders must be written out first.
+> (**FB23813341**) without answering it. Both appear side by side in §5.7, unreconciled. Draft
+> identifiers support unsaved document identity, but this verified `FileRepresentation` export still
+> needs a real file payload, so transient renders must be written out before hand-off.[^identifier-availability]
 
 ### [16.4 — One index, three consumers: entities, Spotlight, and Foundation Models](references/04-entities-spotlight-and-foundation-models.md)
 Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed
@@ -258,3 +263,14 @@ measurement**, always labelled as such and never as an Apple figure: the macOS 2
 guidance-token findings behind 16.4 §7, and the on-device `.files.file` confirmation behind 16.3 §5.
 **No performance number here is presented as Apple-published** — for on-screen entity resolution Apple
 publishes no latency budget, no timeout and no benchmark, so 16.3 §4 argues from mechanism instead.
+
+[^identifier-availability]: Apple, [`EntityIdentifier`](https://developer.apple.com/documentation/appintents/entityidentifier)
+    and [`FileEntityIdentifier`](https://developer.apple.com/documentation/appintents/fileentityidentifier),
+    document the respective public surfaces and availability. Apple’s dedicated
+    [`draft(identifier:)`](https://developer.apple.com/documentation/appintents/fileentityidentifier/draft%28identifier%3A%29)
+    page specifies that a draft identifier represents a document that has not yet been materialized
+    on disk and has no file URL.
+[^speech-cancel]: Apple,
+    [`SpeechAnalyzer.cancelAndFinishNow()`](https://developer.apple.com/documentation/speech/speechanalyzer/cancelandfinishnow%28%29),
+    declares the method `async`, nonthrowing, and able to finish analysis before any input is
+    consumed.

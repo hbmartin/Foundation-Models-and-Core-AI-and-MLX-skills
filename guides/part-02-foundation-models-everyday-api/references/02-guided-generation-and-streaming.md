@@ -423,6 +423,11 @@ as expected — Origami's code is a `first(where:)` returning an `Optional` and 
 `nil`. And `ImageReference` is **iOS 27.0+** while the rest of the guided-generation core is 26.0, so
 this whole section is behind an availability check on a mixed-target app.
 
+## 3. `@Guide`: the complete catalogue
+
+The forms below are grounded in Apple's macro documentation and compiling first-party samples;
+unsupported combinations are kept out of the catalogue.[^guide-macro-source]
+
 ### 3.1 The macro forms
 
 Two `@Guide` signatures are listed on the framework index page:
@@ -2767,3 +2772,7 @@ AI bundles (§6.3). Precedence when these conflicted: **compiling first-party sa
 SDK/source > docs > Apple-staff forum answers > transcripts > community. Every conflict encountered
 is called out inline — see §11.3 for the one place a sample overturned what this guide previously
 asserted.*
+
+[^guide-macro-source]: Apple, [`Guide(description:_:)`](https://developer.apple.com/documentation/foundationmodels/guide%28description%3A_%3A%29),
+    documents the macro that constrains guided-generation properties; the concrete forms below are
+    cross-checked against the first-party examples cited inline.

@@ -1,4 +1,5 @@
 .DS_Store
 
-# Third-party research clones (628M). Reproduce with scripts/clone-research-repos.sh
-repos/
+# Third-party research clones (628M). Reproduce with scripts/clone-research-repos.sh.
+# Anchor this rule so the tracked evidence corpus under notes/repos/ remains visible.
+/repos/

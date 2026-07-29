@@ -64,11 +64,13 @@ What follows:
   🔴 GAP that means sub-byte data is unreadable from Swift except through `RawView`.
 - **§4** — the Neural Engine: three dtypes, rank ≤ 5, 64-byte last-axis alignment, and the reason a
   bare Python float literal in your model code can move an entire op to the GPU.
-- **§5** — Metal / MPP TensorOps: the complete `__tensor_ops_datatype` enum, the 4-bit operand
-  rows verbatim, the settled non-existence of scale planes, and the 26.x feature ladder.
+- **§5** — Metal / MPP TensorOps: the 26.x baseline, the Xcode 27 int2/FP4/FP8/E8M0 additions,
+  auxiliary scale planes and automatic dequantization, plus the cooperative-tensor fallback for
+  26.x and custom formats.[^xcode27-scale-planes]
 - **§6** — MLX: the widest format menu in the stack (affine 2/3/4/5/6/8 bits × three group sizes,
-  mxfp4, mxfp8, nvfp4), implemented **entirely in software**, and the four gates that decide whether
-  you get the fast kernel.
+  mxfp4, mxfp8, nvfp4), implemented by its current kernels with MLX-owned software structs, and the
+  four gates that decide whether you get the fast kernel. This implementation choice does not erase
+  the separate OS 27 Metal FP4/FP8 types.[^xcode27-scale-planes]
 - **§7** — the crossings that silently degrade, as a lookup table: *you emitted X, the runtime stored
   Y, the hardware wanted Z → here is what actually happens.*
 - **§8** — how to check what you actually got: the Xcode model viewer's compute-vs-storage precision
@@ -186,7 +188,8 @@ And the CPU-only escape hatch, which tells you the shape of the problem from the
 
 Legend: **✅** supported · **—** not supported / not present · **SW** supported but implemented in
 software above the hardware primitive · **⚠️** supported with a caveat named in the referenced
-section.
+section. Metal entries marked 27 require the OS 27 tensor datatypes and auxiliary-plane API.
+[^xcode27-scale-planes]
 
 | Format | `coreai-opt` weights | `coreai-opt` activations | `coreai-opt` palette LUT | CoreML export backend | `NDArray.ScalarType` | ANE compute | MPP TensorOps operand | MLX quantize |
 |---|---|---|---|---|---|---|---|---|
@@ -198,15 +201,15 @@ section.
 | **uint8** | ✅ | ✅ | ✅ | ✅ (act: ✅) | `uint8` ✅ | ⚠️ §4.1 | `uint8_t` ✅ (26.4) | ✅ (packed container) |
 | **int4** | ✅ | ✅ | — | ✅ (weights only) | `int4` ✅ | **—** | `int4b_format` ✅ ⚠️ §5.3 | ✅ affine 4-bit |
 | **uint4** | ✅ | ✅ | — | ✅ (weights only) | `uint4` ✅ | **—** | `uint4b_format` ✅ ⚠️ §5.3 | ✅ |
-| **int2 / uint2** | ✅ | ✅ | — | **—** | `int2` / `uint2` ✅ | **—** | **—** | ✅ affine 2-bit (SW) |
+| **int2 / uint2** | ✅ | ✅ | — | **—** | `int2` / `uint2` ✅ | **—** | `metal::int2b_format` / `uint2b_format` ✅ (27) | ✅ affine 2-bit (SW) |
 | **int3, int5, int6, int7** | — | — | — | — | ✅ all present | **—** | **—** | ✅ 3/5/6-bit affine (SW) |
 | **uint1, uint3, uint5, uint6, uint7** | — | — | — | — | ✅ all present | **—** | **—** | — |
-| **FP8 E4M3** | ✅ | ✅ | ✅ | **—** | `float8e4m3fn` ✅ | **—** | **—** | SW (`fp8_e4m3`, §6.4) |
-| **FP8 E5M2** | ✅ | ✅ | ✅ | **—** | `float8e5m2` ✅ | **—** | **—** | — |
-| **FP8 E8M0** (scales) | scale only (§2.3) | — | — | **—** | `float8e8m0fn` ✅ | **—** | **—** | SW (`fp8_e8m0`, §6.4) |
-| **FP4 E2M1** | ✅ (`float4_e2m1fn_x2`) | ✅ | — | **—** | `float4e2m1fn` ✅ | **—** | **—** | SW (`fp4_e2m1`, §6.4) |
-| **MXFP4** (fp4 + E8M0/32) | ✅ ⚠️ §2.3 | — | — | **—** | via the two above | **—** | **—** | ✅ `mxfp4` (SW) |
-| **MXFP8** (fp8 + E8M0/32) | 🟡 §2.3 | — | — | **—** | via the two above | **—** | **—** | ✅ `mxfp8` (SW) |
+| **FP8 E4M3** | ✅ | ✅ | ✅ | **—** | `float8e4m3fn` ✅ | **—** | `metal::metal_fp8_e4m3_format` ✅ (27) | SW (`fp8_e4m3`, §6.4) |
+| **FP8 E5M2** | ✅ | ✅ | ✅ | **—** | `float8e5m2` ✅ | **—** | `metal::metal_fp8_e5m2_format` ✅ (27) | — |
+| **FP8 E8M0** (scales) | scale only (§2.3) | — | — | **—** | `float8e8m0fn` ✅ | **—** | `metal::metal_fp8_ue8m0_format` + scale plane ✅ (27) | SW (`fp8_e8m0`, §6.4) |
+| **FP4 E2M1** | ✅ (`float4_e2m1fn_x2`) | ✅ | — | **—** | `float4e2m1fn` ✅ | **—** | `metal::metal_fp4_e2m1_format` ✅ (27) | SW (`fp4_e2m1`, §6.4) |
+| **MXFP4** (fp4 + E8M0/32) | ✅ ⚠️ §2.3 | — | — | **—** | via the two above | **—** | data + E8M0 scale plane ✅ (27) | ✅ `mxfp4` (SW) |
+| **MXFP8** (fp8 + E8M0/32) | 🟡 §2.3 | — | — | **—** | via the two above | **—** | data + E8M0 scale plane ✅ (27) | ✅ `mxfp8` (SW) |
 | **NVFP4** (fp4 + E4M3/16) | **—** | — | — | **—** | via the two above | **—** | **—** | ✅ `nvfp4` (SW) |
 | **k-means palette 1/2/3/4/6/8 bit** | ✅ (eager only) | n/a | see LUT rows | ⚠️ §2.5 | indices as sub-byte ints | via LUT dtype | **—** | — |
 | **complex 16/32/64** | — | — | — | — | `cfloat16/32/64` ✅ | **—** | **—** | ⚠️ excluded from NAX |
@@ -661,11 +664,8 @@ a shape-and-type mismatch waiting at `run()`.
 | Sub-byte unsigned | `uint1` `uint2` `uint3` `uint4` `uint5` `uint6` `uint7` | |
 | Boolean | `bool` | "A Boolean scalar." |
 
-> 🟡 **RECONSTRUCTED — the case count.** Our harvest of the documentation labels this enum
-> "33 cases", but the groups above enumerate **35**. The *membership* of each group is quoted from
-> the doc pages and is reliable; the total is not. Do not write a case count into your own docs, and
-> do not assume `CaseIterable.allCases.count == 33`. If you have Xcode 27, `print(
-> NDArray.ScalarType.allCases.count)` settles it in one line — that is the resolving action.
+The groups above enumerate **35 cases**, which matches the Xcode 27 SDK surface. Treat the stale
+“33 cases” harvest label as a capture error, not an unresolved API question.[^scalar-type-count]
 
 Four structural observations that matter more than the count:
 
@@ -1020,17 +1020,17 @@ The `-40000.0` rule is the one worth calling out separately, because it is the o
 guide where a format mismatch produces **wrong numbers rather than a fallback**. Every other row in
 every other table degrades performance and preserves correctness. That one does not.
 
-### 4.4 ⚠️ Splitting a model into multiple functions is what routes it to the ANE
+### 4.4 ⚠️ Recognized functions select the sample loader’s ANE preference
 
 WWDC26 session 325 presents splitting SAM3 into three entrypoints — `image_encode`, `text_encode`,
 `detect` — as a **latency trick**: run each at a different cadence, 76% faster second inference.
 
-Reading the shipped code shows a second, stronger reason:
+Reading the optional `coreai-models` package shows a second consequence for callers using its loader:
 
-> ✅ **VERIFIED** — `apple/coreai-models`, `ModelStructure.swift:71-80`: the split is also what
-> **routes the model to the Neural Engine**. A single monolithic function containing one
-> ANE-ineligible region can drag neighbouring work off the ANE with it; separate functions are
-> separately specialized.
+> ✅ **VERIFIED** — `apple/coreai-models`, `ModelStructure.swift:71-80`: recognized structures select
+> that helper’s Neural Engine preference. Direct `AIModel` callers choose their own
+> `SpecializationOptions`; function names do not form a Core AI framework routing contract.
+> [^sample-routing-policy]
 
 The per-function compression recipe in the same repo is a small masterclass in matching format to
 compute unit:
@@ -1101,10 +1101,10 @@ Four things to take from that:
 
 ## 5. Metal and MPP TensorOps: the GPU compute set
 
-### 5.1 The complete data-type enum
+### 5.1 The 26.x baseline and the Xcode 27 extension
 
 Metal Performance Primitives TensorOps is the floor that both Core AI's GPU path and MLX stand on.
-Its dtype surface is one enum in one header, and it is short.
+The dtype surface is versioned: the following enum is the Xcode 26.6 baseline, not the OS 27 set.
 
 > ✅ **VERIFIED** — `MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsTypes.h:36-57`,
 > complete and unabridged, from the Xcode 26.6 SDK (Build 17F113):
@@ -1146,27 +1146,38 @@ The encoding is "low 16 bits are the bit width", confirmed by the size helper �
 > }
 > ```
 
-And the absences, which are the reason this section exists:
+The following absences are therefore true **only of that Xcode 26.6 header**:
 
-| Session 330's spoken claim | In `__tensor_ops_datatype`? |
-|---|---|
-| int2 | **NO** |
-| int4 | **YES** — `__tensor_ops_datatype_int4` (and `uint4`) |
-| int8 | **YES** — `__tensor_ops_datatype_int8` (and `uint8`) |
-| fp4 | **NO** |
-| fp8 | **NO** |
-| `E8M0` scale factors | **NO** |
+| Session 330 type | Xcode 26.6 | Xcode 27 |
+|---|---|---|
+| int2 | absent | `__tensor_ops_datatype_int2` / `uint2` |
+| int4 | `__tensor_ops_datatype_int4` / `uint4` | retained |
+| int8 | `__tensor_ops_datatype_int8` / `uint8` | retained |
+| fp4 | absent | `__tensor_ops_datatype_fp4_e2m1` |
+| fp8 | absent | `__tensor_ops_datatype_fp8_e4m3` / `fp8_e5m2` |
+| `E8M0` scale factors | absent | `__tensor_ops_datatype_fp8_ue8m0` + auxiliary scale plane[^xcode27-scale-planes] |
 
-> ✅ **VERIFIED — negative result, and this is a strong one.** Case-insensitive searches for `scale`,
+> ✅ **VERIFIED — version-scoped negative result.** Case-insensitive searches for `scale`,
 > `plane`, `block_factor`, `blockFactor`, `fp8`, `fp4`, `e8m0`, `e4m3`, `quant` and `aux` across
 > **all ~14,300 lines of MPP headers** and **all 2,788 lines of `metal_tensor` +
-> `metal_cooperative_tensor`** return **zero hits**.
+> `metal_cooperative_tensor`** return **zero hits** in Xcode 26.6.
+
+Xcode 27 extends both the host descriptor and the shader-side type map. `MTLTensorDataType` adds
+int2/uint2, FP4 E2M1, FP8 E4M3/E5M2 and unsigned E8M0; `MPPTensorOpsTypes.h` maps the corresponding
+`metal::*_format` types into TensorOps datatypes.[^xcode27-scale-planes]
+
+| Xcode 27 type | TensorOps mapping |
+|---|---|
+| `metal::int2b_format` / `metal::uint2b_format` | `__tensor_ops_datatype_int2` / `uint2` |
+| `metal::metal_fp4_e2m1_format` | `__tensor_ops_datatype_fp4_e2m1` |
+| `metal::metal_fp8_e4m3_format` / `metal::metal_fp8_e5m2_format` | `__tensor_ops_datatype_fp8_e4m3` / `fp8_e5m2` |
+| `metal::metal_fp8_ue8m0_format` | `__tensor_ops_datatype_fp8_ue8m0` |
 
 ### 5.2 The Metal-language types, and the int16 oddity
 
 The enum is the *description*; the Metal shading-language types are what you actually write.
 
-> ✅ **VERIFIED** — `MPPTensorOpsTypes.h:101-128`, complete:
+> ✅ **VERIFIED** — `MPPTensorOpsTypes.h:101-128` in Xcode 26.6, complete for that SDK:
 > ```cpp
 > template <typename ElementType>
 > constexpr __tensor_ops_datatype __element_type_to_tensor_ops_datatype()
@@ -1200,6 +1211,10 @@ The enum is the *description*; the Metal shading-language types are what you act
 > The 4-bit element types are spelled **`metal::int4b_format`** and **`metal::uint4b_format`**, gated
 > on the feature macro `__HAVE_INT4B_FORMAT_TYPE__`. `MPPTensorOpsUtility.h:66-77` carries the
 > parallel trait specializations.
+
+The Xcode 27 continuation adds feature-gated branches for int2/uint2, FP4, both FP8 value formats,
+and unsigned E8M0. Do not use the 26.6 excerpt as a negative capability test for an OS 27 target.
+[^xcode27-scale-planes]
 
 > 🟡 **RECONSTRUCTED — `int16` / `uint16` have no Metal-type mapping in the quoted function.** The
 > enum contains `__tensor_ops_datatype_int16` and `__tensor_ops_datatype_uint16`, but the function
@@ -1240,9 +1255,10 @@ Two facts follow, and they constrain kernel design more than the dtype list does
    in the **right** position. There is no `int4b_format × half` row. This matches the
    weights-quantized inference case exactly — **your weights must be operand B** — and it means you
    cannot write a 4-bit-activation kernel this way.
-2. **There is no scale operand anywhere in the signature.** `matmul2d` takes exactly three operands.
-   A 4-bit matmul computes the raw dot product of the **stored** 4-bit values. Any scale or zero
-   point is applied **by you, outside the op**.
+2. **There is no separate scale argument in the `matmul2d` signature.** On 26.x and for custom
+   encodings, apply scale/zero point yourself before or around the op. On OS 27, a supported
+   block-scaled `MTLTensor` instead carries an E8M0 auxiliary scale plane, so TensorOps can
+   dequantize it without a fourth explicit operand.[^xcode27-scale-planes]
 
 > 🔴 **GAP — the non-4-bit rows.** The header comment at `MPPTensorOpsMatMul2d.h:13-61` enumerates
 > roughly 50 operand triples in total; our corpus reproduces only the ten 4-bit rows. **The
@@ -1293,8 +1309,9 @@ The defensible sentence is: *"TensorOps ships across macOS/iOS 26 point releases
 bfloat at 26.1, cooperative-tensor matmul inputs at 26.3, int4/int8 tensors at 26.4 — and the
 shipped Xcode 26.6 SDK annotates the relevant symbols with a 26.2 deployment-target macro."*
 
-What is **not** in dispute: **none of it is 27.** Session 330's spoken "new in iOS/macOS 27" does not
-match either artifact.
+The 26.x ladder remains correct for the original TensorOps, bfloat, cooperative-tensor inputs and
+int4/int8 path. It does **not** refute session 330: OS 27 adds a separate tier comprising int2,
+FP4/FP8/E8M0 tensor datatypes and auxiliary scale planes.[^xcode27-scale-planes]
 
 Two more compile-time gates hide behind the availability macro, and their failure mode is a
 confusing error rather than a clear one:
@@ -1308,44 +1325,32 @@ confusing error rather than a clear one:
 > feature macros: `__HAVE_BFLOAT__`, `__HAVE_INT4B_FORMAT_TYPE__` (`MPPTensorOpsTypes.h:106,112`),
 > `__HAVE_EXECUTION_UNIT__` (`__exec/units.h:9`).
 
-### 5.5 ✅ Scale planes do not exist — settled, from three independent directions
+### 5.5 ✅ Xcode 27 auxiliary scale planes and automatic dequantization
 
-WWDC26 session 330's narration described a mechanism in which an `MTLTensor` carries its quantization
-scales alongside its data as an **auxiliary scale plane**, using FP8 E8M0 block-wise scale factors
-declared via a plane descriptor with `dataType` + `blockFactors`. Two guides in this series were
-originally planned around that.
+WWDC26 session 330 describes the OS 27 mechanism accurately: an `MTLTensor` can carry quantization
+scales beside its data as an **auxiliary scale plane**. `MTLTensorAuxiliaryPlaneDescriptor` provides
+the scale `dataType` and per-dimension `blockFactors`; the default and currently supported scale type
+is unsigned FP8 E8M0, and the first block factor is 32. A populated
+`MTLTensorAuxiliaryPlaneDescriptorMap` is attached through `MTLTensorDescriptor.auxiliaryPlanes`.
+[^xcode27-scale-planes]
 
-It is not a shipping API. Three independent sources agree:
+That changes the execution rule by deployment target:
 
-1. **The SDK headers.** Zero hits for `scale`, `plane`, `blockFactor`, `fp8`, `e8m0` across all MPP
-   and Metal tensor headers (§5.1). ✅ VERIFIED.
-2. **MLX's own kernels.** MLX — written by Apple, against these headers, for this hardware —
-   hand-dequantizes into threadgroup memory in software (§6.4). If scale planes existed, that loop
-   would not. ✅ VERIFIED.
-3. **Tech Talk 111432.** The talk devotes a whole segment to quantization and **never mentions a
-   scale plane, a plane descriptor, `blockFactors`, FP8 or E8M0.** Instead, when it reaches "how do
-   you run quantized models", it names the *opposite* mechanism: *"we added support for cooperative
-   tensors as inputs to matmul. **This lets you build custom dequantization routines inside your
-   kernel**, essential for running quantized models efficiently."* ✅ VERIFIED.
+| Target / format | Correct path |
+|---|---|
+| OS 27, supported FP4/FP8/int2 data with E8M0 block scales | Attach the scale plane; TensorOps consumes both planes and handles dequantization |
+| OS 26.x | No auxiliary-plane API; hand-dequantize into a cooperative tensor before `matmul2d` |
+| OS 27, custom scale dtype or block geometry | Keep the cooperative-tensor hand-dequantization path |
 
-Source 3 does better than absence: **it names what shipped instead.** A scale plane would mean the
-tensor carries its own scales and the hardware dequantizes. What Apple actually shipped is: **you
-dequantize yourself, into a cooperative tensor, and feed that to `matmul2d`.**
+The custom fallback is not evidence against the built-in path. Session 330 explicitly presents
+both: pass a supported quantized tensor to TensorOps for automatic dequantization, or dequantize a
+custom format into a cooperative tensor. MLX’s software kernels likewise remain relevant for its own
+formats and for deployment targets that predate the OS 27 API.[^xcode27-scale-planes]
 
-Session 330 is itself consistent with this on a close read — 330:68–75 contains both *"pass your
-quantized tensors and TensorOps will handle dequantization for you"* **and** *"if you need to
-dequantize a **custom** format… **dequantizing the data into a cooperative tensor**, which can now be
-passed as an input to the `matmul2d` op."* The second half is exactly the 26.3 feature.
-
-> 🔴 **Narrow residual GAP.** What is established: scale planes are absent from the Metal
-> shading-language TensorOps surface in the 26.6 SDK. What is **not** established: whether a
-> **host-side** `MTLTensor` API in `Metal.framework` exposes plane descriptors that some other
-> consumer (MPSGraph, Core ML, the ANE driver) uses internally. The ObjC/Swift `Metal.framework`
-> headers were never searched.
->
-> **What would resolve it:** `grep -ri 'blockFactor\|scale\|plane' …/Metal.framework/Headers/`.
-> **Safe default meanwhile:** write kernels as though scale planes do not exist, because from a
-> Metal kernel they demonstrably do not. Nothing you can write today depends on the answer.
+> ⚠️ **Descriptor constraints.** OS 27 multi-plane tensors require compute or render usage rather
+> than `MTLTensorUsageMachineLearning`, reject data-plane elements larger than one byte and rank-zero
+> tensors, and currently accept E8M0 for the scales plane. Preserve a tested software fallback instead
+> of assuming that every block-quantized layout can be described by the built-in plane.
 
 ### 5.6 TensorOps is portable, not M5-only — and there is no capability query
 
@@ -1398,12 +1403,13 @@ ask about:
 | | Supported |
 |---|---|
 | Float element types | `float` (fp32) · `half` (fp16) · `bfloat` (26.1+) |
-| Integer element types | `int8_t` · `uint8_t` · `int32_t` · `uint32_t` · `metal::int4b_format` · `metal::uint4b_format` (26.4 for the 4/8-bit tensor path) |
+| Integer element types | 26.x: `int8_t` · `uint8_t` · `int32_t` · `uint32_t` · `metal::int4b_format` · `metal::uint4b_format`; 27 adds `metal::int2b_format` / `uint2b_format` |
+| OS 27 low-bit floats | `metal::metal_fp4_e2m1_format` · `metal::metal_fp8_e4m3_format` · `metal::metal_fp8_e5m2_format` · `metal::metal_fp8_ue8m0_format`[^xcode27-scale-planes] |
 | In the enum but unmapped in the quoted excerpt | `int16` · `uint16` (🟡 §5.2) |
-| Scale / block-scale mechanism | **none — at any width** |
+| Scale / block-scale mechanism | OS 27 E8M0 auxiliary scale plane with `blockFactors`; hand-dequantize on 26.x/custom formats |
 | 4-bit operand position | **right operand only** |
-| Block-scaled formats (MXFP4/MXFP8/NVFP4) | **software only**, built by the caller (§6) |
-| Deployment gate | ladder 26.0/26.1/26.3/26.4; SDK macro 26.2; `__HAVE_TENSOR__` must be defined |
+| Block-scaled formats | OS 27 built-in path for E8M0/32-compatible data; software for custom layouts such as E4M3-scaled NVFP4 |
+| Deployment gate | baseline ladder 26.0/26.1/26.3/26.4; int2/FP4/FP8/E8M0 + scale planes at 27; feature macros must be defined |
 | Hardware fast-path gate | GPU architecture generation ≥ 17 (≥ 18 for `'p'`); **no query API** |
 
 ---
@@ -1540,7 +1546,7 @@ low-precision arithmetic:
 > match exactly: fewer than 1% of output elements differ. … The error can exceed 1 ULP for very small
 > values, and is always below 1 ULP for larger values. **For nvfp4, the results match exactly.**"*
 
-### 6.4 ⚠️ `fp8_e8m0`, `fp8_e4m3` and `fp4_e2m1` are MLX's own structs, not Metal types
+### 6.4 ⚠️ MLX uses its own FP4/FP8 structs even though OS 27 has Metal types
 
 This is the fact that ties §5 and §6 together, and it is the single most important thing to
 understand about block-scaled formats on Apple silicon in 2026.
@@ -1561,7 +1567,9 @@ understand about block-scaled formats on Apple silicon in 2026.
 > `fp8.h:51-52`); `fp4_e2m1` is in **`fp4.h`**. They are **plain structs with hand-written bit
 > manipulation**, loaded from a `uint8_t` by reinterpret-cast.
 >
-> **There is no hardware fp8 type and no Metal `fp8` at all.**
+> **Scope this result to MLX’s implementation.** These identifiers are MLX-owned software structs,
+> but Xcode 27 separately provides Metal FP4 E2M1, FP8 E4M3/E5M2 and unsigned E8M0 tensor datatypes
+> and shader formats.[^xcode27-scale-planes]
 
 The element dequantization is equally hand-rolled:
 
@@ -1611,8 +1619,10 @@ And the loader that applies the block scales:
 > `scales[i]` comes from a **separate `const device uint8_t*` buffer** (declared at
 > `fp_quantized_nax.h:107`), decoded as E8M0 or E4M3 **in software**, multiplied **in software**.
 
-**That loop is a hand-written software emulation of exactly what a hardware scale plane would have
-done.** If MPP supported scale planes, it would not exist.
+**That loop is MLX's hand-written implementation of the scale-and-dequantize step.** It remains
+necessary for this pinned MLX revision, for 26.x deployment, and for custom formats that OS 27's
+E8M0/block-factor contract cannot represent. Its existence is not evidence against Xcode 27's
+native auxiliary scale planes.[^xcode27-scale-planes]
 
 The affine path is structurally identical:
 
@@ -2406,12 +2416,14 @@ EMIT  (MLX)             affine 2/3/4/5/6/8 bits x group 32/64/128 (7 excluded)
 | `AIModel.deviceArchitectureName` | `CoreAI`, 27.0 | ✅ |
 | `xcrun coreai-build compile … --platform --min-deployment-version --output --preferred-compute` | Xcode 27 + Metal Toolchain | ✅ (flag *values* 🔴) |
 | `__tensor_ops_datatype`, `metal::int4b_format` / `uint4b_format`, `mpp::tensor_ops::matmul2d` | MetalPerformancePrimitives, 26.x | ✅ |
+| int2/FP4/FP8/E8M0 `MTLTensorDataType` and `metal::*_format` operands | Metal / MPP, OS 27 | ✅[^xcode27-scale-planes] |
 | `mx.quantize` / `dequantize` / `quantized_matmul` / `gather_qmm` / `qqmm` / `to_fp8` / `from_fp8` | `mlx.core` | ✅ |
 | `nn.quantize`, `nn.QuantizedLinear`, `nn.QuantizedEmbedding`, `nn.QQLinear` | `mlx.nn` | ✅ |
-| `fp8_e8m0` / `fp8_e4m3` / `fp4_e2m1` | **MLX's own structs** in `fp8.h` / `fp4.h` — **not Metal types** | ✅ |
+| `fp8_e8m0` / `fp8_e4m3` / `fp4_e2m1` | **MLX's own compatibility structs** in `fp8.h` / `fp4.h`; OS 27 also has distinct Metal FP4/FP8 formats | ✅[^xcode27-scale-planes] |
 | A vended Swift type for `.int4` / `.uint1` / `.float8e4m3fn` | **does not exist in the documented surface** | 🔴 |
 | `NDArray.ScalarType.type` | referenced by `RawView.view(as:)`'s docs; absent from the symbol index | 🔴 |
-| `.coreaimodel`, `.aiasset`, `coreai-torch convert`, a scale-plane API, an on-device LoRA training API | **fabricated — do not use** | ❌ |
+| `.coreaimodel`, `.aiasset`, `coreai-torch convert`, an on-device LoRA training API | **fabricated — do not use** | ❌ |
+| `MTLTensorAuxiliaryPlaneDescriptor`, `MTLTensorDescriptor.auxiliaryPlanes` | Metal, OS 27 | ✅[^xcode27-scale-planes] |
 
 ---
 
@@ -2424,7 +2436,8 @@ reason §5 and §6 can be stated flatly.
 
 | Source | What it settles |
 |---|---|
-| `MetalPerformancePrimitives.framework/Headers/` in the **Xcode 26.6 SDK (Build 17F113)** — ~14,300 lines including ~320 lines of Apple prose. `MPPTensorOpsTypes.h`, `MPPTensorOpsMatMul2d.h`, `MPPTensorOpsAvailability.h`, `MPPTensorOpsUtility.h`, `MPPTensorOpsMatMul2dImpl.h` | The entire dtype set (§5.1–5.3); the availability macro (§5.4); the non-existence of scale planes (§5.5) |
+| `MetalPerformancePrimitives.framework/Headers/` in the **Xcode 26.6 SDK (Build 17F113)** — ~14,300 lines including ~320 lines of Apple prose. `MPPTensorOpsTypes.h`, `MPPTensorOpsMatMul2d.h`, `MPPTensorOpsAvailability.h`, `MPPTensorOpsUtility.h`, `MPPTensorOpsMatMul2dImpl.h` | The 26.x baseline dtype set (§5.1–5.3) and availability macro (§5.4); not evidence about OS 27 additions |
+| Xcode 27 `Metal.framework/Headers/MTLTensor.h` and `MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsTypes.h` | int2/FP4/FP8/E8M0 datatypes, auxiliary scale-plane descriptors and shader-side TensorOps mappings (§5.1–5.5)[^xcode27-scale-planes] |
 | The Metal toolchain's language headers (`metal_tensor`, `metal_cooperative_tensor`, `__exec/units.h`), cryptex-mounted — locate with `xcrun -sdk macosx --find metal`, **never hardcode the path** | `metal::int4b_format`, the tensor/cooperative-tensor types |
 | `apple/coreai-optimization` (`coreai-opt` **0.2.1**, 2026-07-02, plus some behaviour from `main` at `cd95cb2`) | The whole of §2 |
 | `apple/coreai-torch` (`_type_mapping.py`, `_utils.py`, converter constant emission) | §3.4, §3.5, §4.2 |
@@ -2465,8 +2478,8 @@ behaviour surprises people, not as documentation.
 | Conflict | Resolution |
 |---|---|
 | Session 325 says `coreai-opt` supports *"int4, int8, FP4 and FP8"*; the source supports **nine** dtypes including int2/uint2 | **Source wins.** §2.1 |
-| Session 330 describes `MTLTensor` **scale planes** with E8M0 `blockFactors` and an auxiliary plane map | **Does not exist** in the shipping shader-side API. Three independent sources agree (§5.5). Treat 330's material as describing `matmul2d` accepting already-dequantized cooperative tensors — the 26.3 feature |
-| Session 330 says int2, fp4 and fp8 tensor types; "new in iOS/macOS 27" | **Headers and Tech Talk 111432 both disagree.** int4/int8 only; 26.x not 27 (§5.1, §5.4) |
+| Session 330 describes `MTLTensor` **scale planes** with E8M0 `blockFactors` and an auxiliary plane map | **Xcode 27 headers corroborate it.** The earlier contradiction came from searching only Xcode 26.6 and only the older MPP surface (§5.5).[^xcode27-scale-planes] |
+| Session 330 says int2, FP4 and FP8 tensor types are new in iOS/macOS 27 | **Xcode 27 corroborates it** through `MTLTensorDataType` and the feature-gated MPP type mappings (§5.1, §5.4). |
 | Our own earlier register said "TensorOps availability is **26.2**"; the M5 talk's ladder is 26.0 → 26.1 → 26.3 → 26.4 and **never mentions 26.2** | **Report both, they are about different things** (§5.4). Do not print a single blanket version |
 | Session 325 says the SAM3 encoders use per-channel scales; the shipped code sets `enable_per_channel_scale=False` because `True` produces rank-6 LUTs the ANE rejects | **Shipped code wins**, and both readings of the discrepancy are stated rather than smoothed over (§4.2) |
 | Apple's framework page lists macOS for Core AI; every symbol page omits it | **Docs bug.** Treat macOS 27 as supported and flag the inconsistency (§3.1) |
@@ -2476,13 +2489,11 @@ behaviour surprises people, not as documentation.
 
 | § | Gap | What would resolve it |
 |---|---|---|
-| 3.1 | `NDArray.ScalarType` case **count** (33 vs the 35 enumerated) | `print(NDArray.ScalarType.allCases.count)` on Xcode 27 |
 | 3.2 | **No `BitwiseCopyable` Swift type for sub-byte or 8-bit-float scalar types**; `ScalarType.type` is referenced but absent from the symbol index | SDK interface dump (`swiftc -print-module -module-name CoreAI`) or an Apple forum answer |
 | 3.4 | The palette **index-plane** `ScalarType` mapping is inferred, not documented | Open a palettized `.aimodel` in the model viewer and read Storage types |
 | 4.1 | **bfloat16 on the ANE** — Apple's rule file names fp16/int8/int16 and is silent on bf16 | Export a bf16 model with `--platform iOS`; read the Instruments Neural Engine track |
 | 5.2 | `int16`/`uint16` are in `__tensor_ops_datatype` but have **no Metal-type branch** in the quoted mapping function | `grep short MPPTensorOpsUtility.h` |
 | 5.3 | Only the ten **4-bit** operand triples are reproduced; the `int8 × int8 → int32` row is implied, not quoted | Read `MPPTensorOpsMatMul2d.h:13-61` |
-| 5.5 | Whether a **host-side** `MTLTensor` plane API exists in `Metal.framework` | grep `Metal.framework/Headers/` for `blockFactor`/`plane` |
 | 5.6 | What **"NAX"** stands for | — (do not expand it in prose) |
 | 6.4 | Whether `int4b_format` matmuls are faster than MLX's dequantize-then-dense path | A benchmark on M5 hardware |
 | 7.2 | The **inference-time error taxonomy** — nothing documents what `AIModel.init` / `loadFunction` / `run` throw | SDK dump, or one `catch { print(type(of: error)) }` |
@@ -2509,6 +2520,23 @@ behaviour surprises people, not as documentation.
 ---
 
 *Last verified 2026-07-27 against: `coreai-opt` 0.2.1 · `apple/coreai-models` and `apple/coreai-torch`
-at the commits recorded in the research corpus · `ml-explore/mlx` HEAD `973e27f` · the
-MetalPerformancePrimitives headers shipped in the Xcode 26.6 SDK (Build 17F113) · Apple's Core AI
-documentation pages · WWDC26 session 325 · Apple Tech Talk 111432.*
+at the commits recorded in the research corpus · `ml-explore/mlx` HEAD `973e27f` · the Xcode 26.6
+baseline and Xcode 27 Metal/MPP headers · Apple's Core AI and Metal documentation pages · WWDC26
+sessions 325 and 330 · Apple Tech Talk 111432.*
+
+[^xcode27-scale-planes]: Apple’s OS 27 API reference documents the scale-plane descriptor, the tensor
+    descriptor’s auxiliary-plane map, and the new tensor datatypes:
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes), and
+    [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype).
+    The automatic-dequantization and custom-format fallback are both stated in the authoritative
+    [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L53-L78).
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates the 35 cases grouped
+    in §3.1: [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).

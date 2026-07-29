@@ -2259,6 +2259,11 @@ misbehaving on the day you ran it.
 For the model-in-the-loop half, greedy sampling plus a transcript assertion is a reasonable
 poor-person's trajectory test on any OS where the Evaluations framework is not available to you:
 
+Greedy sampling stabilizes token selection; it does **not** eliminate the current OS 27 defect in
+which some prompts combining tool calling and guided generation call tools excessively. Apple's beta
+4 release notes recommend adjusting instructions, prompts, and attachment labels.[^excessive-tool-calls]
+Keep a repeated-call ceiling and run the trajectory test on every supported OS build.
+
 ```swift
 let toolCallNames = session.transcript.compactMap { entry -> [String]? in
     guard case let .toolCalls(calls) = entry else { return nil }
@@ -2364,6 +2369,7 @@ Before you ship a tool-using feature:
 |---|---|---|
 | Model answers from memory, never calls the tool | no instruction sentence; description says *what*, not *when* | §4 |
 | Model loops, offering the same thing repeatedly, no error | tool named in instructions but not registered | §8 |
+| Guided generation calls tools excessively despite greedy sampling and a valid toolset | current OS 27 platform issue; tighten instructions, prompts, and attachment labels, then regression-test the call ceiling.[^excessive-tool-calls] | §12 |
 | `respond(to:)` never returns; tool runs forever | `.required` with no exit condition | §7 |
 | Console: `"Tool Choice requires tools"` | `.required` with an empty toolset reaching the inference layer | §6.5 |
 | Arguments outside your `.anyOf` set | `.anyOf` does not constrain; validate in `call` | §3.3 |
@@ -2443,3 +2449,5 @@ narration conflicts with the 27.0 documentation — the `sampling:` versus `samp
 `ToolOutput` versus a `PromptRepresentable` return type — **the documentation wins and this guide says
 so.** Where the documentation or a session conflicts with a shipping sample project — `Tool.name` being
 mandatory, the shape of `SearchBooksTool` — **the sample wins and this guide says so.**
+
+[^excessive-tool-calls]: Apple, [iOS & iPadOS 27 beta 4 release notes](https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-27-release-notes?changes=latest_maj_2_9_8__1_5_10__4), Foundation Models known issue for excessive tool calls when tool calling and guided generation are combined, including Apple's prompt/instruction/attachment-label workaround.

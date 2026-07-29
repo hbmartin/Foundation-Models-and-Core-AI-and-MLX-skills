@@ -3340,9 +3340,11 @@ And a third, in the converter:
 > **Safe default:** avoid `torch.cat` on packed sub-byte tensors until this closes; concatenate before
 > packing, or in the dense domain.
 
-### 17.7 `finalize()` destroys your float weights
+### 17.7 Eager-mode `finalize(CoreAI)` frees your float weights
 
-Not silent, but irreversible and easy to walk into (§2.5). `deepcopy` before `prepare()`.
+Not silent, but irreversible and easy to walk into in eager mode with the Core AI backend (§2.5).
+It is not the behavior of every backend or graph mode. `deepcopy` before `prepare()`.
+[^destructive-finalize-scope]
 
 ### 17.8 A round-tripped config accepts `only_for` twice
 
@@ -3599,7 +3601,8 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 ### 19.4 The rules that prevent the failures
 
 1. `example_inputs` is a **tuple**, and **representative** if any activation is quantized.
-2. `deepcopy` the float model before `prepare()` — `finalize()` frees the originals.
+2. For eager Core AI export, `deepcopy` the float model before `prepare()`—that scoped
+   `finalize()` path frees the originals.[^destructive-finalize-scope]
 3. `None` disables; **omitting** applies defaults. They are not the same (§4.3).
 4. `module_type_configs` keys are **fully qualified**, or pass the class object.
 5. `module_name_configs` uses `re.fullmatch` — the pattern must cover the whole name.
@@ -3628,7 +3631,7 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 | 10 | Per-block activation granularity around a shared observer is **always** downgraded | 9.6 |
 | 11 | CoreML: no FP4/FP8, no int2, no per-channel activations, no MINVAL | 16.2 |
 | 12 | Joint compression finalizes only to CoreAI | 10.4 |
-| 13 | `finalize(CoreAI)` frees dense weights, irreversibly | 2.5 |
+| 13 | Eager-mode `finalize(CoreAI)` frees dense weights, irreversibly[^destructive-finalize-scope] | 2.5 |
 | 14 | `mmap_dir`: eager + CoreAI + CPU + empty dir, files must outlive the model | 2.6 |
 | 15 | Dynamic quantization cannot be exported — `_TORCH` only | 6.5 |
 | 16 | `step()` outside `training_mode()` raises; `_step_count` never resets | 11.3 |
@@ -3801,8 +3804,20 @@ print(coreai_opt.__version__)     # this guide: 0.2.1, plus main @ cd95cb2 where
 - **Part 10 — hardware authoring, debugging, LLM deployment.** The Core AI Debugger, sync points,
   `save_intermediates` / `load_intermediates`, the NaN/Inf validator, and the Neural Engine authoring
   rules that make §13.6's rank-5 constraint make sense.
-- **Part 11 — Metal and TensorOps.** Where int4/int8 operands actually execute, and why there is no
-  scale-plane mechanism in the hardware abstraction.
+- **Part 11 — Metal and TensorOps.** Where low-bit operands execute; OS 27’s native E8M0 auxiliary
+  scale-plane path; and the cooperative-tensor hand-dequantization fallback for 26.x or custom
+  formats.[^xcode27-scale-planes]
 - **Part 15 — shipping and operating.** Size budgets (iOS: keep models under 2 GB; macOS: leave at
   least 6 GB of RAM headroom — both ✅ **VERIFIED** from Apple's `working-with-coreai` skill), and the
   measurement discipline that makes the compression trades in this guide decidable.
+
+[^xcode27-scale-planes]: Apple documents the OS 27 API in
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes), and
+    [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype); the
+    authoritative [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L53-L78)
+    distinguishes automatic dequantization from the custom-format cooperative-tensor fallback.
+
+[^destructive-finalize-scope]: The pinned `coreai-optimization` source limits dense-weight freeing
+    to `ExportBackend.CoreAI` in eager quantization:
+    [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/quantization/quantizer.py#L435-L482).

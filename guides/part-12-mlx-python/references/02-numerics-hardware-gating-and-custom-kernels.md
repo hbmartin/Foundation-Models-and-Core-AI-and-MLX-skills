@@ -18,6 +18,14 @@ true and they are about different things — §4.2 gives the full story. Build f
 
 ---
 
+[^scope-source]: Source snapshot: [`ml-explore/mlx` at `973e27f`](https://github.com/ml-explore/mlx/tree/973e27f82ffe68dbd626cda31ba34997045d1eb7),
+    including the Metal kernels and Python bindings this reference documents.
+[^metal27-formats]: Apple's current [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype)
+    documentation lists Int2, UInt2, Float4E2M1, Float8E4M3, Float8E5M2, and Float8UE8M0. Apple
+    documents scale planes through
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor)
+    and [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
+
 ## What this covers
 
 This is the guide about **where MLX stops being a portable array library and starts being a program
@@ -172,11 +180,9 @@ citation), 🟡 **RECONSTRUCTED** (concept attested, exact spelling or usage inf
   - [9.3 `header=` for helpers and includes](#93-header-for-helpers-and-includes)
   - [9.4 Atomic outputs and `init_value` — the VJP pattern](#94-atomic-outputs-and-init_value--the-vjp-pattern)
   - [9.5 Debugging: `verbose=True`, Metal logging, GPU capture](#95-debugging-verbosetrue-metal-logging-gpu-capture)
-- [10. When a custom kernel is the right tool](#10-when-a-custom-kernel-is-the-right-tool)
-- [11. TensorOps inside a Python-authored kernel: the boundary](#11-tensorops-inside-a-python-authored-kernel-the-boundary)
-- [12. A diagnostic toolkit you can paste](#12-a-diagnostic-toolkit-you-can-paste)
-- [13. Quick reference](#13-quick-reference)
-- [14. Sources and evidence ledger](#14-sources-and-evidence-ledger)
+
+**Scope:** this reference intentionally ends at §9.5; the contents list includes only sections
+present in this file. API spellings and kernel gates are pinned to the inspected MLX revision.[^scope-source]
 
 ---
 
@@ -524,13 +530,10 @@ static inline T dequantize_scale(uint8_t s) {
 }
 ```
 
-**There is no hardware fp8 type and no Metal `fp8` at all.** A case-insensitive search for `fp8`,
-`fp4`, `e8m0` and `e4m3` across ~14,300 lines of `MetalPerformancePrimitives` headers and 2,788
-lines of `metal_tensor` + `metal_cooperative_tensor` returns **zero hits**. Apple's own Tech Talk
-111432 corroborates by announcing only *"four bit and eight bit **integer** tensors"* in 26.4 — no
-fp8, no fp4, no int2. Three independent sources agree. This is Part 11's territory; the reason it
-belongs in a *numerics* guide is that it settles what "fp8 support" means in MLX: **a pair of ops and
-a software codec, not a dtype.**
+**At the pinned MLX revision, these are software codecs rather than MLX dtypes.** The negative
+header search behind the earlier wording was performed against Xcode 26.6. Xcode 27 now documents
+native `MTLTensorDataType` cases for int2, FP4, FP8, and E8M0 plus auxiliary scale planes; that does
+not change how this MLX snapshot implements its own `to_fp8`, `from_fp8`, MX, and NV paths.[^metal27-formats]
 
 The two ops that do exist:
 

@@ -488,9 +488,19 @@ enum ModelPreparationState: Equatable {
     case failed(ModelPreparationFailure)
 }
 
-enum ModelPreparationFailure: Equatable {
+/// Failures owned by transport and local materialization, before Core AI sees
+/// the asset. Every `ModelDelivery` implementation maps its underlying errors
+/// into this type.
+enum ModelDeliveryFailure: Error, Equatable {
     case network(String)
     case insufficientStorage(requiredBytes: Int64, availableBytes: Int64)
+    case fileSystem(String)
+}
+
+enum ModelPreparationFailure: Error, Equatable {
+    case network(String)
+    case insufficientStorage(requiredBytes: Int64, availableBytes: Int64)
+    case delivery(String)
     /// The downloaded artifact did not pass `AIModelAsset.isValid(at:)`.
     case corruptAsset
     /// Specialization threw. `message` is the localized description.
@@ -500,7 +510,9 @@ enum ModelPreparationFailure: Equatable {
 }
 ```
 
-The driver:
+The driver uses separate error scopes for delivery and specialization. A transport or staging error
+must not be relabeled as a Core AI compiler failure, and a specialization error must not be presented
+as a network retry.[^phase-specific-failures]
 
 ```swift
 import Observation
@@ -537,23 +549,41 @@ final class ModelFeatureCoordinator {
     /// Call this from the opt-in button. This is the only place a multi-gigabyte
     /// transfer may start.
     func userOptedIn() async {
-        do {
-            let localURL: URL
-            if let existing = delivery.localURLIfPresent() {
-                localURL = existing
-            } else {
-                state = .downloading(fraction: 0)
+        let localURL: URL
+        if let existing = delivery.localURLIfPresent() {
+            localURL = existing
+        } else {
+            state = .downloading(fraction: 0)
+            do {
                 localURL = try await delivery.fetch { [weak self] fraction in
                     Task { @MainActor in self?.state = .downloading(fraction: fraction) }
                 }
-            }
-
-            guard AIModelAsset.isValid(at: localURL) else {
-                state = .failed(.corruptAsset)
+            } catch let failure as ModelDeliveryFailure {
+                switch failure {
+                case .network(let message):
+                    state = .failed(.network(message))
+                case .insufficientStorage(let required, let available):
+                    state = .failed(.insufficientStorage(
+                        requiredBytes: required, availableBytes: available))
+                case .fileSystem(let message):
+                    state = .failed(.delivery(message))
+                }
+                return
+            } catch {
+                // A conformer violated the ModelDelivery contract. Keep it out
+                // of the Core AI specialization bucket nonetheless.
+                state = .failed(.delivery(error.localizedDescription))
                 return
             }
+        }
 
-            state = .specializing
+        guard AIModelAsset.isValid(at: localURL) else {
+            state = .failed(.corruptAsset)
+            return
+        }
+
+        state = .specializing
+        do {
             // Discardable result: we only want the cache entry warmed here.
             _ = try await AIModel.specialize(
                 contentsOf: localURL,
@@ -820,6 +850,8 @@ protocol ModelDelivery: Sendable {
     /// Downloads or otherwise materialises the asset and returns its local URL.
     /// `onProgress` receives 0...1, or `nil` when the total size is unknown.
     /// Must be safe to call when the asset is already present (returns fast).
+    /// Implementations map transport, capacity, and staging errors to
+    /// `ModelDeliveryFailure`; callers reserve specialization errors for Core AI.
     func fetch(onProgress: @escaping @Sendable (Double?) -> Void) async throws -> URL
 
     /// Removes the local copy. Does NOT touch the Core AI cache — that is the
@@ -840,12 +872,20 @@ final class URLSessionDelivery: NSObject, ModelDelivery, @unchecked Sendable {
 
     let assetName: String
     let expectedVersion: String
+    /// Conservative free-space requirement from the asset manifest, including
+    /// staging and operational headroom rather than only compressed bytes.
+    let requiredFreeBytes: Int64
     private let remoteBase: URL
     private let container: URL
 
-    init(assetName: String, expectedVersion: String, remoteBase: URL) throws {
+    init(assetName: String,
+         expectedVersion: String,
+         requiredFreeBytes: Int64,
+         remoteBase: URL) throws {
+        precondition(requiredFreeBytes >= 0)
         self.assetName = assetName
         self.expectedVersion = expectedVersion
+        self.requiredFreeBytes = requiredFreeBytes
         self.remoteBase = remoteBase
         // Application Support, NOT Documents: models are re-downloadable, so they
         // should not appear in the user's Files.app or be backed up.
@@ -879,26 +919,42 @@ final class URLSessionDelivery: NSObject, ModelDelivery, @unchecked Sendable {
     }
 
     func fetch(onProgress: @escaping @Sendable (Double?) -> Void) async throws -> URL {
-        if let present = localURLIfPresent() { return present }
-        // Download to a staging directory, verify, then move into place atomically.
-        // Real implementations fetch each file in the bundle; this sketch shows
-        // the ordering that matters, not a complete transfer engine.
-        let staging = container.appendingPathComponent("staging-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: staging) }
-        try await downloadBundle(named: assetName,
-                                 from: remoteBase,
-                                 into: staging,
-                                 onProgress: onProgress)
+        do {
+            if let present = localURLIfPresent() { return present }
+            let capacity = try container.resourceValues(forKeys: [
+                .volumeAvailableCapacityForImportantUsageKey
+            ]).volumeAvailableCapacityForImportantUsage
+            if let capacity, capacity < requiredFreeBytes {
+                throw ModelDeliveryFailure.insufficientStorage(
+                    requiredBytes: requiredFreeBytes,
+                    availableBytes: capacity)
+            }
+            // Download to a staging directory, verify, then move into place atomically.
+            // Real implementations fetch each file in the bundle; this sketch shows
+            // the ordering that matters, not a complete transfer engine.
+            let staging = container.appendingPathComponent("staging-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: staging) }
+            try await downloadBundle(named: assetName,
+                                     from: remoteBase,
+                                     into: staging,
+                                     onProgress: onProgress)
 
-        let destination = container.appendingPathComponent(assetName)
-        _ = try FileManager.default.replaceItemAt(destination, withItemAt: staging)
+            let destination = container.appendingPathComponent(assetName)
+            _ = try FileManager.default.replaceItemAt(destination, withItemAt: staging)
 
-        // Sentinel LAST. If the app is killed mid-move, the next launch sees no
-        // sentinel and re-downloads rather than loading a half-written bundle.
-        FileManager.default.createFile(
-            atPath: container.appendingPathComponent(".complete-\(assetName)").path,
-            contents: Data())
-        return destination
+            // Sentinel LAST. If the app is killed mid-move, the next launch sees no
+            // sentinel and re-downloads rather than loading a half-written bundle.
+            FileManager.default.createFile(
+                atPath: container.appendingPathComponent(".complete-\(assetName)").path,
+                contents: Data())
+            return destination
+        } catch let failure as ModelDeliveryFailure {
+            throw failure
+        } catch let error as URLError {
+            throw ModelDeliveryFailure.network(error.localizedDescription)
+        } catch {
+            throw ModelDeliveryFailure.fileSystem(error.localizedDescription)
+        }
     }
 
     func removeLocalCopy() throws {
@@ -918,6 +974,12 @@ final class URLSessionDelivery: NSObject, ModelDelivery, @unchecked Sendable {
     }
 }
 ```
+
+The concrete delivery now performs the same phase-specific mapping it advertises: its manifest
+supplies a conservative free-space requirement, and Foundation's volume-capacity value makes the
+`.insufficientStorage` path reachable before transfer begins.[^storage-preflight] Because the
+capacity key is a required-reason API, include the approved reason in the app's privacy manifest;
+do not copy this preflight without that declaration.
 
 The sentinel-file pattern in `localURLIfPresent()` deserves a note. A `.aimodel` is a directory,
 so "does the path exist" is *not* "is the download complete" — a partially-transferred bundle is a
@@ -3863,3 +3925,14 @@ Apple badge
   half of the size problem
 - [Part 10 — Hardware authoring, debugging, LLM deployment](../../part-10-coreai-hardware-authoring-debugging/)
   — the Core AI instrument and debug gauge
+
+[^phase-specific-failures]: Apple documents URL-loading failures separately from Core AI model
+    specialization: [URL Loading System](https://developer.apple.com/documentation/foundation/url-loading-system),
+    whose Errors topic defines `URLError`,
+    and [`AIModel.specialize`](https://developer.apple.com/documentation/coreai/aimodel/specialize%28contentsof%3Aoptions%3Acache%3Acachepolicy%3A%29).
+    The separate `do`/`catch` scopes preserve that API boundary in the UI state machine.
+
+[^storage-preflight]: Apple, [`URLResourceValues.volumeAvailableCapacityForImportantUsage`](https://developer.apple.com/documentation/foundation/urlresourcevalues/volumeavailablecapacityforimportantusage),
+    defines the available byte count used by the preflight. Apple marks its corresponding
+    [`URLResourceKey`](https://developer.apple.com/documentation/foundation/urlresourcekey/volumeavailablecapacityforimportantusagekey)
+    as a required-reason API that must be declared in `PrivacyInfo.xcprivacy`.

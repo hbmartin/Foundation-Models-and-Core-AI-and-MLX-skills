@@ -477,12 +477,13 @@ looking at whether the Neural Engine instrument shows activity aligned with your
 `preferredComputeUnitKind` is a **preference**, not a lock:
 
 > 🟡 **Community-measured, attribute as such** — `notes/repos/john-rocky-models.md` citing the
-> shipped Swift runtime (`CoreAIShared/Runtime/ModelStructure.swift:57-66`): the runtime probes the
+> optional `coreai-models` Swift runtime (`CoreAIShared/Runtime/ModelStructure.swift:57-66`): that helper probes the
 > model's **structure** and derives a preference — a chunked, static-shape model prefers
 > `.neuralEngine`; a single dynamic `main` prefers `.gpu` with `expectFrequentReshapes`. The
 > conclusion drawn there: *"So 'iOS ⇒ ANE' is the default tendency, not a guarantee. The axis is
 > **structure, not literally iOS**."* Community reading of Apple source; the file and line are
-> checkable, the inference about routing is theirs.
+> checkable, the inference about routing is theirs. Direct `AIModel` callers are not governed by
+> this package’s naming policy.[^sample-routing-policy]
 
 Which is precisely why the template ships a Neural Engine lane. Believe the trace, not the option.
 
@@ -2998,3 +2999,9 @@ for the two worked traces, which exist nowhere else.
 repository. It restates Apple's collection article and its "memory bandwidth / queue depth / cache
 hit-miss" capture list and "Common Issues" table are uncorroborated anywhere else in the corpus and
 may be machine-generated. Nothing in this guide rests on it.
+
+[^sample-routing-policy]: The policy being interpreted is source code in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s framework default is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

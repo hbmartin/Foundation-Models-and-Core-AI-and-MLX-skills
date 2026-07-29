@@ -1184,21 +1184,20 @@ So the 27-era answer to overflow has three tiers, in increasing order of how muc
 Tier 3 still exists and is still the only thing that works on 26. But note what it costs in the terms
 of §8: rebuilding a session throws away the KV cache entirely. Tiers 1 and 2 do not.
 
-One more mutability rule, because it is a trap rather than an error:
+One more mutability rule, because the framework gives this misuse a dedicated error:
 
 > ✅ **VERIFIED** — WWDC26 session 242 (`242:165-167`): *"the `transcript` property on session is now
 > mutable. Remember though, **you can only modify the transcript when the session's `isResponding`
 > property is `false`. Attempting to mutate the transcript during a response is a programmer
 > error.**"*
 >
-> Corroborated by the new error type: `LanguageModelSession.Error.transcriptMutationWhileResponding`
+> The typed failure is `LanguageModelSession.Error.transcriptMutationWhileResponding`
 > — *"The session's transcript was mutated while a request was in progress."*
-> (`/documentation/foundationmodels/languagemodelsession/error`)
+> (`/documentation/foundationmodels/languagemodelsession/error`).[^transcript-mutation-error]
 >
-> ⚠️ The two sources describe different failure modes for the same mistake — 242 says "programmer
-> error" (which in Apple parlance means a **trap**), while the SDK ships a thrown-error case for it.
-> **Guard every mutation with `!session.isResponding` and you never have to find out which one you
-> get.**
+> “Programmer error” describes the caller bug; it does not establish a fatal process trap. The public
+> API supplies a catchable session error for the condition. **Guard every mutation with
+> `!session.isResponding`** so no in-flight response needs to surface it.
 
 ---
 
@@ -2525,7 +2524,7 @@ correct-looking, and quietly makes the model do the wrong thing.
 | `Transcript.structuredTranscript` | `var structuredTranscript: StructuredTranscript { get }` | **27.0** (no Mac Catalyst) |
 | `SystemLanguageModel.contextSize` | `@backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4) final var contextSize: Int` | **26.4**, back-deploys to 26.0 |
 | `SystemLanguageModel.tokenCount(for:)` | `nonisolated(nonsending) final func tokenCount(for instructions: Instructions) async throws -> Int` | **26.4**, no back-deploy |
-| `PrivateCloudComputeLanguageModel.contextSize` | `var contextSize: Int` | **27.0** |
+| `PrivateCloudComputeLanguageModel.contextSize` | `var contextSize: Int { get async throws }` | **27.0**[^pcc-context-size] |
 | `LanguageModelSession.transcript` | `final var transcript: Transcript { get set }` — settable in 27 | 26.0 (get) · **27.0** (set) |
 | `LanguageModelSession.isResponding` | `final var isResponding: Bool { get }` | 26.0 |
 | `LanguageModelSession.usage` | `LanguageModelSession.Usage` | **27.0** |
@@ -2698,7 +2697,7 @@ rebuild — see the silent-failure box in §6.1.
 | 6 | **Session 242 points to 243 "for detecting cache invalidations with Instruments"; 243 never names a cache metric** | **Flagged in-guide.** 243 names only TTFT, tok/s and total latency. The cache-hit-rate metric exists only in the written docs. Compute it from `Usage` instead of hunting for it in the Instrument. §5.1. |
 | 7 | **Utilities README: "Summarization runs only if the rolling window of 10 entries exceeds 5000 tokens"** | **Stale prose.** Zero hits for `5000` in `Sources/` or `Tests/`; commit `376ca60` replaced `threshold: 5000` with `entryThreshold: 10` and never updated the sentence. The package has **no token awareness at all**. §7.4. |
 | 8 | **`contextSize` availability: docs say 26.4; Apple's Python bridge says it works on 26.0** | **Both true.** `@backDeployed(before: iOS 26.4, …)` means introduced-in-26.4, implementation-emitted-into-the-client. Build with the 26.4 SDK and it runs on 26.0. §3.1. |
-| 9 | **Transcript mutation while responding: 242 says "programmer error" (trap); the SDK ships `LanguageModelSession.Error.transcriptMutationWhileResponding` (thrown)** | **Unresolved, and it does not matter if you guard.** Gate every mutation on `!session.isResponding`. §6.5. |
+| 9 | **Transcript mutation while responding: 242 calls it “programmer error”; the API defines `LanguageModelSession.Error.transcriptMutationWhileResponding`.** | **Resolved as a typed session failure, not evidence of a process trap.** Gate every mutation on `!session.isResponding`. §6.5.[^transcript-mutation-error] |
 | 10 | **`init(profile:history:)` vs `init(model:tools:transcript:)`** | Both exist; Origami (27) uses `history:`, the older sample uses `transcript:`. Deprecation status of `transcript:` is **unverified**. Use `history:` on 27. §8.11. |
 | 11 | **Body re-evaluation: 242 says "each time the model is prompted" (implies once); a community measurement says 7 evaluations for 3 turns** | **Reported both.** The community figure is from a custom provider with no stated hardware. The rule that follows is safe under either reading: **keep `body` pure.** §8.6. |
 
@@ -2740,3 +2739,6 @@ rebuild — see the silent-failure box in §6.1.
   [Part 5, Prototyping and profiling](../../part-05-prototyping-profiling-non-swift/)
 - **Version gating and the 26.0 / 26.4 / 27.0 split** →
   [`../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md`](../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md)
+
+[^transcript-mutation-error]: Apple, [`LanguageModelSession.Error.transcriptMutationWhileResponding`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/error/transcriptmutationwhileresponding), the typed error for mutating a session transcript while a request is in progress.
+[^pcc-context-size]: Apple, [`PrivateCloudComputeLanguageModel.contextSize`](https://developer.apple.com/documentation/foundationmodels/privatecloudcomputelanguagemodel/contextsize), whose declaration is an asynchronous, throwing getter.

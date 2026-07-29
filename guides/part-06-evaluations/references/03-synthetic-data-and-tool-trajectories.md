@@ -1925,44 +1925,29 @@ evaluator the trajectory by attaching it to the subject.
 
 Note that `transcript:` is **optional**. It compiles when you omit it. That is the failure.
 
-> ⚠️ **SILENT FAILURE — a tool evaluation with no transcript.** Write
-> `ModelSubject(value: response.content)` instead of `ModelSubject(value:transcript:)` and everything
-> still builds, the session still runs, the model still calls your tools, the evaluation still completes,
-> and the report still shows your two metrics. But the evaluator was handed a subject whose `transcript`
-> is `nil` and whose `toolCalls` are therefore empty: **it is scoring an empty trajectory against your
-> sixteen expectations.**
+> ⚠️ **LOUD SETUP FAILURE — a tool evaluation with no transcript.** Write
+> `ModelSubject(value: response.content)` instead of `ModelSubject(value:transcript:)` and the source
+> still builds, but `ToolCallEvaluator` cannot score the subject: it throws
+> `EvaluationError.missingTranscript(evaluatorType:)` when `transcript` is `nil`.[^missing-transcript]
+> No empty trajectory or metric report is produced.
 >
 > ✅ **VERIFIED** — the requirement, stated plainly in our sample-code analysis of Book Tracker: the
 > transcript *"is passed as `session.transcript.structuredTranscript`… Without it, `ToolCallEvaluator`
-> has nothing to inspect."*
+> has nothing to inspect."* Apple's `ModelSubject.transcript` documentation specifies the typed error
+> used for that rejection.[^missing-transcript]
 >
-> 🔴 **GAP — what an empty trajectory actually scores.** Whether the evaluator reports every sample as
-> failing, ignores the metric entirely (`Metric.ignore()` exists and is excluded from aggregation), or
-> throws an `EvaluatorError` is **not documented and not exercised in any sample**. The two failure
-> shapes are very different in practice: a uniform 0% at least looks broken, while a metric that is
-> silently ignored produces an evaluation report with two beautifully empty columns.
-> **Resolving it needs one experiment** — delete the `transcript:` argument, run the suite, read the
-> report — which takes about four minutes and is worth doing once so you recognise the shape.
->
-> **Safe default meanwhile: assert the trajectory exists, in the evaluation itself**, so the mistake
-> cannot survive a single run:
+> **Safe default: construct the subject at one reviewed boundary and always pass the transcript:**
 >
 > ```swift
-> let hasTrajectory = Metric("Has Trajectory")
->
-> var evaluators: Evaluators {
->     ToolCallEvaluator(allPass: pass, percentagePass: percent)
->     // A canary. If this ever fails, the two metrics above are meaningless.
->     Evaluator { _, subject in
->         subject.transcript == nil
->             ? hasTrajectory.failing(rationale: "ModelSubject was built without a transcript")
->             : hasTrajectory.passing()
->     }
-> }
+> return ModelSubject(
+>     value: response.content,
+>     transcript: session.transcript.structuredTranscript
+> )
 > ```
 >
-> Aggregate it, and assert `computeMean(of: hasTrajectory) == 1.0` in the test body. It is four lines
-> and it converts an invisible failure into a red test.
+> Add a negative harness that deliberately omits `transcript:` and expects
+> `EvaluationError.missingTranscript`; that distinguishes framework setup failures from genuine
+> trajectory-score regressions.[^missing-transcript]
 
 ### 17.3 Construct the model the way your feature does
 
@@ -2453,5 +2438,7 @@ mattered:
 **Open questions carried forward from this guide**, in rough order of how much they would improve it:
 the PCC-quota question in §6.2 (unanswered by Apple, and it affects whether large evaluations are viable
 at all); the `SamplingStrategy` case spellings in §7; the accessors on `TrajectoryExpectation` in §18.2;
-`allowsAdditionalToolCalls`'s default and semantics in §14.2; what an empty trajectory scores in §17.2;
-and the body of `designing-evaluation-datasets` in §11.3, which is a single public page nobody has read.
+`allowsAdditionalToolCalls`'s default and semantics in §14.2; and the body of
+`designing-evaluation-datasets` in §11.3, which is a single public page nobody has read.
+
+[^missing-transcript]: Apple, [`ModelSubject.transcript`](https://developer.apple.com/documentation/evaluations/modelsubject/transcript): when a tool-call evaluator receives `nil`, it throws `EvaluationError.missingTranscript(evaluatorType:)` rather than scoring an empty trajectory.

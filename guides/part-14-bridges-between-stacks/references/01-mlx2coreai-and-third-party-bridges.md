@@ -1318,11 +1318,11 @@ several `coreai.GraphOp`s into one MLIR module, and the test
 The stateful LLM converter emits **only one** (`main`) today, but the plumbing for a prefill/decode
 split exists.
 
-That matters more than it looks: **splitting a Core AI model into multiple entrypoints is what
-routes it to the Neural Engine.** `ModelStructure` in `apple/coreai-models` classifies a
-single-`main` graph as `.dynamic` and sends it to the GPU (§10.2 quotes the code). So
-the unused multi-entrypoint plumbing here is not a curiosity; it is the hook a future ANE-targeted
-MLX bridge would need.
+That matters more than it looks when a caller adopts the optional `apple/coreai-models` loader:
+**recognized multi-entrypoint structures select that helper’s Neural Engine preference.** Its
+`ModelStructure` classifies a single-`main` graph as `.dynamic` and requests the GPU (§10.2 quotes
+the code). Direct `AIModel` callers choose their own `SpecializationOptions`, so the names are not a
+Core AI framework routing contract.[^sample-routing-policy]
 
 ### 5.6 Named composites: the fused-kernel hint
 
@@ -1462,6 +1462,8 @@ let stateCapacity = contextLength + (runOptions.growContext ? runOptions.steps +
 here; a reminder that these are two hand-written implementations of one contract.
 
 ---
+
+<a name="6--asset-generation-coverage-is-not-numerical-parity"></a>
 
 ## 6. ⚠️ Asset-generation coverage is not numerical parity
 
@@ -2792,8 +2794,9 @@ corroborations of the same pattern exist in our corpus: a WWDC26 Core AI session
 sets `opts.expectFrequentReshapes = true` after choosing `.gpu`, and a third-party iOS app does the
 same for its dynamic-sequence path while explicitly setting `false` for fully static shapes.
 
-(Notice the same code block also proves the §5.5 point: a single-`main` graph is classified
-`.dynamic` and lands on the **GPU**. Multi-entrypoint is what buys you the ANE.)
+(Notice the same code block also proves the narrower §5.5 point: under this helper, a single-`main`
+graph is classified `.dynamic` and receives the **GPU preference**; a recognized multi-entrypoint
+shape selects its ANE preference.)
 
 ### 10.3 `swift-lm` rejects it outright
 
@@ -3565,3 +3568,9 @@ Re-read `pyproject.toml` and `git log` before you rely on any of it. The structu
 Core AI's IR is MLIR, that schema 0.2 is the interchange format, that
 `MutableBuffers.buffer_mutation` is the state contract, that coverage is not parity — are the parts
 most likely to still be true in six months.
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

@@ -424,7 +424,7 @@ names** — information that is not on the documentation pages.
 | `.contextSizeExceeded(ContextSizeExceeded)` | `contextSize: Int`, `tokenCount: Int` |
 | `.rateLimited(RateLimited)` | `resetDate: Date?` |
 | `.guardrailViolation(GuardrailViolation)` | — |
-| `.refusal(Refusal)` | `explanation: String` (**required** by the public initializer); surfaced via `refusal.explanation` / `refusal.explanationStream` |
+| `.refusal(Refusal)` | initializer input `explanation: String`; the readable `refusal.explanation` is `async throws` and returns `LanguageModelSession.Response<String>`.[^refusal-response] |
 | `.unsupportedCapability(UnsupportedCapability)` | `capability: LanguageModelCapabilities.Capability` |
 | `.unsupportedTranscriptContent(UnsupportedTranscriptContent)` | `unsupportedContent: [Transcript.Entry]` |
 | `.unsupportedGenerationGuide(UnsupportedGenerationGuide)` | `schemaName: String?` |
@@ -972,7 +972,8 @@ TN3193 is not the only place. Watch for these when you are reading:
   ```swift
   } catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
       // Generate an explanation for the refusal.
-      if let message = try? await refusal.explanation {
+      if let response = try? await refusal.explanation {
+          let message = response.content
           // Display the refusal message.
       }
   }
@@ -1008,20 +1009,22 @@ rather than a taxonomy problem, and it is the subject of
 import FoundationModels
 
 func handleOverflow(_ error: Error) -> Bool {
+    #if canImport(FoundationModels, _version: 2)
     if #available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *) {
         if case LanguageModelError.contextSizeExceeded = error { return true }
     }
+    #endif
     // Deprecated path, still correct for a 26.x deployment target.
     if case LanguageModelSession.GenerationError.exceededContextWindowSize = error { return true }
     return false
 }
 ```
 
-🟡 **RECONSTRUCTED** — the *composition* above is ours. Each element is verified (`@available` with
-those OS versions; both case spellings; `if case … = error` pattern matching on an `Error`
-existential), but no Apple source shows this exact both-ways helper. It will produce a deprecation
-warning on the second `if case`, which is correct and which you should silence deliberately rather
-than by deleting the line.
+🟡 **RECONSTRUCTED** — the *composition* above is ours. The compile-time gate is essential:
+`LanguageModelError` is absent from the Xcode 26 Foundation Models module, so an `if #available`
+check alone cannot make that identifier compile.[^dual-sdk-gate] It will produce a deprecation warning
+on the second `if case`, which is correct and which you should silence deliberately rather than by
+deleting the line.
 
 ---
 
@@ -1820,14 +1823,16 @@ The `Refusal` payload is the one that grew a real API, and it has a sharp edge.
 
 ```swift
 // LanguageModelError.Refusal
-var explanation: String            // async — see below
-var explanationStream: ...         // streamed form
-init(explanation: String, ...)     // `explanation` is REQUIRED
+var explanation: LanguageModelSession.Response<String> { get async throws }
+var explanationStream: LanguageModelSession.ResponseStream<String> { get }
+init(explanation: String, ...)     // initializer input, not the accessor's return type
 ```
 
 ✅ **VERIFIED** — `SKILL.md:549-557` in `apple/foundation-models-utilities` lists
 `.refusal(Refusal)` with *"`explanation: String` (required by the public initializer); surfaced via
-`refusal.explanation` / `refusal.explanationStream`."*
+`refusal.explanation` / `refusal.explanationStream`."* The SDK contract settles the important
+distinction: the initializer accepts a `String`, while the accessor asynchronously returns a
+response wrapper whose message is in `.content`.[^refusal-response]
 
 The `explanation` / `explanationStream` API is **not new to 27** — it carries across the migration.
 ✅ **SDK-verified** on the BEFORE side too: the 26.5 `LanguageModelSession.GenerationError.Refusal`
@@ -1837,7 +1842,7 @@ The `explanation` / `explanationStream` API is **not new to 27** — it carries 
 subtlety this settles: on 26.5, `explanation` is a **computed, async-generated** `Response<String>`
 derived from the transcript — *not* a stored String. The "`explanation: String` required by the
 initializer" the skill describes is the **27-era** shape (§11.1), so the initializer changed even
-though the accessors did not.
+though the accessor names did not.
 
 **`explanation` is generated, not stored.** Apple's documentation notes it is `async` and *"takes
 time for the model to generate"* — and the 26.5 header's `Response<String>` return type confirms it
@@ -1855,7 +1860,8 @@ do {
     )
 } catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
     // Generate an explanation for the refusal.
-    if let message = try? await refusal.explanation {
+    if let response = try? await refusal.explanation {
+        let message = response.content
         // Display the refusal message.
     }
 }
@@ -1870,13 +1876,14 @@ import FoundationModels
 func explainRefusal(_ error: Error) async -> String? {
     guard case LanguageModelError.refusal(let refusal) = error else { return nil }
     // `explanation` is generated on demand and costs an inference round-trip.
-    return try? await refusal.explanation
+    guard let response = try? await refusal.explanation else { return nil }
+    return response.content
 }
 ```
 
 🟡 **RECONSTRUCTED** — the single-value `.refusal(let refusal)` arity is ✅ verified from Apple's
-docs (`.refusal(_:)`, one payload). The `try? await refusal.explanation` access is ✅ verified from
-Apple's own snippet above; only the surrounding `guard case` composition is ours.
+docs (`.refusal(_:)`, one payload). The async accessor and its `Response<String>.content` projection
+are documented by Apple; only the surrounding `guard case` composition is ours.[^refusal-response]
 
 > ⚠️ **SILENT FAILURE — the explanation you `await` on the main actor.**
 > `explanation` runs the model again. On a busy device that is seconds. If you read it inside a
@@ -3264,6 +3271,9 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
   the reference implementation does not.
 - **[Part 6](../../part-06-evaluations/)** — §16 done properly, including model judges and
   tool-trajectory evaluation.
+
+[^refusal-response]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), the generated `String` carried by the response.
+[^dual-sdk-gate]: The authoritative Xcode 26.5 interface contains the deprecated [`LanguageModelSession.GenerationError`](../../../notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface#L404-L442) but no `LanguageModelError`; Apple lists `LanguageModelError` among the [Foundation Models additions for OS 27](https://developer.apple.com/documentation/Updates/FoundationModels). A compile-time `_version: 2` gate must therefore precede the runtime availability test.
 
 ---
 

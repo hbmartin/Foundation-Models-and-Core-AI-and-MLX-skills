@@ -90,11 +90,12 @@ four quota-UI rules, and the Xcode scheme option that simulates both states.
 > Also here: switching a profile from PCC back to `SystemLanguageModel` mid-conversation throws because
 > the transcript is shared — the fix is a `historyTransform` on the *smaller*-model branch.
 
-> 🔴 **GAP — image input on PCC.** One line of spoken demo narration ("we take the text and images")
-> and nothing else: no doc mention, no capability row, no sample, no size or token cost. The guide
-> states what is unknown and gives two safe architectures instead of guessing. Also open: tvOS/Catalyst
-> availability, the full `QuotaUsage.Status` case list, and how PCC's `Error` relates to
-> `LanguageModelError`.
+> ✅ **PCC supports image input.** Session 319 feeds “the text and images” into a PCC-backed
+> `LanguageModelSession`, and Apple's multimodal prompting guidance recommends
+> `PrivateCloudComputeLanguageModel` when image analysis needs additional reasoning or context.[^pcc-images]
+> The support question is settled; image token accounting, size limits, quota interaction, and
+> reasoning-token interaction remain undocumented. Also open: tvOS/Catalyst availability, the full
+> `QuotaUsage.Status` case list, and how PCC's `Error` relates to `LanguageModelError`.
 
 ### [4.2 — Core AI, MLX, and any OpenAI-compatible server behind `LanguageModelSession`](references/02-bring-your-own-model.md)
 The consumer side of bringing your own model, with real initializers rather than demo lines. Path 1 is
@@ -258,3 +259,5 @@ approximate-or-throw and custom segments — plus 319 (PCC), 326 (Core AI behind
 `noemaai-labs/noema-ios` — supply every latency number here, attributed as community-measured at each
 point of use with hardware and OS given where the source gave them. **Apple published no latency figure
 for any of this.**
+
+[^pcc-images]: [WWDC26 session 319 transcript, lines 74–76](../../transcripts/wwdc2026-319.txt#L74-L76), and Apple, [“Analyzing images with multimodal prompting”](https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting), which identifies Private Cloud Compute as the model to use when an image task needs more reasoning or context.

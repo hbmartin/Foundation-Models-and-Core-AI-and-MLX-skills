@@ -1583,9 +1583,10 @@ Repair uses the other 27.0 change — `session.transcript` is now settable:
 > transcript when the session's `isResponding` property is `false`. Attempting to mutate the
 > transcript during a response is a programmer error.**"*
 
-"Programmer error" in Apple's vocabulary means a trap, not a thrown Swift error — your app dies.
-Origami guards on `session.isResponding` for re-entrancy (✅ `Orchestrator.swift:367`); do the same
-before any assignment.
+“Programmer error” identifies a caller bug, but the public API represents this condition with
+`LanguageModelSession.Error.transcriptMutationWhileResponding`; it is not evidence that the process
+must trap.[^transcript-mutation-error] Origami guards on `session.isResponding` for re-entrancy
+(✅ `Orchestrator.swift:367`); do the same before any assignment.
 
 ```swift
 // Repair after an aborted turn, under .preserveTranscript.
@@ -2350,9 +2351,10 @@ model.**"* That is a routing fallback Apple explicitly recommends, and `DynamicP
 belongs — a `networkAvailable` flag in your route enum, not a `try?` at the call site.
 
 **3. Locale.** ✅ `PrivateCloudComputeLanguageModel.supportsLocale(_:)` exists and is used in shipping
-code to throw before the request (`noema-ios`, `AFMLLMClient.swift:92-95`). Note the on-device
-equivalent `SystemLanguageModel.default.supportsLocale(_:)` is gated at **26.4+** in that same file —
-a real version-floor difference between the two.
+code to throw before the request (`noema-ios`, `AFMLLMClient.swift:92-95`). The on-device equivalent,
+`SystemLanguageModel.default.supportsLocale(_:)`, has an **OS 26.0** floor; it appears directly in
+the 26.0 `SystemLanguageModel` declaration, before the separate 26.4 context-introspection
+extension.[^supports-locale-floor] PCC remains 27-only because the PCC model itself is 27-only.
 
 **4. Quota.** This is the one that will actually bite a shipping app.
 
@@ -2999,3 +3001,6 @@ Extracted from the archives obtained via Apple's tutorials JSON API.
 WWDC26 **347** (*Secure your app: mitigate risks to agentic features*) is referenced only through a
 community note; every claim sourced to it is marked secondary. Sessions **240, 343, 344, 345** are
 absent from the corpus entirely.
+
+[^transcript-mutation-error]: Apple, [`LanguageModelSession.Error.transcriptMutationWhileResponding`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/error/transcriptmutationwhileresponding), the typed error for mutating the transcript while a request is in progress.
+[^supports-locale-floor]: The authoritative Xcode 26.5 interface places [`supportsLocale(_:)`](../../../notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface#L572-L591) in the OS 26.0 `SystemLanguageModel` declaration; the following extension is explicitly OS 26.4 and contains the context-introspection APIs.

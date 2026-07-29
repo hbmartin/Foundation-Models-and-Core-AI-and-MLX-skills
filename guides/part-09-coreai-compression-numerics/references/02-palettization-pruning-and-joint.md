@@ -1603,7 +1603,7 @@ It still costs you the rank.
 > is usable without it installed. If it is missing at `finalize(backend=CoreAI)` you get an
 > `ImportError` from that helper and nothing earlier.
 
-### 10.2 ⚠️ `finalize(CoreAI)` destroys your float weights
+### 10.2 ⚠️ Eager-only `KMeansPalettizer.finalize(CoreAI)` frees dense weights
 
 > ✅ **VERIFIED** — `kmeans/_prepare_for_export.py`, verbatim: *"The dense pre-palettization weight
 > stored on the parametrization list is always replaced with a **zero-size placeholder** so its
@@ -1611,6 +1611,8 @@ It still costs you the rank.
 > finalize **frees the original dense weights in place**: on each parametrized weight,
 > `parametrizations[...].original` is replaced with a zero-size placeholder so its storage can be
 > released."*
+> This is the eager-only k-means palettizer’s Core AI backend behavior, not a universal rule for
+> every compressor, execution mode or backend.[^destructive-finalize-scope]
 
 > ⚠️ **SILENT FAILURE — you cannot undo `finalize()`, and there is no warning.** The call returns a
 > working model, so nothing looks wrong. But the float weights are gone from the process, and if
@@ -2752,7 +2754,7 @@ Two lessons generalise beyond SAM3:
    already been absorbed or amplified by the time it reaches the decoder, and the decoder's job is
    to make discrete decisions (is this a detection?) where small numeric shifts flip outcomes.
 
-### 15.2 That the split into three functions is *also* what routes SAM3 to the ANE
+### 15.2 The three-function split also selects `coreai-models`’ ANE preference
 
 Session 325 presents the three-entrypoint split (`image_encode` / `text_encode` / `detect`) as a
 **latency trick** — run each at a different cadence, and get a 76%-faster second inference when only
@@ -2762,10 +2764,11 @@ the prompt changes.
 > **I swapped the prompt to butterfly and only re-ran the text encoder and the detector.** As a
 > result, the **second inference is 76% faster, even after warmup.**"*
 
-Reading the shipped Swift package shows the split is **also what routes the model to the Neural
-Engine** — a much stronger reason to do it than cadence, and one that bears directly on
-compression, because ANE residency is what makes palettization the right format in the first place
-(§1.2). Part 10 covers the routing mechanism; the compression-side consequence is simply this:
+Reading the optional `coreai-models` Swift package shows the split also selects **that loader’s
+Neural Engine preference**. This is package policy, not a Core AI framework naming contract; direct
+`AIModel` callers choose their own `SpecializationOptions`.[^sample-routing-policy] It still bears
+directly on compression when you adopt that loader because intended ANE residency affects the
+appropriate format (§1.2). Part 10 covers the policy; the compression-side consequence is simply this:
 **if you split a model into per-cadence functions, you can and should give each function its own
 compression config**, which is precisely what the SAM3 recipe does (§5.4).
 
@@ -3392,11 +3395,12 @@ The big one.
 §5.2. Rank-6 LUT, ANE rejects, runtime falls back to GPU. No warning, no error, marginally *better*
 PyTorch numerics. Detected only by inspecting compute-unit placement on device.
 
-### 19.3 `finalize(CoreAI)` destroys the float weights, irreversibly
+### 19.3 Eager-only `KMeansPalettizer.finalize(CoreAI)` frees dense weights irreversibly
 
 §10.2. The dense pre-palettization weight is replaced with a zero-size placeholder. Combined with
 `prepare()`'s in-place mutation (§2.4), a careless script can leave you with no float model in the
 process at all. `copy.deepcopy` before `prepare()`; do not `finalize()` during a sweep.
+[^destructive-finalize-scope]
 
 ### 19.4 Vector palettization produces a different model every run
 
@@ -3728,3 +3732,13 @@ Every 🔴 GAP in this guide, in one place, so they can be closed by someone wit
 *Part 9 · Reference 02. Previous: [01 — `coreai-opt` quantization](01-quantization.md). Part 10
 covers the Core AI Debugger, hardware-specific authoring, and the rank/layout rules this guide's §5
 depends on.*
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^destructive-finalize-scope]: The pinned k-means palettizer docstring limits this behavior to its
+    Core AI backend:
+    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/palettization/kmeans/palettizer.py#L357-L425).

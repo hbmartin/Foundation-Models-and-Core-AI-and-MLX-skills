@@ -217,12 +217,9 @@ diagnosed as a modelling problem. **Skippable unless it is your job:**
 — and [12.5 Part B](references/05-serving-and-distributed.md), which needs two or more Macs, Thunderbolt-5
 cables between *every pair*, macOS 26.2 everywhere, and a reboot per machine.
 
-**Status note.** Four guides end before the last sections their own contents lists announce — 12.1 stops inside
-§12, 12.2 at §9.5, 12.5 at §26, 12.6 at §12 — so the quick-reference, checklist, architecture-porting and
-gap-register sections at those tails are not written yet and cross-references to them will not resolve; 12.3 and
-12.4 are complete. Two links inside 12.4 name files that do not exist; the real ones are
-[`03-quantization.md`](references/03-quantization.md) and
-[`06-finetuning-and-porting-models.md`](references/06-finetuning-and-porting-models.md).
+**Scope note.** The six references are complete for their declared scope. Guides 12.1, 12.2, 12.5,
+and 12.6 intentionally end at §12, §9.5, §26, and §12 respectively, and their contents lists now
+match those boundaries; guides 12.3 and 12.4 retain their longer end-to-end treatments.[^part12-scope]
 
 ---
 
@@ -236,8 +233,9 @@ gap-register sections at those tails are not written yet and cross-references to
   conversion, [Part 4](../part-04-beyond-the-built-in-model/) for `ChatCompletionsLanguageModel` and for writing
   a conformer by hand. This part shows only the wiring: point it at `http://localhost:8080/v1`.
 - **Metal shaders in the TensorOps / cooperative-tensor style** — `mpp::tensor_ops::matmul2d`,
-  `metal::cooperative_tensor`, execution scopes: [Part 11](../part-11-metal-and-tensorops/); 12.2 §11 was to
-  have marked the Python-kernel / C++-extension boundary and is not written yet. **Core AI's compression
+  `metal::cooperative_tensor`, execution scopes: [Part 11](../part-11-metal-and-tensorops/). Guide 12.2
+  intentionally stops after the Python-authored kernel options in §9.5; use Part 11 for TensorOps.
+  **Core AI's compression
   story** — palettization, `.aimodel` numeric formats: [Part 9](../part-09-coreai-compression-numerics/).
 - **Evaluation as a discipline** ([Part 6](../part-06-evaluations/)); **delivery and operations**
   ([Part 15](../part-15-shipping-and-operating/)); **migrating off `.fmadapter`**, of which 12.6 §0 is only the
@@ -264,3 +262,11 @@ from `angeloskath`, `zcbenz`, `davidkoski` and `awni`, cited by number throughou
 #3860, #3862, #3875, #3883, #3885, #3887, #3910, #3912, #3922, #3924 and mlx-lm #1425, #1438, #1494, #1598 among
 them. **Community measurements** are labelled as such at every point of use, with hardware and OS named inline,
 and never presented as Apple figures.
+
+[^part12-scope]: See the declared contents and terminal sections in
+    [12.1](references/01-core-fundamentals.md),
+    [12.2](references/02-numerics-hardware-gating-and-custom-kernels.md),
+    [12.5](references/05-serving-and-distributed.md), and
+    [12.6](references/06-finetuning-and-porting-models.md). API evidence is pinned to
+    [`ml-explore/mlx@973e27f`](https://github.com/ml-explore/mlx/tree/973e27f82ffe68dbd626cda31ba34997045d1eb7)
+    and [`ml-explore/mlx-lm@e5baded`](https://github.com/ml-explore/mlx-lm/tree/e5baded8c1d286754edb479ffbde4655a68e2758).

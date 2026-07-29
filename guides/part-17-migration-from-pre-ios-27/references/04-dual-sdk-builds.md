@@ -1486,8 +1486,9 @@ Four things to steal from this, all of which generalise:
 
 Anything you can ask the framework about at run time belongs here:
 
-- `SystemLanguageModel.default.supportsLocale(_:)` — an **iOS 26.4** API. Runtime question, 26.4
-  compile-time floor. An Apple-adjacent forum reply describes it as checking *"against user's
+- `SystemLanguageModel.default.supportsLocale(_:)` — an **OS 26.0** API. It is present in the base
+  `SystemLanguageModel` declaration, not the separate 26.4 context-introspection extension.[^supports-locale-floor]
+  An Apple-adjacent forum reply describes it as checking *"against user's
   language settings… Returns `true` if a close language can be supported"* (e.g. a Catalan app
   returns `true` because Spanish is supported).
 - `SystemLanguageModel.default.contextSize` — **26.4**. See §11.
@@ -1595,8 +1596,8 @@ summary; [17.1](01-what-changed-checklist.md) has the exhaustive version.
 
 | Floor | Representative API | Compile-time gate needed for a 26-SDK build? |
 |---|---|---|
-| **26.0** | `LanguageModelSession`, `SystemLanguageModel.default`, `@Generable`, `@Guide`, `Tool`, `GenerationOptions`, `Transcript` | **No.** Present in every 26 SDK. `if #available(iOS 26.0, *)` only — and even that only if your deployment target is below 26. |
-| **26.4** | `contextSize`, `tokenCount(for:)`, `supportsLocale(_:)`; guardrail false-positive reduction (behavioural) | **Only if you build with an SDK older than 26.4.** If your minimum toolchain is Xcode 26.4+, `if #available(iOS 26.4, *)` is the whole story. |
+| **26.0** | `LanguageModelSession`, `SystemLanguageModel.default`, `@Generable`, `@Guide`, `Tool`, `GenerationOptions`, `Transcript`, `supportsLocale(_:)` | **No.** Present in every 26 SDK. `if #available(iOS 26.0, *)` only — and even that only if your deployment target is below 26.[^supports-locale-floor] |
+| **26.4** | `contextSize`, `tokenCount(for:)`; guardrail false-positive reduction (behavioural) | **Only if you build with an SDK older than 26.4.** If your minimum toolchain is Xcode 26.4+, `if #available(iOS 26.4, *)` is the whole story. |
 | **27.0** | Everything in §9.1 | **Yes.** `canImport(FoundationModels, _version: 2)` or `canImport(CoreAI)` / `canImport(Evaluations)`, **plus** `if #available(iOS 27.0, *)`. |
 
 Note there is deliberately no **26.2** row in this table. 26.2 matters elsewhere in this series —
@@ -2809,8 +2810,9 @@ Work down this list against your own repository. Each item names the section tha
       _version: 2)`, `canImport(CoreAI)`, `canImport(Evaluations)`, or your own SDK flag. (§1, §9)
 - [ ] Every 27-only symbol reference is *also* inside `if #available(iOS 27.0, macOS 27.0,
       visionOS 27.0, *)`. Both, not either. (§1.3)
-- [ ] Nothing that shipped in **26.0** (`@Generable`, `Tool`, `LanguageModelSession`) or **26.4**
-      (`contextSize`, `tokenCount(for:)`, `supportsLocale(_:)`) is inside a 27 gate. (§11)
+- [ ] Nothing that shipped in **26.0** (`@Generable`, `Tool`, `LanguageModelSession`,
+      `supportsLocale(_:)`) or **26.4** (`contextSize`, `tokenCount(for:)`) is inside a 27 gate.
+      (§11)[^supports-locale-floor]
 - [ ] Modules that simply do not exist in the 26 SDK — Core AI, Evaluations, the Spotlight overlay —
       use plain `canImport(Module)`, not the underscored version form. (§9.2)
 - [ ] If you build for watchOS, the outermost gate is bare `canImport(FoundationModels)`, because
@@ -2985,6 +2987,8 @@ overlay), sessions 319 / 339 (`ContextOptions`, PCC).
 stored properties, the two-case error enum, the 26.4 over-gating comment, and the
 `ci_pre_xcodebuild.sh` `.swiftinterface` workaround. All read from a local clone; never presented as
 Apple statements.
+
+[^supports-locale-floor]: The authoritative Xcode 26.5 interface places [`SystemLanguageModel.supportsLocale(_:)`](../../../notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface#L572-L591) in the OS 26.0 declaration; the following extension is the distinct OS 26.4 context-introspection surface.
 
 ---
 

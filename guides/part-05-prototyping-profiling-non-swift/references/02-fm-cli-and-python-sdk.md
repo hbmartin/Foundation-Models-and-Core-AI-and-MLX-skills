@@ -2671,13 +2671,15 @@ JSON-Schema path over `@fm.generable`.
 
 ---
 
+<a name="13--memory-across-the-boundary"></a>
+
 ## 13. ⚠️ Memory across the boundary
 
 This is the section to read if you intend to run anything at batch scale. The Python/Swift boundary
 has a hand-written ownership contract, and the repository's own artefacts tell you it is the area
 Apple is most actively fixing: **a C shim, a custom build backend, two dedicated memory test files,
 a `test_composed_prompt_cleanup.py` regression suite, and a HEAD commit titled "Release
-composed_prompt pointer in all respond() paths."**
+composed_prompt pointer in all respond() paths."**[^python-sdk-memory]
 
 ### 13.1 The ownership contract
 
@@ -3537,3 +3539,8 @@ currently gives with a "read from source, not executed" hedge.
   rather than whenever `fm serve` is documented, [`../../part-12-mlx-python/`](../../part-12-mlx-python/)
   covers `mlx_lm.server` — and Part 4 covers plugging that back into Foundation Models from Swift via
   `ChatCompletionsLanguageModel`, which closes the circle this guide opened in §2.6.
+
+[^python-sdk-memory]: The pinned first-party source includes the cleanup regression in
+    [`test_composed_prompt_cleanup.py`](https://github.com/apple/python-apple-fm-sdk/blob/e868e60811aa0706feb2ccb33cfe7e27626287b7/tests/test_composed_prompt_cleanup.py)
+    and commit [`e868e60`](https://github.com/apple/python-apple-fm-sdk/commit/e868e60811aa0706feb2ccb33cfe7e27626287b7),
+    which releases the composed-prompt pointer across response paths.

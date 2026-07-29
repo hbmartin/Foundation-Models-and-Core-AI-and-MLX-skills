@@ -2219,8 +2219,9 @@ is not `ExternalizeSpec`**:
 > `.aimodel`. Reaching for `ExternalizeSpec` to solve an embedding-quantization problem will not work
 > and will waste your afternoon.
 >
-> That multi-entrypoint split is also **what routes a model to the Neural Engine**, not merely a
-> latency trick — see [Part 7](../../part-07-coreai-swift-runtime/) and
+> When loaded through the optional `coreai-models` package, that recognized multi-entrypoint split
+> also selects the helper’s Neural Engine preference; it is not a Core AI framework naming
+> contract.[^sample-routing-policy] See [Part 7](../../part-07-coreai-swift-runtime/) and
 > [Part 10](../../part-10-coreai-hardware-authoring-debugging/), where it is covered properly.
 
 **Motivation 3, the one Apple states most directly, is simply speed.** From the externalization
@@ -3209,7 +3210,7 @@ No number in this guide is presented as an Apple figure unless the row above say
 | `gated-delta-update.md` example uses `composite_attrs=["use_qk_l2_norm"]`; Apple's shipping `_EXTERNALIZE_SPECS` uses `[]` | **Neither is provably wrong.** Declared as an open GAP; recommendation is to copy the shipping form. §8.5 |
 | Apple's skill labels the ANE embedding table "externalized"; the detailed reference describes a **separate export with its own entrypoint** | **Detailed reference wins.** Two mechanisms, one word — the guide names both and points each intent at the right API. §8.6 |
 | WWDC26 325 says composites are "pre-packaged fast kernels" with no measured benefit; no A/B exists anywhere | Kept as mechanism, declared as a GAP on magnitude. §8.6 |
-| Session 325 frames the multi-entrypoint split as a latency trick; reading `coreai-models` shows it is also what routes a model to the ANE | Noted and deferred to Parts 7 and 10, which cover it properly. §8.6 |
+| Session 325 frames the multi-entrypoint split as a latency trick; the optional `coreai-models` loader also maps recognized structures to its ANE preference | Package policy, not a Core AI framework contract; deferred to Parts 7 and 10. §8.6[^sample-routing-policy] |
 | `coreai-torch`#8 is still OPEN but a contributor states it is fixed on main since #13 | Not relied on in this guide either way |
 
 ### Declared gaps — nothing is guessed inside these
@@ -3240,3 +3241,9 @@ No number in this guide is presented as an Apple figure unless the row above say
   `.aimodel` **directory**, and the OS line is 27.
 - The `coreai-models` PyPI wheel. Maintainer @tjia1818, verbatim: *"the wheel on the pypi.org is not
   to be used, it's just a stub."* Use a source checkout.
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

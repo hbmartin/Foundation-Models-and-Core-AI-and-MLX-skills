@@ -129,8 +129,9 @@ could not verify it, and the box says what would resolve it and what to do meanw
 - [24. Apple's measured numbers](#24-apples-measured-numbers)
 - [25. The distributed bug cluster](#25-the-distributed-bug-cluster)
 - [26. Running without `mlx.launch`](#26-running-without-mlxlaunch)
-- [27. Checklists](#27-checklists)
-- [28. Gaps register](#28-gaps-register)
+
+**Scope:** this reference intentionally ends at §26; operational checks and unresolved gaps are
+declared in the sections they qualify. The CLI surface is pinned to the inspected mlx-lm revision.[^scope-source]
 
 ---
 
@@ -342,7 +343,9 @@ if (model_file := config.get("model_file")) is not None:
         )
 ```
 
-`--trust-remote-code` was added to **every** mlx-lm CLI, and it now gates two different things:
+`--trust-remote-code` is present on the **model-loading** mlx-lm commands, and it gates two different
+things there. It is intentionally absent from `manage`, `upload`, and `share`, which do not load a
+model architecture or tokenizer.[^trust-cli-source]
 remote *tokenizer* code and the *architecture* file. The environment variable
 `MLX_LM_TRUST_REMOTE_CODE=1` works for the CLI tools.
 
@@ -3163,3 +3166,11 @@ Remember §20.1: on ranks other than 0 the `--port` is inert, because only rank 
 routing over mesh cabling. It is not in the documentation's env-var list. **Safe default:** use
 `mlx.launch --backend jaccl-ring` if you can; if you must set it manually, verify with a smoke
 test rather than assuming.
+
+[^scope-source]: Source snapshot: [`ml-explore/mlx-lm` at `e5baded`](https://github.com/ml-explore/mlx-lm/tree/e5baded8c1d286754edb479ffbde4655a68e2758).
+[^trust-cli-source]: At the pinned revision, the dispatcher lists the commands in
+    [`mlx_lm/cli.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/cli.py),
+    while [`manage.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/manage.py),
+    [`upload.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/upload.py),
+    and [`share.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/share.py)
+    define no `--trust-remote-code` argument.

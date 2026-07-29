@@ -49,11 +49,12 @@ the result is any good, none of them conversion problems:
    mask is 15–30 dB worse and still generates fluent text. A pre-RoPE key in the cache passes a
    single-token smoke test and collapses at position 2. A dropped `remove_functionalization` runs at
    full speed with a KV cache that never updates. No exception path for any of it.
-3. **What routes a model to the Neural Engine is not the platform you exported for and not a flag.**
-   Apple's own Swift runtime derives the compute-unit preference from **the names of the functions
-   inside your asset** — `extend*` + `load_embeddings`, or the `image_encode`/`text_encode`/`detect`
-   trio, or a lone `main`. Rename your entrypoints and a week of BC1S authoring silently specialises
-   for the GPU.
+3. **If you adopt Apple's optional `coreai-models` loader, function names select that helper's
+   compute-unit preference.** It recognizes `extend*` + `load_embeddings`, the
+   `image_encode`/`text_encode`/`detect` trio, and a lone `main`. This is package policy, not Core AI
+   framework routing: direct `AIModel` callers provide their own `SpecializationOptions`, and
+   `.default` lets Core AI choose the compute-unit combination that minimizes latency.
+   [^sample-routing-policy]
 
 Underneath all three: **the fastest local engine never exposes logits.** A GPU-pipelined bundle
 samples on-GPU, so `@Generable` and `forcedContinuation` are *structurally* unavailable exactly where
@@ -94,18 +95,21 @@ read-only KV cache; on the GPU, standard layout, fused QKV, native fused SDPA, `
 the SAM3 case study, whose shipped recipe is **asymmetric** (image w4/gs32, text w6/gs8, detector
 uncompressed).
 
-> ⚠️ **SILENT FAILURE — your entrypoint names are load-bearing (§8).** `ModelStructure.swift` derives
-> `SpecializationOptions` from the function names in the asset. Name a re-authored segmenter's three
-> entrypoints `encode_image` / `encode_text` / `predict` and the runtime classifies it `.dynamic` and
-> specialises it for the **GPU**. It works, it produces correct output, and it ignores everything you
-> spent a week on — with no warning log line at all if a `main` graph is present.
+> ⚠️ **SILENT FAILURE — entrypoint names are load-bearing when you use the optional
+> `coreai-models` loader (§8).** Its `ModelStructure.swift` derives `SpecializationOptions` from the
+> function names in the asset. Name a re-authored segmenter’s three entrypoints `encode_image` /
+> `encode_text` / `predict` and that helper classifies it `.dynamic` and requests the **GPU**. Direct
+> `AIModel` callers are not subject to this naming policy and may use `.default` or explicit
+> options.[^sample-routing-policy]
 
 > ⚠️ **SILENT FAILURE (three more).** `enable_per_channel_scale=True` lowers to `mps.dequantize_lut`
 > with **rank-6 LUTs the ANE rejects**, so the model falls back to the GPU at GPU power draw with
 > correct numbers — Apple's SAM3 recipe disables it on purpose and WWDC 325 says the opposite. Caching
 > the **pre-RoPE** key is marked *CRITICAL* by Apple and collapses PSNR to ~20 dB, only after token 1.
-> A non-contiguous tensor handed to `NDArray` produces wrong logits because the runtime **ignores
-> strides**. §10 catalogues eighteen of these with detection recipes.
+> In the `coreai-models` Python bridge, handing a non-contiguous PyTorch tensor to its `NDArray`
+> wrapper can produce wrong logits because that bridge reads the backing memory as contiguous. This
+> is not a universal Core AI rule: Swift `NDArray` exposes explicit strides and preferred layouts.
+> §10 catalogues eighteen failures with detection recipes.[^stride-scope]
 
 > 🔴 **GAP — `coreai-build`'s residency report.** Apple's skill says "compile and check residency" and
 > no source shows what that output looks like — not the flag, not the format, not whether it is per-op.
@@ -240,7 +244,8 @@ source read on disk:** `apple/coreai-models` at `5ed9981` (2026-07-23, BSD-3-Cla
 `primitives/ios/` and `primitives/macos/` libraries file by file, `models/ios/qwen3.py`,
 `models/macos/qwen3_moe.py`, the re-authored SAM3 tree (2,124 lines), `export/*.py`,
 `model_registry.py` (1,051 lines, in full), and the Swift side:
-`CoreAIShared/Runtime/ModelStructure.swift` (the function-name → compute-unit derivation), the four
+`CoreAIShared/Runtime/ModelStructure.swift` (the optional package’s function-name → preference
+policy[^sample-routing-policy]), the four
 `InferenceEngines/`, `Bundle/ModelBundle.swift`, `Tools/llm-runner`, `Tools/benchmark`;
 `apple/coreai-torch` (`converter.py`, the whole `debugging/` module, `docs/api/*`,
 `tests/test_stateful.py`, `tools/graphdiff`); `apple/coreai-optimization` (the `w4` preset verbatim,
@@ -258,3 +263,14 @@ benchmarks) supply nearly every device number, the AOT architecture names, the 0
 forensics, the hybrid/SSM patch and the `trimKVCache` measurements; `lucasnewman/mlx2coreai` (MIT) is
 guide 10.3 §15. **Apple published no latency figure for any Core AI LLM path, and ships no benchmark
 tool for any non-LLM model.**
+
+[^sample-routing-policy]: The name classifier and preferences are implemented by the optional
+    `apple/coreai-models` package in its pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^stride-scope]: The bridge-specific warning comes from the pinned `coreai-models`
+    [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98);
+    Core AI’s Swift API separately documents strided arrays:
+    [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).
