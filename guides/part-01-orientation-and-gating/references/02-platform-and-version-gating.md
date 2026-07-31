@@ -107,7 +107,7 @@ reduced guardrail false positives, and added exactly two API surfaces:
 
 `contextSize` is the interesting one, because it is the only back-deployed member in this corpus:
 
-```swift
+```swift illustrative
 @backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4)
 final var contextSize: Int { get }
 ```
@@ -283,7 +283,7 @@ this section exists.
 
 The only SDK-version test attested anywhere in this corpus is the one `mlx-swift-lm` uses:
 
-```swift
+```swift compile:27
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 // … the entire MLXFoundationModels adapter …
 #endif
@@ -320,7 +320,7 @@ for `3cbf928`:
 `apple/python-apple-fm-sdk` solves the same problem with a plain custom compilation condition rather
 than `canImport`:
 
-```swift
+```swift compile:27
 // FoundationModelsCBindings.swift:33-47
 #if FM_HAS_MACOS_27_SDK
 if #available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *) {
@@ -396,7 +396,7 @@ carries `deprecated: true` in its page frontmatter.
 
 An Apple Frameworks Engineer posted the canonical three-arm pattern on the forums (thread 831404):
 
-```swift
+```swift compile:27
 import FoundationModels
 
 let session = LanguageModelSession()
@@ -424,7 +424,7 @@ migration recipe live in
 **`SystemLanguageModel.Error` first**, ahead of `LanguageModelError`, because an availability failure
 is a *different type* — not a case on `LanguageModelError`:
 
-```swift
+```swift illustrative
 // Error+DisplayMessage.swift — ships in Origami and, near-identically, in the Core Spotlight sample
 extension Error {
     /// A short message describing the error, suitable for display in the UI.
@@ -743,7 +743,7 @@ case unavailable(_: UnavailableReason)
 
 Apple's own canonical switch, from the `SystemLanguageModel` class page:
 
-```swift
+```swift compile:27
 import FoundationModels
 import SwiftUI
 
@@ -778,7 +778,7 @@ explicitly. That is the case you most need to handle, because it is the one the 
 
 The two accessors on the model:
 
-```swift
+```swift compile:27 imports:FoundationModels
 var isAvailable: Bool
 var availability: SystemLanguageModel.Availability
 ```
@@ -861,7 +861,7 @@ it. Gate proactively for the UX, catch reactively for correctness. That split is
 
 ### 7.2 PCC has a *different* reason set
 
-```swift
+```swift compile:27 imports:FoundationModels
 let model = PrivateCloudComputeLanguageModel()
 
 switch model.availability {
@@ -902,7 +902,7 @@ in this corpus does exactly that.
 So `availability == .available` is **not** a green light to send a PCC request. You must also check
 `quotaUsage`:
 
-```swift
+```swift compile:27
 import FoundationModels
 import SwiftUI
 
@@ -985,7 +985,7 @@ asking for a sysdiagnose is one step short of Apple confirming it has reproduced
 Availability is not only hardware and opt-in. The model is gated on language too, and the language
 it reads is **not** the system language.
 
-```swift
+```swift illustrative
 final var supportedLanguages: Set<Locale.Language> { get }
 final func supportsLocale(_ locale: Locale = Locale.current) -> Bool
 ```
@@ -1131,7 +1131,7 @@ Apple's own sample code shows the shape this implies: **ship on-device by defaul
 one-line swap.** Origami stores the model as a stored property of its profile and leaves the PCC line
 commented out:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // Origami/Models/OrchestratorProfile.swift:14-21
 // Brainstorm and tutorial work best on a server model. The sample
 // defaults to the on-device system model so it runs out of the box.
@@ -1305,7 +1305,7 @@ deliberately structured to separate the four questions this guide has been about
 exist in my SDK*, *does it exist on this OS*, *is the feature available on this device right now*,
 and *did the call actually work*.
 
-```swift
+```swift compile:27
 // AIPreflight.swift
 // Requires: Xcode 27 (27.0 SDK). Compiles — with reduced functionality — on the 26 SDK.
 

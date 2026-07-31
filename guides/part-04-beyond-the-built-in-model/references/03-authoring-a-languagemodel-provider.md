@@ -18,7 +18,7 @@ spellings changed between beta 1 and beta 3, and each one is flagged where it ma
 
 You are writing the Swift package that lets an app developer type
 
-```swift
+```swift illustrative
 let session = LanguageModelSession(model: YourModel(…))
 ```
 
@@ -135,7 +135,7 @@ wrote for coding agents:
 
 And the target developer experience, verbatim from the same file (`SKILL.md:13-23`):
 
-```swift
+```swift illustrative
 import MyLanguageModel
 
 let model = MyLanguageModel(name: "your-model-id", baseURL: URL(string: "https://api.example.com")!)
@@ -344,7 +344,7 @@ So the intent is real and it is visible in shipped code. What is *not* real yet 
 it runs. Apple's own `ChatCompletionsLanguageModel` is structured for Linux in three specific ways,
 all verifiable:
 
-```swift
+```swift compile:27
 public import Foundation                       // ChatCompletionsLanguageModel.swift:12
 #if canImport(FoundationNetworking)            // :13  ← exists only on non-Darwin
 public import FoundationNetworking             // :14
@@ -586,7 +586,7 @@ this guide is about the values that flow through `respond`.
 An independent reading agrees on every member. A community author read the same declarations
 directly out of the macOS 27 beta `FoundationModels.swiftinterface` and recorded them as:
 
-```swift
+```swift illustrative
 protocol LanguageModel: Sendable {
     associatedtype Executor: LanguageModelExecutor where Self == Executor.Model
     var capabilities: LanguageModelCapabilities { get }
@@ -745,7 +745,7 @@ beta 3, `foundation-models-utilities` shipped a hand-rolled `AnyLanguageModel` t
 `git show a047a50:…/DynamicProfile+LanguageModel.swift`), removed once the framework shipped
 `.model(any LanguageModel)` itself. Its trick:
 
-```swift
+```swift compile:27
 private struct Metatype: Hashable, Equatable, @unchecked Sendable {
   private let type: UnsafeRawPointer
   init(_ swiftType: Any.Type) { type = unsafeBitCast(swiftType, to: UnsafeRawPointer.self) }
@@ -915,7 +915,7 @@ tool-calling round trip. If you read one code listing in this guide, read this o
 > `Tests/FoundationModelsUtilitiesTests/MockModel.swift:12-102`, verbatim (comments abridged where
 > marked):
 
-```swift
+```swift compile:27
 import Foundation
 import FoundationModels
 
@@ -1048,7 +1048,7 @@ Everything from here on is elaboration on this file.
 
 ## 5. Capabilities: four flags that route requests
 
-```swift
+```swift illustrative
 public var capabilities: LanguageModelCapabilities { get }
 ```
 
@@ -1669,7 +1669,7 @@ the next assistant-ish entry absorbs it. Your translator is a small state machin
 **Segments, not strings.** Every entry carries `segments`, and the segment switch is where images,
 structured content, and the extension points live:
 
-```swift
+```swift illustrative
 func convertedSegment(                                        // :395
   _ segment: Transcript.Segment,
   in entry: Transcript.Entry
@@ -2199,7 +2199,7 @@ The "carry the name on every event" rule is the one that bites, because most wir
 function name **once**, on the opening delta, and then send argument fragments only. You have to
 latch it. Apple's implementation:
 
-```swift
+```swift illustrative
 var toolCallRouting: [Int: (id: String, name: String)] = [:]   // :289
 …
 for toolCallDelta in toolCallDeltas {                          // :311
@@ -2440,7 +2440,7 @@ and the balance rule for custom errors (339:151–156):
 Every case is a two-step construction: the enum case wraps a payload struct of the same name in
 UpperCamelCase. Apple's examples, verbatim (`SKILL.md:561-614`), abridged to four:
 
-```swift
+```swift compile:27 imports:Foundation
 import FoundationModels
 
 throw LanguageModelError.contextSizeExceeded(
@@ -3082,7 +3082,7 @@ hermetic.
 
 **The protocols** (`SKILL.md:41-59`)
 
-```swift
+```swift illustrative
 public protocol LanguageModel: Sendable {
   associatedtype Executor: LanguageModelExecutor where Executor.Model == Self
   var capabilities: LanguageModelCapabilities { get }

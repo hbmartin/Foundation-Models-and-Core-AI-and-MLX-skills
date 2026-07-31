@@ -133,7 +133,7 @@ The API really is *"a natural extension of the existing prompt builders"* — th
 phrasing from WWDC26 session 241, and it is accurate. You do not construct a request object, you do
 not pick an encoder, you do not resize anything.
 
-```swift
+```swift compile:27
 import FoundationModels
 import CoreGraphics
 
@@ -172,7 +172,7 @@ Prompt {
 And the full function form, which is the one worth memorising because it shows the orientation
 parameter *and* Apple's own comment explaining when you need it:
 
-```swift
+```swift compile:27 imports:FoundationModels,CoreGraphics
 func compareImages(imageOne: CGImage, imageTwo: CGImage) async throws -> String {
     let session = LanguageModelSession()
     let response = try await session.respond {
@@ -301,7 +301,7 @@ Three things to steal from those fifteen lines:
    builds `var imagePrompts: [Prompt] = []`, appends one per photo, and then drops the whole array
    into the builder:
 
-```swift
+```swift illustrative
 // Origami/Models/Orchestrator.swift:596-616 — Apple sample source, verbatim
 var imagePrompts: [Prompt] = []
 for photo in photos {
@@ -654,7 +654,7 @@ images, N labels, one call.
 
 **Stage 3 — declare the `ImageReference` field in the `@Generable` type.**
 
-```swift
+```swift compile:27 imports:FoundationModels
 // Origami/Brainstorm/ImageAnalysis.swift:11-27 — Apple sample source, verbatim
 @Generable
 struct ImageAnalysis {
@@ -737,7 +737,7 @@ See that same guide for how partial snapshots work generally.
 `ImageReference` conforms to `Generable`, so it is also legal as a tool argument — which is how you
 let the model hand an image *back* to your code for real processing. Apple's documented pattern:
 
-```swift
+```swift illustrative
 // /documentation/foundationmodels/imagereference — Apple's snippet, verbatim
 struct MyTool: Tool {
   @SessionProperty(\.history) var history
@@ -1016,7 +1016,7 @@ Inside `MyPromptView`, you now need a second switch over `prompt.segments` that 
 
 Apple's documented classification recipe pairs a `@Generable` enum with deterministic sampling:
 
-```swift
+```swift compile:27 imports:FoundationModels,CoreGraphics
 @Generable
 enum ImageLabel {
     case cat
@@ -1086,7 +1086,7 @@ Two `Tool` implementations provided by the Vision framework, new in 27.0:
 > WWDC26 241 adds the rationale: *"Both enhance a model's ability to reason about visual information
 > **in ways it can't natively**."*
 
-```swift
+```swift compile:27 imports:FoundationModels,Vision
 func analyzeBarcodeImage(_ image: CGImage) async {
     do {
         let session = LanguageModelSession(tools: [BarcodeReaderTool()])
@@ -1386,7 +1386,7 @@ Image support is **not** uniform across them, and the framework has a formal mec
 
 ### 10.1 The capability gate
 
-```swift
+```swift illustrative
 protocol LanguageModel: Sendable {
     associatedtype Executor: LanguageModelExecutor where Self == Executor.Model
     var capabilities: LanguageModelCapabilities { get }   // .vision / .guidedGeneration
@@ -1436,7 +1436,7 @@ servers"* pitch at face value.
 `mlx_lm.server`, Ollama, vLLM and LM Studio into Foundation Models backends) has **two entirely
 different image paths**:
 
-```swift
+```swift compile:27
 // Darwin: encode the in-memory image inline as a base64 JPEG data URL.
 //   image.cgImage.jpegData().base64EncodedString()  →  "data:image/jpeg;base64,…"
 //   ChatCompletionsLanguageModel.swift:413-421, guarded by #if canImport(CoreImage)

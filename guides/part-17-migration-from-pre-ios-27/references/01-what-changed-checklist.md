@@ -153,7 +153,7 @@ Two consequences:
    defensive check below is therefore belt-and-braces rather than load-bearing; keep it anyway —
    it is free.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Returns the model's context budget in tokens, or a conservative fallback.
@@ -308,7 +308,7 @@ retrofitting it after a regression means reconstructing what your old prompt was
 > ✅ **VERIFIED** — `/documentation/foundationmodels/updating-prompts-for-new-model-versions`,
 > verbatim code:
 
-```swift
+```swift compile:27
 if #available(iOS 26.4, macOS 26.4, visionOS 26.4, *) {
     // Use the prompt that you update for the the latest system version.
 } else {
@@ -419,7 +419,7 @@ The call-site shape is confirmed by shipping Apple sample code, not just narrati
 > `ImageReference.attachmentLabel`. Apple's documentation shows the same shape in the
 > `BarcodeReaderTool` example (§4.6).
 
-```swift
+```swift compile:27
 import FoundationModels
 import Vision          // only needed for the tools in §4.6
 
@@ -571,7 +571,7 @@ The protocol text itself:
 > declares `associatedtype Model : LanguageModel` explicitly. `SystemLanguageModel`'s conformance
 > is at `:291`.
 
-```swift
+```swift illustrative
 // Verbatim shape from the 27.0 interface (availability: iOS/macOS/visionOS/watchOS 27.0, no tvOS).
 public protocol LanguageModel: Sendable {
     associatedtype Executor: LanguageModelExecutor where Self == Self.Executor.Model
@@ -770,7 +770,7 @@ FoundationModels**, and that is the single most common wasted hour in adopting t
 > `OCRTool` **does not**. Do not smooth this over in a cross-platform build — if you target watchOS
 > and reach for OCR, it will not be there.
 
-```swift
+```swift compile:27
 import FoundationModels
 import Vision                      // ← the tools live HERE
 
@@ -991,7 +991,7 @@ entry**, which will then be fed back to the model on the next turn. If you prese
 > manners for the next reader, but relying on the implicit rollback is now measured behaviour, not
 > a guess.
 
-```swift
+```swift illustrative
 // ✅ SDK-verified — both spellings are real and canonical (27.0:937 and 27.0:1885-1892).
 // As a DynamicProfile modifier:
 Profile { … }.transcriptErrorHandlingPolicy(.preserveTranscript)
@@ -1373,7 +1373,7 @@ case .unavailable(let reason):
 > never calls `.isAvailable`, and never gates UI on model readiness.** It relies entirely on catching
 > `SystemLanguageModel.Error` at use time and mapping it to display copy:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // ✅ VERIFIED — Origami/Models/Error+DisplayMessage.swift, verbatim.
 extension Error {
     /// A short message describing the error, suitable for display in the UI.

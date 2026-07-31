@@ -122,7 +122,7 @@ protocol Generable : ConvertibleFromGeneratedContent, ConvertibleToGeneratedCont
 
 The three protocol members:
 
-```swift
+```swift illustrative
 static var generationSchema: GenerationSchema { get }
 func asPartiallyGenerated() -> Self.PartiallyGenerated
 associatedtype PartiallyGenerated          // "A representation of partially generated content"
@@ -220,7 +220,7 @@ property, not the type; `.count(4)` is a `GenerationGuide` passed as the *second
 
 `@Generable` also works on enums, and this is the cheapest constraint in the framework:
 
-```swift
+```swift compile:27 imports:FoundationModels
 @Generable
 enum ActivityKind {
     case sightseeing
@@ -239,7 +239,7 @@ spellings above are inferred from spoken words.
 The *forms* an `@Generable` enum may take are no longer inferred. Apple's Origami sample (iOS 27)
 ships three of them:
 
-```swift
+```swift illustrative
 @Generable enum OrigamiTemplate: String, CaseIterable { … }   // raw values include hyphens:
                                                               //   case catOrDogFace = "cat-or-dog-face"
 @Generable enum CraftDomain: String, Codable { … }
@@ -272,7 +272,7 @@ closed vocabulary. See §4.8.
 
 You do not need a struct:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let prompt = "How many tablespoons are in a cup?"
 let session = LanguageModelSession(model: .default)
 
@@ -451,7 +451,7 @@ Two `@Guide` signatures are listed on the framework index page:
 But Apple's own prose in *Managing the context window* shows a third form that matches neither
 signature:
 
-```swift
+```swift compile:27 imports:FoundationModels
 @Generable
 struct GameSettings {
     @Guide(.minimumCount(1), .maximumCount(20))
@@ -472,7 +472,7 @@ struct GameSettings {
 
 So **three arities are attested in shipping Apple code**, and you can use any of them:
 
-```swift
+```swift illustrative
 @Guide(description: "…")                       // Origami, Book Tracker
 @Guide(.minimumCount(3))                       // Origami — guides only, no description
 @Guide(description: "…", .count(3...8))        // Book Tracker — both
@@ -556,7 +556,7 @@ Two rows deserve comment:
 
 ### 3.4 What happens when a guide is not supported
 
-```swift
+```swift illustrative
 // iOS 27.0+
 catch let error as LanguageModelError {
     if case .unsupportedGenerationGuide(let context) = error { … }
@@ -783,7 +783,7 @@ Ordered by strength:
 
 A defensive helper worth keeping around:
 
-```swift
+```swift compile:27 imports:Foundation
 import FoundationModels
 
 enum ConstrainedValueError: Error, LocalizedError {
@@ -928,7 +928,7 @@ What the samples *do* demonstrate is belt-and-braces. Book Tracker's tagging fea
 (*"Return between 3 and 8 tags"*), and a third time as a heuristic `Evaluator` that measures whether
 the shipped model actually complies. ✅ **VERIFIED**, `BookTracker/Services/BookTaggingService.swift:13-45`.
 
-```swift
+```swift compile:27 imports:FoundationModels
 @Generable
 struct BookTags: Codable, Equatable {
     @Guide(description: "Descriptive tags capturing themes, genres, moods, and topics from the review",
@@ -1463,7 +1463,7 @@ Four of these do all the work:
 Apple's own, ✅ **VERIFIED** verbatim from
 `/documentation/foundationmodels/generating-swift-data-structures-with-guided-generation`:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // Create the dynamic schema at runtime.
 let menuSchema = DynamicGenerationSchema(
     name: "Menu",
@@ -1859,7 +1859,7 @@ It applies **through the whole type graph**: `Itinerary.PartiallyGenerated` has
 var itinerary: Itinerary.PartiallyGenerated?
 ```
 
-```swift
+```swift illustrative
 func generateItinerary(dayCount: Int = 3) async throws {
     let prompt = Prompt { /* … */ }
 
@@ -2322,7 +2322,7 @@ The errors you will actually see, and which are which.
 Verbatim code from an Apple Frameworks Engineer, forum thread 831404 (✅ **VERIFIED** as a quotation
 of Apple's own reply):
 
-```swift
+```swift compile:27 imports:FoundationModels
 let session = LanguageModelSession()
 let stream = session.streamResponse(to: "Tell me about origami.")
 
@@ -2359,7 +2359,7 @@ and report "something went wrong" for a device that simply has Apple Intelligenc
 ✅ **VERIFIED** from `Origami/Models/Error+DisplayMessage.swift:12-36`, which is the most complete
 first-party statement of this taxonomy in existence:
 
-```swift
+```swift compile:27 imports:FoundationModels
 extension Error {
     /// A short message describing the error, suitable for display in the UI.
     var displayMessage: String {
@@ -2440,7 +2440,7 @@ unsafe content, **to text responses**."* That phrase is why developers read it a
 
 One of them said so in a forum thread answered by an Apple Frameworks Engineer:
 
-```swift
+```swift compile:27 imports:FoundationModels
 LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations))
 // I'm aware that .permissiveContentTransformations does not apply to Generable, but I'd really
 // really really really love it, if it did!

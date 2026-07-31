@@ -909,7 +909,7 @@ provides introspection precisely so you do not have to write them:
 
 > ✅ **VERIFIED** — Apple developer documentation, `InferenceFunctionDescriptor`:
 
-```swift
+```swift illustrative
 struct InferenceFunctionDescriptor {          // Sendable, SendableMetatype
     var name: String { get }
 
@@ -1049,7 +1049,7 @@ constant factor, it is slow by an order of magnitude in specific places. (Commun
 must zero a large state, do it through `withUnsafeMutablePointer` and a plain loop or `memset`, not
 through a per-element closure.
 
-```swift
+```swift compile:27 imports:Foundation,CoreAI
 /// Zero a state in one shot, without a per-element closure.
 ///
 /// `byteCount` comes from the descriptor you allocated with:
@@ -1094,7 +1094,7 @@ initializer parameter:
 > ✅ **VERIFIED** — `apple/coreai-models`, `KVCacheStrategy` in the `CoreAILanguageModels` target
 > (quoted exactly; the enclosing file was not recorded, so cite the type, not the path):
 
-```swift
+```swift compile:27
 public enum KVCacheStrategy: String, Codable, Sendable, CaseIterable {
     case auto      = "auto"
     case fixedSize = "fixed_size"
@@ -1398,7 +1398,7 @@ adapted from a Swift runner that exists and compiles against the macOS 27 SDK.
 > appear in `apple/coreai-models`' `CoreAISequentialEngine`. Quoted structure, lightly reorganised for
 > reading; the `greedyToken` helper's fp16 hard-coding is the original's.
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 
@@ -1944,7 +1944,7 @@ They are asymmetric in a way the docs never explain, and the asymmetry is inform
 
 > ✅ **VERIFIED** — Apple developer documentation:
 
-```swift
+```swift illustrative
 final class AsyncValue {                       // a CLASS, and Sendable
     init(_: CVReadOnlyPixelBuffer)
     init(_: consuming InferenceFunction.AsyncMutableValue)
@@ -2019,7 +2019,7 @@ an `await` between the two encodes is the entire point.
 > ✅ **VERIFIED** — Apple developer documentation, `encode(inputs:states:outputViews:to:)`, quoted
 > exactly:
 
-```swift
+```swift illustrative
 let computeStream = ComputeStream()
 let pipelineFunctionOne: InferenceFunction = ...
 let pipelineFunctionTwo: InferenceFunction = ...
@@ -2110,7 +2110,7 @@ The engine does not hand Core AI `NDArray`s at all. It allocates Metal buffers i
 
 > ✅ **VERIFIED** — `CoreAIPipelinedEngine.swift:707-741` and `:743-766`, quoted exactly:
 
-```swift
+```swift illustrative
 let tokenValue: InferenceFunction.AsyncValue
 if tokens.isEmpty {
     // Decode: read input token from previous step's decode output buffer
@@ -2130,7 +2130,7 @@ let asyncInputs: [String: InferenceFunction.AsyncValue] = [
 ]
 ```
 
-```swift
+```swift illustrative
 // Build States as AsyncMutableValue (KV cache, in-place update)
 var keyState = unsafe InferenceFunction.AsyncMutableValue(
     unsafeBuffer: keyBuffer,
@@ -2267,7 +2267,7 @@ of the engine above.
 > all appear in `apple/coreai-models`' shipping engine. The gate, the rotation arithmetic and the
 > sampler hook mirror that engine's structure.
 
-```swift
+```swift illustrative
 import CoreAI
 import Metal
 
@@ -3047,7 +3047,7 @@ A practical sequence for a suspected state bug:
 
 All ✅ **VERIFIED** from Apple's developer documentation unless marked.
 
-```swift
+```swift illustrative
 // ── Running ───────────────────────────────────────────────────────────────────
 func run(inputs: [String : NDArray],
          states: consuming InferenceFunction.MutableViews = MutableViews(),

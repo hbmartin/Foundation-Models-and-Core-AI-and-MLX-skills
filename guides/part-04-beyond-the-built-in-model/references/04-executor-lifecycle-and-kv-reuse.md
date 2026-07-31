@@ -522,7 +522,7 @@ error. If `deep` arrives first, your triage path hangs for ten minutes instead o
 
 If you are writing your own provider, put a **hashable proxy for the transport** in the key:
 
-```swift
+```swift compile:27
 import Foundation
 import FoundationModels
 
@@ -1313,7 +1313,7 @@ correspond to text that is no longer in the prompt. **The output would be plausi
 
 The correct shape:
 
-```swift
+```swift compile:27
 /// Returns the number of leading tokens of `new` that are already valid in the cache.
 /// Zero means: reset and re-prefill everything.
 func reusablePrefixLength(cached: [Int32], new: [Int32]) -> Int {

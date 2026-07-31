@@ -1111,7 +1111,7 @@ Programmatically, they are on the `Metric` (`var rationale: String?`) and reacha
 > per-sample frame supports two subscript forms, `result.detailed[someResultColumn]` and
 > `result.detailed[metric: someMetric]`.
 
-```swift
+```swift illustrative
 @Test("Book Tag Evaluations", .evaluates(evaluation, info: evaluationInfo))
 func evaluateBookTagging() async throws {
     let result = EvaluationContext.current.result
@@ -1640,7 +1640,7 @@ Two facts follow from the attested call site, and they constrain any implementat
 > does not constrain — how to bucket continuous scores, what to return for degenerate input — the
 > choice is flagged in a comment. **Do not assume Apple's 72 lines are byte-identical to this.**
 
-```swift
+```swift compile:27
 import Foundation
 
 /// Inter-rater agreement statistics.
@@ -1785,7 +1785,7 @@ Reading the pair together:
 
 > ✅ **VERIFIED** — `ModelJudgeAlignmentEvaluation.swift:303-332`, verbatim:
 
-```swift
+```swift illustrative
 func aggregateMetrics(using aggregator: inout MetricsAggregator) {
     let expertRelevance = Self.samples.map { $0.expected?.expertRelevanceScore ?? 0.0 }
     let expertUsefulness = Self.samples.map { $0.expected?.expertUsefulnessScore ?? 0.0 }
@@ -1967,7 +1967,7 @@ from the two attested field names:
 > `ModelJudgeAlignmentEvaluation.swift:166-169` and `:303-332`. The rest of the declaration below is
 > inferred from those uses plus `ModelSample`'s documented `Codable` constraint.
 
-```swift
+```swift compile:27
 struct BookTagJudgmentValue: Codable, Sendable {
     /// The tags a previous evaluation run generated — replayed verbatim, never regenerated.
     var tags: [String]
@@ -2303,7 +2303,7 @@ evaluation is production.
 Reconstructing the shape of one of those examples — the *format* is verified, the specific book and
 tags below are ours:
 
-```swift
+```swift illustrative
 let calibrationJudgePrompt = ModelJudgePrompt<ModelSample<BookTagJudgmentValue>>(
     instructions: """
         … role, context, criteria, evaluation steps as in §8.3 …
@@ -2646,7 +2646,7 @@ checked against each other. Write `"Relevance Alignment Score"` in one place and
 
 **Fix:** never write the string twice.
 
-```swift
+```swift compile:27
 enum AlignmentLabel {
     static let relevance  = "Relevance Alignment Score"
     static let usefulness = "Usefulness Alignment Score"
@@ -2774,7 +2774,7 @@ person to see it, and the sample archive is a better oracle than a search engine
 
 ### 21.1 The judge API, in one place
 
-```swift
+```swift illustrative
 // ── Scale ──────────────────────────────────────────────────────────────────────
 ScoringScale.numeric([4: "…", 3: "…", 2: "…", 1: "…"])   // [Double: String]
 ScoringScale.passFail(passDescription: "…", failDescription: "…")

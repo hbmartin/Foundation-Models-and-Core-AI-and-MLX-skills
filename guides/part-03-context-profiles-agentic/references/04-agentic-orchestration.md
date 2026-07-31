@@ -650,7 +650,7 @@ where iOS 26 reported 4096 (community, `noema-ios`, `AFMLLMClient.swift:133-135`
 `contextSize`, do not hardcode either number.** Origami's answer is the smallest possible
 `historyTransform`:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // ✅ VERIFIED — Origami/Models/OrchestratorProfile.swift:289-293
 private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
     entries.suffix(4)
@@ -721,7 +721,7 @@ conversation and wondering where your battery went.
 > `LanguageModelSession(model:instructions:)` from ✅ `Origami/Terms/TermExtractor.swift:32-39`;
 > `respond(to:)` → `.content` from the same). No Apple sample implements a phone-a-friend tool.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 struct ConsultTitleSpecialistTool: Tool {
@@ -1416,7 +1416,7 @@ private struct StructuredToolOutputProfile: LanguageModelSession.DynamicProfile 
 
 with the counter declared as
 
-```swift
+```swift compile:27 imports:FoundationModels
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 extension SessionPropertyValues {
     @SessionPropertyEntry
@@ -1468,7 +1468,7 @@ Two failure modes of Exit A, neither obvious:
 > slide; no source was published, and **no Apple sample project sets `toolCallingMode` at all**, so
 > there is no first-party call site to copy.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Thrown to break out of a `.required` tool-calling loop.
@@ -1766,7 +1766,7 @@ alongside the prose that names it:
 
 > ✅ **VERIFIED** — `Origami/Coach/CoachInstructions.swift:12-36`:
 
-```swift
+```swift illustrative
 struct CoachInstructions: DynamicInstructions {
     let orchestrator: Orchestrator
 
@@ -2079,7 +2079,7 @@ func sendFollowUp(_ text: String) {
 }
 ```
 
-```swift
+```swift compile:27
 // 3. Never persist a pending proposal across app launches. Restore the
 //    transcript (LanguageModelSession(profile:history:)), not the pending flag.
 ```
@@ -2666,7 +2666,7 @@ which ships sixteen trajectory expectations across a 578-line evaluation file.
 
 > ✅ **VERIFIED** — `BookTrackerEvaluations/SearchBooks.swift:46-74`, a sample with expectations:
 
-```swift
+```swift illustrative
     ModelSample(
         prompt: "gothic",
         expected: BookResults(books: [ … ]),

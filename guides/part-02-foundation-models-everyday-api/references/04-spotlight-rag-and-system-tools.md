@@ -157,7 +157,7 @@ shipping iOS app's source on disk (`NoemaSpotlightIndexing.swift`), not reconstr
 the three things that matter — availability gating, domain-scoped replacement, and the attribute
 set.
 
-```swift
+```swift compile:27
 import Foundation
 import CoreSpotlight
 import UniformTypeIdentifiers
@@ -368,7 +368,7 @@ it is the verbatim repro from Developer Forums thread **838904**, written by a d
 session 246, and it matches `246:41` ("in one line of code, the tool is ready to search your
 app's Core Spotlight index"):
 
-```swift
+```swift compile:27
 import CoreSpotlight
 import FoundationModels
 
@@ -1215,7 +1215,7 @@ cannot construct it inline and still iterate it — but it should **not** outliv
 > Apple's answer is to build a fresh tool and a fresh session per query and cancel the listener
 > task when the query ends.
 
-```swift
+```swift compile:27
 import SwiftUI
 import CoreSpotlight
 import FoundationModels
@@ -1374,7 +1374,7 @@ the server model — and branches.
 > that all have defaults — and **`.complete`**, written without, so it is a plain static member.
 > The two appear in the arms of one ternary, so they are the same type.
 
-```swift
+```swift illustrative
 // Maximum capability, maximum tokens. PCC or a large local model only.
 SpotlightSearchTool(configuration: .init(sources: […], guide: .complete))
 
@@ -2203,7 +2203,7 @@ though it now accepts images.
 The usage pattern is the important part, and Apple's own sample makes it explicit — this code is
 ✅ **VERIFIED**, reproduced verbatim from the documentation page:
 
-```swift
+```swift compile:27 imports:FoundationModels,Vision
 func analyzeBarcodeImage(_ image: CGImage) async {
     do {
         let session = LanguageModelSession(tools: [BarcodeReaderTool()])

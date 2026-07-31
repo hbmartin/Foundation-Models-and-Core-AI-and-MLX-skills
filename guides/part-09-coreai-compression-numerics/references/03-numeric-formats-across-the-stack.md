@@ -738,7 +738,7 @@ Every typed accessor on `NDArray` is constrained to `BitwiseCopyable`:
 > strides you are handed. Do **not** guess at a vended type name; do not write `view(as: Int4.self)`
 > in code you intend to ship.
 
-```swift
+```swift compile:27
 import CoreAI
 
 /// Read a palettized index plane (uint4, two indices per byte) without guessing at a Swift type.
@@ -787,7 +787,7 @@ of this array may return `nil`."*
 
 **`InterleaveLayout`.** ✅ VERIFIED — the most thoroughly documented type in the framework:
 
-```swift
+```swift illustrative
 struct InterleaveLayout          // Equatable, Sendable, SendableMetatype
 init(dimension: Int, factor: Int)
 var dimension: Int { get }
@@ -1952,7 +1952,7 @@ models**."* ✅ VERIFIED, parameter documentation.
 
 A CI-friendly gate built only from verified members:
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 

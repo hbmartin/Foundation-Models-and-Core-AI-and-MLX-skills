@@ -343,7 +343,7 @@ like file extensions.
 where it gets genuinely dangerous, and Apple's own reader has a guard for it. ✅ VERIFIED verbatim,
 `ModelBundle.swift:121-131`:
 
-```swift
+```swift illustrative
 public init(at url: URL) throws {
     // A model bundle is a *directory* (metadata.json + assets + tokenizer).
     // If the caller points us directly at a `.aimodel`/`.aimodelc` asset,
@@ -687,7 +687,7 @@ Any blog post or README snippet you find that mentions `pipeline.json` predates 
 
 The complete enumeration. ✅ VERIFIED, `CoreAIShared/Bundle/BundleKind.swift:11-16`:
 
-```swift
+```swift compile:27
 /// Top-level model categories the runner ecosystem knows about.
 ///
 /// The bundle's `kind` selects which kind-specific config block (and which
@@ -771,7 +771,7 @@ bundle that ships compiled assets for three architectures needs either three bun
 
 A 30-line post-compile step, since you will write one anyway:
 
-```swift
+```swift compile:27
 import Foundation
 
 /// Rewrites `assets.<role>` in a bundle's metadata.json to point at a compiled asset.
@@ -929,7 +929,7 @@ precondition(lang.hasEmbeddedTokenizer,              // no silent network fetch 
 
 ✅ VERIFIED verbatim, `Package.swift:1`, `:10-46`:
 
-```swift
+```swift illustrative
 // swift-tools-version: 6.0
 
 let package = Package(
@@ -1124,7 +1124,7 @@ The ones that matter for this guide (✅ `Tools/llm-runner/LLMRunnerMain.swift`,
 Two hidden flags there are environment variables in disguise, which means **you can set them from
 your app** without going near the CLI:
 
-```swift
+```swift compile:27 imports:Foundation
 setenv("COREAI_CHUNK_THRESHOLD", "128", 1)   // BEFORE the engine is created
 ```
 
@@ -1200,7 +1200,7 @@ public static func prepare(at url: URL) async throws -> PreparedModel {
 The probe is cheap because it reads **the asset's summary without specializing**
 (`ModelStructure.swift:170-185`):
 
-```swift
+```swift illustrative
 let asset = try AIModelAsset(contentsOf: url)
 if let summary = try asset.summary(includingStatistics: false) {
     let names = summary.functions.map(\.name)
@@ -1372,7 +1372,7 @@ print("engine supportsLogits: \(engine.supportsLogits)")   // decides §7 for yo
 One protocol, four conformers. ✅ VERIFIED verbatim,
 `InferenceEngines/InferenceEngine.swift:87-149`:
 
-```swift
+```swift illustrative
 /// Interface for inference engines.
 ///
 /// KV cache is preserved between `generate()` calls. Call `reset()` to clear.
@@ -1461,7 +1461,7 @@ evaluation hook this layer has, and like `includeLogits`, **the pipelined engine
 And the output sequence protocol, which is how you learn *why* generation stopped
 (✅ `InferenceOutputSequence.swift`):
 
-```swift
+```swift illustrative
 public enum StopReason: Sendable, Equatable {
     case maxTokens, eos, stopSequence(String), cancelled, error
 }
@@ -1479,7 +1479,7 @@ use `setIfUnset` on natural exhaustion so a consumer's `.eos` is not clobbered b
 
 ✅ VERIFIED, `EngineFactory.swift:297-306`:
 
-```swift
+```swift compile:27
 private enum Variant: String, Sendable, CaseIterable {
     case sequential = "coreai-sequential"    // Core AI sequential engine (clean public API rewrite)
     case pipelined  = "coreai-pipelined"     // Core AI pipelined engine (GPU)
@@ -1619,7 +1619,7 @@ it is also, precisely, why there are no logits for you: the logits never leave t
 Reference 03 covers `InferenceFunction.encode(inputs:states:outputViews:to:)`, `ComputeStream`, and
 `AsyncMutableViews`. What matters here are the four hard errors:
 
-```swift
+```swift compile:27
 // includeLogits == true
 "CoreAI pipelined engine does not support logits (GPU-side sampling). "
     + "Use a sequential engine for constrained generation or evaluation."
@@ -1742,7 +1742,7 @@ and the protocol's own doc comment states the flow and, crucially, who owns the 
 > `generate(with: EmbeddedInput, …)` — scatter-merge embeddings into token sequence and run prefill
 > + decode. **The caller owns the embeddings and decides caching strategy.**"*
 
-```swift
+```swift compile:27 imports:CoreAI
 public struct EmbeddedInput: Sendable {
     public let embeddings: NDArray          // [batch, seq_len, hidden_dim]; init throws if rank != 3
     public let embeddingPositions: Range<Int>
@@ -1764,7 +1764,7 @@ the accumulated token context."* That is a note-to-self, not an implemented feat
 
 ✅ VERIFIED verbatim, `InferenceEngine.swift:327-367`:
 
-```swift
+```swift compile:27
 public enum KVCacheStrategy: String, Codable, Sendable, CaseIterable {
     case auto      = "auto"
     case fixedSize = "fixed_size"
@@ -1911,7 +1911,7 @@ let engine = try await EngineFactory.createEngine(
 `EngineFactory`. So `"coreai-sequental"` is a runtime error, not a compile error. Define your own
 constants:
 
-```swift
+```swift compile:27
 enum CoreAIEngineVariant {
     static let auto = "auto"
     static let sequential = "coreai-sequential"
@@ -2099,7 +2099,7 @@ community fork added them.
 Two additions to the protocol (✅ VERIFIED verbatim from the fork,
 `swift/Sources/CoreAILanguageModels/InferenceEngines/InferenceEngine.swift:111-138`):
 
-```swift
+```swift illustrative
 /// Rewind the KV cache toward `length` tokens for cross-call PREFIX REUSE, keeping the
 /// leading cached tokens valid and dropping everything after — so the next
 /// `generate(with:)` prefills only the un-cached suffix instead of the whole prompt.
@@ -2123,7 +2123,7 @@ var prefixReuseFeedsFullSequence: Bool { get }
 
 with fail-safe defaults (`:185-188`):
 
-```swift
+```swift compile:27
 public func trimKVCache(to length: Int) async -> Int { -1 }
 public var prefixReuseFeedsFullSequence: Bool { true }
 ```
@@ -2516,7 +2516,7 @@ So: **`ConstrainedGenerationSession` accepts a `stopTokenIds` array, documents i
 that prevents EOS mid-object, and silently discards it.** And `ConstrainedDecodingStrategy` dutifully
 computes and passes one (✅ `ConstrainedDecodingStrategy.swift:95-108`):
 
-```swift
+```swift illustrative
 let singleTokenStops = stopSequences.sequences.filter { $0.count == 1 }.map { $0[0] }
 …
 let stopTokenIds: [Int32]? = singleTokenStops.isEmpty ? nil : singleTokenStops
@@ -2568,7 +2568,7 @@ emit(tokenizer.decode(tokens: [Int(token)]))
 
 ### 7.5 ⚠️ A second, quieter trap: the `vocabType` default mismatch
 
-```swift
+```swift compile:27
 public enum VocabularyType: Sendable { case raw; case byteFallback; case byteLevel }
 ```
 
@@ -2704,7 +2704,7 @@ the authoritative number and it is right there in your bundle. Use it.
 Inside `CoreAIExecutor.respond(to:model:streamingInto:)`, guided generation is one branch. ✅ VERIFIED
 verbatim, `CoreAILanguageModel.swift:312-333`:
 
-```swift
+```swift illustrative
 // Check if guided generation is requested
 if let schema = request.schema {
     guard engine.supportsLogits else {
@@ -3096,7 +3096,7 @@ print(response)
 
 ✅ VERIFIED, `LanguageModel/CoreAILanguageModel.swift:31-181`:
 
-```swift
+```swift illustrative
 public struct CoreAILanguageModel: LanguageModel {
     public enum LoadMode: Sendable { case lazy; case eager }
     public typealias Executor = CoreAIExecutor
@@ -3381,7 +3381,7 @@ through *either* path because masked positions are `-.infinity` (or
 
 **`MPSGraphSampler` — GPU** (✅ `Samplers/MPSGraphSamplers.swift`):
 
-```swift
+```swift illustrative
 protocol MPSGraphSampler: AnyObject, Sendable {
     var vocabSize: Int { get }
     func encode(to queue: MTLCommandQueue, logitsBuffer: MTLBuffer, logitsOffset: Int,
@@ -3430,7 +3430,7 @@ applies the chat template, `.rawText` does not (✅ `:271-…`, `PromptUtils.may
 
 `TextGenerator` also gives you the two things Foundation Models does not expose at all:
 
-```swift
+```swift illustrative
 let (text, logits) = try await generator.generateWithLogits(input: .prompt("…"), maxTokens: 50)
 let result = try await generator.evaluateContinuation(context: ctx, continuation: cont)
 ```

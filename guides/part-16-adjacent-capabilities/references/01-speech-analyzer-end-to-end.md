@@ -333,7 +333,7 @@ So the mental model is a **fan-out**, not a chain:
 
 Every module conforms to `SpeechModule`:
 
-```swift
+```swift illustrative
 protocol SpeechModule : AnyObject, Sendable          // iOS 26.0+
     var availableCompatibleAudioFormats: [AVAudioFormat] { get async }
                                                      // formats this module can analyze,
@@ -695,7 +695,7 @@ plainly that it will not exist everywhere:
 
 That sentence is your fallback policy, written by Apple. Encode it:
 
-```swift
+```swift compile:27
 import Speech
 
 /// Picks the best available transcriber module for a locale, following Apple's documented
@@ -732,7 +732,7 @@ func makeTranscriber(preferring locale: Locale) async -> (any SpeechModule)? {
 own iOS 26 sample — which we *can* read, and which is the strongest evidence available for this
 particular point — compares by BCP-47 identifier, deliberately:
 
-```swift
+```swift compile:27 imports:Speech
     func supported(locale: Locale) async -> Bool {
         let supported = await SpeechTranscriber.supportedLocales
         return supported.map { $0.identifier(.bcp47) }.contains(locale.identifier(.bcp47))
@@ -1255,7 +1255,7 @@ with, then retry. A multi-language app that lets the user switch transcription l
 release the previous locale on switch, not on quit — the system removes the assets "at a later
 time" anyway, so releasing early costs nothing if the user switches back quickly.
 
-```swift
+```swift compile:27 imports:Speech
 /// Switch transcription locale, releasing the previous reservation first so a multi-language
 /// app cannot walk into `maximumReservedLocales`.
 ///
@@ -2378,7 +2378,7 @@ extension LiveTranscription {
 
 ### 8.7 A merge implementation for strategy B
 
-```swift
+```swift compile:27 imports:SwiftUI
 @MainActor
 @Observable
 final class TwoTranscriptStore {
@@ -2561,7 +2561,7 @@ throw.** The API is correct, your code compiles, the types check, and the output
 > has exactly that property: a `Task { }` created inside another task does *not* inherit
 > cancellation. So:
 
-```swift
+```swift compile:27
 /// Runs `body` in a context that does not observe the calling task's cancellation.
 ///
 /// 🟡 OUR IMPLEMENTATION of the semantics Apple's article describes. If
@@ -2671,7 +2671,7 @@ to start from if you want something running today.
 Every Speech, AVFoundation and Foundation call below is ✅ VERIFIED against an Apple page or sample.
 Structure, naming and error handling are ours. Provenance is annotated inline.
 
-```swift
+```swift compile:27
 //  LiveDictation.swift
 //  Requires: iOS 27 / iPadOS 27 / macOS 27 (physical device — not the Simulator)
 
@@ -3277,7 +3277,7 @@ Apple's sample calls its target `datagenerator`. Here is the shape, assembled fr
 API. This is a **macOS command-line target in your Xcode project** — add it once, run it whenever
 your vocabulary changes, commit the `.bin`.
 
-```swift
+```swift compile:27
 //  datagenerator/main.swift
 //  A macOS command-line target. Run on your Mac; commit the output.
 //
@@ -3706,7 +3706,7 @@ second or two of nothing followed by a burst of text.
 The fix is one call at the right moment — when the compose field gains focus, when the record screen
 appears, when the user starts holding the button:
 
-```swift
+```swift compile:27 imports:Speech
 // 🟡 Ours in composition; the call itself is ✅ SDK-verified. The former gap about the `in:`
 //    parameter closed 2026-07-29: the declaration is
 //    `func prepareToAnalyze(in audioFormat: AVAudioFormat?) async throws`, with an

@@ -1781,7 +1781,7 @@ Nothing upstream will hear about the failure.
 ⚠️ **Why this matters practically.** Every prose reconstruction of this method in circulation —
 including one in this project's own research notes before the sample was obtained — writes it as:
 
-```swift
+```swift illustrative
 // ❌ WRONG — this is the reconstruction, not the API.
 func searchableItems(forIdentifiers identifiers: [String]) -> [CSSearchableItem] { … }
 ```

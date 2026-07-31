@@ -483,7 +483,7 @@ presenter treats as a bug in her app, not in the framework.
 Putting §1.1 and §3.2 together gives a four-step ladder. Each step is cheap and answers a question
 before you pay for the next one.
 
-```swift
+```swift illustrative
 import CoreAI
 import Foundation
 
@@ -579,7 +579,7 @@ write a cache-eviction path:
 
 ### 4.1 The distinction, stated by Apple
 
-```swift
+```swift illustrative
 func loadFunction(named functionName: String) throws -> InferenceFunction?
 func functionDescriptor(for functionName: String) -> InferenceFunctionDescriptor?
 var functionNames: [String] { get }
@@ -614,7 +614,7 @@ uninformative branch.
 
 **Write it like this:**
 
-```swift
+```swift compile:27 imports:CoreAI
 enum ModelSetupError: Error {
     case functionNotFound(requested: String, available: [String])
     case functionLoadFailed(name: String, underlying: any Error)
@@ -1006,7 +1006,7 @@ switched away from it:
 Here is the descriptor pattern packaged so you write it once. Every member it touches is ✅ VERIFIED
 above; the assembly is mine.
 
-```swift
+```swift compile:27
 import CoreAI
 
 /// What a call site needs to know about one tensor argument.
@@ -1696,7 +1696,7 @@ adding the stride walk.
 
 ### 8.3 A stride-respecting writer you can actually reuse
 
-```swift
+```swift compile:27
 import CoreAI
 
 extension Span where Element == Int {
@@ -1866,7 +1866,7 @@ Two `guard`s, two different meanings — same shape as `loadFunction` in §4:
 > property is `nil` when the value contains an image instead of an array. **Accessing this property
 > consumes the value and transfers ownership of the array to the caller.**"*
 
-```swift
+```swift illustrative
 struct InferenceValue
 var kind: InferenceValue.Kind { get }        // .image or .ndArray
 var ndArray: NDArray? { get }                // ⚠️ consuming
@@ -1881,7 +1881,7 @@ enum Kind { case image; case ndArray }
 
 So this is a bug:
 
-```swift
+```swift illustrative
 guard let value = outputs.remove("prediction") else { … }
 if value.ndArray != nil {              // ⚠️ consumes here…
     let array = value.ndArray!         // …and this is a second consuming read
@@ -1890,7 +1890,7 @@ if value.ndArray != nil {              // ⚠️ consumes here…
 
 Check `kind` first, or bind once:
 
-```swift
+```swift illustrative
 guard let value = outputs.remove("prediction") else { throw … }
 guard value.kind == .ndArray else { throw … }        // cheap, non-consuming
 guard let array = value.ndArray else { throw … }     // consume exactly once
@@ -2899,7 +2899,7 @@ Because the beta SDK publishes no taxonomy beyond `AssetError`, correct Core AI 
 three properties: it **catches everything**, it **records enough to diagnose later**, and it
 **degrades rather than retrying blindly**.
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 import os
@@ -3055,7 +3055,7 @@ This puts §3, §4, §6, §8, §9 and §13 together into one type. It is **descr
 hardcodes a shape — so it survives a model re-export (§6.1). Every Core AI member it calls is
 ✅ VERIFIED in the sections above; the assembly is mine and is marked 🟡 RECONSTRUCTED as a whole.
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 import os
@@ -3404,7 +3404,7 @@ print("logits \(shape): \(logits.prefix(8))")
 > see §16.1). `import CoreAI` works because `CoreAI` is an umbrella re-export of `CoreAIDelegates`,
 > which re-exports the rest.
 
-```swift
+```swift illustrative
 import CoreAI      // iOS/iPadOS/macOS/Mac Catalyst/tvOS/visionOS/watchOS 27.0+ (Beta)
 
 // ───────── Model ─────────

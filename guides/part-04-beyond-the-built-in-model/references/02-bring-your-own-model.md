@@ -116,7 +116,7 @@ the same."*
 > where it appears in this guide. The *shape* is right; treat it as the outline, not as the
 > signatures.
 
-```swift
+```swift illustrative
 // 1. On-device Apple model                                   (339:16-17)
 let model = SystemLanguageModel()
 
@@ -936,7 +936,7 @@ nag you about.
 
 In practice:
 
-```swift
+```swift illustrative
 // MyApp/ModelBackends.swift
 import Foundation
 
@@ -1844,7 +1844,7 @@ The error is typed and carries the offending capability:
 
 Which makes this a usable runtime probe:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, *)
@@ -2066,7 +2066,7 @@ collect that value without scattering `#if` blocks through your app.
 > This is the strongest evidence in the corpus that "swapping the backend is one line" is how Apple's
 > own engineers write it, not marketing.
 
-```swift
+```swift compile:27
 import FoundationModels
 import Observation
 
@@ -2248,7 +2248,7 @@ everywhere.
 
 ### 10.1 The three initializers
 
-```swift
+```swift illustrative
 // 1 — any OpenAI-compatible server.  package: apple/foundation-models-utilities
 //     iOS/macOS/visionOS/watchOS 27.0
 import FoundationModels

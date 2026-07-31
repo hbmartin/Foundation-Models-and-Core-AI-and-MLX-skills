@@ -1319,7 +1319,7 @@ entry all the time, because it costs tokens on every request and dilutes the mod
 
 ### 11.1 `Skill` — two storages behind one type
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — Sources/FoundationModelsUtilities/Skills/Skill.swift
 public struct Skill {                                             // :65
     var name: String { storage.name }                             // :66  ← internal
@@ -1347,7 +1347,7 @@ synthesized tool.
 
 The two backing structs make the asymmetry concrete:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // ✅ VERIFIED — Skill.swift:232-246
 struct InstructionsSkill {                                        // :232
     let name: String
@@ -1507,7 +1507,7 @@ is no `Optional` flag in the API — the builder accepts a `Skill?` directly"*
 
 The consequence is a real, if minor, ergonomic trap:
 
-```swift
+```swift illustrative
 Skills(activations: activations) {
     Skill(name: "always", description: "…", prompt: "…")
 
@@ -1944,7 +1944,7 @@ cause of a chatty, permission-seeking assistant.
 
 ### 14.3 `defer { onCall(skill) }` — why the verb reads backwards
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — Skills.swift:293-319
 func call(arguments: GeneratedContent) async throws -> Prompt {
     let name = try arguments.value(String.self, forProperty: "skill")   // :294
@@ -2380,7 +2380,7 @@ model needs, do not make the model ask.** Origami's `TutorialInstructions` condi
 `OrigamiInstructions()` when `orchestrator.project.craftDomain == .origami` — no tool call, no extra
 inference, no schema, no activation state, no risk of the model choosing wrong:
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — the pattern, from Origami/Tutorial/Intelligence/TutorialInstructions.swift
 struct TutorialInstructions: DynamicInstructions {
     let orchestrator: Orchestrator

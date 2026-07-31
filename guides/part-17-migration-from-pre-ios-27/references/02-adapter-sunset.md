@@ -779,7 +779,7 @@ then you have thrown away the information about which of the two it was.
 If you are keeping a 26.x branch alive, this is the one change worth making to it: split the failure
 into two distinct cases so your telemetry can tell you which is happening in the field.
 
-```swift
+```swift compile:27
 // 26.x maintenance branch. Two failures, two error cases, two dashboards.
 enum AdapterFailure: Error {
     case packUnavailable(id: String, underlying: Error)   // a DOWNLOAD problem
@@ -1043,7 +1043,7 @@ The most useful evidence that this path is real is that Apple's code-along, havi
 
 After that edit, the instructions in Apple's demo collapse to approximately one sentence:
 
-```swift
+```swift compile:27
 let instructions = "Your job is to create an itinerary for the user."
 ```
 
@@ -1509,7 +1509,7 @@ Two lines of difference from a `SystemLanguageModel` session. That is genuinely 
 
 The type, ✅ verified from the same file:
 
-```swift
+```swift illustrative
 public struct CoreAILanguageModel: LanguageModel {
     public enum LoadMode: Sendable { case lazy; case eager }
     public typealias Executor = CoreAIExecutor
@@ -2034,7 +2034,7 @@ as the reason adapters ended.
 > ✅ **VERIFIED** — from the doc comment on `MLXLanguageModel`
 > (`Libraries/MLXFoundationModels/MLXLanguageModel.swift:304-337`):
 
-```swift
+```swift illustrative
 import MLXFoundationModels
 import MLXHuggingFace
 import MLXLMCommon

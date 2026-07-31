@@ -5,10 +5,11 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 
 | target | Xcode | SDK | triple |
 |---|---|---|---|
+| 26 | 26.6 (17F113) | 26.5 (25F70) | arm64-apple-macos26.5 |
 | 27 | 27.0 (27A5228h) | 27.0 (26A5388f) | arm64-apple-macos27.0 |
 | sim27 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios27.0-simulator |
 
-**Totals over 1350 Swift fences:** ELIDED 99 · STUB 56 · UNCLASSIFIED-FAIL 985 · UNCLASSIFIED-PASS 210
+**Totals over 1350 Swift fences:** ILLUSTRATIVE 155 · UNCLASSIFIED-FAIL 985 · VERIFIED 210
 
 **UNCLASSIFIED backlog (the metric): 985**
 
@@ -16,53 +17,53 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 
 | guide | fences | verified/pass | xfail-proven | illus./stub/elided | unclassified pass–fail | FAILING |
 |---|---|---|---|---|---|---|
-| part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md | 5 | 2 | 0 | 1 | 2–2 | 0 |
-| part-01-orientation-and-gating/references/02-platform-and-version-gating.md | 15 | 9 | 0 | 3 | 9–3 | 0 |
-| part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md | 58 | 10 | 0 | 8 | 10–40 | 0 |
-| part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md | 64 | 9 | 0 | 5 | 9–50 | 0 |
-| part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md | 37 | 7 | 0 | 2 | 7–28 | 0 |
-| part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md | 22 | 4 | 0 | 1 | 4–17 | 0 |
-| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 6 | 0 | 3 | 6–24 | 0 |
-| part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md | 30 | 10 | 0 | 1 | 10–19 | 0 |
-| part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md | 11 | 6 | 0 | 2 | 6–3 | 0 |
-| part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md | 21 | 6 | 0 | 2 | 6–13 | 0 |
-| part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md | 32 | 1 | 0 | 4 | 1–27 | 0 |
-| part-03-context-profiles-agentic/references/04-agentic-orchestration.md | 37 | 5 | 0 | 2 | 5–30 | 0 |
-| part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md | 11 | 4 | 0 | 2 | 4–5 | 0 |
-| part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md | 19 | 2 | 0 | 3 | 2–14 | 0 |
-| part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md | 28 | 4 | 0 | 7 | 4–17 | 0 |
-| part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md | 11 | 2 | 0 | 0 | 2–9 | 0 |
-| part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md | 8 | 3 | 0 | 0 | 3–5 | 0 |
-| part-06-evaluations/references/01-foundations-and-hill-climbing.md | 16 | 2 | 0 | 3 | 2–11 | 0 |
-| part-06-evaluations/references/02-model-judges-and-alignment.md | 26 | 3 | 0 | 4 | 3–19 | 0 |
-| part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md | 26 | 3 | 0 | 7 | 3–16 | 0 |
-| part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md | 21 | 5 | 0 | 6 | 5–10 | 0 |
-| part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md | 37 | 3 | 0 | 8 | 3–26 | 0 |
-| part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md | 21 | 3 | 0 | 7 | 3–11 | 0 |
-| part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md | 81 | 10 | 0 | 11 | 10–60 | 0 |
+| part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md | 5 | 2 | 0 | 1 | 0–2 | 0 |
+| part-01-orientation-and-gating/references/02-platform-and-version-gating.md | 15 | 9 | 0 | 3 | 0–3 | 0 |
+| part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md | 58 | 10 | 0 | 8 | 0–40 | 0 |
+| part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md | 64 | 9 | 0 | 5 | 0–50 | 0 |
+| part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md | 37 | 7 | 0 | 2 | 0–28 | 0 |
+| part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md | 22 | 4 | 0 | 1 | 0–17 | 0 |
+| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 6 | 0 | 3 | 0–24 | 0 |
+| part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md | 30 | 10 | 0 | 1 | 0–19 | 0 |
+| part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md | 11 | 6 | 0 | 2 | 0–3 | 0 |
+| part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md | 21 | 6 | 0 | 2 | 0–13 | 0 |
+| part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md | 32 | 1 | 0 | 4 | 0–27 | 0 |
+| part-03-context-profiles-agentic/references/04-agentic-orchestration.md | 37 | 5 | 0 | 2 | 0–30 | 0 |
+| part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md | 11 | 4 | 0 | 2 | 0–5 | 0 |
+| part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md | 19 | 2 | 0 | 3 | 0–14 | 0 |
+| part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md | 28 | 4 | 0 | 7 | 0–17 | 0 |
+| part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md | 11 | 2 | 0 | 0 | 0–9 | 0 |
+| part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md | 8 | 3 | 0 | 0 | 0–5 | 0 |
+| part-06-evaluations/references/01-foundations-and-hill-climbing.md | 16 | 2 | 0 | 3 | 0–11 | 0 |
+| part-06-evaluations/references/02-model-judges-and-alignment.md | 26 | 3 | 0 | 4 | 0–19 | 0 |
+| part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md | 26 | 3 | 0 | 7 | 0–16 | 0 |
+| part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md | 21 | 5 | 0 | 6 | 0–10 | 0 |
+| part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md | 37 | 3 | 0 | 8 | 0–26 | 0 |
+| part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md | 21 | 3 | 0 | 7 | 0–11 | 0 |
+| part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md | 81 | 10 | 0 | 11 | 0–60 | 0 |
 | part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md | 1 | 0 | 0 | 0 | 0–1 | 0 |
-| part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md | 3 | 2 | 0 | 1 | 2–0 | 0 |
-| part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md | 5 | 1 | 0 | 1 | 1–3 | 0 |
+| part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md | 3 | 2 | 0 | 1 | 0–0 | 0 |
+| part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md | 5 | 1 | 0 | 1 | 0–3 | 0 |
 | part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md | 4 | 0 | 0 | 2 | 0–2 | 0 |
 | part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md | 1 | 0 | 0 | 0 | 0–1 | 0 |
 | part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md | 1 | 0 | 0 | 0 | 0–1 | 0 |
 | part-12-mlx-python/references/05-serving-and-distributed.md | 3 | 0 | 0 | 2 | 0–1 | 0 |
-| part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md | 95 | 8 | 0 | 6 | 8–81 | 0 |
-| part-13-mlx-swift/references/02-generation-tools-and-caching.md | 79 | 3 | 0 | 16 | 3–60 | 0 |
-| part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md | 72 | 7 | 0 | 4 | 7–61 | 0 |
-| part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md | 19 | 1 | 0 | 2 | 1–16 | 0 |
-| part-15-shipping-and-operating/references/01-model-distribution-and-updates.md | 53 | 14 | 0 | 5 | 14–34 | 0 |
-| part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md | 31 | 2 | 0 | 4 | 2–25 | 0 |
-| part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md | 59 | 8 | 0 | 1 | 8–50 | 0 |
+| part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md | 95 | 8 | 0 | 6 | 0–81 | 0 |
+| part-13-mlx-swift/references/02-generation-tools-and-caching.md | 79 | 3 | 0 | 16 | 0–60 | 0 |
+| part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md | 72 | 7 | 0 | 4 | 0–61 | 0 |
+| part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md | 19 | 1 | 0 | 2 | 0–16 | 0 |
+| part-15-shipping-and-operating/references/01-model-distribution-and-updates.md | 53 | 14 | 0 | 5 | 0–34 | 0 |
+| part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md | 31 | 2 | 0 | 4 | 0–25 | 0 |
+| part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md | 59 | 8 | 0 | 1 | 0–50 | 0 |
 | part-16-adjacent-capabilities/references/02-app-schema-domains.md | 37 | 0 | 0 | 0 | 0–37 | 0 |
 | part-16-adjacent-capabilities/references/03-onscreen-awareness.md | 36 | 0 | 0 | 1 | 0–35 | 0 |
 | part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md | 25 | 0 | 0 | 1 | 0–24 | 0 |
-| part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md | 17 | 5 | 0 | 2 | 5–10 | 0 |
-| part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md | 17 | 2 | 0 | 2 | 2–13 | 0 |
-| part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md | 49 | 17 | 0 | 3 | 17–29 | 0 |
-| part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md | 46 | 16 | 0 | 5 | 16–25 | 0 |
-| part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md | 19 | 1 | 0 | 4 | 1–14 | 0 |
-| part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md | 8 | 4 | 0 | 1 | 4–3 | 0 |
+| part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md | 17 | 5 | 0 | 2 | 0–10 | 0 |
+| part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md | 17 | 2 | 0 | 2 | 0–13 | 0 |
+| part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md | 49 | 17 | 0 | 3 | 0–29 | 0 |
+| part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md | 46 | 16 | 0 | 5 | 0–25 | 0 |
+| part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md | 19 | 1 | 0 | 4 | 0–14 | 0 |
+| part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md | 8 | 4 | 0 | 1 | 0–3 | 0 |
 
 ## Guess-mode failures (triage input)
 
@@ -1055,14 +1056,9 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 ## Wrongness-candidates (possible xfail: markers — triage by hand)
 
 - `part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md:557` (#33-the-concrete-failure) — status UNCLASSIFIED-FAIL
-- `part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md:1073` (#62-the-body-must-be-pure-it-runs-more-than-once-per-turn) — status ELIDED
-- `part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md:1510` (#114-skillsbuilder-six-methods-and-one-if-you-cannot-write) — status ELIDED
 - `part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md:1156` (#72-read-only-by-default) — status UNCLASSIFIED-FAIL
 - `part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md:1407` (#54-chatsession-is-not-thread-safe-modelcontainer-is) — status UNCLASSIFIED-FAIL
-- `part-15-shipping-and-operating/references/01-model-distribution-and-updates.md:2811` (#92-how-it-actually-happens) — status UNCLASSIFIED-PASS
+- `part-15-shipping-and-operating/references/01-model-distribution-and-updates.md:2811` (#92-how-it-actually-happens) — status VERIFIED
 - `part-16-adjacent-capabilities/references/02-app-schema-domains.md:3213` (#141-silent-failure-intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) — status UNCLASSIFIED-FAIL
 - `part-16-adjacent-capabilities/references/03-onscreen-awareness.md:682` (#34-shape-c-lists-and-collections-appentityidentifierforselectiontype) — status UNCLASSIFIED-FAIL
-- `part-16-adjacent-capabilities/references/03-onscreen-awareness.md:1346` (#53-what-does-not-work-and-the-log-line-that-proves-it) — status ELIDED
-- `part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md:1784` (#92-the-exact-signature-and-it-is-not-what-you-would-write) — status ELIDED
-- `part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md:189` (#12-why-the-wrong-choice-is-expensive) — status ELIDED
-- `part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md:204` (#12-why-the-wrong-choice-is-expensive) — status UNCLASSIFIED-PASS
+- `part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md:204` (#12-why-the-wrong-choice-is-expensive) — status VERIFIED

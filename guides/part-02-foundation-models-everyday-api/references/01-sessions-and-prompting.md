@@ -329,7 +329,7 @@ spellings in the same project, so they are interchangeable at the call site. ✅
 initializer forms are attested: `SystemLanguageModel(useCase: .contentTagging)` (see
 [§5.3](#53-guided-generation)) and, newly, `SystemLanguageModel(guardrails:)`:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
 ```
 
@@ -367,7 +367,7 @@ uses this model for `@Generable` output anyway, so do not read its presence as p
 `init(model:tools:transcript:)` is how you resume a conversation across app launches, and how the
 iOS 26-era context-compaction pattern works:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // 26.0+
 func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
     let allEntries = originalSession.transcript
@@ -677,7 +677,7 @@ The **shape** is no longer reconstructed. ✅ **VERIFIED, verbatim** — Origami
 `Origami/Models/Orchestrator.swift:596-616`, shows the builder accepting an `if let` binding, string
 interpolation, and — the surprising one — **an array of `Prompt` values spliced in inline**:
 
-```swift
+```swift illustrative
             var imagePrompts: [Prompt] = []
             for photo in photos {
                 imagePrompts.append(try await photo.toPrompt())
@@ -910,7 +910,7 @@ bias the model."* If you are migrating, that is where your flag went.
 
 ### 5.2 Plain text
 
-```swift
+```swift compile:27
 import FoundationModels
 
 let session = LanguageModelSession {
@@ -1250,7 +1250,7 @@ anyone has published.
 
 ## 8. `isResponding` and the one-request-at-a-time contract
 
-```swift
+```swift illustrative
 // 26.0+
 final var isResponding: Bool { get }
 ```
@@ -1263,7 +1263,7 @@ final var isResponding: Bool { get }
 
 Apple's own sample, verbatim:
 
-```swift
+```swift compile:27 imports:FoundationModels,SwiftUI
 struct ShopView: View {
     @State var session = LanguageModelSession()
     @State var joke = ""
@@ -1326,7 +1326,7 @@ delays and cancellations in background tasks*. There is no documented API to rai
 
 ### 9.1 What changed
 
-```swift
+```swift illustrative
 final var transcript: Transcript { get set }     // 26.0 get; SET is new in 27.0
 ```
 
@@ -1346,7 +1346,7 @@ intent is an Apple Frameworks Engineer's answer on forum thread 835927, verbatim
 
 `Transcript` itself is a full collection:
 
-```swift
+```swift illustrative
 struct Transcript      // 26.0 (watchOS 27.0)
 // Conforms: BidirectionalCollection, Collection, Copyable, Decodable, Encodable, Equatable,
 //           Escapable, MutableCollection, RandomAccessCollection, RangeReplaceableCollection,
@@ -1505,7 +1505,7 @@ the timeline in [§10.3](#103-samplingmode).
 
 Properties:
 
-```swift
+```swift compile:27 imports:FoundationModels
 var sampling: GenerationOptions.SamplingMode?             // 26.0 — ✅ VERIFIED in the 26.5 interface
 var temperature: Double?                                  // 26.0 — ✅ VERIFIED
 var maximumResponseTokens: Int?                           // 26.0 — ✅ VERIFIED
@@ -1567,7 +1567,7 @@ and its two factory pages, with Apple's own explanations:
 **The readable projection (27.0-era).** These are enum-*like* structs: you could always construct
 them, but not inspect them. There is now a `kind`:
 
-```swift
+```swift illustrative
 // 27.0
 enum GenerationOptions.SamplingMode.Kind {
     case greedy
@@ -1723,7 +1723,7 @@ Token accounting is new in **27.0** and it exists because the session is no long
 
 ### 11.1 The type
 
-```swift
+```swift illustrative
 // 27.0
 struct LanguageModelSession.Usage {
     init(input: Usage.Input, output: Usage.Output, metadata: …)
@@ -1791,7 +1791,7 @@ list on the class page). The session-level property is also what WWDC26 session 
 > ✅ **VERIFIED, verbatim** — KV-caching article: *"determine your cache hit rate by dividing the
 > cached input tokens by the total input tokens."*
 
-```swift
+```swift compile:27 imports:FoundationModels
 extension LanguageModelSession.Usage {
     /// 0.0 … 1.0. Higher is better: it means the prefix survived.
     var cacheHitRate: Double {
@@ -1934,7 +1934,7 @@ them assuming text."* ✅ **VERIFIED** — SKILL.md pitfall #8.
 
 ### 12.3 Four segment types
 
-```swift
+```swift illustrative
 enum Transcript.Segment {
     case text(Transcript.TextSegment)               // "A segment containing text."
     case attachment(Transcript.AttachmentSegment)   // "A segment containing an attachment."   ← NEW in 27.0
@@ -1970,7 +1970,7 @@ entry for `CustomSegment`.
 **`CustomSegment` is a protocol, not a struct.** ✅ **VERIFIED** — Apple's
 `foundation-models-language-model-protocol` SKILL.md gives the declaration:
 
-```swift
+```swift illustrative
 public protocol CustomSegment: Sendable, Identifiable, Equatable, CustomStringConvertible,
   PromptRepresentable, InstructionsRepresentable
 {
@@ -2050,7 +2050,7 @@ Extracting plain text from segments is not free — a segment array can mix text
 and attachments. Apple's own internal helper in `foundation-models-utilities` is instructive both for
 what it does and what it drops:
 
-```swift
+```swift compile:27 imports:FoundationModels
 extension Sequence where Element == Transcript.Segment {
   var textContent: String {
     compactMap { segment in
@@ -2113,7 +2113,7 @@ This compiles against the **27.0** SDK and degrades to 26.0 if you drop the `usa
 instructions → streamed structured output → `isResponding` gating → user-initiated cancellation →
 the three-way error catch → token accounting.
 
-```swift
+```swift compile:27
 import SwiftUI
 import FoundationModels
 
@@ -2452,7 +2452,7 @@ Full treatment is a separate guide in this part; here is the minimum you need to
 **There are three error types**, and an Apple Frameworks Engineer gave the canonical catch order
 verbatim on forum thread 831404:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let session = LanguageModelSession()
 let stream = session.streamResponse(to: "Tell me about origami.")
 
@@ -2477,7 +2477,7 @@ samples ship a near-identical `Error+DisplayMessage.swift` that checks `SystemLa
 `Origami/Models/Error+DisplayMessage.swift:12-36`; the Spotlight sample's
 `Error+DisplayMessage.swift:11-32` is the same file minus the parsing clause:
 
-```swift
+```swift compile:27 imports:FoundationModels
 extension Error {
     /// A short message describing the error, suitable for display in the UI.
     var displayMessage: String {

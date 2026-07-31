@@ -596,7 +596,7 @@ device today, and what to fall back to when the runtime will not answer — not 
 **Read `contextSize`. Never hardcode.** The defensive shape that the shipping app above uses is the
 right one, and it generalises:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
@@ -746,7 +746,7 @@ works everywhere**.
 The honest use of `tokenCount(for:)` is as a *threshold trigger*, not as an exact ledger — you call it
 on the transcript, compare against a fraction of `contextSize`, and compact when you cross the line.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @available(iOS 26.4, macOS 26.4, visionOS 26.4, *)
@@ -847,7 +847,7 @@ This is the single most useful derived number in this guide, and Apple publishes
 > ✅ **VERIFIED** — the KV-caching article: *"determine your **cache hit rate** by dividing the
 > **cached input tokens** by the **total input tokens**."*
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)
@@ -1091,7 +1091,7 @@ which primitives were missing.
 Reconstructed in the shape a 26-targeting app would actually write it — this compiles against the
 26.4 SDK and does not require any 27 API:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// The iOS 26 idiom: meter, compact, retry once, rebuild.
@@ -2451,7 +2451,7 @@ actually do them.
 
 ### 12.1 Step 1 — Establish the ceiling at runtime
 
-```swift
+```swift compile:27 imports:FoundationModels
 let capacity = SystemLanguageModel.default.contextSize     // 26.4 API, back-deployed to 26.0
 let ceiling  = capacity > 0 ? capacity : 4_096             // documented floor as fallback
 let inputBudget = ceiling - 512                            // leave room for the answer
@@ -2464,7 +2464,7 @@ Never a literal. See §3.4 for why, and §3.3 for the disagreement that makes it
 These are paid on every request forever, so measure them once at development time and treat them as
 constants in your head:
 
-```swift
+```swift compile:27 imports:FoundationModels
 @available(iOS 26.4, macOS 26.4, visionOS 26.4, *)
 func auditFixedCosts(model: SystemLanguageModel = .default,
                      instructions: Instructions,
@@ -2512,7 +2512,7 @@ example.
 
 Two numbers, both cheap:
 
-```swift
+```swift illustrative
 // Alarm 1: are we near the ceiling?
 if try await meter.shouldCompact(session, threshold: 0.75) { … }
 
@@ -2624,7 +2624,7 @@ rebuild session from transcript             → cold cache — prewarm()
 
 ### 13.4 Overflow catch ladder (27.0)
 
-```swift
+```swift illustrative
 do {
     let response = try await session.respond(to: prompt)
     …

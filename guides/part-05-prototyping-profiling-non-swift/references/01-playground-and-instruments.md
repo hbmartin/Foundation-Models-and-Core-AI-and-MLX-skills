@@ -542,7 +542,7 @@ Apple's own usage examples:
 
 Wiring that into a real app is about fifteen lines:
 
-```swift
+```swift compile:27
 import FoundationModels
 import SwiftUI
 
@@ -674,7 +674,7 @@ The options mirror `SystemLanguageModel.Availability`:
 > ✅ **VERIFIED** — the four-case switch, from the code-along (`205:208-228`), with Apple's own guidance
 > for each case in the comments:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 let model = SystemLanguageModel.default
@@ -1708,7 +1708,7 @@ For 26.4 and later, two cheaper measurements that need no 27 API at all:
 
 A defensive read, from shipping community code:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // contextSize is available in the 26.4+ SDK; treat <= 0 as "unknown".
 let reported = SystemLanguageModel.default.contextSize
 let contextSize = reported > 0 ? reported : 4096

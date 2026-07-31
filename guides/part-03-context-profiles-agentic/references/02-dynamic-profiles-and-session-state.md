@@ -1070,7 +1070,7 @@ Apple says "each time the model is prompted", which reads as *once per turn*. It
 
 Concretely:
 
-```swift
+```swift illustrative
 // ❌ WRONG. Counter increments an unpredictable number of times per turn,
 //    and the increment itself changes what the body resolves to.
 var body: some DynamicProfile {
@@ -1107,7 +1107,7 @@ local in the body.
 So unlike `DynamicInstructionsBuilder`, the profile builder does **not** accept a bare `if` with no
 `else`. The two sanctioned shapes are:
 
-```swift
+```swift illustrative
 // ✅ switch over an enum — exhaustive, so exactly one branch always resolves
 switch orchestrator.mode {
 case .brainstorm: Profile { … }
@@ -1323,7 +1323,7 @@ No WWDC session mentions this, and it is the single most useful thing you can ad
 agentic feature during development. When a profile switch does not fire, or history vanishes, the diff
 between two consecutive snapshots tells you exactly which entry changed.
 
-```swift
+```swift compile:27
 import FoundationModels
 import Foundation
 
@@ -1724,7 +1724,7 @@ Three things to take from this:
 Here is the WWDC26 example — hiding a history transform behind a name — written against the verified
 API shapes above.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Drops tool-call and tool-output entries from the history that the model sees,
@@ -2515,7 +2515,7 @@ Apple's documentation attaches a related warning to `isResponding` itself:
 
 ### 14.5 A safe repair helper
 
-```swift
+```swift compile:27
 import FoundationModels
 
 extension LanguageModelSession {
@@ -2539,7 +2539,7 @@ bad moment becomes a retry rather than a failed response — you decide when to 
 
 A minimal, honest repair — drop a trailing entry that has no business being there:
 
-```swift
+```swift compile:27 imports:FoundationModels
 func droppingUnfinishedTail(_ transcript: Transcript) -> Transcript {
     var entries = Array(transcript)
     if case .toolCalls = entries.last {
@@ -2643,7 +2643,7 @@ unit-test in milliseconds, and the AI layer is downstream of it.
 
 ### 15.2 Session properties
 
-```swift
+```swift compile:27
 import FoundationModels
 
 extension SessionPropertyValues {
@@ -2804,7 +2804,7 @@ before the last four entries, for every persona, forever.
 
 ### 15.5 The custom modifier
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Presents a bounded, tool-traffic-free view of the history to this profile's model.

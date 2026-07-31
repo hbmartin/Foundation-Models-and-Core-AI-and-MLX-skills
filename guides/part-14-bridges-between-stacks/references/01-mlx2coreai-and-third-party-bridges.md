@@ -858,7 +858,7 @@ public struct ModelBundle: Sendable {
 }
 ```
 
-```swift
+```swift compile:27
 public enum BundleKind: String, Codable, Sendable, CaseIterable {
     case llm; case vlm; case diffusion; case segmenter
 }
@@ -2043,7 +2043,7 @@ Two more Python-side constraints, both ✅ verified:
 `scripts/benchmark_aimodel_sampling_coreai.swift` (351 lines) uses the **Swift `CoreAI` framework**
 directly:
 
-```swift
+```swift illustrative
 import CoreAI
 import Darwin
 import Foundation
@@ -2665,7 +2665,7 @@ let output = try await model.generate(
 
 This is the most transferable warning in the whole package, and the repo says it about itself.
 
-```swift
+```swift illustrative
 @Test("Runs an official Core AI VLM bundle when test assets are provided")
 func runsVisionLanguageBundle() async throws {
     let environment = ProcessInfo.processInfo.environment

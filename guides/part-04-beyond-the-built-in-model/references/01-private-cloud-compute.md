@@ -493,7 +493,7 @@ class is.
 
 Defensive read, following the pattern in shipping code (`AFMLLMClient.swift:140`, community):
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Returns the model's context size in tokens, or a conservative fallback.
@@ -625,7 +625,7 @@ Two live watchOS caveats:
 The line, verbatim from the documentation article
 (`notes/web/apple-docs-fm-evals-speech.md:1697-1701`):
 
-```swift
+```swift xfail:26 compile:27
 import FoundationModels
 
 // Create a session with the server-side model.
@@ -1180,7 +1180,7 @@ in (Origami reasons deeply for tutorial generation and not at all for term looku
 So this is a two-line instrument, and if you are shipping `.deep` you should have it in your logs
 from day one:
 
-```swift
+```swift compile:27
 import FoundationModels
 import os
 
@@ -1264,7 +1264,7 @@ The transcript shape is verified:
 SwiftUI view that reads `session.transcript` re-renders as entries arrive. Here is a progress
 affordance built on that:
 
-```swift
+```swift illustrative
 import SwiftUI
 import FoundationModels
 
@@ -1563,7 +1563,7 @@ next to the *choice*, not in a settings screen.
 Here is the whole pattern in one file: a state model, the button, the label, the upgrade affordance,
 and the error path. It is the four rules made concrete.
 
-```swift
+```swift compile:27
 import SwiftUI
 import FoundationModels
 
@@ -2495,7 +2495,7 @@ Circulating claims about this API that our sources contradict or fail to support
 
 ### 14.2 API surface
 
-```swift
+```swift illustrative
 // iOS 27.0 / iPadOS 27.0 / macOS 27.0 / watchOS 27.0 / visionOS 27.0
 final class PrivateCloudComputeLanguageModel
 // Conforms: Copyable, Escapable, LanguageModel, Observable, Sendable, SendableMetatype

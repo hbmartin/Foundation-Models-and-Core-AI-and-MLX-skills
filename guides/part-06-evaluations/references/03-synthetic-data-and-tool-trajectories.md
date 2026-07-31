@@ -301,7 +301,7 @@ appears on disk.
 > markers are elisions in the harvested transcription of the file, not in the source — the instruction
 > string is longer than what is reproduced here, and §5 shows what belongs in it.
 
-```swift
+```swift illustrative
 import Evaluations
 import Foundation
 import FoundationModels
@@ -635,7 +635,7 @@ becomes the normal case rather than the edge case.
 > by a human on a signed-in Mac — which is exactly what Apple's sample does — and check
 > `quotaUsage.isLimitReached` *before* starting a long run rather than discovering it at sample 60.
 
-```swift
+```swift compile:27 imports:Foundation,FoundationModels
 // Fail fast rather than halfway through a 100-sample run.
 let pcc = PrivateCloudComputeLanguageModel()
 guard case .available = pcc.availability else {
@@ -1124,7 +1124,7 @@ The fix was not a better prompt but a new tool.
 > ✅ **VERIFIED** — `335:224-225`: *"**`BookTaggingService` now takes a list of tools as input. I also
 > set the default to an empty array so my existing evaluation won't need any changes.**"*
 
-```swift
+```swift illustrative
 struct BookTaggingService {
     // Defaulting to [] means the existing evaluation compiles and behaves
     // identically, so the two runs differ in exactly one variable.
@@ -1517,7 +1517,7 @@ that costs ten minutes if you guess.
 
 > ✅ **VERIFIED** — verbatim from `SearchBooks.swift:46-74`:
 
-```swift
+```swift illustrative
     ModelSample(
         prompt: "gothic",
         expected: BookResults(books: [ … ]),
@@ -1550,7 +1550,7 @@ not actually hold.
 
 Applied to the Book Tracker assistant, the ordering constraint from §12.2 becomes:
 
-```swift
+```swift illustrative
 ModelSample(
     prompt: "Tell me when the gothic books in my library were published",
     expected: BookResults(books: [ … ]),
@@ -1774,7 +1774,7 @@ This is the headline capability and the reason the whole matcher enum is `Genera
 > fine**. The **`.naturalLanguage`** matcher **checks whether the value matches the intent, not the exact
 > string**."*
 
-```swift
+```swift illustrative
 ModelSample(
     prompt: "show me something cheerful",
     expected: BookResults(books: [ … ]),
@@ -1862,7 +1862,7 @@ failing, because a violation still produces a fluent answer.
 > ✅ **VERIFIED** — the form, from `SearchBooks.swift:344-359`:
 > `TrajectoryExpectation(unordered: [...], disallowed: [ToolExpectation("findSimilarBooks")])`.
 
-```swift
+```swift illustrative
 ModelSample(
     prompt: "Find cheerful books, but don't look for similar books",
     expected: BookResults(books: [ … ]),
@@ -2080,7 +2080,7 @@ one of them has to match. The cleanest way to guarantee it is to not have two ca
 tool evaluation has to build its own session — because it needs the transcript back — keep the
 construction in one factory shared by both.
 
-```swift
+```swift illustrative
 enum BookAssistant {
     static let instructions = "…"
 
@@ -2153,7 +2153,7 @@ against a transcript containing `searchBooks`.
 The generation instructions therefore have to carry a written specification of your tool surface. Not a
 summary — the names exactly as spelled, the arguments, and the dependencies between them.
 
-```swift
+```swift compile:27
 let toolSpec = """
     The app exposes exactly three tools. Use these names verbatim; do not invent others.
 
@@ -2205,7 +2205,7 @@ one you registered. The third is the one that catches §18.1's invented names, a
 > rules *at generation time* (rule 4 below), and it keeps the generating model filling in a
 > deliberately small schema instead of `TrajectoryExpectation`'s full generality.
 
-```swift
+```swift compile:27
 import Evaluations
 import FoundationModels
 

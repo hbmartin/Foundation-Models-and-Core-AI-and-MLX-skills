@@ -676,14 +676,15 @@ def refine_needed_imports(rows, toolchains, opts):
         if verdict == "pass":
             r["_needed_imports"] = []
             continue
-        # Binary-search would be overkill; drop imports one at a time.
+        # Binary-search would be overkill; drop imports one at a time. Whatever
+        # survives the drop test is needed — including Foundation.
         needed = list(r.get("_guess_imports", []))
         for mod in list(needed):
             trial = [m for m in needed if m != mod]
             verdict, _, _ = compile_variants(fence, Markers(), trial, tc, opts, False)
             if verdict == "pass":
                 needed = trial
-        r["_needed_imports"] = [m for m in needed if m not in ("Foundation",)] or needed
+        r["_needed_imports"] = needed
     return rows
 
 

@@ -234,7 +234,7 @@ turning it off removes the adapter regardless of SDK.
 There is a repo test that pins this. `Tests/MLXFoundationModelsTests/TraitMatrixTests.swift` is
 structured so that *compiling* it under a given trait state is the assertion:
 
-```swift
+```swift compile:27
 // Copyright © 2026 Apple Inc.
 //
 // TraitMatrixTests: symbol-surface + behavioral checks across the
@@ -476,7 +476,7 @@ site, into source text that references symbols from five different modules. Thos
 in scope **where you wrote the macro**, not where the macro was declared. The macro's own doc comment
 enumerates them (`Libraries/MLXHuggingFace/FoundationModelsMacros.swift:17-25`, verbatim):
 
-```swift
+```swift compile:27
 /// The expansion references symbols the caller must have in scope:
 /// ```swift
 /// import Foundation          // URL, Progress (via #hubDownloader)
@@ -586,7 +586,7 @@ the availability line and the `#externalMacro` clause. The whole file is wrapped
 There is a subtlety in the defaults that the source calls out explicitly and that you should read
 before you rely on either default (`FoundationModelsMacros.swift:35-40`, verbatim):
 
-```swift
+```swift compile:27
     // The `capabilities` / `configurationResolver` defaults mirror
     // `MLXLanguageModel.init(configuration:capabilities:configurationResolver:weightsLocation:load:)`.
     // The expansion forwards each argument only when the caller supplies it, so
@@ -729,7 +729,7 @@ full registry.
 
 ### 5.1 The signature
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 public struct MLXLanguageModel: FoundationModels.LanguageModel, Sendable {
 
@@ -928,7 +928,7 @@ own adapter uses the positional `LanguageModelCapabilities(caps)`. Both spelling
 
 ### 6.2 The adapter refuses to infer them, and says so twice
 
-```swift
+```swift compile:27 imports:FoundationModels
     /// Capabilities are declared explicitly by the caller at ``init(configuration:capabilities:configurationResolver:weightsLocation:load:)``
     /// and stored verbatim. The caller includes
     /// `.guidedGeneration`/`.toolCalling`/`.reasoning` as appropriate; the
@@ -956,7 +956,7 @@ chose. To close this gap: read `Libraries/MLXLMCommon/ReasoningHeuristics.swift`
 
 ### 6.3 What `.reasoning` actually switches — the sharpest doc comment in the repo
 
-```swift
+```swift compile:27
     /// Declaring `.reasoning` matters for request routing: the framework only
     /// forwards a `reasoningLevel` to executors that declare `.reasoning`, and
     /// auto-rejects one otherwise (on the developer's behalf) before `respond`
@@ -1056,7 +1056,7 @@ gap: run `MLXLanguageModelCapabilitiesTests` on a 27 SDK and add a `capabilities
 
 ### 7.1 The `Availability` enum
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 extension MLXLanguageModel {
 
@@ -1873,7 +1873,7 @@ are no zones and no closing pressure.
 
 **Mode resolution first** (`ToolCallingModeResolution.swift:14-45`, the whole file is 49 lines):
 
-```swift
+```swift compile:27 imports:FoundationModels
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 enum ToolCallingModeResolution {
     enum Error: Swift.Error, Equatable {
@@ -2397,7 +2397,7 @@ case where the model's logit dimension exceeds the tokenizer's vocab.
 
 ### 9.2 The three types you touch
 
-```swift
+```swift illustrative
 public final class GrammarTokenizer: @unchecked Sendable {
     public let vocabSize: Int
     public init(vocab: [String], vocabType: VocabType, eosTokenId: Int32) throws
@@ -2623,7 +2623,7 @@ EOS overlaps."*
 And the crucial guard — the zone bias only applies when the grammar actually constrains something
 (`:225-231`):
 
-```swift
+```swift illustrative
             // Only applied when the grammar's mask carries exclusions
             // (`needsApply == true`). When false, the grammar is in an
             // unconditional splice (all tokens forced by FF). Applying
@@ -2942,7 +2942,7 @@ on the template cache. To close this gap: bind a timing harness around
 
 ### 9.9 ⚠️ SILENT FAILURE: `flushLogs()` always returns `nil`
 
-```swift
+```swift compile:27
     /// xgrammar does not accumulate a log stream, so this always
     /// returns `nil`. Retained as a no-op so the diagnostic path in
     /// `GuidedGenerationLoop` stays shaped around an optional log
