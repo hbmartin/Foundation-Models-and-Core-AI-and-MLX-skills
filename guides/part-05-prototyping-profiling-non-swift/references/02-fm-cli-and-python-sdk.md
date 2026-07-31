@@ -189,6 +189,11 @@ Two independent sessions agree on the platform and the preinstalled status. Take
 > 🔴 **GAP — the installed path.** Nothing states where the binary lives (`/usr/bin/fm`?
 > `/usr/local/bin/fm`? a `xcrun`-brokered tool?), whether it is present without Xcode, or whether it
 > is gated on Apple Intelligence being enabled. `which fm` on a macOS 27 machine settles all three.
+> **One elimination, checked 2026-07-29:** on a macOS 26.5.2 host with the Xcode 27.0 beta
+> (27A5228h) installed, `xcrun --find fm` fails and no `fm` binary exists anywhere in
+> `Xcode-beta.app` — so `fm` is **not an Xcode-27-beta toolchain tool**. That is consistent with
+> Apple's claim that it ships with **macOS 27 itself** (which this host does not run; the
+> preinstall claim remains untested until someone checks on a 27.0 machine).
 > **Safe default meanwhile:** in any script, test for the tool before using it —
 > `command -v fm >/dev/null || { echo "fm not found (needs macOS 27)" >&2; exit 127; }`.
 
@@ -388,6 +393,13 @@ softened, and it deliberately contains no guesses.
 > That is the entire remediation. There is no substitute for it — not the documentation (no `fm`
 > documentation page exists in this corpus), not the session (it showed the screen and described it
 > in prose), not the forums.
+>
+> **Status check, 2026-07-29:** the shortcut everyone hopes for — that `fm` might ride along with
+> the Xcode 27 beta on a macOS 26 machine — is now **eliminated**. On a macOS 26.5.2 host with
+> Xcode 27.0 beta (27A5228h) installed, `xcrun --find fm` fails and an exhaustive search of
+> `Xcode-beta.app` finds no `fm` binary. `fm` is not part of the Xcode 27.0 beta toolchain;
+> per Apple's sessions it ships with **macOS 27 itself**, so the ninety-second run above genuinely
+> requires a machine on the OS beta. Every flag table in §2 keeps its attested-only status.
 >
 > **Safe default until then:** treat `fm` as an *interactive exploration tool* and keep it out of
 > automation you cannot babysit. If you must automate now, write the wrapper described in §4.3 —
@@ -866,7 +878,8 @@ Before compiling anything the backend runs five checks, each raising `SwiftTooli
 Check 3 is the one everyone hits, and it is an **open issue in Apple's repository**:
 
 > ✅ **VERIFIED** — `apple/python-apple-fm-sdk` issue #6, *"Build fails with Command Line Tools only —
-> Xcode.app should not be required"*, **open since 2026-03-07**, still open as of 2026-07-27.
+> Xcode.app should not be required"*, **open since 2026-03-07**, still open as of 2026-07-29 (two
+> comments, no merge).
 > Reporter's environment: macOS 26.3, M3 Max, Swift 6.2.3 from CLT, no Xcode.app. Their argument is
 > correct on the facts — **the build only ever calls `swift build`, never `xcodebuild`** — and they
 > report a local patch (require `swift --version >= 6.2` instead) that builds and passes *"text

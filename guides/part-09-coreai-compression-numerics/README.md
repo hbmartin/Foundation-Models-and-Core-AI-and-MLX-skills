@@ -253,7 +253,7 @@ transcripts*: `model-authoring/SKILL.md` (the four PSNR gates at `:94-99`, the s
 `model-compression-exploration/SKILL.md` and `model-deployment`. **`coreai-opt` documentation** — the
 quantization, palettization, pruning, utils, debugging and examples trees, source of every
 Apple-published number here. **GitHub issues and PRs** on both Apple repos, several with maintainer
-answers (#3, #7, #16, #38, #40, #41, #42/#44, #45, #52, #56), states as of 2026-07-27.
+answers (#3, #7, #16, #38, #40, #41, #42/#44, #45, #52, #56), states as of 2026-07-29.
 **WWDC26 session 325**, *"Dive into Core AI model authoring and optimization"* — used for narration,
 framing and the SAM3 story, and **never alone for a signature**; plus **Apple Tech Talk 111432** for
 the M5 numbers, which is a Tech Talk and not a WWDC26 session, has no published code block, and whose

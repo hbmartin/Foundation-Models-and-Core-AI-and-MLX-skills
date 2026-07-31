@@ -2,10 +2,22 @@
 
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
-**Series status:** **17-part published corpus, scope-audited as of 2026-07-28.** All 76 guides exist
-(17 part READMEs + 59 reference guides), and each contents list is expected to name only sections
-present in its file. Declared evidence gaps remain explicit rather than being counted as unwritten
-sections.[^series-scope]
+**Series status:** **17-part published corpus, scope-audited as of 2026-07-28; SDK-verification
+pass 2026-07-29.** All 76 guides exist (17 part READMEs + 59 reference guides), and each contents
+list is expected to name only sections present in its file. Declared evidence gaps remain explicit
+rather than being counted as unwritten sections.[^series-scope] On 2026-07-29 the series was
+verified against the real macOS **26.5 and 27.0-beta SDK Swift interfaces** (Xcode 27.0 beta
+`27A5228h`, captured in `notes/sdk-interfaces/` — including the Core AI SubFrameworks, the
+`_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels` cross-import overlays, and
+Xcode-bundled `Evaluations`), and every GitHub-tracked defect status was re-checked live.
+
+**Two cross-cutting indexes:**
+
+- **[The silent-failure index](SILENT-FAILURES.md)** — every ⚠️ callout in the series (1,765,
+  of which 1,407 describe a concrete silent failure), in one page, sorted by the symptom you
+  observe: wrong output, empty output, performance cliff, version drift, …
+- **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
+  presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
 
 ---
 
@@ -254,7 +266,11 @@ invented, and no gap has been quietly papered over with a plausible-looking iden
 The single largest cluster has one cause: **this series was written on macOS 26.5.2 / Xcode 26.6.**
 Anything that requires a shipping macOS 27 toolchain — `fm --help`, `xcrun coreai-build --help`, the
 Instruments 27 lane names, the `CoreAI` and `FoundationModels` `.swiftinterface` dumps — could not
-be checked, only reasoned about.
+be checked at writing time, only reasoned about. Two of those have since been captured from the
+Xcode 27.0 beta on this machine: the `.swiftinterface` dumps (2026-07-29, `notes/sdk-interfaces/`)
+and `xcrun coreai-build --help` (2026-07-31 — the tool turned out to ship in the optional **Metal
+Toolchain component**, not Xcode itself; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`),
+and the affected guides carry dated resolution notes.
 
 [`../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`](../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md) is the
 precise shopping list: seven independent items, each with the literal commands to run and the guides

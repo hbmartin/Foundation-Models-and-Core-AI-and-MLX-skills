@@ -1294,7 +1294,8 @@ Three effects, in decreasing order of how often they bite:
 > `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (OPEN at research time): affine
 > `gather_qmm` silently corrupts MoE output when gathered rows are `> 32768 && % 64 != 0`, and
 > separately when `K % 64 != 0` (which also hits `mxfp4`). It **cannot be reproduced on M1–M4**.
-> Fix PRs `#3922` (mlx) and `#1585` (mlx-lm, "pad sorted gather rows to 64") were open. Also
+> Fix PRs `#3922` (mlx) and `#1585` (mlx-lm, "pad sorted gather rows to 64") were open — `#3922`
+> still open on a 2026-07-31 `gh` re-check, as were issue #3856 and its sibling #3887. Also
 > **mlx#3912**, "fp quantized matmul corruption when the quantized dim isn't a multiple of 32".
 > If you are fine-tuning an MoE in 4-bit on M5-generation silicon, verify your checkout includes
 > those fixes before trusting a single loss curve. These are community-reported and
@@ -1302,10 +1303,10 @@ Three effects, in decreasing order of how often they bite:
 
 ### 5.4 The NAX caveat, stated sharply
 
-Four NAX (neural-accelerator) correctness fixes landed in `ml-explore/mlx` in the **three days**
-before 2026-07-27 — `#3912`, `#3922`, `#3924` — including a **missing `else` in `tile_matmad_nax`
-that silently miscompiles odd tile shapes**. NAX is the newest code path in the stack and it is
-sharp-edged.
+Four NAX (neural-accelerator) correctness fix PRs opened against `ml-explore/mlx` in the **three
+days** before 2026-07-27 — `#3912`, `#3922`, `#3924`, all three **still open and unmerged** on a
+2026-07-31 `gh` re-check — including a **missing `else` in `tile_matmad_nax` that silently
+miscompiles odd tile shapes**. NAX is the newest code path in the stack and it is sharp-edged.
 
 > **Safe default while this settles.** If your fine-tune produces a loss curve that looks *fine*
 > but generations that look wrong, and you are on M5-generation hardware, re-run a handful of
@@ -2512,7 +2513,7 @@ unless you pass `--dequantize`. DoRA's `fuse` additionally folds the magnitude:
 
 Note the duck-typing: `if hasattr(m, "fuse")`. Anything exposing a `fuse` participates —
 `LoRALinear`, `LoRASwitchLinear`, `LoRAEmbedding`, `DoRALinear`, `DoRAEmbedding`, and AFM 7's
-`FusedLoRALinear` (§13.9). Anything not exposing it (a plain `nn.Linear` from `--fine-tune-type
+`FusedLoRALinear`. Anything not exposing it (a plain `nn.Linear` from `--fine-tune-type
 full`) does not, which is why fusing a full fine-tune is a no-op (§4.3).
 
 ### 11.2 The flags

@@ -338,7 +338,15 @@ Use it when the module genuinely may not exist. In this stack that is three situ
 
 1. **`CoreAI` and its satellites.** Core AI is new in 27; there is no 26 SDK anywhere that has it.
    📏 **MEASURED BY US**: `#if canImport(CoreAI)` evaluates **false** on `MacOSX26.5.sdk`
-   (macOS 26.5.2 · Xcode 26.6 · 2026-07-28).
+   (macOS 26.5.2 · Xcode 26.6 · 2026-07-28). And on the 27 side, know what `canImport(CoreAI)`
+   is actually testing for: ✅ **SDK-verified** from the captured 27.0 interfaces (2026-07-29),
+   `CoreAI` is a one-line **umbrella** — `@_exported public import CoreAIDelegates`
+   (`CoreAI-27.0-macos.swiftinterface:5`) — and `CoreAIDelegates`, a **SubFramework** in the SDK,
+   `@_export`s `CoreAIAsset` + `CoreAICommon` + `CoreAICompiler` + `CoreAIRuntime`
+   (`CoreAIDelegates-27.0:5-8`), all built `-public-module-name CoreAI`. Practical consequences:
+   `import CoreAI` is the only import user code needs; the gate `canImport(CoreAI)` stands for the
+   whole family; and if a build log or linker error ever names `CoreAIDelegates` or
+   `CoreAIRuntime`, that is the same framework, not a missing dependency.
 2. **`FoundationModels` on watchOS.** See §3.2.
 3. **Cross-platform modules in a package that also builds on Linux** — `CoreImage`, `AVFoundation`,
    `FoundationNetworking`, `Darwin`. This is the classic use and both Apple packages in our corpus
@@ -513,18 +521,20 @@ recorded via `#warning`. The semantics are unambiguous:
 
 ### 4.3 What that means for the 26 → 27 boundary
 
-On the 26.5 SDK, FoundationModels is `1.5.2`. Apple asserts `_version: 2` is true on the 27.0 SDK.
-Combining those two facts:
+On the 26.5 SDK, FoundationModels is `1.5.2`. On the 27.0 beta SDK — measured 2026-07-29, no longer
+merely Apple-asserted — it is `2.0.62.1.402`, so `_version: 2` is true there. Combining the two
+measurements:
 
-> 🟡 **RECONSTRUCTED:** the FoundationModels module's user version **bumped its major component from
-> 1 to 2 for the 27 release**, and its minor component appears to track the OS minor — 26.5 → 1.5.x.
-> If that pattern holds, the 27.0 SDK reports something of the form `2.0.x`, and a hypothetical
-> 27.4 SDK would report `2.4.x`.
+> 📏 **MEASURED — updated 2026-07-29.** The 27.0 beta SDK has now been read
+> (`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`, Xcode 27.0 beta `27A5228h`):
+> the module declares **`-user-module-version 2.0.62.1.402`**. So the major component **did** cross
+> from 1 to 2 exactly at the 27 boundary, and `_version: 2` is measured-true on the 27.0 SDK —
+> that half of the earlier reconstruction is confirmed.
 >
-> The major-bump half of this is strongly supported: `_version: 2` being *the* 27-SDK test only
-> works if the major crossed 2 at exactly that boundary, and Apple states that it does. The
-> minor-tracks-OS-minor half rests on **a single data point (26.5 → 1.5.2)** plus the plausibility
-> of the scheme. Do not build anything load-bearing on it. §19 lists what would settle it.
+> The other half is retired: the minor does **not** simply track the OS minor. The 27 module moved
+> to a five-component scheme (`2.0.62.1.402` — compare `AppIntents`' `300.5.12.1.401` shape), so
+> "27.4 would report `2.4.x`" was the wrong extrapolation, and you should not predict any future
+> value from the OS version. §19.1 has the full measured table across the captured frameworks.
 
 Do **not** generalise the numbering across frameworks. It is per-module and Apple picks it. 📏
 **MEASURED BY US** on `MacOSX26.5.sdk`, same environment:
@@ -556,12 +566,14 @@ five-second check that replaces an afternoon of guessing.
 
 ### 4.4 🔴 GAP: this spelling is underscored and effectively undocumented
 
-> 🔴 **GAP — three things about `_version:` are unknown, and you should not pretend otherwise.**
+> 🔴 **GAP — two things about `_version:` are still unknown, and you should not pretend otherwise.**
+> (A third was closed 2026-07-29.)
 >
-> 1. **What the 27.0 SDK actually reports.** We measured `1.5.2` on 26.5 and inferred `2.0.x` on
->    27.0. Nobody in this corpus has read the 27 SDK's `swift-module-flags` line.
->    **Resolves with:** one command on a machine with Xcode 27 —
->    `find "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/FoundationModels.framework" -name '*.swiftinterface' -exec grep -o 'user-module-version [^ ]*' {} \;`.
+> 1. ~~**What the 27.0 SDK actually reports.**~~ ✅ **RESOLVED 2026-07-29** — measured
+>    **`2.0.62.1.402`** on the Xcode 27.0 beta's macOS 27.0 SDK
+>    (`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`, header line 3), via
+>    exactly the `find`/`grep` command this box used to prescribe. §19.1 has the cross-framework
+>    table.
 > 2. **Whether the spelling is stable.** The leading underscore is Swift's convention for
 >    "unofficial, may change". It appears in no Apple documentation page in this corpus and in no
 >    WWDC session. Its only Apple-authored appearances anywhere we can see are inside
@@ -2866,21 +2878,25 @@ Work down this list against your own repository. Each item names the section tha
 
 Everything this guide could not verify, what it would take to close each, and what to do meanwhile.
 
-### 19.1 What the 27 SDK reports for `-user-module-version`
+### 19.1 What the 27 SDK reports for `-user-module-version` — ✅ RESOLVED 2026-07-29
 
-**Unknown.** We measured `1.5.2` on `MacOSX26.5.sdk` and inferred `2.0.x` for 27.0 from the fact
-that Apple's own gate uses `_version: 2`. Nobody in this corpus has read the 27 SDK's
-`swift-module-flags` line.
+**Answered, by exactly the command this section prescribed**, run against the Xcode 27.0 beta
+(`27A5228h`) macOS 27.0 SDK and captured to
+`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface` (header line 3):
 
-**Resolves with**, on a machine with Xcode 27:
+> **`FoundationModels` in the macOS 27.0 beta SDK declares `-user-module-version 2.0.62.1.402`.**
 
-```bash
-find "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/FoundationModels.framework" \
-  -name '*.swiftinterface' -exec grep -o 'user-module-version [^ ]*' {} \; | sort -u
-```
+So `canImport(FoundationModels, _version: 2)` is **measured true** on the 27.0 SDK
+(`2.0.62.1.402 >= 2.0.0`), no longer only Apple-asserted. Two refinements to §4.3's inference:
+the **major-crossed-2-at-the-27-boundary** half is confirmed; the **minor-tracks-OS-minor** half
+(`1.5.x` on 26.5 → so `2.4.x` on a 27.4) now looks *wrong in form* — the 27 module uses a
+**five-component** scheme (`2.0.62.1.402`, the same shape `AppIntents` uses), so do not predict
+future values from the OS version. For the record, the other captured 27-era dumps report:
+`Vision 10.0.39`, `Speech 3600.74.1`, `AppIntents 301.0.45.4.401`, `CoreSpotlight 2454`,
+`Evaluations 25061.1`, and the Core AI family `3600.79.1`.
 
-**Safe default:** `_version: 2`, unchanged. It works regardless of what the exact patch component
-turns out to be, because the comparison is `>=`.
+**Safe default:** `_version: 2`, unchanged — now on measurement rather than assertion, and still
+correct whatever the trailing components do, because the comparison is `>=`.
 
 ### 19.2 Whether the `_version:` spelling is stable
 

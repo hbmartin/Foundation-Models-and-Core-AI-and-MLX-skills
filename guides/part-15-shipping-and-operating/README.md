@@ -92,8 +92,9 @@ The operational guide for how a model reaches a device and how it gets replaced 
 problem, the feature-introduction screen (which does three jobs at once and is where you hide
 specialization latency), delivery, `coreai-build compile` and per-architecture `.aimodelc` variants,
 specialization and its cache, the update sequence, storage hygiene, app groups, and the App Store
-reality. It ends with a checklist and **twelve declared gaps collected in one table** (§14), each
-with what would close it and a safe default. Two numbers worth carrying in from §4.5: omitting
+reality. It ends with a checklist and **twelve declared gaps collected in one table** (§14) — two
+of them closed 2026-07-29 against the captured beta SDK interface — each with what would close it
+and a safe default. Two numbers worth carrying in from §4.5: omitting
 `--architecture` emitted **~20 Mac variants totalling 34 GB** on one measured export, and each
 `.aimodelc` runs about **2× the size of its source** `.aimodel`.
 
@@ -116,10 +117,17 @@ with what would close it and a safe default. Two numbers worth carrying in from 
 > adapter-specific and therefore dead in 27. The guide's answer is a seam: build against a delivery
 > protocol you own, implement it with `URLSession`, swap in Background Assets later without touching
 > any Core AI code. Also open here: the authoritative `deviceArchitectureName` value set (community
-> sources actively *disagree* about the M4 Max), `AIModelError` — which is not a documented symbol and
-> surfaces as `CoreAIDelegates.AIModelError error 3` — whether deleting an in-use cache entry throws
-> or defers (Apple's reference page and Apple's article contradict each other), and the fact that
-> there is **no progress API for specialization** and **no API to size or locate the Core AI cache**.
+> sources actively *disagree* about the M4 Max), and whether deleting an in-use cache entry throws
+> or defers (Apple's reference page and Apple's article contradict each other). Two former unknowns
+> were settled 2026-07-29 against the captured macOS 27.0 beta SDK interface: `AIModelError` (the
+> `CoreAIDelegates.AIModelError error 3` breadcrumb) is confirmed **non-public** — the loading APIs
+> throw untyped, so there is nothing to pattern-match — and the **absence** of any progress API for
+> specialization and of any API to size or locate the Core AI cache is now SDK-confirmed, not just
+> unindexed (§5.3, §6.4, §11.6). And a 2026-07-31 resolution: `coreai-build`, absent from the bare
+> Xcode 27.0 beta install when checked 2026-07-29, turns out to ship in the optional **Metal
+> Toolchain component** — its full `--help` is now captured, and probing it enumerated the 24 valid
+> `--architecture` codes, though the code→*device* mapping (the M4 Max disagreement above) remains
+> community-only (§4.2).
 
 ### [15.2 — Memory, jetsam, thermals, energy, and measuring honestly](references/02-memory-thermals-and-honest-benchmarking.md)
 

@@ -1,0 +1,8 @@
+Target dependency graph (3 targets)
+Target 'AllIncludingTests' in project 'Aggregate'
+➜ Explicit dependency on target 'ProbesTests-product' in project 'Probes'
+➜ Dependency on target 'ProbesTests-product' in project 'Probes' via transitive dependency through 'ProbesTests-test-runner'
+➜ Explicit dependency on target 'ProbeSupport' in project 'Probes'
+Target 'ProbesTests-product' in project 'Probes'
+➜ Explicit dependency on target 'ProbeSupport' in project 'Probes'
+Target 'ProbeSupport' in project 'Probes' (no dependencies)

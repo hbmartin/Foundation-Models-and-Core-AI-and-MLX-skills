@@ -750,6 +750,13 @@ bundle does not update itself. `models/README.md:173` is unambiguous:
 > usage. If you compile a model, replace the corresponding asset in the bundle directory and update
 > `metadata.json` to reference the new filename."*
 
+> ✅ **Availability, resolved 2026-07-31:** `coreai-build` **is runnable after all** — it ships in
+> the optional **Metal Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), not
+> in Xcode-beta.app itself, which is why a 2026-07-29 check of the bare beta (27A5228h) found
+> `xcrun --find coreai-build` failing. With the component installed the `--help` Apple's README
+> points at runs and is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; see
+> 7.2 §13 for the full surface.
+
 The reader's error message spells out the fix (✅ `ModelBundle.swift:103-109`):
 
 > `Asset 'main' not found at …. If you compiled this model with 'xcrun coreai-build compile', update
@@ -3731,6 +3738,6 @@ signature.*
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

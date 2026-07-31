@@ -3277,7 +3277,7 @@ device claim reach a card."*
 | A **Hugging Face checkpoint** in *any* family | a Core AI bundle | **re-author + `coreai_torch`** ([Part 10 g3](../../part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md)) | The path Apple supports and the zoo documents. Slowest to start, only one with a real safety net |
 | An **existing Core AI bundle** you did not build | to run it | `LanguageBundle` / `CoreAILanguageModel` ([Part 7 g4](../../part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md)) | Nothing in this guide is needed |
 | A **VLM** (image + text) | a Core AI bundle | **Apple's exporter**, consumed via `swift-lm`'s adapter pattern (§9.3–§9.7) | `mlx2coreai` writes only `kind: "llm"`. 🔴 We have no read of how Apple's VLM exporter is invoked (§14) |
-| A model you want on the **Neural Engine** | ANE execution | **not these bridges** | ANE needs a multi-entrypoint or chunked-static structure (§5.5, §10.2) and palettized weights. `mlx2coreai` emits a single dynamic `main` and does no compression at all |
+| A model you want on the **Neural Engine** | ANE execution | **not these bridges** | Apple's ANE LLM recipes use a multi-entrypoint or chunked-static structure plus palettized weights (§5.5, §10.2 — a `coreai-models` loader convention, not a framework routing contract). `mlx2coreai` emits a single dynamic `main` and does no compression at all |
 
 ### 12.2 When the honest answer is "re-author from the checkpoint"
 
@@ -3571,6 +3571,6 @@ most likely to still be true in six months.
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

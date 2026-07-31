@@ -218,15 +218,25 @@ You cannot file one on GitHub. `README.md:12` and `CONTRIBUTING.md` both route y
 ✅ `CONTRIBUTING.md` also asks, in its repro checklist, that you *"Run
 `session.logFeedbackAttachment` and serialize to a JSON file."*
 
-> 🔴 **GAP — `session.logFeedbackAttachment`.** This symbol is named exactly once in the entire
-> corpus, in `CONTRIBUTING.md`. It is not defined in this repository, does not appear in any Apple
-> sample project, any documentation page harvested for this series, or any WWDC transcript. We cannot
-> say whether it is a property or a method, what it returns, whether it is `async`, or which OS
-> version introduced it. **What would resolve this:** the `LanguageModelSession` symbol index on
-> `developer.apple.com`, or a header dump from a 27.0 SDK. **Safe default meanwhile:** attach
-> `session.transcript` instead — `Transcript` is `Encodable` (✅ confirmed against Apple's Origami
-> sample), so `try JSONEncoder().encode(session.transcript)` gives you a serialisable repro artifact
-> today.
+> ✅ **RESOLVED (2026-07-29) — `session.logFeedbackAttachment` is a real `LanguageModelSession`
+> method family, read from the 27.0 interface.** Three overloads, all synchronous (not `async`),
+> all `@discardableResult`, all returning **`Data`** (the JSON to attach to a Feedback report) —
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3408-3450`):
+>
+> ```swift
+> func logFeedbackAttachment(sentiment: LanguageModelFeedback.Sentiment?,
+>                            issues: [LanguageModelFeedback.Issue] = [],
+>                            desiredOutput: Transcript.Entry? = nil) -> Data
+> // plus two conveniences, @backDeployed(before: iOS 26.1, macOS 26.1, visionOS 26.1):
+> func logFeedbackAttachment(sentiment:issues:desiredResponseText: String?) -> Data
+> func logFeedbackAttachment(sentiment:issues:desiredResponseContent:
+>                            (any ConvertibleToGeneratedContent)?) -> Data
+> ```
+>
+> Floor: the extension is `@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0)`, so it is
+> a 26-era API, not 27-only — `CONTRIBUTING.md` was citing a real symbol all along. Attaching
+> `try JSONEncoder().encode(session.transcript)` remains a fine *additional* artifact, but the
+> feedback attachment is the one Apple's tooling expects.
 
 ### 1.3 What "experimental" means here, concretely
 
@@ -567,17 +577,18 @@ Pass `SystemLanguageModel()` unless you have measured that it is not good enough
 > Origami sample writes `var serverModel = SystemLanguageModel()` and never writes
 > `SystemLanguageModel.default` anywhere (`Origami/Models/OrchestratorProfile.swift:11-75`).
 
-> 🔴 **GAP — what happens when the summariser call fails.** The hook body is inside an
-> `onPrompt { }` closure that performs `try await session.respond(...)`. We have not seen the
-> declaration of `.onPrompt`, so we cannot say whether it is `throws`, whether a thrown error
-> propagates out of the user's `respond(to:)` call, whether it aborts the turn, or whether it is
-> swallowed. No test in the repository exercises a failing summariser — `SummarizeHistoryTests.swift`
-> has five tests and none of them makes the model throw. **What would resolve this:** the
-> `/documentation/foundationmodels/languagemodelsession/dynamicprofile/onprompt(_:)` symbol page, or
-> a 27.0 SDK header. **Safe default meanwhile:** treat a summariser failure as capable of failing the
-> user's turn. Wrap your call site in the same error handling you would use for any generation, and
-> pass a model whose availability you have already checked — do not, for example, pass a
-> `PrivateCloudComputeLanguageModel` to the summariser in a code path that is meant to work offline.
+> ✅ **RESOLVED on the declaration (2026-07-29); the behaviour follows.** `.onPrompt`'s closure **is**
+> `async throws` — `func onPrompt(perform action: @escaping (Transcript.Prompt) async throws ->
+> Void) -> some DynamicProfile`, with a zero-argument forwarding overload — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:939-945`). Combined with Apple's documented rule
+> that *"throwing an error inside a life cycle callback propagates to the caller's
+> `respond(to:options:)`"*, a failing summariser **fails the user's turn**: the error surfaces at
+> your `respond` call site. It is not swallowed. No test in the repository exercises this
+> (`SummarizeHistoryTests.swift` has five tests and none makes the model throw), so the exact
+> transcript state after such a failure is still unobserved — `TranscriptErrorHandlingPolicy`
+> applies. **Practical rule unchanged:** wrap your call site in the same error handling you would
+> use for any generation, and pass a model whose availability you have already checked — do not
+> pass a `PrivateCloudComputeLanguageModel` to the summariser in a code path meant to work offline.
 
 ---
 
@@ -1140,18 +1151,18 @@ modifiers exercise, `history` supports `lastIndex(where:)`, `prefix(upTo:)`, `su
 `[Transcript.Entry]`** (✅ `SummarizeHistory.swift:153` assigns an array literal). So it behaves as a
 `RandomAccessCollection` of `Transcript.Entry` with a settable projection.
 
-> 🔴 **GAP — the concrete type of `@SessionProperty(\.history)`.** One local documentation mirror
-> types it as `[Transcript.Entry]` (`DynamicSessions.md:118-119` writes
-> `@SessionProperty(\.history) var history: [Transcript.Entry]`), but the utilities package always
-> declares it *without* a type annotation — `@SessionProperty(\.history) private var history` — which
-> is what you would write if the projected type were a dedicated `History` struct rather than a plain
-> array. Session 242 calls it *"a window into the transcript"* (242:72), which reads like a struct.
-> We cannot resolve this. **What would resolve it:** the `SessionPropertyValues.history` symbol page,
-> or a 27.0 SDK header. **Safe default meanwhile:** the code above avoids the question by using only
-> `Collection` operations plus assignment-from-array — both of which are proven by Apple's own
-> modifiers. If `history` turns out to be an `Array`, `Array(history.dropFirst(cut))` still compiles;
-> if it is a custom `Collection`, it still compiles. Do not write `history[3]` with an `Int`
-> subscript; use `history.index(_:offsetBy:)` as above.
+> ✅ **RESOLVED (2026-07-29) — the concrete type is `ArraySlice<Transcript.Entry>`.** The 27.0
+> interface declares `SessionPropertyValues.history: ArraySlice<Transcript.Entry>` with
+> `get`/`set`/`_modify` (✅ **SDK-verified**,
+> `FoundationModels-27.0-macos.swiftinterface:1026-1031`), backed by `Transcript.history:
+> ArraySlice<Transcript.Entry>` on the transcript itself (`:2641-2645`). Neither the mirror's
+> `[Transcript.Entry]` nor a dedicated `History` struct — it is a slice, which explains everything
+> observed: all `Collection` operations work, assignment from an array literal works (an
+> `ArraySlice` is `RangeReplaceableCollection`-assignable via the setter), and *"a window into the
+> transcript"* is literally what an `ArraySlice` is. Two consequences: `history[3]` with a raw
+> `Int` really is unsafe — a slice's indices need not start at zero; keep using
+> `history.index(_:offsetBy:)` — and `Array(history.dropFirst(cut))` compiles exactly as written
+> above.
 
 **Do the work in `.onPrompt`, not in `body`.** The `body` of a `DynamicProfile` or a
 `DynamicProfileModifier` is a pure declarative projection — it can be evaluated more than once per
@@ -1361,14 +1372,15 @@ struct PromptSkill {                                              // :241
 no-op unless the storage is `.instructions`. This is not a policy decision you can override; it falls
 out of what a prompt skill *is* (§12).
 
-> 🔴 **GAP — `AnyDynamicInstructions`.** Used at `Skill.swift:183`, `:223` and `:235` as the erased
-> storage for an instructions skill's body. It is **not defined in this repository**, so it is a
-> framework type — but we have never seen its declaration, its availability annotation, or whether
-> it is public API you may use directly. Its initializer evidently accepts `some DynamicInstructions`
-> (`Skill.swift:183` wraps `Instructions(instructions)`). **What would resolve this:** the
-> `/documentation/foundationmodels/anydynamicinstructions` page, or a 27.0 SDK header. **Safe default
-> meanwhile:** do not reach for it. Use the `@DynamicInstructionsBuilder` initializer (below), which
-> does the erasure for you.
+> ✅ **RESOLVED (2026-07-29) — `AnyDynamicInstructions` is public framework API.** Declared
+> `public struct AnyDynamicInstructions : DynamicInstructions` with
+> `public init(_ dynamicInstructions: any DynamicInstructions)`, `typealias Body = Never`, and it
+> is the registered `@_typeEraser` for the `DynamicInstructions` protocol — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:595-618`). Availability: iOS/macOS/visionOS/watchOS
+> 27.0, no tvOS. There is also an `init(erasing:)` convenience taking `some DynamicInstructions`
+> (`:606-608`) — the form `Skill.swift:183` relies on. So you *may* use it directly; the
+> `@DynamicInstructionsBuilder` initializer (below) still does the erasure for you and is the
+> nicer spelling.
 
 ### 11.2 The four `Skill` initializers
 
@@ -2887,7 +2899,8 @@ token-usage and duration lanes (`243:93`, `243:130`).
 
 **Apple documentation mirrors** (`AppleFoundationModels/` doc set): `DynamicSessions.md` — the six
 lifecycle modifiers verbatim (`:92-101`) and the `@SessionProperty(\.history)` type annotation
-(`:118-119`, and see §9's 🔴 GAP on why it conflicts with the package's usage) ·
+(`:118-119` — its `[Transcript.Entry]` annotation is now known to be wrong: the projected type is
+`ArraySlice<Transcript.Entry>`, §9) ·
 `OptimizingKV.md` — append-preserves / rewrite-invalidates (`:28`, `:32`), profile switch as full
 prefix change (`:100`), the cache-hit metric (`:171`) · `RuntimePerformance.md:27`.
 
@@ -2909,10 +2922,13 @@ places in this guide the sources conflict and the guide says which wins:
    session-wide `@SessionProperty(\.history)` instead. Both are Apple, and neither is wrong — but the
    consequence is real and undocumented, so §8 states it plainly rather than picking a winner.
 
-**Open 🔴 GAPs declared in this guide, collected:** `session.logFeedbackAttachment` (§1.2) · whether
-`.onPrompt` is `throws` and what a failing summariser does to the user's turn (§3.4) · outside-in
-composition ordering, documented three times by one author and tested zero times (§4) · why
-`.instructions` survives a rolling window (§7) · the concrete type behind
-`@SessionProperty(\.history)` (§9) · `AnyDynamicInstructions` (§11.1) · whether real models
-deactivate skills unprompted (§13.3) · what happens when a model calls a tool from a
-just-deactivated skill (§16).
+**Open 🔴 GAPs declared in this guide, collected:** outside-in composition ordering, documented
+three times by one author and tested zero times (§4) · why `.instructions` survives a rolling
+window (§7) · whether real models deactivate skills unprompted (§13.3) · what happens when a model
+calls a tool from a just-deactivated skill (§16). **Closed on 2026-07-29 against
+`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`:**
+`session.logFeedbackAttachment` — three synchronous `Data`-returning overloads, 26.0-era
+(§1.2, `:3408-3450`) · `.onPrompt` is `async throws`, so a failing summariser fails the turn
+(§3.4, `:939-945`) · `@SessionProperty(\.history)` projects `ArraySlice<Transcript.Entry>`
+(§9, `:1026-1031`) · `AnyDynamicInstructions` is public API, the protocol's registered type
+eraser (§11.1, `:595-618`).

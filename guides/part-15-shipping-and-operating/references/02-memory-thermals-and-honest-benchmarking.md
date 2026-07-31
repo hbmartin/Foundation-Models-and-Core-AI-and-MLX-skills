@@ -335,7 +335,11 @@ in `mlx-swift-examples` enables it (✅ **VERIFIED**, `notes/repos/mlx-swift-exa
 relevant if you want long GPU work to survive backgrounding; it is Part 15 guide 1's territory but
 it belongs on the same checklist. The separate
 `background-tasks.continued-processing.inference` entitlement is required for background Neural
-Engine access through Core AI, Core ML, or MPS Graph. These entitlements authorize background
+Engine access through Core AI, Core ML, or MPS Graph — ✅ **VERIFIED (Apple docs)**, verbatim from
+the entitlement page: *"The system also requires the entitlement for any Neural Engine access while
+your app is in the background, regardless of whether it's running a continued background task. You
+can perform inference with Core AI, Core ML, or Metal Performance Shaders
+Graph."*[^background-inference-entitlement] These entitlements authorize background
 hardware access; they do **not** set inference priority or force placement on a compute unit. Keep
 placement preferences in Core AI `SpecializationOptions` and verify actual placement in
 Instruments.[^background-inference-entitlement]

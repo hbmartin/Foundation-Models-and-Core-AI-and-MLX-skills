@@ -5,8 +5,14 @@
 cooperative tensors as `matmul2d` **inputs** in **26.3** (the header's own gate macro says **26.2** —
 both are true, and guide 11.1 §1 reconciles them); 4-bit and 8-bit integer tensor element types in
 **26.4**. Xcode 27 adds int2, FP4, FP8, the E8M0 scale datatype, and `MTLTensor` auxiliary scale
-planes.[^metal27-multiplane] You need **Metal 4** (`__METAL_VERSION__ ≥ 400`) and a toolchain that
-defines `__HAVE_TENSOR__`. The 26.x surface runs on **every Apple GPU from M1 onward** — Apple states
+planes — and the macOS 27.0 beta SDK carries the shader-side half: the `matmul2d` support matrix
+gains int2b/uint2b, FP4 (e2m1) and FP8 (e4m3 *and* e5m2) operand rows, blockwise ue8m0 scale planes
+land in the implementation headers, and a new deployment gate
+`__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0` appears (checked 2026-07-29; guide 11.1 §0.2,
+§1.2).[^metal27-multiplane] You need **Metal 4** (`__METAL_VERSION__ ≥ 400`) and a toolchain that
+defines `__HAVE_TENSOR__` — toolchain-verified 2026-07-31: `-std=metal4.0` defines it, and
+`-std=metal4.1` additionally defines `__HAVE_TENSOR_MULTIPLANE__` and the FP4/FP8 format types the
+27.0 scale planes need (guide 11.1 §2.2). The 26.x surface runs on **every Apple GPU from M1 onward** — Apple states
 the API is portable and falls back to optimised shader implementations where there is no neural
 accelerator. M5-class hardware is a fast path, not a requirement.
 
@@ -25,7 +31,11 @@ Xcode 27.** Session 330 accurately describes a single `MTLTensor` carrying quant
 scale plane whose `blockFactors` define blockwise dequantization.[^wwdc330] Xcode 27's shipped
 `MTLTensor.h` provides `MTLTensorPlaneTypeScales`, `MTLTensorAuxiliaryPlaneDescriptor`, an auxiliary
 plane descriptor map, and `MTLTensorDescriptor.auxiliaryPlanes`; its MPP type mapping accepts int2,
-FP4, FP8, and E8M0 operands.[^metal27-multiplane]
+FP4, FP8, and E8M0 operands. The macOS 27.0 beta SDK's MPP headers confirm the shader-side half on
+disk: `MPPTensorOpsMatMul2d.h:62-83` lists the new operand rows, and
+`__impl/MPPTensorOpsMatMul2dImpl.h:6241-6316` enforces the scale-plane contract — ue8m0 only, block
+size 32, left untransposed / right transposed, never on the destination (checked 2026-07-29; guide
+11.1 §0.2 has the full matrix and constraints).[^metal27-multiplane]
 
 The older cooperative-tensor technique remains useful for custom formats and deployment targets that
 cannot use the 27.0 multiplane surface: dequantize inside the kernel and feed the dense cooperative
@@ -71,10 +81,10 @@ What falls out is a surface with an unusual failure profile:
 | If your situation is… | Read | Why |
 |---|---|---|
 | "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.3](references/02-cooperative-tensors-and-flash-attention.md) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
-| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | It is 26.x throughout; §1.5 is the deployment-target cheat sheet |
+| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
 | `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
 | "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
-| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists. Real spellings: templated `slice<…>()` and `is_valid_element` |
+| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
 | Compile error deep inside `__mutmul2d_detail` | [11.2 §3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §6.3](references/01-tensorops-and-quantized-operands.md) | The input getters take **element** types; the destination getter takes **operand** types |
 | "My K loop returns only the last chunk" | [11.1 §3.5](references/01-tensorops-and-quantized-operands.md) · [11.2 §5.5](references/02-cooperative-tensors-and-flash-attention.md) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
 | "Attention quality dropped and I can't find a bug" | [11.2 §6.3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §7.2](references/01-tensorops-and-quantized-operands.md) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |
@@ -234,8 +244,10 @@ Strongest first, and the ordering is the whole point of this part. **Apple's shi
 current API reference:** the `MetalPerformancePrimitives.framework` headers read from Xcode 26.6 —
 `MPPTensorOpsMatMul2d.h`, the three `__impl/` support headers, and the
 8,963-line `MPPTensorOpsMatMul2dImpl.h` whose `static_assert`s supply several claims that appear in no
-transcript — plus the Metal *language* headers from the cryptex toolchain (`metal_tensor`,
-`metal_cooperative_tensor`, `metal_packed_numeric`, `__exec/units.h`), and
+transcript — plus the same framework's **macOS 27.0 beta SDK** headers (Xcode 27 beta, read
+2026-07-29; `MPPTensorOpsMatMul2dImpl.h` grows to 16,754 lines there), which supply the 27.0
+quantized-format and scale-plane facts — plus the Metal *language* headers from the cryptex
+toolchain (`metal_tensor`, `metal_cooperative_tensor`, `metal_packed_numeric`, `__exec/units.h`), and
 `Metal.framework/Headers/MTLTensor.h` for the 26.x host surface — plus Apple's Xcode 27 API pages
 for host-side dtype and auxiliary-plane availability.[^metal27-multiplane]
 **MLX's shipping

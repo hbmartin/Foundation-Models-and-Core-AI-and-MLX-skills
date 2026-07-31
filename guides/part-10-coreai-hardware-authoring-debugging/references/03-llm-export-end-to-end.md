@@ -104,7 +104,9 @@ Specifically:
 - **An Apple silicon Mac on macOS 27.** The runtime is OS-bound; betas count. You can do the entire
   convert / run / numerically-verify loop on the Mac alone — an iPhone is needed only for the device
   tier (AOT load, thermals, sustained tok/s, the memory ceiling).
-- **Xcode 27** — `xcrun coreai-build` and the `aimodelc` binary live inside it.
+- **Xcode 27, plus the Metal Toolchain component** (`xcodebuild -downloadComponent
+  MetalToolchain`) — `aimodelc` lives inside Xcode itself, but `xcrun coreai-build` resolves from
+  the component, not the app bundle (verified 2026-07-31; §10.2).
 - **`uv` ≥ 0.9.0**, and a clone of `apple/coreai-models` (the compression-config YAMLs referenced by
   the registry live in the source tree and are **not** resolvable from a pip wheel).
 - **Disk.** More than you think: see §4. A 7B export can transiently need 40 GB.
@@ -317,7 +319,10 @@ you Apple expects you to hit it:
 `assetVersion` and, from `coreai-torch` 0.4.1 onward, a `producer` string
 (community-observed: `{"producer": "coreai-core 1.0.0b2", "assetVersion": "2.0", "creationDate": …}`).
 We do not have Apple's schema for it, and nothing in the shipped Swift reads it directly. **Resolving
-this needs an Apple doc page or a `coreai-build inspect` output dump on a 27.0 GM.** Meanwhile:
+this needs an Apple doc page or a `coreai-build inspect` output dump on a real asset** — the
+`inspect` subcommand is now confirmed to exist, with `--metadata` on by default and `--json` output
+(2026-07-31, `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`); what remains is running it
+against an actual `.aimodel`. Meanwhile:
 treat the inner file as read-only diagnostic metadata, and use the **outer** bundle `metadata.json`
 for anything your code depends on.
 
@@ -749,12 +754,15 @@ Consequences:
   silently. Apple's own guidance in the `working-with-coreai` skill is to *"use `.default`
   specialization options unless you deliberately pin a compute unit."*
 
-> 🟡 **RECONSTRUCTED** — `SpecializationOptions(preferredComputeUnitKind:)` and
-> `.expectFrequentReshapes` are read from Apple's shipping Swift, so the *members* are verified; the
-> full initializer surface of `SpecializationOptions` is not, because the type lives in the closed
-> `CoreAI.framework`. The Python mirror exposes `cpu_only()`, `default()` and
-> `from_preferred_compute_unit_kind(ComputeUnitKind.gpu()/.ane()/…)`. See Part 7 for the runtime
-> treatment.
+> ✅ **SDK-verified (upgraded from 🟡 on 2026-07-29)** — the full public surface of
+> `SpecializationOptions` is now read from the macOS 27.0 beta interface
+> (`CoreAIDelegates-27.0-macos.swiftinterface:89-106`): statics `.default` and `.cpuOnly`, exactly
+> one initializer `init(preferredComputeUnitKind: ComputeUnitKind)`, get-only
+> `allowedComputeUnitKinds: Set<ComputeUnitKind>` and `preferredComputeUnitKind: ComputeUnitKind?`,
+> and the settable `expectFrequentReshapes: Bool`. `ComputeUnitKind` is `.cpu`/`.gpu`/
+> `.neuralEngine` plus static `availableKinds` (`:72-88`). The Python mirror exposes `cpu_only()`,
+> `default()` and `from_preferred_compute_unit_kind(ComputeUnitKind.gpu()/.ane()/…)`. See Part 7
+> for the runtime treatment.
 
 ⚠️ **SILENT FAILURE — a segmenter or speech asset crashes the auto-detect path rather than throwing.**
 `EngineFactory.autoDetectVariant` calls `preconditionFailure` for any structure other than
@@ -2411,8 +2419,8 @@ Three levers, in increasing order of control:
 2. **Specialize ahead of first use** at runtime, from your app.
 3. **AOT-compile** with `xcrun coreai-build compile` and ship `.aimodelc` per architecture.
 
-> 🟡 **RECONSTRUCTED** — the runtime cache/specialize API is quoted in the community notes as WWDC 324
-> verbatim:
+> ✅ **SDK-verified (upgraded from 🟡 on 2026-07-29)** — the runtime cache/specialize API quoted in
+> the community notes as WWDC 324 verbatim:
 >
 > ```swift
 > let cache = AIModelCache.default
@@ -2423,10 +2431,14 @@ Three levers, in increasing order of control:
 > try await AIModel.specialize(contentsOf: modelURL)
 > ```
 >
-> `AIModelCache` reportedly can delete unused entries, control retention policy, and **share a cache
-> across apps in one app group**. Treat the *shape* as right and the exact signatures as provisional
-> — this is spoken narration transcribed by a third party, and Part 7 is the guide that owns these
-> types. Do not copy this into production without checking it against the SDK.
+> now checks out against the macOS 27.0 beta interface
+> (`CoreAIDelegates-27.0-macos.swiftinterface`): `AIModelCache.default` and
+> `init?(appGroup:)` (`:27-32` — the app-group sharing is real API, not narration),
+> `model(for:options:) throws -> AIModel?` (`:33-36`), the four `delete*` methods (`:37-43`),
+> `Policy`/`PurgeConditions` retention control (`:44-71`), and
+> `AIModel.specialize(contentsOf:options:cache:cachePolicy:) async throws -> AIModel` — all
+> arguments after the URL defaulted, so the one-argument spelling above compiles (`:22-26`).
+> Part 7 is the guide that owns these types.
 
 ### 10.2 The compile command
 
@@ -2455,12 +2467,27 @@ coreai-build compile <input.aimodel> [--output <dir>]
 > `xcrun coreai-build compile model.aimodel --platform iOS` and
 > `… --preferred-compute neural-engine`.
 >
-> **Community-verified (the full flag list)** — `aot-and-specialization.md:73-77`, from
-> `coreai-build compile --help` run on 2026-06-10. Naming resolved in the same file: **`xcrun
-> coreai-build compile` is the verb; `aimodelc` is the compiler binary *and* the compiled
-> extension**, and `aimodelc` lives at `Xcode-beta.app/…/usr/bin/aimodelc`. Output is
-> `modelName.architectureName.aimodelc`, matching the filename `ModelBundle.swift:103` tells you to
-> write into `metadata.json`.
+> ✅ **Tool-verified (the full flag list) — 2026-07-31.** The synopsis above is now confirmed
+> flag-for-flag against `coreai-build compile --help` run on this machine (`coreai-build
+> 3600.79.1`; full capture in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`), including
+> the defaults: `--platform` defaults to **macOS**, `--min-deployment-version` to **27.0**,
+> `--preferred-compute` to **none**. The 2026-06-10 community capture
+> (`aot-and-specialization.md:73-77`) was accurate. Subcommands beyond `compile`: `package`,
+> `inspect`, `metadata`.
+>
+> ⚠️ **Where the tool lives — resolved 2026-07-31, and it matters for CI:** `coreai-build` is
+> **not in Xcode-beta.app at all**; it ships in the optional **Metal Toolchain component**
+> (`xcodebuild -downloadComponent MetalToolchain`) and resolves via `xcrun --no-cache --find
+> coreai-build` to `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/
+> Metal.xctoolchain/usr/bin/coreai-build`. A 2026-07-29 check of the bare beta (27A5228h) had
+> found `xcrun --find coreai-build` failing and only
+> `Contents/Developer/usr/bin/aimodelc` present (command types `package`/`compile`, `--output`
+> required, no `--help`, binary embedding *"'aimodelc' is a tool used by the Xcode compiler"* and
+> *"Please use 'xcrun coreai-build' instead"*) — an accurate observation of an install without
+> the component. Naming resolved: **`xcrun coreai-build compile` is the verb; `aimodelc` is the
+> Xcode-internal stub *and* the compiled extension**. Output is
+> `modelName.architectureName.aimodelc`, matching the filename `ModelBundle.swift:103` tells you
+> to write into `metadata.json`.
 
 Output is **one `.aimodelc` per requested architecture**, each roughly **2× the `.aimodel` size**
 (it embeds the precompiled graph). Ship them as Background Assets; the app detects its architecture
@@ -2489,12 +2516,24 @@ and requests the matching one.
 every other silent failure in this stack. Build a device-load smoke test into your release process,
 not just a build step.
 
-🔴 **GAP — Apple publishes no architecture-name table.** We have no Apple documentation mapping
-device identifiers to `--architecture` values, and none of the four WWDC transcripts names one.
-**Resolving this needs `coreai-build compile --help` output from a shipping Xcode 27, or an Apple
-doc page.** Meanwhile: **compile for every architecture the tool offers for your platform** (it is
+🔴 **GAP — Apple publishes no architecture-name table. Narrowed 2026-07-31: the valid-code *set*
+is now enumerated; the code→device mapping is still unpublished.** Probing the shipped
+`coreai-build` 3600.79.1's own `--architecture` validation (it validates the code before touching
+the input file, with distinct errors for unknown code / valid-but-wrong-platform / accepted)
+enumerated **24 valid codes**: `h11p h11g h12p h13p h13s h13c h13g h14p h14s h14c h14g h15p h15s
+h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p` — grammar `h<generation><variant>` with
+`p` = phone-class, `s`/`c` = Mac-class, `g` from `h13g` up; `h17p` is the one code accepted for
+both macOS and iOS at the 27.0 default target; **`h18p` (this section's device-validated iPhone 17
+Pro code) is confirmed valid**, and no `h19*`/`h20*` exists in this toolchain. Method and full
+per-platform matrix: `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, final section.
+`compile --help` itself does *not* list the codes, and we still have no Apple documentation mapping
+device identifiers to them — that half stays open. Meanwhile:
+**compile for every architecture the tool offers for your platform** (omit `--architecture`; it is
 cheap and produces one directory per arch), ship the set, and select at runtime — rather than
-guessing a single name from a marketing model number.
+guessing a single name from a marketing model number. On device, `AIModel.deviceArchitectureName`
+is the authority
+(✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:107-112` — it exists and returns
+`String`; the SDK does not enumerate the values either).
 
 ### 10.4 When you must AOT-compile
 
@@ -3837,11 +3876,11 @@ Stated explicitly because all of them are in circulation:
 
 | # | Gap | What would resolve it | Safe default meanwhile |
 |---|---|---|---|
-| 1 | The `.aimodel`'s **inner** `metadata.json` schema | An Apple doc page or `coreai-build inspect` output on 27.0 GM | Treat as read-only; depend only on the outer bundle metadata (§1.3) |
+| 1 | The `.aimodel`'s **inner** `metadata.json` schema | An Apple doc page or `coreai-build inspect` output on a real asset (`inspect` confirmed to exist 2026-07-31, `--metadata`/`--json` flags) | Treat as read-only; depend only on the outer bundle metadata (§1.3) |
 | 2 | Hugging Face Xet behaviour — two community reports contradict | A controlled repro against the current Hub | Let one `hf download` finish; never mix Xet and non-Xet for one file (§4.3) |
 | 3 | How `hoistToArg` relates to `remove_functionalization` | `coreai-torch` `LegalizeToCoreOptions` docs/source | Use Apple's shipped `export/macos.py` path verbatim (§5.4) |
 | 4 | Contents of Apple's two mixed-precision YAMLs | Reading `models/qwen3/qwen3_*_mixed_4bit_8bit.yaml` | Read them before writing your own (§7.4) |
-| 5 | The `--architecture` name table | `coreai-build compile --help` on a shipping Xcode 27, or an Apple doc | Compile for every offered arch and select at runtime (§10.3) |
+| 5 | The `--architecture` name table (narrowed 2026-07-31: the valid-code set — 24 codes, `h11p…h18p` — is enumerated in §10.3; the code→device mapping is still unpublished) | An Apple doc mapping device identifiers to codes | Compile for every offered arch and select at runtime (§10.3) |
 | 6 | Whether AOT is *strictly required* on iOS or only for large models | An Apple statement, or a controlled test with a tiny iOS asset | AOT-compile everything you ship to iOS (§10.6) |
 | 7 | Upstream status of multi-state (hybrid/SSM) engine support | Check `apple/coreai-models` issues/releases when you read this | Ship the patched engine in your app, or choose a pure-attention model (§13.2) |
 | 8 | What `COREAI_QUERY_BUCKET_SIZE` does | Apple docs or a controlled A/B | Leave it at the default (64) (§14.3) |
@@ -3854,7 +3893,8 @@ Recorded for the reader's benefit, because both versions circulate:
 1. **The catalog size.** The brief for this guide said "22 models"; a community audit of the same
    repo says "21 export recipes". The registry is the authority — enumerate it yourself (§2.1).
 2. **`coreai-build compile` flags.** Apple documents only `--platform` and `--preferred-compute`.
-   The full flag list in §10.2 is community-verified from `--help` and is marked as such.
+   The full flag list in §10.2, originally community-verified from `--help`, was confirmed
+   flag-for-flag on 2026-07-31 against the shipped tool (Metal Toolchain component).
 3. **`.aimodelc` is "the compiled model file".** It is a **directory** containing its own
    `metadata.json`, which is why pointing a bundle loader at it produces a misleading version error
    (§1.2).
@@ -3873,7 +3913,7 @@ operating on device).*
 
 [^sample-routing-policy]: The structure classifier and preferences live in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218),
     whereas Core AI separately documents `.default` as selecting the compute-unit combination that
     minimizes latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 
@@ -3883,3 +3923,9 @@ operating on device).*
     [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
     The authoritative [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L53-L78)
     describes E8M0 block scales, automatic dequantization, and the custom-format fallback.
+
+[^stride-scope]: The `.contiguous()` warning is specific to the Python authoring path documented in
+    the pinned `coreai-models`
+    [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98).
+    The Core AI API itself exposes explicit strides and specialization-selected layouts:
+    [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).

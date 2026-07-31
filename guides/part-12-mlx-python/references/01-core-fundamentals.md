@@ -118,8 +118,9 @@ Two markers you will see constantly:
 ### Freshness warning, and it is sharp
 
 The clone's HEAD is `973e27f` ("[CUDA] Fix grid overflow in gemm conv unfold kernels…", PR #3893).
-**Four NAX correctness fixes landed in the three days before 2026-07-27 and are therefore *not* in
-this checkout:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
+**Four NAX correctness fix PRs opened in the three days before 2026-07-27, and none is in
+this checkout — nor in any other: all three were still open, unmerged, on a 2026-07-31 `gh`
+re-check:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
 multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary handling), and **#3924** — one of which
 is a *missing `else`* in `tile_matmad_nax` that silently miscompiles odd tile shapes. We grepped:
 `tile_matmad_nax` is present at `mlx/backend/metal/kernels/steel/gemm/nax.h:825` and called from
@@ -589,7 +590,8 @@ And the reassurance you need in order to sprinkle `mx.eval` freely while debuggi
 
 Once an array is evaluated it holds data and is detached from its inputs — the C++ tutorial states
 this outright: *"Once an array is evaluated, it has data and is detached from its inputs."*
-(`examples/cpp/tutorial.cpp`.) That detachment is the mechanism behind §13's memory-leak callout.
+(`examples/cpp/tutorial.cpp`.) That detachment also means an evaluated array owns real buffer
+memory — the raw ingredient in §3.5's functional-cache leak.
 
 ### 2.4 Control flow on array values forces evaluation
 
@@ -807,7 +809,7 @@ This is the defect class that makes MLX genuinely hard to debug, and it deserves
 > Shape *mismatches* in particular are caught at record time in most cases, because MLX propagates
 > shapes eagerly. What is **not** caught at record time is everything that depends on data or on
 > execution: device-specific dtype restrictions (`float64` on the GPU), out-of-bounds gather indices
-> (which are undefined behaviour, not an error — §13.2), and any backend failure such as an
+> (which are undefined behaviour, not an error), and any backend failure such as an
 > allocation refusal or a Metal command-buffer error.
 >
 > **How to find the real line.** Bisect with `mx.eval`. Add an `mx.eval(...)` after each stage and

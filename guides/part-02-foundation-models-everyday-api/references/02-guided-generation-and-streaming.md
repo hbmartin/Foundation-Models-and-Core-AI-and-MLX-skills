@@ -173,13 +173,22 @@ Practical reading of each parameter:
   package sends `schema.name` as the OpenAI `response_format.json_schema.name`
   (✅ **VERIFIED**, `ChatCompletionsLanguageModel.swift:266`), so on that path the Swift type name
   leaks to a third-party server unless you override it.
-- **`representNilExplicitlyInGeneratedContent:`** — 🔴 **GAP**. The parameter exists (it is in the
-  macro signature on the index page) but no page in the harvested corpus explains its semantics.
-  The name implies the choice between emitting `"field": null` and omitting the key entirely, which
-  in turn interacts with JSON-Schema `required`. **What would resolve it:** the doc page for the
-  macro overload, or the expanded macro output (right-click the attribute in Xcode 27 →
-  *Expand Macro*). Do not guess: the difference is observable in `GeneratedContent.Kind.null`
-  handling and in whether an optional property appears in `required`.
+- **`representNilExplicitlyInGeneratedContent:`** — 🔴 **GAP (narrowed 2026-07-29)** on semantics;
+  the declarations are now pinned. The three macro overloads and their availability are
+  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:1088-1096`):
+  `@Generable(description: String? = nil)` is 26.0; `@Generable(description:
+  representNilExplicitlyInGeneratedContent: Bool)` is **26.4** with *no default* — passing it is
+  opting in explicitly; and the 27.0 `@Generable(name: String, description: String? = nil,
+  representNilExplicitlyInGeneratedContent: Bool = false)` overload **defaults it to `false`**. The
+  same flag appears as `representNilExplicitlyInGeneratedContent explicitNil: Bool` on
+  `DynamicGenerationSchema.init` (`:3098-3100`) and `GenerationSchema.init` (`:3301-3303`), both
+  26.4+. So the *default behaviour* is the implicit form, and the flag's internal name is
+  `explicitNil` — consistent with the reading that `true` emits `"field": null` rather than
+  omitting the key. What the emitted schema actually does with it is still unverified: no doc page
+  in the corpus explains the semantics, and interfaces do not show macro expansions. **What would
+  resolve it:** the doc page for the macro overload, or the expanded macro output (right-click the
+  attribute in Xcode 27 → *Expand Macro*). The difference is observable in
+  `GeneratedContent.Kind.null` handling and in whether an optional property appears in `required`.
 
 ### 2.3 The canonical shape
 
@@ -834,6 +843,14 @@ a `@Generable enum` with four unusual cases, greedy sampling, and a prompt that 
 value. Run it a hundred times and count. Until someone does that, treat *both* mechanisms as
 advisory and validate.
 
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass at larger N.** The probe suite
+> ran a small version of that experiment (`probes/` `fm.anyOf-enum-enforcement`, on the 27.0 sim
+> runtime): 10 greedy runs against a prompt begging for an out-of-vocabulary value produced
+> **0 violations, 0 errors** — consistent with the constrained-decoding reading on that runtime.
+> N=10 is far too small to close a bug that reproduces intermittently (the original thread-812501
+> failure was on-device, iOS 26.2); rerun with `PROBE_ENUM_RUNS=100` on 27 hardware before relying
+> on it. The gap stays open; keep validating.
+
 ### 4.7 Apple's own code validates `.anyOf` results
 
 This is circumstantial but instructive. The `apple/foundation-models-utilities` package's `Skills`
@@ -1478,18 +1495,21 @@ let response = try await session.respond(
 Note the `schema:` label — a **different overload family** from `generating:`. From the class page's
 overload list: `respond(to:schema:includeSchemaInPrompt:options:)`,
 `respond(schema:includeSchemaInPrompt:options:prompt:)`,
-`respond(to:schema:options:contextOptions:metadata:)`, plus the `streamResponse` mirrors
-(✅ **VERIFIED** as *names* on the class page; full declarations for the `schema:` family are
-🔴 **GAP** — the doc harvest captured declarations for the `generating:` family only).
+`respond(to:schema:options:contextOptions:metadata:)`, plus the `streamResponse` mirrors. The full
+declarations are now ✅ **SDK-verified** (26.x forms:
+`FoundationModels-27.0-macos.swiftinterface:2063-2071` for `respond`, `:2016-2018` for
+`streamResponse`, each returning `Response<GeneratedContent>` /
+`ResponseStream<GeneratedContent>` with `includeSchemaInPrompt: Bool = true`; the 27.0
+`contextOptions:`/`metadata:` forms at `:2107-2119`, `:2033-2039`, where the flag moves into
+`ContextOptions(includeSchemaInPrompt: true)` and the overloads are `@_disfavoredOverload`).
 
 **The return type is different.** `respond(to:generating: T.self)` gives you
 `Response<T>` whose `.content` is a `T`. `respond(to:schema:)` gives you a response whose `.content`
 is a **`GeneratedContent`** — because there is no Swift type to decode into. You read it with
-`value(_:forProperty:)`. 🟡 **RECONSTRUCTED** for Swift: the doc snippet above does not show the
-result being used, but the Python SDK — which mirrors the Swift API deliberately — documents exactly
-this split (`generating=Cls` → an instance of `Cls`; `schema=` or `json_schema=` → a
-`GeneratedContent`), and `Tool.call(arguments: GeneratedContent)` in the verified forum code takes
-`GeneratedContent` precisely because the tool declared `parameters` as a `GenerationSchema`.
+`value(_:forProperty:)`. ✅ **SDK-verified** (2026-07-29): every `schema:` overload is declared
+`-> Response<GeneratedContent>` (`FoundationModels-27.0-macos.swiftinterface:2063-2071`),
+matching the Python SDK's documented split (`generating=Cls` → an instance of `Cls`; `schema=` →
+a `GeneratedContent`).
 
 ### 7.4 A runtime schema, end to end
 
@@ -1626,10 +1646,12 @@ entirely** in favour of a first-class `GenerationSchema.name` property.
 ✅ **VERIFIED** by `git show 376ca60` on `apple/foundation-models-utilities`, and the current call
 site at `ChatCompletionsLanguageModel.swift:266`.
 
-🔴 **GAP:** what `name` returns for an anonymous or inline schema (e.g. one built from
-`DynamicGenerationSchema(name:)` versus one built from a Swift type) is not documented anywhere in
-the corpus. **What would resolve it:** the doc page for `generationschema/name`, or a one-line print
-in a `#Playground`.
+The declaration is now ✅ **SDK-verified**: `public var name: String { get }`, 27.0+,
+**non-optional** (`FoundationModels-27.0-macos.swiftinterface:3255-3263`) — so every schema has
+*some* name. 🔴 **GAP:** what that `String` *is* for an anonymous or inline schema (e.g. one built
+from `DynamicGenerationSchema(name:)` versus one built from a Swift type) is still not documented
+anywhere in the corpus, and a getter body is not visible in the interface. **What would resolve
+it:** the doc page for `generationschema/name`, or a one-line print in a `#Playground`.
 
 ---
 
@@ -1750,12 +1772,14 @@ Adopt it. When your `.anyOf` validation fails, throwing a `ParsingError` with `r
 arguments.jsonString` and a `debugDescription` that lists the legal values gives the framework —
 and your logs, and Instruments — a structured record of what the model actually said.
 
-🔴 **GAP (narrowed):** that `GeneratedContent.ParsingError` is on the throw path is now verified;
-what remains unverified is whether it is *specifically* the successor to the deprecated
-`GenerationError.decodingFailure(_:)`, which has no obviously-named counterpart in the iOS 27
-`LanguageModelError` enum. No Apple page states the mapping. **What would resolve it:** deliberately
-break a decode on iOS 27 and print the concrete error type. Until then, catch
-`GeneratedContent.ParsingError` **and** keep a generic `catch`.
+✅ **RESOLVED (2026-07-29):** it *is* the named successor. The deprecated
+`GenerationError.decodingFailure(_:)` case carries the SDK's own per-case deprecation message
+*"Use ``GeneratedContent/ParsingError`` instead."* — ✅ **SDK-verified**
+(`FoundationModels-27.0-macos.swiftinterface:3491-3494`). The struct's members are also read
+verbatim there: `rawContent: String`, `underlyingError: (any Error)?`, `debugDescription: String`,
+conforming to `LocalizedError` (`:1356-1361`). While migrating, still catch
+`GeneratedContent.ParsingError` **and** keep a generic `catch` — apps built with Xcode 26 keep
+throwing the old case until rebuilt.
 
 ---
 
@@ -1894,11 +1918,15 @@ for try await snapshot in stream {
 let final = try await stream.collect()      // the completed result
 ```
 
-🟡 **RECONSTRUCTED** — `.collect()` is verified to exist with that documented meaning; whether it may
-be called after manual iteration, or must be called instead of it, is not documented.
-🔴 **GAP**, and a consequential one: **do not assume you can do both.** Until it is confirmed, either
-iterate *or* collect, and if you need the final value after iterating, keep the last snapshot's
-`.content`.
+`.collect()` is verified to exist with that documented meaning, and its
+declaration is ✅ **SDK-verified**: `nonisolated(nonsending) func collect() async throws ->
+sending Response<Content>` (`FoundationModels-27.0-macos.swiftinterface:2168`). Whether it may
+be called after manual iteration was a 🔴 GAP; it is now measured. ✅ **Probe-verified,
+2026-07-31** (`probes/` `fm.collect-after-iteration`, run on the 27.0 sim runtime) — **calling
+`collect()` after fully iterating the stream succeeds and returns the complete response** (13
+manual iterations, then `collect()` returned the full 51-character content). You can do both, as
+the snippet above does. The docs still do not say so; if you want belt-and-braces, keeping the
+last snapshot's `.content` remains harmless.
 
 **`Snapshot.usage` lets you meter mid-stream.** On a per-token-billed third-party backend, that is
 how you implement a spend cap without waiting for the response to finish.
@@ -2151,15 +2179,16 @@ Write the defensive code regardless; it is four lines.
 ### 9.7 Transcript timing and cancellation
 
 - **Breaking out of the loop early** cancels the request; that is standard `AsyncSequence` behaviour
-  and the framework's Swift-concurrency contract. 🟡 **RECONSTRUCTED** for Swift — the Python SDK
-  documents its stream as *"Can be cancelled mid-stream using asyncio cancellation"* and the Swift
-  side is `sending` and `AsyncSequence`-conforming, but no Apple page in the corpus states Swift
-  cancellation semantics explicitly. 🔴 **GAP:** whether a cancelled stream leaves a partial entry
-  in `session.transcript` is unverified for Swift.
+  and the framework's Swift-concurrency contract. What it leaves behind was a 🔴 GAP and is now
+  measured. ✅ **Probe-verified, 2026-07-31** (`probes/` `fm.stream-early-break`, run on the 27.0
+  sim runtime) — after an early `break` (2 partials in), **a partial `.response` entry IS present in
+  `session.transcript`** (`entries=[prompt,response]`) **and `session.isResponding` remains `true`**
+  at least 500 ms later. Treat a broken-out session as still busy: do not issue a follow-up `respond`
+  on it without checking `isResponding`, and do not assume the transcript ends cleanly at the prompt.
 - The Python SDK's equivalent states *"The session transcript is updated only after streaming
-  completes"* (✅ **VERIFIED** from its docstring). 🟡 If that mirrors Swift — likely, since the
-  Python SDK is a binding over the same runtime — then mid-stream reads of `session.transcript` will
-  not include the in-flight response.
+  completes"* (✅ **VERIFIED** from its docstring). The Swift measurement above shows that after an
+  early break the partial entry has already landed — so do not carry the Python docstring's mental
+  model over to Swift's cancellation path.
 - Related and verified for Swift: `TranscriptErrorHandlingPolicy` (iOS 27) with
   `.preserveTranscript` and `.revertTranscript`, and Apple's note that **"When preserving the
   transcript, the last entry may be partially generated."** ✅ **VERIFIED**. That is the framework
@@ -2447,6 +2476,13 @@ is one initializer argument — but budget for it not helping, and do not build 
 Full guardrail treatment in
 [`06-availability-errors-and-guardrails.md`](./06-availability-errors-and-guardrails.md).
 
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** The probe suite ran exactly
+> that comparison, but on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`): a
+> guardrail-tripping `@Generable` request threw `LanguageModelError` code 2 under **both**
+> `.default` and `.permissiveContentTransformations` — identical outcomes, supporting the
+> forum developer's "inert on the structured path" reading *on this runtime*. Sim guardrail assets
+> may differ from device; the gap stays open until the same probe runs on 27 hardware.
+
 ### 11.4 Determinism when you are testing structured output
 
 > "**Greedy sampling tells the model to stop being creative and to always pick the most obvious next
@@ -2705,23 +2741,27 @@ equivalent of the `concurrentRequests` hazard, without the error.
 
 Collected, so a future reader knows exactly what is unresolved and what would resolve it.
 
+Rows struck through were closed on **2026-07-29** against the captured 27.0 beta interface
+(`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`); the inline sections carry the
+line-numbered citations.
+
 | # | Unknown | What would resolve it |
 |---|---|---|
-| 1 | `representNilExplicitlyInGeneratedContent:` semantics on `@Generable` | The macro's doc page, or *Expand Macro* in Xcode 27 |
-| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) | A 100-iteration `#Playground` on a device with a four-case enum and an adversarial prompt |
+| 1 | `representNilExplicitlyInGeneratedContent:` **semantics** on `@Generable` — the three overloads, their floors (26.0 / 26.4 / 27.0), and the 27.0 default `= false` are now SDK-verified (§2.2) | The macro's doc page, or *Expand Macro* in Xcode 27 |
+| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) — 🟠 suggestive 2026-07-31: 10/10 clean runs on the 27.0 sim runtime (`probes/` `fm.anyOf-enum-enforcement`); needs N=100 on 27 hardware | A 100-iteration `#Playground` on a device with a four-case enum and an adversarial prompt |
 | 3 | Whether the `.anyOf` defect is fixed in iOS 27.0 — the reproduction is confirmed on **iOS 26.2** and the corpus's forum capture (2026-07-27) still lists it as open | Re-run the thread-812501 repro on an iOS 27 device |
 | 4 | Where in the pipeline the `.anyOf` constraint is lost (§5.4) | Symbol-level tracing of `TokenGenerationCore` on macOS 27 |
 | 5 | Whether `SystemLanguageModel` uses `xgrammar` (§5.2) — verified only for Core AI and MLX | Symbol inspection of the shipped `FoundationModels.framework` / `TokenGenerationCore` binary |
-| 6 | Full declarations of the `respond(to:schema:…)` / `streamResponse(to:schema:…)` overload family | The doc pages for those specific overloads (the harvest captured `generating:` only) |
-| 7 | Whether `ResponseStream.collect()` may be called after manual iteration (§9.3) | Apple's `collect()` doc page, or a device test |
-| 8 | Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands in the transcript | A device test reading `session.transcript` after an early `break` |
-| 9 | `ContextOptions`' exact initializer labels (iOS 27) | The `ContextOptions` doc page |
-| 10 | What `GenerationSchema.name` returns for an anonymous/inline schema | The `generationschema/name` doc page, or a `print` |
-| 11 | Whether `GeneratedContent.ParsingError` is *specifically* the successor to the deprecated `GenerationError.decodingFailure` — that it is thrown at you is now verified (§8.3) | Deliberately break a decode on iOS 27 and print the concrete type |
-| 12 | The declared signature of the description-less `@Guide(_ guides:)` overload — its *usage* is verified in shipping Apple code (§3.1) | The macro's doc page |
-| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. A developer says no; Apple's Book Tracker sample pairs them anyway (§11.3) | A device test tripping a guardrail false positive under both settings |
+| 6 | ~~Full declarations of the `respond(to:schema:…)` / `streamResponse(to:schema:…)` overload family~~ — **✅ RESOLVED** (§7.3): all return `Response<GeneratedContent>` / `ResponseStream<GeneratedContent>` | Resolved — 27.0 `.swiftinterface:2016-2018, :2063-2071, :2107-2119` |
+| 7 | ~~Whether `ResponseStream.collect()` may be called after manual iteration (§9.3)~~ — **✅ RESOLVED, probe-verified 2026-07-31**: yes, and it returns the complete response (`probes/` `fm.collect-after-iteration`, 27.0 sim runtime) | Resolved by runtime probe |
+| 8 | ~~Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands in the transcript~~ — **✅ RESOLVED, probe-verified 2026-07-31**: a partial `.response` entry lands and `isResponding` stays `true` (§9.7; `probes/` `fm.stream-early-break`, 27.0 sim runtime) | Resolved by runtime probe |
+| 9 | ~~`ContextOptions`' exact initializer labels (iOS 27)~~ — **✅ RESOLVED**: `init(includeSchemaInPrompt: Bool? = nil, reasoningLevel: ContextOptions.ReasoningLevel? = nil)`, both properties optional-typed | Resolved — 27.0 `.swiftinterface:3068-3072` |
+| 10 | What `GenerationSchema.name` returns for an anonymous/inline schema — the declaration (`var name: String`, non-optional, 27.0) is now SDK-verified (§7.6) | The `generationschema/name` doc page, or a `print` |
+| 11 | ~~Whether `GeneratedContent.ParsingError` is *specifically* the successor to `GenerationError.decodingFailure`~~ — **✅ RESOLVED**: the SDK's own deprecation message names it (§8.3) | Resolved — 27.0 `.swiftinterface:3491-3494` |
+| 12 | The declared signature of the description-less `@Guide(_ guides:)` overload — the three `@Guide` macro declarations in the interface all carry `description:` first (`@Guide(description: String? = nil, _ guides: GenerationGuide<T>...)`, `:1099-1105`), so the "description-less" call form works because `description:` has a default | The macro's doc page |
+| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. A developer says no; Apple's Book Tracker sample pairs them anyway (§11.3) — 🟠 suggestive 2026-07-31: identical blocks under both settings on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`); needs 27 hardware | A device test tripping a guardrail false positive under both settings |
 | 14 | Whether a tool-only turn is the *only* cause of a zero-snapshot stream — Apple's comment says "for example" (§9.6) | An instrumented empty-response or guardrailed request on device |
-| 15 | Whether `LanguageModelSession.Error` is real in practice — documented, but used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
+| 15 | Whether `LanguageModelSession.Error` is real in practice — its two cases are SDK-verified (`:1986-1994`), but it is used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
 
 Closed since the first edition, and recorded here so nobody re-opens them: whether `count(_:)` has
 both `Int` and `ClosedRange<Int>` overloads (yes — §3.2), whether a description-less `@Guide` is

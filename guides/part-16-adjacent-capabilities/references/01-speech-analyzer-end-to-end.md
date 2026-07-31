@@ -23,13 +23,28 @@ text-to-speech API. The other is a sample project demonstrating the 2026 APIs.
 > ✅ **VERIFIED** — quoted from an Apple documentation page or a compiling Apple sample project
 > that we read this session. The citation follows the claim.
 >
+> ✅ **SDK-verified** — read directly from the Speech framework's `.swiftinterface` in a real SDK.
+> Citations look like (`Speech-27.0-macos.swiftinterface:120-134`) and point into
+> `notes/sdk-interfaces/`.
+>
 > 🟡 **RECONSTRUCTED** — the concept is attested in an Apple source, but the exact spelling, type
 > or default is inferred. Treat the shape as right and the identifier as provisional.
 >
 > 🔴 **GAP** — we could not verify it and are saying so rather than inventing it. Every gap box
 > names what is unknown, what would resolve it, and a safe default.
 
-The **strongest** evidence class in this guide is Apple's own documentation article
+**Checked 2026-07-29:** every Swift-native Speech symbol in this guide was verified against two
+SDK interface dumps — `Speech-26.5-macos.swiftinterface` (macOS 26.5 SDK) and
+`Speech-27.0-macos.swiftinterface` (the real macOS 27.0 beta SDK). That is now the **strongest**
+evidence class here: it settles spellings, signatures, availability floors and enum cases that
+documentation prose could not. Two honesty caveats. First, a `.swiftinterface` shows only the
+Swift-native surface — the framework's Objective-C API (`SFSpeechRecognizer`,
+`SFSpeechLanguageModel`, the legacy request types) does not appear in it, so ObjC-side claims keep
+their documentation-grade markers and are *not* downgraded by absence from the interface. Second,
+absence of a symbol from the 27.0 dump means "not present in the macOS 27.0 beta SDK interface",
+never "does not exist".
+
+The strongest *documentation* evidence remains Apple's own article
 *"Recognizing speech in live audio"* (`/documentation/speech/recognizing-speech-in-live-audio`,
 fetched 2026-07-27), which is marked **iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta,
 Xcode 27.0+ Beta** and walks through the SpokenWord sample line by line. Nearly every code
@@ -109,8 +124,10 @@ This guide covers:
 in live audio"* lists **iOS 27.0+, iPadOS 27.0+, Mac Catalyst 27.0+, Xcode 27.0+ — and no native
 macOS entry**, even though `CaptureInputSequenceProvider` itself is documented for macOS 27. The
 most likely explanation is that the *sample project* is iOS-only and the availability line
-describes the project rather than the API. We cannot confirm that from the page alone. **Safe
-default:** treat the API as available on macOS 27 (its own reference page says so) but expect to
+describes the project rather than the API. The **API half is now settled**: the class is present
+in the macOS 27.0 beta SDK interface — ✅ **SDK-verified**
+(`Speech-27.0-macos.swiftinterface:717-736`) — so only the sample project's platform coverage
+remains unknown. **Safe default:** treat the API as available on macOS 27, but expect to
 write your own AVCaptureSession plumbing on macOS rather than lifting the sample wholesale.
 
 ---
@@ -267,7 +284,9 @@ final actor SpeechAnalyzer          // iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.
                                     // macOS 26.0+, tvOS 26.0+, visionOS 26.0+
                                     // Conforms: Actor, Sendable, SendableMetatype
 ```
-✅ VERIFIED — `/documentation/speech/speechanalyzer`.
+✅ VERIFIED — `/documentation/speech/speechanalyzer`. ✅ **SDK-verified** — declared
+`final public actor SpeechAnalyzer : Sendable`, `@available(anyAppleOS 26, *)` with watchOS
+explicitly unavailable (`Speech-27.0-macos.swiftinterface:226-228`).
 
 Apple's own division of labour, verbatim from that page:
 
@@ -316,31 +335,41 @@ Every module conforms to `SpeechModule`:
 
 ```swift
 protocol SpeechModule : AnyObject, Sendable          // iOS 26.0+
-    var availableCompatibleAudioFormats { get }      // formats this module can analyze,
+    var availableCompatibleAudioFormats: [AVAudioFormat] { get async }
+                                                     // formats this module can analyze,
                                                      // given its configuration
     var results: Self.Results { get }                // an AsyncSequence
-    associatedtype Result
-    associatedtype Results
+    associatedtype Result : SpeechModuleResult, Sendable where Result == Results.Element
+    associatedtype Results : Sendable, AsyncSequence where Results.Failure == any Error
 
 protocol LocaleDependentSpeechModule : SpeechModule  // modules with per-locale assets
+    static var supportedLocales: [Locale] { get async }
+    static func supportedLocale(equivalentTo locale: Locale) async -> Locale?
+    var selectedLocales: [Locale] { get }
 
 protocol SpeechModuleResult                          // iOS 26.0+
-    var range { get }                    // "The audio input range that this result applies to."
-    var isFinal: Bool { get }            // "Whether this result is final at the time it is produced."
-    var resultsFinalizationTime { get }  // "The audio input time up to which results from this
+    var range: CMTimeRange { get }       // "The audio input range that this result applies to."
+    var resultsFinalizationTime: CMTime { get }
+                                         // "The audio input time up to which results from this
                                          //  module have been finalized (after this result).
                                          //  The module's results are final up to but not
                                          //  including this time."
+
+extension SpeechModuleResult
+    var isFinal: Bool { get }            // "Whether this result is final at the time it is produced."
 ```
 ✅ VERIFIED — `/documentation/speech/speechmodule`, `/localedependentspeechmodule`,
 `/speechmoduleresult`. Conforming modules, per Apple's page: `DictationTranscriber`,
-`SpeechDetector`, `SpeechTranscriber`.
+`SpeechDetector`, `SpeechTranscriber`. ✅ **SDK-verified** — all three protocol declarations as
+shown (`Speech-27.0-macos.swiftinterface:316-336`, `:60-66`). Two details only the interface
+reveals: `availableCompatibleAudioFormats` is an `async` getter, and `isFinal` is a protocol
+*extension* property, not a requirement.
 
-🟡 **RECONSTRUCTED — the types of `range` and `resultsFinalizationTime`.** Apple's page gives the
-descriptions but not the declarations. Every other time value in this API is a `CMTime`, and
-`analyzeSequence(_:)` returns `CMTime?`, so `range` is almost certainly `CMTimeRange` and
-`resultsFinalizationTime` a `CMTime`. Code in this guide never annotates them; it lets inference
-do the work, which is both idiomatic and immune to being wrong.
+✅ **SDK-verified — the types of `range` and `resultsFinalizationTime`.** Formerly reconstructed
+from the fact that every other time value in this API is a `CMTime`; the interface confirms the
+inference exactly — `range: CMTimeRange`, `resultsFinalizationTime: CMTime`
+(`Speech-27.0-macos.swiftinterface:327-328`). Code in this guide still never annotates them; it
+lets inference do the work, which remains the idiomatic choice.
 
 ### 2.2 Apple's eight-step canonical flow
 
@@ -438,8 +467,11 @@ Three things to notice in that listing, because they are easy to skim past:
    and then `yield(input)`, you have a type error, not a subtle bug, so this one at least fails
    loudly.
 2. **`audioFormat` is an `AVAudioFormat?` and Apple passes it into
-   `AnalyzerInputConverter(analyzerFormat:)` without unwrapping it.** Either the initializer takes
-   an optional or the snippet is loose. 🔴 See §15, gap G3.
+   `AnalyzerInputConverter(analyzerFormat:)` without unwrapping it.** The snippet is loose:
+   ✅ **SDK-verified**, the initializer takes a **non-optional** `AVAudioFormat`
+   (`Speech-27.0-macos.swiftinterface:520`), so Apple's canonical example does not compile as
+   printed — unwrap the format yourself, which you need to do anyway because `nil` means missing
+   assets (§5.5). This closes what was gap G3.
 3. **The results loop lives in its own `Task`, started before analysis.** That structure is not
    decoration. §9 is entirely about what happens when you get the lifetime of that task wrong.
 
@@ -487,59 +519,63 @@ error recovery; you need one `catch` around the whole session.
 
 ### 2.4 The complete `SpeechAnalyzer` API surface
 
-For reference. Every name here is ✅ VERIFIED from `/documentation/speech/speechanalyzer`;
-declarations are given where Apple published one, and omitted where it did not.
+For reference. Every name here is ✅ VERIFIED from `/documentation/speech/speechanalyzer`, and the
+whole surface is now ✅ **SDK-verified** (`Speech-27.0-macos.swiftinterface:226-259` plus the
+audio-file extension at `:337-343`); declarations below carry the interface's exact shapes.
 
 ```swift
 // ── Creating ───────────────────────────────────────────────────────────────
-init(modules:options:)
+init(modules: [any SpeechModule], options: SpeechAnalyzer.Options? = nil)
 init(inputSequence:modules:options:analysisContext:volatileRangeChangedHandler:)
-init(inputAudioFile:modules:options:analysisContext:finishAfterFile:volatileRangeChangedHandler:)
+init(inputAudioFile:modules:options:analysisContext:finishAfterFile:volatileRangeChangedHandler:) async throws
 
 // ── Modules ────────────────────────────────────────────────────────────────
 func setModules(_:) async throws
-var modules
+var modules: [any SpeechModule]
 
 // ── Performing analysis (structured concurrency) ───────────────────────────
 final func analyzeSequence<InputSequence>(_ inputSequence: InputSequence) async throws -> CMTime?
     where InputSequence : Sendable,
           InputSequence : AsyncSequence,
           InputSequence.Element == AnalyzerInput
-func analyzeSequence(from:) async throws -> CMTime?
+func analyzeSequence(from: AVAudioFile) async throws -> CMTime?
 
 // ── Autonomous analysis (fire and forget) ──────────────────────────────────
-func start(inputSequence:)
-func start(inputAudioFile:finishAfterFile:)
+func start(inputSequence:) async throws
+func start(inputAudioFile:finishAfterFile:) async throws
 
 // ── Finalizing / cancelling mid-session ────────────────────────────────────
-func cancelAnalysis(before:)   // "Stops analyzing audio predating the given time."
-func finalize(through:) async throws
+func cancelAnalysis(before: CMTime)   // "Stops analyzing audio predating the given time."
+                                      // The one synchronous method here.
+func finalize(through: CMTime?) async throws     // note the OPTIONAL time
                                // "Finalizes the modules' analyses."
 
 // ── Finishing the session ──────────────────────────────────────────────────
 func cancelAndFinishNow() async
 func finalizeAndFinishThroughEndOfInput() async throws
-func finalizeAndFinish(through:) async throws
-func finish(after:) async throws
+func finalizeAndFinish(through: CMTime) async throws   // non-optional here
+func finish(after: CMTime) async throws
 
 // ── Formats ────────────────────────────────────────────────────────────────
 static func bestAvailableAudioFormat(compatibleWith modules: [any SpeechModule]) async -> AVAudioFormat?
-static func bestAvailableAudioFormat(compatibleWith:considering:) async -> AVAudioFormat?
+static func bestAvailableAudioFormat(compatibleWith:considering: AVAudioFormat?) async -> AVAudioFormat?
 
 // ── Responsiveness ─────────────────────────────────────────────────────────
-func prepareToAnalyze(in:)
-func prepareToAnalyze(in:withProgressReadyHandler:)
+func prepareToAnalyze(in: AVAudioFormat?) async throws
+func prepareToAnalyze(in:withProgressReadyHandler:) async throws
 
 // ── Monitoring ─────────────────────────────────────────────────────────────
-func setVolatileRangeChangedHandler(_:)
-var volatileRange              // "The range of results that can change."
+func setVolatileRangeChangedHandler(_:)          // handler gets (CMTimeRange, Bool, Bool)
+var volatileRange: CMTimeRange?  // "The range of results that can change."
 
 // ── Context ────────────────────────────────────────────────────────────────
-func setContext(_:)
-var context
+func setContext(_:) async throws
+var context: AnalysisContext     // async getter
 ```
 `cancelAndFinishNow()` is the one nonthrowing finish operation in this group; it still requires
-`await`.[^speech-cancel]
+`await`.[^speech-cancel] The asymmetry between `finalize(through: CMTime?)` and
+`finalizeAndFinish(through: CMTime)` is the interface's, not a transcription slip — the
+mid-session form accepts `nil`, the finishing form does not.
 
 Two API-design notes that pay off later:
 
@@ -571,11 +607,19 @@ performance mistake; on some platforms it is a "does not exist" mistake.
 | **`AnalyzerInputConverter`** | **27.0** | 27.0 | 27.0 | 27.0 | 27.0 | 27.0 | ❌ |
 | **`AssetInputSequenceProvider`** | **27.0** | 27.0 | 27.0 | 27.0 | 27.0 | 27.0 | ❌ |
 | **`CaptureInputSequenceProvider`** | **27.0** | 27.0 | 27.0 | 27.0 | 27.0 | 27.0 | ❌ |
-| `SFCustomLanguageModelData` | 17.0 | 17.0 | 17.0 | **14.0** | ? | **1.1** | ❌ |
+| `SFCustomLanguageModelData` | 17.0 | 17.0 | 17.0 | **14.0** | **17.0** | **1.1** | ❌ |
 | `SFSpeechLanguageModel` | 17.0 | 17.0 | 17.0 | **14.0** | ❌ **no tvOS** | 1.1 | ❌ |
 
 ✅ VERIFIED — availability lines read from each symbol's page during the 2026-07-27 documentation
-harvest. All the 27.0 rows carry the `Beta` marker.
+harvest. All the 27.0 rows carry the `Beta` marker. ✅ **SDK-verified 2026-07-29** — the interface
+dumps confirm every Swift-native row: the 26.0 symbols are `@available(anyAppleOS 26, *)`, the
+three 2026 classes are `@available(anyAppleOS 27, *)`, `DictationTranscriber` carries an explicit
+`@available(tvOS, unavailable)`, and **every** modern symbol carries
+`@available(watchOS, unavailable)` (`Speech-27.0-macos.swiftinterface`, throughout). The formerly
+unknown tvOS cell for `SFCustomLanguageModelData` is settled by its
+`@available(macOS 14, iOS 17, visionOS 1.1, tvOS 17, *)` line
+(`Speech-27.0-macos.swiftinterface:535-537`). `SFSpeechLanguageModel` is Objective-C API and does
+not appear in a `.swiftinterface`; its row stays documentation-sourced.
 
 Two entries deserve emphasis because they are asymmetric in ways that look like typos and are not:
 
@@ -594,26 +638,30 @@ final class SpeechTranscriber              // iOS 26.0+ … tvOS 26.0+, visionOS
 init(locale:preset:)
 init(locale:transcriptionOptions:reportingOptions:attributeOptions:)
 
-static var isAvailable: Bool               // "whether this module is available given the device's
-                                           //  hardware and capabilities"
-static var installedLocales
-static var supportedLocales                // "including locales that may not be installed but
-                                           //  are downloadable"
-static func supportedLocale(equivalentTo:) -> Locale?
-var results                                // AsyncSequence of SpeechTranscriber.Result
+static var isAvailable: Bool               // synchronous — "whether this module is available given
+                                           //  the device's hardware and capabilities"
+static var installedLocales: [Locale]      // async getter
+static var supportedLocales: [Locale]      // async getter — "including locales that may not be
+                                           //  installed but are downloadable"
+static func supportedLocale(equivalentTo:) async -> Locale?
+var results                                // some Sendable & AsyncSequence<SpeechTranscriber.Result, any Error>
 ```
-✅ VERIFIED — `/documentation/speech/speechtranscriber`.
+✅ VERIFIED — `/documentation/speech/speechtranscriber`. ✅ **SDK-verified**
+(`Speech-27.0-macos.swiftinterface:344-447`).
 
 ```swift
 final class DictationTranscriber           // iOS 26.0+ … visionOS 26.0+ — NO tvOS
 init(locale:preset:)
 init(locale:contentHints:transcriptionOptions:reportingOptions:attributeOptions:)
-static var installedLocales
-static var supportedLocales
-static func supportedLocale(equivalentTo:)
-var results
+static var installedLocales                // async getter
+static var supportedLocales                // async getter
+static func supportedLocale(equivalentTo:) async -> Locale?
+var results                                // some Sendable & AsyncSequence<DictationTranscriber.Result, any Error>
 ```
-✅ VERIFIED — `/documentation/speech/dictationtranscriber`.
+✅ VERIFIED — `/documentation/speech/dictationtranscriber`. ✅ **SDK-verified**
+(`Speech-27.0-macos.swiftinterface:67-189`); note there is **no** `isAvailable` on
+`DictationTranscriber` — that property is `SpeechTranscriber`-only, exactly as §3.4's last row
+assumes.
 
 The difference is not "one is better". It is **which models they run**:
 
@@ -660,13 +708,12 @@ func makeTranscriber(preferring locale: Locale) async -> (any SpeechModule)? {
 }
 ```
 
-> 🟡 **RECONSTRUCTED — `isAvailable` and `supportedLocale(equivalentTo:)` isolation.** Apple's page
-> lists `static var isAvailable: Bool` and `static func supportedLocale(equivalentTo:) -> Locale?`
-> but does not publish whether they are actor-isolated or `async`. The iOS 26 sample awaits the
-> *collection* properties (`await SpeechTranscriber.supportedLocales`), which implies at least some
-> of this surface is isolated. The `await`s above are written defensively; if a member turns out to
-> be synchronous, the compiler tells you and you delete one keyword. That is the safe direction to
-> be wrong in.
+> ✅ **SDK-verified — `isAvailable` and `supportedLocale(equivalentTo:)` isolation, formerly
+> reconstructed.** The interface settles it: `isAvailable` is a plain **synchronous** static
+> property, while `supportedLocale(equivalentTo:)` is **`async`**, as are the getters of
+> `supportedLocales` and `installedLocales` (`Speech-27.0-macos.swiftinterface:408-417`). The
+> helper above is written exactly right as it stands — no `await` on `isAvailable`, `await` on
+> the locale matcher.
 
 ### 3.3 The locale-matching rule you must not shortcut
 
@@ -699,7 +746,7 @@ conclude the user's language is unsupported when it is fully supported.
 
 | If you need… | Use | Because |
 |---|---|---|
-| Long-form transcription, alternatives, best accuracy | `SpeechTranscriber` | `alternativeTranscriptions` reporting option; the newer engine |
+| Long-form transcription, alternatives, best accuracy | `SpeechTranscriber` | The newer engine, with two alternatives presets. (The `alternativeTranscriptions` option itself is *not* exclusive to it — see the note below the box) |
 | tvOS | `SpeechTranscriber` | `DictationTranscriber` is not available there |
 | **Custom vocabulary / a custom language model** | **`DictationTranscriber`** | `ContentHint.customizedLanguage(modelConfiguration:)` exists only here (§4.4) |
 | Far-field audio, atypical speech, or a length hint | `DictationTranscriber` | `.farField`, `.atypicalSpeech`, `.shortForm` content hints |
@@ -709,11 +756,26 @@ conclude the user's language is unsupported when it is fully supported.
 
 > ⚠️ **`SpeechTranscriber` has no `ContentHint` at all.** This is the constraint that decides most
 > real projects. If your app has domain jargon — medical terms, chess openings, SKU codes, player
-> names — the entire custom-language-model path in §11 binds *only* to `DictationTranscriber`. You
-> cannot have alternatives *and* custom vocabulary from a single module.
+> names — the entire custom-language-model path in §11 binds *only* to `DictationTranscriber`.
 > ✅ VERIFIED by omission: `/documentation/speech/speechtranscriber` lists
 > `init(locale:transcriptionOptions:reportingOptions:attributeOptions:)` with **no** `contentHints:`
 > parameter, and there is no `SpeechTranscriber.ContentHint` type in the framework index.
+> ✅ **SDK-verified**: neither `SpeechTranscriber` initializer takes hints and no nested
+> `ContentHint` type exists on it (`Speech-27.0-macos.swiftinterface:346-348`).
+
+**A correction the SDK forced (2026-07-29).** An earlier revision of this guide inferred that
+alternatives were a `SpeechTranscriber`-only feature and that you could not have alternatives
+*and* custom vocabulary from one module. The interface says otherwise:
+`DictationTranscriber.ReportingOption` **includes `.alternativeTranscriptions`**, and
+`DictationTranscriber.Result` **has an `alternatives: [AttributedString]` member** — in the 26.5
+interface as well as the 27.0 one, so this is not new API
+(`Speech-27.0-macos.swiftinterface:119-135`, `:168-183`; `Speech-26.5-macos.swiftinterface:98-114`).
+What remains true from the docs: **no `DictationTranscriber` preset enables it** (§4.2), and
+Apple's prose never mentions alternatives on the dictation engine — so the option is attested in
+the API surface but its runtime behaviour on the dictation models is unverified. If you need both
+alternatives and custom vocabulary, `DictationTranscriber` with
+`reportingOptions: preset.reportingOptions.union([.alternativeTranscriptions])` is now worth an
+experiment rather than a dead end.
 
 ---
 
@@ -735,7 +797,9 @@ var attributeOptions, contentHints, reportingOptions, transcriptionOptions
 ```
 ✅ VERIFIED — `/documentation/speech/speechtranscriber/preset`,
 `/documentation/speech/dictationtranscriber/preset`. Apple adds: *"You can also create your own
-presets by extending this type."*
+presets by extending this type."* ✅ **SDK-verified** — both structs, their initializers, all
+eleven preset names, and the fact that every option collection is a literal `Swift.Set` of the
+corresponding enum (`Speech-27.0-macos.swiftinterface:73-90`, `:349-364`).
 
 That matters because the two-argument `init(locale:preset:)` is a convenience. The moment you need
 to add one option, you stop using it and start using the designated initializer, decomposing the
@@ -788,6 +852,12 @@ Descriptions, verbatim:
 - `timeIndexedProgressiveTranscription` — *"Configuration for immediate transcription of live audio,
   cross-referenced to stream time-codes."*
 
+**What the SDK does and does not confirm here (checked 2026-07-29).** All eleven preset *names*
+are SDK-verified as `static let`s (`Speech-27.0-macos.swiftinterface:74-79`, `:350-354`). But a
+preset's option *contents* are runtime values, invisible in a `.swiftinterface` — so the two
+matrices above remain documentation-sourced, and the §8.3 conflict they feed is **not** settled
+by the interface.
+
 **Read the `.audioTimeRange` columns.** Only three presets across both transcribers turn it on:
 `timeIndexedLongDictation`, `timeIndexedTranscriptionWithAlternatives` and
 `timeIndexedProgressiveTranscription`. Every preset with "timeIndexed" in the name has it; no
@@ -815,7 +885,9 @@ case transcriptionConfidence   // "Includes confidence attributes in a transcrip
                                //  string."
 ```
 ✅ VERIFIED — `/documentation/speech/speechtranscriber/transcriptionoption`, `/reportingoption`,
-`/resultattributeoption`.
+`/resultattributeoption`. ✅ **SDK-verified** — these are the *complete* case lists: one
+`TranscriptionOption` case, three `ReportingOption` cases, two `ResultAttributeOption` cases,
+nothing else (`Speech-27.0-macos.swiftinterface:365-407`).
 
 > **Note what is missing from the preset matrix: `transcriptionConfidence`.** No preset enables it.
 > If you want per-run confidence attributes you *must* use the designated initializer. This is a
@@ -838,8 +910,11 @@ let transcriber = SpeechTranscriber(
 saying out loud because a reader who copies it and gets a parse error will reasonably assume they
 misunderstood the API rather than that Apple's docs have a typo. Add the commas.
 
-The important structural fact those snippets teach: **the option collections are `Set`-like** —
-`.union(_:)` and `.subtracting(_:)` work on them. So the idiom for "the preset, plus one thing" is:
+The important structural fact those snippets teach: **the option collections are literal
+`Set`s** — ✅ **SDK-verified**, the designated initializers take `Set<TranscriptionOption>`,
+`Set<ReportingOption>` and `Set<ResultAttributeOption>` (`Speech-27.0-macos.swiftinterface:348`,
+`:72`) — so `.union(_:)` and `.subtracting(_:)` work on them. The idiom for "the preset, plus one
+thing" is:
 
 ```swift
 // The compiling version of Apple's example.
@@ -854,33 +929,48 @@ let transcriber = SpeechTranscriber(
 🟡 RECONSTRUCTED only in the sense that the commas are ours and `.transcriptionConfidence` was
 added to demonstrate the pattern. Every identifier is ✅ VERIFIED.
 
-> 🔴 **GAP — the full case lists for `DictationTranscriber`'s option enums.** We have confirmed
-> `DictationTranscriber.TranscriptionOption.punctuation` and `.emoji`,
-> `DictationTranscriber.ReportingOption.volatileResults` and `.frequentFinalization`, and
-> `DictationTranscriber.ResultAttributeOption.audioTimeRange` — all inferred from the preset matrix
-> and from Apple's example snippet. The individual enum pages were **not fetched**, so there may be
-> more cases (a `transcriptionConfidence` analogue, in particular, would be unsurprising).
-> **Resolving this** needs `/documentation/speech/dictationtranscriber/transcriptionoption`,
-> `/reportingoption` and `/resultattributeoption`, or an SDK interface dump.
-> **Safe default:** build option sets by starting from a preset and unioning only the cases listed
-> above. Do not write an exhaustive `switch` over any of these enums — they are documented as
-> `CaseIterable` but nothing says they are frozen.
+> ✅ **SDK-verified — the full case lists for `DictationTranscriber`'s option enums** (this was a
+> 🔴 gap until 2026-07-29; the SDK interface dump was exactly the thing the gap box asked for).
+> From `Speech-27.0-macos.swiftinterface:102-151`:
+>
+> ```swift
+> enum DictationTranscriber.TranscriptionOption   // CaseIterable, Sendable, Equatable, Hashable
+> case punctuation
+> case emoji
+> case etiquetteReplacements
+>
+> enum DictationTranscriber.ReportingOption
+> case volatileResults
+> case alternativeTranscriptions
+> case frequentFinalization
+>
+> enum DictationTranscriber.ResultAttributeOption
+> case audioTimeRange
+> case transcriptionConfidence
+> ```
+>
+> Three cases the preset matrix never surfaced: `.etiquetteReplacements` (the redaction option is
+> not `SpeechTranscriber`-only), `.transcriptionConfidence` (the predicted analogue exists), and
+> — most surprisingly — `.alternativeTranscriptions` (see the correction in §3.4). Still true:
+> these enums are `CaseIterable` but nothing says they are frozen, so do not write an exhaustive
+> `switch` without a `default`.
 
 ### 4.4 Content hints — `DictationTranscriber` only
 
 ```swift
 struct DictationTranscriber.ContentHint          // Equatable, Hashable, Sendable
-static var shortForm       // "A processing hint indicating that the audio is only expected to be
+static let shortForm       // "A processing hint indicating that the audio is only expected to be
                            //  a minute or so long."
-static var farField        // "A processing hint indicating that the audio should be processed as
+static let farField        // "A processing hint indicating that the audio should be processed as
                            //  if it were from a speaker far from the microphone."
-static var atypicalSpeech  // "A processing hint indicating that the audio is from a speaker with
+static let atypicalSpeech  // "A processing hint indicating that the audio is from a speaker with
                            //  a heavy accent, lisp, or other confounding factor."
-static func customizedLanguage(modelConfiguration:)
+static func customizedLanguage(modelConfiguration: SFSpeechLanguageModel.Configuration) -> ContentHint
                            // "A hint specifying a custom language model applicable to the expected
                            //  spoken audio content."
 ```
-✅ VERIFIED — `/documentation/speech/dictationtranscriber/contenthint`.
+✅ VERIFIED — `/documentation/speech/dictationtranscriber/contenthint`. ✅ **SDK-verified** — these
+four members are the complete surface (`Speech-27.0-macos.swiftinterface:91-101`).
 
 Apple's caveat on all of them, verbatim: *"These hints optimize transcription, but **do not preclude
 spoken audio with different characteristics**."* In other words a hint is a bias, not a filter.
@@ -997,10 +1087,12 @@ final class AssetInventory                 // iOS 26.0+ … tvOS 26.0+, visionOS
 
 static func assetInstallationRequest(supporting modules: [any SpeechModule])
     async throws -> AssetInstallationRequest?
-static func reserve(locale:) async throws
-static func release(reservedLocale:) async
-static var reservedLocales
-static var maximumReservedLocales: Int
+@discardableResult
+static func reserve(locale:) async throws -> Bool
+@discardableResult
+static func release(reservedLocale:) async -> Bool
+static var reservedLocales: [Locale]       // async getter
+static var maximumReservedLocales: Int     // synchronous
 static func status(forModules:) async -> AssetInventory.Status
 
 enum AssetInventory.Status                 // Comparable, Equatable, Hashable
@@ -1013,26 +1105,36 @@ case supported     // "The module can work with its configuration, but the asset
 case unsupported   // "The module will not work with its configuration."
 ```
 ✅ VERIFIED — `/documentation/speech/assetinventory`, `/documentation/speech/assetinventory/status`.
+✅ **SDK-verified** (`Speech-27.0-macos.swiftinterface:31-59`). The interface adds two facts the
+docs harvest missed: `reserve(locale:)` and `release(reservedLocale:)` both return a
+`@discardableResult Bool`, so you *can* check whether a reservation or release actually happened.
 
 ```swift
 @objc final class AssetInstallationRequest    // inherits NSObject, conforms ProgressReporting
 func downloadAndInstall() async throws
 ```
-✅ VERIFIED — `/documentation/speech/assetinstallationrequest`. Conforming to `ProgressReporting`
-means it has a `progress: Progress` you can bind straight into SwiftUI's `ProgressView`.
+✅ VERIFIED — `/documentation/speech/assetinstallationrequest`. ✅ **SDK-verified** — `NSObject`
+subclass, `ProgressReporting`, `Sendable`, with exactly `progress: Progress` and
+`downloadAndInstall() async throws` (`Speech-27.0-macos.swiftinterface:507-515`). Conforming to
+`ProgressReporting` means you can bind `progress` straight into SwiftUI's `ProgressView`.
 
 Apple adds: *"You do not create instances of this type directly. **The system consolidates download
 and installation requests; you may obtain several of these instances and call `downloadAndInstall()`
 several times without causing redundant downloads**."* That is a licence to be sloppy in a good
 way — if two screens both ensure assets on appear, you have not doubled the download.
 
-> 🔴 **GAP — `AssetInventory.Status` is `Comparable` but the ordering is unpublished.** The natural
-> reading is `unsupported < supported < downloading < installed`, which would make
-> `if await AssetInventory.status(forModules: [m]) >= .supported` a clean guard. We could not
-> confirm it. **Resolving this** needs the SDK interface or a one-line experiment on a macOS 27
-> machine (`print([Status.installed, .downloading, .supported, .unsupported].sorted())`).
-> **Safe default:** `switch` on the four cases explicitly. It is three more lines and it cannot be
-> wrong.
+> 🔴 **GAP (narrowed 2026-07-29) — `AssetInventory.Status` is `Comparable` but the ordering is
+> unpublished, and the interface makes it *more* suspect, not less.** The four cases and the
+> `Comparable` conformance are ✅ SDK-verified — but the case **declaration order changed between
+> SDKs**: the 26.5 interface declares `unsupported, supported, downloading, installed`
+> (`Speech-26.5-macos.swiftinterface:23-34`) while the 27.0 beta declares
+> `unsupported, downloading, supported, installed` (`Speech-27.0-macos.swiftinterface:44-55`). If
+> the `<` is the compiler-synthesized one (which follows declaration order — an interface dump
+> cannot distinguish synthesized from hand-written), the relative order of `.downloading` and
+> `.supported` **flipped in the 27.0 beta**. A `>= .supported` guard would mean different things
+> on the two OS generations. **Safe default, now with teeth:** `switch` on the four cases
+> explicitly. It is three more lines and it cannot be wrong — and the reordering above is evidence
+> that relying on the ordering actually bites.
 
 ### 5.3 The four-step process, and the ordering that matters
 
@@ -1127,8 +1229,11 @@ about four lines of SwiftUI.
 says what it is, and it may well vary by device.
 
 > 🔴 **GAP — the value of `maximumReservedLocales`.** Not published on any page we fetched, and
-> the API is a property rather than a constant precisely because it is presumably dynamic.
-> **Resolving this** takes one line on a device: `print(AssetInventory.maximumReservedLocales)`.
+> the API is a property rather than a constant precisely because it is presumably dynamic. The
+> SDK interface (checked 2026-07-29) confirms the declaration — a synchronous
+> `static var maximumReservedLocales: Int { get }` (`Speech-27.0-macos.swiftinterface:34-36`) —
+> but a computed property's value is exactly what an interface cannot show, so the number stays
+> unknown. **Resolving this** takes one line on a device: `print(AssetInventory.maximumReservedLocales)`.
 > Add it to your diagnostics screen. **Safe default:** never assume you can hold more than **one**
 > reserved locale, release aggressively, and treat the throw from `assetInstallationRequest` as a
 > normal, recoverable outcome rather than a programming error.
@@ -1263,18 +1368,41 @@ final class CaptureInputSequenceProvider        // iOS 27.0+ Beta, iPadOS 27.0+ 
                                                 // Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta,
                                                 // tvOS 27.0+ Beta, visionOS 27.0+ Beta
 
-static func providerWithSession(from:compatibleWith:priority:)
+static func providerWithSession(from captureDevice: AVCaptureDevice,
+                                compatibleWith modules: [any SpeechModule],
+                                priority: TaskPriority? = nil) async throws -> CaptureInputSequenceProvider
     // "configures a NEW audio capture session with that device"
-static func provider(from:in:compatibleWith:priority:)
-    // uses an EXISTING session
-init(session:analyzerFormat:priority:)
 
-var analyzerInputs                              // AsyncSequence of AnalyzerInput
-var captureSession                              // "The underlying capture session."
-var captureAudioDataOutput                      // "An audio data output that routes and converts
+@available(visionOS, unavailable)
+static func provider(from captureDevice: AVCaptureDevice,
+                     in session: AVCaptureSession,
+                     compatibleWith modules: [any SpeechModule],
+                     priority: TaskPriority? = nil) async throws -> CaptureInputSequenceProvider
+    // uses an EXISTING session
+
+@available(visionOS, unavailable)
+init(session: AVCaptureSession, analyzerFormat: AVAudioFormat, priority: TaskPriority?) throws
+
+var analyzerInputs: some Sendable & AsyncSequence<AnalyzerInput, any Error>
+var captureSession: AVCaptureSession            // "The underlying capture session."
+@available(visionOS, unavailable)
+var captureAudioDataOutput: AVCaptureAudioDataOutput
+                                                // "An audio data output that routes and converts
                                                 //  captured audio buffers to async sequences."
 ```
-✅ VERIFIED — `/documentation/speech/captureinputsequenceprovider`.
+✅ VERIFIED — `/documentation/speech/captureinputsequenceprovider`. ✅ **SDK-verified** — every
+declaration above, availability included (`Speech-27.0-macos.swiftinterface:717-736`). Two facts
+only the interface shows: the two static factories are `async throws` and default `priority:` to
+`nil`, while the designated `init` is a synchronous `throws` and does **not** default it; and
+**visionOS gets only the "make me a session" path** — the existing-session factory, the designated
+initializer and `captureAudioDataOutput` are all `@available(visionOS, unavailable)`, so on Vision
+Pro you cannot compose the provider into a session you already own.
+
+One related addition in the 27.0 beta worth knowing while you are here:
+`SFSpeechError.Code.cannotConfigureAudioSystem` is new in 27 — ✅ **SDK-verified**, present in the
+27.0 interface (`Speech-27.0-macos.swiftinterface:711-715`) and absent from the 26.5 one — which
+is the shape of error you should expect from this class's session plumbing when the audio system
+cannot be set up.
 
 The three entry points map onto three levels of "how much of my audio stack do I already own":
 
@@ -1294,15 +1422,13 @@ That "output destination object" is `captureAudioDataOutput`, described on the r
 third integration mode is: build your own session, take the provider's
 `captureAudioDataOutput`, `addOutput` it, and read `analyzerInputs`.
 
-> 🔴 **GAP — the type of `captureAudioDataOutput`, and whether `priority:` is defaulted.** Apple's
-> page gives the member names and descriptions but no declarations. The name strongly suggests an
-> `AVCaptureAudioDataOutput` subclass or wrapper, and `priority:` appears as a trailing parameter on
-> both static factories while the article calls
-> `providerWithSession(from:compatibleWith:)` with only two arguments — which implies it *is*
-> defaulted. **Resolving this** needs an SDK interface dump (`swift-ide-test` or Xcode's
-> "Jump to Definition" on macOS 27). **Safe default:** call the two-argument form the article uses,
-> and if you need the output object, bind it with `let output = provider.captureAudioDataOutput`
-> and let inference tell you the type.
+> ✅ **SDK-verified — the type of `captureAudioDataOutput`, and the `priority:` default** (a 🔴
+> gap until 2026-07-29; the SDK interface dump the gap box asked for resolved it).
+> `captureAudioDataOutput` is a plain **`AVCaptureAudioDataOutput`** — not a subclass, not a
+> wrapper — and `priority:` is a `TaskPriority?` defaulted to `nil` on both static factories, which
+> is why the article can call `providerWithSession(from:compatibleWith:)` with two arguments
+> (`Speech-27.0-macos.swiftinterface:720-731`). The one caveat carried up from the listing:
+> `captureAudioDataOutput` is unavailable on visionOS.
 
 ### 6.4 Complete microphone capture, end to end
 
@@ -1511,19 +1637,19 @@ final class LiveTranscription {
 The explicit `else` is required in a live session: `nil` means no audio was consumed, and
 `cancelAndFinishNow()` is the finish operation Apple documents as valid before any input.[^speech-cancel]
 
-> 🔴 **GAP — the `AsyncSequence` element/failure types of `provider.analyzerInputs`.** Apple
-> documents `analyzerInputs` as "an asynchronous sequence" of `AnalyzerInput` but publishes no
-> declaration, so the typed-throws spelling above
-> (`some AsyncSequence<AnalyzerInput, any Error> & Sendable`) is **ours**. What *is* ✅ VERIFIED is
-> the constraint on the receiving side: `analyzeSequence(_:)` is declared
-> `where InputSequence : Sendable, InputSequence : AsyncSequence, InputSequence.Element == AnalyzerInput`.
-> **Safe default:** do not annotate. Write `let audioSequence = provider.analyzerInputs` and pass it
-> straight to `analyzeSequence(_:)`; if it satisfies the constraint the call compiles, and if it
-> does not you get a clear diagnostic rather than a wrong guess baked into a signature.
+> ✅ **SDK-verified — the `AsyncSequence` element/failure types of `provider.analyzerInputs`** (a
+> 🔴 gap until 2026-07-29). The declaration is
+> `var analyzerInputs: some Sendable & AsyncSequence<AnalyzerInput, any Error>`
+> (`Speech-27.0-macos.swiftinterface:732-734`) — the typed spelling this guide had guessed turned
+> out to be **exactly right**, and the signature in the listing above is now the real one. Passing
+> it straight to `analyzeSequence(_:)` without annotating remains the tidier style, but annotating
+> is no longer a gamble.
 
 > 🔴 **GAP — `withTaskCancellationShield`.** See §9.4. It appears verbatim in Apple's article and
-> nowhere else in our corpus. It may be a Swift concurrency library function or a helper defined
-> inside the SpokenWord sample. §9.4 gives you a shield you can write yourself either way.
+> nowhere else in our corpus. One elimination made 2026-07-29: it is **not** a Speech framework
+> symbol — it does not appear anywhere in the macOS 27.0 beta Speech interface — which leaves a
+> Swift concurrency library function or a helper defined inside the SpokenWord sample. §9.4 gives
+> you a shield you can write yourself either way.
 
 ### 6.5 Files and assets: `AssetInputSequenceProvider`
 
@@ -1532,14 +1658,21 @@ The file-based sibling. Same shape, different source.
 ```swift
 final class AssetInputSequenceProvider          // iOS 27.0+ Beta … visionOS 27.0+ Beta
 
-static func provider(from:compatibleWith:priority:)
+static func provider(from asset: AVAsset,
+                     compatibleWith modules: [any SpeechModule],
+                     priority: TaskPriority? = nil) async throws -> AssetInputSequenceProvider
     // "reads from the first track of an asset or file"
-static func provider(from:track:compatibleWith:priority:)
-init(asset:track:analyzerFormat:priority:)
+static func provider(from asset: AVAsset, track: AVAssetTrack,
+                     compatibleWith modules: [any SpeechModule],
+                     priority: TaskPriority? = nil) async throws -> AssetInputSequenceProvider
+init(asset: AVAsset, track: AVAssetTrack, analyzerFormat: AVAudioFormat, priority: TaskPriority? = nil)
 
-var analyzerInputs                              // AsyncSequence of AnalyzerInput
+var analyzerInputs: some Sendable & AsyncSequence<AnalyzerInput, any Error>
 ```
-✅ VERIFIED — `/documentation/speech/assetinputsequenceprovider`.
+✅ VERIFIED — `/documentation/speech/assetinputsequenceprovider`. ✅ **SDK-verified** — all
+declarations above (`Speech-27.0-macos.swiftinterface:670-680`). Unlike its capture sibling, the
+designated initializer here is neither `async` nor `throws`, and nothing on this class is
+platform-restricted beyond the 27.0 floor.
 
 The two static factories differ only in whether you name a track. `provider(from:compatibleWith:)`
 reads *the first track*, which is right for a voice memo and wrong for a movie with a music bed on
@@ -1600,11 +1733,12 @@ func transcribeFile(at url: URL, locale: Locale = .current) async throws -> Stri
 The batch path handles the same empty-input state so its result-consuming task also receives stream
 termination rather than waiting indefinitely.[^speech-cancel]
 
-> 🟡 **RECONSTRUCTED — `AVURLAsset(url:)` as the argument to `provider(from:)`.** Apple's page says
-> the factory "reads from the first track of an asset or file" and names the parameter `from:`, but
-> does not publish its type. `AVAsset`/`AVURLAsset` is the obvious reading and matches the class
-> name. **Safe default:** if `AVURLAsset` does not type-check, try passing the `URL` directly — the
-> documentation phrase "an asset **or file**" suggests overloads for both.
+> ✅ **SDK-verified — `AVURLAsset(url:)` as the argument to `provider(from:)`** (formerly
+> reconstructed). The parameter type is **`AVAsset`** (`Speech-27.0-macos.swiftinterface:673`), so
+> `AVURLAsset(url:)` type-checks as a subclass. One correction to the old safe default: there is
+> **no `URL` overload** in the 27.0 beta interface — the documentation phrase "an asset **or
+> file**" describes what an `AVURLAsset` can point at, not a second entry point. Wrap file URLs in
+> `AVURLAsset` yourself.
 
 Notice how much simpler the file path is than the live one. There is no cancellation shield, no
 capture session to release, and no volatile-result merging — because a file has a natural end. That
@@ -1627,13 +1761,18 @@ is the piece that makes "yours" tolerable.
 
 ```swift
 final class AnalyzerInputConverter              // iOS 27.0+ Beta … visionOS 27.0+ Beta
-static func converter(compatibleWith:) -> AnalyzerInputConverter
-init(analyzerFormat:configurationHandler:)
-func convert(_:at:) throws -> [AnalyzerInput]
+static func converter(compatibleWith modules: [any SpeechModule]) async throws -> AnalyzerInputConverter
+init(analyzerFormat: AVAudioFormat, configurationHandler: ((AVAudioConverter) -> Void)? = nil)
+func convert(_ buffer: AVAudioBuffer, at audioTime: AVAudioTime?) throws -> [AnalyzerInput]
 func flush() throws -> [AnalyzerInput]
 ```
 ✅ VERIFIED — `/documentation/speech/analyzerinputconverter`. The framework changelog describes it
 as converting *"`AVAudioBuffer` data into formats that `AnalyzerInput` supports."*
+✅ **SDK-verified** — all four declarations (`Speech-27.0-macos.swiftinterface:516-524`). Notes
+the interface adds: the static factory is `async throws` (it has to consult the modules' formats);
+`convert` takes the `AVAudioBuffer` *superclass*, so PCM and compressed buffer subclasses both
+pass; and `configurationHandler:` hands you the underlying **`AVAudioConverter`** to tweak, which
+is the escape hatch if the default conversion quality is not what you want.
 
 Three things to get right:
 
@@ -1645,7 +1784,8 @@ Three things to get right:
    independent way to lose the tail of a recording — distinct from the §9 cancellation bug and
    equally invisible.
 3. **`init(analyzerFormat:configurationHandler:)` is used in Apple's canonical example with one
-   argument**, so `configurationHandler:` is defaulted.
+   argument**, and the interface confirms why: `configurationHandler:` defaults to `nil` —
+   ✅ **SDK-verified** (`Speech-27.0-macos.swiftinterface:520`).
 
 ```swift
 import Speech
@@ -1689,30 +1829,40 @@ func makeInputSequence(
 }
 ```
 
-> 🔴 **GAP — the `at:` parameter of `convert(_:at:)`.** Apple's canonical example passes `nil`, and
-> the surrounding documentation on `AnalyzerInput` explains that a time-code is how you handle
-> discontiguous audio: *"When you resume analysis with a later `AVAudioPCMBuffer` buffer, you may
-> need to supply the correct time-code to account for skipped audio. To do this, pass the time-code
-> of the later buffer as the `bufferStartTime` parameter of the corresponding `AnalyzerInput`
-> object."* (✅ VERIFIED.) So `at:` is almost certainly an optional `CMTime` playing the same role.
-> **Safe default:** pass `nil` for contiguous audio, which is the case for every live capture. If
-> you skip audio deliberately, set the time explicitly and expect to verify the type at the call
-> site.
+> ✅ **SDK-verified — the `at:` parameter of `convert(_:at:)`, with a correction** (a 🔴 gap until
+> 2026-07-29). This guide had inferred "almost certainly an optional `CMTime`". **Wrong**: the
+> declaration is `at audioTime: AVAudioTime?` (`Speech-27.0-macos.swiftinterface:521`) — an
+> AVFoundation timestamp, not a Core Media one, which makes sense for a parameter that describes
+> where an `AVAudioBuffer` sits on the audio-engine timeline. The role is the one the
+> `AnalyzerInput` documentation describes for discontiguous audio: *"When you resume analysis with
+> a later `AVAudioPCMBuffer` buffer, you may need to supply the correct time-code to account for
+> skipped audio."* (✅ VERIFIED.) Pass `nil` for contiguous audio, which is the case for every
+> live capture; pass the buffer's `AVAudioTime` when you deliberately skip.
 
 ### 6.7 `AnalyzerInput` itself
 
 ```swift
 struct AnalyzerInput                            // iOS 26.0+, Sendable — "Time-coded audio data."
-init(buffer:)
-init(buffer:bufferStartTime:)                   // "for audio that may be discontiguous with
+init(buffer: AVAudioPCMBuffer)
+init(buffer: AVAudioPCMBuffer, bufferStartTime: CMTime?)
+                                                // "for audio that may be discontiguous with
                                                 //  previous input"
-var bufferStartTime                             // "The time-code of this input."
-var bufferDuration                              // "The length of this input."
-var bufferFormat                                // "The audio format of this input."
-var buffer                                      // *(Deprecated)* "A new copy of the audio data
-                                                //  for this input."
+init(buffer: CMReadySampleBuffer<CMReadOnlyDataBlockBuffer>)   // ⚠️ iOS 27.0+ — NEW this year
+let bufferStartTime: CMTime?                    // "The time-code of this input."
+let bufferDuration: CMTime                      // ⚠️ iOS 27.0+ — "The length of this input."
+let bufferFormat: AVAudioFormat                 // ⚠️ iOS 27.0+ — "The audio format of this input."
+var buffer: AVAudioPCMBuffer                    // *(Deprecated in 27)* "A new copy of the audio
+                                                //  data for this input."
 ```
-✅ VERIFIED — `/documentation/speech/analyzerinput`.
+✅ VERIFIED — `/documentation/speech/analyzerinput`. ✅ **SDK-verified**
+(`Speech-27.0-macos.swiftinterface:11-30`), and the interface diff against 26.5 adds three
+availability facts the reference page's flat member list hides: **`bufferDuration` and
+`bufferFormat` do not exist on iOS 26** — they are `@available(anyAppleOS 27, *)` additions, so
+code that must run on 26 cannot read them; the `CMReadySampleBuffer` initializer is likewise new
+in 27 (it is how sample-buffer pipelines — `AVCaptureAudioDataOutput` delivers
+`CMSampleBuffer`s — feed the analyzer without a PCM detour); and the `buffer` property was a
+plain `let` in 26.5 (`Speech-26.5-macos.swiftinterface:241-248`) and is deprecated only as of 27,
+with the message *"use other AnalyzerInput properties to get information about audio"*.
 
 Two contract statements from that page you should read as hard rules:
 
@@ -1738,7 +1888,10 @@ resume yielding with an explicit `bufferStartTime`. The analyzer's time-line sta
 also saving the audio.
 
 ⚠️ Note `var buffer` is marked **deprecated** on the `AnalyzerInput` page — read the format and
-timing metadata instead of pulling a copy of the samples back out.
+timing metadata instead of pulling a copy of the samples back out. One wrinkle for
+26-and-27 code: the replacement properties (`bufferFormat`, `bufferDuration`) are themselves
+27-only (see above), so on an iOS 26 deployment target `buffer` is not deprecated *and* is the
+only way to inspect the audio — the deprecation and its replacements arrived together in 27.
 
 ---
 
@@ -1864,7 +2017,9 @@ Plus two mid-session methods that do not finish anything:
 
 ✅ VERIFIED — all six names and descriptions from `/documentation/speech/speechanalyzer`. The
 individual method pages provide their current concurrency and throwing declarations; this is no
-longer an API-shape gap.[^speech-cancel]
+longer an API-shape gap.[^speech-cancel] ✅ **SDK-verified** — all six declarations, including
+the `CMTime?`/`CMTime` optionality split noted in §2.4
+(`Speech-27.0-macos.swiftinterface:240-245`).
 
 ### 7.4 Stopping a live capture: two approaches, one recommendation
 
@@ -1940,24 +2095,28 @@ Each result carries what you need to do better:
 struct SpeechTranscriber.Result   // CustomStringConvertible, Equatable, Hashable, Sendable,
                                   // SpeechModuleResult
 var text: AttributedString        // "The most likely interpretation of the audio in this range."
-var alternatives                  // "All the alternative interpretations of the audio in this
+let alternatives: [AttributedString]
+                                  // "All the alternative interpretations of the audio in this
                                   //  range. The interpretations are in descending order of
                                   //  likelihood."
-// inherited from SpeechModuleResult:
-var range                         // the audio time range this result applies to
-var isFinal: Bool                 // whether this result is final at the time it is produced
-var resultsFinalizationTime       // results are final up to but not including this time
+// from SpeechModuleResult:
+let range: CMTimeRange            // the audio time range this result applies to
+var isFinal: Bool                 // extension property — whether this result is final
+let resultsFinalizationTime: CMTime
+                                  // results are final up to but not including this time
 ```
 ✅ VERIFIED — `/documentation/speech/speechtranscriber/result` plus the `SpeechModuleResult`
-protocol.
+protocol. ✅ **SDK-verified** — every member and type above
+(`Speech-27.0-macos.swiftinterface:427-442`).
 
-🔴 **GAP — `DictationTranscriber.Result`.** Its own reference page was not fetched. It conforms to
-`SpeechModuleResult` (so it has `range`, `isFinal`, `resultsFinalizationTime`) and Apple's article
-treats it as having a text payload, but we cannot confirm whether it also has `alternatives` — and
-given that `DictationTranscriber` has no `alternativeTranscriptions` reporting option, it very
-plausibly does not. **Resolving this** needs `/documentation/speech/dictationtranscriber/result`.
-**Safe default:** use `result.text`, `result.range` and `result.isFinal` only. Those three are
-protocol-guaranteed or article-attested.
+✅ **SDK-verified — `DictationTranscriber.Result`** (a 🔴 gap until 2026-07-29, and the inference
+it recorded was wrong). Its reference page was never fetched, and this guide reasoned that with
+no `alternativeTranscriptions` option it plausibly lacked `alternatives`. The interface says the
+dictation result is **member-for-member identical** to `SpeechTranscriber.Result`: `text`,
+`alternatives: [AttributedString]`, `range`, `resultsFinalizationTime`, plus the `isFinal`
+extension property (`Speech-27.0-macos.swiftinterface:168-183`) — and the reporting option exists
+too (§3.4's correction). `result.text`, `result.range` and `result.isFinal` remain the members
+every listing in this guide actually uses.
 
 ### 8.2 Strategy A — range replacement in one attributed string
 
@@ -1972,7 +2131,7 @@ if let rangeToReplace = transcript.rangeOfAudioTimeRangeAttributes(intersecting:
 ```
 ✅ VERIFIED — quoted verbatim from *"Recognizing speech in live audio"*.
 
-The machinery underneath is in Foundation, not Speech:
+The machinery underneath extends Foundation types but ships in the Speech framework:
 
 - `AttributeScopes.SpeechAttributes.TimeRangeAttribute` — *"The time range in the source audio
   corresponding to the associated transcription text."*
@@ -1982,7 +2141,12 @@ The machinery underneath is in Foundation, not Speech:
   attributed string that is within the given time range."*
 
 ✅ VERIFIED — all three from the Foundation attribute-scope pages cross-referenced by the Speech
-documentation.
+documentation. ✅ **SDK-verified** — all three are declared in the *Speech* module as extensions
+of Foundation types (`Speech-27.0-macos.swiftinterface:190-225`), so `import Speech` is what
+brings them in. The declaration the merge line depends on:
+`func rangeOfAudioTimeRangeAttributes(intersecting timeRange: CMTimeRange) -> Range<AttributedString.Index>?`
+(`:221-225`), with `TimeRangeAttribute.Value = CMTimeRange` and
+`ConfidenceAttribute.Value = Double` (`:196-205`).
 
 **How it works.** Each result's `text` arrives with time-range attributes already attached, mapping
 substrings back to audio time. You keep one `AttributedString` for the whole document. When a new
@@ -2054,9 +2218,11 @@ would settle it is not available to us (§1.2). There are three possibilities:
 3. The sample really does append-only and nobody noticed because the demo recordings are short.
 
 > 🔴 **GAP — the resolution of the `progressiveLongDictation` / `.audioTimeRange` conflict.**
-> **Resolving this** needs either the SpokenWord project's actual source, or one run on an iOS 27
-> device printing `result.text.runs` for a volatile result and checking whether a time-range
-> attribute is present.
+> The SDK interface was checked 2026-07-29 and **cannot settle this one**: preset *names* are
+> `static let`s in the interface, but the option sets they contain are runtime values a
+> `.swiftinterface` never shows (§4.2). **Resolving this** needs either the SpokenWord project's
+> actual source, or one run on an iOS 27 device printing `result.text.runs` for a volatile result
+> and checking whether a time-range attribute is present.
 >
 > **SAFE DEFAULT — and this costs you nothing, so just do it:** if you intend to use
 > `rangeOfAudioTimeRangeAttributes(intersecting:)`, **explicitly union `.audioTimeRange` into your
@@ -2191,7 +2357,9 @@ extension LiveTranscription {
 
 > 🟡 **RECONSTRUCTED — `result.text` on a generic `SpeechModuleResult`.** `text` is declared on
 > `SpeechTranscriber.Result`, not on the `SpeechModuleResult` protocol, so the generic constraint
-> above will not actually give you `.text`. In real code, type the parameter concretely
+> above will not actually give you `.text`. ✅ **SDK-verified** that the flag is right: the
+> protocol's only requirements are `range` and `resultsFinalizationTime`
+> (`Speech-27.0-macos.swiftinterface:326-329`). In real code, type the parameter concretely
 > (`DictationTranscriber.Result` or `SpeechTranscriber.Result`) or add your own protocol. This is
 > flagged rather than silently fixed because it is the kind of thing that looks fine in a guide and
 > fails at the call site.
@@ -2237,13 +2405,25 @@ to look when proofreading.
 > ✅ **VERIFIED** — `AttributeScopes.SpeechAttributes.ConfidenceAttribute` is described as
 > *"A confidence level (0–1) of the associated transcription text."*
 
-> 🔴 **GAP — how to read a confidence value in code.** We have the attribute type's name and
-> semantics but not the key path you use to read it from an `AttributedString` run. The Speech
-> attribute scope's property names were not harvested. **Resolving this** needs
-> `/documentation/foundation/attributescopes/speechattributes` or Xcode autocompletion on a run's
-> attribute container. **Safe default:** iterate `text.runs` and inspect the run's
-> `attributes` container; the attribute you want is the one whose value is a floating-point number
-> in 0…1. Do not hardcode a key path from a guide — including this one.
+> ✅ **SDK-verified — how to read a confidence value in code** (a 🔴 gap until 2026-07-29). The
+> Speech attribute scope's property names are now harvested from the interface: the scope declares
+> `transcriptionConfidence` (a `ConfidenceAttribute`, `Value = Double`) and `audioTimeRange` (a
+> `TimeRangeAttribute`, `Value = CMTimeRange`), and Speech installs the standard
+> `AttributeDynamicLookup` subscript for the scope
+> (`Speech-27.0-macos.swiftinterface:190-220`). So the read is ordinary `AttributedString`
+> machinery:
+>
+> ```swift
+> for run in result.text.runs {
+>     if let confidence = run.transcriptionConfidence {   // Double, 0…1
+>         // dim or underline low-confidence ranges
+>     }
+> }
+> ```
+>
+> The key-path spelling (`run.transcriptionConfidence` via dynamic member lookup) is the standard
+> Foundation pattern for a scope property of that name; the names and value types themselves are
+> no longer guesses.
 
 ---
 
@@ -2353,8 +2533,9 @@ throw.** The API is correct, your code compiles, the types check, and the output
 
 > 🔴 **GAP — the provenance of `withTaskCancellationShield`.** It appears in Apple's article code
 > block, in a comment written by Apple, and **nowhere else in our corpus** — not in the Speech
-> framework symbol index, not in the iOS 26 sample, not in any other documentation page we fetched.
-> It is therefore one of:
+> framework symbol index, not in the iOS 26 sample, not in any other documentation page we fetched,
+> and (checked 2026-07-29) **not anywhere in the macOS 27.0 beta Speech `.swiftinterface`**, which
+> rules out the Speech framework as its home. It is therefore one of:
 >
 > - a Swift concurrency library function (in which case it is a Swift-evolution addition, not a
 >   Speech API, and belongs to the toolchain rather than the SDK);
@@ -2798,17 +2979,20 @@ that `displayTask.value` can complete even when recording stops before the first
 ### 10.2 Verification checklist before you ship this
 
 Because so much of the above is documentation-derived rather than sample-derived, run this list on
-a real iOS 27 device once. Each item takes a minute and each one closes a gap in §15.
+a real iOS 27 device once. Each item takes a minute and each one closes a gap in §15. (The
+2026-07-29 SDK check already retired the former items about `captureAudioDataOutput`'s type and
+the provider signatures — G4, G7, G8, G9 — so the list is shorter than it was.)
 
 1. `print(AssetInventory.maximumReservedLocales)` — gap G5.
-2. Type `withTaskCancellationShield` in a scratch file. Does it resolve? — gap G6.
-3. `let x = provider.captureAudioDataOutput` and option-click the type — gap G4.
-4. Print `result.text.runs` for a **volatile** result from `progressiveLongDictation` and check
+2. Type `withTaskCancellationShield` in a scratch file. Does it resolve? — gap G6 (the SDK check
+   confirmed it is not a Speech-framework symbol, so this tells you toolchain vs. sample helper).
+3. Print `result.text.runs` for a **volatile** result from `progressiveLongDictation` and check
    whether a time-range attribute is present — gap G1, the §8.3 conflict.
-5. Record, speak, and hit stop **mid-word**. Is the last word present? — §9.5.
-6. Airplane mode on a device that has never transcribed. Does `prepare()` fail with a useful error?
-7. `print(AssetInventory.status(forModules: [t]))` before and after install — gap G2 (`Comparable`
-   ordering).
+4. Record, speak, and hit stop **mid-word**. Is the last word present? — §9.5.
+5. Airplane mode on a device that has never transcribed. Does `prepare()` fail with a useful error?
+6. `print([AssetInventory.Status.installed, .downloading, .supported, .unsupported].sorted())` —
+   gap G2. The SDK check made this one *more* interesting: the case declaration order changed
+   between the 26.5 and 27.0 interfaces, so run it on both OS generations if you can.
 
 ---
 
@@ -2821,23 +3005,37 @@ a real iOS 27 device once. Each item takes a minute and each one closes a gap in
 **Lever 1 — `AnalysisContext.contextualStrings`.** Free, runtime, per-session.
 
 ```swift
-final class AnalysisContext                 // iOS 26.0+
-var contextualStrings                       // bias words
+final class AnalysisContext : Sendable      // iOS 26.0+
+var contextualStrings: [AnalysisContext.ContextualStringsTag : [String]]
+                                            // bias words, grouped under string-raw-value tags
+struct AnalysisContext.ContextualStringsTag // RawRepresentable (String)
+static let general: ContextualStringsTag    // the one predefined tag
+var userData: [AnalysisContext.UserDataTag : any Sendable]
 ```
 ✅ VERIFIED — `/documentation/speech/analysiscontext`. Apple: *"To bias recognition towards certain
 words, create an `AnalysisContext` object and add those words to its `contextualStrings` property.
 Create a `SpeechAnalyzer` instance with that context object or set the analyzer's `context`
-property."*
+property."* ✅ **SDK-verified** — with a correction to what the docs prose implies: the property is
+not a flat `[String]` but a **dictionary keyed by tag**, with `.general` as the predefined key
+(`Speech-27.0-macos.swiftinterface:480-506`). So the call you actually write is:
+
+```swift
+let context = AnalysisContext()
+context.contextualStrings[.general] = ["Winawer", "Tartakower", "Albin"]
+try await analyzer.setContext(context)
+```
 
 This is the one to reach for **first**, and most apps never need anything else. The names in the
 user's contact list, the titles in their library, the items on the screen right now — push those in
 and recognition of them improves. It costs nothing, it changes per session, and it needs no build
 tooling.
 
-> 🔴 **GAP — how many contextual strings is too many, and the type of `contextualStrings`.** Not
-> published. It is presumably `[String]`. There is no documented limit and no documented behaviour
-> when the list is large. **Safe default:** keep it in the low hundreds and prioritise — put the
-> names actually visible on screen at the front, not the user's entire address book.
+> 🔴 **GAP (narrowed 2026-07-29) — how many contextual strings is too many.** The *type* half of
+> this gap is closed above: `[ContextualStringsTag : [String]]`, SDK-verified, and the old
+> `[String]` presumption was wrong. The *limit* half remains open — there is no documented cap and
+> no documented behaviour when the list is large, and an interface dump cannot show one.
+> **Safe default:** keep it in the low hundreds and prioritise — put the names actually visible on
+> screen at the front, not the user's entire address book.
 
 **Lever 2 — content hints.** Free, one line. `.farField`, `.atypicalSpeech`, `.shortForm`. Covered
 in §4.4.
@@ -2955,7 +3153,10 @@ class SFCustomLanguageModelData.CompoundTemplate         // "You are not intende
                                                          //  directly."
 ```
 ✅ VERIFIED — `/documentation/speech/sfcustomlanguagemodeldata`, `/datainsertable`,
-`/templateinsertable`.
+`/templateinsertable`. ✅ **SDK-verified** — the whole surface above, including the two
+`@resultBuilder` types, the `insert` overloads (`insert(term:)` takes a `CustomPronunciation`),
+`export(to:) async throws`, and `supportedPhonemes(locale:) -> [String]`
+(`Speech-27.0-macos.swiftinterface:535-663`).
 
 Three insertion mechanisms, three purposes.
 
@@ -3036,8 +3237,8 @@ phoneme symbol is a data error you want to catch on your Mac, not a silently-ign
 you discover from a support ticket. This is a two-line check and there is no reason not to do it:
 
 ```swift
-// 🟡 Ours. `supportedPhonemes(locale:)` is ✅ VERIFIED; the validation loop is not Apple's.
-let allowed = Set(try await SFCustomLanguageModelData.supportedPhonemes(locale: locale))
+// 🟡 Ours. `supportedPhonemes(locale:)` is ✅ SDK-verified; the validation loop is not Apple's.
+let allowed = Set(SFCustomLanguageModelData.supportedPhonemes(locale: locale))
 for pronunciation in myPronunciations {
     for phonemeString in pronunciation.phonemes {
         for symbol in phonemeString.split(separator: " ") {
@@ -3048,11 +3249,11 @@ for pronunciation in myPronunciations {
 }
 ```
 
-> 🔴 **GAP — the return type of `supportedPhonemes(locale:)`, and whether it is `async`.** Documented
-> only by its one-line description. The `Set<String>` reading above is inference. **Safe default:**
-> bind with `let allowed = try await SFCustomLanguageModelData.supportedPhonemes(locale: locale)`
-> and let the compiler tell you the shape. Since this runs in *your* build-time CLI, getting it
-> wrong costs a compile error, not a shipping bug.
+> ✅ **SDK-verified — the shape of `supportedPhonemes(locale:)`** (a 🔴 gap until 2026-07-29). It
+> is `static func supportedPhonemes(locale: Locale) -> [String]` — **synchronous and
+> nonthrowing**, returning an array (`Speech-27.0-macos.swiftinterface:648`). The snippet above
+> has been corrected accordingly: no `try`, no `await`, and the `Set` is built from the returned
+> array for the containment checks.
 
 ### 11.4 Stage 1: the generator CLI
 
@@ -3114,25 +3315,26 @@ print("Wrote \(outputURL.path)")
 > keyed on *something*. **Safe default:** bump `version` whenever the data changes, so that if the
 > cache is keyed on it, you get the new data.
 
-> 🟡 **RECONSTRUCTED — the result-builder usage.** `init(locale:identifier:version:builder:)` is
-> ✅ VERIFIED as an initializer, and `DataInsertableBuilder` / `TemplateInsertableBuilder` are
-> ✅ VERIFIED as `@resultBuilder` types, and `PhraseCount` / `PhraseCountsFromTemplates` /
-> `CustomPronunciation` are ✅ VERIFIED as the item types Apple uses in exactly this position.
-> What is **not** verified is that mixing all three item kinds in one builder block is legal —
-> `DataInsertable` and `TemplateInsertable` are two different protocols, and
-> `PhraseCountsFromTemplates` takes its own nested `TemplateInsertableBuilder` closure (as shown).
-> **Safe default:** if the mixed block does not compile, fall back to the imperative form, which is
-> unambiguous:
+> ✅ **SDK-verified — mixing all three item kinds in one builder block is legal** (a 🟡 concern
+> until 2026-07-29). The interface settles the protocol question: `PhraseCount`,
+> `PhraseCountsFromTemplates` **and `CustomPronunciation` all conform to `DataInsertable`**
+> (`Speech-27.0-macos.swiftinterface:538`, `:554`, `:641`), and `DataInsertableBuilder.buildBlock`
+> takes `any DataInsertable...` (`:571`), so the mixed block in the listing above type-checks.
+> `TemplateInsertable` is a separate protocol only *inside* the nested
+> `PhraseCountsFromTemplates(classes:) { Template(...) }` closure, exactly as shown. The
+> imperative form remains available if you prefer it:
 >
 > ```swift
 > let data = SFCustomLanguageModelData(locale: locale, identifier: "…", version: "1.0")
 > data.insert(phraseCount: .init(phrase: "Play the Albin counter gambit", count: 10))
-> data.insert(term: "Winawer")
+> data.insert(term: .init(grapheme: "Winawer", phonemes: ["w I n aU @r"]))
 > data.insert(phraseCountGenerator: someGenerator)
 > try await data.export(to: outputURL)
 > ```
 >
-> All four of those methods are ✅ VERIFIED members. `SFCustomLanguageModelData` is a `class`, so
+> All four of those methods are ✅ SDK-verified members — note the corrected `insert(term:)`
+> argument: it takes a `CustomPronunciation`, not a bare string
+> (`Speech-27.0-macos.swiftinterface:651-654`). `SFCustomLanguageModelData` is a `class`, so
 > mutation through a `let` binding is fine.
 
 **Wire it into your build.** Two reasonable options:
@@ -3189,8 +3391,15 @@ transcription.
 > model and specialized vocabulary"* — so a `URL`-shaped story is strongly implied on both sides.
 > **What we will not do is invent the initializer.**
 >
-> **Resolving this** needs `/documentation/speech/sfspeechlanguagemodel/configuration` or an SDK
-> interface dump.
+> The 2026-07-29 SDK check could not close this one, and it is worth saying why:
+> `SFSpeechLanguageModel` is **Objective-C API**, and ObjC declarations do not appear in a
+> `.swiftinterface` — its absence there means nothing. What the Swift interface *does* attest is
+> the type's existence and spelling, because
+> `ContentHint.customizedLanguage(modelConfiguration: SFSpeechLanguageModel.Configuration)`
+> names it (`Speech-27.0-macos.swiftinterface:95`).
+>
+> **Resolving this** needs `/documentation/speech/sfspeechlanguagemodel/configuration` or the ObjC
+> header (`SFSpeechLanguageModel.h`) — not a Swift interface dump.
 >
 > **Safe default:** structure your code so the two unknowns are isolated in one small function with
 > one call site, then fix it in five minutes against autocompletion on a real machine:
@@ -3270,13 +3479,25 @@ None of these throw where you would want them to.
 ```swift
 final class SpeechDetector                 // iOS 26.0+ … tvOS 26.0+, visionOS 26.0+
 init()                                     // "Creates a speech detector with default settings."
-init(detectionOptions:reportResults:)
-struct SpeechDetector.DetectionOptions
-SpeechDetector.SensitivityLevel            // has at least .medium
-var results
-struct SpeechDetector.Result
+init(detectionOptions: SpeechDetector.DetectionOptions, reportResults: Bool)
+
+struct SpeechDetector.DetectionOptions     // Sendable, Equatable, Hashable
+    let sensitivityLevel: SensitivityLevel
+    init(sensitivityLevel:)
+
+enum SpeechDetector.SensitivityLevel : Int // CaseIterable
+    case low, medium, high
+
+var results                                // some Sendable & AsyncSequence<Result, any Error>
+struct SpeechDetector.Result : SpeechModuleResult
+    let range: CMTimeRange
+    let resultsFinalizationTime: CMTime
+    let speechDetected: Bool
 ```
-✅ VERIFIED — `/documentation/speech/speechdetector`.
+✅ VERIFIED — `/documentation/speech/speechdetector`. ✅ **SDK-verified** — the full surface above
+(`Speech-27.0-macos.swiftinterface:265-315`). This closes what §15 tracked as gap G17:
+`SensitivityLevel` is exactly `{low, medium, high}` (an `Int`-raw enum), `DetectionOptions` has a
+single `sensitivityLevel` member, and `reportResults:` is a `Bool`, as the doc wording implied.
 
 > ✅ **VERIFIED**, same page, verbatim: *"This module asks 'is there speech?' and provides you with
 > the ability to **gate transcription by the presence of voices, saving power** otherwise used by
@@ -3335,20 +3556,26 @@ contexts. **Do not use it** for short dictation where the user is actively speak
 > "speech ended" booleans. Code written on the assumption that iterating `speechDetector.results`
 > yields voice-activity events will compile, run, and produce nothing — a loop that never fires,
 > which reads as "there is no speech in this audio" rather than "I am reading the wrong stream."
+>
+> **A docs-vs-SDK tension worth recording (2026-07-29):** the interface shows that
+> `SpeechDetector.Result` *does* carry a `speechDetected: Bool` payload
+> (`Speech-27.0-macos.swiftinterface:300-307`) — the struct is shaped exactly like the event
+> stream you would want. That does not overturn Apple's *"currently only support error handling"*
+> note: a field existing says nothing about when (or whether) results are actually published. The
+> word "currently" plus this payload reads like room being left for a future behaviour change.
+> Until Apple's note changes, build nothing on this stream except error handling.
 
 If you need voice-activity *events* for UI — a level meter, a "listening" indicator, an
 auto-stop-after-silence behaviour — `SpeechDetector` is not the API. Use the transcriber's own
 result cadence (results stop arriving during silence) or `analyzer.volatileRange` (§2.4), or read
 levels off the capture session directly.
 
-> 🔴 **GAP — `SpeechDetector.DetectionOptions` members, `SensitivityLevel`'s full case list, and
-> the type of `reportResults:`.** Only `.medium` is attested for `SensitivityLevel`; `.low` and
-> `.high` are the obvious companions and are **not** confirmed. `reportResults:` is presumably a
-> `Bool` given the wording "these must be enabled via reportResults". The
-> `/documentation/speech/speechdetector/detectionoptions` and `/sensitivitylevel` pages were not
-> fetched. **Safe default:** use `SpeechDetector()` — the no-argument initializer is documented as
-> "default settings", and `.medium` is Apple's own recommendation for most cases, so the default is
-> very likely already what you want.
+> ✅ **SDK-verified — `SpeechDetector.DetectionOptions`, `SensitivityLevel`, and `reportResults:`**
+> (a 🔴 gap until 2026-07-29; see the §12.1 listing for the declarations and citation). The
+> guesses all landed: `.low` and `.high` do accompany `.medium`, and `reportResults:` is a `Bool`.
+> Still unknown, because default *values* do not appear in an interface: which sensitivity the
+> no-argument `SpeechDetector()` actually selects. `.medium` is Apple's recommendation and the
+> obvious candidate, so `SpeechDetector()` remains the sensible default construction.
 
 ---
 
@@ -3378,6 +3605,12 @@ Read that middle paragraph carefully. `ignoresResourceLimits: true` does not rai
 **removes the error that tells you about the limit**. You still hit the hardware ceiling, you just
 hit it as "an unpredictable error" instead of a named, catchable one.
 
+One availability fact the docs page does not surface: **`ignoresResourceLimits` is new in the
+27.0 beta.** ✅ **SDK-verified** — the property and its three-argument `init` are
+`@available(anyAppleOS 27, *)` (`Speech-27.0-macos.swiftinterface:454-456`, `:474-476`) and are
+absent from the 26.5 interface entirely. On iOS 26 the resource limit has no escape hatch at all,
+which for the reasons above is arguably the safer configuration.
+
 > ⚠️ **SILENT FAILURE, of the worst kind: trading a good error for a bad one.**
 > `SFSpeechError.Code.insufficientResources` is a specific, documented, actionable failure — you
 > catch it, you queue the work, you tell the user. Setting `ignoresResourceLimits: true` to "fix"
@@ -3401,20 +3634,30 @@ this limit exists to constrain.
 
 ```swift
 struct SpeechAnalyzer.Options              // Equatable, Sendable
-init(priority:modelRetention:)
-init(priority:modelRetention:ignoresResourceLimits:)
-var priority                               // "The priority of analysis processing work."
-var modelRetention: Options.ModelRetention
-var ignoresResourceLimits: Bool
+init(priority: TaskPriority, modelRetention: ModelRetention)
+init(priority:modelRetention:ignoresResourceLimits:)   // ⚠️ iOS 27.0+
+let priority: TaskPriority                 // "The priority of analysis processing work."
+let modelRetention: Options.ModelRetention
+let ignoresResourceLimits: Bool            // ⚠️ iOS 27.0+
 
 enum SpeechAnalyzer.Options.ModelRetention // CaseIterable, Equatable, Hashable, Sendable
+case whileInUse       // "Releases the models when the analyzer is deallocated."
 case lingering        // "Keeps the models in memory for a time so that they can be reused by
                       //  another compatible analyzer session."
 case processLifetime  // "Keeps the models in memory until this process exits."
-case whileInUse       // "Releases the models when the analyzer is deallocated."
 ```
 ✅ VERIFIED — `/documentation/speech/speechanalyzer/options`,
-`/documentation/speech/speechanalyzer/options/modelretention-swift.enum`.
+`/documentation/speech/speechanalyzer/options/modelretention-swift.enum`. ✅ **SDK-verified** —
+the full struct, the 27.0 gating noted above, and `priority`'s type: a plain Swift concurrency
+**`TaskPriority`** (`Speech-27.0-macos.swiftinterface:448-479`).
+
+A related member the interface surfaces that no fetched documentation page discusses:
+`SpeechModels.endRetention()` — ✅ **SDK-verified**, `public enum SpeechModels` with a single
+`static func endRetention() async`, iOS 26.0+ (`Speech-27.0-macos.swiftinterface:260-264`). Its
+evident role is the other half of the retention story: a process-wide "release whatever models
+`.lingering` or `.processLifetime` are holding" lever, for when you get a memory warning after
+opting into retention. The framework index lists the type (`/documentation/speech/speechmodels`);
+treat the *behavioural* description here as inference from the name until that page is read.
 
 | Retention | Use when |
 |---|---|
@@ -3422,11 +3665,13 @@ case whileInUse       // "Releases the models when the analyzer is deallocated."
 | `.lingering` | The user dictates repeatedly — a notes app, a chat composer. Second session starts fast without holding memory forever. |
 | `.processLifetime` | Transcription *is* your app. A dedicated dictation or captioning app. |
 
-🔴 **GAP — which retention is the default, and the type of `priority:`.** Neither is published.
-`priority` is described as "The priority of analysis processing work", which suggests `TaskPriority`,
-but we will not guess it into a code listing. **Safe default:** use `SpeechAnalyzer(modules:)`
-without options, which is what both Apple's canonical example and its 2026 article do. Reach for
-`Options` only when you have a measured reason.
+🔴 **GAP (narrowed 2026-07-29) — which retention is the default.** Half of this gap closed: the
+type of `priority:` is **`TaskPriority`**, ✅ SDK-verified above, so the old hesitation about
+guessing it is retired. The default retention remains genuinely unknowable from the interface —
+the analyzer initializers take `options: SpeechAnalyzer.Options? = nil` and whatever `nil` maps
+to is internal. **Safe default:** use `SpeechAnalyzer(modules:)` without options, which is what
+both Apple's canonical example and its 2026 article do. Reach for `Options` only when you have a
+measured reason.
 
 ### 13.3 Lazy loading and prewarming
 
@@ -3443,15 +3688,15 @@ The fix is one call at the right moment — when the compose field gains focus, 
 appears, when the user starts holding the button:
 
 ```swift
-// 🟡 Ours. `prepareToAnalyze(in:)` is ✅ VERIFIED as a member; its parameter type is not
-//    published, so this is written as a shape rather than a compiling call.
+// 🟡 Ours in composition; the call itself is ✅ SDK-verified. The former gap about the `in:`
+//    parameter closed 2026-07-29: the declaration is
+//    `func prepareToAnalyze(in audioFormat: AVAudioFormat?) async throws`, with an
+//    `(in:withProgressReadyHandler:)` overload whose handler receives a Foundation `Progress`
+//    (`Speech-27.0-macos.swiftinterface:231-232`). It is a format, it is optional, and the
+//    method throws.
 //    Apple's own phrasing: "call prepareToAnalyze(in:) after setting its modules."
-//
-// 🔴 GAP: the `in:` parameter. The two-argument overload is
-//    `prepareToAnalyze(in:withProgressReadyHandler:)`, which suggests `in:` is a format or
-//    a context rather than a duration. Verify at the call site.
-func preheat(analyzer: SpeechAnalyzer) async throws {
-    // try await analyzer.prepareToAnalyze(in: <format-or-context>)
+func preheat(analyzer: SpeechAnalyzer, format: AVAudioFormat?) async throws {
+    try await analyzer.prepareToAnalyze(in: format)
 }
 ```
 
@@ -3613,36 +3858,48 @@ clearest worked example of `InferenceFunction` KV-cache state, which Part 7 uses
 Every unresolved item in this guide, in one place, with what would close it. None of these is
 guessed at anywhere in the text above; each one has a stated safe default.
 
-| # | Gap | Why it is open | What resolves it | Safe default |
+**2026-07-29 update:** a verification pass against the `Speech-26.5` and `Speech-27.0`
+`.swiftinterface` dumps closed **twelve** of the original twenty-four gaps outright and narrowed
+three more. The still-open items come first; the closed ones follow, kept for the audit trail
+(several closed with *corrections*, which is exactly why they were gaps and not guesses).
+
+### Still open
+
+| # | Gap | Why it is still open | What resolves it | Safe default |
 |---|---|---|---|---|
-| **G1** | **`progressiveLongDictation` vs `.audioTimeRange`.** Apple's article merges by time range using a preset the preset page says has no time-range attributes (§8.3). | Two Apple pages disagree; the sample that would settle it is unavailable (§1.2). | Print `result.text.runs` for a volatile result on an iOS 27 device; or read the SpokenWord source. | `.union([.audioTimeRange])` explicitly. Costs nothing, removes the ambiguity. |
-| **G2** | `AssetInventory.Status` is `Comparable`, ordering unpublished. | Ordering not stated on the page. | `print([Status.installed, .downloading, .supported, .unsupported].sorted())` on macOS 27. | `switch` on all four cases. |
-| **G3** | `AnalyzerInputConverter(analyzerFormat:)` appears to accept an `AVAudioFormat?` in Apple's own example. | Apple's canonical snippet passes an unwrapped optional. | SDK interface dump. | Unwrap it yourself before calling. You need a non-nil format anyway (§5.5). |
-| **G4** | Type of `CaptureInputSequenceProvider.captureAudioDataOutput`; whether `priority:` is defaulted. | Members are documented by description only. | Option-click in Xcode 27. | Use the two-argument `providerWithSession(from:compatibleWith:)`; bind the output with `let` and let inference work. |
-| **G5** | Value of `AssetInventory.maximumReservedLocales`. | Not published; likely device-dependent. | One `print` on a device. | Assume 1. Release aggressively. Treat the throw as recoverable. |
-| **G6** | **Provenance of `withTaskCancellationShield`.** | Appears in Apple's article and nowhere else in the corpus. | Type the name in a scratch file with the Xcode 27 toolchain. | Write your own (§9.4) — the semantics are unambiguous, and an unstructured `Task` already has them. |
-| **G7** | Element/failure types of `provider.analyzerInputs`. | Documented as "an asynchronous sequence" with no declaration. | SDK interface dump. | Do not annotate; pass it straight to `analyzeSequence(_:)`. |
-| **G8** | `AnalyzerInputConverter.convert(_:at:)` — the type and meaning of `at:`. | Apple's example passes `nil`; no declaration published. | SDK interface dump. | Pass `nil` for contiguous audio. |
-| **G9** | Argument type of `AssetInputSequenceProvider.provider(from:)` — `AVAsset` vs `URL`. | Description says "an asset **or file**". | Try both; one compiles. | `AVURLAsset(url:)`. |
-| **G10** | `DictationTranscriber` option-enum full case lists. | Individual enum pages not fetched. | Fetch `/dictationtranscriber/transcriptionoption`, `/reportingoption`, `/resultattributeoption`. | Start from a preset; union only the attested cases (§4.3). No exhaustive `switch`. |
-| **G11** | `DictationTranscriber.Result` members — does it have `alternatives`? | Page not fetched. | Fetch `/documentation/speech/dictationtranscriber/result`. | Use only `text`, `range`, `isFinal`. |
-| **G12** | Reading a confidence value from an `AttributedString` run. | Speech attribute-scope property names not harvested. | Fetch `/documentation/foundation/attributescopes/speechattributes`. | Iterate `runs` and inspect the attribute container; do not hardcode a key path. |
-| **G13** | `SFSpeechLanguageModel.Configuration`'s initializer, and the type of `prepareCustomLanguageModel(for:)`. | Neither published. **This is the only unverified API in the entire custom-vocabulary path.** | Fetch `/documentation/speech/sfspeechlanguagemodel/configuration`. | Isolate both in one small function (§11.5) and fix against autocompletion in five minutes. |
-| **G14** | Whether mixing `PhraseCount`, `PhraseCountsFromTemplates` and `CustomPronunciation` in one result-builder block is legal. | Two distinct builder protocols (`DataInsertable` / `TemplateInsertable`). | Compile it. | Fall back to the imperative `insert(...)` form — all four methods are documented. |
-| **G15** | Whether a `Template`'s `count:` is per-expansion or divided across expansions. | Not documented. | An A/B recognition experiment. | Treat counts as relative weights on one consistent scale; tune empirically. |
-| **G16** | Return type of `SFCustomLanguageModelData.supportedPhonemes(locale:)`; whether it is `async`. | Described only in prose. | Compile it — this runs in *your* build-time CLI. | `let allowed = try await …` and let inference decide. |
-| **G17** | `SpeechDetector.DetectionOptions` members; `SensitivityLevel`'s full case list; type of `reportResults:`. | Pages not fetched. Only `.medium` attested. | Fetch `/speechdetector/detectionoptions`, `/sensitivitylevel`. | `SpeechDetector()` — documented as "default settings", and `.medium` is Apple's recommendation. |
-| **G18** | `SpeechAnalyzer.Options.priority`'s type; the default `ModelRetention`. | Not published. | SDK interface dump. | `SpeechAnalyzer(modules:)` with no options, as both Apple examples do. |
-| **G19** | `prepareToAnalyze(in:)`'s parameter. | Not published. The `(in:withProgressReadyHandler:)` overload hints it is a format or context, not a duration. | SDK interface dump. | Skip prewarming until you have measured that first-result latency is a real problem. |
+| **G1** | **`progressiveLongDictation` vs `.audioTimeRange`.** Apple's article merges by time range using a preset the preset page says has no time-range attributes (§8.3). | Two Apple pages disagree; the sample that would settle it is unavailable (§1.2). A preset's option contents are runtime values — invisible in a `.swiftinterface` (checked 2026-07-29). | Print `result.text.runs` for a volatile result on an iOS 27 device; or read the SpokenWord source. | `.union([.audioTimeRange])` explicitly. Costs nothing, removes the ambiguity. |
+| **G2** | `AssetInventory.Status` `Comparable` ordering. *Narrowed:* cases SDK-verified, but the case **declaration order differs between the 26.5 and 27.0 interfaces** (§5.2), so if `<` is synthesized, the ordering changed. | An interface cannot distinguish a synthesized `<` from a hand-written one. | `print([Status.installed, .downloading, .supported, .unsupported].sorted())` on *both* OS generations. | `switch` on all four cases. Never `>=`. |
+| **G5** | Value of `AssetInventory.maximumReservedLocales`. | A computed property's value is not in the interface; likely device-dependent. | One `print` on a device. | Assume 1. Release aggressively. Treat the throw as recoverable. |
+| **G6** | **Provenance of `withTaskCancellationShield`.** *Narrowed:* it is **not** a Speech-framework symbol — absent from the 27.0 interface. | Appears in Apple's article and nowhere else in the corpus; remaining candidates are the Concurrency library or a sample-local helper. | Type the name in a scratch file with the Xcode 27 toolchain. | Write your own (§9.4) — the semantics are unambiguous, and an unstructured `Task` already has them. |
+| **G13** | `SFSpeechLanguageModel.Configuration`'s initializer, and the type of `prepareCustomLanguageModel(for:)`. | **Objective-C API — a `.swiftinterface` cannot show it** (checked 2026-07-29; the type's existence is attested via `ContentHint.customizedLanguage`). Still the only unverified API in the custom-vocabulary path. | Fetch `/documentation/speech/sfspeechlanguagemodel/configuration` or read the ObjC header. | Isolate both in one small function (§11.5) and fix against autocompletion in five minutes. |
+| **G15** | Whether a `Template`'s `count:` is per-expansion or divided across expansions. | Behavioural, not declarational — no interface can settle it. | An A/B recognition experiment. | Treat counts as relative weights on one consistent scale; tune empirically. |
+| **G18** | The default `ModelRetention`. *Narrowed:* `priority`'s type is SDK-verified as `TaskPriority` (§13.2). | `options:` defaults to `nil`; what `nil` maps to is internal. | Apple documenting it, or measurement. | `SpeechAnalyzer(modules:)` with no options, as both Apple examples do. |
 | **G21** | Whether the modern stack needs speech-recognition authorization. | Apple's 2026 article requests **only** `AVCaptureDevice.requestAccess(for: .audio)`. The legacy `asking-permission-to-use-speech-recognition` article still exists. | Run on a device with speech recognition denied. | Request microphone access as Apple's article does. If you also support the legacy `SFSpeechRecognizer` path, request both. |
 | **G22** | The Info.plist usage-description key AVFoundation requires for microphone capture. | Not covered by any source read for this guide. | AVFoundation's capture-authorization documentation. | Consult AVFoundation's docs before shipping — a missing key is an immediate launch-time crash on device, so this one at least fails loudly. |
-| **G23** | Native macOS availability of the SpokenWord sample (§"What you need"). | The article's availability line omits macOS, though `CaptureInputSequenceProvider` lists macOS 27. | Fetch the sample project. | Treat the API as macOS 27 (its own page says so); expect to write macOS capture plumbing yourself. |
-| **G24** | Whether a `.bin`'s locale mismatching the transcriber's locale is ignored or errors (§11.7). | Not documented. | Test on device. | Ship one `.bin` per locale, named with the locale as Apple's sample does. |
+| **G23** | Native macOS availability of the SpokenWord **sample**. *Narrowed:* the API half is settled — the 27.0 classes are all present in the macOS interface dump. | The sample project remains unobtainable. | Fetch the sample project. | Treat the API as macOS 27 (SDK-verified); expect to write macOS capture plumbing yourself. |
+| **G24** | Whether a `.bin`'s locale mismatching the transcriber's locale is ignored or errors (§11.7). | Behavioural; not documented. | Test on device. | Ship one `.bin` per locale, named with the locale as Apple's sample does. |
 | **G25** | Whether bumping `SFCustomLanguageModelData.version` invalidates the on-device prepared-model cache. | The existence of an `ignoresCache:` overload implies caching is keyed on *something*, unspecified. | Test: prepare, change data, bump version, prepare again, check recognition. | Bump `version` on every data change. If that is insufficient, the `ignoresCache:` overload exists. |
 
-**Two of these are worth resolving before you write much code**: **G1** (because it silently
-corrupts your transcript) and **G13** (because it is the only genuinely unverified API call in the
-custom-vocabulary path). Both take under ten minutes on a real machine.
+### Closed 2026-07-29 against the SDK interfaces
+
+| # | Was | Resolution |
+|---|---|---|
+| **G3** | Does `AnalyzerInputConverter(analyzerFormat:)` accept an optional? | **No.** Non-optional `AVAudioFormat`; Apple's canonical snippet is loose and does not compile as printed (§2.2, `Speech-27.0-macos.swiftinterface:520`). |
+| **G4** | Type of `captureAudioDataOutput`; is `priority:` defaulted? | A plain `AVCaptureAudioDataOutput` (visionOS-unavailable); `priority: TaskPriority? = nil` on both factories (§6.3, `:720-731`). |
+| **G7** | Element/failure types of `provider.analyzerInputs`. | `some Sendable & AsyncSequence<AnalyzerInput, any Error>` — the guide's provisional spelling was exactly right (§6.4, `:732-734`). |
+| **G8** | Type of `convert(_:at:)`'s `at:`. | **Correction:** `AVAudioTime?`, not the guessed `CMTime?` (§6.6, `:521`). |
+| **G9** | `AVAsset` vs `URL` for `AssetInputSequenceProvider.provider(from:)`. | `AVAsset`; there is **no** URL overload — wrap URLs in `AVURLAsset` (§6.5, `:673`). |
+| **G10** | `DictationTranscriber` option-enum case lists. | Complete lists in §4.3, including three cases the docs never surfaced (`.etiquetteReplacements`, `.transcriptionConfidence`, `.alternativeTranscriptions`) (`:102-151`). |
+| **G11** | Does `DictationTranscriber.Result` have `alternatives`? | **Yes** — member-for-member identical to `SpeechTranscriber.Result`; the guide's "plausibly not" inference was wrong (§8.1, `:168-183`). |
+| **G12** | Reading a confidence value from a run. | Scope properties `transcriptionConfidence` (`Double`) / `audioTimeRange` (`CMTimeRange`) with standard dynamic member lookup (§8.8, `:190-220`). |
+| **G14** | Is a mixed result-builder block legal? | **Yes** — all three item types conform to `DataInsertable` (§11.4, `:538`, `:554`, `:641`). |
+| **G16** | Shape of `supportedPhonemes(locale:)`. | `-> [String]`, synchronous, nonthrowing — the guide's `try await` guess was wrong (§11.3, `:648`). |
+| **G17** | `SpeechDetector` options/sensitivity/`reportResults:`. | `SensitivityLevel {low, medium, high}` (`Int` raw), `DetectionOptions(sensitivityLevel:)`, `reportResults: Bool` (§12.1, `:265-315`). |
+| **G19** | `prepareToAnalyze(in:)`'s parameter. | `in audioFormat: AVAudioFormat?`, `async throws` (§13.3, `:231-232`). |
+
+**Two of the open ones are worth resolving before you write much code**: **G1** (because it
+silently corrupts your transcript) and **G13** (because it is the only genuinely unverified API
+call in the custom-vocabulary path). Both take under ten minutes on a real machine.
 
 ### 15.1 Where each claim in this guide comes from
 
@@ -3650,13 +3907,14 @@ For auditability, since a previous batch in this series was found to contain a f
 
 | Class | Count in this guide | Examples |
 |---|---|---|
+| **SDK interface dumps** (`Speech-26.5` / `Speech-27.0` `.swiftinterface`, checked 2026-07-29) | ~40 declarations, every availability floor, every enum case list | The whole `SpeechAnalyzer` and provider surfaces, all option enums, both `Result` structs, the attribute scope, the `SFCustomLanguageModelData` DSL |
 | Verbatim quotes from Apple's 2026 article | ~14 code fragments + ~10 prose blocks | The transcriber constructor, the capture-provider call, the two-line analysis core, the merge branch, the cancellation-shield task group, all four DSL fragments |
 | Verbatim quotes from Apple reference pages | ~30 declarations + ~25 prose blocks | The whole `SpeechAnalyzer` surface, both preset matrices, `AssetInventory`, `AnalyzerInput`, `SpeechDetector`, `SFCustomLanguageModelData` |
 | Quotes from a compiling Apple sample (iOS 26, stale) | 3 blocks | Locale comparison by BCP-47, the asset ladder, the two-transcript merge |
 | Quotes from an Apple staff forum reply | 1 | Thread 834149, "no new API has been released specific to that model" |
 | Read from `apple/coreai-models` source | §14 entirely | Line-numbered citations throughout |
 | **Assembled by us and marked 🟡** | ~8 listings | `makeTranscriber` composition, `switchLocale`, `transcribeFile`, `makeInputSequence`, `withTaskCancellationShield`, the `datagenerator` CLI, `TranscriptStore`, the §10 controller |
-| **Declared 🔴 unknown** | 24 | The table above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
+| **Declared 🔴 unknown** | 12 still open (of an original 24; 12 closed against the SDK 2026-07-29, several with corrections) | The tables above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
 
 Nothing in this guide is written from recollection of an API. Where a name, type or default could
 not be traced to a source read this session, it appears in the gap table rather than in a code
@@ -3728,7 +3986,19 @@ Everything cited in this guide, with the evidence class it belongs to.
 
 Cross-framework: `AttributeScopes.SpeechAttributes.TimeRangeAttribute`,
 `AttributeScopes.SpeechAttributes.ConfidenceAttribute`,
-`AttributedString.rangeOfAudioTimeRangeAttributes(intersecting:)` (Foundation).
+`AttributedString.rangeOfAudioTimeRangeAttributes(intersecting:)` (declared in the Speech module
+as extensions of Foundation types — see §8.2).
+
+**SDK interface dumps** (checked 2026-07-29; the strongest evidence class in this guide):
+
+- `notes/sdk-interfaces/Speech-26.5-macos.swiftinterface` — the macOS 26.5 SDK's Swift surface
+  (682 lines), used as the iOS 26-generation baseline.
+- `notes/sdk-interfaces/Speech-27.0-macos.swiftinterface` — the macOS 27.0 **beta** SDK's Swift
+  surface (742 lines), the source of every `Speech-27.0-macos.swiftinterface:N` citation.
+- Scope caveat, stated once here and honoured throughout: a `.swiftinterface` shows Swift-native
+  declarations only. The Objective-C surface (`SFSpeechRecognizer`, `SFSpeechLanguageModel`, the
+  legacy request/task types) is invisible to it, so those claims remain documentation-sourced and
+  were not downgraded by absence.
 
 [^speech-cancel]: Apple, [`SpeechAnalyzer`](https://developer.apple.com/documentation/speech/speechanalyzer),
     §“Finishing analysis,” publishes the finish methods' exact concurrency and throwing

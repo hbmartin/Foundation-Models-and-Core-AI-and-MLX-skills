@@ -1,0 +1,143 @@
+# coreai-build help surface — captured 2026-07-31
+# Tool: /Users/haroldmartin/Library/Developer/DVTDownloads/MetalToolchain/mounts/e0303a069097c7034cc5befc63a7a7c2c8ee7720/Metal.xctoolchain/usr/bin/coreai-build (version: coreai-build 3600.79.1)
+# Source: Metal Toolchain component 27A5228f installed into Xcode 27.0 beta (27A5228h); host macOS 26.5.2
+
+===== coreai-build --help =====
+OVERVIEW: A utility for building model assets.
+
+USAGE: coreai-build <subcommand>
+
+OPTIONS:
+  --version               Print version information and exit
+  -h, --help              Show help information.
+
+SUBCOMMANDS:
+  compile                 Compiles a source model to produce a specialization.
+  package                 Packages a source model to produce a model asset.
+  inspect                 Inspects a model asset.
+  metadata                Updates model metadata.
+
+  See 'coreai-build help <subcommand>' for detailed help.
+
+===== coreai-build compile =====
+OVERVIEW: Compiles a source model to produce a specialization.
+
+USAGE: coreai-build compile <input> [--output <output>] [--platform <platform>] [--min-deployment-version <min-deployment-version>] [--preferred-compute <preferred-compute>] [--architecture <architecture> ...] [--expect-frequent-reshapes]
+
+ARGUMENTS:
+  <input>                 The input source model (.aimodel).
+
+OPTIONS:
+  --output <output>       The output directory. If not provided, defaults to
+                          the current directory.
+        The output models will preserve the base input model name and append
+        the architecture and the .aimodelc extension. If the output is a single
+        model you can specify the full model path as output.
+  --platform <platform>   The target platform. (values: iOS, macOS, watchOS,
+                          visionOS, tvOS; default: macOS)
+  --min-deployment-version <min-deployment-version>
+                          The minimum deployment target version. (default: 27.0)
+  --preferred-compute <preferred-compute>
+                          An optional preferred compute unit type. (values:
+                          gpu, neural-engine, none; default: none)
+  --architecture <architecture>
+                          A list of specific architectures to compile for. If
+                          omitted compiles for all supported architectures.
+  --expect-frequent-reshapes
+                          Hint that inference will be run with frequently
+                          changing input shapes.
+  -h, --help              Show help information.
+
+
+===== coreai-build package =====
+OVERVIEW: Packages a source model to produce a model asset.
+
+USAGE: coreai-build package <input> [--platform <platform>] [--min-deployment-version <min-deployment-version>] --output <output>
+
+ARGUMENTS:
+  <input>                 The input model. It can be a source model (.aimodel)
+                          or compiled model (.aimodelc).
+
+OPTIONS:
+  -p, --platform <platform>
+                          The target platform. (values: iOS, macOS, watchOS,
+                          visionOS, tvOS; default: macOS)
+  --min-deployment-version <min-deployment-version>
+                          The minimum deployment target version.
+  -o, --output <output>   The output asset path.
+  -h, --help              Show help information.
+
+
+===== coreai-build inspect =====
+OVERVIEW: Inspects a model asset.
+
+USAGE: coreai-build inspect <path> [--io] [--no-io] [--metadata] [--no-metadata] [--storage] [--no-storage] [--compute] [--no-compute] [--ops] [--no-ops] [--json]
+
+ARGUMENTS:
+  <path>                  The input model. It can be a source model (.aimodel)
+                          or compiled model (.aimodelc).
+
+OPTIONS:
+  -i, --io/--no-io        Show functions with their inputs and outputs.
+                          (default: --io)
+  -m, --metadata/--no-metadata
+                          Show metadata. (default: --metadata)
+  -s, --storage/--no-storage
+                          Show storage types. (default: --no-storage)
+  -c, --compute/--no-compute
+                          Show compute types. (default: --no-compute)
+  -o, --ops/--no-ops      Show operation distribution. (default: --no-ops)
+  --json                  Output JSON.
+  -h, --help              Show help information.
+
+
+===== coreai-build metadata =====
+OVERVIEW: Updates model metadata.
+
+USAGE: coreai-build metadata <path> [--json <json>] [--author <author>] [--license <license>] [--description <description>] [--function-name <function-name> ...] [--argument-name <argument-name> ...] [--argument-description <argument-description> ...]
+
+ARGUMENTS:
+  <path>                  The model. It can be a source model (.aimodel) or
+                          compiled model (.aimodelc).
+
+OPTIONS:
+  --json <json>           When provided, updates the model's metadata to match
+                          the contents of the JSON file (use '-' for stdin)
+  --author <author>       Sets the author.
+  --license <license>     Sets the license.
+  --description <description>
+                          Sets the description.
+  --function-name <function-name>
+                          A function name for which to set a custom argument
+                          description (repeat for each entry).
+  --argument-name <argument-name>
+                          An argument name for which to set a custom
+                          description (repeat for each entry).
+  --argument-description <argument-description>
+                          Custom argument description (matched by position with
+                          --function-name and --argument-name).
+  -h, --help              Show help information.
+
+
+===== architecture-code enumeration (probed 2026-07-31, validation-oracle method) =====
+# Method: `coreai-build compile /nonexistent.aimodel --platform P --architecture A` validates
+# A before touching the file. Three distinct responses:
+#   "Unknown architecture 'A'"                          -> not a code at all
+#   "Architecture 'A' is not supported for the requested deployment target: P 27.0" -> valid code, wrong platform
+#   "Input model is missing the source bytecode."       -> valid code, accepted for platform
+# Swept h10..h20 x suffixes {p,s,c,g,x,a} on all five platforms, default --min-deployment-version 27.0.
+
+VALID CODES (24): h11p h11g h12p h13p h13s h13c h13g h14p h14s h14c h14g
+                  h15p h15s h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p
+
+PER-PLATFORM ACCEPTANCE at 27.0 default deployment:
+  macOS:    h13s h13c h13g  h14s h14c h14g  h15s h15c h15g  h16s h16c h16g  h17p h17s h17c h17g
+  iOS:      h11p h11g h12p  h13p h13g  h14p h14g  h15p h15g  h16p h16g  h17p h17g  h18p
+  tvOS:     h11p h14p
+  watchOS:  (none of the swept codes accepted on this host)
+  visionOS: (none of the swept codes accepted on this host; possibly missing device-support data on a macOS 26.5 host)
+
+# Grammar (observed, not documented): h<generation><variant>; variant p = phone-class (iOS/tvOS),
+# s/c = Mac-class, g = both stacks from h13g up; h17p is the one code accepted on BOTH macOS and iOS;
+# h18p is the newest phone-class code. The community-attested "h18p" (blog, previously unconfirmed)
+# is confirmed VALID. No h10*, h18{s,c,g}, h19*, h20* exist in this toolchain.

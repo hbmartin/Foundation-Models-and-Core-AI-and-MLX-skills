@@ -16,6 +16,17 @@ the Evaluations framework.** It is hand-written Swift in Apple's sample project.
 discusses judge alignment discusses κ, the number appears in Apple's own test assertions, and a
 reasonable reader concludes it ships. It does not. §15 shows you what you have to write.
 
+> ✅ **VERIFIED — interface check, 2026-07-29.** The framework ships inside Xcode 27, not the OS SDK
+> (guide 01's distribution box has the full story), and its real macOS Swift interface is captured
+> in this repo at `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface`. This guide has been
+> read against it end-to-end: claims marked ✅ **SDK-verified**
+> (`Evaluations-27.0-macos.swiftinterface:<lines>`) cite it, and it closed three of this guide's
+> GAPs — `ScoringMode`'s cases, `ModelJudgeError`'s cases, and `ModelJudgePrompt.reference`'s second
+> parameter (§20). An interface settles spellings, signatures, defaults and case lists, never
+> runtime behaviour — and it *confirms* the κ correction above: there is no agreement statistic
+> anywhere in the module's interface. Absence from it means "not present in the Xcode 27 beta
+> interface", not "does not exist".
+
 ---
 
 ## What this covers
@@ -388,11 +399,14 @@ you will have a measured reason rather than a vibe.
 
 ### 3.3 Passing a PCC model as the judge
 
-> 🟡 **RECONSTRUCTED** — `ModelJudgeEvaluator`'s `judge:` parameter is documented as taking a model
-> value, and it accepts both `SystemLanguageModel.default` and `SystemLanguageModel()` in the same
-> archive, so it is not pinned to a single static. **We have not seen
-> `judge: PrivateCloudComputeLanguageModel()` in any compiling source or documentation example**,
-> and the parameter's declared type was not captured in our harvest.
+> 🟡 **RECONSTRUCTED usage, ✅ SDK-verified type.** `ModelJudgeEvaluator`'s `judge:` parameter is
+> declared **`any FoundationModels.LanguageModel`** on all four initialisers and both `pairwise`
+> statics, with the promptless forms defaulting it to `SystemLanguageModel()`
+> (`Evaluations-27.0-macos.swiftinterface:317-324`, checked 2026-07-29). So
+> `judge: PrivateCloudComputeLanguageModel()` **typechecks** so long as that model conforms to
+> `LanguageModel`. What remains unverified is everything past the type system: **we have still not
+> seen a PCC judge in any compiling source or documentation example**, and nobody has reported how
+> it behaves against quota, latency, or the judge's JSON-decoding path.
 >
 > Session 298 narrates PCC as the judge, and an Apple engineer on forum thread 832053 confirms
 > `ModelJudgeEvaluator` works with PCC — but the code they posted sets up PCC as the *subject's*
@@ -403,9 +417,9 @@ you will have a measured reason rather than a vibe.
 > let response = try await session.respond(to: "Analyze this document...")
 > ```
 >
-> **Safe default until you have compiled it yourself:** write
+> **Safe default until you have run it yourself:** write
 > `judge: SystemLanguageModel.default`, calibrate with κ, and treat a PCC judge as an experiment you
-> verify with the compiler before you build a CI pipeline on it. If it does not typecheck, the
+> verify on hardware before you build a CI pipeline on it. If it misbehaves in practice, the
 > fallback that certainly works is to make PCC the *subject* model and keep the on-device judge.
 
 ### 3.4 The judge must not be the same *session* as the feature
@@ -488,31 +502,46 @@ So the minimum viable judge is a name and a scale, and everything else has a def
 > var dimensions
 > var scoringMode
 > ```
+>
+> ✅ **SDK-verified** — the interface fills in what the doc page left out
+> (`Evaluations-27.0-macos.swiftinterface:311-334`): `judge:` is `any LanguageModel` and **defaults
+> to `SystemLanguageModel()`** on the two promptless initialisers; `scoringMode:` **defaults to
+> `.discrete`** on all four initialisers and both `pairwise` statics; `pairwise`'s
+> `evaluationTarget:` is `((Input.ExpectedValue) -> String)? = nil`; and `judgePrompt(for:output:)`
+> is `async throws` and returns a FoundationModels **`Prompt`**, not a plain string (`:325-327`).
 
 Two things to take from that list.
 
 **First, `judgePrompt(for:output:)` is the debugging tool nobody mentions.** It renders the assembled
 prompt — your instructions, the framework's framing, the serialised output, the reference sections and
-the scale anchors — as a string you can print. When a judge behaves inexplicably, print the prompt
+the scale anchors — as a `Prompt` you can print. Note it is `async throws`, so the call is
+`try await evaluator.judgePrompt(for: sample, output: value)`. When a judge behaves inexplicably, print the prompt
 before you change anything else. Half the time the answer is visible immediately: a reference section
 that says "No expected tags defined" for every sample, an `evaluationTarget` that stringified a struct
 into `BookTags(tags: ["a", "b"])`, an instruction that never mentions your app.
 
-**Second, `scoringMode` is a genuine hole in our knowledge.**
+**Second, `scoringMode` is no longer a hole in our knowledge — its cases are pinned, its semantics
+are not.**
 
-> 🔴 **GAP — `ScoringMode`'s cases are unknown.** It appears as a parameter on all four
-> `ModelJudgeEvaluator` initialisers and both `pairwise` statics, and the framework index describes it
-> as *"The scoring constraint mode for a model-as-judge evaluator."* That is the entirety of what we
-> have. Its own documentation page was not fetched, it does not appear in the Book Tracker archive
-> (every call site omits it), and it is not spoken in any of the three Evaluations sessions.
+> ✅ **SDK-verified — GAP closed (2026-07-29).** `ScoringMode` has exactly two cases:
 >
-> **What would resolve it:** `xcrun swift-api-digester` or a `swiftinterface` dump of the
-> `Evaluations` module from a 27.0 SDK, or fetching
-> `/documentation/evaluations/modeljudgeevaluator/scoringmode`.
+> ```swift
+> public enum ScoringMode : Sendable {
+>     case discrete
+>     case continuous
+> }
+> ```
 >
-> **Safe default meanwhile:** omit the parameter, exactly as Apple's sample does at all three of its
-> judge call sites. The name suggests it constrains the decoder to legal scale values; if that is
-> right, the default is the constrained one and you lose nothing.
+> (`Evaluations-27.0-macos.swiftinterface:300-308`), and **`.discrete` is the default** on all four
+> `ModelJudgeEvaluator` initialisers and both `pairwise` statics (`:317-324`). What the interface
+> cannot settle is behaviour: the names read as "constrain the judge to the scale's defined values"
+> versus "allow scores between the anchors" — consistent with the framework index's *"scoring
+> constraint mode"* description, but that is a reading of two identifiers, not a documented fact.
+>
+> **Safe default unchanged:** omit the parameter, exactly as Apple's sample does at all three of its
+> judge call sites — you get `.discrete`. Treat `.continuous` as a deliberate experiment, and check
+> what lands in the DataFrame if you try it: scores between anchors would break any downstream
+> statistic that assumes contiguous categories, κ included (§14.4).
 
 ---
 
@@ -533,6 +562,14 @@ measurable consequences.
 > struct ScaleOption
 > protocol ScoreLevel { var guideDescription: String { get }; var value: Double { get } }
 > ```
+>
+> ✅ **SDK-verified** (`Evaluations-27.0-macos.swiftinterface:360-399`): `numeric(_ scale: [Double :
+> String])`, `passFail(passDescription:failDescription:)` and `custom<Level>(_ level: Level.Type)
+> where Level : ScoreLevel` are all real, as is `init(options: [ScaleOption])`. The full
+> `ScoreLevel` protocol is `CaseIterable & Hashable & Sendable`, requiring `label`,
+> `guideDescription` and `value: Double` — with a default implementation of `label`, which is why
+> the enum example below gets away without writing one. `ScaleOption` is
+> `init(label:guideDescription:value:)`.
 
 All three forms, from Apple's documentation examples:
 
@@ -677,6 +714,10 @@ That is a scoring guide.
 > var scale: ScoringScale
 > var description: String?
 > ```
+>
+> ✅ **SDK-verified** — `init(_ name: String, description: String? = nil, scale: ScoringScale)`;
+> `description` defaults to `nil`, and `metric` is a computed property
+> (`Evaluations-27.0-macos.swiftinterface:389-399`).
 
 Three parts, confirmed independently by the session:
 
@@ -889,6 +930,12 @@ judge cannot know which app it is looking at unless you tell it.
 > var evaluationTarget       // closure: response -> String
 > var reference              // closure: (input, response) -> [String: String] labeled sections
 > ```
+>
+> ✅ **SDK-verified** — the exact declarations (`Evaluations-27.0-macos.swiftinterface:347-357`):
+> `instructions` defaults to `ModelJudgePrompt.defaultInstructions`; `evaluationTarget` is
+> `(@Sendable (Input.ExpectedValue) -> String)? = nil`; and `reference` is
+> `(@Sendable (Input, Input.ExpectedValue) async throws -> [String : String])? = nil` — note the
+> reference closure may be `async` and may `throw`, which no doc example uses.
 
 > ⚠️ **CORRECTION — `reference` returns a dictionary, not a string.** This is the single most likely
 > thing to get wrong from memory, and material in circulation has it as a `String`. It is
@@ -935,14 +982,15 @@ have to derive.
 **`reference` takes `(input, _)`.** The first parameter is the `ModelSample`, which is where the
 expected value lives. The second is discarded at both call sites in the archive.
 
-> 🔴 **GAP — what is `reference`'s second closure parameter?** Discarded as `_` in both of the
-> sample's usages and in Apple's documentation snippet. The documentation prose says the closure
-> *"receives the input sample and the model's response"*, which makes `ModelSubject` (or the raw
-> value) the obvious candidate, but the parameter's type is not published anywhere we fetched.
-> **What would resolve it:** a `swiftinterface` dump, or naming the parameter in your own code and
-> letting the compiler tell you its type — which takes about fifteen seconds and is the fastest
-> answer available to a reader with Xcode 27 open.
-> **Safe default meanwhile:** write `{ input, _ in … }` and take everything from `input`.
+> ✅ **SDK-verified — GAP closed (2026-07-29).** The second parameter is the model's output value,
+> typed **`Input.ExpectedValue`** — the full closure type is
+> `(Input, Input.ExpectedValue) async throws -> [String : String]`
+> (`Evaluations-27.0-macos.swiftinterface:355`). For `ModelSample<BookTags>` the discarded `_` is
+> therefore the generated `BookTags` — the same value `evaluationTarget` receives — not a
+> `ModelSubject`, as previously guessed. Discarding it stays reasonable: the framework already shows
+> the judge the output, and repeating it in a reference section would duplicate it in the prompt.
+> Reach for it when the reference section should *react* to the output — say, listing only the
+> expected tags the model missed.
 
 **The `?? "No expected tags defined"` is deliberate.** A prompt-only sample with no `expected` value
 still gets a reference section, and it says so in words the judge can act on. The alternative —
@@ -1265,6 +1313,12 @@ deviation and alignment score sit together.
 > func group(_:_:)
 > struct MetricsAggregator.Group
 > ```
+>
+> ✅ **SDK-verified** — that is the complete public surface: the interface shows exactly those nine
+> members on `MetricsAggregator`, and the same eight compute/custom methods again on
+> `MetricsAggregator.Group` (`Evaluations-27.0-macos.swiftinterface:717-744`). The absence of an
+> agreement statistic is no longer an inference from a documentation member list; it is the shipped
+> interface, checked 2026-07-29.
 
 There is no `computeCorrelation`, no `computeAgreement`, and **no kappa**. `custom(of:label:_:)` is
 the extension point, and §15 is what you put in it.
@@ -1564,7 +1618,8 @@ sample uses plain, unweighted κ.
 > ✅ **VERIFIED** — `MetricsAggregator`'s complete documented member list is `computeMean`,
 > `computeMedian`, `computeMode`, `computeMinimum`, `computeMaximum`, `computeStandardDeviation`,
 > `computeVariance`, `custom(of:label:_:)`, `group(_:_:)`. **There is no agreement statistic of any
-> kind.** No correlation, no κ, no ICC.
+> kind.** No correlation, no κ, no ICC. (Confirmed against the shipped interface, 2026-07-29:
+> `Evaluations-27.0-macos.swiftinterface:717-744`.)
 >
 > ✅ **VERIFIED** — the session itself is consistent with this once you listen closely (`335:127`):
 > *"we need to calculate Cohen's kappa, which I can do that with a **custom aggregation method**."*
@@ -1851,16 +1906,19 @@ func evaluateBookTagging() async throws {
     #expect(result.aggregateValue(.mean(of: Self.evaluation.tagCount)) >= 0.8)
 
     // Drop a copy where the calibration workflow can pick it up.
-    let url = URL.desktopDirectory.appending(path: "BookTagging-latest.json")
-    try result.saveJSON(to: url, includeReportMetadata: false)
+    // `saveJSON(to:)` takes a DIRECTORY; the framework names the file and returns its URL.
+    let written = try result.saveJSON(to: URL.desktopDirectory, includeReportMetadata: false)
+    print("run saved to \(written.path())")
 }
 ```
 
-> 🟡 **RECONSTRUCTED** — `saveJSON(to:includeReportMetadata:)` is a documented member with those
-> argument labels; the surrounding test body is verified (`BookTags.swift:149-167`). We have not seen
-> the two used together, and the JSON `saveJSON` produces is not necessarily the same shape as the
-> `.xcevalresult` bundle `DatasetExtractor` parses. **If you need Apple's exact format, use
-> `DatasetExtractor`.**
+> ✅ **SDK-verified signature, 🟡 unverified output shape.** The exact declaration is
+> `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false) throws
+> -> URL` (`Evaluations-27.0-macos.swiftinterface:575-591`, checked 2026-07-29) — the parameter is a
+> **directory**, which is why the snippet above no longer appends a filename. What is still
+> unverified is the *shape* of the JSON it writes: no sample calls it, and it is not necessarily the
+> same layout as the `.xcevalresult` bundle `DatasetExtractor` parses. **If you need Apple's exact
+> extractor format, use `DatasetExtractor`.**
 
 ### 16.2 Step 2 — score the rows yourself
 
@@ -2614,12 +2672,29 @@ fixture, joined positionally against 100% of your expert ratings (§19.1).
 > produced subject"*), `SubjectInferenceError` (*"A typed reason why `subject(from:)` failed to
 > produce a subject for a sample"*), `EvaluationResultsError`, and `ModelJudgeError`.
 
-> 🔴 **GAP — `ModelJudgeError`'s cases are not published**, and neither is the framework's policy for
-> a judge call that throws mid-run: whether the sample is skipped, retried, or the whole evaluation
-> fails. Nothing in the sessions, the sample or the fetched documentation says.
-> **What would resolve it:** the `/documentation/evaluations/modeljudgeerror` page, or an interface
-> dump.
-> **Safe default meanwhile:** compare the judge array's length against your fixture's on every run
+> ✅ **SDK-verified — `ModelJudgeError`'s cases (GAP half-closed, 2026-07-29).** The interface pins
+> five cases, all about the judge's *response* rather than its transport
+> (`Evaluations-27.0-macos.swiftinterface:335-346`):
+>
+> ```swift
+> public enum ModelJudgeError : LocalizedError {
+>     case invalidScore(dimension: String, value: String)
+>     case invalidResponse(String)
+>     case jsonDecodingFailed(response: String, underlying: any Error)
+>     case missingDimension(String, response: String)
+>     case noScaleValues(dimension: String)
+> }
+> ```
+>
+> Read the list as a diagnosis menu: the judge answered off-scale (`invalidScore`), answered in the
+> wrong shape (`invalidResponse`, `jsonDecodingFailed`), skipped a dimension you asked for
+> (`missingDimension`), or was handed a scale with no options (`noScaleValues`).
+>
+> 🔴 **Still open:** the framework's *policy* when a judge call throws mid-run — skipped, retried, or
+> whole-run failure — is runtime behaviour an interface cannot show. One data point leans "skip and
+> log": `EvaluationError`'s deprecated `metricsNotFound` case carries Apple's own message that
+> missing metrics are *"materialized as ignored columns and logged"* (`:489-498`).
+> **Safe default unchanged:** compare the judge array's length against your fixture's on every run
 > (§19.1's `precondition`), so a partial run cannot masquerade as a complete one.
 
 ### 19.9 The checklist
@@ -2642,25 +2717,27 @@ fixture, joined positionally against 100% of your expert ratings (§19.1).
 
 Collected, so you can see the shape of the fog rather than meeting it one patch at a time.
 
-> 🔴 **GAP — `ScoringMode` cases.** A parameter on all four `ModelJudgeEvaluator` initialisers and
-> both `pairwise` statics, described only as *"The scoring constraint mode for a model-as-judge
-> evaluator."* Absent from every call site in Apple's sample. **Resolve with:** the
-> `/documentation/evaluations/modeljudgeevaluator/scoringmode` page or a `swiftinterface` dump.
-> **Meanwhile:** omit it, as Apple does.
+> ✅ **CLOSED (2026-07-29) — `ScoringMode` cases.** `case discrete`, `case continuous`, with
+> `.discrete` the default everywhere the parameter appears
+> (`Evaluations-27.0-macos.swiftinterface:300-308`, `:317-324`). The *semantics* of `.continuous`
+> remain undocumented. **Meanwhile:** omit it, as Apple does (§4.1).
 
-> 🔴 **GAP — `ModelJudgeError` cases**, and the framework's behaviour when a judge inference throws
-> mid-dataset. **Resolve with:** the error's documentation page, or one deliberately-failed run.
+> ✅ **CLOSED in part (2026-07-29) — `ModelJudgeError` cases** are five, SDK-verified (§19.8;
+> `Evaluations-27.0-macos.swiftinterface:335-346`). 🔴 **Still open:** the framework's behaviour
+> when a judge inference throws mid-dataset. **Resolve with:** one deliberately-failed run.
 > **Meanwhile:** length-assert the join (§19.1).
 
-> 🔴 **GAP — the second parameter of `ModelJudgePrompt.reference`.** Discarded as `_` at every
-> observed call site. Prose says the closure *"receives the input sample and the model's response"*,
-> so `ModelSubject` is the obvious guess — but it is a guess. **Resolve with:** naming the parameter
-> and reading the compiler error. **Meanwhile:** take everything from the first parameter.
+> ✅ **CLOSED (2026-07-29) — the second parameter of `ModelJudgePrompt.reference`.** It is the
+> model's output value, typed `Input.ExpectedValue`; the full closure type is
+> `(Input, Input.ExpectedValue) async throws -> [String : String]`
+> (`Evaluations-27.0-macos.swiftinterface:355`). Not a `ModelSubject`, as previously guessed (§8.2).
 
 > 🔴 **GAP — `ScoringScale` cases beyond `.numeric` in practice.** `.passFail` and `.custom` are
-> documented with examples, but **only `.numeric` appears anywhere in Apple's sample archive**, and
-> no `ScoreLevel`-conforming enum appears in compiling code. The typed-enum path is documentation-only.
-> **Meanwhile:** `.numeric` for quality, `.passFail` for binary; treat `.custom` as unproven.
+> documented with examples and their signatures are now SDK-verified
+> (`Evaluations-27.0-macos.swiftinterface:382-388`), but **only `.numeric` appears anywhere in
+> Apple's sample archive**, and no `ScoreLevel`-conforming enum appears in compiling code.
+> **Meanwhile:** `.numeric` for quality, `.passFail` for binary; treat `.custom` as unproven in
+> practice, though no longer in spelling.
 
 > 🔴 **GAP — the exact contents of `Statistics.swift`.** We know it is 72 lines, that it is
 > hand-written, that it lives in `HillClimbingEvaluations/`, and that its entry point is
@@ -2676,11 +2753,15 @@ Collected, so you can see the shape of the fog rather than meeting it one patch 
 > image. **Meanwhile:** judge the text description of an image result, not the image.
 
 > 🔴 **GAP — running a PCC model as the judge.** See §3.3. Narrated in session 298, never seen in
-> code. **Meanwhile:** `SystemLanguageModel.default` plus κ calibration.
+> code. The interface narrows it: `judge:` is declared `any LanguageModel`
+> (`Evaluations-27.0-macos.swiftinterface:317-324`), so a PCC model typechecks — runtime behaviour
+> against quota and the judge's decoding path is the open part. **Meanwhile:**
+> `SystemLanguageModel.default` plus κ calibration.
 
-> 🔴 **GAP — weighted κ.** Absent from Apple's entire corpus. §15.3 is ours, offered as a
-> supplementary diagnostic and explicitly not as a substitute for the statistic the 0.6 bar was set
-> against.
+> 🔴 **GAP — weighted κ.** Absent from Apple's entire corpus — and the interface confirms no
+> weighting parameter exists anywhere in the module (κ itself is sample code, not framework). §15.3
+> is ours, offered as a supplementary diagnostic and explicitly not as a substitute for the
+> statistic the 0.6 bar was set against.
 
 One non-gap worth recording, because it is unusually clean: **the Evaluations developer forum contains
 exactly three threads**, all from WWDC26 week, one unanswered. There is essentially no community
@@ -2707,18 +2788,22 @@ dimension.name          // becomes the DataFrame column name
 
 // ── Prompt ─────────────────────────────────────────────────────────────────────
 ModelJudgePrompt(
-    instructions: String,                                  // role + criteria + steps
-    evaluationTarget: (Value) -> String,                   // how the output is shown
-    reference: (ModelSample<Value>, _) -> [String: String]  // labelled sections — a DICTIONARY
-)
+    instructions: String = .defaultInstructions,            // role + criteria + steps
+    evaluationTarget: ((Value) -> String)? = nil,           // how the output is shown
+    reference: ((ModelSample<Value>, Value) async throws -> [String: String])? = nil
+)                                          // labelled sections — a DICTIONARY (SDK-verified)
 ModelJudgePrompt.defaultInstructions                       // used if you omit the prompt
 
 // ── Evaluator ──────────────────────────────────────────────────────────────────
-ModelJudgeEvaluator(_ name:, scale:, judge:, scoringMode:, prompt:)       // single dimension
-ModelJudgeEvaluator(judge:, dimensions:, scoringMode:, prompt:)           // multi-dimension
+// judge: any LanguageModel = SystemLanguageModel() on the promptless forms;
+// scoringMode: ScoringMode = .discrete (cases: .discrete | .continuous)
+ModelJudgeEvaluator(_ name:, scale:, judge:, scoringMode:)                // single dimension
+ModelJudgeEvaluator(_ name:, scale:, judge:, scoringMode:, prompt:)
+ModelJudgeEvaluator(judge:, dimensions:, scoringMode:)                    // multi-dimension
+ModelJudgeEvaluator(judge:, dimensions:, scoringMode:, prompt:)
 ModelJudgeEvaluator.pairwise(_ name:, scale:, judge:, scoringMode:, evaluationTarget:)
 ModelJudgeEvaluator.pairwise(judge:, dimensions:, scoringMode:, evaluationTarget:)
-evaluator.judgePrompt(for:output:)   // renders the assembled prompt — your best debugger
+try await evaluator.judgePrompt(for:output:)   // async throws -> Prompt — your best debugger
 ModelJudgeEvaluator.defaultInstructions
 
 // ── Aggregation ────────────────────────────────────────────────────────────────
@@ -2812,6 +2897,14 @@ Files cited: `BookTracker/Services/BookTaggingService.swift` · `BookTrackerEval
 call site read, body not read**) · `HillClimbingEvaluations/BookTaggingEvaluation-extracted.json` ·
 `BookSampleGenerator/main.swift` · `DatasetExtractor/main.swift`.
 
+**The framework's shipped Swift interface** —
+`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (885 lines), dumped from the Xcode 27
+beta's macOS `Evaluations.framework` on **2026-07-29**. For names, signatures, defaults,
+availability and case lists it outranks every source below, the sample included; for usage and
+runtime behaviour it decides nothing. Cited as ✅ **SDK-verified** with line numbers. It closed this
+guide's GAPs on `ScoringMode`, `ModelJudgeError`'s cases and `ModelJudgePrompt.reference`'s second
+parameter, and corrected `judgePrompt(for:output:)` to `async throws -> Prompt`.
+
 **Apple documentation** (harvested 2026-07-27 via `sosumi.ai` mirrors of `developer.apple.com`):
 `/documentation/evaluations` (framework index, 44 KB) ·
 `/documentation/evaluations/scoring-with-model-as-judge-evaluators` ·
@@ -2877,10 +2970,11 @@ Evaluations framework, which did not exist when they were written.
    `some Evaluator`. The sample says **`var evaluators: Evaluators`** — a result-builder type, plural.
    **Ruling: the sample.** The narrated form does not compile.
 
-**Precedence used throughout:** Apple sample-code projects > headers/SDK sources > Apple documentation
-pages > Apple-staff forum answers > WWDC session transcripts > community material. No community source
-is cited in this guide, because for this framework there is essentially none: the Evaluations
-developer forum contains three threads in total.
+**Precedence used throughout:** for *signatures*, the shipped `.swiftinterface` first, then Apple
+sample-code projects; for *usage and behaviour*, Apple sample-code projects first. Below both: Apple
+documentation pages > Apple-staff forum answers > WWDC session transcripts > community material. No
+community source is cited in this guide, because for this framework there is essentially none: the
+Evaluations developer forum contains three threads in total.
 
 ---
 

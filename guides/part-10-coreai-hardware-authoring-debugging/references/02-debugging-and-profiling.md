@@ -471,6 +471,16 @@ mirror and had to be recovered from Apple's raw DocC JSON, so it is worth reprod
 > - ***Time Profiler*** — *"Profiles running threads on all cores at regular intervals for all
 >   processes."*
 
+> ✅ **SDK-verified, 2026-07-29** — that four-instrument composition is now confirmed from the
+> shipped toolchain, not just DocC prose. The Xcode 27.0 beta's
+> `Instruments.app/Contents/Resources/templates/Core AI.tracetemplate` archives exactly four
+> instrument identifiers — **`com.apple.dt.instruments.coreai`**, **`com.apple.ane`** (Neural
+> Engine), **`com.apple.xray.instrument-type.metal-gpu`**, and
+> **`com.apple.xray.instrument-type.coresampler2`** (the Time Profiler sampler) — plus the template
+> description *"Monitors an application's machine learning activity executed through Core AI."*
+> `xcrun xctrace list templates` lists **Core AI** and `list instruments` lists **Core AI** and
+> **Neural Engine** by name.
+
 That composition is the answer to the most common Core AI question — *"did my model actually run on
 the Neural Engine?"* You do not answer it by reading `SpecializationOptions`; you answer it by
 looking at whether the Neural Engine instrument shows activity aligned with your Inference events.
@@ -606,8 +616,21 @@ Two inferences worth drawing from those strings, both of which change how you re
 > evidence for *what the strings look like on screen* in the Xcode 27 build you have. **Nobody here
 > has run Xcode 27's Instruments.** In particular: the detail-pane column set, whether there is a
 > per-compute-unit breakdown column for each Inference event, whether the template works against the
-> Simulator, and whether there is a cache-hit metric are all **unknown**. **Resolution:** an Xcode 27
-> install, a device, and one recorded trace. **Safe default meanwhile:** navigate by the four
+> Simulator, and whether there is a cache-hit metric are all **unknown**.
+>
+> **Narrowed 2026-07-29:** the template file itself was inspected in the Xcode 27.0 beta and its
+> four-instrument composition is now ✅ (see §3.2) — so *what exists* is settled. The on-screen
+> strings remain out of reach from the toolchain alone: Instruments streams instrument definitions
+> from the **recording target** at attach time (a sweep of the host Instruments.app finds none of
+> the known lane names), so no amount of host-side inspection produces them.
+> **Narrowed again 2026-07-31:** an OS 27 recording target now exists on this machine — the iOS
+> 27.0 Simulator runtime — but `xcrun xctrace record` against the booted simulator hangs for every
+> template on this macOS 26.5 host (measured with a Time Profiler control; `--no-prompt` set), so
+> headless capture is ruled out. Note also that **Core AI itself cannot run in the simulator** (the
+> CoreAI module is absent from the iPhoneSimulator27.0 SDK — guide 7.1), so even a GUI recording of
+> *this* template against the simulator would show the lane chrome but no Core AI events.
+> **Resolution:** one manual GUI Instruments recording — against the booted iOS 27.0 simulator for
+> the lane/metric *names*, or a real OS 27 device for names *and* live Core AI events. **Safe default meanwhile:** navigate by the four
 > category names above (they are Apple's own, and appear in event labels, not just legends), expand
 > every track to its function level, and do not script or automate against any string in the UI.
 
@@ -936,19 +959,27 @@ The command, verbatim from the docs:
 naming it: *"For the available values, the minimum deployment version, the target architecture, and
 other options, run `coreai-build compile --help`."*
 
-> 🔴 **GAP — the full `coreai-build compile` flag list and the set of `deviceArchitectureName`
-> values.** Apple names five flags and hints at a sixth. Community sources report
-> `--architecture h18p` (iPhone 17 Pro, from the device identifier `iPhone18,1`) and
-> `--preferred-compute neural-engine` / `gpu`, with `h16c` for M-series Macs — **community-reported,
-> not Apple-published, and unverified here**. Whether `coreai-build` has subcommands beyond `compile`
-> (an `inspect` and a `package` are attested only in community bug reports; see §15) is likewise
-> undocumented. **Resolution:** run `xcrun coreai-build compile --help` on a Mac with Xcode 27 and
-> the Metal Toolchain. **Safe default meanwhile:** use only the five documented flags, and discover
-> the architecture string at runtime rather than hardcoding it:
+> ✅ **GAP — RESOLVED 2026-07-31 — the full `coreai-build compile` flag list; the architecture-code
+> *set* is enumerated, its device mapping is not.** `xcrun coreai-build compile --help` has now been
+> run: the wrapper turned out to ship in the optional **Metal Toolchain component**
+> (`xcodebuild -downloadComponent MetalToolchain`), not in Xcode-beta.app — which is why the
+> 2026-07-29 check found it absent and only the `aimodelc` stub (command types `package`/`compile`,
+> no `--help`, binary saying *"Please use 'xcrun coreai-build' instead"*) in the app bundle. Full
+> capture: `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, `coreai-build 3600.79.1`. The
+> flag list: `--output`, `--platform {iOS, macOS, watchOS, visionOS, tvOS}`,
+> `--min-deployment-version` (default 27.0), `--preferred-compute {gpu, neural-engine, none}`
+> (default `none`), `--architecture` (repeatable), `--expect-frequent-reshapes`. Subcommands:
+> `compile`, `package`, **`inspect`** (the community claim §15 could only attest from bug reports
+> is real — flags `--io/--metadata/--storage/--compute/--ops/--json`) and a previously-unknown
+> **`metadata`**. Probing the compiler's own `--architecture` validation enumerated **24 valid
+> codes, `h11p…h18p`** (capture file, final section) — `h18p` confirmed valid. What is *still*
+> community-reported only: which physical device maps to which code (`h18p` = iPhone 17 Pro from
+> `iPhone18,1`, `h16c` = M4 Max).
+> **Safe default unchanged:** discover the architecture string at runtime rather than hardcoding it:
 >
 > ```swift
-> let arch = AIModel.deviceArchitectureName          // ✅ verified: static, returns String
-> let assetName = "MyModel.\(arch).aimodelc"
+> let arch = AIModel.deviceArchitectureName          // ✅ SDK-verified: static, returns String
+> let assetName = "MyModel.\(arch).aimodelc"         //    (CoreAIDelegates-27.0:107-112)
 > ```
 
 And the hardware gate that neither transcript mentions and that will decide whether AOT is even
@@ -2894,7 +2925,9 @@ export VERIFY_DEBUGINFO_LOCATIONS=1
 - Why the gauge omits `Setup`, and whether that inflates its Inference median — §3.4
 - Whether the gauge needs a scheme option, and what it costs — §2.8
 - The exact shipped strings in the gauge's More menu (`DebugML` leak) — §2.7
-- Full `coreai-build compile` flag list; `deviceArchitectureName` value set — §5.2
+- ~~Full `coreai-build compile` flag list; `deviceArchitectureName` value set~~ **closed 2026-07-31**
+  (Metal Toolchain component; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) — the
+  code→device mapping remains community-only — §5.2
 - Full value lists for Target / Compute Units / Graph Visualization in the Debugger scheme dialog — §8.2
 - Whether the Debugger can attach to visionOS / tvOS / watchOS — §6.1
 - Which PyTorch model Apple intends in `save_intermediates(program=…)` — §9.3
@@ -3002,6 +3035,6 @@ may be machine-generated. Nothing in this guide rests on it.
 
 [^sample-routing-policy]: The policy being interpreted is source code in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s framework default is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

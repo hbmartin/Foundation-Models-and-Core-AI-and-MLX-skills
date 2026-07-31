@@ -52,7 +52,10 @@ index content — into a shape Apple Intelligence can use, which is where integr
    for schema domains or on-screen awareness in this corpus, and the *only* downloadable Speech sample
    is a **WWDC25 leftover** containing none of the 2026 symbols. Three of these guides therefore stand
    on documentation pages, Apple's published session code blocks and forum answers — and say so in a
-   box at the top rather than pretending otherwise.
+   box at the top rather than pretending otherwise. Since 2026-07-29, **16.2 and 16.4 are
+   additionally checked symbol-by-symbol against the macOS 26.5 and 27.0-beta SDK interfaces** in
+   `notes/sdk-interfaces/`, which upgraded their headline claims to ✅ SDK-verified and closed
+   seven of their gap-register entries between them.
 3. **A known-negative is as load-bearing as an API.** "No TTS API" and "no fitness / health / finance /
    commerce / travel / food / transport / social / education / games schema domain" are both
    *findings*, and both change roadmaps. Guides 16.1 §1 and 16.2 §6 lead with them.
@@ -103,15 +106,23 @@ Core AI runtime, cross-linked to Part 7.
 > time-range merging to append-only, and `bestAvailableAudioFormat` returning `nil` if you query it
 > before installing assets.
 
-> 🔴 **GAP — 24 declared unknowns**, more than any guide here, because the SpokenWord project that
-> would settle most of them was never obtainable. §15 lists each with what would resolve it.
-> The former finish-method signature gap is resolved by Apple's current async declaration for
+> ✅ **SDK-verified 2026-07-29** against the `Speech-26.5` and `Speech-27.0` (macOS 27.0 beta)
+> `.swiftinterface` dumps in `notes/sdk-interfaces/`: every Swift-native symbol, signature,
+> availability floor and enum case now carries a file:line citation. Of the original **24 declared
+> unknowns**, **12 closed** against the interfaces (several with corrections — `convert(_:at:)`
+> takes `AVAudioTime?` not `CMTime?`, `DictationTranscriber` *does* have `alternatives`, and
+> `AnalyzerInput.bufferDuration`/`bufferFormat` turn out to be 27-only) and **12 remain open** —
+> mostly behavioural questions and ObjC-side API (`SFSpeechLanguageModel.Configuration`) that no
+> Swift interface can settle. §15 keeps the full open/closed ledger. The former finish-method
+> signature gap is resolved by Apple's current async declaration for
 > `cancelAndFinishNow()`.[^speech-cancel]
 
 ### [16.2 — App Schema Domains: the complete map of what Siri can actually do](references/02-app-schema-domains.md)
-The enumeration is the product: **all 23 domains in three tiers — roughly 177 intents, 73 entities and
-50 enums** — in one place for the first time, with per-domain commentary on what each one's shape tells
-you. Around it: Apple's discovery-versus-action framing (the most clarifying paragraph in the area), the
+The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50
+enums, censused symbol-by-symbol against the macOS 27.0 beta SDK interface on 2026-07-29** — in one
+place for the first time, with per-domain commentary on what each one's shape tells you. The SDK
+pass corrected five domains the doc pages under-report (clock's entire stopwatch surface among
+them). Around it: Apple's discovery-versus-action framing (the most clarifying paragraph in the area), the
 macro system and the build errors it generates, query protocols, dialog and snippets, and §13's new
 execution model — `LongRunningIntent` past the 30-second wall, `ExecutionTargets`, `EntityCollection`,
 `@UnionValue`, `SyncableEntity`. **§6 is the section most readers need**: the categories with no domain.
@@ -121,10 +132,12 @@ execution model — `LongRunningIntent` past the 30-second wall, `ExecutionTarge
 > The obvious `if let` implementation compiles, runs, returns success, and silently ignores every
 > *"remove the due date"* the user will ever say. `.set(value)` / `.set(nil)` / `.unset` is the fix.
 
-> 🔴 **GAP — a 21-entry register (§16),** because Apple's per-schema documentation is thin: required
-> properties are verified for exactly two of ~170 schemas, the co-requisite graph rests on one
-> demonstrated pair, and `ValueRepresentation` vs `IntentValueRepresentation` — two similarly-named
-> types doing one apparent job across two sessions — is unreconciled. **Do not port code between them.**
+> 🔴 **GAP — a 21-entry register (§16), five entries closed against the 27.0 beta SDK interface on
+> 2026-07-29** — among them the `ValueRepresentation` vs `IntentValueRepresentation` hazard, now
+> resolved: they are **one type** (`ValueRepresentation` is an `AppEntity`-scoped typealias), so the
+> spellings cannot diverge. Still open: Apple's per-schema documentation is thin — required
+> properties are verified for exactly two of ~180 schemas, and the co-requisite graph rests on one
+> demonstrated pair.
 
 ### [16.3 — On-screen awareness: making Siri understand "this"](references/03-onscreen-awareness.md)
 This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity`
@@ -167,7 +180,10 @@ one gap starves all three at once. Both on-ramps are given complete, §5 says wh
 
 > 🔴 **GAP (G5) — the seam between the two halves.** Whether that hook fires at all for content indexed
 > via `indexAppEntities(_:)` is documented nowhere: not the docs, not the sessions, not the samples, not
-> any forum answer. That is the natural path for an App Intents-first team and every step of its failure
+> any forum answer — and not the SDK either: the 2026-07-29 interface pass (which closed G1,
+> `IndexedEntity` is iOS 18 / macOS 15, and G4, `priority: Int = 0`) cannot see it, because the
+> delegate is Objective-C and outside the Swift module interface. That is the natural path for an
+> App Intents-first team and every step of its failure
 > is silent. §10 covers nothing else; the safe default is blunt — if you need model-readable bodies,
 > donate `CSSearchableItem`s too.
 

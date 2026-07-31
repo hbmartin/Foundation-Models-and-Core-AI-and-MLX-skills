@@ -344,10 +344,10 @@ if (model_file := config.get("model_file")) is not None:
 ```
 
 `--trust-remote-code` is present on the **model-loading** mlx-lm commands, and it gates two different
-things there. It is intentionally absent from `manage`, `upload`, and `share`, which do not load a
-model architecture or tokenizer.[^trust-cli-source]
-remote *tokenizer* code and the *architecture* file. The environment variable
-`MLX_LM_TRUST_REMOTE_CODE=1` works for the CLI tools.
+things there: remote *tokenizer* code and the *architecture* file. It is intentionally absent from
+`manage`, `upload`, and `share`, which do not load a model architecture or
+tokenizer.[^trust-cli-source] The environment variable `MLX_LM_TRUST_REMOTE_CODE=1` works for the
+CLI tools.
 
 The CVE was reported against Docker Model Runner, which embeds mlx-lm. If you are running a server
 that will load models chosen by a request body (`"model": "..."` is a per-request field — §4), you
@@ -1216,8 +1216,9 @@ are reachable only through the newer kernel formulations, which is precisely why
 best kernel" is the operative clause.
 
 ⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Four
-correctness fixes landed in the three days before 2026-07-27, including a **missing `else` in
-`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912, #3922, #3924). Separately,
+correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
+`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912, #3922, #3924 — all three
+still open, unmerged, on a 2026-07-31 `gh` re-check). Separately,
 mlx#3897 (open) reports that **batched vs single-sequence attention diverges numerically on M5**.
 If you are on M5 and chasing a correctness difference, update MLX before you debug anything else,
 and do not assert bit-equality between batched and unbatched paths.

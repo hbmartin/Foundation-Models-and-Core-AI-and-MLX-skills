@@ -34,8 +34,9 @@ The move from `MLModel` to `AIModel`, told as a *decision* rather than a *proced
   caching, feature providers → a plain named dictionary, and the file extensions — including the
   fact that `.aimodel` and `.aimodelc` are **directories**, not files.
 - **§3 — What does not announce itself.** Five silent failures specific to *this* migration, headed
-  by the big one: a converted model that loads, runs, produces correct numbers, and quietly executes
-  on the wrong compute unit.
+  by the big one: adopt the optional `coreai-models` loader without reading its policy and a
+  converted model can load, run, produce correct numbers, and quietly execute on a compute unit
+  you did not intend.
 - **§4 — What genuinely improves, and why.** States (KV caches as first-class in-place inputs),
   multi-function assets (including how recognized names select the optional `coreai-models`
   loader’s Neural Engine preference), the Core AI Debugger's sync points and PSNR comparison
@@ -971,8 +972,9 @@ call `.optimize()`; stateful models *require* it (mutation outputs become handle
 > **silently miscompiles** N×N distance expressions."* A transpose that exists only to make
 > broadcasting work can be treated as removable, and the resulting graph computes something else.
 >
-> 🔴 **GAP — current status unknown.** This issue was open with zero comments as of the corpus
-> snapshot (2026-07-27). **What would resolve it:** check `github.com/apple/coreai-torch/issues/49`
+> 🔴 **GAP — still unresolved.** Re-checked via `gh` on **2026-07-29**: the issue remains **open
+> with zero comments** — no maintainer response, last activity 2026-07-23. **What would resolve it:**
+> check `github.com/apple/coreai-torch/issues/49`
 > before you trust a converted model containing pairwise-distance or explicit-broadcast patterns.
 > **Safe default meanwhile:** run the Python-side numeric parity check on the **optimized** program,
 > not the unoptimized one — the bug is introduced by `optimize()`, so a parity test that runs before
@@ -1445,6 +1447,18 @@ The command and the output convention:
 > above the minimum deployment version you pass.**"* Apple also documents `--preferred-compute` and
 > says a `--help` run reveals *"the target architecture, and other options"*.
 
+> ✅ **Toolchain reality check — resolved 2026-07-31.** The 2026-07-29 finding stands as history:
+> the Xcode 27.0 beta app bundle (`27A5228h`) ships **no `coreai-build` binary**, only
+> **`aimodelc`** (`Contents/Developer/usr/bin/aimodelc`, command types `package` | `compile`),
+> whose binary embeds *"Please use 'xcrun coreai-build' instead."* The resolution: that note points
+> at a tool in a **different, optional component** — `coreai-build` ships in the **Metal Toolchain**
+> (`xcodebuild -downloadComponent MetalToolchain`), where `xcrun --no-cache --find coreai-build`
+> resolves it (version 3600.79.1) and its full `--help` runs
+> (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). So: the documented `coreai-build`
+> spelling is real and usable today, `aimodelc` is the Xcode-internal stub, and a machine without
+> the Metal Toolchain component reproduces the "absent" state. [Reference 06
+> §7](06-toolchain-and-asset-compatibility.md) tracks this.
+
 Runtime selection is two lines and no new load API:
 
 ```swift
@@ -1581,28 +1595,37 @@ small, and it is not organized as a project you can open and run.
 
 This is the gap that costs you first, because it shows up the moment you write your first `do`.
 
-> 🔴 **GAP — the error type thrown by the Core AI runtime is undocumented.**
+> 🔴 **GAP — the Core AI runtime throws untyped, and the SDK interface now confirms there is
+> nothing to catch by type.** (Narrowed 2026-07-29.)
 >
-> **What is unknown:** nothing in the 312-symbol index documents the error thrown by
-> `AIModel.init(contentsOf:)`, `AIModel.specialize(…)`, `loadFunction(named:)`, `run(…)`,
-> `encode(…)`, or any of `AIModelCache`'s `delete*` methods. The one error type that exists,
-> `AssetError`, covers **asset** operations only — its `Kind` cases are `corruptedMetadata`,
-> `duplicateName`, `invalidFeatureType(String)`, `invalidName`, `unsupportedVersion(String)` — and it
-> is publicly initializable by app code, so it is clearly not the sealed system error for inference.
+> The `.swiftinterface` dump this box used to ask for has been read: the Core AI module interfaces
+> were captured 2026-07-29 from the Xcode 27.0 beta (`27A5228h`) into `notes/sdk-interfaces/`.
+> **`CoreAIRuntime` declares no public error type at all** — every `throws` in
+> `CoreAIRuntime-27.0-macos.swiftinterface` is untyped (the only typed-throws in the file are
+> generic `throws(E)` rethrow plumbing on the unsafe-view closures). The **only public error type
+> anywhere in the Core AI module family** is `CoreAIAsset.AssetError`
+> (`CoreAIAsset-27.0-macos.swiftinterface:229-247`): `struct AssetError : Error, LocalizedError`
+> with `kind`, `debugMessage: String?`, and a `Kind` enum of exactly five cases —
+> `unsupportedVersion(String)`, `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`,
+> `duplicateName` — publicly initializable by app code, so clearly not the sealed system error for
+> inference.
 >
-> **Corroboration that they are not all one type:** community bug reports in this corpus show at
-> least two distinct shapes escaping the framework — a `CoreAIDelegates.AIModelError error 3`, and an
-> `NSPOSIXErrorDomain Code=2`.
+> **What is still unknown:** what concrete error *values* escape `AIModel.init(contentsOf:)`,
+> `AIModel.specialize(…)`, `loadFunction(named:)`, `run(…)`, `encode(…)`, or `AIModelCache`'s
+> `delete*` methods at runtime. Community bug reports show at least two distinct shapes — a
+> `CoreAIDelegates.AIModelError error 3` (note: no `AIModelError` appears in the public interface;
+> that is an internal type surfacing through `NSError` bridging), and an `NSPOSIXErrorDomain Code=2`.
 >
-> **What would resolve it:** an SDK `.swiftinterface` dump from Xcode 27, or a deliberate
-> `do { … } catch let e as NSError { print(e.domain, e.code) }` over a set of induced failures on a
-> real device.
+> **What would resolve the rest:** a deliberate `do { … } catch let e as NSError {
+> print(e.domain, e.code) }` over a set of induced failures on a real device — the interface pass
+> is done and cannot say more.
 >
-> **Safe default meanwhile:** catch `AssetError` explicitly where you are genuinely doing asset work,
-> then catch the general `Error`. **Do not write a typed `catch` you cannot prove exists** — it will
-> compile and never fire. Log `(error as NSError).domain` and `.code` so your crash reports are
-> actually useful, and build your recovery ladder on *observable state* (does
-> `cache.model(for:options:)` return `nil`?) rather than on error identity.
+> **Safe default:** unchanged, and now on firmer ground — catch `AssetError` explicitly where you
+> are genuinely doing asset work, then catch the general `Error`. **A typed `catch` for any other
+> Core AI error cannot even be written**, because no other public error type exists to name. Log
+> `(error as NSError).domain` and `.code` so your crash reports are actually useful, and build your
+> recovery ladder on *observable state* (does `cache.model(for:options:)` return `nil`?) rather
+> than on error identity.
 
 ```swift
 import CoreAI
@@ -1626,9 +1649,12 @@ func loadOrRecover(at url: URL, options: SpecializationOptions) async throws -> 
 }
 ```
 
-> 🟡 **RECONSTRUCTED** — the `AssetError` members (`kind`, `debugMessage`, and the five `Kind` cases)
-> are ✅ verified from the reference page. The *pattern* of this snippet — catch the one documented
-> type, then log domain and code for everything else — is this guide's recommendation, not Apple's.
+> 🟡 **RECONSTRUCTED** — the `AssetError` members (`kind`, `debugMessage`, and the five `Kind`
+> cases) are ✅ verified from the reference page and now ✅ **SDK-verified**
+> (`CoreAIAsset-27.0-macos.swiftinterface:229-247`, including
+> `init(kind:debugMessage:)` and `errorDescription`). The *pattern* of this snippet — catch the one
+> real type, then log domain and code for everything else — is this guide's recommendation, not
+> Apple's.
 
 Compare that with what you are used to on the Core ML side 🟡, where an established `NSError` domain
 and a documented set of failure conditions have existed for years, and where community answers cover
@@ -1698,9 +1724,13 @@ And one gap that will stop you on day one if it still applies:
 **No generated typed wrapper.** Covered in §2.8. You write the adapter.
 
 **No documented Objective-C or C interface.** ✅ **VERIFIED** — all 312 Core AI symbols are
-Swift-only in the doc index; there are no Objective-C interface-language entries. 🔴 **GAP:** whether
-an Objective-C surface exists and is merely undocumented is unverified. **What would resolve it:** a
-look at the framework's headers in the Xcode 27 SDK. **Safe default meanwhile:** if you have an
+Swift-only in the doc index; there are no Objective-C interface-language entries. 🔴 **GAP,
+narrowed:** the captured Swift interfaces (2026-07-29) point the same way — every public Core AI
+type in the dumps is a plain Swift struct/class with no `@objc` exposure, and the runtime leans on
+Swift-only features (`~Copyable`, `Span`, lifetime dependencies) that cannot bridge. Whether a
+separate C header surface exists in the framework is still unverified — a `.swiftinterface` shows
+only the Swift side. **What would resolve the rest:** the framework's `Headers/` directory in the
+Xcode 27 SDK. **Safe default meanwhile:** if you have an
 Objective-C or C++ codebase calling Core ML directly, budget for a Swift interop layer, and note that
 the ownership-annotated Swift API (§4.5) does not bridge naturally — `~Copyable` types and non-escapable
 views have no Objective-C representation.
@@ -2318,6 +2348,22 @@ process(y.view(as: Float.self))
 > `"main"` / `"input"` / `"output"` names and the shape are placeholders for your asset's real
 > contract.
 
+**And a module-layout fact the reference pages never state**, ✅ **SDK-verified** from the interface
+dumps captured 2026-07-29 (Xcode 27.0 beta, `notes/sdk-interfaces/`): `import CoreAI` — the spelling
+every snippet in this guide uses — is an **umbrella**. The `CoreAI` module's entire interface is one
+line, `@_exported public import CoreAIDelegates` (`CoreAI-27.0-macos.swiftinterface:5`), and
+`CoreAIDelegates` (a SubFramework in the SDK) in turn `@_export`s `CoreAIAsset`, `CoreAICommon`,
+`CoreAICompiler` and `CoreAIRuntime` (`CoreAIDelegates-27.0-macos.swiftinterface:5-8`) — all built
+with `-public-module-name CoreAI`, which is why every symbol presents as `CoreAI.*`. Three
+placement details that matter when an error message or a stack trace names the real module:
+**`AIModelCache` lives in `CoreAIDelegates`** (`CoreAIDelegates-27.0:29-45` — including
+`model(for:options:)`, exactly the `throws -> AIModel?` non-async signature quoted above), not in
+`CoreAICache`; the `CoreAICache`, `CoreAICommon` and `CoreAICompiler` modules have **empty public
+Swift surfaces**; and `AIModel`'s bookmark and `specialize` conveniences are `CoreAIDelegates`
+extensions on the `CoreAIRuntime` class (`CoreAIDelegates-27.0:14-27`). None of this changes what
+you write — `import CoreAI` remains correct — but it explains why `CoreAIDelegates.AIModelError`
+shows up in bridged `NSError` domains (§5.2) while your source never mentions that module.
+
 ### 9.3 Ten things that will surprise a Core ML migrant
 
 1. `.aimodel` is a **directory**. So is `.aimodelc`.
@@ -2330,7 +2376,8 @@ process(y.view(as: Float.self))
 8. Every state must be supplied on every `run`; there is no `stateCount`, only `stateNames.count`.
 9. `coreai-models.PreparedModel` gives a single-`main` dynamic structure its **GPU** preference;
    direct `AIModel` callers choose their own options.[^sample-routing-policy]
-10. There is no generated wrapper class, no sample project, and no documented runtime error type.
+10. There is no generated wrapper class, no sample project, and — SDK-confirmed (§5.2) — no public
+    runtime error type to catch.
 
 ### 9.4 The three sentences to take away
 
@@ -2418,10 +2465,10 @@ Every 🔴 in this guide, in one place, so a future pass can close them.
 | §2.9 | Whether a zero-copy `CVPixelBuffer` image path exists in practice — Apple's own vision packages do not use one | A converted image-input model run both ways under the Instruments template | Follow Apple's package: `CGImage` in, hand-built `Float32` `NDArray` out |
 | §3.4 | Current status of `coreai-torch` #49 (`optimize()` dropping broadcasting-significant axis moves) | Check the issue before trusting a converted model with pairwise-distance or explicit-broadcast patterns | Run the parity check on the **optimized** program |
 | §4.2 | The 76%-faster claim has no stated device, warmup protocol or comparison basis | A reproduction on named hardware with a stated protocol | Treat it as an existence proof, not a number to quote |
-| §5.2 | The error type thrown by `AIModel.init`, `loadFunction`, `run`, `encode`, and the cache `delete*` methods | An SDK `.swiftinterface` dump, or induced failures logged by domain and code | Catch `AssetError` where relevant, then general `Error`; branch on observable state, not error identity |
+| §5.2 | ~~Whether a typed runtime error exists~~ **Narrowed 2026-07-29:** the interface dumps confirm no public error type outside `CoreAIAsset.AssetError` — throws are untyped. Still open: the runtime error *values* (domains/codes) that actually escape | Induced failures logged by domain and code on a device | Catch `AssetError` where relevant, then general `Error`; branch on observable state, not error identity |
 | §5.4 | Whether the Core AI Swift package still fails to build for the iOS Simulator | A clean `xcodebuild` against a current Xcode 27 beta | Plan for device-only development and CI |
 | §5.4 | Current status of every listed converter/runtime defect | Re-check each tracker | Numeric gate plus device test, not a green build |
-| §5.5 | Whether an Objective-C or C surface exists but is undocumented | The framework headers in the Xcode 27 SDK | Budget a Swift interop layer; assume no bridge for `~Copyable` types |
+| §5.5 | Whether a C header surface exists but is undocumented — **narrowed 2026-07-29:** the Swift interface dumps show no `@objc` exposure anywhere | The framework `Headers/` directory in the Xcode 27 SDK | Budget a Swift interop layer; assume no bridge for `~Copyable` types |
 | §6.1 | Whether any `.mlmodel` → `.aimodel` path exists or is planned | An Apple statement, or a `coreai-torch` release note | Assume none; plan on going back to source |
 | §6.3 | Current `coremltools` API for reading a model spec | The `coremltools` docs for the current release | Confirm before planning a weight-extraction project |
 
@@ -2456,6 +2503,6 @@ Every 🔴 in this guide, in one place, so a future pass can close them.
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s documented `.default` behavior is separate:
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

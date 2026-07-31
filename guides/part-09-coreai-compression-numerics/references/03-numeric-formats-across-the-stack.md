@@ -1029,7 +1029,8 @@ Reading the optional `coreai-models` package shows a second consequence for call
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `ModelStructure.swift:71-80`: recognized structures select
 > that helper’s Neural Engine preference. Direct `AIModel` callers choose their own
-> `SpecializationOptions`; function names do not form a Core AI framework routing contract.
+> `SpecializationOptions`, and Apple's specialization documentation describes no function-name
+> routing in the framework itself — the name policy is that helper's code alone.
 > [^sample-routing-policy]
 
 The per-function compression recipe in the same repo is a small masterclass in matching format to
@@ -1333,6 +1334,10 @@ the scale `dataType` and per-dimension `blockFactors`; the default and currently
 is unsigned FP8 E8M0, and the first block factor is 32. A populated
 `MTLTensorAuxiliaryPlaneDescriptorMap` is attached through `MTLTensorDescriptor.auxiliaryPlanes`.
 [^xcode27-scale-planes]
+
+> ✅ **SDK-verified** — the macOS 27.0 beta SDK's `Metal.framework/Headers/MTLTensor.h` declares
+> `MTLTensorAuxiliaryPlaneDescriptor` (`:164`), `MTLTensorAuxiliaryPlaneDescriptorMap` (`:191`),
+> and `MTLTensorDescriptor.auxiliaryPlanes`, gated `API_AVAILABLE(macos(27.0), ios(27.0))` (`:288`).
 
 That changes the execution rule by deployment target:
 
@@ -1743,7 +1748,7 @@ four must pass.
 > Complex dtypes are excluded outright.
 >
 > ⚠️ Upstream PR #3883 ("Warn once when float32 ops silently run at TF32 precision", open as of
-> 2026-07-16) exists because users are being surprised by this. **This is the MLX analogue of the
+> 2026-07-29) exists because users are being surprised by this. **This is the MLX analogue of the
 > Core AI silent-fallback problem**: a precision reduction that produces correct-looking numbers and
 > announces itself nowhere.
 
@@ -2131,12 +2136,13 @@ And one CLI lever worth knowing when the model viewer looks right and the model 
 > ```
 > listed under *"when the model runs on CPU"*.
 >
-> 🔴 **GAP:** the full `coreai-build compile` flag list is unpublished. Apple's prose names only
-> `--platform`, `--min-deployment-version`, `--output`, `--preferred-compute` and alludes to a
-> target-architecture flag; third-party sources claim `--architecture h18p`. **Whether
-> `--preferred-compute` takes `neural-engine` or `neuralEngine` is corroborated only by the line
-> above.** Resolving it takes one `xcrun coreai-build compile --help` on a machine with Xcode 27 and
-> the Metal Toolchain. **Safe default meanwhile:** prefer `SpecializationOptions(
+> ✅ **GAP — RESOLVED 2026-07-31:** `xcrun coreai-build compile --help` has now been run (the tool
+> ships in the Metal Toolchain component, not Xcode-beta.app; capture in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). The flag list: `--output`, `--platform`,
+> `--min-deployment-version`, `--architecture` (repeatable; 24 valid codes enumerated by probing,
+> `h18p` among them), `--expect-frequent-reshapes`, and **`--preferred-compute` takes
+> `{gpu, neural-engine, none}` — hyphenated `neural-engine`, exactly as the line above spells it**
+> (default `none`). **Safe default unchanged:** prefer `SpecializationOptions(
 > preferredComputeUnitKind: .neuralEngine)` at runtime, where the enum spelling is documented
 > (`ComputeUnitKind` = `.cpu`, `.gpu`, `.neuralEngine`), and treat the CLI flag as a build-time
 > optimisation you verify by hand.
@@ -2414,7 +2420,7 @@ EMIT  (MLX)             affine 2/3/4/5/6/8 bits x group 32/64/128 (7 excluded)
 | `ComputeUnitKind` = `.cpu` / `.gpu` / `.neuralEngine`, `availableKinds` | `CoreAI`, 27.0 | ✅ |
 | `AssetError.Kind` = `corruptedMetadata` / `duplicateName` / `invalidFeatureType(String)` / `invalidName` / `unsupportedVersion(String)` | `CoreAI`, 27.0 | ✅ |
 | `AIModel.deviceArchitectureName` | `CoreAI`, 27.0 | ✅ |
-| `xcrun coreai-build compile … --platform --min-deployment-version --output --preferred-compute` | Xcode 27 + Metal Toolchain | ✅ (flag *values* 🔴) |
+| `xcrun coreai-build compile … --platform --min-deployment-version --output --preferred-compute` | Xcode 27 + Metal Toolchain | ✅ (flag values ✅ 2026-07-31: `--preferred-compute {gpu, neural-engine, none}`) |
 | `__tensor_ops_datatype`, `metal::int4b_format` / `uint4b_format`, `mpp::tensor_ops::matmul2d` | MetalPerformancePrimitives, 26.x | ✅ |
 | int2/FP4/FP8/E8M0 `MTLTensorDataType` and `metal::*_format` operands | Metal / MPP, OS 27 | ✅[^xcode27-scale-planes] |
 | `mx.quantize` / `dequantize` / `quantized_matmul` / `gather_qmm` / `qqmm` / `to_fp8` / `from_fp8` | `mlx.core` | ✅ |
@@ -2499,8 +2505,8 @@ behaviour surprises people, not as documentation.
 | 7.2 | The **inference-time error taxonomy** — nothing documents what `AIModel.init` / `loadFunction` / `run` throw | SDK dump, or one `catch { print(type(of: error)) }` |
 | 8.2 | The **exact strings** in `Summary.computeTypes` / `StorageType.typeName` / `ValueDescriptor.typeName` | Print them once for a real asset |
 | 8.3 | Why the debug gauge shows **three** event types where Instruments shows four (`Setup` missing) | — |
-| 8.5 | The full `coreai-build compile` flag list and the spelling of `--preferred-compute` values | `xcrun coreai-build compile --help` on Xcode 27 |
-| 9.4 | The set of `deviceArchitectureName` values | Print it per device; never hardcode |
+| 8.5 | ~~The full `coreai-build compile` flag list and the spelling of `--preferred-compute` values~~ **CLOSED 2026-07-31** — `--help` captured via the Metal Toolchain component; values `{gpu, neural-engine, none}` (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) | — |
+| 9.4 | The set of `deviceArchitectureName` values (the compiler-accepted code set — 24, `h11p…h18p` — was enumerated 2026-07-31; which code each device *reports* remains open) | Print it per device; never hardcode |
 | 11.3 | No M5 hardware for any TensorOps claim; no non-LLM performance data anywhere in `apple/coreai-models` | Hardware |
 
 ### 13.4 Related guides
@@ -2534,7 +2540,7 @@ sessions 325 and 330 · Apple Tech Talk 111432.*
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 

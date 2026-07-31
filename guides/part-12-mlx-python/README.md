@@ -28,7 +28,8 @@ returns the graft boundary (`ca60290`), not the introducing commit.
 
 **So: pin `mlx==0.32.*` and `mlx-lm==0.31.3`, read the shipped `mlx/version.h` rather than trusting any date
 including these guides', and re-run your own numerics after every bump.** Not boilerplate — **four NAX
-correctness fixes landed or opened in the 72 hours before 2026-07-27** (PRs #3912, #3922, #3924), one a *missing
+correctness fix PRs opened in the 72 hours before 2026-07-27** (PRs #3912, #3922, #3924 — all three still open,
+unmerged, per a 2026-07-31 `gh` re-check, so no release or checkout contains them), one a *missing
 `else`* in `tile_matmad_nax` that compiles odd tile shapes to nothing and produces garbage. Second version axis:
 **PyPI mlx-lm 0.31.3 is dated 2026-04-22 and `main` has moved substantially past it**, so several fixes here are
 unreleased — and **0.31.0 was pulled from practical use** for a `BatchKVCache` cross-contamination bug.
@@ -63,7 +64,7 @@ in twenty.** Four reasons this is six long guides rather than a quickstart.
 | "Prefill is slow" · "OOM at a context length the arithmetic said fits" | [12.2 §5](references/02-numerics-hardware-gating-and-custom-kernels.md) | Silent SDPA fallback — check `head_dim` against the allow-list |
 | "MLX has no op for this" | [12.2 §7–§9](references/02-numerics-hardware-gating-and-custom-kernels.md) | `mx.fast.metal_kernel`: a JIT'd string, no Xcode, no build step |
 | "Which bits, group size and mode?" · "3-bit is unusable" | [12.3 §2–§3, §8, §12](references/03-quantization.md) | Mode inventory, sizing arithmetic, selection table; AWQ/GPTQ/DWQ/dynamic |
-| **"I run a quantized MoE model on an M5"** | **[12.3 §9](references/03-quantization.md) — before you trust its output** | Unwritten rows, OPEN as of 2026-07-27 |
+| **"I run a quantized MoE model on an M5"** | **[12.3 §9](references/03-quantization.md) — before you trust its output** | Unwritten rows, OPEN as of 2026-07-29 |
 | "Which KV cache class?" · "output quality changed and I cannot explain it" | [12.4 §4–§6, §9](references/04-mlx-lm-cli-generation-and-caching.md) | Nine cache classes and the trimmability contract; the chat template is not the one you think |
 | "I want an OpenAI endpoint / an agent in Xcode 27" · "the server 404s and my URL is fine" | [12.5 Part A](references/05-serving-and-distributed.md) | Every flag and endpoint; *every* load failure surfaces as 404 |
 | "The model does not fit on one Mac" | [12.5 Part B](references/05-serving-and-distributed.md) | `mlx.launch`, hostfiles, Thunderbolt-5 RDMA, mesh vs ring |
@@ -102,7 +103,7 @@ hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENAB
 > matmul error at **2^-10.4** versus **2^-19.8** with `MLX_ENABLE_TF32=0`; `x.dtype` still says `float32`,
 > because it is — only the multiply-accumulate is relaxed. **Set `MLX_ENABLE_TF32=0` before importing mlx in any
 > test suite**, which is exactly what MLX's own harness does. A warn-once PR (#3883) and a docs PR (#3894) were
-> both open as of 2026-07-27.
+> both open as of 2026-07-29.
 
 > ⚠️ **SILENT FAILURE — fused attention silently becomes unfused (§5).**
 > `mx.fast.scaled_dot_product_attention` returns the mathematically correct answer via `matmul → softmax →
@@ -122,7 +123,7 @@ are worth multiples rather than percentages, the four learned-quantization pipel
 defaults, and a pre-ship verification recipe.
 
 > ⚠️ **SILENT FAILURE — §9 is why this guide exists.** Seven quantized-matmul defects with status as of
-> 2026-07-27; **five are M5-generation-only**. The worst (mlx#3856, issue and fix PR both OPEN) is an `int16`
+> 2026-07-29; **five are M5-generation-only**. The worst (mlx#3856, issue and fix PR both OPEN) is an `int16`
 > overflow in affine `gather_qmm`: when the flattened gathered row count exceeds 32768 and is not a multiple of
 > 64, output rows are **never written** and read back whatever the recycled `MTLBuffer` last held — *"sometimes
 > coincidentally plausible."* No exception, no NaN, no suspicious magnitude; the model just generates fluent
@@ -130,7 +131,8 @@ defaults, and a pre-ship verification recipe.
 > buffer-poisoning recipe fixes that). Also silent: `nn.quantize` **skips** layers whose dimensions do not
 > divide the group size, and DWQ does nothing to an `mxfp4`/`mxfp8`/`nvfp4` or 8-bit-affine model.
 
-> 🔴 **GAP — eight, registered in §13.** The one that bites: **MLX exposes no API to ask which quantized kernel
+> 🔴 **GAP — seven, registered in §13** (an eighth, PR #3912's trigger and scope, was resolved by a live read
+> of the PR on 2026-07-29). The one that bites: **MLX exposes no API to ask which quantized kernel
 > a given call dispatched to**, so §6's gates are the only way to reason about the fast path.
 
 ### [12.4 — mlx-lm: the CLI surface, the generation API, and KV caching](references/04-mlx-lm-cli-generation-and-caching.md)

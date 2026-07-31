@@ -1425,7 +1425,9 @@ struct MyFileEntity { /* schema-required properties */ }
 
 `.files` is a **primary-tier** domain with 5 intents and exactly 1 entity — the smallest content
 domain Apple ships and, by this finding, the most load-bearing one. [Guide 02 §5.1](02-app-schema-domains.md)
-has its full inventory.
+has its full inventory. Note the availability asymmetry: `FileEntityIdentifier` itself is iOS 18 /
+macOS 15, but the `.files.file` **schema's** own floor is not stated on its documentation page — the
+safe default remains gating schema adoption on the 27 releases where the domain catalog shipped.
 
 #### The identifier
 
@@ -2698,8 +2700,9 @@ unanswered**. The one genuinely useful technical answer in the cluster came from
    systematically omit the authoritative half of every thread.
 4. **The remaining gaps:** several API-shape questions in G4–G15 would fall to a single
    `AppIntents` module-interface dump from the Xcode 27 SDK (`swift-api-digester`, or the
-   `.swiftinterface` in the SDK) — the same technique that settled the identifier surface above —
-   or to downloading the CosmoTunes sample. Behavioral questions still require device testing.
+   `.swiftinterface` in the SDK) — the identifier surface above was settled the lighter way, by
+   fetching the two documentation pages directly on 2026-07-28 — or to downloading the CosmoTunes
+   sample. Behavioral questions still require device testing.
 
 ---
 

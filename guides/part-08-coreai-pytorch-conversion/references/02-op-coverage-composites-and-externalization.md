@@ -12,7 +12,8 @@ know before you read anything else:
 > ⚠️ ✅ **VERIFIED** — `coreai-torch` v0.4.1 release notes, verbatim: *"**.aimodel artifacts converted
 > with coreai-torch v0.4.0 will fail to load/specialize on-device starting with OS 27 second beta
 > onwards. Reconvert your model using coreai-torch v0.4.1 or later to produce a compatible
-> artifact.**"* Maintainer @gokulkrishna98 on `coreai-torch#37`: *"from macOS beta 2 the assets
+> artifact.**"* Maintainer @gokulkrishna98 on `coreai-torch#37` (resolved: closed as completed
+> 2026-07-13): *"from macOS beta 2 the assets
 > generated via coreai-torch 0.4.0 will fail to compile. Please use coreai-torch 0.4.1 for
 > conversion."* There is a recovery path that does not require re-conversion — §9.6.
 
@@ -66,7 +67,7 @@ lowering that ran, produced a correctly-shaped tensor, and got the arithmetic wr
 - **Externalization**: `ExternalizeSpec` and `externalize_modules`, the five-phase pipeline, and the
   real motivations from Apple's own agent skill. §8.
 - **Four live silent-miscompile defects on 0.4.1**, all verified against the shipped source in this
-  session, all with open-or-closed-unmerged fixes as of 2026-07-27. §9.
+  session, all with open-or-closed-unmerged fixes as of 2026-07-29. §9.
 - **A diagnostic checklist**: given a symptom, which of the four failure classes is it, and which
   tool finds it. §10.
 
@@ -135,7 +136,7 @@ things. Class 4 announces nothing at all.
 > class 4. The corpus of open issues on `apple/coreai-torch`, `apple/coreai-optimization` and
 > `apple/coreai-models` contains **seventeen distinct defects that produce plausible output with the
 > correct shape and no diagnostic**. Four of them live in `coreai-torch` 0.4.1 with unmerged fixes as
-> of 2026-07-27 and are documented in §9. The practical consequence: **a conversion that "worked" is
+> of 2026-07-29 and are documented in §9. The practical consequence: **a conversion that "worked" is
 > not evidence of anything until you have run a numerics gate.** §10 gives you four of them.
 
 Two structural facts explain why class 2 exists at all, and they are worth internalising before §2:
@@ -1280,7 +1281,7 @@ Swift LLM runtime refuses to run the resulting model.
 > Root cause is a `descriptor.stateNames.count == 2` guard. **Maintainer answer (@stikves),
 > verbatim — the definitive statement:** *"Thanks for the report. **The check for only 2 states is
 > deliberate. We currently do not have support for linear attention or similar hybrid state models.**
-> Keeping this open for potential future changes."* Filed as FB23893830. Still open 2026-07-27.
+> Keeping this open for potential future changes."* Filed as FB23893830. Still open 2026-07-29.
 
 **Prefix caching is forfeit for these architectures, and that is architectural, not a bug.**
 
@@ -1352,7 +1353,7 @@ models genuinely hard right now, and the reporter mapped it out precisely:
 > validity/causality."* Costs a full cache rewrite per step; matched eager to rel err ≤ 5e-4 across
 > stepped calls. A related crash (`coreai-models#5`) with the same root shape was reported by a
 > maintainer as *"**should be fixed in macOS / Xcode beta 4**"* — unconfirmed by the reporter as of
-> 2026-07-27.
+> 2026-07-29.
 
 **Summary you can act on:**
 
@@ -2175,7 +2176,7 @@ two large-model patterns:
 > handle a 7B model", not because one implements the other. (The mmap-backed path that *does* exist
 > is `KMeansPalettizer.finalize(mmap_dir=…)` in `coreai-opt` — Part 9 — and `coreai-models` PR #101,
 > *"Add support for memory efficient iOS exports for large models"*, which was **still open** as of
-> 2026-07-27.)
+> 2026-07-29.)
 
 **Motivation 2 — iOS embedding quantization.**
 
@@ -2318,9 +2319,9 @@ Transformers."*
 > into the submodule re-export**.
 >
 > **Workaround (from the thread):** drop `SDPA` from the externalize list so it decomposes to
-> primitive ops — you lose the composite and keep the export. An open PR (**#7**, *"Skip
-> fully-specialised dims in submodule re-export"*, +347/−241) targets this and was **unmerged** as of
-> 2026-07-27.
+> primitive ops — you lose the composite and keep the export. The PR that targeted this (**#7**,
+> *"Skip fully-specialised dims in submodule re-export"*, +347/−241) was **closed without being
+> merged on 2026-07-29** (re-checked via `gh` 2026-07-31), so the workaround remains the only path.
 >
 > This failure is at least loud. Note the message: **"This is a coreai-torch bug. Please report it."**
 > is emitted by the package itself — if you see that sentence, do not debug your model.
@@ -2331,7 +2332,7 @@ Transformers."*
 
 Everything in this section was **verified against the shipped source this session**, at
 `apple/coreai-torch` commit `4529671`, `coreai_torch/__version__.py` = `"0.4.1"`. Each defect has a
-proposed fix that was **open or closed-unmerged as of 2026-07-27**, which means each is live in the
+proposed fix that was **open or closed-unmerged as of 2026-07-29**, which means each is live in the
 version you get from `pip install coreai-torch` today.
 
 They share a shape: **the conversion succeeds, the shapes are right, and the numbers are wrong.**
@@ -2616,7 +2617,7 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > **Reporter's own workaround, verbatim:** *"Transforming the 2D matrix into a 4D matrix
 > (1 x 1 x m x n) avoids the issue on the NPU."*
 >
-> Single reporter, uncontrolled conditions, no Apple response as of 2026-07-27. But the mitigation is
+> Single reporter, uncontrolled conditions, no Apple response as of 2026-07-29. But the mitigation is
 > cheap, consistent with the Neural Engine's BC1S/4D orientation, and worth trying before you conclude
 > your quantization is at fault.
 
@@ -2667,7 +2668,8 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 Not a miscompile, but the version gate from the top of this guide has a documented escape hatch that
 is easy to miss.
 
-> ✅ **VERIFIED** — `coreai-torch` issue **#44** (closed), maintainer @cymbalrush, verbatim: *"Could
+> ✅ **VERIFIED** — `coreai-torch` issue **#44** (resolved: closed as completed 2026-07-24),
+> maintainer @cymbalrush, verbatim: *"Could
 > you try using `strip_debug_info` to remove debugging metadata? This should prevent the compiler
 > failure. After stripping the debug information, make sure to save the updated asset."*
 >
@@ -2700,7 +2702,7 @@ is easy to miss.
 
 Nine defects, in one table, so you can check your own model against it:
 
-| # | Defect | Wrong on | Fix status 2026-07-27 | Cheap workaround |
+| # | Defect | Wrong on | Fix status 2026-07-29 | Cheap workaround |
 |---|---|---|---|---|
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | PR #22 open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | PR #32 open | `a.float() / b` |
@@ -3173,9 +3175,9 @@ Every one also carries `version` (always `1`).
   `TorchConverter.__repr__` form, `tests/utils.py::validate_numerical_output`, and the doc/source
   drift catalogue.
 - `notes/repos/issues-coreai-stack.md` — every issue and PR cited in §9 and §6.3, read live via `gh`
-  on 2026-07-27: `coreai-torch` #1, #2, #6, #9, #10, #11, #21, #37, #44, #49, #51 and PRs #5, #7,
+  on 2026-07-27: `coreai-torch` #1, #2, #5, #6, #9, #10, #11, #21, #37, #44, #49, #51 and PRs #7,
   #13, #18, #22, #29, #32, #40, #41, #45; `coreai-optimization` #7; `coreai-models` #66, #118 and
-  PR #69.
+  PR #69. States re-checked via `gh` 2026-07-29.
 - `notes/transcripts/coreai-python-metal.md` — WWDC26 session 325, *"Dive into Core AI model
   authoring and optimization"* (Sachin and Nicole). Used only for framing quotes in §8.6; every
   API-shaped claim from the session was checked against source before use.
@@ -3244,6 +3246,6 @@ No number in this guide is presented as an Apple figure unless the row above say
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

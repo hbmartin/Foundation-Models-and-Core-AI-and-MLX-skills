@@ -9,6 +9,30 @@ confirmed by an Apple Frameworks Engineer on forum thread 833729. One sub-floor 
 Catalyst**. The *feature* you point all this at can be much older; `SystemLanguageModel` is 26.0. You can
 evaluate a 26.0-era feature, but you can only run the evaluation on 27.
 
+> ✅ **VERIFIED — where the framework physically lives** (Xcode 27 beta, checked 2026-07-29).
+> `Evaluations.framework` is **not in the OS SDKs**: the macOS 27.0 and iOS 27.0 beta SDKs contain no
+> public `Evaluations` module (`System/Library/Frameworks`, `System/Library/SubFrameworks` and
+> `usr/lib/swift` all searched). It ships **inside Xcode**, exactly like `XCTest.framework` and Swift
+> Testing's `Testing.framework`, at
+> `…/Xcode-beta.app/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`
+> — present for macOS, iPhoneOS/Simulator, watchOS/Simulator and visionOS(XROS)/Simulator, and
+> **absent for AppleTVOS**, corroborating "no tvOS" from the shipped binary rather than only the doc
+> index. The macOS module's `.swiftinterface` marks 102 declarations `@available(anyAppleOS 27.0, *)`
+> and 99 `@available(tvOS, unavailable)`, imports `Testing`, `FoundationModels` and `TabularData`,
+> and is Swift-only. Consequence for readers: `import Evaluations` resolves in **test targets**
+> (Xcode's test-framework search path), like `import Testing`; it will not resolve when compiling
+> directly against the bare OS SDK. A spot-check of ~25 API spellings used across this part
+> (`ModelJudgeEvaluator`, `ScoreDimension`, `TrajectoryExpectation`, `ArgumentMatcher`,
+> `missingTranscript(evaluatorType:)`, `saveJSON`, …) found every one in that interface — which is
+> now the strongest on-disk evidence source for signatures in this part. A full end-to-end pass of
+> the interface followed on 2026-07-29 and closed several of the part's open 🔴 GAPs:
+> `ScoringMode = .discrete | .continuous` (default `.discrete`), `ModelJudgeError`'s five cases,
+> `SamplingStrategy = .random(retries: Int = 5) | .slidingWindow`, `TrajectoryExpectation`'s public
+> `ordered`/`unordered`/`disallowed` accessors and `allowsAdditionalToolCalls = true` default, and
+> `ModelJudgePrompt.reference`'s second parameter (`Input.ExpectedValue`). Each guide's gap list
+> records what moved; signature claims across the part now cite the interface as ✅ **SDK-verified**
+> with line numbers.
+
 **Who this is for:** anyone shipping an AI feature — and that is not a figure of speech. Part 6 is the one
 cross-cutting part of this series, because there is no model version pinning API and an evaluation suite
 is the only regression detector you get for a dependency you cannot version-pin.
@@ -87,10 +111,12 @@ structural rather than a testing convenience.
 > enough — reports a number about a model you do not ship.
 
 > 🔴 **GAP — several, and each has a stated safe default.** Whether `Metric` identity is by **name or by
-> instance** (Apple's doc example and Apple's sample code imply opposite answers); what
-> `aggregateValue(.mean(of:))` returns when every sample was `.ignore()`d; and what happens to a run when
-> `subject(from:)` throws for a subset of samples — `SubjectInferenceError` and `EvaluatorError` exist,
-> their effect on the run is documented nowhere. All three are neutralised by the same one-line habit:
+> instance** (Apple's doc example and Apple's sample code imply opposite answers; the interface shows a
+> hand-written `==` but not its semantics); what `aggregateValue(.mean(of:))` returns when every sample
+> was `.ignore()`d; and what happens to a run when `subject(from:)` throws for a subset of samples —
+> `SubjectInferenceError` and `EvaluatorError`'s cases are now SDK-verified, and a deprecation message
+> in the interface says missing metrics are *"materialized as ignored columns and logged"*, but the
+> thrown-subject path itself is still unconfirmed. All three are neutralised by the same one-line habit:
 > assert the scored row count before you assert anything computed from it.
 
 ### [6.2 — Model judges, score dimensions, drift, and Cohen's kappa](references/02-model-judges-and-alignment.md)
@@ -117,11 +143,14 @@ against your own ratings.
 > points the wrong way: a **contaminated calibration reports a higher κ**, so this failure makes your
 > judge look better the more you break it.
 
-> 🔴 **GAP** — `ScoringMode`'s cases are unknown (omit it, as Apple does at all three of its judge call
-> sites); `ModelJudgeError`'s cases and the framework's behaviour when a judge inference throws mid-run
-> are unpublished; `ModelJudgePrompt.reference`'s second closure parameter is discarded as `_` everywhere
-> it appears. Also worth knowing before you search for help: the Evaluations developer forum contains
-> **exactly three threads**, one unanswered. There is essentially no community knowledge yet.
+> 🔴 **GAP — narrowed by the 2026-07-29 interface pass.** `ScoringMode` is now pinned to
+> `.discrete | .continuous` with `.discrete` the default (still omit it, as Apple does at all three of
+> its judge call sites — the *semantics* of `.continuous` remain undocumented); `ModelJudgeError`'s five
+> cases are SDK-verified, but the framework's behaviour when a judge inference throws mid-run is not;
+> and `ModelJudgePrompt.reference`'s second closure parameter is settled — it is the model's output
+> value, typed `Input.ExpectedValue`. Also worth knowing before you search for help: the Evaluations
+> developer forum contains **exactly three threads**, one unanswered. There is essentially no community
+> knowledge yet.
 
 ### [6.3 — `SampleGenerator`, synthetic datasets, and evaluating tool trajectories](references/03-synthetic-data-and-tool-trajectories.md)
 Two subjects that share a chapter because both are about honesty. First, getting *enough* data: the two
@@ -146,11 +175,13 @@ catch that.
 > 🔴 **GAP — the most consequential unanswered question in the part is a billing question.** Nobody has
 > established **whose PCC quota an evaluation run spends** — a 100-sample judge evaluation or an 87-sample
 > generation is hundreds of Private Cloud Compute requests, and no session, doc page or sample says
-> whether they bill against the signed-in developer's iCloud account. Apple has not answered it. Smaller
-> gaps with stated workarounds: `SamplingStrategy`'s case spellings (omit the parameter; random is the
-> default), `allowsAdditionalToolCalls`'s default and exact semantics (pass it explicitly, every time),
-> and the absence of any published accessor for a `TrajectoryExpectation`'s tool lists (generate into a
-> `@Generable` type you own, then construct the expectation yourself).
+> whether they bill against the signed-in developer's iCloud account. Apple has not answered it. The
+> smaller gaps closed on 2026-07-29 against the shipped interface: `SamplingStrategy` is
+> `.random(retries: Int = 5)` / `.slidingWindow` with `.random()` the default;
+> `allowsAdditionalToolCalls` defaults to `true` (its `false` semantics are still unverified — keep
+> writing it explicitly); and `TrajectoryExpectation`'s `ordered` / `unordered` / `disallowed` lists
+> are public vars after all, so generated expectations can be validated directly — though generating
+> into a `@Generable` type you own remains the better workflow.
 
 ---
 
@@ -212,9 +243,10 @@ to a thousand samples, or you will hill-climb a feature against a ruler that was
   example or session demonstrates one end to end, and the forum question about image-text evaluation
   (thread 833822) is **unanswered**. The Core ML / MLX bridge material is
   [Part 14](../part-14-bridges-between-stacks/); treat the evaluation half as unproven.
-- **Running suites in CI and shipping operations.** `EvaluationResult.saveJSON(to:)` and
-  `loadJSONLines(from:)` are documented and 6.1 §12 shows the shape, but whether the report is reachable
-  from `xcodebuild` output is a 🔴 GAP. [Part 15](../part-15-shipping-and-operating/) is the operating story.
+- **Running suites in CI and shipping operations.** `EvaluationResult.saveJSON(to:)` — which takes a
+  *directory* and returns the written file's URL — and `loadJSONLines(from:)` are SDK-verified, and
+  6.1 §12 shows the shape, but whether the report is reachable from `xcodebuild` output is a 🔴 GAP.
+  [Part 15](../part-15-shipping-and-operating/) is the operating story.
 
 ---
 
@@ -239,6 +271,10 @@ on-device/PCC comparison — all machine-transcribed spoken word, which is why s
 treated as verified statements while any Swift identifier heard only in narration is marked 🟡. Where the
 transcripts and the sample disagree — the evaluators property type, the `Evaluator` closure shape, the
 metric factories, `info:` versus "notes", the judge model, and κ's provenance — **the sample wins in every
-case**, and each guide's sources section says so explicitly.
+case**, and each guide's sources section says so explicitly. Since 2026-07-29 there is one source above
+even the sample for *signatures*: the framework's own `.swiftinterface`, shipped inside the Xcode 27 beta
+and captured into this repo at `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (885 lines,
+read end-to-end that day). Signature-level claims across the three guides now cite it as ✅
+**SDK-verified** with line numbers. The sample remains the authority for *usage*.
 
 [^missing-transcript]: Apple, [`ModelSubject.transcript`](https://developer.apple.com/documentation/evaluations/modelsubject/transcript): tool-call evaluators require a structured transcript and throw `EvaluationError.missingTranscript(evaluatorType:)` when it is `nil`.

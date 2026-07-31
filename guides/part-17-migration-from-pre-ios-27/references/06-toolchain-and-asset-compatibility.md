@@ -94,7 +94,10 @@ What follows:
 - A shell, and the ability to run `find` and `python3 -c` over the tree where your `.aimodel`
   bundles live. §3's audit is four lines and you should run it before you read §4.
 - **Xcode 27** plus the **Metal Toolchain** component if you AOT-compile. `xcrun coreai-build` is a
-  macOS 27 host tool.
+  macOS 27 host tool — and the component is not optional decoration: `coreai-build` **lives in the
+  Metal Toolchain**, not in Xcode-beta.app (resolved 2026-07-31 — the app bundle carries only the
+  `aimodelc` stub, which is why our 2026-07-29 check of a bare install found `coreai-build`
+  absent); see §7.
 - For the §3 recovery: the ability to create **two** isolated Python virtual environments with
   *different* `coreai-core` wheel generations in them. This is not optional; §3.6 explains why.
 - A **real device** for anything in §5, §6 or §7. Specialization is per-hardware and per-OS. A
@@ -316,7 +319,9 @@ first one produces an error message you would recognise.
 > maintainer of a ~60-model community model zoo, published as
 > `knowledge/coreai-torch-041-ir-incident.md` in the `coreai-model-zoo` repository, dated
 > **2026-07-18** with an update on **2026-07-21**. Quotations below are from that document and from
-> the GitHub threads. Nothing here is a measurement of ours.
+> the GitHub threads. Nothing here is a measurement of ours. ✅ **Both GitHub issues are now
+> closed as completed** — #37 on 2026-07-13, #44 on 2026-07-24 (checked via `gh`, 2026-07-29) —
+> consistent with the incident being resolved by the 0.4.1 toolchain and the repair recipe below.
 
 ### 3.1 What it looks like
 
@@ -1499,12 +1504,13 @@ your only durable record of a build. Archive it. §10.
 > dequantise lowering for the same recipe, or whether the native quantised-`Linear` fold has been
 > restored.
 >
-> **Why we do not know:** the forensics are dated **2026-06-11**. It is **2026-07-28**. Several
+> **Why we do not know:** the forensics are dated **2026-06-11**. It is **2026-07-29**. Several
 > macOS 27 and Xcode 27 betas have shipped in between. **Nobody in our corpus re-ran the
 > experiment** — the author moved on to other work, and there is no Apple statement, no Feedback
 > number published for it, and no issue in any of the public `apple/coreai-*` repositories that
-> matches it. (Contrast §3, which has two public issues, an Apple root cause, and a maintainer's
-> repair.)
+> matches it (re-checked 2026-07-29 via GitHub issue search for `constexpr_blockwise_shift_scale`
+> and the export-lowering symptoms — still none). (Contrast §3, which has two public issues, an
+> Apple root cause, and a maintainer's repair.)
 >
 > **What would resolve it, exactly:** on a machine running a current macOS 27 beta, with
 > `coreai-torch 0.4.1` / `coreai-core 1.0.0b2`:
@@ -1602,6 +1608,12 @@ re-specialization cost — but it is a reduction, not a removal:
 > `options`, this method loads and returns the model. **This method never performs specialization.**"*
 > Signature: `final func model(for modelURL: URL, options: SpecializationOptions) throws -> AIModel?`
 > — `throws` but **not** `async`, because nothing expensive happens.
+> Now also ✅ **SDK-verified** verbatim (`notes/sdk-interfaces/CoreAIDelegates-27.0-macos.swiftinterface:35-38`,
+> captured 2026-07-29 from the Xcode 27.0 beta) — and note the module: `AIModelCache` is declared in
+> **`CoreAIDelegates`**, the SubFramework that `import CoreAI` re-exports, not in the (empty)
+> `CoreAICache` module. The `Policy` statics (`.default`, `.persistent`) and both `PurgeConditions`
+> (`.storagePressure`, `.sourceAssetChangedOrDeleted`) are in the same interface (`:47-60`), exactly
+> as the article describes them.
 
 So a launch-time sweep is cheap, and comparing it against what you saw last launch tells you an
 invalidation happened:
@@ -1694,7 +1706,8 @@ final class SpecializationWatch {
 ```
 
 > 🟡 **RECONSTRUCTED** — the `AIModelCache.model(for:options:)` call and its semantics are ✅
-> verified from Apple's reference page (quoted above), as is the fact that `SpecializationOptions`
+> verified from Apple's reference page (quoted above) and the declaration is ✅ SDK-verified
+> (`CoreAIDelegates-27.0:35-38`), as is the fact that `SpecializationOptions`
 > participates in the cache key. `ModelSpecialization.options(for:)` is the single-source-of-truth
 > helper pattern from
 > [Part 7 reference 02 §4](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md);
@@ -1765,7 +1778,10 @@ init?(resolvingBookmark bookmark: Data) throws                 // on AIModel
 static func deleteEntry(referencedBy bookmark: Data) throws    // on AIModelCache
 ```
 
-> ✅ **VERIFIED** — all three quoted from Apple's Core AI reference pages.
+> ✅ **VERIFIED** — all three quoted from Apple's Core AI reference pages; all three now also
+> ✅ **SDK-verified** verbatim (`CoreAIDelegates-27.0-macos.swiftinterface:14-20, 41` — the
+> bookmark pair is a `CoreAIDelegates` extension on the `CoreAIRuntime` `AIModel` class, which is
+> why it comes along with plain `import CoreAI`).
 > `bookmarkData` discussion, verbatim: *"The data returned can be stored and later resolved to
 > re-create a model with `init?(resolvingBookmark:)`. It contains information about the cache and
 > entry backing the model."*
@@ -1956,11 +1972,28 @@ So you will be running `coreai-build compile`. Which brings us to the trap.
 > where `<arch>` is the device architecture identifier returned by `deviceArchitectureName` at
 > runtime."*
 >
-> 🔴 **GAP — the full flag list is not Apple-published.** Apple's prose names `--platform`,
-> `--min-deployment-version`, `--output` and `--preferred-compute`, and *alludes* to an
-> architecture-selection flag without naming it. `--architecture` and `--expect-frequent-reshapes`
-> come from community `--help` captures. **What would resolve it:** `xcrun coreai-build compile
-> --help` on a machine with Xcode 27 + Metal Toolchain, pasted verbatim.
+> ✅ **GAP — RESOLVED 2026-07-31 — the full flag list, captured first-hand.** `xcrun coreai-build
+> compile --help` has now been run on this machine and pasted verbatim into
+> **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`** (`coreai-build 3600.79.1`). The
+> community synopsis above is confirmed flag-for-flag — `--architecture` (repeatable) and
+> `--expect-frequent-reshapes` are real, `--preferred-compute` takes `{gpu, neural-engine, none}`
+> (default `none`), `--platform` defaults to macOS — and the subcommand list is `compile` |
+> `package` | **`inspect`** (flags `--io/--metadata/--storage/--compute/--ops/--json`) | a
+> previously-unknown **`metadata`** (edits author/license/description/argument descriptions).
+>
+> ✅ **And the "tool moved under our feet" mystery is solved — 2026-07-31.** The 2026-07-29
+> observation was accurate but incomplete: the Xcode 27.0 beta (`27A5228h`) contains **no
+> `coreai-build` binary anywhere in the app bundle** — because **`coreai-build` ships in the
+> optional Metal Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), mounted
+> under `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/`.
+> What the app bundle ships is **`aimodelc`** at `Contents/Developer/usr/bin/aimodelc`, which
+> demands a command type of **`package` or `compile`** and requires `--output`; its embedded
+> diagnostic *"note: Please use 'xcrun coreai-build' instead."* defers to the tool in the *other,
+> optional component* — not to a tool missing from the product. With the component installed,
+> `xcrun --no-cache --find coreai-build` resolves it (plain `xcrun --find` can fail from a stale
+> cache). Practical consequences: **CI must run the `-downloadComponent MetalToolchain` step** or
+> it reproduces the "absent" state, and §10's provenance record should capture the exact tool path
+> and version string, not just "compiled with Xcode 27".
 
 ### ⚠️ The silent failure
 
@@ -2127,7 +2160,8 @@ While you are in `coreai-build`, one more, because it produces a crash rather th
 ### And one that is not about architectures at all
 
 > ⚠️ **`CoreAI.framework` is absent from the iOS Simulator SDK.**
-> Reported on `apple/coreai-models` issue #49 (FB23189921), **still open as of 2026-07-27**, verbatim:
+> Reported on `apple/coreai-models` issue #49 (FB23189921), **still open as of 2026-07-29** (3
+> comments, no activity since 2026-06-28), verbatim:
 > *"`CoreAI.framework` ships only in the device SDK (it's the Neural Engine inference runtime) and is
 > **absent from the iOS Simulator SDK**. … every source that `import CoreAI` fails to compile for an
 > iOS Simulator destination."*
@@ -3181,7 +3215,16 @@ If more than one thing applies, this is the order that minimises wasted work:
 | Only tags are `1.0.0-beta1` / `1.0.0-beta3`; two commits; issues disabled; zero deps; 27.0 floor | `apple/foundation-models-utilities` `git ls-remote --tags`, `git log`, `Package.swift`, `README.md` |
 | The beta1 → beta3 framework changelog | `foundation-models-utilities` commit `376ca60` message |
 
-### Apple GitHub issue threads (evidence class 4)
+### SDK interfaces and toolchain probes (evidence class 2 — captured/run 2026-07-29, Xcode 27.0 beta `27A5228h`)
+
+| Claim | Source |
+|---|---|
+| `AIModelCache.model(for:options:)` signature verbatim (`throws -> AIModel?`, not async); `AIModelCache` lives in **`CoreAIDelegates`**; `Policy` / `PurgeConditions` statics (§5) | `notes/sdk-interfaces/CoreAIDelegates-27.0-macos.swiftinterface:29-60` |
+| `bookmarkData` / `init?(resolvingBookmark:)` / `deleteEntry(referencedBy:)` verbatim (§6) | Same interface `:14-20, 41` |
+| `import CoreAI` is an umbrella: `CoreAI` → `@_exported CoreAIDelegates` → `@_exported` Asset/Common/Compiler/Runtime, all `-public-module-name CoreAI`; `CoreAICache`/`CoreAICommon`/`CoreAICompiler` have empty public surfaces | `CoreAI-27.0-macos.swiftinterface:5`; `CoreAIDelegates-27.0:5-8`; the three stub interfaces |
+| No public error type in `CoreAIRuntime`; `CoreAIAsset.AssetError` is the only public Core AI error (relevant to §3/§7 triage — see [17.5 §5.2](05-coreml-to-coreai.md)) | `CoreAIRuntime-27.0-macos.swiftinterface` (grep), `CoreAIAsset-27.0:229-247` |
+| `coreai-build` **absent** from the bare Xcode 27.0 beta app bundle; `aimodelc` present (`package`\|`compile`, `--output` required), embedding *"Please use 'xcrun coreai-build' instead"*; `xcrun coreai-build` fails to resolve (§7) | Run directly on this machine, 2026-07-29 |
+| `coreai-build 3600.79.1` **found in the Metal Toolchain component**; full `--help` for `compile`/`package`/`inspect`/`metadata` captured; `--preferred-compute {gpu, neural-engine, none}`; 24 `--architecture` codes enumerated by validation probing (§7) | `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, run 2026-07-31 |
 
 | Claim | Source |
 |---|---|
@@ -3229,8 +3272,12 @@ engineer, measured on **one M4 Max and one iPhone 17 Pro**, on **beta** software
 5. **Whether specialization is cancellable** (§5). Resolved by a device test.
 6. **Whether the pre-export PT2E quantisation path swallows failures** the way the post-MLIR path does
    (§8). Resolved by reading `export/pipeline.py` and `export/compression.py` end to end.
-7. **`coreai-build compile --help`'s full flag list** (§7) — Apple's prose names four flags and
-   alludes to a fifth. Resolved by pasting a real `--help`.
+7. ~~**`coreai-build compile --help`'s full flag list** (§7)~~ **CLOSED 2026-07-31** — a real
+   `--help` is pasted in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The 2026-07-29
+   confusion (beta `27A5228h` ships no `coreai-build`; `aimodelc` embeds "Please use 'xcrun
+   coreai-build' instead") resolved: the tool lives in the **optional Metal Toolchain component**,
+   not the app bundle. Both spellings coexist by design — `coreai-build` is the developer CLI,
+   `aimodelc` the Xcode-internal stub.
 8. **Whether Python's `AIModelAssetMetadata` exposes creator-defined keys** (§10). Resolved by
    `help()` in an environment with the wheel.
 9. **`AIProgram._load_bytecode` / `AIModelAsset.load`** are private/undocumented (§3.7) and may move.

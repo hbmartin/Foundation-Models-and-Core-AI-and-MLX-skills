@@ -1,19 +1,32 @@
 # What to run on a macOS 27 / Xcode 27 machine
 
-This machine is **macOS 26.5.2 / Xcode 26.6 / SDK 26.5**. The gaps below are unresolvable here.
-Each closes one or more 🔴 GAP boxes currently shipping in the guides.
+**Status update 2026-07-29.** The **Xcode 27.0 beta (27A5228h)** is now installed on this machine
+(host OS still macOS 26.5.2), and `scripts/dump-sdk-interfaces.sh` has captured the full 27.0
+interface set into `notes/sdk-interfaces/` — including the Core AI SubFrameworks umbrella
+(`CoreAIRuntime`, `CoreAIAsset`, `CoreAIDelegates`), the cross-import overlays
+(`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
+**Items 2, 4, 5 and 6 below are resolved and folded into the guides (2 and 6's toolchain half fell
+on 2026-07-31 when the Metal Toolchain component turned out to contain `coreai-build` and the Metal
+compiler). Items 1, 3 and 7 still genuinely need a machine (or recording target / device) *running*
+macOS 27 — the toolchain alone cannot produce them.**
 
 Run what you can, paste the raw output back. Partial is fine — every item is independent.
 
+**Probes for these now live in `probes/`** — every behavioral item below (5's runtime residue, both halves of 7) plus the guide-level 🔴 GAPs are executable XCTest probes; see `probes/README.md` for the per-destination one-liners.
+
 ---
 
-## 1. The `fm` CLI — closes the largest gap in the series
+## 1. The `fm` CLI — 🔴 still open, now sharper
 
-Guide `part-05/references/02-fm-cli-and-python-sdk.md` currently says, honestly, that nobody has run
-this. Only semantic option names were spoken aloud in WWDC26 session 334.
+Verified 2026-07-29: `fm` is **absent from the Xcode 27.0 beta** — `xcrun --find fm` fails and an
+exhaustive `find` of Xcode-beta.app returns nothing. That is *consistent* with the corpus claim
+that `fm` comes **preinstalled with macOS 27** (this host is 26.5.2, so the claim is untested, not
+false). Guide `part-05/references/02-fm-cli-and-python-sdk.md` still has no attested flag surface.
+
+On a machine running macOS 27:
 
 ```bash
-fm --help
+which fm && fm --help
 fm respond --help
 fm chat --help
 fm schema --help
@@ -30,95 +43,118 @@ fm chat
 
 ---
 
-## 2. `coreai-build` — closes gaps in guides 7.2, 10.3 and Part 15
+## 2. `coreai-build` — ✅ RESOLVED 2026-07-31 (it ships in the Metal Toolchain component)
 
-Four flags are attested from an Apple doc article. The architecture codes come from a community
-source and are unverified. Unknown whether subcommands beyond `compile` and `inspect` exist.
+The 2026-07-29 "does not ship in the beta" finding was true of the bare Xcode install and wrong
+about the product: **`coreai-build` 3600.79.1 arrives with the optional Metal Toolchain component**
+(`xcodebuild -downloadComponent MetalToolchain`), resolving via `xcrun --no-cache --find
+coreai-build` into `Metal.xctoolchain/usr/bin/` (plain `xcrun --find` can miss it through a stale
+cache). That also dissolves the `aimodelc`-stub mystery — the stub pointed at a tool in a
+different, optional component. Its version string matches the CoreAI framework's
+`-user-module-version` (3600.79.1).
 
-```bash
-xcrun coreai-build --help
-xcrun coreai-build compile --help
-xcrun coreai-build inspect --help
-```
-
-Specifically needed: the full `--preferred-compute` value list, and the enumeration of device
-architecture codes (we have only `h18p`, from a blog, unconfirmed).
-
----
-
-## 3. Xcode 27 Instruments lane names — closes gaps in guides 5.1 and 10.2
-
-WWDC26 session 243 says the Foundation Models template has **6 lanes**. Only two are named anywhere
-in the entire corpus: *Instructions* and *Model Inference*. The agents refused to invent the other
-four, which is correct but leaves the guide thin.
-
-1. Open Instruments 27 → template chooser.
-2. Screenshot or list the lane names for the **Foundation Models** template (all 6).
-3. Same for the **Core AI** template — its lane and metric names come only from prose.
+Everything the item asked for is captured in
+`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`: subcommands are `compile | package |
+inspect | metadata` (inspect exists, with `--io/--metadata/--storage/--compute/--ops/--json`);
+**`--preferred-compute` = `gpu` | `neural-engine` | `none` (default `none`)**; and the
+architecture codes were enumerated by validation-oracle probing — **24 valid codes, h11p…h18p**,
+grammar `h<generation><variant>` (p = phone-class, s/c = Mac-class, g = both stacks from h13g),
+`h18p` confirmed, per-platform acceptance matrix included (watchOS/visionOS accepted none of the
+swept codes on this 26.5 host — the one residual caveat).
 
 ---
 
-## 4. Core AI error types — closes a gap in guides 7.1 and 7.2
+## 3. Xcode 27 Instruments lane names — 🔴 still open, narrowed to "needs a target"
 
-No inference, specialization or cache error type appears among the 312 indexed Core AI symbols.
-`AssetError` covers asset operations only. So what `AIModel.init`, `loadFunction`, `run` and cache
-deletion actually throw is unknown — which means readers cannot write correct `catch` blocks.
+Progress 2026-07-29, from the beta's `Instruments.app` on disk: the **Foundation Models** template
+archives exactly **one instrument, `com.apple.FoundationModels`** (all six lanes are its lanes),
+and the **Core AI** template archives exactly **four** (`com.apple.dt.instruments.coreai`,
+`com.apple.ane`, `metal-gpu`, `coresampler2`) — both now cited in guides 5.1 §6.3 and 10.2 §3.2.
+But the **lane names are not extractable from the host toolchain**: instrument definitions stream
+from the *recording target* at attach time (a full-text sweep of Instruments.app for the known lane
+name "Model Inference" finds nothing).
 
-```bash
-# Dump the shipped interface:
-xcrun --sdk macosx swift-api-digester --dump-sdk -module CoreAI -o /tmp/coreai.json 2>/dev/null
-# Or simply locate and open the generated interface:
-find "$(xcrun --sdk macosx --show-sdk-path)" -name 'CoreAI.swiftinterface' -o -name 'CoreAI.swiftmodule' | head
-```
+**Sharpened 2026-07-31: this no longer needs new hardware.** The iOS 27.0 Simulator runtime on
+THIS machine is an OS 27 recording target, and Foundation Models inference provably runs in it
+(`probes/`). What failed is *headless* capture: `xcrun xctrace record` against the booted
+simulator hangs for every template on this 26.5 host (Time Profiler control included,
+`--no-prompt` set), and the lane strings are not on disk (sim framework binaries live in the dyld
+shared cache). The residue is one manual GUI job on this machine:
 
----
-
-## 5. The FoundationModels interface — closes ~8 gaps across Parts 2, 3 and 4
-
-Several signature questions would collapse at once: which `LanguageModelSession.init(model:...)`
-overloads are real; the `tokenCount(for:)` overload set; whether a `Profile(model:)` initialiser
-exists at all (only the `.model(_:)` modifier appears in compiling code); the full `QuotaUsage.Status`
-and `UnavailableReason` case lists; and the `Tool.includesSchemaInInstructions` default.
-
-```bash
-find "$(xcrun --sdk macosx --show-sdk-path)" -path '*FoundationModels*' -name '*.swiftinterface' | head
-# then just cat the arm64 one
-```
-
-Same for Vision, which would close the `BarcodeReaderTool` / `OCRTool` `Arguments`/`Output`
-associated-type gap:
-```bash
-find "$(xcrun --sdk macosx --show-sdk-path)" -path '*Vision*' -name '*.swiftinterface' | head
-```
+1. Open Instruments 27 → Foundation Models template → target the **booted iOS 27.0 simulator** →
+   Record (click through the privacy consent) → read the six lane headers off the timeline.
+2. Same for the Core AI template — lane/metric names and detail-pane columns render from the
+   template even though Core AI events cannot occur in the simulator (CoreAI is absent from the
+   simulator SDK; a real 27 device is still the only way to see live Core AI events).
 
 ---
 
-## 6. MetalPerformancePrimitives on the 27 SDK — confirms the Part 11 version story
+## 4. Core AI error types — ✅ RESOLVED 2026-07-29
 
-We verified against the **26.6** headers that scale planes do not exist and that the dtype set is
-int4/int8 only. Worth confirming nothing changed in 27, and resolving the availability discrepancy:
-Tech Talk 111432's ladder is 26.0 / 26.1 / 26.3 / 26.4 and never mentions 26.2, while the 26.6
-headers annotate the symbol as 26.2.
-
-```bash
-grep -rn "available" "$(xcrun --sdk macosx --show-sdk-path)"/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/ | grep -i tensor | head -40
-grep -rniE "scale|plane|e8m0|fp8|fp4|int2" "$(xcrun --sdk macosx --show-sdk-path)"/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/ | head
-```
+Answered from the captured interfaces, with evidence of absence: **CoreAIRuntime declares no public
+error type at all** — `AIModel.init`, `loadFunction`, `run`, `encode` and every cache method throw
+**untyped** `async throws`. The only public error type in the entire Core AI surface is
+`CoreAIAsset.AssetError` (`kind` + `debugMessage`; `Kind` = `unsupportedVersion(String)`,
+`invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`, `duplicateName` —
+`CoreAIAsset-27.0-macos.swiftinterface:230-247`). Correct `catch` guidance is now written into
+guides 7.1 §13 and 7.2 §3. Also settled: `AIModelCache` lives in **CoreAIDelegates**;
+`CoreAICache`/`CoreAICommon`/`CoreAICompiler` have empty public Swift surfaces.
 
 ---
 
-## 7. Two device tests (only if you have a 27 device handy)
+## 5. The FoundationModels / Vision interfaces — ✅ RESOLVED 2026-07-29
+
+All captured and folded into Parts 2–4 (34 gaps closed, 15 narrowed): the
+`LanguageModelSession.init(model:...)` overload set (including a previously-undocumented generic
+`some LanguageModel` family), the five `tokenCount(for:)` overloads, **no `Profile(model:)` init**
+(only `.model(_:)` modifiers), full `QuotaUsage.Status` / `UnavailableReason` /
+`LanguageModelError` (9 cases) lists, the `LanguageModel`/`LanguageModelExecutor` protocol
+requirements, PCC surface, and `DynamicProfile`. The Vision `BarcodeReaderTool`/`OCRTool` question
+resolved via the **cross-import overlay** `_Vision_FoundationModels` (their `Output` is an opaque
+`some PromptRepresentable` — deliberately unnameable). The last residue fell on 2026-07-31: the
+`probes/` package measured **`Tool.includesSchemaInInstructions` default = `true`** on both the
+macOS 26.5 host and the iOS 27.0 simulator runtime.
+
+---
+
+## 6. MetalPerformancePrimitives on the 27 SDK — ✅ RESOLVED 2026-07-29 (answer inverted)
+
+The "confirm nothing changed" expectation was wrong in the interesting direction. The 27.0 headers
+add **22 new matmul dtype rows** (int2b/uint2b, fp4 `e2m1`, fp8 `e4m3` **and** `e5m2`) and
+**blockwise scale planes now exist** (`tensor_blockwise` + `tensor_plane_scales`, scale dtype
+`metal_fp8_ue8m0` only, block 32×1, strict transpose rules), gated behind a new
+`__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0` macro. Conv2d gets none of it. Per-symbol
+availability is still macro-only (the 26.2-vs-Tech-Talk-ladder discrepancy stands, unchanged in
+27). All written into Part 11 with header citations.
+
+The Metal Toolchain follow-up ran on 2026-07-31: **`static_slice` does not exist** in the 27-era
+compiler (comment-spelling only; the real API is `slice<...>`, verified by grep + compile error),
+and the tensor macros are gated purely by `-std` — `metal4.0` defines `__HAVE_TENSOR__`,
+`metal4.1` adds `__HAVE_TENSOR_MULTIPLANE__` and the fp4/fp8/int2b format macros (gated with
+`==` per version, not `>=`); a ue8m0 scale-plane matmul compiles to AIR at 4.1. All folded into
+Part 11.
+
+---
+
+## 7. Two device tests — 🔴 still open (only if you have a 27 device handy)
 
 - **`AIModelCache` deletion semantics.** Apple's own docs contradict themselves: the reference page
   says deleting a referenced entry throws; the caching article says deletion is deferred until the
-  `AIModel` deallocates. One test settles it.
-- **On-device `contextSize`.** TN3193 says 4096. A third-party app's source comment claims device
-  probing returns 8192. Print `SystemLanguageModel().contextSize` on a real 27 device.
+  `AIModel` deallocates. One test settles it. (The interfaces confirm only spellings, not
+  behaviour — checked 2026-07-29.)
+- **On-device `contextSize`.** Narrowed 2026-07-29: the 26.5 interface **hardcodes `return 4096`**;
+  the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below.
+  Narrowed again 2026-07-31: the `probes/` run measured **4096 on the iOS 27.0 simulator runtime**
+  (and the overflow error text there independently says "maximum allowed context size of 4096").
+  The third-party 8192 claim now rests entirely on 27 *hardware* — print
+  `SystemLanguageModel().contextSize` on a real 27 device to settle it.
 
 ---
 
 ## Not needed from you
 
 Everything else is either resolved or resolvable from material already on disk. The research corpus
-is ~85,000 lines and the guides are written against it; these seven items are the residue that
-genuinely requires the newer toolchain.
+is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass and
+the 2026-07-31 Metal-Toolchain pass, the three items above (1, 3, 7 — plus item 5's small runtime
+probe, now in probes/) are the residue
+that genuinely requires a running macOS 27 / an OS 27 recording target / a 27 device.

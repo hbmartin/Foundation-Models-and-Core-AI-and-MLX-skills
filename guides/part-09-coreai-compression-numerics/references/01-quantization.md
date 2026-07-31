@@ -3331,7 +3331,8 @@ A second, still-open instance of the same class:
 
 And a third, in the converter:
 
-> ⚠️ **SILENT FAILURE (open).** ✅ **VERIFIED** — `coreai-torch` issue **#41, OPEN**:
+> ⚠️ **SILENT FAILURE (open).** ✅ **VERIFIED** — `coreai-torch` **PR #41, OPEN (fix unmerged as of
+> 2026-07-29)**:
 > `SubbyteTensor.__torch_dispatch__`'s `aten.cat` branch reads `dim` via `fill_defaults` but **never
 > passes it**, so **every `cat` on a packed intx/uintx tensor runs on dim 0**. Two `(2,4)` tensors with
 > `dim=1` give `(4,4)` instead of `(2,8)`, **silently**. Affects both `IntxTensor` and `UintxTensor`.
@@ -3717,7 +3718,7 @@ here.
 
 **Class 4 — GitHub issues and PRs** on `apple/coreai-optimization` and `apple/coreai-torch`, including
 several with Apple-maintainer answers (#3, #7, #16, #42/#44). Issue numbers, states and dates as of
-2026-07-27.
+2026-07-29.
 
 **Class 5 — WWDC26 session 325**, *"Dive into Core AI model authoring and optimization"* (Sachin,
 Core AI; Nicole, Core AI Debugger). Every `325:NN` citation is a transcript line reference. Used for

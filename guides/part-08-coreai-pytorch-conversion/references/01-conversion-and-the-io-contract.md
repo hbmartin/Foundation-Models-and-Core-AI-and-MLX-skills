@@ -300,7 +300,8 @@ during an earlier beta.
 > > starting with OS 27 second beta onwards. Reconvert your model using coreai-torch v0.4.1 or later
 > > to produce a compatible artifact."**
 >
-> Corroborated by maintainer **@gokulkrishna98** on `coreai-torch#37`:
+> Corroborated by maintainer **@gokulkrishna98** on `coreai-torch#37` (resolved: closed as
+> completed 2026-07-13):
 > *"Hi @zli96, from macOS beta 2 the assets generated via coreai-torch 0.4.0 will fail to compile.
 > Please use coreai-torch 0.4.1 for conversion."*
 
@@ -332,7 +333,7 @@ coreai_program.save_asset(Path("model_stripped.aimodel"))
 > ✅ **VERIFIED** — maintainer's answer verbatim: *"Could you try using `strip_debug_info` to remove
 > debugging metadata? This should prevent the compiler failure. After stripping the debug
 > information, make sure to save the updated asset."* Implementation pointer given in-thread:
-> `coreai_torch/debugging/debug_info.py`. Issue closed as resolved.
+> `coreai_torch/debugging/debug_info.py`. Issue resolved: closed as completed 2026-07-24.
 >
 > Note the call shape: the maintainer's snippet calls `strip_debug_info(program)` as a **statement**
 > and then saves the same object. The function is documented as operating in place — *"replaces every
@@ -656,7 +657,7 @@ decomposes to a slice/concat construction instead of the single `coreai.pad`).
 There is a further, nastier consequence of the same design. Ops **not** on the preserve list get
 PyTorch's naïve decomposition, and some of those decompositions are numerically unsafe at fp16:
 
-> ✅ **VERIFIED** — `coreai-torch#21` (OPEN as of 2026-07-27), which names the mechanism precisely:
+> ✅ **VERIFIED** — `coreai-torch#21` (OPEN as of 2026-07-29), which names the mechanism precisely:
 > *"In `_decomp.py`, the decomposition table preserves only 6 ops … When `softplus` is not in this
 > list, PyTorch decomposes it to `log(1 + exp(x))`, where `exp(x)` overflows fp16 (max 65,504) for
 > `x > ~11.09`. **On the ANE specifically, the overflow occurs even earlier at `x ≈ 10.4` due to an
@@ -673,7 +674,7 @@ PyTorch's naïve decomposition, and some of those decompositions are numerically
 > `replace_log_softmax` in `_aten_to_core.py`.
 >
 > **Status:** PR #22 proposes stable forms (`max(x,0) + log(1+exp(-|x|))` etc.) and adds the three ops
-> to `_COMPOSITE_OPS`. **Not merged as of 2026-07-27.** On shipped `coreai-torch 0.4.1`, softplus,
+> to `_COMPOSITE_OPS`. **Not merged as of 2026-07-29.** On shipped `coreai-torch 0.4.1`, softplus,
 > mish, logsumexp and logcumsumexp are fp16-unsafe on the ANE.
 >
 > **Safe default meanwhile:** substitute in your PyTorch source before export —
@@ -1050,7 +1051,7 @@ This is the most important callout in Part 8. It is an **open bug**, it produces
 loads and runs, and the wrongness is large.
 
 > ✅ **VERIFIED** — `coreai-torch#49`, *"`AIProgram.optimize()` removes broadcasting-significant axis
-> moves and silently miscompiles N×N distance expressions"*. **OPEN, 0 comments, as of 2026-07-27.**
+> moves and silently miscompiles N×N distance expressions"*. **OPEN, 0 comments, as of 2026-07-29.**
 > Reported 2026-07-23 by `dkomoroske`. Environment: macOS 27.0 builds `26A5378j` and `26A5388g`,
 > `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0, Python 3.12.13. Also filed as Feedback
 > Assistant **FB23695952**.
@@ -1142,7 +1143,7 @@ For calibration, Apple's own agent skill sets these acceptance thresholds:
 > `optimize=True` against `optimize=False` on real inputs and fail the build on a divergence.** §11.4
 > is that gate, written out.
 >
-> **Status: unresolved as of 2026-07-27.** Zero comments on the issue. Re-check `coreai-torch#49`
+> **Status: unresolved as of 2026-07-29.** Zero comments on the issue. Re-check `coreai-torch#49`
 > before shipping.
 
 This is not an isolated case, which is why the gate matters more than the specific bug. The same
@@ -1650,7 +1651,7 @@ wrong advice:**
 | dynamic monolithic stateful | prefill chunk > 16 tokens | Nondeterministic (`coreai-models#84`, not reproduced by Apple) |
 
 > ✅ **VERIFIED** — rows assembled from the named issues in `apple/coreai-torch` and
-> `apple/coreai-models`. Statuses as of 2026-07-27.
+> `apple/coreai-models`. Statuses as of 2026-07-29.
 
 ### 8.6 The iOS counter-current
 
@@ -2557,7 +2558,7 @@ out_ane = (await model_ane.load_function("main")({"image": nd_in}))["logits"].nu
 >
 > Author's own isolation and workaround: *"Transforming the 2D matrix into a 4D matrix
 > (1 x 1 x m x n) avoids the issue on the NPU."* Status: `coreai-torch#51` **OPEN**, 0 comments, as
-> of 2026-07-27. Attribute these numbers as community-measured, not Apple-published.
+> of 2026-07-29. Attribute these numbers as community-measured, not Apple-published.
 
 ### 11.7 The four A/Bs, as a checklist
 
@@ -3064,7 +3065,7 @@ Before you consider a conversion done:
 | Apple-staff answers | `coreai-torch` issues #33, #37, #44 (maintainers @cymbalrush, @gokulkrishna98, @DawerG) | Strong |
 | Release notes | `coreai-torch` v0.4.1 + bundled `coreai-core` 1.0.0b2 changelog | Strong |
 | WWDC26 | Session 325, *"Dive into Core AI model authoring and optimization"* (Sachin, Nicole) | Medium — spoken |
-| Community | `coreai-torch` issues #1, #2, #6, #9, #10, #11, #21, #49, #51; PRs #5/#22, #45 — reproducers and measurements by external developers | **Community-measured; always labelled as such** |
+| Community | `coreai-torch` issues #1, #2, #5, #6, #9, #10, #11, #21, #49, #51; PRs #22, #45 — reproducers and measurements by external developers | **Community-measured; always labelled as such** |
 
 ### 14.2 Numbers used in this guide, with attribution
 
@@ -3145,12 +3146,12 @@ Two more, inherited from the corpus and worth carrying:
 
 *Guide last verified 2026-07-27 against `coreai-torch` 0.4.1 (`main`, HEAD `4529671`),
 `coreai-core` 1.0.0b2, `coreai-models` 0.2.0-pre, macOS 27.0 beta builds `26A5378j` / `26A5388g`.
-Every open issue referenced was checked on that date. `coreai-torch#49` — the `optimize()`
-miscompile — was **unresolved with zero comments**; re-check it before you ship.*
+Issue and PR states were re-checked 2026-07-29. `coreai-torch#49` — the `optimize()`
+miscompile — was still **unresolved with zero comments**; re-check it before you ship.*
 
 [^sample-routing-policy]: The name classifier and preferences are implemented by the optional
     `apple/coreai-models` package in its pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI itself documents `.default` as choosing the CPU/GPU/Neural Engine combination that minimizes
     latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 

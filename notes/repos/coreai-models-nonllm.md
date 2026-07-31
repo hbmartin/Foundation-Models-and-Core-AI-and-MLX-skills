@@ -5,7 +5,8 @@
 > **This file deliberately covers what that one did not**: the four non-LLM Swift products,
 > their CLI tools, the vision/audio/diffusion model catalog, and the non-LLM Python primitives.
 >
-> Repo: `/Volumes/ExtStor/FM and MLX and CoreAI/repos/apple__coreai-models` @ commit `c944232`-era checkout.
+> Repo: `/Volumes/ExtStor/FM and MLX and CoreAI/repos/apple__coreai-models` @ commit `5ed9981`
+> (`5ed9981303b38d5a44aa6b45509bc4f6945029f5`, the pinned checkout in `scripts/clone-research-repos.sh`).
 > All code quoted with `path:LINE` citations relative to that repo root.
 > Anything not directly read is marked **UNVERIFIED**.
 

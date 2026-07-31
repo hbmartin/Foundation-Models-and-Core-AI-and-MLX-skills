@@ -1925,13 +1925,18 @@ and the base invocation (✅ **VERIFIED** — `working-with-coreai/SKILL.md:99`)
 xcrun coreai-build compile model.aimodel --platform iOS
 ```
 
-> 🔴 **GAP — `coreai-build`'s residency report.**
+> 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.**
 > Apple's skill says *"compile and check residency"* but **no source in this corpus shows what the
-> residency output looks like** — not the flag that produces it, not the format, not whether it is
-> per-op or per-segment. The two `coreai-build` invocations above are the only ones attested
-> anywhere: `--platform` and `--preferred-compute`. Session 325 does not cover `coreai-build` at
-> all. **What would resolve it:** `xcrun coreai-build compile --help` on a machine with Xcode 27,
-> or the Apple doc page *"Compiling Core AI models ahead of time"* at
+> residency output looks like on a real asset** — not the format, not whether it is per-op or
+> per-segment. Session 325 does not cover `coreai-build` at all. The `--help` run this box used to
+> ask for has now happened: the wrapper turned out to ship in the optional **Metal Toolchain
+> component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app — which is what
+> the 2026-07-29 "absent from the beta toolchain" check was actually seeing — and the full surface
+> is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The residency-shaped
+> surface it reveals: **`coreai-build inspect --compute`** (*"Show compute types"*, off by
+> default) and `inspect --ops` (operation distribution), with `--json` output. **What would still
+> resolve it:** that inspect output captured on a real compiled asset, or the Apple doc page
+> *"Compiling Core AI models ahead of time"* at
 > `developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time`.
 > **Safe default meanwhile:** use the **Core AI Debugger** instead. It is a standalone app
 > (`developer.apple.com/core-ai-debugger/`) that, per session 325, *"executes your model on specific
@@ -1940,7 +1945,9 @@ xcrun coreai-build compile model.aimodel --platform iOS
 > graph. Failing that, `coreai_torch.debugging.benchmarker.benchmark_coreai_program` gives per-module
 > timings, and a segmentation point shows up as an implausibly expensive layer.
 
-**The `--preferred-compute` default is `none`.** This is corroborated **community-measured**
+**The `--preferred-compute` default is `none`.** Now ✅ **tool-verified** (2026-07-31,
+`coreai-build compile --help`, `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`): values
+`{gpu, neural-engine, none}`, default `none`. The community report had it right
 (`john-rocky/coreai-model-zoo`, `knowledge/compute-units-and-authoring.md:115-127`): AOT
 `--preferred-compute` *"defaults to `none`(compiler decides), and a 'compiles but runs on CPU' case
 needs an explicit `--preferred-compute neural-engine`."* Apple's own `common_issues.md:109-112`
@@ -3090,19 +3097,19 @@ different loader unless it adopts the same policy.
 will change between calls, which is exactly what a dynamic-shape GPU model does and exactly what a
 chunked-static ANE model must never do.
 
-> 🟡 **RECONSTRUCTED — `SpecializationOptions` on iOS.**
-> `SpecializationOptions(preferredComputeUnitKind:)` and `.expectFrequentReshapes` are ✅ **VERIFIED**
-> from `ModelStructure.swift`. But the corpus also records that `SpecializationOptions` is
-> **macOS-only** in the `coreai.runtime` Python API. Whether the Swift `SpecializationOptions` is
-> available on iOS — and `ModelStructure.swift` is compiled for a package that declares
-> `.iOS("27.0")`, which suggests it is — could not be confirmed from a header.
-> **What would resolve it:** the `CoreAI` framework's Swift interface, or the
-> `developer.apple.com/documentation/coreai` page for `SpecializationOptions`.
-> **Safe default:** Apple's own `working-with-coreai` guidance (`guidance.md:62`) says
-> *"Use `.default` specialization options at runtime for each platform — this gives Core AI the most
-> flexibility to optimize execution on device."* Take that advice unless you have measured a reason
-> not to, and get your compute unit from your model's *structure*, which is portable, rather than
-> from an option that may not be.
+> ✅ **SDK-verified (upgraded from 🟡 on 2026-07-29) — `SpecializationOptions` is available on iOS,
+> and on every other platform.**
+> The framework's Swift interface — the exact artifact the old gap box asked for — was captured
+> from the Xcode 27.0 beta SDK: `SpecializationOptions` is declared
+> `@available(macOS 27.0, iOS 27.0, watchOS 27.0, tvOS 27.0, visionOS 27.0, *)`
+> (`CoreAIDelegates-27.0-macos.swiftinterface:89-106`), with `init(preferredComputeUnitKind:)` and
+> the settable `expectFrequentReshapes: Bool` exactly as `ModelStructure.swift` uses them. The
+> macOS-only restriction the corpus recorded is a property of the `coreai.runtime` **Python** API
+> only, not of the Swift type.
+> **Still-good advice regardless:** Apple's own `working-with-coreai` guidance (`guidance.md:62`)
+> says *"Use `.default` specialization options at runtime for each platform — this gives Core AI
+> the most flexibility to optimize execution on device."* Take that unless you have measured a
+> reason not to, and get your compute unit from your model's *structure*, which is portable.
 
 ### 8.2 The corollary about compression, from Apple's own guidance
 
@@ -3694,10 +3701,10 @@ preference policy[^sample-routing-policy]) ·
 | Gap | What is unknown | What would resolve it | Safe default |
 | --- | --- | --- | --- |
 | Core AI sample code | There is none | An Apple sample under `/documentation/coreai` | Use `apple/coreai-models` as the sample |
-| `coreai-build` residency output | The flag, the format, whether it is per-op | `xcrun coreai-build compile --help`; the AOT-compilation doc page | Use the Core AI Debugger, or `benchmark_coreai_program` per-module timings |
+| `coreai-build` residency output | The output format, whether it is per-op — **narrowed 2026-07-31**: the wrapper ships in the Metal Toolchain component (not Xcode-beta.app; the 2026-07-29 "absent" check hit a bare install), and its captured `--help` names the likely surface, `inspect --compute` / `--ops` / `--json` (§4; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) | That inspect output on a real compiled asset; the AOT-compilation doc page | Use the Core AI Debugger, or `benchmark_coreai_program` per-module timings |
 | `HardwareConstraints` / `AllocationType` | Full signature; `interleave` vs `alignments` semantics; the enum cases | The `coreai` Python API reference | Do not hand-author them; go through `coreai_models.export.ios` |
 | `LegalizeToCoreOptions` | Whether it exists at all | The `coreai` Python API reference | Use `state_names=` as `export/macos.py` does |
-| `SpecializationOptions` on iOS | Whether the Swift type is iOS-available | The `CoreAI` Swift interface | Use `.default`; treat function-name policy as specific to `coreai-models.PreparedModel`[^sample-routing-policy] |
+| ~~`SpecializationOptions` on iOS~~ | **CLOSED 2026-07-29** — the captured beta Swift interface declares it `iOS 27.0`-available (§8.1) | — | Still use `.default` per Apple's guidance; function-name policy remains specific to `coreai-models.PreparedModel`[^sample-routing-policy] |
 | Which ANE KV pattern to prefer | Apple ships two and recommends neither over the other | An Apple doc page on ANE KV caching | `KVCacheHandler` for the shipped LLM export path; read-only for hand-rolled models |
 | "Newer hardware generations support vector-valued LUT entries" | *Which* generations | `PalettizationSpec.cluster_dim` docs with availability | Leave `cluster_dim=1` unless you have measured a win on your target device |
 | The 76% figure's conditions | Device, warm-up, what was compared | Apple restating it with a methodology | Measure it yourself; the shipped engine will not give it to you (§9.5) |
@@ -3720,7 +3727,7 @@ preference policy[^sample-routing-policy]) ·
 
 [^sample-routing-policy]: The classifier and preferences described here are source code in the
     optional `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI documents `.default` separately as selecting the compute-unit combination that minimizes
     latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 

@@ -25,6 +25,27 @@ evaluate a 26.0-era feature, but you can only *run* the evaluation on 27.
 > Python, Apple's guidance is the Python Foundation Models SDK plus your own scoring code — covered in
 > [`../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md).
 
+> ✅ **VERIFIED — distribution.** The framework ships **inside Xcode, not in the OS SDK** (Xcode 27
+> beta, checked 2026-07-29). The macOS 27.0 and iOS 27.0 beta SDKs contain no public `Evaluations`
+> module anywhere (`System/Library/Frameworks`, `SubFrameworks`, `usr/lib/swift`); the framework
+> lives at `<Xcode>/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`
+> — the same location and mechanism as `XCTest.framework` and Swift Testing's `Testing.framework`,
+> and consistent with session 299's *"new in Xcode 27"* phrasing. It is present for every platform
+> in the availability list and absent for AppleTVOS; its `.swiftinterface` annotates symbols
+> `@available(anyAppleOS 27.0, *)` / `@available(tvOS, unavailable)` and imports `Testing`. Two
+> practical consequences: `import Evaluations` resolves in **test targets** by default — a
+> non-test target (Book Tracker ships two command-line tools that use the framework) has to reach
+> the same platform `Developer/Library/Frameworks` directory through its search paths, as with
+> XCTest — and if you go looking for the framework under `xcrun --show-sdk-path`, you will not
+> find it. That absence is expected, not evidence the framework is missing.
+>
+> **Interface pass, 2026-07-29:** that captured interface (885 lines, checked into this repo at
+> `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface`) has now been read end-to-end
+> against all three guides in this part. Claims marked ✅ **SDK-verified**
+> (`Evaluations-27.0-macos.swiftinterface:<lines>`) cite it. An interface settles spellings,
+> signatures, defaults, availability and case lists; it cannot settle runtime behaviour, and
+> absence from it means "not present in the Xcode 27 beta interface", never "does not exist".
+
 ---
 
 ## What this covers
@@ -65,7 +86,9 @@ in Part 6. This one gives you the frame they hang on, and names them where they 
 
 ## What you need
 
-- **Xcode 27** and a 27 SDK. Nothing here compiles against Xcode 26.
+- **Xcode 27** and a 27 SDK. Nothing here compiles against Xcode 26. (The framework itself ships
+  inside Xcode, like XCTest — see the distribution box above — so "a 27 SDK" gates the OS symbols
+  you evaluate, not the `Evaluations` module.)
 - A feature worth measuring, and a written list of what "good" means for it. If you cannot write that
   list, §1 is where to start, not §4.
 - Familiarity with `@Generable`, `@Guide`, `LanguageModelSession` and `Tool`. See
@@ -249,6 +272,11 @@ model was involved:
 > typealias Evaluators                      // "Shorthand for the evaluator array type, resolved per-conformance."
 > func aggregateMetrics(using aggregator: inout MetricsAggregator)
 > ```
+>
+> ✅ **SDK-verified nuance:** in the shipped interface `name` is not a protocol *requirement* at all —
+> it is a computed property in an extension (`Evaluations-27.0-macos.swiftinterface:476-481`), so a
+> conformance never has to supply it; and the `evaluators` requirement carries the builder attribute
+> directly — `@EvaluatorsBuilder var evaluators` (`:463-473`).
 
 `Sample`, `Subject` and `SampleLoader` are all associated types. `ModelSample` and `ModelSubject` are
 *the language-model-shaped conformances* of `SampleProtocol` / `EvaluationSubject`, not the protocol
@@ -268,7 +296,8 @@ your model, evaluators that score it, an aggregate, a threshold.
 > Apple answer on 833822. **Safe default meanwhile:** for a non-LLM system, drive it through the
 > generic protocol requirements — your own `Sample` type, your own `Subject` type, plain `Evaluator`
 > closures — and stay away from `ModelJudgeEvaluator`, `ToolCallEvaluator` and `SampleGenerator`, all
-> three of which are constrained to `ModelSampleProtocol`.
+> three of which are constrained to `ModelSampleProtocol` (constraints ✅ SDK-verified —
+> `Evaluations-27.0-macos.swiftinterface:160,311,840`).
 
 The practical consequence of taking Apple at their word here: **an Evaluations suite is a reasonable
 place to put your Core ML or MLX regression tests too.** You get the same report UI, the same
@@ -764,6 +793,11 @@ The corrected shape:
 > Note that `metrics(subject:input:)` returns **`[Metric]`** — plural. That is how one evaluator can
 > emit several metrics from one pass, which is what `ModelJudgeEvaluator` does with multiple
 > `ScoreDimension`s.
+>
+> ✅ **SDK-verified** — both match the interface, and the interface also pins the closure type the
+> docs never printed: `Evaluator.init(_ evaluate: (Input, ModelSubject<Input.ExpectedValue>) async
+> throws -> Metric)` — sample first, subject second, returning one `Metric`
+> (`Evaluations-27.0-macos.swiftinterface:289-297`; the protocol at `:636-642`).
 
 If a closure is not enough — you need stored state, or you want to emit several metrics — conform
 directly:
@@ -795,12 +829,13 @@ directly:
 > static func buildOptional([any EvaluatorProtocol<Sample, Subject>]?) -> [any EvaluatorProtocol<Sample, Subject>]
 > ```
 
-> 🟡 **RECONSTRUCTED — no `buildEither`, so `if/else` is probably unsupported.** The published member
-> list has `buildBlock`, `buildExpression` and `buildOptional` and **no `buildEither(first:)` /
-> `buildEither(second:)`**. In Swift's result-builder rules that means a bare `if` works and an
-> `if/else` does not. We have not compiled it. **Safe default:** write two bare `if`s with
-> complementary conditions rather than an `if/else`, or hoist the branch outside the builder and build
-> the evaluator list in a helper.
+> ✅ **SDK-verified — the builder has exactly those three members and no `buildEither`**
+> (`Evaluations-27.0-macos.swiftinterface:645-649`, checked 2026-07-29): `buildExpression`,
+> `buildBlock` and `buildOptional`, nothing else. Under Swift's result-builder rules that means a
+> bare `if` works and an `if/else` does not — we still have not compiled the negative case, but the
+> member list is no longer an inference from a documentation page; it is the shipped interface.
+> **Safe default stands:** write two bare `if`s with complementary conditions rather than an
+> `if/else`, or hoist the branch outside the builder and build the evaluator list in a helper.
 
 ### Evaluators are per-sample; aggregation is per-run
 
@@ -1000,6 +1035,21 @@ a floor — goes here, and comes back out of the result by the same label (§8).
 
 Evaluations does not have a runner. Swift Testing is the runner.
 
+> ✅ **SDK-verified — with one footnote: the library *can* drive itself.** The interface exposes
+> `Evaluation.run(info: [String : String] = [:]) async throws -> EvaluationResult`
+> (`Evaluations-27.0-macos.swiftinterface:484-488`) — presumably what the `.evaluates` trait calls
+> internally, and the hook a command-line harness would use to run an evaluation outside a test.
+> No Apple sample or doc article calls it; running through the trait is what gets you the Xcode
+> report and the attachment (§11–§12). Treat `run(info:)` as the escape hatch, not the norm.
+>
+> ✅ **Probe-verified, 2026-07-31 — the escape hatch works, offline, under XCTest.** The probe
+> suite's five Evaluations probes (`probes/`, run on the 27.0 sim runtime) all drive
+> `Evaluation.run(info:)` programmatically from XCTest cases — no Swift Testing trait, no Xcode
+> report, **no model** (canned subjects) — and get real `EvaluationResult`s back. Every measured
+> Evaluations finding in this guide (§8.2, §8.4, §17.4, §17.5, §17.7) came through this path, which
+> is itself the existence proof that the runner has no hidden dependency on the trait, the report
+> UI, or a live language model.
+
 > ✅ **VERIFIED** (`298:83`): *"Evaluations integrates with **Swift Testing**, so you can run your
 > evaluations in your app's test targets."*
 
@@ -1042,6 +1092,10 @@ That is nineteen lines and there are five non-obvious things in it.
 > Both spellings appear in the sample: **`.evaluates(evaluation)`** bare (`SearchBooks.swift:572`,
 > `ModelJudgeAlignmentEvaluation.swift:344`) and **`.evaluates(evaluation, info: evaluationInfo)`**
 > (`BookTags.swift:161`).
+>
+> ✅ **SDK-verified** — one declaration, not two: `static func evaluates(_ evaluation: any
+> Evaluation, info: [String : String] = [:])` (`Evaluations-27.0-macos.swiftinterface:412-414`); the
+> bare form is the defaulted `info:`.
 
 ⚠️ The parameter is **`info:`**, taking `[String: String]`. Session 298 describes it as *"a notes
 dictionary"* in narration (`298:88-89`) and every reconstruction spelled it `notes:`. **It is `info:`.**
@@ -1055,19 +1109,21 @@ Not stylistic. The test body needs to reach the *same* `Metric` values the evalu
 that by reading them off the evaluation instance: `BookTagEvaluationTests.evaluation.tagCount`. A fresh
 `BookTaggingEvaluation()` constructed inside the test body would be a different instance.
 
-> 🔴 **GAP — whether `Metric` identity is by name or by instance.** It matters, and the two Apple
-> sources point opposite ways. `Metric` is `Equatable` and its `name` is documented as *"used as the
-> DataFrame column name"*, which suggests name-keyed lookup — and Apple's own minimal `Evaluation`
-> example constructs `let metric = Metric("Match")` **inside** the evaluator closure, shadowing the
-> stored property of the same name, which can only work if identity is by name. But Book Tracker's
-> structure, and the fact that the test body reaches through `static let evaluation` to get the metric,
-> only makes sense if you are meant to hold onto instances.
+> ✅ **Probe-verified, 2026-07-31 — `Metric` identity is BY NAME.** (was a 🔴 GAP; `probes/`
+> `eval.metric-identity`, run offline on the 27.0 sim runtime via `Evaluation.run(info:)`.) Two
+> evaluators each constructing a **fresh** `Metric("Match")` instance produce **one** detailed
+> column and **one** `"Mean of Match"` summary column — and
+> `aggregateValue(.mean(of: Metric("Match")))` through yet another fresh instance works, returning
+> 0.5. That 0.5 is the second half of the finding: **same-named metrics from different evaluators
+> POOL into one aggregate** (both evaluators' values averaged together). Apple's minimal example
+> constructing `Metric("Match")` inside the evaluator closure was the correct reading; Book
+> Tracker's hold-the-instance structure is a style choice, not a requirement.
 >
-> **What would resolve it:** the `Metric` synthesised-conformance page, or an experiment declaring two
-> `Metric("X")` values in one evaluation and checking whether the report shows one column or two.
-> **Safe default:** declare each metric exactly once as a stored property on the evaluation, reference
-> it everywhere else, keep the evaluation a `static let`, and never construct a `Metric` inside a
-> closure. That form is correct under either answer.
+> **The safe default barely changes, and the reason sharpens:** declare each metric exactly once as
+> a stored property and reference it everywhere — no longer because instance identity might matter
+> (it does not), but because name-keyed pooling means a *typo'd or duplicated* name silently forks
+> or merges columns (§17.4). Fresh instances with the same name are safe; same names for different
+> measurements are the hazard.
 
 ### 8.3 The dataset runs *before* the test body, and the body never iterates
 
@@ -1115,6 +1171,12 @@ reconstructions of this API show — does not exist. The signature is a plain
 > enum EvaluationResult.DataFrameKind
 > struct ResultColumn
 > ```
+>
+> ✅ **SDK-verified** — that member list matches the shipped interface
+> (`Evaluations-27.0-macos.swiftinterface:524-604`), which also fixes two details the docs left
+> loose: `saveJSON(to:)`'s parameter is labelled **`to directory:`** — it takes a directory, writes
+> a file into it, and returns the file's URL (`@discardableResult`) — and `jsonData`'s options
+> default to `[.prettyPrinted, .sortedKeys]` (`:575-604`).
 
 `aggregateValue` takes an `AggregationOperation` and returns a `Double`. Two forms are attested in
 shipping code:
@@ -1130,6 +1192,14 @@ shipping code:
 
 ✅ both verified in the sample. Note the symmetry: whatever you asked for in `aggregateMetrics` is what
 you can read here, addressed the same way you registered it.
+
+> ✅ **Probe-verified, 2026-07-31 — what `aggregateValue` returns when there is nothing to read:
+> `-1.0`, always.** (`probes/` `eval.mean-over-all-ignored` and the empty-`aggregateMetrics` run,
+> 27.0 sim runtime.) An evaluation whose `aggregateMetrics(using:)` registers nothing yields an
+> **empty `summary` DataFrame**, and `aggregateValue` returns **`-1.0` for every metric you ask
+> about** — the same `-1.0` you get for a mean over all-ignored samples (§17.5). `-1.0` is the
+> framework's universal "no value" sentinel: it never throws, never traps, and never tells you
+> *why* there was no value. Assert row counts (§17.1) alongside every `aggregateValue` assertion.
 
 `summary` and `detailed` are **TabularData `DataFrame`s**, which is a much bigger door than
 `aggregateValue` alone. If you want to *inspect* rather than assert:
@@ -1414,14 +1484,14 @@ struct BookTagEvaluationTests {
 }
 ```
 
-> 🟡 **RECONSTRUCTED — `.standardDeviation(of:)` as an `AggregationOperation` case.** `AggregationOperation`
-> is documented as *"The type of aggregation operation used to compute a summary statistic"*, and
-> **`.mean(of:)` and `.custom(label:)` are the only two cases attested in shipping code.** Registering
-> `computeStandardDeviation(of:)` in `aggregateMetrics` is ✅ verified (`BookTags.swift:135`); reading it
-> back with `aggregateValue(.standardDeviation(of:))` is an inference from the symmetry of the two
-> attested pairs. **Safe default if it does not compile:** register a `custom(of: tagTotal, label: "Tag
-> Total SD") { … }` computing the deviation yourself, and read it back with
-> `.custom(label: "Tag Total SD")` — both halves of that are ✅ verified.
+> ✅ **SDK-verified — `.standardDeviation(of:)` is a real case, and the case list is now closed.**
+> `AggregationOperation`'s cases are `mean(of:)`, `median(of:)`, `mode(of:)`, `minimum(of:)`,
+> `maximum(of:)`, `standardDeviation(of:)`, `variance(of:)` — each taking a `Metric` — plus
+> `custom(label:)` (`Evaluations-27.0-macos.swiftinterface:425-438`, checked 2026-07-29). The enum
+> mirrors the `compute…` registration methods one-for-one, so anything you can register in
+> `aggregateMetrics(using:)` you can read back through `aggregateValue(_:)` with the matching case.
+> Only `.mean(of:)` and `.custom(label:)` appear in shipping Apple code; the rest are now verified
+> spellings rather than inferences.
 
 Run it with ⌘U. What you get is not a green checkmark; it is a report. §11.
 
@@ -1719,17 +1789,23 @@ func evaluateBookTagging() async throws {
     #expect(result.aggregateValue(.mean(of: Self.evaluation.tagCount)) >= 0.8)
 
     // Keep a durable, diffable record independent of Xcode's report UI.
-    let url = URL.documentsDirectory
-        .appending(path: "runs/\(result.evaluationID)-\(result.resultID).json")
-    try result.saveJSON(to: url, includeReportMetadata: true)
+    // `saveJSON(to:)` takes a DIRECTORY; the framework names the file and returns its URL.
+    let runsDirectory = URL.documentsDirectory.appending(path: "runs")
+    let written = try result.saveJSON(to: runsDirectory, includeReportMetadata: true)
+    print("run saved to \(written.path())")
 }
 ```
 
-> 🟡 **RECONSTRUCTED — the call above is assembled from ✅ documented members
-> (`saveJSON(to:includeReportMetadata:)`, `evaluationID`, `resultID`) but the exact argument types of
-> `saveJSON` are not published and no sample calls it.** The `.xcevalresult` route in the box above is
-> the one with a compiling reference implementation. Prefer it if you need certainty today; use
-> `saveJSON` if you need a CI artefact and are prepared to fix up the signature.
+> ✅ **SDK-verified signature, 🟡 unverified usage.** The exact declaration is
+> `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false) throws
+> -> URL` (`Evaluations-27.0-macos.swiftinterface:575-591`, checked 2026-07-29) — the parameter is a
+> **directory**, not a file path, which is why the snippet above no longer builds a filename from
+> `evaluationID`/`resultID` by hand. The same block pins the rest of the round trip:
+> `static loadJSON(from:)`, `init(jsonData:)`, an async `static loadJSONLines(from:)`, and — easy to
+> miss because it hangs off `Collection` — `[EvaluationResult].saveJSONLines(to:includeReportMetadata:)`
+> for appending a run history as JSONL (`:592-604`). No sample calls any of them, and whether
+> `saveJSON`'s output matches the `.xcevalresult` shape `DatasetExtractor` parses is still unknown —
+> the `.xcevalresult` route remains the one with a compiling reference implementation.
 
 Either way, the durable-record habit is what turns a test suite into a time series, and a time series is
 what §18 needs.
@@ -2206,14 +2282,15 @@ and then **shadows it inside the evaluator closure** with a locally constructed 
 Tracker never does this, and its test body deliberately reaches through `static let evaluation` to get
 the *instance*.
 
-> 🔴 **GAP — `Metric` identity semantics are unresolved.** See §8.2 for the full statement of what is
-> unknown and what would resolve it. The hazard either way: if identity is by name, two metrics with the
-> same string silently merge into one column; if identity is by instance, a locally constructed
-> `Metric("Match")` produces results that `aggregateMetrics(using:)` never aggregates and
-> `aggregateValue(.mean(of: storedMetric))` cannot find — and neither case throws.
+> ✅ **Probe-verified, 2026-07-31 — identity is by NAME, so the merge arm is the live hazard.**
+> (was a 🔴 GAP; `probes/` `eval.metric-identity`, 27.0 sim runtime — full result in §8.2.) Two
+> metrics with the same string **silently merge into one column and one pooled aggregate**, and
+> nothing throws. The instance arm of the old dilemma is dead: a locally constructed
+> `Metric("Match")` is found by `aggregateMetrics` and `aggregateValue` just fine.
 >
-> **Safe default:** one stored property per metric, unique names, referenced everywhere. Never
-> construct a `Metric` inside a closure or a function body.
+> **Safe default unchanged, sharper reason:** one stored property per metric, unique names,
+> referenced everywhere. The thing to police is the *name*: two evaluators reusing a name
+> unintentionally pools unrelated measurements into one mean, silently.
 
 ### 17.5 An aggregate computed over nothing
 
@@ -2223,15 +2300,17 @@ dataset — which Apple explicitly recommends for judge-scored evaluations (§5)
 evaluator written for a reference-carrying one. **Every sample ignores. The metric aggregates over zero
 values.**
 
-> 🔴 **GAP — what `aggregateValue(.mean(of:))` returns when every sample was ignored.** Zero? NaN? A
-> trap? Nothing in the documentation, the sessions or the sample covers it, and the difference matters
-> enormously: `#expect(0.0 >= 0.8)` fails loudly, `#expect(Double.nan >= 0.8)` also fails, but
-> `#expect(1.0 >= 0.8)` would pass a suite measuring nothing.
+> ✅ **Probe-verified, 2026-07-31 — the answer is a `-1.0` sentinel.** (was a 🔴 GAP; `probes/`
+> `eval.mean-over-all-ignored`, 27.0 sim runtime: an evaluator returning `.ignore()`
+> unconditionally over 4 detailed rows yields `aggregateValue(.mean(of:)) == -1.0`.) Not zero, not
+> NaN, no trap. The good news: `#expect(mean >= threshold)` fails loudly for any sane positive
+> threshold. The bad news: **`-1.0` is also what `aggregateValue` returns for a metric that was
+> never registered at all** (the probe suite confirmed that too, on an evaluation with empty
+> `aggregateMetrics`), so a `-1.0` cannot tell you *which* of the two nothings you measured.
 >
-> **What would resolve it:** run an evaluation whose evaluator returns `.ignore()` unconditionally and
-> print the aggregate. **Safe default meanwhile:** if you mix reference-carrying and prompt-only
-> samples, assert the scored row count as in §17.1 before asserting the aggregate. That check is correct
-> under every possible answer.
+> **The safe default therefore stands unchanged:** if you mix reference-carrying and prompt-only
+> samples, assert the scored row count as in §17.1 before asserting the aggregate. The sentinel
+> saves you from a false green; only the row-count assertion tells you what actually ran.
 
 ### 17.6 A green suite over a bad feature
 
@@ -2244,21 +2323,28 @@ which of your five expectations has no metric behind it.
 
 ### 17.7 A failing sample that vanishes instead of failing
 
-> 🔴 **GAP — what happens to the run when `subject(from:)` throws for some samples.** The framework
-> defines `SubjectInferenceError` — *"A typed reason why `subject(from:)` failed to produce a subject
-> for a sample"* — and `EvaluatorError` — *"A typed reason why an evaluator failed while scoring a
-> produced subject"*. ✅ both names and descriptions verified in the symbol inventory. What is **not**
-> documented anywhere is whether a per-sample failure (a `guardrailViolation`, a
-> `contextSizeExceeded`, a transient `LanguageModelError.timeout`) **aborts the run, fails the test, or
-> quietly drops the sample from the aggregate.**
+> ✅ **Probe-verified, 2026-07-31 — per-sample `subject(from:)` failures drop silently, and the
+> score improves.** (was a 🔴 GAP; `probes/` `eval.subject-throws`, 27.0 sim runtime.) The exact
+> resolving experiment was run: 5 samples, `subject(from:)` throwing on 2 of them. The run
+> **completed** — no abort, no test failure from the throws alone — the failed samples still occupy
+> detailed rows (`detailedRows=5`), and they are **EXCLUDED from the aggregate**: the mean over the
+> 3 survivors came back **1.0** with 2/5 failing. The "silently improved score" hazard is no longer
+> a hypothesis; it is reproduced fact.
 >
-> This matters because guardrail false positives are real and rate-dependent, and because the on-device
-> model refresh in 26.4 explicitly retuned them. A run that silently drops its five hardest samples
-> would report an *improved* score.
+> Background that predicted the drop-silently arm, kept for the record: the interface pass
+> (2026-07-29) pinned `SubjectInferenceError.failed(reason: String)` and
+> `EvaluatorError.failed(evaluator:evaluatorType:reason:)`
+> (`Evaluations-27.0-macos.swiftinterface:499-521`), and `EvaluationError`'s deprecated
+> `metricsNotFound(names:)` case carries Apple's own statement that *"missing metrics are
+> materialized as ignored columns and logged."*
 >
-> **What would resolve it:** an evaluation whose `subject(from:)` throws on a known subset, run against
-> the row count in `result.detailed`. **Safe default meanwhile:** assert the scored row count (§17.1).
-> It is the one check that catches every member of this family.
+> This matters because guardrail false positives are real and rate-dependent, and because the
+> on-device model refresh in 26.4 explicitly retuned them. A run that silently drops its five
+> hardest samples reports an *improved* score — measured, not imagined.
+>
+> **The safe default is now a hard rule:** assert the scored row count (§17.1) in every test body.
+> It is the one check that catches every member of this family, and the probe shows nothing else
+> will.
 
 ### The pattern behind all seven
 
@@ -2505,7 +2591,8 @@ let result = EvaluationContext.current.result
 #expect(result.aggregateValue(.mean(of: Self.evaluation.primary)) >= 0.8)
 
 // 3. The distribution, wherever you have a range metric.
-#expect(result.aggregateValue(.custom(label: "Primary SD")) > 0)
+//    (.standardDeviation(of:) is an SDK-verified AggregationOperation case — §9.)
+#expect(result.aggregateValue(.standardDeviation(of: Self.evaluation.primaryTotal)) > 0)
 ```
 
 ---
@@ -2514,6 +2601,11 @@ let result = EvaluationContext.current.result
 
 ### Evidence used, in precedence order
 
+0. **The framework's shipped Swift interface** — `Evaluations-27.0-macos.swiftinterface` (885
+   lines), dumped from the Xcode 27 beta's macOS `Evaluations.framework` on **2026-07-29** into
+   `notes/sdk-interfaces/` in this repo. For *names, signatures, defaults, availability and case
+   lists* it outranks everything below, including the sample; for *usage and runtime behaviour* it
+   decides nothing. Cited inline as ✅ **SDK-verified** with line numbers.
 1. **Apple sample code — Book Tracker**
    (`/documentation/evaluations/book-tracker-using-evaluations-to-evaluate-an-intelligent-feature`).
    20 Swift files, `MACOSX_DEPLOYMENT_TARGET = 27.0`, five targets: the app, two test bundles
@@ -2570,27 +2662,39 @@ transcripts are in wide circulation, and several of them look entirely plausible
 
 ### Still open
 
-Consolidated from the 🔴 boxes above, so you know exactly what this guide could not verify:
+Consolidated from the 🔴 boxes above, updated after the 2026-07-29 interface pass. Closed items are
+kept and marked, so you can see what moved:
 
-1. **Non-text / multimodal evaluation** (§2). Hook exists (`ModelSampleInput`, custom
-   `ModelSampleProtocol`); no compiling example anywhere; the forum question is unanswered.
-2. **`Metric` identity — by name or by instance?** (§8.2, §17.4). Apple's doc sample and Apple's code
-   sample imply different answers.
-3. **`AggregationOperation`'s full case list** (§9). Only `.mean(of:)` and `.custom(label:)` are
-   attested in shipping code.
-4. **What an all-`.ignore()` metric aggregates to** (§17.5).
-5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). `SubjectInferenceError`
-   and `EvaluatorError` exist; their effect on the run does not appear anywhere.
-6. **`if/else` inside the `evaluators` builder** (§6). No `buildEither` is listed.
-7. **The Evaluations report UI beyond four narrated sentences** (§11) — no screenshots, no CI story, no
-   confirmation that Compare handles more than two runs.
-8. **`EvaluationResult.saveJSON(to:includeReportMetadata:)`'s exact signature** (§12) — documented,
-   never called in any sample.
+1. **Non-text / multimodal evaluation** (§2). Hook exists (`ModelSampleInput` and the generic
+   protocols, all present in the interface); no compiling example anywhere; the forum question is
+   unanswered. **Open.**
+2. **`Metric` identity — by name or by instance?** (§8.2, §17.4). **Closed, probe-verified
+   2026-07-31:** by NAME, and same-named metrics pool into one aggregate (`probes/`
+   `eval.metric-identity`, 27.0 sim runtime).
+3. **`AggregationOperation`'s full case list** (§9). **Closed:** seven statistic cases plus
+   `custom(label:)`, ✅ SDK-verified (`Evaluations-27.0-macos.swiftinterface:425-438`).
+4. **What an all-`.ignore()` metric aggregates to** (§17.5). **Closed, probe-verified 2026-07-31:**
+   the `-1.0` sentinel — indistinguishable from an unregistered metric, so keep asserting row
+   counts (`probes/` `eval.mean-over-all-ignored`, 27.0 sim runtime).
+5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). **Closed,
+   probe-verified 2026-07-31:** the run continues and failed samples are excluded from the
+   aggregate while still occupying detailed rows — the silently-improved-score hazard is reproduced
+   fact (`probes/` `eval.subject-throws`, 27.0 sim runtime).
+6. **`if/else` inside the `evaluators` builder** (§6). **Effectively closed:** the interface confirms
+   `buildExpression` / `buildBlock` / `buildOptional` and nothing else (`:645-649`), so a bare `if`
+   builds and an `if/else` should not. Not compile-tested.
+7. **The Evaluations report UI beyond four narrated sentences** (§11) — no screenshots, no CI story,
+   no confirmation that Compare handles more than two runs. **Open.**
+8. **`EvaluationResult.saveJSON(to:includeReportMetadata:)`'s exact signature** (§12). **Closed:** it
+   takes a *directory* and returns the written file's URL, ✅ SDK-verified (`:575-591`). Whether its
+   output matches the `.xcevalresult` shape is still open.
 9. **`ScoreDimension.scale` cases other than `.numeric`** — `.passFail(passDescription:failDescription:)`
-   and `.custom(_:)` are ✅ in the docs but appear in no sample; every dimension in Book Tracker is a
-   4-point numeric scale.
-10. **`ModelJudgePrompt.reference`'s second closure parameter** — discarded as `_` in both of Book
-    Tracker's usages. Plausibly the `ModelSubject`; unverified.
+   and `.custom(_:)` signatures are now ✅ SDK-verified (`:382-388`), but no sample exercises them;
+   every dimension in Book Tracker is a 4-point numeric scale. **Usage still unproven.**
+10. **`ModelJudgePrompt.reference`'s second closure parameter.** **Closed:** it is the model's output
+    value, typed `Input.ExpectedValue` — the full closure type is
+    `(Input, Input.ExpectedValue) async throws -> [String : String]`, ✅ SDK-verified (`:349-357`).
+    Not the `ModelSubject`, as previously guessed.
 
 ### Where to go next in Part 6
 

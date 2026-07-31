@@ -604,21 +604,34 @@ protocol LanguageModelExecutor: Sendable {
 }
 ```
 
-> **Where the two readings differ, and how to rule.**
+> ✅ **The dispute is now settled first-hand (2026-07-29): this repo holds the interface.** The
+> declarations, read verbatim from
+> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface:1438-1444` and `:1668-1678`:
 >
-> - `where Executor.Model == Self` (skill) vs `where Self == Executor.Model` (swiftinterface read):
->   the same constraint, written in the two legal orders. Not a disagreement.
-> - `nonisolated(nonsending)` on `respond` appears in the swiftinterface reading and on two shipped
->   conformances (`CoreAIExecutor.respond`, `ZooExecutor.respond`) but **not** in the skill's
->   declaration and **not** on the two conformances in this guide's main worked examples
->   (`ChatCompletionsLanguageModel.Executor.respond`, `MLXLanguageModel.Executor.respond`). Both
->   spellings compile as witnesses. Write the plain form unless you have a reason; note that
->   `foundation-models-utilities` enables the `NonisolatedNonsendingByDefault` experimental feature
->   package-wide (`Package.swift:36`), which makes the plain form mean the annotated one inside that
->   package.
-> - The skill lists `associatedtype Model: LanguageModel` explicitly; the swiftinterface reading omits
->   it (it is implied by the `where` clause on the other side). Declare `typealias Model = …` or a
->   nested `Executor` and inference handles it.
+> ```swift
+> public protocol LanguageModel : Sendable {
+>   associatedtype Executor : LanguageModelExecutor where Self == Self.Executor.Model
+>   var capabilities: LanguageModelCapabilities { get }
+>   var executorConfiguration: Self.Executor.Configuration { get }
+> }
+> public protocol LanguageModelExecutor : Sendable {
+>   associatedtype Configuration : Hashable, Sendable
+>   associatedtype Model : LanguageModel
+>   func prewarm(model: Self.Model, transcript: Transcript)
+>   init(configuration: Self.Configuration) throws
+>   nonisolated(nonsending) func respond(to request: LanguageModelExecutorGenerationRequest,
+>       model: Self.Model, streamingInto channel: LanguageModelExecutorGenerationChannel) async throws
+> }
+> ```
+>
+> Rulings, against the real text: the `where` clause is `Self == Self.Executor.Model` (the two
+> orderings were indeed the same constraint); `nonisolated(nonsending)` **is** in the SDK's
+> `respond` requirement (the skill omitted it — both spellings still compile as witnesses, since
+> the module enables `NonisolatedNonsendingByDefault`, interface line 3); the skill was right that
+> `associatedtype Model : LanguageModel` is explicit; `init(configuration:)` **is `throws`**; and
+> the default `prewarm` implementation exists in an extension (`:1866-1868` — body not emitted;
+> the skill documents it as a no-op). Both protocols are
+> `@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)`, tvOS unavailable.
 
 ### 3.1 Why the split exists
 
@@ -1377,12 +1390,13 @@ That `schema.name` is itself new:
 > `GenerationSchema.name` property, and lists the change in its message: *"`ChatCompletionsLanguageModel`
 > schema name uses the new `GenerationSchema.name` API."*
 >
-> 🔴 **GAP — what `.name` returns for an anonymous or inline schema is unknown.** The deleted `title`
-> hack had an explicit `"Response"` fallback; whether `.name` has an equivalent, or returns an empty
-> string, or is even non-optional in edge cases, is not shown anywhere in the corpus and no test pins
-> it. **Safe default meanwhile:** if your wire format requires a non-empty schema name, write
-> `schema.name.isEmpty ? "Response" : schema.name` and log when you hit the fallback, so you find out
-> what the real behaviour is from your own telemetry rather than from a support ticket.
+> 🔴 **GAP (narrowed 2026-07-29) — what `.name` returns for an anonymous or inline schema.** The
+> declaration is now pinned: `public var name: String { get }`, 27.0+, **non-optional** —
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3255-3263`) — so every schema has
+> *some* name and there is no `String?` edge case. What the getter *computes* for an anonymous
+> schema is still invisible (non-inlinable body) and untested. **Safe default unchanged:** if your
+> wire format requires a non-empty schema name, write
+> `schema.name.isEmpty ? "Response" : schema.name` and log when you hit the fallback.
 
 ---
 
@@ -1464,14 +1478,17 @@ schema in the prompt as well burns tokens describing something the decoder alrea
 backend does *not*, the prompt is the only place the schema can live. The flag lets the developer —
 who may know their model responds better to one or the other — control it.
 
-> 🔴 **GAP — nobody in this corpus reads `includeSchemaInPrompt`.** Its existence is verified from
-> Apple's skill; its type is almost certainly `Bool` given the name and the sentence, but no
-> declaration and no call site is available. `ChatCompletionsLanguageModel` ignores all of
-> `contextOptions`; MLX reads only `reasoningLevel`. Resolving this needs the
-> `FoundationModels.swiftinterface` or the documentation page for `ContextOptions`. **Safe default
-> meanwhile:** if you inline schemas into prompts, do it only when your backend cannot constrain
-> decoding, and treat the flag as advisory when you eventually read it — do not make a
-> correctness-critical decision on an unverified field.
+> 🔴 **GAP (narrowed 2026-07-29) — still nobody in this corpus *reads* `includeSchemaInPrompt`, but
+> the declaration is settled.** `ContextOptions` is
+> `public struct ContextOptions : Sendable, Equatable` with `includeSchemaInPrompt: Bool?` and
+> `reasoningLevel: ContextOptions.ReasoningLevel?`, `init` defaulting both to `nil` —
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3066-3083`). Note the **optional**
+> `Bool?`: `nil` means "the developer expressed no preference", so your executor needs a
+> three-state policy, not a boolean one (the framework's own `schema:` overloads default it to
+> `ContextOptions(includeSchemaInPrompt: true)`, `:2033-2039`). `ChatCompletionsLanguageModel`
+> ignores all of `contextOptions`; MLX reads only `reasoningLevel`. **Safe default unchanged:**
+> inline schemas into prompts only when your backend cannot constrain decoding, and treat the flag
+> as advisory.
 
 
 ---
@@ -2260,14 +2277,19 @@ knowing before you spend a day on it.
 > Recorded as commit `1c86cc1` in `ml-explore/mlx-swift-lm`. The stated effect: *"consumer-visible
 > usage for these responses may be absent or zero."*
 
-🔴 **GAP — whether this is fixed in the SDK you are building against is unknown.** The corpus captures
-it as of Xcode 27 beta 3 (2026-07-10) and no later SDK was tested. Apple's own
-`ChatCompletionsLanguageModel` calls the two-argument form and is unaffected, which is consistent
-with the diagnosis. **Safe default meanwhile:** call `updateUsage(input:output:)` with **both
-arguments explicit and no reliance on any defaulted parameter**, exactly as
-`ChatCompletionsLanguageModel.swift:351-360` and `MockModel.swift:95-99` do. If your package crashes
-at image load with an unbound `FoundationModels` symbol, this is why, and the fix is to stop
-referencing the symbol — not to guard the call.
+🔴 **GAP (updated 2026-07-29) — whether this is fixed in the SDK you are building against is still
+unknown, and the interface side has not moved.** The macOS 27.0 beta interface captured on this
+machine (Xcode 27 beta, 2026-07-29) **still declares the three-parameter form** —
+`updateUsage(input:output:metadata: … = [:])` on all three `Action` types
+(`FoundationModels-27.0-macos.swiftinterface:1823, :1831, :1846`) — so the interface/dylib split
+the MLX comment describes cannot be ruled out from the interface alone; a `.swiftinterface` cannot
+tell you what the dylib exports. Only an `nm`/`dyld_info` dump of the shipping
+`FoundationModels.framework` binary, or a link-and-run test, settles it per SDK. **Safe default
+unchanged:** call `updateUsage(input:output:)` with **both arguments explicit and no reliance on
+any defaulted parameter**, exactly as `ChatCompletionsLanguageModel.swift:351-360` and
+`MockModel.swift:95-99` do. If your package crashes at image load with an unbound
+`FoundationModels` symbol, this is why, and the fix is to stop referencing the symbol — not to
+guard the call.
 
 
 ---
@@ -2396,7 +2418,7 @@ and the balance rule for custom errors (339:151–156):
 > | `.contextSizeExceeded(ContextSizeExceeded)` | `contextSize: Int`, `tokenCount: Int` | *"The transcript would exceed the model's context window. The developer can recover by trimming entries and retrying."* |
 > | `.rateLimited(RateLimited)` | `resetDate: Date?` | *"Provider returned 429 / a burst-throttling signal. Include `resetDate` when the provider tells you when retries will succeed."* |
 > | `.guardrailViolation(GuardrailViolation)` | — | *"Provider's safety system flagged the prompt or the response."* |
-> | `.refusal(Refusal)` | initializer input `explanation: String`; readable `explanation` is `async throws -> LanguageModelSession.Response<String>` | *"Model declined to answer for non-safety reasons… Read the generated message from `(try await refusal.explanation).content`."*[^refusal-response] |
+> | `.refusal(Refusal)` | initializer input `explanation: String`; readable `explanation` is `async throws -> LanguageModelSession.Response<String>` | *"Model declined to answer for non-safety reasons (e.g. asked for something out of scope). Surfaced to the developer via `refusal.explanation` / `refusal.explanationStream`."* In practice, read the generated message from `(try await refusal.explanation).content`.[^refusal-response] |
 > | `.unsupportedCapability(UnsupportedCapability)` | `capability: LanguageModelCapabilities.Capability` | *"A capability you didn't declare was requested. **The framework throws this for you when you under-declare** — only throw it manually when your provider rejects a capability mid-stream."* |
 > | `.unsupportedTranscriptContent(UnsupportedTranscriptContent)` | `unsupportedContent: [Transcript.Entry]` | *"The transcript contains content the model can't process — unsupported file types, corrupted data, or a custom segment your provider doesn't recognize."* |
 > | `.unsupportedGenerationGuide(UnsupportedGenerationGuide)` | `schemaName: String?` | *"The generation schema uses a guide your provider doesn't support (e.g. an exotic regex pattern)."* |

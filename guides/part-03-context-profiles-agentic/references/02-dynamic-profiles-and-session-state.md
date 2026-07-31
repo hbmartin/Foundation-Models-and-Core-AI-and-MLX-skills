@@ -424,12 +424,18 @@ index — which are visible inside a conforming type. It is the same ergonomic a
 > exactly like `.temperature(_:)` and `.reasoningLevel(_:)`. `Profile`'s only documented initialiser
 > is `init(_:)` — *"Creates a profile that contains dynamic instructions."*
 >
-> 🔴 **GAP — whether a `Profile(model:)` overload also exists is unverified.** It appears in
-> reconstructions derived from spoken WWDC narration and in one local documentation mirror, but in no
-> compiling source and on no Apple documentation page in the corpus. **Safe default: always use
-> `.model(_:)`.** It is verified, it composes with the other modifiers, and it is what Apple ships.
-> Resolving this needs the `FoundationModels.swiftinterface` from an Xcode 27 SDK — grep it for
-> `struct Profile` and read the initialiser list.
+> ✅ **RESOLVED (2026-07-29) — no `Profile(model:)` overload exists in the 27.0 beta SDK
+> interface.** The grep this box asked for has been run.
+> `LanguageModelSession.Profile` declares exactly **one** initializer:
+> `public init(@DynamicInstructionsBuilder _ dynamicInstructions: () -> some DynamicInstructions)`
+> — ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:785-798`). The model arrives
+> only through the modifier, which has **two** overloads —
+> `func model(_ model: any LanguageModel)` and `func model(_ model: some LanguageModel)`, both
+> `-> some DynamicProfile` (`:921-923`) — so it accepts an existential or a concrete model. Every
+> `Profile(model:)` spelling in circulation is a reconstruction that does not compile against the
+> 27.0 beta. (Per this repo's honesty rule: this is absence from the captured beta interface, not a
+> promise about the final SDK — but the shipping sample, the docs article, and the interface now
+> all agree.)
 
 Two smaller spelling corrections from the same listing:
 
@@ -727,12 +733,20 @@ tool mutates your state; the body re-runs at the next prompt boundary.
 > skill. So both `DynamicInstructionsForEach` and `DynamicInstructions.ForEach` name the same thing,
 > the way SwiftUI's `ForEach` does.
 
-> 🔴 **GAP — the initialiser list is unverified.** The documentation page carries no member
-> documentation, and the one compiled call site in the corpus uses a single
-> `(_ data:, id:, _ content:)` form. Whether an `Identifiable`-constrained overload without `id:`
-> exists, and whether a `Range<Int>` overload exists, is unknown. **Safe default: use the
-> `(_:id:_:)` form Apple's package uses.** Reading `FoundationModels.swiftinterface` from the Xcode 27
-> SDK would resolve it.
+> ✅ **RESOLVED (2026-07-29) — the initialiser list is exactly two.**
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:739-748`):
+>
+> ```swift
+> init(_ data: Data, id: KeyPath<Data.Element, ID>,
+>      @DynamicInstructionsBuilder content: @escaping (Data.Element) -> Content)
+> // and, where Data.Element: Identifiable, ID == Data.Element.ID:
+> init(_ data: Data, @DynamicInstructionsBuilder content: @escaping (Data.Element) -> Content)
+> ```
+>
+> So the `Identifiable`-constrained overload without `id:` **does** exist; a `Range<Int>` overload
+> does **not** (use the `id:` form over a range, e.g. `\.self`). The nested spelling is a
+> typealias: `extension DynamicInstructions { typealias ForEach = DynamicInstructionsForEach }`
+> (`:749-753`).
 
 ---
 
@@ -763,6 +777,19 @@ through modifiers.
 | `transcriptErrorHandlingPolicy(_:)` | "The session's policy for managing the transcript when errors occur." | See §14. |
 | `modifier(_:)` | "Apply a modifier to the dynamic profile." | The entry point for custom modifiers. See §10. |
 
+> ✅ **SDK-verified addendum (2026-07-29)** — the value modifiers' exact signatures, from
+> `FoundationModels-27.0-macos.swiftinterface:920-937`. Every configuration modifier takes an
+> **Optional** and returns `some DynamicProfile`: `temperature(_: Double?)`,
+> `samplingMode(_: GenerationOptions.SamplingMode?)`, `maximumResponseTokens(_: Int?)`,
+> `reasoningLevel(_: ContextOptions.ReasoningLevel?)`,
+> `toolCallingMode(_: GenerationOptions.ToolCallingMode?)`,
+> `transcriptErrorHandlingPolicy(_: TranscriptErrorHandlingPolicy?)` — so passing `nil` is legal
+> and reads as "no opinion at this level" (consistent with §8's precedence model, though the
+> nil-clearing semantics are not separately documented). `model(_:)` has two overloads
+> (`any LanguageModel` / `some LanguageModel`, non-optional), and
+> `historyTransform(_: @escaping ([Transcript.Entry]) -> [Transcript.Entry])` is synchronous and
+> non-throwing — an `async` transform does not compile.
+
 **Lifecycle modifiers — run your code at session events**
 
 | Modifier | Apple's description |
@@ -787,15 +814,18 @@ in the article's lifecycle table — treat it as real but under-documented, and 
 Plus a fourth group that is not in the framework at all — the history modifiers shipped by
 `apple/foundation-models-utilities` as extensions on `DynamicProfile`. Those are §13.
 
-> 🔴 **GAP — `contextOptions(_:)` as a profile modifier is unverified.** One local documentation
-> mirror shows a `.contextOptions(ContextOptions(reasoningLevel: .deep))` modifier applied to a
-> profile *alongside* `.reasoningLevel(.deep)` on the same profile, which reads like sample-code
-> sloppiness rather than API. `ContextOptions` itself is verified — it exists, carries
-> `includeSchemaInPrompt` and `reasoningLevel`, and is a parameter of the iOS 27 `respond` metadata
-> overloads (`respond(to:options:contextOptions:metadata:)`). Whether a profile-level
-> `.contextOptions(_:)` modifier exists is not in Apple's documented modifier list and not in any
-> sample. **Safe default: use `.reasoningLevel(_:)` on the profile, and pass `contextOptions:` at the
-> call site if you need the other fields.**
+> ✅ **RESOLVED (2026-07-29) — there is no `.contextOptions(_:)` profile modifier in the 27.0 beta
+> interface.** The complete built-in modifier surface on
+> `LanguageModelSession.DynamicProfile` is read verbatim at
+> `FoundationModels-27.0-macos.swiftinterface:912-983`: `modifier(_:)`, `model(_:)` (×2),
+> `temperature(_:)`, `samplingMode(_:)`, `maximumResponseTokens(_:)`, `reasoningLevel(_:)`,
+> `toolCallingMode(_:)`, `historyTransform(_:)`, `transcriptErrorHandlingPolicy(_:)`, and the seven
+> lifecycle hooks — nothing else. The documentation mirror's `.contextOptions(...)` modifier does
+> not compile against this interface; per-call `contextOptions:` (`ContextOptions` itself is
+> SDK-verified at `:3068-3072`) and the `.reasoningLevel(_:)` modifier (which takes the *same*
+> `ContextOptions.ReasoningLevel?` type, `:931`) are the two real surfaces. **Use
+> `.reasoningLevel(_:)` on the profile, and pass `contextOptions:` at the call site if you need
+> `includeSchemaInPrompt`.**
 
 ### 5.2 `samplingMode`
 
@@ -1233,10 +1263,14 @@ Confirmed spellings here: `Transcript.Entry.response(_:)`,
 > ⚠️ **`assetIDs` is a required, non-optional `[String]`, and Apple's own sample passes `[""]`** — an
 > array containing one empty string. It is undocumented. Copy it; there is nothing better available.
 >
-> 🔴 **GAP — what `assetIDs` means is unknown.** It plausibly identifies the model asset that produced
-> a response, which would make `[""]` mean "no model produced this; the app wrote it." No
-> documentation page in the corpus describes it. Resolving this needs the `Transcript.Response`
-> documentation page or the SDK interface.
+> 🔴 **GAP (narrowed 2026-07-29) — what `assetIDs` means is still unknown, but the SDK shows its
+> trajectory.** The 27.0 interface declares `Transcript.Response` with `assetIDs: [String]` plus a
+> 27-only `metadata: [String : any Codable & Sendable & Equatable]`, and the back-deployed
+> `metadata` getter on pre-27 runtimes literally returns `["assetIDs": assetIDs]` — ✅
+> **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:2554-2586`). So in the 27 model,
+> `assetIDs` is just one key of the general response-metadata bag (the 27-only initializer
+> `init(id:metadata:segments:)` drops the label entirely). Its *semantics* remain undocumented;
+> `[""]` still has no better reading than "no model produced this."
 
 ### 7.4 Restoring a saved conversation
 
@@ -1246,11 +1280,13 @@ exists, and both appear in Apple samples of different vintages:
 > ✅ **VERIFIED** — `init(model:tools:transcript:)` is the iOS 26.0 spelling and is used by Apple's
 > 2025-vintage samples; `init(profile:history:)` is the iOS 27 spelling and is what Origami uses.
 >
-> 🔴 **GAP — whether `transcript:` is deprecated in 27 is unverified.** Both labels appear in shipping
-> Apple code, in samples targeting different OS versions. Nothing in the corpus marks either
-> deprecated. **Safe default: use `history:` in new 27-targeting code** (it is the label on the
-> profile-taking initialisers, and it is what the current sample uses) and leave existing
-> `transcript:` call sites alone until a deprecation warning appears.
+> ✅ **RESOLVED (2026-07-29) — `transcript:` is not deprecated in the 27.0 beta.** The 26.x
+> `init(model:tools:transcript:)` appears in the 27.0 interface with no deprecation attribute
+> (`FoundationModels-27.0-macos.swiftinterface:41`), and 27.0 even *adds* a generic
+> `init(model: some LanguageModel, tools:, transcript:)` (`:1910`). The two labels are different
+> shapes, not old/new spellings of one: `transcript:` takes a whole `Transcript` on a tools-based
+> session; `history:` takes `some Collection<Transcript.Entry>` on the profile/dynamic-instructions
+> initialisers (`:871`, `:1083`). Use whichever matches the session shape you are building.
 
 Rehydration has a cost that surprises people:
 
@@ -1485,13 +1521,25 @@ This is the messiest corner of the API surface, so here is exactly what is known
 > (`.onResponse { response in print("Debug response: \(response)") }` appears in Apple's custom-modifier
 > example). These are overloads, not variadic magic.
 
-> 🔴 **GAP — the declared signatures are unverified.** Specifically unknown: the *types* of the
-> `toolCall`, `output` and `response` parameters (`Transcript.ToolCall`? a dedicated type?); whether
-> the closures are `async`, `throws`, or `@Sendable`; and whether every hook has both arities or only
-> some do. **Safe default: use the zero-argument form wherever you can** — it is attested in compiling
-> Apple-adjacent code and in Apple's documentation — and reach for the argument-taking form only for
-> `onToolCall`/`onToolOutput`, where Apple's documentation shows it explicitly. Resolving this needs
-> `FoundationModels.swiftinterface` from the Xcode 27 SDK.
+> ✅ **RESOLVED (2026-07-29) — the declared signatures, read verbatim from the 27.0 interface**
+> (`FoundationModels-27.0-macos.swiftinterface:939-981`). Every transcript-event hook is an
+> overload **pair** — a zero-argument convenience that forwards to the payload form — and the
+> payload types are all `Transcript` nested types:
+>
+> | Hook | Payload form's parameters | Closure |
+> |---|---|---|
+> | `onPrompt` | `(Transcript.Prompt)` | `async throws` |
+> | `onResponse` | `(Transcript.Response)` | `async throws` |
+> | `onReasoning` | `(Transcript.Reasoning)` | `async throws` |
+> | `onToolCall` | `(Transcript.ToolCall)` | `async throws` |
+> | `onToolOutput` | `(Transcript.ToolCall, Transcript.ToolOutput)` | `async throws` |
+> | `onActivate` / `onDeactivate` | `()` only | `async`, **non-throwing** |
+>
+> (Full attributes: `@_inheritActorContext perform action: nonisolated(nonsending) sending
+> @escaping … async throws -> Void`; the activate/deactivate pair is `@isolated(any) () async ->
+> Void`.) So: every hook except activate/deactivate has both arities, all are `async`, the
+> transcript-event hooks may `throw` (§9.3's turn-abort), and `onActivate`/`onDeactivate`
+> **cannot throw** — teardown code that can fail needs its own error handling.
 
 ### 9.3 Throwing from a lifecycle callback aborts the turn
 
@@ -1868,9 +1916,15 @@ session state from a test. Neither WWDC session mentions it. This is the hook th
 flow testable without scraping the transcript: give your profile a `phase` session property, drive the
 session, and assert on `session.properties.phase`.
 
-> 🔴 **GAP — whether `session.properties` is writable from outside is unverified.** The only observed
-> use is a read in a test assertion. **Safe default: treat it as read-only from outside the session**
-> and do all writes from a profile, modifier, or tool, where the API is verified.
+> 🔴 **GAP (narrowed 2026-07-29) — outside writes now provably *compile*; their semantics are still
+> unverified.** The interface declares `session.properties: SessionPropertyValues { get }` returning
+> a `final class` whose keyed subscript has `get`/`set`/`_modify`, and whose `history` accessor is
+> likewise settable (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1053-1063,
+> :1026-1031, :1084-1086`) — so `session.properties.phase = .done` from outside is not a compile
+> error. What no source shows is what happens next (does an in-flight turn observe it? does it race
+> the `transcriptMutationWhileResponding` guard?). **Safe default: treat it as read-only from
+> outside the session** and do all writes from a profile, modifier, or tool, where the behaviour is
+> verified.
 
 ### 11.5 Summary of the surface
 
@@ -1881,7 +1935,7 @@ session, and assert on `session.properties.phase`.
 | `DynamicProfileModifier.body(content:)` | ✅ | ⚠️ same purity rule — write in the hook it installs | Apple's utilities package |
 | `Tool.call(arguments:)` | ✅ | ✅ | Apple docs |
 | `DynamicInstructions` body | ✅ | ⚠️ purity; and see the read-only rule in §12.2 | Apple docs |
-| Outside, via `session.properties` | ✅ | 🔴 GAP | compiled test |
+| Outside, via `session.properties` | ✅ | ⚠️ setter exists (SDK-verified `:1059-1063`); runtime semantics 🔴 GAP | compiled test + 27.0 interface |
 
 ---
 
@@ -1951,12 +2005,16 @@ That is exactly Origami's shape: the two on-device branches carry
 > ✅ **VERIFIED** — Apple's documentation, as a NOTE: *"Because model output influences the evaluation
 > of `DynamicInstructions` and `Tool`, **the session history is read-only in these contexts.**"*
 >
-> 🔴 **GAP — what happens if you write to it anyway is unverified.** The three plausible behaviours —
-> a compile error from a get-only projection, a silent no-op, or a runtime trap — have very different
-> debugging costs, and nothing in the corpus distinguishes them. **Safe default: only assign to
-> `history` from a lifecycle modifier closure** (`onPrompt`, `onResponse`), which is where every
-> verified write in the corpus happens, including all three of Apple's own history modifiers. Reading
-> it from a tool or from `DynamicInstructions` is fine and documented.
+> 🔴 **GAP (narrowed 2026-07-29) — what happens if you write to it anyway.** One of the three
+> plausible behaviours is now eliminated: it is **not a compile error**. The interface has a single
+> `SessionPropertyValues.history` accessor with a real `set`/`_modify`
+> (`FoundationModels-27.0-macos.swiftinterface:1026-1031`) and no read-only projection type for the
+> `Tool`/`DynamicInstructions` contexts — so the documented read-only rule must be enforced at
+> runtime, which leaves **silent no-op or runtime trap**, and nothing in the corpus distinguishes
+> those. **Safe default: only assign to `history` from a lifecycle modifier closure** (`onPrompt`,
+> `onResponse`), which is where every verified write in the corpus happens, including all three of
+> Apple's own history modifiers. Reading it from a tool or from `DynamicInstructions` is fine and
+> documented.
 
 ### 12.3 The two types are not the same type
 
@@ -2886,17 +2944,17 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | `LanguageModelSession.Profile` (struct, `init(_:)`) | ✅ docs + Apple sample |
 | `LanguageModelSession.DynamicProfileModifier` (+ `Content`, `body(content:)`) | ✅ docs + Apple's utilities package |
 | `DynamicInstructions` (top-level protocol) | ✅ docs + Apple sample |
-| `DynamicInstructionsBuilder`, `DynamicInstructionsForEach` | ✅ docs (members of `ForEach` 🔴 GAP) |
+| `DynamicInstructionsBuilder`, `DynamicInstructionsForEach` | ✅ docs + SDK-verified — `ForEach` has exactly two inits, `(_:id:content:)` and an `Identifiable` `(_:content:)` (`FoundationModels-27.0-macos.swiftinterface:739-748`) |
 | `.model(_:)` on a profile | ✅ Apple sample (moved into the framework at Xcode 27 beta 3) |
 | `.temperature(_:)` `Double` | ✅ Apple sample + docs |
 | `.reasoningLevel(_:)` — `.light` / `.moderate` / `.deep` | ✅ Apple sample (`.deep`) + docs |
 | `.samplingMode(_:)` | ✅ docs · no sample · cases renamed during beta |
 | `.maximumResponseTokens(_:)`, `.toolCallingMode(_:)`, `.transcriptErrorHandlingPolicy(_:)`, `.modifier(_:)` | ✅ docs |
 | `.historyTransform(_:)` — `([Transcript.Entry]) -> [Transcript.Entry]` | ✅ Apple sample (function reference) + docs |
-| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolCall/.onToolOutput/.onReasoning` | ✅ docs · exact arities 🔴 GAP |
+| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolCall/.onToolOutput/.onReasoning` | ✅ docs + SDK-verified — overload pairs, `async throws`, `Transcript.*` payloads; activate/deactivate zero-arg `async` non-throwing (`:939-981`) |
 | `SessionPropertyValues`, `SessionPropertyKey`, `@SessionPropertyEntry`, `@SessionProperty(\.…)` | ✅ docs + compiled tests |
 | `\.history` → `ArraySlice<Transcript.Entry>` `{ get set }` | ✅ docs |
-| `session.properties.<name>` | ✅ compiled test (write-from-outside 🔴 GAP) |
+| `session.properties.<name>` | ✅ compiled test · setter SDK-verified (`:1059-1063`); write-from-outside *semantics* 🔴 GAP |
 | `LanguageModelSession(profile:history:)` · `init(dynamicInstructions:history:)` | ✅ docs + Apple sample |
 | `TranscriptErrorHandlingPolicy` — `.preserveTranscript` / `.revertTranscript` | ✅ docs |
 | `session.transcript` — now `{ get set }` | ✅ docs + WWDC |
@@ -2943,7 +3001,7 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | `summarizeHistory` never fires | `entryThreshold ≥ rollingWindow` size, or the trailing entry is not a `.prompt` | 13.4, 13.5 |
 | History window starts with an orphaned response | `rollingWindow(entries:)` cutting between a prompt and its response — a known, pinned bug | 13.3 |
 | Strange answers after an aborted turn | `.preserveTranscript` left a partially-generated trailing entry | 14.3 |
-| Crash inside `LanguageModelSession` on assignment | `session.transcript = …` while `isResponding` was `true` | 14.4 |
+| `LanguageModelSession.Error.transcriptMutationWhileResponding` thrown on assignment | `session.transcript = …` while `isResponding` was `true` | 14.4 |
 | Spinner never clears | the turn's only output was a tool call; the stream yielded zero partials | 15.7 |
 | `LanguageModelError.contextSizeExceeded` in a long session | trimming that silently never ran | 13.5 |
 
@@ -2952,10 +3010,10 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | # | Conflict | Ruling |
 |---|---|---|
 | 1 | `var body: some LanguageModelSession.DynamicProfile` (docs, WWDC, doc mirrors) vs `some DynamicProfile` (Apple sample) | **Both compile.** Use the short form inside a conforming type, the long form in a free extension. Earlier "naming corrections" that mandated the long form everywhere were half wrong. |
-| 2 | `Profile(model:) { }` (reconstructions, one doc mirror) vs `Profile { }.model(_:)` (Apple sample + docs) | **Sample wins.** Use the modifier. The initialiser form is unverified and appears in no compiling code. |
+| 2 | `Profile(model:) { }` (reconstructions, one doc mirror) vs `Profile { }.model(_:)` (Apple sample + docs) | **Sample wins, now SDK-confirmed** — `Profile` has exactly one init, the builder-closure form; no `model:` label exists in the 27.0 beta interface (`:785-798`, checked 2026-07-29). |
 | 3 | `.temperature(1)` (WWDC narration) vs `.temperature(1.0)` (sample + docs) | **`Double`.** |
 | 4 | "Beta (iOS 26.0+)" on one doc mirror of the dynamic-sessions article vs 27.0 everywhere else | **27.0.** The mirror is wrong. |
-| 5 | `reasoningLevel` as a profile modifier vs `ContextOptions(reasoningLevel:)` per call | **Both exist**; the profile modifier is documented in the modifier list, `ContextOptions` is documented as a `respond` parameter. A profile-level `.contextOptions(_:)` modifier is 🔴 GAP. |
+| 5 | `reasoningLevel` as a profile modifier vs `ContextOptions(reasoningLevel:)` per call | **Both exist** — and both take the same `ContextOptions.ReasoningLevel?` type (`:931`, `:3068-3072`). A profile-level `.contextOptions(_:)` modifier **does not exist** in the 27.0 beta interface (checked 2026-07-29). |
 | 6 | `ToolCallMode` (a documentation page title) vs `GenerationOptions.ToolCallingMode` (compiled code) | **`ToolCallingMode`.** |
 | 7 | `@SessionPropertyEntry()` (one doc mirror) vs `@SessionPropertyEntry` (compiled code) | **No parentheses.** |
 | 8 | The demo app's modes: brainstorm/planning/reviewing (session 242) vs `.brainstorm`/`.tutorial`/`.term` (the shipping sample) vs brainstorm/tutorial (session 243) | **The sample.** Three inconsistent tellings of one demo; do not present any WWDC mapping of mode → model as a recommendation. |
