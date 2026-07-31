@@ -2,10 +2,22 @@
 
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
-**Series status:** **17-part published corpus, scope-audited as of 2026-07-28.** All 76 guides exist
-(17 part READMEs + 59 reference guides), and each contents list is expected to name only sections
-present in its file. Declared evidence gaps remain explicit rather than being counted as unwritten
-sections.[^series-scope]
+**Series status:** **17-part published corpus, scope-audited as of 2026-07-28; SDK-verification
+pass 2026-07-29.** All 76 guides exist (17 part READMEs + 59 reference guides), and each contents
+list is expected to name only sections present in its file. Declared evidence gaps remain explicit
+rather than being counted as unwritten sections.[^series-scope] On 2026-07-29 the series was
+verified against the real macOS **26.5 and 27.0-beta SDK Swift interfaces** (Xcode 27.0 beta
+`27A5228h`, captured in `notes/sdk-interfaces/` — including the Core AI SubFrameworks, the
+`_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels` cross-import overlays, and
+Xcode-bundled `Evaluations`), and every GitHub-tracked defect status was re-checked live.
+
+**Two cross-cutting indexes:**
+
+- **[The silent-failure index](SILENT-FAILURES.md)** — every ⚠️ callout in the series (1,765,
+  of which 1,407 describe a concrete silent failure), in one page, sorted by the symptom you
+  observe: wrong output, empty output, performance cliff, version drift, …
+- **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
+  presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
 
 ---
 
