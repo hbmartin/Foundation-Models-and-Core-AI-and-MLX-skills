@@ -64,11 +64,15 @@ done
 echo
 echo "=== toolchain CLIs (blank = absent) ==="
 for t in fm coreai-build; do
-  p="$(xcrun --find "$t" 2>/dev/null)"
+  # --no-cache: xcrun caches negative lookups, which hides tools installed
+  # mid-session (the Metal Toolchain component adds coreai-build this way).
+  p="$(xcrun --no-cache --find "$t" 2>/dev/null)"
   printf "  %-14s %s\n" "$t" "${p:-ABSENT}"
   # If present, capture --help so the guide can cite the real flag surface.
+  # Invoke via the resolved path — the bare name is not on PATH for
+  # component-installed tools.
   if [ -n "$p" ]; then
-    "$t" --help > "$DEST/${t}-help-sdk${SDKVER}.txt" 2>&1 && \
+    "$p" --help > "$DEST/${t}-help-sdk${SDKVER}.txt" 2>&1 && \
       echo "                 -> saved $DEST/${t}-help-sdk${SDKVER}.txt"
   fi
 done
