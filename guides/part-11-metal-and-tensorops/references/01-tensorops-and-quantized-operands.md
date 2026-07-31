@@ -273,6 +273,22 @@ something with no shading-language surface in the 26.x SDK.
 >   must not be transposed if it has scale factors"**; **"Right tensor must be transposed if it has
 >   scale factors"**; and **"Destination tensor cannot have scale factors"** (`:6315`). That is
 >   MX-style block-32 scaling, matching the Feature Set Tables' reservation of ue8m0 for scale planes.
+> - **The compiling scaled-matmul descriptor is `(false, true)`, not the `(false, false)` shown in
+>   Apple's WWDC26 code listing.** Session 330 declares both `matrixA` and `matrixB` with the same
+>   `tensor_blockwise<tensor_plane_scales, …>` tag, then publishes a descriptor with both transpose
+>   flags false. Compiling that listing against Xcode 27.0 beta `27A5228h` fails at the right-scale
+>   assertion above; left-not-transposed/right-transposed compiles to AIR:
+>
+>   ```cpp
+>   constexpr auto descriptor = matmul2d_descriptor(
+>       TILEM, TILEN, dynamic_length_v<int>,
+>       false,  // scaled left operand: must not be transposed
+>       true);  // scaled right operand: must be transposed
+>   ```
+>
+>   Store and slice the logical right matrix in the matching transposed layout; the flag is matrix
+>   semantics, not a switch to flip after packing. This is a docs-versus-compiler conflict, not
+>   evidence that the header's assertion is merely an internal orientation trait.[^wwdc330-transpose-conflict]
 > - **The supporting traits and datatypes ship alongside.** `MPPTensorOpsTraits.h:135-187` adds
 >   `is_tensor_blockwise` / `has_tensor_blockwise_v` / `tensor_blockwise_tag` over
 >   `metal::tensor_blockwise`; `MPPTensorOpsTypes.h:45-64` adds `__tensor_ops_datatype_int2`,
@@ -330,6 +346,7 @@ in Apple's shipping comment text:
 | `:259-263` | `for (uint16_t i = 0, i < cT.get_capacity(); ++i)` — a comma where a semicolon belongs |
 | `:261`, `:280` | calls **`cT.get_mask(i)`** — see §6.4, **there is no such member function** |
 | `:881` | `destCT.map_iterator(sourceCT)` — passes a tensor where an iterator belongs, and drops a semicolon |
+| WWDC26 session 330, 7:19 code listing | gives two scale-plane operands to `(false,false)`; Xcode 27 beta rejects the right operand — use a correspondingly stored `(false,true)` right-hand matrix (§0.2) |
 | internal namespace | spelled `__mutmul2d_detail` throughout — a typo for `__matmul2d_detail`, shipping as-is |
 
 Two of those — `static_slice` and `get_mask` — are not cosmetic. They are **API names that appear
@@ -2430,5 +2447,15 @@ writing FlashAttention with a streaming softmax and you know your fragment layou
     documentation lists Int2, UInt2, Float4E2M1, Float8E4M3, Float8E5M2, and Float8UE8M0. Apple's
     [Metal Feature Set Tables](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf)
     identify the format types that support block scaling and reserve Float8UE8M0 for scale planes.
+[^wwdc330-transpose-conflict]: Apple's
+    [WWDC26 session 330 code listing](https://developer.apple.com/videos/play/wwdc2026/330/?time=439)
+    declares scale-plane types for both operands and passes `false, false` to
+    `matmul2d_descriptor`; the repository's authoritative
+    [transcript](../../../transcripts/wwdc2026-330.txt#L51-L68) describes the same quantized matmul
+    and says setup is otherwise identical to an ordinary tensor. The compiled contract is in Xcode
+    27 beta's `MPPTensorOpsMatMul2dImpl.h:6241-6303`: `!descriptor.transpose_left` for a scaled
+    left tensor and `descriptor.transpose_right` for a scaled right tensor. A 2026-07-31 Metal 4.1
+    probe against build `27A5228h` reproduced the published listing's static-assert failure and
+    compiled the corresponding `false, true` form to AIR.
 
 ---

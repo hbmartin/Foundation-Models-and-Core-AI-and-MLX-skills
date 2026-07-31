@@ -752,8 +752,9 @@ bundle does not update itself. `models/README.md:173` is unambiguous:
 
 > ✅ **Availability, resolved 2026-07-31:** `coreai-build` **is runnable after all** — it ships in
 > the optional **Metal Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), not
-> in Xcode-beta.app itself, which is why a 2026-07-29 check of the bare beta (27A5228h) found
-> `xcrun --find coreai-build` failing. With the component installed the `--help` Apple's README
+> in Xcode-beta.app itself. The 2026-07-29 Xcode 27 beta installation did not have that component,
+> so `xcrun --find coreai-build` failed; that result described the installation, not the Xcode
+> release. With the component installed the `--help` Apple's README
 > points at runs and is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; see
 > 7.2 §13 for the full surface.
 

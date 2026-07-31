@@ -1856,7 +1856,8 @@ Which tells you there is at least an architecture-selection flag Apple declines 
 > is the reliable spelling.)
 >
 > **The history, kept because the distribution split is reader-critical:** checked 2026-07-29
-> against a bare Xcode 27.0 beta install (27A5228h), `xcrun --find coreai-build` **failed**, and
+> against Xcode 27.0 beta (27A5228h) **without the optional Metal Toolchain component**,
+> `xcrun --find coreai-build` **failed**, and
 > an exhaustive `find` of `Xcode-beta.app` turned up **no file named `coreai*` at all** — the
 > wrapper is genuinely absent from the app bundle. What the bundle ships is
 > `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc` (project stamp `IDEMLKit-25131.2`,

@@ -8,8 +8,8 @@ Output TSV: symbol<TAB>framework-guess<TAB>total-mentions<TAB>n-guides<TAB>sdk26
 import os, re, sys
 from collections import defaultdict
 
-ROOT = "guides"
-IFACE_DIR = "notes/sdk-interfaces"
+ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
+IFACE_DIR = sys.argv[2] if len(sys.argv) > 2 else "notes/sdk-interfaces"
 
 # A symbol is: a CamelCase identifier, optionally dotted / parenthesised, found in `code`.
 SPAN = re.compile(r'`([^`\n]{2,90})`')
@@ -23,6 +23,9 @@ def norm(s):
     return s
 
 FW_RULES = [
+    (r'^(FoundationModels|LanguageModelSession|LanguageModelFeedback|LanguageModelError|StructuredTranscript)(\.|$)', 'FoundationModels'),
+    (r'^(CoreAI(?:Asset|Cache|Common|Compiler|Delegates|Runtime)?)(\.|$)', 'CoreAI'),
+    (r'^(Evaluations|Evaluator|Evaluation|EvaluationResult)(\.|$)', 'Evaluations'),
     (r'^(LanguageModel|SystemLanguageModel|PrivateCloudCompute|ChatCompletions|MLXLanguageModel|CoreAILanguageModel|Generable|Guide\b|GenerationError|GeneratedContent|Transcript|Instructions|Prompt\b|Profile|DynamicProfile|Tool\b|Tool\.|Session|Respond|QuotaUsage|UnavailableReason|Refusal|Feedback|Adapter|SystemModels)', 'FoundationModels'),
     (r'^(AIModel|InferenceFunction|InferenceValue|NDArray|NDArrayDescriptor|ImageDescriptor|ComputeStream|AssetError|AIModelCache|AssetPack|Specializ)', 'CoreAI'),
     (r'^(MLX|GPUArray)', 'MLX'),
@@ -45,7 +48,8 @@ def guess_fw(sym):
     return 'other'
 
 counts = defaultdict(lambda: defaultdict(int))  # sym -> file -> count
-for dirpath, _, filenames in os.walk(ROOT):
+for dirpath, dirnames, filenames in os.walk(ROOT):
+    dirnames.sort()
     for fn in sorted(filenames):
         # Never scan the generated index pages: the symbol index would index
         # itself, inflating every count on each regeneration.
@@ -64,6 +68,8 @@ for dirpath, _, filenames in os.walk(ROOT):
 # SDK presence: build one big set of words per SDK generation
 def iface_text(pattern):
     buf = []
+    if not os.path.isdir(IFACE_DIR):
+        return ''
     for fn in os.listdir(IFACE_DIR):
         if pattern in fn and fn.endswith('.swiftinterface'):
             buf.append(open(os.path.join(IFACE_DIR, fn), encoding='utf-8').read())
@@ -80,7 +86,9 @@ for sym, files in counts.items():
     base = sym.lstrip('@.').split('.')[0].split('(')[0]
     in26 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk26) else ''
     in27 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk27) else ''
-    top = sorted(files.items(), key=lambda kv: -kv[1])[:12]
+    # Counts often tie at the visible cutoff. Use the guide path as an explicit
+    # secondary key so selection stays stable independently of traversal order.
+    top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))[:12]
     out.append((sym, guess_fw(sym), total, len(files), in26, in27,
                 ';'.join(f'{p}:{c}' for p, c in top)))
 

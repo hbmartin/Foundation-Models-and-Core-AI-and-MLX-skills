@@ -5,8 +5,9 @@ symbol is **iOS 27.0 · iPadOS 27.0 · Mac Catalyst 27.0 · macOS 27.0 · vision
 whole index is tagged **Beta**, and **there is no tvOS**. You need **Xcode 27** — the `.evaluates` trait
 and the Evaluations report are Xcode features, not just library code — and the framework is **Swift-only**,
 confirmed by an Apple Frameworks Engineer on forum thread 833729. One sub-floor is easy to miss:
-`Transcript.structuredTranscript`, the bridge that makes tool-trajectory evaluation possible, **omits Mac
-Catalyst**. The *feature* you point all this at can be much older; `SystemLanguageModel` is 26.0. You can
+`Transcript.structuredTranscript`—an Evaluations extension on `FoundationModels.Transcript`, so its use
+site must `import Evaluations`—is the bridge that makes tool-trajectory evaluation possible and **omits
+Mac Catalyst**. The *feature* you point all this at can be much older; `SystemLanguageModel` is 26.0. You can
 evaluate a 26.0-era feature, but you can only run the evaluation on 27.
 
 > ✅ **VERIFIED — where the framework physically lives** (Xcode 27 beta, checked 2026-07-29).

@@ -1398,8 +1398,10 @@ What to look for:
 > `quantized.cpp` behind the Python boundary. Resolving this would need either an upstream
 > diagnostic hook or a Metal capture in Instruments where you read the kernel *name* (the NAX
 > variants are separately named — `quantized_nax`, `fp_quantized_nax`).
-> **Safe default: benchmark the shapes you care about, and satisfy `K % 64 == 0` and
-> `transpose=True` unconditionally.** Both are free to arrange at conversion time.
+> **Safe default: benchmark the shapes you care about and use `transpose=True`.** Keep `K % 64 ==
+> 0` when the model already has that shape. If it does not, alignment means changing or padding a
+> model dimension, not flipping a free conversion option; measure that overhead and use the
+> version/fallback guidance in §9.4.[^k64-tradeoff]
 
 ### 6.6 The other silent numeric switch: `MLX_ENABLE_TF32`
 
@@ -2201,8 +2203,10 @@ It also gives §6.1's alignment gate a second, sharper reason to exist. Recall t
 > attribution to a specific line as provisional.
 
 **Practical rule that covers both 9.1 and 9.2:** for any quantized MoE you intend to run on
-M5-class hardware, ensure **`K % 64 == 0`** and **gathered rows padded to a multiple of 64**. Those
-two conditions together sidestep both open bugs regardless of mode.
+M5-class hardware, **prefer an already-aligned `K % 64 == 0` shape** and pad gathered rows to a
+multiple of 64. Those conditions together sidestep both open bugs regardless of mode. If the model's
+native K is not aligned, padding is a correctness workaround with memory and compute cost — measure
+it rather than describing it as a free conversion setting.[^k64-tradeoff]
 
 ### 9.3 `nvfp4` split-K — fixed, and the reason is instructive — PR #3854
 
@@ -2255,9 +2259,13 @@ this is the fp modes' analogue of §9.2.
 > correctly — *"a model can decode perfectly and corrupt during prefill."* **Not NAX-only:** the
 > PR's reproducer is an M3 Pro. Magnitude in that reproducer: max |err| ≈ 40, **72% of outputs
 > wrong**, versus ~1e-3 on the aligned/CPU/vector paths.
-> **Safe default until the PR merges: keep every quantized dimension a multiple of 64.** 64 is a
-> multiple of 32, so that single rule covers §6.1's fast-path gate, §9.2's gather tail, and this
-> PR simultaneously. There is no configuration in which `K % 64 == 0` costs you anything.
+> **Safe default until the PR merges:** keep dimensions that are *already* multiples of 64 aligned;
+> for a legal non-aligned NVFP4 model, either pin a revision containing #3912's bounded-tail fix,
+> route the affected matrix operation to the verified CPU path, or pad only after measuring the
+> graph-wide cost. The PR's own `K = 1040` reproducer would need padding to 1088: 48 extra reduction
+> elements, **4.6% more** weights and multiply work for every affected matrix, plus matching
+> activation/adjacent-layer changes. Alignment covers several current bugs, but it is not free and
+> it is not merely a quantizer switch.[^k64-tradeoff]
 
 ### 9.5 fp quantized matvec with output dim < 8 — PR #3804
 
@@ -2351,10 +2359,12 @@ hunting.
 
 If you run **quantized MoE models on M5-generation hardware** on mlx 0.32.x, you are exposed to two
 open, independent, silent corruption bugs (#3856, #3887), and the corruption presents as *plausible
-wrong output*, not as an error. Mitigate by keeping `K % 64 == 0` and padding gathered rows to a
-multiple of 64, and verify with §10 before every release. If you run **dense quantized models on
-M1–M4**, essentially none of this section applies to you today. Everyone should pin their mlx
-version, because the fixes and the regressions are landing in the same weeks.
+wrong output*, not as an error. Prefer models whose native K is already 64-aligned; otherwise choose
+explicitly between a pinned fixed revision, a safe fallback, or measured padding. Pad gathered rows
+to a multiple of 64 while the row-tail bug remains open, and verify with §10 before every release.
+If you run **dense quantized models on M1–M4**, essentially none of this section applies to you
+today. Everyone should pin their mlx version, because the fixes and the regressions are landing in
+the same weeks.[^k64-tradeoff]
 
 ---
 
@@ -2821,7 +2831,9 @@ OPEN BUGS    #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
              #3924  tile_matmad_nax missing else, odd tile shapes
              (all OPEN as of 2026-07-29; #3854 nvfp4 split-K is MERGED)
 
-MITIGATION   K % 64 == 0, gathered rows padded to 64, pin your mlx version.
+MITIGATION   Prefer native K % 64 == 0; otherwise pin a fixed revision, use a
+             safe fallback, or measure padding. Pad gathered rows to 64 while
+             the row-tail bugs remain open.
 
 ENV          MLX_ENABLE_TF32 defaults to 1. Set it to 0 BEFORE the first matmul
              or it silently does nothing. Metal: gen-17 + macOS 26.2 only.
@@ -2834,9 +2846,11 @@ VERIFY       greedy, fixed prompt, compare TOKEN IDS against the unquantized mod
 
 ### 12.5 Three rules that survive every version bump
 
-**1. `K % 64 == 0`, always.** It is free at conversion time, it is the fast-path gate, and it
-sidesteps three of the four open corruption bugs. There is no configuration in which violating it
-helps you.
+**1. Treat `K % 64 == 0` as a measured shape tradeoff, not a free conversion rule.** It is the NAX
+fast-path gate and sidesteps several current corruption bugs when the architecture is already
+aligned. For a legal non-aligned model, changing K means padding weights and activations or changing
+the graph contract. Pin a fixed MLX revision or use a safe fallback when that cost is worse than the
+temporary workaround.[^k64-tradeoff]
 
 **2. Never ship a quantized model you have not diffed against the unquantized one.** Greedy, fixed
 prompt, token IDs. It costs a minute and it is the only check that catches the failure class this
@@ -2866,8 +2880,9 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > `quantized.cpp` behind the Python boundary.
 > **Resolution:** an upstream diagnostic hook, or a Metal capture in Instruments where the kernel
 > names are readable (the NAX variants are separately named).
-> **Safe default:** benchmark the shapes you care about (§6.5) and satisfy `K % 64 == 0` and
-> `transpose=True` unconditionally.
+> **Safe default:** benchmark the shapes you care about (§6.5), use `transpose=True`, and preserve
+> native 64-alignment where it exists. For a non-aligned K, compare a pinned fix or safe fallback
+> against measured padding rather than changing the graph unconditionally.
 
 > ✅ **GAP 3 — RESOLVED 2026-07-29 — PR #3912's trigger, scope and magnitude.**
 > The PR body was read live via `gh` on 2026-07-29 (PR still **OPEN**): trigger `K % 32 == 16`,
@@ -2875,7 +2890,9 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > `fp_quantized.h`, GPU matrix path only (CPU and vector/decode kernels correct); **not**
 > NAX-gated — reproduced on an M3 Pro; magnitude max |err| ≈ 40 with 72% of outputs wrong in the
 > reproducer. Full detail now in §9.4.
-> **Safe default:** keep every quantized dimension a multiple of 64.
+> **Safe default:** keep already-aligned dimensions aligned. For legal non-aligned NVFP4 dimensions,
+> pin a revision containing the fix or use a verified fallback; pad only after measuring the
+> graph-wide overhead.
 
 > 🔴 **GAP 4 — `gather_qmm`'s index dtype and rank contract.**
 > "Flat indices along the batch dimensions" is the whole published description. The permitted dtype
@@ -2891,8 +2908,9 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > PR #3922 are **all still open** — nothing has landed. This guide cannot tell you their state on
 > the day you read it.
 > **Resolution:** check the issues.
-> **Safe default:** assume open. The mitigations (`K % 64 == 0`, pad gathered rows to 64) are
-> harmless if the bugs are fixed and essential if they are not.
+> **Safe default:** assume open. Preserve native 64-alignment and keep the gathered-row workaround
+> while needed, but re-measure and remove padding after a fix; both forms of padding consume memory
+> and compute even when the underlying bug is gone.
 
 > 🔴 **GAP 6 — quality numbers for MLX's quantization modes specifically.**
 > The corpus contains no MLX-measured perplexity or benchmark table comparing affine-4 against
@@ -2989,3 +3007,12 @@ before relying on the table.*
     and [`MTLTensor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensor/auxiliaryplanes).
     The repository's [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L27-L78)
     describes the E8M0 scale plane and `blockFactors` relationship.
+[^k64-tradeoff]: [`ml-explore/mlx` PR #3912](https://github.com/ml-explore/mlx/pull/3912)
+    documents that NVFP4's group size 16 makes `K = 1040` a legal input and that the kernel, rather
+    than the model, must handle legal 16-wide tails. Padding that example to the next multiple of
+    64 gives 1088 elements: `(1088 - 1040) / 1040 = 4.615%` additional reduction-width storage and
+    multiply work before accounting for the corresponding activation and adjacent-layer changes.
+    The local source mirror records the same dispatch gate in
+    [`notes/repos/mlx-tensorops-kernels.md`](../../../notes/repos/mlx-tensorops-kernels.md), while
+    the guide's §6.1 examples identify adapters, 72-wide heads, and custom projections for which K
+    is part of the model contract rather than a free quantization parameter.
