@@ -989,11 +989,12 @@ VLMs, with no error.** Three linked issues document this:
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
-- **`#420` (OPEN as of 2026-07-29)** — M-RoPE state dropped **across `ChatSession` turns**:
+- **`#420` (still OPEN as of 2026-07-31)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
-  cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399;
-  **still open for Qwen2.5-VL / Qwen2-VL / Qwen3-VL** (PR #448 wires them).
+  cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399
+  (**merged 2026-07-14**); PR #448 wiring Qwen2.5-VL / Qwen2-VL **merged 2026-07-30**. **Qwen3-VL
+  remains unwired** — the issue title now names Qwen2.5-VL / Qwen3-VL, and #420 itself is open.
 - **`#443` (OPEN)** — `savePromptCache` / `loadPromptCache` drop `LMOutput.State` entirely:
   *"The safetensors layout has no slot for it, `loadPromptCache` returns only
   `([KVCache], metadata)`, and both cache-accepting `ChatSession` initializers hard-code
@@ -1004,7 +1005,8 @@ from a cold full prefill by **0.43 max-abs**, against an **8.3e-07** decode-path
 *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
 
 > ✅ **VERIFIED** — issue and PR text from the July 2026 issue-mining pass over
-> `ml-explore/mlx-swift-lm`. Status stated as of **2026-07-28**; re-check before relying on it.
+> `ml-explore/mlx-swift-lm`. States re-checked via `gh` **2026-07-31**: issues #420 and #443 still
+> open; PR #399 merged 2026-07-14, PR #448 merged 2026-07-30. Re-check before relying on this.
 >
 > **Safe default for VLMs today:** if you are doing multi-turn grounding (bounding boxes,
 > coordinates, "the thing on the left"), **do not restore a saved KV cache** and prefer

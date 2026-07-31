@@ -2122,6 +2122,15 @@ with `DynamicProfiles` for this."*).
 > `case allowed/required/disallowed`). 🔴 Still open: **precedence when you set both** — per-call
 > `GenerationOptions(toolCallingMode:)` vs. the profile modifier — is stated nowhere. What would
 > resolve it: an Apple doc sentence, or a two-line device test setting them to conflicting values.
+>
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** That two-line test now
+> exists (`probes/` `fm.toolCallingMode-precedence`), but the 27.0 sim runtime lacks tool-calling
+> assets, so the result is only directional: profile `.required` + options `.disallowed` produced
+> **no** tool call, while profile `.disallowed` + options `.required` **engaged the tool machinery**
+> (and then hit the sim's missing-assets `ModelManagerError 1026`). Both halves are consistent with
+> **per-call options winning** — which matches the dynamic-profiles article's general precedence
+> rule ("call-site arguments override all profile … modifiers") — but do not close this on sim
+> evidence; rerun on 27 hardware where the tool call can actually execute.
 
 ### 7.5 `ToolCallError` and "Failed to parse generated content"
 
@@ -3186,7 +3195,7 @@ Entries marked 🔴 **GAP** remain unanswered by the corpus; three rows are
 | 5.2 | 🟡 That `.permissiveContentTransformations` is inert in Apple's own Book Tracker sample is our deduction from two verified facts, not a stated one | A demonstration either way, or an Apple clarification of the docs sentence |
 | 7.1 | `com.apple.SensitiveContentAnalysisML` error 15 | Apple reply on 836285 |
 | 7.3 | `ModelManagerServices.ModelManagerError` 1046 | Apple reply, or symbol dump |
-| 7.4 | ~~Are the two `toolCallingMode` surfaces one type?~~ — **✅ RESOLVED 2026-07-29**: yes, `GenerationOptions.ToolCallingMode` in both; precedence when both are set stays 🔴 | Resolved — 27.0 `.swiftinterface:933, :3229-3249` |
+| 7.4 | ~~Are the two `toolCallingMode` surfaces one type?~~ — **✅ RESOLVED 2026-07-29**: yes, `GenerationOptions.ToolCallingMode` in both; precedence when both are set stays 🔴 (🟠 suggestive 2026-07-31: per-call options appear to win — `probes/` `fm.toolCallingMode-precedence` on the 27.0 sim runtime; needs 27 hardware) | Resolved — 27.0 `.swiftinterface:933, :3229-3249` |
 | 8.2 | ~~Full `QuotaUsage.Status` case list~~ — **✅ RESOLVED 2026-07-29**: `.belowLimit(_)` / `.limitReached(_)` only | Resolved — 27.0 `.swiftinterface:224-241` |
 | 8.2 | Numeric quota values | None — Apple does not expose them (FB23378161) |
 | 9.2 | ~~Full `LanguageModelFeedback.Issue.Category` list~~ — **✅ RESOLVED 2026-07-29**: eight cases incl. `.triggeredGuardrailUnexpectedly` | Resolved — 27.0 `.swiftinterface:3384-3405` |

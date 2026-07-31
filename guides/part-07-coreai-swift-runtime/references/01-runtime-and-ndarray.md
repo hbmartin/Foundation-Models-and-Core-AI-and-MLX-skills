@@ -6,7 +6,13 @@
 **iOS 27.0 · iPadOS 27.0 · macOS 27.0 · Mac Catalyst 27.0 · tvOS 27.0 · visionOS 27.0 ·
 watchOS 27.0**, all marked **Beta** in Apple's documentation as of this writing (2026-07-27).
 There is no back-deployment: Core AI is a *new framework* in the 27 cycle, not a rename of
-Core ML, and nothing here exists on a 26.x SDK. Three APIs are narrower than the framework *per
+Core ML, and nothing here exists on a 26.x SDK.
+
+> ⚠️ **No Simulator destination in this beta.** ✅ **Probe-verified, 2026-07-31** (`probes/`
+> package, Xcode 27.0 beta): `CoreAI.framework` and all six of its SubFrameworks are present in
+> `iPhoneOS27.0.sdk` and **ABSENT from `iPhoneSimulator27.0.sdk`** — `canImport(CoreAI)` is false
+> for a simulator build, so Core AI code cannot even *compile* for that destination, let alone run.
+> Gate any shared target with `#if canImport(CoreAI)` and plan on device (or Mac) testing only. Three APIs are narrower than the framework *per
 the doc pages* — `NDArray.RawView.init(metalBuffer:…)`, `InferenceFunction.AsyncValue.init(unsafeBuffer:…)`
 and `ComputeStream.init(commandQueue:)` **drop watchOS** — and are marked as such where they
 appear. (⚠️ The captured macOS 27.0 beta SDK interface declares all three `watchOS 27.0`; see

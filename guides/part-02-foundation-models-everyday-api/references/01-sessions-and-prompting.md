@@ -1312,6 +1312,13 @@ delays and cancellations in background tasks*. There is no documented API to rai
 > requests" is the only statement we have; no number, no error case specific to exceeding it, no
 > way to query it. **What would resolve it:** a controlled experiment on device (N sessions issuing
 > `respond` simultaneously, recording which throw and with what), or an Apple technote.
+>
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** The probe suite ran that
+> experiment at n=8 on the 27.0 sim runtime (`probes/` `fm.concurrent-session-limit`): **8 sessions
+> issuing `respond` simultaneously all completed `ok`** — no throw, no visible ceiling at that
+> width. Sim inference is host-backed, so this says nothing about a device's thermal/memory limits;
+> rerun on 27 hardware (`PROBE_CONCURRENT_SESSIONS=16` widens it) before designing around any
+> number. The gap stays open.
 
 ---
 

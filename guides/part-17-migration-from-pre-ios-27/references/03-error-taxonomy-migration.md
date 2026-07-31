@@ -369,13 +369,15 @@ static let revertTranscript               // "Revert the transcript back to the 
 > }
 > ```
 >
-> 🔴 **GAP — the default, narrowed but still open.** The property is **Optional**, and `nil` means
-> "the framework's default behaviour" — which the interface, read 2026-07-29, does not name.
-> Neither the reference page nor the article states which policy `nil` maps to either. (The 26.5
-> interface remains **grep-0 absent** of the type — it is a genuine 27 addition.)
-> **Safe default:** set it explicitly at the point you construct the session rather than relying on
-> the framework default. Resolving `nil`'s meaning now needs documentation or a device test — a
-> `.swiftinterface` cannot say which behaviour an Optional's `nil` selects.
+> ✅ **Probe-verified, 2026-07-31 — `nil` behaves like `.revertTranscript`.** (was a 🔴 GAP;
+> `probes/` `fm.transcript-policy-nil-default`, run on the 27.0 sim runtime.) The property's
+> initial value is `nil`, and after a failed request the transcript under `nil` **matches the
+> `.revertTranscript` outcome** — both rolled back to just the instructions entry — while
+> `.preserveTranscript` retained the prompt entry. So the rollback described in the article's
+> first sentence IS the un-set behaviour, exactly as the docs implied. (The 26.5 interface remains
+> **grep-0 absent** of the type — it is a genuine 27 addition.) Setting it explicitly at session
+> construction is still worth doing for legibility; it is no longer necessary for safety on this
+> runtime.
 
 ### 2.3 `ToolCallError` did not change, and that is a trap of its own
 
@@ -834,17 +836,18 @@ Three corrections that declaration forces: the type is **iOS 27.0+**, not 26.0 (
 `rawContent` is a **stored public property** you can read in a `catch` (and it is a `String`); and
 there is a middle `underlyingError:` parameter the documentation snippet omitted.
 
-🔴 **GAP — narrowed, not gone.** What the header cannot settle is *behaviour*: whether the framework
-itself throws `GeneratedContent.ParsingError` for a guided-generation decode failure, or throws some
-`LanguageModelError` case, or handles that failure mode internally by re-prompting. No source we
-hold shows the framework throwing it — the deprecation message tells you what to *catch*, not what
-is *thrown*. (27.0 interface read 2026-07-29; a `.swiftinterface` cannot answer this.)
+✅ **Probe-verified, 2026-07-31 — the framework DOES throw `GeneratedContent.ParsingError`.** (was
+a 🔴 GAP; `probes/` `fm.parsingError-thrown`, run on the 27.0 sim runtime.) A guided-generation
+request truncated into an incomplete object threw exactly this type: dynamic type `ParsingError`,
+NSError domain `FoundationModels.GeneratedContent.ParsingError`, **code 1**, casting cleanly to
+`GeneratedContent.ParsingError`, description *"GeneratedContent does not contain a property
+'summary'."* — and `rawContent` held the partial JSON, exactly as the stored property promised. No
+internal re-prompt, no `LanguageModelError` in its place. The deprecation message's advice is
+therefore literal: what you are told to catch is genuinely what is thrown.
 
-**What would resolve it:** one device run — a `@Generable` type with a schema the model reliably
-fails to satisfy, and a `print(type(of: error))` in the catch.
-
-**Safe default:** catch `GeneratedContent.ParsingError` explicitly as its own arm (§7), *and* keep a
-generic terminal arm. Do not assume a decode failure arrives as a `LanguageModelError`.
+**Safe default, now a confirmed pattern:** catch `GeneratedContent.ParsingError` explicitly as its
+own arm (§7), *and* keep a generic terminal arm — the probe confirms the dedicated arm will
+actually fire.
 
 ### 4.5 What `GenerationError.Context` was, and what replaced it
 
@@ -1174,21 +1177,34 @@ in this order:
 
 4. **The terminal `catch { }` last, obviously — but make it *loud*.** See §6.4.
 
-### 6.3 🔴 GAP — can one thrown value satisfy two of these checks?
+### 6.3 🔴 GAP (two rows now measured) — one value, two checks: the concern is real
 
-**Unknown:** whether the framework ever throws a value that is simultaneously castable to two of
-these types. The plausible mechanism is `NSError` bridging: all four new types bridge to `NSError`,
-and thread **831998** shows a real error whose domain is `FoundationModels.LanguageModelError` and
-whose `userInfo` carries `NSMultipleUnderlyingErrorsKey` containing a
-`ModelManagerServices.ModelManagerError`. If any type is ever *wrapped* rather than thrown directly,
-ordering could become load-bearing after all.
+**The question:** whether the framework ever throws a value whose `NSError` identity and Swift-type
+identity disagree — a value one check claims and another misses. The plausible mechanism was
+`NSError` bridging: all four new types bridge to `NSError`, and thread **831998** shows a real
+error whose domain is `FoundationModels.LanguageModelError` and whose `userInfo` carries
+`NSMultipleUnderlyingErrorsKey` containing a `ModelManagerServices.ModelManagerError`.
 
-**What would resolve it:** printing `type(of: error)` and `(error as NSError).domain` for each
-failure mode on a device, across all four types. Nobody in this corpus has published that table.
+✅ **Probe-verified, 2026-07-31 — the `type(of:)`/domain table now has its first two rows**
+(`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on the 27.0 sim
+runtime), and they land on opposite sides:
 
-**Safe default:** keep Apple's order — `SystemLanguageModel.Error`, then
+| Failure mode | Dynamic type | NSError domain / code | Casts to |
+|---|---|---|---|
+| Context overflow | `LanguageModelError` | `FoundationModels.LanguageModelError` / 0 | `LanguageModelError` only — **clean, single-type** |
+| `.required` with empty toolset | `NSError` | `FoundationModels.LanguageModelError` / **-1** | **nothing** (`casts=[]`); wraps via `NSMultipleUnderlyingErrorsKey` |
+
+The second row **confirms the concern for that mode**: the framework really does throw a value
+whose NSError *domain* says `LanguageModelError` but which `catch let e as LanguageModelError`
+does **not** catch. A ladder that trusts the Swift-type checks alone routes that error to its
+terminal arm with a domain string that *looks* classified. The inverse hazard (one value matching
+two typed arms) has not been observed; the remaining failure modes still need their rows, on
+device.
+
+**Safe default, upgraded:** keep Apple's order — `SystemLanguageModel.Error`, then
 `LanguageModelSession.Error`, then `LanguageModelError`, then `GeneratedContent.ParsingError` —
-because it costs nothing and it is the order Apple's shipping code uses. §14 does exactly this.
+**and in the terminal arm log `(error as NSError).domain` and code**, because §14's ladder is now
+known to receive at least one domain-tagged impostor. §14 does exactly this.
 
 ### 6.4 Make the terminal arm loud
 
@@ -1819,6 +1835,12 @@ Tracker's `generateTags` on a review containing content the default guardrails b
 `.permissiveContentTransformations` and once without, on a device, and compare. If the outcomes are
 identical, the argument is inert and the documentation is complete.
 
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** That A/B now exists as
+> `probes/` `fm.guardrails-permissive-generable` and was run on the 27.0 sim runtime: a
+> guardrail-blocked `@Generable` request threw `LanguageModelError` code 2 under **both** settings
+> — identical outcomes, supporting "inert on the structured path" on that runtime. Sim guardrail
+> assets may differ from device, so this does not close the gap; rerun on 27 hardware.
+
 > ⚠️ **SILENT FAILURE — the guardrail setting that does nothing.**
 > This is the shape to remember: you set `.permissiveContentTransformations` because your feature
 > was being blocked. It compiles. There is no warning, no runtime log, no `throws`. Then you call
@@ -2437,7 +2459,12 @@ Unpack the interaction with §1, because it is not obvious and it is important:
 - The observable result is the opaque `LanguageModelError -1` of §13.3.
 
 **So: every error-handling behaviour in this guide must be validated on a physical device running
-27.0.** A Simulator result is not a result. Additionally:
+27.0.** A Simulator result is not a result. (One measured refinement, 2026-07-31: the probe run
+behind this guide's ✅ 2026-07-31 boxes shows the 27.0 sim runtime resolves the base model's assets
+independently of the host's Apple Intelligence toggle and runs plain/guided inference — but lacks
+tool-calling and attachment assets, which *itself* produces sim-only errors such as
+`ModelManagerError 1026`. See 17.1 §6.9. Sim-measured error shapes marked here as probe-verified
+still await device confirmation.) Additionally:
 
 - **PCC does not work in the Simulator at all** — known issue **177684296**, documented in the iOS 27
   release notes, with the workaround stated as *"Use a physical device running OS 27.0."*
@@ -3356,13 +3383,13 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 | # | Gap | What would resolve it | § |
 |---|---|---|---|
-| 1 | ~~The spelling of the `TranscriptErrorHandlingPolicy` setter~~ ✅ **RESOLVED 2026-07-29** (session property + profile modifier, `27.0:1885-1892, 937`). **Still open:** which behaviour the Optional's `nil` default selects | Documentation of the default, or a device test — the interface was read and cannot say | §2.2 |
+| 1 | ~~The spelling of the `TranscriptErrorHandlingPolicy` setter~~ ✅ **RESOLVED 2026-07-29** (session property + profile modifier, `27.0:1885-1892, 937`). ~~Still open: which behaviour the Optional's `nil` default selects~~ ✅ **RESOLVED 2026-07-31, probe-verified** — `nil` behaves like `.revertTranscript` (`probes/` `fm.transcript-policy-nil-default`, 27.0 sim runtime) | — | §2.2 |
 | 2 | ~~Whether `Timeout` / `GuardrailViolation` / `RateLimited` payloads carry fields beyond those in `SKILL.md`~~ ✅ **RESOLVED 2026-07-29** — they do not (`27.0:1499-1622`) | — | §3.5 |
-| 3 | Whether any thrown value can satisfy two of the four new type checks (NSError bridging) | Print `type(of:)` + `NSError.domain` for each failure mode on a device. *(27.0 interface read 2026-07-29 — declarations cannot settle runtime bridging)* | §6.3 |
-| 4 | ~~`GenerationError.decodingFailure`'s successor~~ ✅ **RESOLVED 2026-07-29** — the SDK's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`). **Still open:** whether the framework itself throws it for a guided-generation decode failure | A `@Generable` type the model reliably fails, with `print(type(of: error))` | §4.4 |
+| 3 | Whether any thrown value can satisfy two of the four new type checks (NSError bridging) — **partially answered, probe-verified 2026-07-31**: the first two table rows exist; the `.required`-no-tools mode throws a domain-tagged NSError that matches NO typed check (§6.3), confirming the divergence hazard; remaining failure modes still need rows on device | The rest of the `type(of:)` + `NSError.domain` table, per failure mode, on device | §6.3 |
+| 4 | ~~`GenerationError.decodingFailure`'s successor~~ ✅ **RESOLVED 2026-07-29** — the SDK's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`). ~~Still open: whether the framework itself throws it~~ ✅ **RESOLVED 2026-07-31, probe-verified** — it does, on truncated structured output (code 1, `rawContent` = partial JSON; `probes/` `fm.parsingError-thrown`, 27.0 sim runtime) | — | §4.4 |
 | 5 | ~~Whether `GeneratedContent.ParsingError.rawContent` is exposed as a readable property~~ ✅ **RESOLVED 2026-07-29** — stored `public var rawContent: String` (`27.0:1357`) | — | §7 |
 | 6 | **Which `LanguageModelError` case thread 836673 actually caught** | The reporter re-running with §3.5's `classify` | §9.2 |
-| 7 | Whether `.permissiveContentTransformations` does anything at all in Book Tracker's guided path | Device A/B on blocked content, with and without the argument | §10.3 |
+| 7 | Whether `.permissiveContentTransformations` does anything at all in Book Tracker's guided path — 🟠 suggestive 2026-07-31: identical blocks under both settings on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`); needs 27 hardware | Device A/B on blocked content, with and without the argument | §10.3 |
 | 8 | The meaning of `SensitiveContentAnalysisML` 15, `ModelManagerError` 1046, `UnifiedAssetFramework` 5000, and `LanguageModelError` code `-1` | Apple documentation, or an Apple answer on 831448 | §13 |
 | 9 | Whether `catch LanguageModelError.<case>` reliably matches, especially on streams | Closure of **FB23061009**. *(27.0 interface read 2026-07-29 — the declarations are ordinary payload cases, so the reported failure is a runtime/stream matter the header cannot settle)* | §14.1 |
 | 10 | ~~The exact spelling for mutating `session.transcript` / `transcript.history` in 27~~ ✅ **RESOLVED 2026-07-29** — both spellings compile (`27.0:1872-1878, 2640-2646`) | — | §12.4 |

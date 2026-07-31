@@ -2319,9 +2319,9 @@ Transformers."*
 > into the submodule re-export**.
 >
 > **Workaround (from the thread):** drop `SDPA` from the externalize list so it decomposes to
-> primitive ops — you lose the composite and keep the export. An open PR (**#7**, *"Skip
-> fully-specialised dims in submodule re-export"*, +347/−241) targets this and was **unmerged** as of
-> 2026-07-29.
+> primitive ops — you lose the composite and keep the export. The PR that targeted this (**#7**,
+> *"Skip fully-specialised dims in submodule re-export"*, +347/−241) was **closed without being
+> merged on 2026-07-29** (re-checked via `gh` 2026-07-31), so the workaround remains the only path.
 >
 > This failure is at least loud. Note the message: **"This is a coreai-torch bug. Please report it."**
 > is emitted by the package itself — if you see that sentence, do not debug your model.

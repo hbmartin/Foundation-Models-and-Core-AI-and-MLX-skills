@@ -2136,12 +2136,13 @@ And one CLI lever worth knowing when the model viewer looks right and the model 
 > ```
 > listed under *"when the model runs on CPU"*.
 >
-> 🔴 **GAP:** the full `coreai-build compile` flag list is unpublished. Apple's prose names only
-> `--platform`, `--min-deployment-version`, `--output`, `--preferred-compute` and alludes to a
-> target-architecture flag; third-party sources claim `--architecture h18p`. **Whether
-> `--preferred-compute` takes `neural-engine` or `neuralEngine` is corroborated only by the line
-> above.** Resolving it takes one `xcrun coreai-build compile --help` on a machine with Xcode 27 and
-> the Metal Toolchain. **Safe default meanwhile:** prefer `SpecializationOptions(
+> ✅ **GAP — RESOLVED 2026-07-31:** `xcrun coreai-build compile --help` has now been run (the tool
+> ships in the Metal Toolchain component, not Xcode-beta.app; capture in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). The flag list: `--output`, `--platform`,
+> `--min-deployment-version`, `--architecture` (repeatable; 24 valid codes enumerated by probing,
+> `h18p` among them), `--expect-frequent-reshapes`, and **`--preferred-compute` takes
+> `{gpu, neural-engine, none}` — hyphenated `neural-engine`, exactly as the line above spells it**
+> (default `none`). **Safe default unchanged:** prefer `SpecializationOptions(
 > preferredComputeUnitKind: .neuralEngine)` at runtime, where the enum spelling is documented
 > (`ComputeUnitKind` = `.cpu`, `.gpu`, `.neuralEngine`), and treat the CLI flag as a build-time
 > optimisation you verify by hand.
@@ -2419,7 +2420,7 @@ EMIT  (MLX)             affine 2/3/4/5/6/8 bits x group 32/64/128 (7 excluded)
 | `ComputeUnitKind` = `.cpu` / `.gpu` / `.neuralEngine`, `availableKinds` | `CoreAI`, 27.0 | ✅ |
 | `AssetError.Kind` = `corruptedMetadata` / `duplicateName` / `invalidFeatureType(String)` / `invalidName` / `unsupportedVersion(String)` | `CoreAI`, 27.0 | ✅ |
 | `AIModel.deviceArchitectureName` | `CoreAI`, 27.0 | ✅ |
-| `xcrun coreai-build compile … --platform --min-deployment-version --output --preferred-compute` | Xcode 27 + Metal Toolchain | ✅ (flag *values* 🔴) |
+| `xcrun coreai-build compile … --platform --min-deployment-version --output --preferred-compute` | Xcode 27 + Metal Toolchain | ✅ (flag values ✅ 2026-07-31: `--preferred-compute {gpu, neural-engine, none}`) |
 | `__tensor_ops_datatype`, `metal::int4b_format` / `uint4b_format`, `mpp::tensor_ops::matmul2d` | MetalPerformancePrimitives, 26.x | ✅ |
 | int2/FP4/FP8/E8M0 `MTLTensorDataType` and `metal::*_format` operands | Metal / MPP, OS 27 | ✅[^xcode27-scale-planes] |
 | `mx.quantize` / `dequantize` / `quantized_matmul` / `gather_qmm` / `qqmm` / `to_fp8` / `from_fp8` | `mlx.core` | ✅ |
@@ -2504,8 +2505,8 @@ behaviour surprises people, not as documentation.
 | 7.2 | The **inference-time error taxonomy** — nothing documents what `AIModel.init` / `loadFunction` / `run` throw | SDK dump, or one `catch { print(type(of: error)) }` |
 | 8.2 | The **exact strings** in `Summary.computeTypes` / `StorageType.typeName` / `ValueDescriptor.typeName` | Print them once for a real asset |
 | 8.3 | Why the debug gauge shows **three** event types where Instruments shows four (`Setup` missing) | — |
-| 8.5 | The full `coreai-build compile` flag list and the spelling of `--preferred-compute` values | `xcrun coreai-build compile --help` on Xcode 27 |
-| 9.4 | The set of `deviceArchitectureName` values | Print it per device; never hardcode |
+| 8.5 | ~~The full `coreai-build compile` flag list and the spelling of `--preferred-compute` values~~ **CLOSED 2026-07-31** — `--help` captured via the Metal Toolchain component; values `{gpu, neural-engine, none}` (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) | — |
+| 9.4 | The set of `deviceArchitectureName` values (the compiler-accepted code set — 24, `h11p…h18p` — was enumerated 2026-07-31; which code each device *reports* remains open) | Print it per device; never hardcode |
 | 11.3 | No M5 hardware for any TensorOps claim; no non-LLM performance data anywhere in `apple/coreai-models` | Hardware |
 
 ### 13.4 Related guides

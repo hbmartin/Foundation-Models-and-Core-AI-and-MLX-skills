@@ -810,11 +810,13 @@ that is where to look first.
 > <id>`** (`notes/transcripts/fm-core.md:2129`), which is adapter-specific and therefore dead in 27.
 > **We have no evidence of a Core AI equivalent.** Whether models are packaged with a different
 > `ba-package` subcommand, with a generic one, or entirely through Xcode is unverified. Resolving
-> it needs `xcrun ba-package --help` on a machine with Xcode 27. One adjacent 2026-07-29
-> toolchain observation, reported for completeness rather than as an answer: the Core AI compiler
-> stub `aimodelc` in the Xcode 27.0 beta names `package` as one of its two command types
-> (`'package' or 'compile'`) — that is the Xcode build compiler, not evidenced as a Background
-> Assets packaging path, and the documented `coreai-build` wrapper is absent from this beta.
+> it needs `xcrun ba-package --help` on a machine with Xcode 27. One adjacent toolchain
+> observation, reported for completeness rather than as an answer: `coreai-build` (which ships in
+> the optional Metal Toolchain component — resolved 2026-07-31, §4.2) has a **`package`**
+> subcommand, *"Packages a source model to produce a model asset"*, taking `.aimodel` or
+> `.aimodelc` input and `--platform`/`--min-deployment-version`/`--output`
+> (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) — that is model-asset packaging, not
+> evidenced as a Background Assets packaging path.
 
 ### 3.4 The delivery protocol: keep Core AI independent of the transport
 
@@ -1165,20 +1167,26 @@ Both ✅ VERIFIED as *quoted commands from public issue threads*
 (`notes/repos/issues-coreai-stack.md:884-885, 1180-1184`) — verified that these commands were run
 and reported, **not** verified as Apple-sanctioned usage.
 
-> 🟡 **RECONSTRUCTED** — `--architecture` and `--expect-frequent-reshapes` spellings. Apple confirms
-> an architecture flag exists but never names it; the spelling comes from a community `--help` dump
-> plus consistent third-party usage. High confidence in the shape — but it is **not currently
-> verifiable**: as of 2026-07-29, `xcrun --find coreai-build` fails on the Xcode 27.0 beta
-> (27A5228h) and no `coreai*` file exists anywhere in `Xcode-beta.app`. The wrapper is **not in
-> this beta toolchain**. Re-run `xcrun coreai-build compile --help` on the first seed that ships
-> it, before you write these flags into a build script.
+> ✅ **VERIFIED — upgraded from 🟡 RECONSTRUCTED on 2026-07-31.** `--architecture` (repeatable)
+> and `--expect-frequent-reshapes` are both real: `xcrun coreai-build compile --help` has now been
+> run against the shipped tool (`coreai-build 3600.79.1`) and the community synopsis above is
+> confirmed flag-for-flag, including `--preferred-compute {gpu, neural-engine, none}` (default
+> `none`) and the `--platform` default of macOS. Full capture:
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The 2026-07-29 finding that made this
+> unverifiable — `xcrun --find coreai-build` failing on the beta, no `coreai*` file in
+> `Xcode-beta.app` — was accurate for a bare install: **the wrapper ships in the optional Metal
+> Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), resolving via
+> `xcrun --no-cache --find coreai-build` to
+> `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/`.
+> Build scripts and CI must install that component, or they reproduce the "absent" state.
 
-**Also note the compiler binary.** `xcrun coreai-build compile` is the verb; the underlying binary
-is `aimodelc`, living at `Xcode-beta.app/.../usr/bin/aimodelc` — community-reported
-(`notes/repos/john-rocky-models.md:1117-1120`) and **toolchain-confirmed 2026-07-29**: the stub is
-present in beta 27A5228h, accepts command types `package` and `compile` only, requires `--output`,
-implements no `--help`, and its binary embeds *"Please use 'xcrun coreai-build' instead"* — naming
-a wrapper the same beta does not ship. Useful only for debugging a toolchain installation.
+**Also note the compiler binary.** `xcrun coreai-build compile` is the verb; inside the app bundle
+there is only `aimodelc`, living at `Xcode-beta.app/.../usr/bin/aimodelc` — community-reported
+(`notes/repos/john-rocky-models.md:1117-1120`) and **toolchain-confirmed 2026-07-29**: the stub
+accepts command types `package` and `compile` only, requires `--output`, implements no `--help`,
+and its binary embeds *"Please use 'xcrun coreai-build' instead"* — pointing (we now know) at the
+tool in the separate Metal Toolchain component. Useful only for debugging a toolchain
+installation.
 
 ### 4.3 Output naming and the runtime lookup
 
@@ -1317,13 +1325,25 @@ The codes observed in the wild, with what they were reported to correspond to:
 Sources: `notes/repos/john-rocky-models.md:1161-1164, 1176-1181`;
 `notes/repos/issues-coreai-stack.md:1187`.
 
-> 🔴 **GAP — the architecture-code enumeration is incomplete, community-sourced, and internally
-> contested.**
+> 🔴 **GAP — the architecture-code enumeration was incomplete, community-sourced, and internally
+> contested. Narrowed 2026-07-31: the code *set* is now first-party-probed; the device mapping is
+> still contested.**
 >
-> **What is unknown:** the authoritative list of `deviceArchitectureName` values; the mapping from
-> each code to a device family; the meaning of the suffix letters (`p`/`g`/`s`/`c` appear to
-> partition something, plausibly performance/graphics tiers, but **no source states this**); and
-> which code a given Mac actually reports.
+> **Now enumerated:** probing the shipped `coreai-build` 3600.79.1's `--architecture` validation
+> (it validates the code before reading the input file, with distinct diagnostics for unknown /
+> valid-but-wrong-platform / accepted) yields **24 valid codes**: `h11p h11g h12p h13p h13s h13c
+> h13g h14p h14s h14c h14g h15p h15s h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p`.
+> Observed grammar: `h<generation><variant>`, `p` = phone-class (accepted for iOS/tvOS), `s`/`c` =
+> Mac-class, `g` present from `h13g` up — consistent with the tier reading above, though the
+> letters' meanings are still nowhere stated by Apple. At the 27.0 default target, macOS accepts
+> the `s`/`c`/`g` codes (plus `h17p`), iOS the `p`/`g` codes through `h18p`; watchOS and visionOS
+> accepted none of the swept codes on the probing host (macOS 26.5 — possibly missing
+> device-support data). Method and full matrix:
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, final section.
+>
+> **What is still unknown:** the authoritative list of `deviceArchitectureName` values (the
+> compiler's accepted set is the best proxy, not a definition); the mapping from
+> each code to a device family; and which code a given Mac actually reports.
 >
 > **The contested part is specific and worth naming.** Two community sources disagree about the M4
 > Max Mac. One says `h16c` is the only code that loads there
@@ -3862,8 +3882,8 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 |---|---|---|---|
 | 1 | **The 2026 Background Assets API for Core AI.** No Apple sample, no WWDC26 transcript, no docs page shows BA delivering a `.aimodel`/`.aimodelc`. §3.2 | The WWDC25 "Discover Apple-Hosted Background Assets" transcript; the current `backgroundassets` reference; any Apple sample. `coreai` currently has **zero** sample-code projects. | Build against your own `ModelDelivery` protocol; implement with `URLSession` first. |
 | 2 | **The packaging CLI for model asset packs.** Only `xcrun ba-package foundation-models package` is attested, and it is adapter-specific (adapters are discontinued in 27). §3.3 | `xcrun ba-package --help` on Xcode 27. | Do not script packaging until you have run `--help`. |
-| 3 | **The `deviceArchitectureName` value set.** Community enumeration only; internally contested for Macs (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
-| 4 | **`--architecture` / `--expect-frequent-reshapes` spellings.** Apple confirms an arch flag exists but never names it. §4.2 — ⚠️ and `coreai-build` is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29; only the `aimodelc` stub ships, no `--help`) | A seed shipping `coreai-build`, then `compile --help`. | Verify on your own machine before writing a build script. |
+| 3 | **The `deviceArchitectureName` value set** — narrowed 2026-07-31: the set of codes the *compiler* accepts is now enumerated (24, `h11p…h18p`, via validation probing; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`), but which code each *device* reports remains community-attested and internally contested for Macs (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
+| 4 | ~~**`--architecture` / `--expect-frequent-reshapes` spellings.**~~ **CLOSED 2026-07-31: both flags tool-verified via `compile --help` — `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), which is why the bare-install check of 2026-07-29 found it absent. Probing also enumerated the 24 valid `--architecture` codes (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`); the code→device mapping stays open as gap #3.** §4.2 | — | Unchanged: verify on your own machine (with the component installed) before writing a build script. |
 | 5 | ~~**`AIModelError` is not documented.**~~ **CLOSED 2026-07-29 by the SDK interface dump: `AIModelError` is not public in the macOS 27.0 beta SDK; the loading APIs throw untyped; `AssetError` is the only public error type.** §5.3 | — | Unchanged: do not pattern-match. Treat any throw from a `.aimodelc` load as "unusable here" and fall back. |
 | 6 | **Deleting an in-use cache entry: throws or defers?** The reference pages and the prose article disagree; the beta interface confirms the `throws` spellings only. §7.4 | A five-line device test. | Write code correct under both: release models, then delete, then retry a throw. |
 | 7 | ~~**No progress API for specialization.**~~ **CONFIRMED ABSENT in the macOS 27.0 beta interface (2026-07-29): the full public loading surface has no progress reporting.** §6.4 | Apple shipping one in a later release. | Indeterminate indicator plus honest text and a measured estimate. |
@@ -3881,7 +3901,9 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 `notes/sdk-interfaces/*-27.0-macos.swiftinterface`) — `CoreAIDelegates` (the `AIModel` loading and
 `AIModelCache` surface; closed gaps #5 and #7 and confirmed the API-absence half of #8),
 `CoreAIAsset` (`AssetError`), `CoreAIRuntime`, and the empty-in-this-beta `CoreAICache`. Plus the
-2026-07-29 toolchain check: `coreai-build` absent, `usr/bin/aimodelc` present (gap #4).
+toolchain checks: 2026-07-29, `coreai-build` absent from the bare beta install, `usr/bin/aimodelc`
+present; 2026-07-31, `coreai-build 3600.79.1` found in the Metal Toolchain component and its full
+`--help` captured (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; closed gap #4).
 
 **Apple documentation** (harvested 2026-07-27 via `sosumi.ai` plus Apple's raw DocC JSON API;
 312-symbol index verified complete, `notes/web/apple-docs-coreai.md`)

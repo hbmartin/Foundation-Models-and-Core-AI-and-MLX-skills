@@ -39,8 +39,10 @@ Concretely:
   schemas, which are re-sent per request).
 - **`contextSize`** on `SystemLanguageModel` and `PrivateCloudComputeLanguageModel`, and the
   Apple-published 4K / 32K split. **The on-device window is 4096 tokens per `LanguageModelSession`** —
-  Apple's docs, the WWDC slide and **TN3193** all say so; the lone third-party claim of 8192 is a
-  footnote, not a rival (§3.3). The rule is unchanged: **read `contextSize` at runtime, never hardcode.**
+  Apple's docs, the WWDC slide and **TN3193** all say so, and a 2026-07-31 runtime probe measured
+  4096 on both the macOS 26.5 host and the 27.0 sim runtime; the lone third-party claim of 8192 is a
+  footnote resting solely on unverified iOS 27 *hardware* (§3.3). The rule is unchanged:
+  **read `contextSize` at runtime, never hardcode.**
 - **`tokenCount(for:)`** — the only pre-flight budget check that exists, its five overloads, and the
   OS floor that makes it unusable as your only strategy.
 - **`Usage`** and `Usage.Input.cachedTokenCount` — the post-hoc accounting, and the cache-hit-rate
@@ -366,6 +368,12 @@ is no published token cost per image.
 > attachment, at several resolutions, on a real device. Until someone runs that, **treat every image
 > as an unknown large constant** and measure your own session with `Usage` (§5) rather than
 > predicting it.
+>
+> That exact experiment now exists as `probes/` `fm.image-token-cost` and was run 2026-07-31 — but
+> **the 27.0 sim runtime cannot answer it**: every attachment size from 128 px to 1792 px errored
+> with `LanguageModelError -1` (image/attachment assets are among what the sim runtime lacks; only
+> the no-attachment baseline measured, at 6 tokens). The gap stays open and is now known to require
+> MAC-27 or DEVICE-27, not the Simulator.
 
 ### 2.5 Schemas are tokens too
 
@@ -567,6 +575,15 @@ technote states the number plainly, and it is now the fourth independent Apple c
 > interface does not show what `_contextSize` returns, and no Apple source publishes a figure
 > other than 4096. TN3193's number stands as the documented expectation; §3.4's read-don't-hardcode
 > rule is now visibly what the SDK itself is built for.
+
+> ✅ **Probe-verified, 2026-07-31 — a 27 *runtime* answers, and it answers 4096.** (`probes/`
+> `fm.contextSize`, run on the macOS 26.5 host AND the 27.0 sim runtime, where the dynamic
+> `_contextSize` path is live.) Both report **4096** — and a second, independent probe agrees: the
+> context-overflow error text on the 27.0 sim runtime reads *"…exceeds the maximum allowed context
+> size of 4096"* (`probes/` `fm.error-domain-context-overflow`). So the first dynamic answer we
+> have from a 27 runtime is still 4096, and **the noema 8192 comment now rests entirely on iOS 27
+> *hardware*** — the sim runtime does not corroborate it. The device-27 measurement remains the one
+> open residual; the read-don't-hardcode rule is unchanged either way.
 
 **Why this does not make the number safe to hardcode.** Apple's 26.4 announcement said the point of
 these APIs is *"to adapt your app to the hardware it's running on"* (session 241, `241:L14-19`);

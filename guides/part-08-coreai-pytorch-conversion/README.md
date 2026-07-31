@@ -261,7 +261,9 @@ hardware, OS build and date where the source gave them. **Apple published no per
 this except the SAM3 76% and the Qwen3-MoE tok/s deltas, both with hardware and methodology unstated.** All
 three guides were last verified 2026-07-27 against `coreai-torch` 0.4.1, `coreai-core` 1.0.0b2,
 `coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; the state of every issue and PR
-cited was re-checked 2026-07-29, and `coreai-torch#49` was still unresolved. The 0.4.0-artifact incident
+cited was re-checked 2026-07-29, and `coreai-torch#49` was still unresolved. `coreai-torch` PR #7 (the
+SDPA submodule re-export fix) was **closed without being merged on 2026-07-29** (re-checked via `gh`
+2026-07-31). The 0.4.0-artifact incident
 issues are resolved: `coreai-torch#37` closed as completed 2026-07-13 and `#44` closed as completed
 2026-07-24.
 

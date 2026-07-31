@@ -273,16 +273,20 @@ let newSamplesWanted = 87
 let targetCount = seeds.count + newSamplesWanted   // 100
 ```
 
-> 🔴 **GAP — what happens when the target is unreachable.** If your `validator` is strict enough that
-> the generator cannot produce enough *valid* samples to reach `targetCount`, we do not know whether
-> `run()` retries indefinitely, gives up after some internal budget, or throws. Neither session 299,
-> the `/documentation/evaluations/samplegenerator` page as harvested, nor the Book Tracker CLI exercises
-> that path. **Resolving it needs either the SDK interface with its doc comments, or an experiment: set
-> `targetCount` high and a validator that returns `false` unconditionally, and observe.**
+> ✅ **Probe-verified, 2026-07-31 — an unreachable target neither throws nor loops forever: the
+> generator gives up after its internal retry budget and finishes short.** (was a 🔴 GAP; `probes/`
+> `eval.generator-unreachable-target`, run on the 27.0 sim runtime.) The exact experiment was run —
+> a validator returning `false` unconditionally against a positive `targetCount` — and the run
+> `finished(produced=0)`: no error, no hang, `sessionProviderInvocations=1`. The rejected attempts
+> ARE observable: `invalidSamples` came back 4–5 across runs, **matching the documented
+> `.random(retries: 5)` default sampling strategy** — the retry budget is the sampling strategy's
+> retry count. So the under-delivery failure mode above extends all the way down: an impossible
+> validator produces an empty dataset *silently*, but `invalidSamples` tells you rejects happened.
 >
-> **Safe default meanwhile:** treat every generation run as bounded by wall-clock, not by the API.
-> Drive it from a command-line tool you can `^C` (§6), print progress inside the `for try await` body,
-> and never put an unattended `SampleGenerator` run in CI.
+> **Safe defaults, updated:** still treat generation runs as wall-clock-bounded and drive them from
+> a `^C`-able CLI (§6) — but now also **check `invalidSamples` and the produced count after every
+> run**; a high reject count with a short yield means your validator, not the model, set your
+> dataset size.
 
 ---
 
@@ -518,14 +522,17 @@ let generator = SampleGenerator<ModelSample<BookTags>>(
 Notice rule 2. It is in the instructions, it is not in the validator, and §8 explains why that split is
 forced on you rather than chosen.
 
-> 🔴 **GAP — is the context error observable?** Session 299 says exhaustion "will throw an error" and
-> that the generator then calls `sessionProvider` again. What we do not know is whether that error is
-> surfaced anywhere you can see — a thrown error from `run()` that is caught internally leaves no trace
-> in `samples`, `invalidSamples`, or any documented property, and no delegate or callback is listed on
-> `/documentation/evaluations/samplegenerator`. **Resolving it needs the SDK interface or a run
-> instrumented with `OSLog` capture.** Meanwhile: **count `sessionProvider` invocations yourself.** A
-> counter incremented inside the factory — printed, not branched on — turns an invisible event into a
-> line of output, and costs nothing.
+> 🔴 **GAP (bounded half ✅ probe-verified 2026-07-31) — is the context error observable?** Session
+> 299 says exhaustion "will throw an error" and that the generator then calls `sessionProvider`
+> again. What we still do not know is whether that error is surfaced anywhere you can see — no
+> delegate or callback is listed on `/documentation/evaluations/samplegenerator`, and observing the
+> exhaustion path needs an unbounded generation run (out of scope for the probe suite). What the
+> probe run *did* establish (`probes/` `eval.generator-unreachable-target`, 27.0 sim runtime): the
+> counting techniques below genuinely work — `sessionProviderInvocations` is countable from the
+> factory exactly as shown (the probe measured `=1` on a bounded run), and validator rejects are
+> visible via the `invalidSamples` property. Meanwhile the advice stands: **count `sessionProvider`
+> invocations yourself.** A counter incremented inside the factory — printed, not branched on —
+> turns an invisible event into a line of output, and costs nothing.
 
 ```swift
 // Observability, not control flow. Never branch on this value.
@@ -1675,17 +1682,21 @@ An ordered expectation lists the calls you require. Real transcripts often conta
 > parameter exists only on the `ordered:unordered:` initialiser, never alongside `disallowed:`
 > (§13.1).
 >
-> 🔴 **Still open: the exact semantics of `false`.** Whether it forbids *all* unlisted calls or only
-> unlisted calls *interleaved between* the listed ones is runtime behaviour; both readings are
-> consistent with every example in the corpus. One experiment with a deliberately chatty trajectory
-> would settle it.
+> ✅ **Probe-verified, 2026-07-31 — `false` IS enforced.** (was 🔴 still-open; `probes/`
+> `eval.allowsAdditionalCalls-false`, run on the 27.0 sim runtime with canned transcripts.) A
+> trajectory containing an unexpected extra call under `allowsAdditionalToolCalls: false` **fails
+> `allPass`** (control `allPass=1.0`, with-extra-call `allPass=0.0`) and **halves
+> `percentagePass`** (1.0 → 0.5) — the flag is a real prohibition, not advisory. The finer reading
+> question — whether an extra call *outside* the listed span is treated differently from one
+> interleaved between listed calls — was not separately distinguished by the probe; if that
+> distinction matters to your suite, test your own shape.
 >
-> **The habit still worth keeping: write it explicitly wherever the distinction matters.** Now that
-> the default is known, omission means `true` — but an explicit value documents your intent to the
-> next reader. Use `true` when you are asserting "these steps happened in this order" and `false`
-> when you are asserting "this is the whole trajectory and nothing else belongs in it" — the second
-> being much stronger, much more brittle, and appropriate mainly for cost-sensitive or
-> safety-sensitive flows.
+> **The habit still worth keeping: write it explicitly wherever the distinction matters.** Omission
+> means `true` — but an explicit value documents your intent to the next reader. Use `true` when
+> you are asserting "these steps happened in this order" and `false` when you are asserting "this
+> is the whole trajectory and nothing else belongs in it" — the second being much stronger, much
+> more brittle, and appropriate mainly for cost-sensitive or safety-sensitive flows — and now known
+> to actually bite.
 
 ```swift
 // "Search, then fetch details. The model may also do other things." — permissive.
@@ -1873,13 +1884,16 @@ ModelSample(
 argument matchers too. That opens a second, more precise class of assertion: *this tool may be called,
 but never with these arguments*.
 
-> 🔴 **GAP — whether a `disallowed` entry's `arguments` narrow the prohibition is unverified.** Every
-> example in the corpus disallows a bare `ToolExpectation("name")` with no matchers, so we have not seen
-> the narrowed form used or documented. The type permits it; the semantics are not stated. **Resolving
-> it needs a documented example or an experiment.**
+> ✅ **Probe-verified, 2026-07-31 — `arguments` on a `disallowed` entry DO narrow the prohibition.**
+> (was a 🔴 GAP; `probes/` `eval.disallowed-arguments-narrowing`, run on the 27.0 sim runtime with
+> canned transcripts.) A call to the disallowed tool with **different** arguments than the matchers
+> **passes** (`allPass=1.0`); a call **matching** the matchers **fails** (`allPass=0.0`). The
+> narrowed form means exactly what the type suggests: *this tool may be called, but never with
+> these arguments*.
 >
-> **Safe default meanwhile: disallow by name only**, and express "never with these arguments" as a
-> separate `Evaluator` over `subject.toolCalls`, which is ordinary Swift you can read:
+> **When to still prefer the hand-written form:** the declarative matcher is now trustworthy, but a
+> separate `Evaluator` over `subject.toolCalls` remains the right tool when the prohibition is
+> conditional on other calls or needs a rationale string richer than a matcher can carry:
 >
 > ```swift
 > let noDestructiveDeletes = Metric("No Destructive Deletes")
@@ -2400,7 +2414,7 @@ where each spelling comes from, because that is what tells you how much to trust
 | `TrajectoryExpectation(unordered:disallowed:)` | ✅ sample code (`:344-359`) |
 | `TrajectoryExpectation(expected:arguments:)` | ✅ sample code (`:413-418`) + docs |
 | the full initialiser set — `(ordered:unordered:allowsAdditionalToolCalls:)` / `(ordered:unordered:disallowed:)` / `(unordered:)` / `(expected:arguments:)`, with `ordered:` / `unordered:` defaulting to `[]` | ✅ SDK-verified (`swiftinterface:252-255`) |
-| `allowsAdditionalToolCalls` default | ✅ SDK-verified `= true` (`swiftinterface:252`); property is `allowsAdditionalCalls` · semantics of `false` 🔴 GAP |
+| `allowsAdditionalToolCalls` default | ✅ SDK-verified `= true` (`swiftinterface:252`); property is `allowsAdditionalCalls` · `false` ✅ probe-verified 2026-07-31: enforced, extra call fails `allPass` (§14.2) |
 | `TrajectoryExpectation.ordered` / `.unordered` / `.disallowed` / `.allowsAdditionalCalls` — public vars | ✅ SDK-verified (`swiftinterface:248-251`) |
 | `ToolExpectation(_ name:)` / `(_ name:, arguments:)` · `.name` · `.arguments` · `.isAnyOrderGroup` | ✅ docs + sample code |
 | `ToolExpectation.anyOrder(_:)` | ✅ docs |

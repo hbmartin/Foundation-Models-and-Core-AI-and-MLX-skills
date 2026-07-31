@@ -5,11 +5,14 @@
 interface set into `notes/sdk-interfaces/` — including the Core AI SubFrameworks umbrella
 (`CoreAIRuntime`, `CoreAIAsset`, `CoreAIDelegates`), the cross-import overlays
 (`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
-**Items 4, 5 and 6 below are resolved and folded into the guides. Items 1–3 and 7 still genuinely
-need a machine (or recording target / device) *running* macOS 27 — the toolchain alone cannot
-produce them.**
+**Items 2, 4, 5 and 6 below are resolved and folded into the guides (2 and 6's toolchain half fell
+on 2026-07-31 when the Metal Toolchain component turned out to contain `coreai-build` and the Metal
+compiler). Items 1, 3 and 7 still genuinely need a machine (or recording target / device) *running*
+macOS 27 — the toolchain alone cannot produce them.**
 
 Run what you can, paste the raw output back. Partial is fine — every item is independent.
+
+**Probes for these now live in `probes/`** — every behavioral item below (5's runtime residue, both halves of 7) plus the guide-level 🔴 GAPs are executable XCTest probes; see `probes/README.md` for the per-destination one-liners.
 
 ---
 
@@ -40,24 +43,24 @@ fm chat
 
 ---
 
-## 2. `coreai-build` — 🔴 still open, materially narrowed
+## 2. `coreai-build` — ✅ RESOLVED 2026-07-31 (it ships in the Metal Toolchain component)
 
-Verified 2026-07-29 on the Xcode 27.0 beta: **`coreai-build` does not ship in the beta** (`xcrun
---find` fails; exhaustive find of the bundle). What *does* ship is **`aimodelc`**
-(`Contents/Developer/usr/bin/aimodelc`, IDEMLKit): command types exactly `package` | `compile`,
-requires `--output`, and has **no `--help`**. Bizarrely, Apple's `aimodelc` usage stub says
-*"Please use 'xcrun coreai-build' instead"* — pointing at a tool that is not there.
+The 2026-07-29 "does not ship in the beta" finding was true of the bare Xcode install and wrong
+about the product: **`coreai-build` 3600.79.1 arrives with the optional Metal Toolchain component**
+(`xcodebuild -downloadComponent MetalToolchain`), resolving via `xcrun --no-cache --find
+coreai-build` into `Metal.xctoolchain/usr/bin/` (plain `xcrun --find` can miss it through a stale
+cache). That also dissolves the `aimodelc`-stub mystery — the stub pointed at a tool in a
+different, optional component. Its version string matches the CoreAI framework's
+`-user-module-version` (3600.79.1).
 
-Still needed, from any machine whose Xcode carries the tool (possibly a later beta, or macOS 27):
-
-```bash
-xcrun coreai-build --help
-xcrun coreai-build compile --help
-xcrun coreai-build inspect --help
-```
-
-Specifically needed: the full `--preferred-compute` value list, and the enumeration of device
-architecture codes (we have only `h18p`, from a blog, unconfirmed).
+Everything the item asked for is captured in
+`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`: subcommands are `compile | package |
+inspect | metadata` (inspect exists, with `--io/--metadata/--storage/--compute/--ops/--json`);
+**`--preferred-compute` = `gpu` | `neural-engine` | `none` (default `none`)**; and the
+architecture codes were enumerated by validation-oracle probing — **24 valid codes, h11p…h18p**,
+grammar `h<generation><variant>` (p = phone-class, s/c = Mac-class, g = both stacks from h13g),
+`h18p` confirmed, per-platform acceptance matrix included (watchOS/visionOS accepted none of the
+swept codes on this 26.5 host — the one residual caveat).
 
 ---
 
@@ -71,11 +74,18 @@ But the **lane names are not extractable from the host toolchain**: instrument d
 from the *recording target* at attach time (a full-text sweep of Instruments.app for the known lane
 name "Model Inference" finds nothing).
 
-So the remaining job needs Instruments 27 **attached to a device or Mac running an OS 27**:
+**Sharpened 2026-07-31: this no longer needs new hardware.** The iOS 27.0 Simulator runtime on
+THIS machine is an OS 27 recording target, and Foundation Models inference provably runs in it
+(`probes/`). What failed is *headless* capture: `xcrun xctrace record` against the booted
+simulator hangs for every template on this 26.5 host (Time Profiler control included,
+`--no-prompt` set), and the lane strings are not on disk (sim framework binaries live in the dyld
+shared cache). The residue is one manual GUI job on this machine:
 
-1. Open Instruments 27 → Foundation Models template → record anything → read the six lane headers.
-2. Same for the Core AI template — its on-screen lane and metric names, the detail-pane columns,
-   and whether a cache-hit metric exists.
+1. Open Instruments 27 → Foundation Models template → target the **booted iOS 27.0 simulator** →
+   Record (click through the privacy consent) → read the six lane headers off the timeline.
+2. Same for the Core AI template — lane/metric names and detail-pane columns render from the
+   template even though Core AI events cannot occur in the simulator (CoreAI is absent from the
+   simulator SDK; a real 27 device is still the only way to see live Core AI events).
 
 ---
 
@@ -101,14 +111,9 @@ All captured and folded into Parts 2–4 (34 gaps closed, 15 narrowed): the
 `LanguageModelError` (9 cases) lists, the `LanguageModel`/`LanguageModelExecutor` protocol
 requirements, PCC surface, and `DynamicProfile`. The Vision `BarcodeReaderTool`/`OCRTool` question
 resolved via the **cross-import overlay** `_Vision_FoundationModels` (their `Output` is an opaque
-`some PromptRepresentable` — deliberately unnameable). One residue that still needs a runtime probe
-on any 26/27 machine (interfaces cannot print non-inlinable default bodies):
-
-```swift
-// The Tool.includesSchemaInInstructions default value:
-struct Probe: Tool { /* minimal conformance */ }
-print(Probe().includesSchemaInInstructions)
-```
+`some PromptRepresentable` — deliberately unnameable). The last residue fell on 2026-07-31: the
+`probes/` package measured **`Tool.includesSchemaInInstructions` default = `true`** on both the
+macOS 26.5 host and the iOS 27.0 simulator runtime.
 
 ---
 
@@ -122,9 +127,12 @@ add **22 new matmul dtype rows** (int2b/uint2b, fp4 `e2m1`, fp8 `e4m3` **and** `
 availability is still macro-only (the 26.2-vs-Tech-Talk-ladder discrepancy stands, unchanged in
 27). All written into Part 11 with header citations.
 
-Small follow-up runnable on THIS machine when convenient (needs the ~multi-GB Metal Toolchain
-component): `xcodebuild -downloadComponent MetalToolchain`, then re-check `static_slice` and the
-`-std=metal` level questions in 11.1.
+The Metal Toolchain follow-up ran on 2026-07-31: **`static_slice` does not exist** in the 27-era
+compiler (comment-spelling only; the real API is `slice<...>`, verified by grep + compile error),
+and the tensor macros are gated purely by `-std` — `metal4.0` defines `__HAVE_TENSOR__`,
+`metal4.1` adds `__HAVE_TENSOR_MULTIPLANE__` and the fp4/fp8/int2b format macros (gated with
+`==` per version, not `>=`); a ue8m0 scale-plane matmul compiles to AIR at 4.1. All folded into
+Part 11.
 
 ---
 
@@ -135,15 +143,18 @@ component): `xcodebuild -downloadComponent MetalToolchain`, then re-check `stati
   `AIModel` deallocates. One test settles it. (The interfaces confirm only spellings, not
   behaviour — checked 2026-07-29.)
 - **On-device `contextSize`.** Narrowed 2026-07-29: the 26.5 interface **hardcodes `return 4096`**;
-  the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below. So
-  TN3193's 4096 is the 26.x truth, and the third-party 8192 claim is *plausible* for 27 devices —
-  print `SystemLanguageModel().contextSize` on a real 27 device to settle it.
+  the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below.
+  Narrowed again 2026-07-31: the `probes/` run measured **4096 on the iOS 27.0 simulator runtime**
+  (and the overflow error text there independently says "maximum allowed context size of 4096").
+  The third-party 8192 claim now rests entirely on 27 *hardware* — print
+  `SystemLanguageModel().contextSize` on a real 27 device to settle it.
 
 ---
 
 ## Not needed from you
 
 Everything else is either resolved or resolvable from material already on disk. The research corpus
-is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass, the
-four items above (1, 2, 3, 7 — plus the two small probes inlined in items 5 and 6) are the residue
+is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass and
+the 2026-07-31 Metal-Toolchain pass, the three items above (1, 3, 7 — plus item 5's small runtime
+probe, now in probes/) are the residue
 that genuinely requires a running macOS 27 / an OS 27 recording target / a 27 device.

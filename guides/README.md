@@ -266,7 +266,11 @@ invented, and no gap has been quietly papered over with a plausible-looking iden
 The single largest cluster has one cause: **this series was written on macOS 26.5.2 / Xcode 26.6.**
 Anything that requires a shipping macOS 27 toolchain — `fm --help`, `xcrun coreai-build --help`, the
 Instruments 27 lane names, the `CoreAI` and `FoundationModels` `.swiftinterface` dumps — could not
-be checked, only reasoned about.
+be checked at writing time, only reasoned about. Two of those have since been captured from the
+Xcode 27.0 beta on this machine: the `.swiftinterface` dumps (2026-07-29, `notes/sdk-interfaces/`)
+and `xcrun coreai-build --help` (2026-07-31 — the tool turned out to ship in the optional **Metal
+Toolchain component**, not Xcode itself; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`),
+and the affected guides carry dated resolution notes.
 
 [`../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`](../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md) is the
 precise shopping list: seven independent items, each with the literal commands to run and the guides

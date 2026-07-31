@@ -111,12 +111,15 @@ uncompressed).
 > is not a universal Core AI rule: Swift `NDArray` exposes explicit strides and preferred layouts.
 > §10 catalogues eighteen failures with detection recipes.[^stride-scope]
 
-> 🔴 **GAP — `coreai-build`'s residency report.** Apple's skill says "compile and check residency" and
-> no source shows what that output looks like — not the flag, not the format, not whether it is per-op.
-> And it cannot currently be checked: the `coreai-build` wrapper is **absent from the Xcode 27.0 beta
-> toolchain** (27A5228h, checked 2026-07-29); only the underlying `aimodelc` stub ships, with no
-> `--help`. Also open: `HardwareConstraints` / `AllocationType`, and
-> `LegalizeToCoreOptions(mutable_arg_action:)`
+> 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.** Apple's skill says "compile
+> and check residency" and no source shows what that output looks like — not the format, not whether
+> it is per-op. It **can** now be checked: `coreai-build` turned out to ship in the optional **Metal
+> Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app — the
+> 2026-07-29 "absent" finding was a bare-install artifact — and its captured `--help`
+> (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) shows the likely surface:
+> **`coreai-build inspect --compute`** (*"Show compute types"*, off by default), plus `--ops` for
+> operation distribution. What that output looks like on a real asset is still uncaptured. Also
+> open: `HardwareConstraints` / `AllocationType`, and `LegalizeToCoreOptions(mutable_arg_action:)`
 > — prescribed by a skill file, present in **zero** other files across three Apple repos.
 
 ### [10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger](references/02-debugging-and-profiling.md)
@@ -184,11 +187,13 @@ edit everyone forgets, the three Swift engines, the hybrid/SSM wall, and the `ml
 > `forcedContinuation`, so `@Generable` *and* MMLU-style evaluation are unavailable on the fastest local
 > path. Pick `variant: "coreai-sequential"` (or a chunked-static ANE bundle) and pay the throughput.
 
-> 🔴 **GAP — nine declared, each with a safe default.** The `--architecture` name table is
-> community-measured only (`h18p` = iPhone 17 Pro, `h16c` = M4 Max) and **`coreai-build compile` exits
-> 0 for any architecture you ask for**, so only a device load validates the choice — and note the
-> `coreai-build` wrapper is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29;
-> 10.3 §10.2 has the `aimodelc` details). Whether AOT is strictly required on iOS is unresolved —
+> 🔴 **GAP — nine declared, each with a safe default.** The set of valid `--architecture` codes is
+> now **enumerated** — 24 codes, `h11p…h18p`, probed 2026-07-31 against the shipped `coreai-build`
+> 3600.79.1 (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; the code→device mapping, e.g.
+> `h18p` = iPhone 17 Pro, `h16c` = M4 Max, is still community-measured only) — and **`coreai-build
+> compile` exits 0 for any accepted architecture**, so only a device load validates the choice. The
+> wrapper itself turned out to ship in the **Metal Toolchain component**, not Xcode-beta.app
+> (resolved 2026-07-31; 10.3 §10.2 has the details). Whether AOT is strictly required on iOS is unresolved —
 > compile everything you ship. Also open: the `.aimodel`'s inner `metadata.json` schema, and what
 > `COREAI_QUERY_BUCKET_SIZE` does. Two former gaps closed against the captured macOS 27.0 beta SDK
 > interface: `SpecializationOptions` is available on iOS (10.1 §8.1), and the runtime

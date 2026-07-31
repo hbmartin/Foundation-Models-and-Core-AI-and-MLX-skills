@@ -100,8 +100,9 @@ returns the graft boundary, not real history. No date in this guide should be re
 when the feature landed" unless it is attached to a specific PR number that the notes recorded with
 a date. Where I know a date, I give it; where I do not, I say so.
 
-**Second: the NAX quantized path is new and actively churning.** Four correctness fixes touching
-NAX landed or opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**
+**Second: the NAX quantized path is new and actively churning.** Four correctness fix PRs touching
+NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**, all
+three still open and unmerged on a 2026-07-31 `gh` re-check
 — including a *missing `else`* in `tile_matmad_nax` that silently compiles to nothing for odd tile
 shapes and produces garbage. The research note that found it puts it plainly:
 
@@ -2886,7 +2887,9 @@ Things this guide could not verify, what would resolve them, and what to do mean
 
 > 🔴 **GAP 5 — whether the fixes for #3856 and #3887 have landed.**
 > Both were **OPEN** on 2026-07-27, with mlx PR #3922 (upstream) and mlx-lm PR #1585 (downstream
-> padding workaround) also open. This guide cannot tell you their state today.
+> padding workaround) also open. Re-checked via `gh` **2026-07-31**: issues #3856 and #3887 and fix
+> PR #3922 are **all still open** — nothing has landed. This guide cannot tell you their state on
+> the day you read it.
 > **Resolution:** check the issues.
 > **Safe default:** assume open. The mitigations (`K % 64 == 0`, pad gathered rows to 64) are
 > harmless if the bugs are fixed and essential if they are not.

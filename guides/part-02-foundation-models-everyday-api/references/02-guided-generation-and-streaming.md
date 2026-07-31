@@ -843,6 +843,14 @@ a `@Generable enum` with four unusual cases, greedy sampling, and a prompt that 
 value. Run it a hundred times and count. Until someone does that, treat *both* mechanisms as
 advisory and validate.
 
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass at larger N.** The probe suite
+> ran a small version of that experiment (`probes/` `fm.anyOf-enum-enforcement`, on the 27.0 sim
+> runtime): 10 greedy runs against a prompt begging for an out-of-vocabulary value produced
+> **0 violations, 0 errors** — consistent with the constrained-decoding reading on that runtime.
+> N=10 is far too small to close a bug that reproduces intermittently (the original thread-812501
+> failure was on-device, iOS 26.2); rerun with `PROBE_ENUM_RUNS=100` on 27 hardware before relying
+> on it. The gap stays open; keep validating.
+
 ### 4.7 Apple's own code validates `.anyOf` results
 
 This is circumstantial but instructive. The `apple/foundation-models-utilities` package's `Skills`
@@ -1910,13 +1918,15 @@ for try await snapshot in stream {
 let final = try await stream.collect()      // the completed result
 ```
 
-🟡 **RECONSTRUCTED** — `.collect()` is verified to exist with that documented meaning, and its
-declaration is now ✅ **SDK-verified**: `nonisolated(nonsending) func collect() async throws ->
+`.collect()` is verified to exist with that documented meaning, and its
+declaration is ✅ **SDK-verified**: `nonisolated(nonsending) func collect() async throws ->
 sending Response<Content>` (`FoundationModels-27.0-macos.swiftinterface:2168`). Whether it may
-be called after manual iteration, or must be called instead of it, is still not documented —
-🔴 **GAP**, and a consequential one: **do not assume you can do both.** Until it is confirmed, either
-iterate *or* collect, and if you need the final value after iterating, keep the last snapshot's
-`.content`.
+be called after manual iteration was a 🔴 GAP; it is now measured. ✅ **Probe-verified,
+2026-07-31** (`probes/` `fm.collect-after-iteration`, run on the 27.0 sim runtime) — **calling
+`collect()` after fully iterating the stream succeeds and returns the complete response** (13
+manual iterations, then `collect()` returned the full 51-character content). You can do both, as
+the snippet above does. The docs still do not say so; if you want belt-and-braces, keeping the
+last snapshot's `.content` remains harmless.
 
 **`Snapshot.usage` lets you meter mid-stream.** On a per-token-billed third-party backend, that is
 how you implement a spend cap without waiting for the response to finish.
@@ -2169,15 +2179,16 @@ Write the defensive code regardless; it is four lines.
 ### 9.7 Transcript timing and cancellation
 
 - **Breaking out of the loop early** cancels the request; that is standard `AsyncSequence` behaviour
-  and the framework's Swift-concurrency contract. 🟡 **RECONSTRUCTED** for Swift — the Python SDK
-  documents its stream as *"Can be cancelled mid-stream using asyncio cancellation"* and the Swift
-  side is `sending` and `AsyncSequence`-conforming, but no Apple page in the corpus states Swift
-  cancellation semantics explicitly. 🔴 **GAP:** whether a cancelled stream leaves a partial entry
-  in `session.transcript` is unverified for Swift.
+  and the framework's Swift-concurrency contract. What it leaves behind was a 🔴 GAP and is now
+  measured. ✅ **Probe-verified, 2026-07-31** (`probes/` `fm.stream-early-break`, run on the 27.0
+  sim runtime) — after an early `break` (2 partials in), **a partial `.response` entry IS present in
+  `session.transcript`** (`entries=[prompt,response]`) **and `session.isResponding` remains `true`**
+  at least 500 ms later. Treat a broken-out session as still busy: do not issue a follow-up `respond`
+  on it without checking `isResponding`, and do not assume the transcript ends cleanly at the prompt.
 - The Python SDK's equivalent states *"The session transcript is updated only after streaming
-  completes"* (✅ **VERIFIED** from its docstring). 🟡 If that mirrors Swift — likely, since the
-  Python SDK is a binding over the same runtime — then mid-stream reads of `session.transcript` will
-  not include the in-flight response.
+  completes"* (✅ **VERIFIED** from its docstring). The Swift measurement above shows that after an
+  early break the partial entry has already landed — so do not carry the Python docstring's mental
+  model over to Swift's cancellation path.
 - Related and verified for Swift: `TranscriptErrorHandlingPolicy` (iOS 27) with
   `.preserveTranscript` and `.revertTranscript`, and Apple's note that **"When preserving the
   transcript, the last entry may be partially generated."** ✅ **VERIFIED**. That is the framework
@@ -2465,6 +2476,13 @@ is one initializer argument — but budget for it not helping, and do not build 
 Full guardrail treatment in
 [`06-availability-errors-and-guardrails.md`](./06-availability-errors-and-guardrails.md).
 
+> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** The probe suite ran exactly
+> that comparison, but on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`): a
+> guardrail-tripping `@Generable` request threw `LanguageModelError` code 2 under **both**
+> `.default` and `.permissiveContentTransformations` — identical outcomes, supporting the
+> forum developer's "inert on the structured path" reading *on this runtime*. Sim guardrail assets
+> may differ from device; the gap stays open until the same probe runs on 27 hardware.
+
 ### 11.4 Determinism when you are testing structured output
 
 > "**Greedy sampling tells the model to stop being creative and to always pick the most obvious next
@@ -2730,18 +2748,18 @@ line-numbered citations.
 | # | Unknown | What would resolve it |
 |---|---|---|
 | 1 | `representNilExplicitlyInGeneratedContent:` **semantics** on `@Generable` — the three overloads, their floors (26.0 / 26.4 / 27.0), and the 27.0 default `= false` are now SDK-verified (§2.2) | The macro's doc page, or *Expand Macro* in Xcode 27 |
-| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) | A 100-iteration `#Playground` on a device with a four-case enum and an adversarial prompt |
+| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) — 🟠 suggestive 2026-07-31: 10/10 clean runs on the 27.0 sim runtime (`probes/` `fm.anyOf-enum-enforcement`); needs N=100 on 27 hardware | A 100-iteration `#Playground` on a device with a four-case enum and an adversarial prompt |
 | 3 | Whether the `.anyOf` defect is fixed in iOS 27.0 — the reproduction is confirmed on **iOS 26.2** and the corpus's forum capture (2026-07-27) still lists it as open | Re-run the thread-812501 repro on an iOS 27 device |
 | 4 | Where in the pipeline the `.anyOf` constraint is lost (§5.4) | Symbol-level tracing of `TokenGenerationCore` on macOS 27 |
 | 5 | Whether `SystemLanguageModel` uses `xgrammar` (§5.2) — verified only for Core AI and MLX | Symbol inspection of the shipped `FoundationModels.framework` / `TokenGenerationCore` binary |
 | 6 | ~~Full declarations of the `respond(to:schema:…)` / `streamResponse(to:schema:…)` overload family~~ — **✅ RESOLVED** (§7.3): all return `Response<GeneratedContent>` / `ResponseStream<GeneratedContent>` | Resolved — 27.0 `.swiftinterface:2016-2018, :2063-2071, :2107-2119` |
-| 7 | Whether `ResponseStream.collect()` may be called after manual iteration (§9.3) — its declaration is now SDK-verified | Apple's `collect()` doc page, or a device test |
-| 8 | Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands in the transcript | A device test reading `session.transcript` after an early `break` |
+| 7 | ~~Whether `ResponseStream.collect()` may be called after manual iteration (§9.3)~~ — **✅ RESOLVED, probe-verified 2026-07-31**: yes, and it returns the complete response (`probes/` `fm.collect-after-iteration`, 27.0 sim runtime) | Resolved by runtime probe |
+| 8 | ~~Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands in the transcript~~ — **✅ RESOLVED, probe-verified 2026-07-31**: a partial `.response` entry lands and `isResponding` stays `true` (§9.7; `probes/` `fm.stream-early-break`, 27.0 sim runtime) | Resolved by runtime probe |
 | 9 | ~~`ContextOptions`' exact initializer labels (iOS 27)~~ — **✅ RESOLVED**: `init(includeSchemaInPrompt: Bool? = nil, reasoningLevel: ContextOptions.ReasoningLevel? = nil)`, both properties optional-typed | Resolved — 27.0 `.swiftinterface:3068-3072` |
 | 10 | What `GenerationSchema.name` returns for an anonymous/inline schema — the declaration (`var name: String`, non-optional, 27.0) is now SDK-verified (§7.6) | The `generationschema/name` doc page, or a `print` |
 | 11 | ~~Whether `GeneratedContent.ParsingError` is *specifically* the successor to `GenerationError.decodingFailure`~~ — **✅ RESOLVED**: the SDK's own deprecation message names it (§8.3) | Resolved — 27.0 `.swiftinterface:3491-3494` |
 | 12 | The declared signature of the description-less `@Guide(_ guides:)` overload — the three `@Guide` macro declarations in the interface all carry `description:` first (`@Guide(description: String? = nil, _ guides: GenerationGuide<T>...)`, `:1099-1105`), so the "description-less" call form works because `description:` has a default | The macro's doc page |
-| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. A developer says no; Apple's Book Tracker sample pairs them anyway (§11.3) | A device test tripping a guardrail false positive under both settings |
+| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. A developer says no; Apple's Book Tracker sample pairs them anyway (§11.3) — 🟠 suggestive 2026-07-31: identical blocks under both settings on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`); needs 27 hardware | A device test tripping a guardrail false positive under both settings |
 | 14 | Whether a tool-only turn is the *only* cause of a zero-snapshot stream — Apple's comment says "for example" (§9.6) | An instrumented empty-response or guardrailed request on device |
 | 15 | Whether `LanguageModelSession.Error` is real in practice — its two cases are SDK-verified (`:1986-1994`), but it is used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
 

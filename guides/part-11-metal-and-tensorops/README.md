@@ -10,7 +10,9 @@ gains int2b/uint2b, FP4 (e2m1) and FP8 (e4m3 *and* e5m2) operand rows, blockwise
 land in the implementation headers, and a new deployment gate
 `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0` appears (checked 2026-07-29; guide 11.1 §0.2,
 §1.2).[^metal27-multiplane] You need **Metal 4** (`__METAL_VERSION__ ≥ 400`) and a toolchain that
-defines `__HAVE_TENSOR__`. The 26.x surface runs on **every Apple GPU from M1 onward** — Apple states
+defines `__HAVE_TENSOR__` — toolchain-verified 2026-07-31: `-std=metal4.0` defines it, and
+`-std=metal4.1` additionally defines `__HAVE_TENSOR_MULTIPLANE__` and the FP4/FP8 format types the
+27.0 scale planes need (guide 11.1 §2.2). The 26.x surface runs on **every Apple GPU from M1 onward** — Apple states
 the API is portable and falls back to optimised shader implementations where there is no neural
 accelerator. M5-class hardware is a fast path, not a requirement.
 
@@ -82,7 +84,7 @@ What falls out is a surface with an unusual failure profile:
 | "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
 | `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
 | "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
-| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists. Real spellings: templated `slice<…>()` and `is_valid_element` |
+| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
 | Compile error deep inside `__mutmul2d_detail` | [11.2 §3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §6.3](references/01-tensorops-and-quantized-operands.md) | The input getters take **element** types; the destination getter takes **operand** types |
 | "My K loop returns only the last chunk" | [11.1 §3.5](references/01-tensorops-and-quantized-operands.md) · [11.2 §5.5](references/02-cooperative-tensors-and-flash-attention.md) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
 | "Attention quality dropped and I can't find a bug" | [11.2 §6.3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §7.2](references/01-tensorops-and-quantized-operands.md) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |

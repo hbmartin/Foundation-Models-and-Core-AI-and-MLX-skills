@@ -88,8 +88,9 @@ LagunaXS open source coding model in nvfp4", 2026-07-26) in this session. That i
 
 **Second: MLX moves weekly, and this clone is shallow.** It was cloned `--depth 50`, so `git log`
 on most paths returns only the graft boundary. **Do not treat any date in this guide as
-authoritative** beyond the HEAD commit date. Four NAX correctness fixes landed in mlx core in the
-three days before 2026-07-27 alone. Anything described here as "new" should be re-read against
+authoritative** beyond the HEAD commit date. Four NAX correctness fix PRs opened against mlx core
+in the three days before 2026-07-27 alone (#3912/#3922/#3924 still open, unmerged, on a 2026-07-31
+`gh` re-check). Anything described here as "new" should be re-read against
 `main` before you build on it.
 
 **Third: the docs disagree with the code in several documented places, and the code wins.** mlx-lm

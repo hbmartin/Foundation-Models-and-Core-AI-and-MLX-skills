@@ -1939,6 +1939,8 @@ it is `tgid` **and** `sgid`, because each simdgroup owns a distinct band of quer
 > //      auto tC = C.static_slice<32, 64>(tgid.x*32, tgid.y*64);
 > ```
 >
+> (That is Apple's comment spelling. The member that compiles is templated `slice<32, 64>` —
+> `static_slice` does not exist in any toolchain, ✅ toolchain-verified 2026-07-31, guide 01 §5.4.)
 > The M extent (64) appears **second** in the slice and **first** in the descriptor. Every kernel
 > author transposes this at least once. If your kernel produces a correctly-shaped output full of
 > wrong numbers, check this before anything else.
@@ -1967,10 +1969,11 @@ Two practical notes:
 - **Bounds.** `slice` produces a `tensor_offset` with the *same extents* as the original, origin
   shifted — so the op still bounds-checks against the full tensor. That is safe and slightly slow.
   Apple's own performance guidance, ✅ **VERIFIED** from the header's prose, is to detect interior
-  tiles and use `static_slice` for them: *"for large enough matrices most of thread groups will be
-  working on 'inside' tiles, requiring no bounds check… In high performance code we can avoid edge
-  checking for inside thread groups and get better performance."* The idiom is
-  `if (tgid.x*64 + 63 < M && tgid.y*32 + 31 < N) { /* static_slice path */ } else { /* slice path */ }`.
+  tiles and use compile-time-extent slices for them (`static_slice` in Apple's comments; templated
+  `slice<…>` in code that compiles — guide 01 §5.4): *"for large enough matrices most of thread
+  groups will be working on 'inside' tiles, requiring no bounds check… In high performance code we
+  can avoid edge checking for inside thread groups and get better performance."* The idiom is
+  `if (tgid.x*64 + 63 < M && tgid.y*32 + 31 < N) { /* templated slice<…> path */ } else { /* slice path */ }`.
 - ⚠️ **That `if` must not make `run()` non-uniform.** Both branches must be taken uniformly by the
   whole execution scope. Since the condition depends only on `tgid` and compile-time tile sizes, it
   is uniform across the threadgroup — fine. A condition that depended on `sgid` or on data would

@@ -28,7 +28,8 @@ returns the graft boundary (`ca60290`), not the introducing commit.
 
 **So: pin `mlx==0.32.*` and `mlx-lm==0.31.3`, read the shipped `mlx/version.h` rather than trusting any date
 including these guides', and re-run your own numerics after every bump.** Not boilerplate — **four NAX
-correctness fixes landed or opened in the 72 hours before 2026-07-27** (PRs #3912, #3922, #3924), one a *missing
+correctness fix PRs opened in the 72 hours before 2026-07-27** (PRs #3912, #3922, #3924 — all three still open,
+unmerged, per a 2026-07-31 `gh` re-check, so no release or checkout contains them), one a *missing
 `else`* in `tile_matmad_nax` that compiles odd tile shapes to nothing and produces garbage. Second version axis:
 **PyPI mlx-lm 0.31.3 is dated 2026-04-22 and `main` has moved substantially past it**, so several fixes here are
 unreleased — and **0.31.0 was pulled from practical use** for a `BatchKVCache` cross-contamination bug.

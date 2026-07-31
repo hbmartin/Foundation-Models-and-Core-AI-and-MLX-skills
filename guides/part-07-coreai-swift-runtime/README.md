@@ -127,10 +127,12 @@ five-rung recovery ladder for wedged loads.
 > 🔴 **GAP — Apple's reference pages and Apple's article contradict each other (§7).** Delete a cache
 > entry a live `AIModel` still references and the reference pages say *"an error is thrown"* while the
 > prose article says Core AI *"defers deletion."* The guide quotes both, gives a device test that would
-> settle it, and shows code correct under either reading. Also open: the full `coreai-build` CLI surface
-> — and note `coreai-build` is **absent from the Xcode 27.0 beta toolchain** (`xcrun --find` fails,
-> checked 2026-07-29), so the `--help` run that would close it is currently impossible — and
-> cancellation semantics for `specialize`.
+> settle it, and shows code correct under either reading. The full `coreai-build` CLI surface, open
+> when this was written, **closed 2026-07-31**: the tool ships in the optional **Metal Toolchain
+> component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app itself — which is
+> why the 2026-07-29 check found it absent — and its full `--help` is captured in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt` (§13). Still open: cancellation semantics
+> for `specialize`.
 
 ### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
 A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable:
@@ -255,7 +257,8 @@ the three LLM engines and the VLM engine, `ModelStructure.swift` (the structure�
 strongest guidance on `SpecializationOptions` anywhere), the bundle readers, `NDArray+Helpers.swift`,
 `ImagePreprocessor.swift`, the two xgrammar wrappers, `CoreAILanguageModel.swift`, the four Python bundle
 writers, `Package.swift`/`Package.resolved` and the agent skills in `skills/` — plus merged PRs **#62,
-#74, #85, #89** and issues **#5, #55, #58, #112**, each documenting a real failure; and
+#74, #89**, still-open PR **#85** (re-checked via `gh` 2026-07-31) and issues **#5, #55, #58, #112**,
+each documenting a real failure; and
 `apple/coreai-torch` v0.4.1 (`converter.py`, `_utils.py`, `tests/test_stateful.py`, the notebooks, and
 the release note that gates 0.4.0 assets). **Apple documentation**, harvested 2026-07-27 via `sosumi.ai`
 plus Apple's raw DocC JSON API (which preserves term lists and tables the Markdown mirrors drop): the

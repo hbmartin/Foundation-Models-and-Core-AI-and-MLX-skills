@@ -750,9 +750,12 @@ bundle does not update itself. `models/README.md:173` is unambiguous:
 > usage. If you compile a model, replace the corresponding asset in the bundle directory and update
 > `metadata.json` to reference the new filename."*
 
-> ⚠️ **Availability, checked 2026-07-29:** `coreai-build` is **not present in the Xcode 27.0 beta
-> toolchain** (`xcrun --find coreai-build` fails on 27A5228h). Apple's README instruction above is
-> attested but not currently runnable on this beta; see 7.2 §13 for the full status note.
+> ✅ **Availability, resolved 2026-07-31:** `coreai-build` **is runnable after all** — it ships in
+> the optional **Metal Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), not
+> in Xcode-beta.app itself, which is why a 2026-07-29 check of the bare beta (27A5228h) found
+> `xcrun --find coreai-build` failing. With the component installed the `--help` Apple's README
+> points at runs and is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; see
+> 7.2 §13 for the full surface.
 
 The reader's error message spells out the fix (✅ `ModelBundle.swift:103-109`):
 

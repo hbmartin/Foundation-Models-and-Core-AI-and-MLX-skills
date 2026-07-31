@@ -922,8 +922,12 @@ struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
 > use the `GenerationOptions` form. The same-type half of this is now settled: ✅ **SDK-verified**
 > (`27.0:933`), the profile modifier takes exactly `GenerationOptions.ToolCallingMode?` — one type,
 > two surfaces. **🔴 GAP:** which surface wins when both are set is still **unverified** — that is
-> precedence behaviour, which the interface (read 2026-07-29) cannot express. **Safe default:** pick
-> one surface per feature and don't mix them in a single session.
+> precedence behaviour, which the interface (read 2026-07-29) cannot express. 🟠 **Suggestive,
+> 2026-07-31** (`probes/` `fm.toolCallingMode-precedence`, 27.0 sim runtime — where tool-calling
+> assets are missing, so directional only): profile `.required` + options `.disallowed` produced no
+> tool call; profile `.disallowed` + options `.required` engaged the tool machinery. Both halves
+> lean **per-call options win**; confirm on MAC-27/DEVICE-27 before relying on it. **Safe
+> default:** pick one surface per feature and don't mix them in a single session.
 
 > ⚠️ **Initializer footgun.** In the iOS 27 four-argument `GenerationOptions` initializer,
 > `toolCallingMode` has **no default value** while `samplingMode`, `temperature` and
@@ -978,12 +982,14 @@ New, small, and directly relevant to anyone who has tools that throw.
 That last sentence is the trap. `.preserveTranscript` can leave you holding a **half-generated
 entry**, which will then be fed back to the model on the next turn. If you preserve, validate.
 
-> 🟡 **RECONSTRUCTED** — the default. `.revertTranscript` is described as the rollback behaviour the
-> framework already performs, which implies it is the default, and WWDC26 session 242 narrates
-> setting the policy as a change from existing behaviour. **The default is still not stated
-> anywhere**: the 27.0 interface (read 2026-07-29) declares the session property as an **Optional**
-> — `transcriptErrorHandlingPolicy: TranscriptErrorHandlingPolicy?` — and does not name what `nil`
-> selects. Safe default: set it explicitly rather than relying on the implicit one.
+> ✅ **Probe-verified, 2026-07-31 — the default is `nil`, and `nil` behaves like
+> `.revertTranscript`.** (was 🟡 RECONSTRUCTED; `probes/` `fm.transcript-policy-nil-default`, run
+> on the 27.0 sim runtime.) The session property's initial value is `nil`, and after a failed
+> request the `nil` transcript outcome **matches `.revertTranscript`** — both rolled back to just
+> the instructions entry — while `.preserveTranscript` retained the prompt entry. The old
+> reconstruction was right, and the probe confirmed it. Setting the policy explicitly is still good
+> manners for the next reader, but relying on the implicit rollback is now measured behaviour, not
+> a guess.
 
 ```swift
 // ✅ SDK-verified — both spellings are real and canonical (27.0:937 and 27.0:1885-1892).
@@ -1031,9 +1037,16 @@ lives on `ContextOptions`. The 27.0 interface shows the duplication plainly: the
 `includeSchemaInPrompt: Bool = true` overloads survive un-deprecated (`27.0:2063-2083`) alongside
 new `contextOptions:` overloads whose default is `ContextOptions(includeSchemaInPrompt: true)`
 (`27.0:2107-2137`) — they are **separate overload families**, so a single call cannot actually pass
-both. **🔴 GAP:** what happens across a session mixing the two families, and which setting wins if a
-profile supplies one while the call supplies the other, is unverified (interface read 2026-07-29 —
-precedence is behaviour). Safe default: set it in one place.
+both. ✅ **Probe-verified, 2026-07-31 — they are one knob with two spellings, and mixing them is
+harmless.** (was a 🔴 GAP; `probes/` `fm.includeSchemaInPrompt-recording`, run on the 27.0 sim
+runtime.) The legacy `includeSchemaInPrompt: false` parameter and
+`ContextOptions(includeSchemaInPrompt: false)` are recorded **identically** on
+`Transcript.Prompt.contextOptions` — same `ContextOptions(includeSchemaInPrompt: Optional(false))`
+entry either way — and an all-defaults call records `Optional(true)`. There is no second
+independent setting to disagree with the first, so the "mixing families across a session" fear
+dissolves; alternating spellings between calls just writes the same field. Only the
+profile-supplies-one-while-the-call-supplies-the-other precedence remains unmeasured, as with
+every profile-vs-call knob. Style still favours one spelling per codebase — the new one.
 
 ### 4.12 ADDITIVE — watchOS
 
@@ -1635,8 +1648,19 @@ Symptoms of the mismatch, all reported and none self-explanatory:
 iPhone 17 Pro Max with New Siri enabled. So "run it on a device" narrows the search; it does not
 guarantee a clean result.
 
-**Migration rule:** any behavioural result you intend to act on must come from a **physical device on
-27.0 or later**. A Simulator result during a migration tells you about your Mac.
+> ✅ **Probe-verified nuance, 2026-07-31** (`probes/` `fm.availability` and the full FM probe set,
+> iOS 27.0 Simulator runtime 24A5390f on a macOS 26.5.2 host): "punching out" is not the whole
+> picture — **the 27.0 sim runtime resolves model availability and assets independently of the
+> host's Apple Intelligence toggle**. With the host toggle OFF (the host itself reports
+> `.appleIntelligenceNotEnabled`), the sim reported `available` and ran text inference, guided
+> generation, streaming and 8 concurrent sessions. What the sim runtime lacks: tool-calling assets
+> (`ModelManagerError 1026` / `UnifiedAssetFramework 5000`) and image attachments
+> (`LanguageModelError -1`). So sim errors are not always host-toggle skew — but a sim *result* is
+> still not a device result.
+
+**Migration rule, unchanged:** any behavioural result you intend to act on must come from a
+**physical device on 27.0 or later**. A Simulator result during a migration tells you about your
+Mac and the sim runtime's partial asset set.
 
 ### 6.10 BEHAVIOURAL — an OS update invalidates Core AI specialization
 
@@ -2560,12 +2584,12 @@ Collected so a future pass can close them. Each is a 🔴 **GAP** in the body wi
 | 1 | What actually differs between **AFM 3 Core** and **AFM 3 Core Advanced**, and whether any API reports the tier | An Apple doc page or a `SystemLanguageModel` property | §3.3 |
 | 2 | ~~The `Arguments` / `Output` associated types of `OCRTool` and `BarcodeReaderTool`, and the `Barcode` type~~ ✅ **RESOLVED 2026-07-29** — the `_Vision_FoundationModels` overlay interface was captured: `Arguments` is a Generable struct with no named public properties, `Output` is the opaque `some PromptRepresentable` return of `call`, and no public `Barcode` type exists | — | §4.6 |
 | 3 | Why `BarcodeReaderTool` lists watchOS and `OCRTool` does not | An Apple statement; the difference itself is verified | §4.6 |
-| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type~~ ✅ **RESOLVED 2026-07-29** — the profile modifier takes `GenerationOptions.ToolCallingMode?` (`27.0:933`). **Still open:** which wins when both are set | An Apple answer or a device experiment | §4.8 |
-| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1885-1892, 937`). **Still open:** the **default** — the property is Optional and the interface does not name what `nil` selects | Documentation of the default, or a device test | §4.10 |
-| 6 | Which `includeSchemaInPrompt` wins when set both on `ContextOptions` and on `respond(…)` | An Apple answer or an experiment on device *(27.0 interface read 2026-07-29 — the two are separate overload families, so the remaining question is cross-call/profile precedence)* | §4.11 |
+| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type~~ ✅ **RESOLVED 2026-07-29** — the profile modifier takes `GenerationOptions.ToolCallingMode?` (`27.0:933`). **Still open:** which wins when both are set — 🟠 suggestive 2026-07-31: per-call options appear to win (`probes/` `fm.toolCallingMode-precedence`, 27.0 sim runtime; needs 27 hardware) | An Apple answer or a device experiment | §4.8 |
+| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1885-1892, 937`). ~~Still open: the default~~ ✅ **RESOLVED 2026-07-31, probe-verified** — initial value is `nil`, and `nil` behaves like `.revertTranscript` (`probes/` `fm.transcript-policy-nil-default`, 27.0 sim runtime) | — | §4.10 |
+| 6 | ~~Which `includeSchemaInPrompt` wins when set both on `ContextOptions` and on `respond(…)`~~ ✅ **RESOLVED 2026-07-31, probe-verified** — one knob, two spellings: both record identically on `Transcript.Prompt.contextOptions` (default records `Optional(true)`), so there is nothing to win; only profile-vs-call precedence stays open (`probes/` `fm.includeSchemaInPrompt-recording`, 27.0 sim runtime) | — | §4.11 |
 | 7 | `fm schema object`'s argument grammar, and the full `fm` subcommand list | `fm --help` / `fm schema object --help` on macOS 27. *(Checked 2026-07-29: no `fm` binary ships in the Xcode 27.0 beta toolchain (`27A5228h`) — consistent with it being a macOS 27 OS tool, which this macOS 26.5 machine cannot run)* | §5.2 |
 | 8 | Where the open-sourced core Foundation Models framework lives | The repository appearing | §5.5 |
-| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`); whether the framework throws it remains a device test | — | §7.1 |
+| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`); ~~whether the framework throws it remains a device test~~ ✅ **RESOLVED 2026-07-31, probe-verified** — the framework DOES throw it on truncated structured output (code 1; `probes/` `fm.parsingError-thrown`, 27.0 sim runtime; see 17.3 §4.4) | — | §7.1 |
 | 10 | ~~Whether `LanguageModelSession(transcript:)` is formally deprecated~~ ✅ **RESOLVED 2026-07-29** — it is not; no deprecation in the 27.0 interface (`27.0:41`) | — | §7.5 |
 | 11 | The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)` — **now a live docs-vs-SDK contradiction**: the captured 27.0 beta interface has only un-deprecated `resolve(in: Transcript)` (`27.0:2959-2963`) while the docs present `resolved(in:)` as current | A later beta's interface, or a doc revision | §7.6 |
 | 12 | Whether the Python SDK's tool calling is current (README omits it; the session claims it) | A README update, or reading `tests/test_tool.py` | §9 |

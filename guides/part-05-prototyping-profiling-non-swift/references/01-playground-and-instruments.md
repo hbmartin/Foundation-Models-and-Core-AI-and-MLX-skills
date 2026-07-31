@@ -389,6 +389,17 @@ precisely why Apple's Instruments session exists.
 > device on the matching OS.** This is, by a wide margin, the largest single source of phantom bug
 > reports in the developer forums. Before you spend an afternoon on an error code, check what you are
 > running on.
+>
+> ✅ **Probe-verified nuance, 2026-07-31** (`probes/` `fm.availability` and friends, iOS 27.0
+> Simulator runtime 24A5390f on a macOS 26.5.2 host): the "punching out" picture needs one
+> correction — **the 27.0 sim runtime resolves model availability and assets independently of the
+> host's Apple Intelligence toggle.** With host Apple Intelligence OFF (the host's own `swift test`
+> reports `.appleIntelligenceNotEnabled`), the sim still reported `available` and ran text
+> inference, guided generation, streaming, and 8 concurrent sessions. What the sim runtime *lacks*:
+> tool-calling assets (`ModelManagerError 1026` / `UnifiedAssetFramework 5000`) and image
+> attachments (`LanguageModelError -1`). So the sim is more usable for plain/guided-generation
+> prototyping than the folklore says — and still useless for tool calling, attachments, PCC, and
+> any number you intend to quote.
 
 One live example of how unhelpful the failure looks, so you recognise it:
 
@@ -879,6 +890,18 @@ a security review rather than before one:
 If your organisation has a data-handling policy, a Foundation Models trace almost certainly falls under
 it. Decide where these files live before you make the first one.
 
+> ✅ **Observed 2026-07-31 — the consent also gates *scripted* recordings.** During the probe-package
+> runs (`probes/`, macOS 26.5 host), driving the Foundation Models template through `xctrace`'s CLI
+> recording path surfaced the same privacy consent interactively on the terminal: *"Captured prompts
+> and responses could include sensitive or personally identifying information… Press 'Enter' to
+> 'Record Anyway'"* — and **`xctrace` blocks waiting for that keypress**. Piping a newline into
+> stdin does **not** satisfy it (measured 2026-07-31 — the prompt reads the controlling TTY, and the
+> recording sat blocked for 20+ minutes with a newline piped); the supported answer is the
+> documented **`--no-prompt`** flag (*"Skip any prompts that would be otherwise presented (like
+> privacy warnings)"*, `xctrace record --help`). Two things follow: unattended automation around
+> this template needs `--no-prompt`, and the consent text is itself first-party confirmation that
+> the instrument records prompt/response *content*, not just timings.
+
 ### 5.3 It works with *any* model, and that is the point
 
 `243:148` says the instrument supports **any** model used through the framework. Because 2026 turned
@@ -1062,9 +1085,20 @@ all:
 > toolchain — it needs a recording target running an OS 27 (device or Mac); the toolchain alone,
 > which this project now has, cannot produce the names.
 >
-> **What would resolve it:** anyone with Xcode 27 opening the Foundation Models template **against an
-> OS 27 target** and reading the lane headers off the timeline, or a screenshot in the Instruments
-> help / release notes.
+> **Narrowed again 2026-07-31 — the target exists; headless recording against it does not.** The
+> Xcode 27 beta's **iOS 27.0 Simulator runtime is an OS 27 recording target**, and the probe run
+> (§13.4, `probes/`) proved Foundation Models inference actually executes there. But `xcrun xctrace
+> record` against the booted simulator **hangs for every template tried** on this macOS 26.5 host —
+> Foundation Models *and* a plain Time Profiler control, `--no-prompt` set, 15-second limits never
+> completing, the `.trace` bundle frozen at its 52 KB scaffold — so CLI recording cannot reach the
+> lane names in this host/beta combination. The sweep of the simulator runtime's own filesystem
+> finds no lane strings either (its framework binaries live in the dyld shared cache).
+>
+> **What would resolve it:** one **manual GUI recording on this machine** — open Instruments 27 →
+> Foundation Models template → target the booted iOS 27.0 simulator → Record (click through the
+> §5.2 consent) → read the six lane headers off the timeline. No new hardware, no macOS 27
+> install — a thirty-second human job that CLI automation measurably cannot do today. (A screenshot
+> in Instruments help / release notes would also settle it.)
 >
 > **What to do meanwhile:** the two named lanes carry the diagnoses in §8 and §10, which are the two
 > highest-value reads in the instrument. Work from those, and treat the other lanes as unlabelled context
@@ -1969,16 +2003,22 @@ your own timeline up against the trace's.
 
 ### 13.4 A device
 
-Repeating §2.6 because it is the single most common wasted afternoon in this stack: the Simulator punches
-inference out to the host Mac, PCC does not work in simulators at all (known issue **177684296**), and
-session 243's own requirements say *"on the device you'd like to run and profile your app on, update to
-the latest OS releases"* (✅ `243:147`).
+Repeating §2.6 because it is the single most common wasted afternoon in this stack: Simulator
+inference is host-backed (though the 27.0 sim runtime resolves model assets independently of the
+host's Apple Intelligence toggle — see the probe-verified nuance in §2.6), PCC does not work in
+simulators at all (known issue **177684296**), and session 243's own requirements say *"on the
+device you'd like to run and profile your app on, update to the latest OS releases"* (✅ `243:147`).
 
-> 🔴 **GAP — whether the Foundation Models template works against the Simulator at all.** `243:147`
-> implies a device without forbidding the Simulator, and no Apple source states either way. **Resolving
-> this needs someone with Xcode 27 to select a Simulator destination and hit Product ▸ Profile.** Safe
-> default: **profile on a device.** Even if the template records against a Simulator, the numbers would be
-> the host Mac's, which is not a measurement of anything you ship.
+> 🔴 **GAP (narrowed 2026-07-31) — whether the Foundation Models *template* records against a
+> Simulator destination.** The half of this that a test can decide is now decided: ✅
+> **Probe-verified, 2026-07-31** (`probes/` `fm.availability`, on the 27.0 sim runtime) — **the FM
+> stack itself works in the Simulator**: model `available`, text inference, guided generation,
+> streaming and 8 concurrent sessions all executed, even with the host's Apple Intelligence off
+> (tool calling and attachments do not — assets missing). So there is real FM activity in a sim
+> process for the template to record. Whether Product ▸ Profile with a Simulator destination
+> actually populates the template's lanes remains open — that is Xcode UI behaviour no XCTest can
+> decide. Safe default unchanged: **profile on a device.** Even if the template records against a
+> Simulator, the numbers would be the host Mac's, which is not a measurement of anything you ship.
 
 ---
 

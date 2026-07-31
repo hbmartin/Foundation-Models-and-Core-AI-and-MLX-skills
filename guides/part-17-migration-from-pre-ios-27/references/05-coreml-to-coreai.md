@@ -1447,13 +1447,16 @@ The command and the output convention:
 > above the minimum deployment version you pass.**"* Apple also documents `--preferred-compute` and
 > says a `--help` run reveals *"the target architecture, and other options"*.
 
-> ⚠️ **Toolchain reality check, 2026-07-29.** The Xcode 27.0 beta on this machine (`27A5228h`)
-> ships **no `coreai-build` binary** — `xcrun coreai-build` fails to resolve. What it ships is
-> **`aimodelc`** (`Contents/Developer/usr/bin/aimodelc`), which takes the same two command types the
-> article describes (`package` | `compile`) and whose binary embeds the note *"Please use 'xcrun
-> coreai-build' instead."* — a pointer at a tool that is not present in this beta. Read that as:
-> the documented `coreai-build` spelling is the intended stable interface, `aimodelc` is what
-> currently exists, and one of the two will move before release. [Reference 06
+> ✅ **Toolchain reality check — resolved 2026-07-31.** The 2026-07-29 finding stands as history:
+> the Xcode 27.0 beta app bundle (`27A5228h`) ships **no `coreai-build` binary**, only
+> **`aimodelc`** (`Contents/Developer/usr/bin/aimodelc`, command types `package` | `compile`),
+> whose binary embeds *"Please use 'xcrun coreai-build' instead."* The resolution: that note points
+> at a tool in a **different, optional component** — `coreai-build` ships in the **Metal Toolchain**
+> (`xcodebuild -downloadComponent MetalToolchain`), where `xcrun --no-cache --find coreai-build`
+> resolves it (version 3600.79.1) and its full `--help` runs
+> (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). So: the documented `coreai-build`
+> spelling is real and usable today, `aimodelc` is the Xcode-internal stub, and a machine without
+> the Metal Toolchain component reproduces the "absent" state. [Reference 06
 > §7](06-toolchain-and-asset-compatibility.md) tracks this.
 
 Runtime selection is two lines and no new load API:

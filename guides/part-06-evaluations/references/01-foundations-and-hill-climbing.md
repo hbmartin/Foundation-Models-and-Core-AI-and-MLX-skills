@@ -1041,6 +1041,14 @@ Evaluations does not have a runner. Swift Testing is the runner.
 > internally, and the hook a command-line harness would use to run an evaluation outside a test.
 > No Apple sample or doc article calls it; running through the trait is what gets you the Xcode
 > report and the attachment (§11–§12). Treat `run(info:)` as the escape hatch, not the norm.
+>
+> ✅ **Probe-verified, 2026-07-31 — the escape hatch works, offline, under XCTest.** The probe
+> suite's five Evaluations probes (`probes/`, run on the 27.0 sim runtime) all drive
+> `Evaluation.run(info:)` programmatically from XCTest cases — no Swift Testing trait, no Xcode
+> report, **no model** (canned subjects) — and get real `EvaluationResult`s back. Every measured
+> Evaluations finding in this guide (§8.2, §8.4, §17.4, §17.5, §17.7) came through this path, which
+> is itself the existence proof that the runner has no hidden dependency on the trait, the report
+> UI, or a live language model.
 
 > ✅ **VERIFIED** (`298:83`): *"Evaluations integrates with **Swift Testing**, so you can run your
 > evaluations in your app's test targets."*
@@ -1101,23 +1109,21 @@ Not stylistic. The test body needs to reach the *same* `Metric` values the evalu
 that by reading them off the evaluation instance: `BookTagEvaluationTests.evaluation.tagCount`. A fresh
 `BookTaggingEvaluation()` constructed inside the test body would be a different instance.
 
-> 🔴 **GAP — whether `Metric` identity is by name or by instance.** It matters, and the two Apple
-> sources point opposite ways. `Metric` is `Equatable` and its `name` is documented as *"used as the
-> DataFrame column name"*, which suggests name-keyed lookup — and Apple's own minimal `Evaluation`
-> example constructs `let metric = Metric("Match")` **inside** the evaluator closure, shadowing the
-> stored property of the same name, which can only work if identity is by name. But Book Tracker's
-> structure, and the fact that the test body reaches through `static let evaluation` to get the metric,
-> only makes sense if you are meant to hold onto instances.
+> ✅ **Probe-verified, 2026-07-31 — `Metric` identity is BY NAME.** (was a 🔴 GAP; `probes/`
+> `eval.metric-identity`, run offline on the 27.0 sim runtime via `Evaluation.run(info:)`.) Two
+> evaluators each constructing a **fresh** `Metric("Match")` instance produce **one** detailed
+> column and **one** `"Mean of Match"` summary column — and
+> `aggregateValue(.mean(of: Metric("Match")))` through yet another fresh instance works, returning
+> 0.5. That 0.5 is the second half of the finding: **same-named metrics from different evaluators
+> POOL into one aggregate** (both evaluators' values averaged together). Apple's minimal example
+> constructing `Metric("Match")` inside the evaluator closure was the correct reading; Book
+> Tracker's hold-the-instance structure is a style choice, not a requirement.
 >
-> **What the interface adds (2026-07-29), which is not enough:** `Metric` declares a hand-written
-> `==` rather than a synthesised one, and `Array<Metric>` gains a subscript keyed by a `Metric`
-> (`Evaluations-27.0-macos.swiftinterface:682-709`) — both consistent with name-keyed lookup, but an
-> interface shows signatures, not comparison bodies, so identity semantics remain unresolved.
-> **What would resolve it:** an experiment declaring two `Metric("X")` values in one evaluation and
-> checking whether the report shows one column or two.
-> **Safe default:** declare each metric exactly once as a stored property on the evaluation, reference
-> it everywhere else, keep the evaluation a `static let`, and never construct a `Metric` inside a
-> closure. That form is correct under either answer.
+> **The safe default barely changes, and the reason sharpens:** declare each metric exactly once as
+> a stored property and reference it everywhere — no longer because instance identity might matter
+> (it does not), but because name-keyed pooling means a *typo'd or duplicated* name silently forks
+> or merges columns (§17.4). Fresh instances with the same name are safe; same names for different
+> measurements are the hazard.
 
 ### 8.3 The dataset runs *before* the test body, and the body never iterates
 
@@ -1186,6 +1192,14 @@ shipping code:
 
 ✅ both verified in the sample. Note the symmetry: whatever you asked for in `aggregateMetrics` is what
 you can read here, addressed the same way you registered it.
+
+> ✅ **Probe-verified, 2026-07-31 — what `aggregateValue` returns when there is nothing to read:
+> `-1.0`, always.** (`probes/` `eval.mean-over-all-ignored` and the empty-`aggregateMetrics` run,
+> 27.0 sim runtime.) An evaluation whose `aggregateMetrics(using:)` registers nothing yields an
+> **empty `summary` DataFrame**, and `aggregateValue` returns **`-1.0` for every metric you ask
+> about** — the same `-1.0` you get for a mean over all-ignored samples (§17.5). `-1.0` is the
+> framework's universal "no value" sentinel: it never throws, never traps, and never tells you
+> *why* there was no value. Assert row counts (§17.1) alongside every `aggregateValue` assertion.
 
 `summary` and `detailed` are **TabularData `DataFrame`s**, which is a much bigger door than
 `aggregateValue` alone. If you want to *inspect* rather than assert:
@@ -2268,14 +2282,15 @@ and then **shadows it inside the evaluator closure** with a locally constructed 
 Tracker never does this, and its test body deliberately reaches through `static let evaluation` to get
 the *instance*.
 
-> 🔴 **GAP — `Metric` identity semantics are unresolved.** See §8.2 for the full statement of what is
-> unknown and what would resolve it. The hazard either way: if identity is by name, two metrics with the
-> same string silently merge into one column; if identity is by instance, a locally constructed
-> `Metric("Match")` produces results that `aggregateMetrics(using:)` never aggregates and
-> `aggregateValue(.mean(of: storedMetric))` cannot find — and neither case throws.
+> ✅ **Probe-verified, 2026-07-31 — identity is by NAME, so the merge arm is the live hazard.**
+> (was a 🔴 GAP; `probes/` `eval.metric-identity`, 27.0 sim runtime — full result in §8.2.) Two
+> metrics with the same string **silently merge into one column and one pooled aggregate**, and
+> nothing throws. The instance arm of the old dilemma is dead: a locally constructed
+> `Metric("Match")` is found by `aggregateMetrics` and `aggregateValue` just fine.
 >
-> **Safe default:** one stored property per metric, unique names, referenced everywhere. Never
-> construct a `Metric` inside a closure or a function body.
+> **Safe default unchanged, sharper reason:** one stored property per metric, unique names,
+> referenced everywhere. The thing to police is the *name*: two evaluators reusing a name
+> unintentionally pools unrelated measurements into one mean, silently.
 
 ### 17.5 An aggregate computed over nothing
 
@@ -2285,15 +2300,17 @@ dataset — which Apple explicitly recommends for judge-scored evaluations (§5)
 evaluator written for a reference-carrying one. **Every sample ignores. The metric aggregates over zero
 values.**
 
-> 🔴 **GAP — what `aggregateValue(.mean(of:))` returns when every sample was ignored.** Zero? NaN? A
-> trap? Nothing in the documentation, the sessions or the sample covers it, and the difference matters
-> enormously: `#expect(0.0 >= 0.8)` fails loudly, `#expect(Double.nan >= 0.8)` also fails, but
-> `#expect(1.0 >= 0.8)` would pass a suite measuring nothing.
+> ✅ **Probe-verified, 2026-07-31 — the answer is a `-1.0` sentinel.** (was a 🔴 GAP; `probes/`
+> `eval.mean-over-all-ignored`, 27.0 sim runtime: an evaluator returning `.ignore()`
+> unconditionally over 4 detailed rows yields `aggregateValue(.mean(of:)) == -1.0`.) Not zero, not
+> NaN, no trap. The good news: `#expect(mean >= threshold)` fails loudly for any sane positive
+> threshold. The bad news: **`-1.0` is also what `aggregateValue` returns for a metric that was
+> never registered at all** (the probe suite confirmed that too, on an evaluation with empty
+> `aggregateMetrics`), so a `-1.0` cannot tell you *which* of the two nothings you measured.
 >
-> **What would resolve it:** run an evaluation whose evaluator returns `.ignore()` unconditionally and
-> print the aggregate. **Safe default meanwhile:** if you mix reference-carrying and prompt-only
-> samples, assert the scored row count as in §17.1 before asserting the aggregate. That check is correct
-> under every possible answer.
+> **The safe default therefore stands unchanged:** if you mix reference-carrying and prompt-only
+> samples, assert the scored row count as in §17.1 before asserting the aggregate. The sentinel
+> saves you from a false green; only the row-count assertion tells you what actually ran.
 
 ### 17.6 A green suite over a bad feature
 
@@ -2306,32 +2323,28 @@ which of your five expectations has no metric behind it.
 
 ### 17.7 A failing sample that vanishes instead of failing
 
-> 🔴 **GAP — what happens to the run when `subject(from:)` throws for some samples.** The framework
-> defines `SubjectInferenceError` — *"A typed reason why `subject(from:)` failed to produce a subject
-> for a sample"* — and `EvaluatorError` — *"A typed reason why an evaluator failed while scoring a
-> produced subject"*. ✅ both names and descriptions verified in the symbol inventory. What is **not**
-> documented anywhere is whether a per-sample failure (a `guardrailViolation`, a
-> `contextSizeExceeded`, a transient `LanguageModelError.timeout`) **aborts the run, fails the test, or
-> quietly drops the sample from the aggregate.**
+> ✅ **Probe-verified, 2026-07-31 — per-sample `subject(from:)` failures drop silently, and the
+> score improves.** (was a 🔴 GAP; `probes/` `eval.subject-throws`, 27.0 sim runtime.) The exact
+> resolving experiment was run: 5 samples, `subject(from:)` throwing on 2 of them. The run
+> **completed** — no abort, no test failure from the throws alone — the failed samples still occupy
+> detailed rows (`detailedRows=5`), and they are **EXCLUDED from the aggregate**: the mean over the
+> 3 survivors came back **1.0** with 2/5 failing. The "silently improved score" hazard is no longer
+> a hypothesis; it is reproduced fact.
 >
-> The interface pass (2026-07-29) narrows this without closing it. The case lists are now pinned:
-> `SubjectInferenceError.failed(reason: String)` and
+> Background that predicted the drop-silently arm, kept for the record: the interface pass
+> (2026-07-29) pinned `SubjectInferenceError.failed(reason: String)` and
 > `EvaluatorError.failed(evaluator:evaluatorType:reason:)`
-> (`Evaluations-27.0-macos.swiftinterface:499-521`). And `EvaluationError` carries a deprecated
-> `metricsNotFound(names:)` case whose deprecation message is a behavioural statement from Apple:
-> *"The runner no longer throws this; **missing metrics are materialized as ignored columns and
-> logged.** This case will be removed before general availability."* (`:489-498`). A metric that
-> never fires therefore becomes an ignored column, not an error — which leans toward the
-> drop-silently arm for per-sample failures too, but an interface cannot show what the runner does
-> when `subject(from:)` itself throws.
+> (`Evaluations-27.0-macos.swiftinterface:499-521`), and `EvaluationError`'s deprecated
+> `metricsNotFound(names:)` case carries Apple's own statement that *"missing metrics are
+> materialized as ignored columns and logged."*
 >
-> This matters because guardrail false positives are real and rate-dependent, and because the on-device
-> model refresh in 26.4 explicitly retuned them. A run that silently drops its five hardest samples
-> would report an *improved* score.
+> This matters because guardrail false positives are real and rate-dependent, and because the
+> on-device model refresh in 26.4 explicitly retuned them. A run that silently drops its five
+> hardest samples reports an *improved* score — measured, not imagined.
 >
-> **What would resolve it:** an evaluation whose `subject(from:)` throws on a known subset, run against
-> the row count in `result.detailed`. **Safe default meanwhile:** assert the scored row count (§17.1).
-> It is the one check that catches every member of this family.
+> **The safe default is now a hard rule:** assert the scored row count (§17.1) in every test body.
+> It is the one check that catches every member of this family, and the probe shows nothing else
+> will.
 
 ### The pattern behind all seven
 
@@ -2655,17 +2668,18 @@ kept and marked, so you can see what moved:
 1. **Non-text / multimodal evaluation** (§2). Hook exists (`ModelSampleInput` and the generic
    protocols, all present in the interface); no compiling example anywhere; the forum question is
    unanswered. **Open.**
-2. **`Metric` identity — by name or by instance?** (§8.2, §17.4). Apple's doc sample and Apple's code
-   sample imply different answers; the interface shows a hand-written `==` and a metric-keyed
-   subscript but not their semantics. **Open.**
+2. **`Metric` identity — by name or by instance?** (§8.2, §17.4). **Closed, probe-verified
+   2026-07-31:** by NAME, and same-named metrics pool into one aggregate (`probes/`
+   `eval.metric-identity`, 27.0 sim runtime).
 3. **`AggregationOperation`'s full case list** (§9). **Closed:** seven statistic cases plus
    `custom(label:)`, ✅ SDK-verified (`Evaluations-27.0-macos.swiftinterface:425-438`).
-4. **What an all-`.ignore()` metric aggregates to** (§17.5). Runtime behaviour; the interface cannot
-   answer it. **Open.**
-5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). **Narrowed:**
-   both error types' cases are SDK-verified, and the deprecated `metricsNotFound` case's message
-   says missing metrics are *"materialized as ignored columns and logged"* — but the thrown-subject
-   path itself is still unconfirmed.
+4. **What an all-`.ignore()` metric aggregates to** (§17.5). **Closed, probe-verified 2026-07-31:**
+   the `-1.0` sentinel — indistinguishable from an unregistered metric, so keep asserting row
+   counts (`probes/` `eval.mean-over-all-ignored`, 27.0 sim runtime).
+5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). **Closed,
+   probe-verified 2026-07-31:** the run continues and failed samples are excluded from the
+   aggregate while still occupying detailed rows — the silently-improved-score hazard is reproduced
+   fact (`probes/` `eval.subject-throws`, 27.0 sim runtime).
 6. **`if/else` inside the `evaluators` builder** (§6). **Effectively closed:** the interface confirms
    `buildExpression` / `buildBlock` / `buildOptional` and nothing else (`:645-649`), so a bare `if`
    builds and an `if/else` should not. Not compile-tested.

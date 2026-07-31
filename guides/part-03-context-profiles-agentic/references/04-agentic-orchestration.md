@@ -1677,16 +1677,16 @@ On Apple's own stack the observed symptom is uglier:
 > tools" in the console** — it means "required mode, empty toolset", regardless of what you thought
 > you passed.
 
-> 🔴 **GAP — the documented behaviour of `.required` with no tools is unknown.** We have a provider
-> that throws `requiredToolsMissing`, and a beta bug report where the first-party path emits
-> `LanguageModelError` code `-1` wrapping an internal `GuidedGenerationError`. We do **not** know
-> whether a specific `LanguageModelError` case exists for it or whether the mode is simply ignored.
-> The 2026 sample projects do not resolve it: **no sample sets `toolCallingMode`**, and both shipped
-> `LanguageModelError` switches (Origami's and the hiking-trails app's `Error+DisplayMessage.swift`)
-> end in `default: break`, so the type is non-frozen and the enumerated list is not exhaustive.
-> Resolving this needs the full case list or a clean 27.0 GA device test. **Safe default meanwhile:
-> assert your toolset is non-empty before you set `.required`, and treat a `LanguageModelError` you
-> cannot classify as a retry-once-then-degrade condition.**
+> ✅ **Probe-verified, 2026-07-31 — `.required` with no tools throws the generic `-1`, and there is
+> no dedicated case.** (was a 🔴 GAP; `probes/` `fm.required-mode-no-tools`, run on the 27.0 sim
+> runtime.) A genuinely empty toolset under `.required` throws an error whose NSError domain is
+> `FoundationModels.LanguageModelError`, code **`-1`**, wrapping underlying errors via
+> `NSMultipleUnderlyingErrorsKey` — and which does **NOT** cast to the Swift `LanguageModelError`
+> type (`casts=[]`), so a `catch let e as LanguageModelError` never sees it. The mode is not
+> ignored and nothing hangs; the beta symptom above is the actual behaviour on this runtime. Full
+> error-shape analysis in 17.3 §6.3. **The safe default stands: assert your toolset is non-empty
+> before you set `.required`, and treat an error you cannot classify as retry-once-then-degrade —
+> matching by NSError domain, not by Swift type.**
 
 > 🔴 **GAP — there is no first-party call site for `toolCallingMode` anywhere.** Origami, Book Tracker
 > and the Core Spotlight sample all ship without it; Origami, the most agentic of the three, steers
@@ -2025,6 +2025,10 @@ confirmWithUser(call)` and you may throw. 🔴 What remains unverified is the *e
 the community note says "the tool never runs and control returns to the loop"; Apple's documented
 wording is that the error **propagates to the caller's `respond`** — turn-level abort, not a
 per-call veto. A device test is still the only way to observe which transcript state results.
+That test exists as `probes/` `fm.onToolCall-throw-effect`, but the 2026-07-31 run confirmed the
+27.0 sim runtime **cannot decide it** — the sim lacks tool-calling assets, so `respond` threw
+`ModelManagerError` before any tool call was emitted (`toolRan=false`). This one genuinely waits
+for MAC-27 or DEVICE-27.
 
 Even if it works exactly as sketched, **Origami's shape is better for user-facing consent**, for three
 reasons that hold regardless:

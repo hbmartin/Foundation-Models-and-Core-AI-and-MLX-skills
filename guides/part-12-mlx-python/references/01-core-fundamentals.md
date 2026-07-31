@@ -118,8 +118,9 @@ Two markers you will see constantly:
 ### Freshness warning, and it is sharp
 
 The clone's HEAD is `973e27f` ("[CUDA] Fix grid overflow in gemm conv unfold kernels…", PR #3893).
-**Four NAX correctness fixes landed in the three days before 2026-07-27 and are therefore *not* in
-this checkout:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
+**Four NAX correctness fix PRs opened in the three days before 2026-07-27, and none is in
+this checkout — nor in any other: all three were still open, unmerged, on a 2026-07-31 `gh`
+re-check:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
 multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary handling), and **#3924** — one of which
 is a *missing `else`* in `tile_matmad_nax` that silently miscompiles odd tile shapes. We grepped:
 `tile_matmad_nax` is present at `mlx/backend/metal/kernels/steel/gemm/nax.h:825` and called from

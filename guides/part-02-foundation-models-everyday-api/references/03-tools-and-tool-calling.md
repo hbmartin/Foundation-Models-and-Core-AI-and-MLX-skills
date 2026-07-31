@@ -46,8 +46,12 @@ how you keep control of the loop once it can:
 - Xcode 26 for the `Tool` protocol alone; **Xcode 27** for calling modes, dynamic profiles, and the
   new error types. Apps built with Xcode 26 keep catching the deprecated
   `LanguageModelSession.GenerationError` until you rebuild.
-- A device (not the Simulator) for anything you intend to trust. The Simulator punches inference out to
-  the host macOS, which produces version-skew errors that look like your bug and are not.
+- A device (not the Simulator) for anything you intend to trust — and for tool calling this is now
+  measured, not folklore: ✅ **Probe-verified, 2026-07-31** (`probes/` on the 27.0 sim runtime) that
+  plain and guided inference *do* run in the Simulator (with its own model assets, independent of the
+  host's Apple Intelligence toggle), but **tool-calling assets are absent there** — engaging the tool
+  machinery fails with `ModelManagerError 1026` / `UnifiedAssetFramework 5000` ("no underlying
+  assets … com.apple.modelcatalog"). Everything in this guide needs a device.
 - Read [`01-sessions-and-prompting.md`](01-sessions-and-prompting.md) and
   [`02-guided-generation-and-streaming.md`](02-guided-generation-and-streaming.md) first. This guide
   assumes you know what `@Generable`, `@Guide`, `Instructions`, and a `Transcript` are.
@@ -238,14 +242,15 @@ and `MovePhotoToStepTool` declares `let name = "movePhotoToStep"`. `CalculatePap
 `ConvertMeasurement` are mentioned nowhere, so nothing has to match them. **If your instructions name
 the tool, declare `name` explicitly** — you cannot match a string you have never seen.
 
-> 🔴 **GAP — the exact string the derived name produces.** No sample prints it, and the symbol page
-> `/documentation/foundationmodels/tool/name-6x7wj` was never fetched, so we cannot say whether the
-> default is the type name, a lowercased one, or a snake_cased one with a `Tool` suffix stripped.
-> One circumstantial data point, offered as a hint and **not** as evidence: Apple's first-party
-> `SpotlightSearchTool` presents to the model as **`spotlight_search`** (✅ the hiking-trails sample's
-> own instructions text, `Session.swift:43`) — which is consistent with a snake_case derivation and
-> equally consistent with a hand-declared name. Resolving this needs that symbol page, or a device
-> dump of `Transcript.ToolDefinition(tool:).name` for a tool that omits it.
+> ✅ **Probe-verified, 2026-07-31 — the derived name is the verbatim type name.** (was a 🔴 GAP;
+> `probes/` `fm.tool-derived-name`, run on both the macOS 26.5 host and the 27.0 sim runtime.) A
+> tool that omits `name` reports its **unmodified type name** — a probe tool type named
+> `FetchWeatherReportTool` yields `name == "FetchWeatherReportTool"` on the instance *and* in
+> `Transcript.ToolDefinition(tool:).name` — no lowercasing, no snake_casing, no `Tool`-suffix
+> stripping, identical on both runtimes. That settles the old circumstantial hint the other way
+> round: Apple's first-party `SpotlightSearchTool` presenting to the model as **`spotlight_search`**
+> (✅ the hiking-trails sample's own instructions text, `Session.swift:43`) must be a
+> **hand-declared** name, not a derivation.
 
 **`description`** is the *only* thing, besides the name and the parameter schema, that the model uses to
 decide whether to call this tool. It is prose, it is sent to the model on every request, and it costs
@@ -816,21 +821,20 @@ transcript is rendered to the model — belongs to
 > Documented as: *"If true, the model's name, description, and parameters schema will be injected into
 > the instructions of sessions that leverage this tool."*
 
-> 🔴 **GAP (narrowed further, 2026-07-29) — the default *value* and runtime effect of
-> `includesSchemaInInstructions`.** The interfaces settle the declaration side completely: it is a
-> `Bool` protocol requirement (`FoundationModels-27.0-macos.swiftinterface:2996`, unchanged from
+> 🔴 **GAP (default *value* now ✅ probe-verified; only the `false` semantics remain) — the runtime
+> effect of `includesSchemaInInstructions: false`.** The declaration side was already settled: it is
+> a `Bool` protocol requirement (`FoundationModels-27.0-macos.swiftinterface:2996`, unchanged from
 > 26.5) with a default implementation in the `Tool` extension (`:3007-3009`), which is why every
-> sample can omit it and compile. What **neither** the 26.5 nor the 27.0 interface reveals is the
-> default getter's return *value* — swiftinterface files do not emit non-inlinable bodies, and this
-> one is not `@inlinable` (checked 2026-07-29). So we still do not know (a) whether the default
-> returns `true`, or (b) what the model is told about the tool when the flag is `false` — whether
-> the tool becomes invisible or is advertised by name only. (c) `ContextOptions.includeSchemaInPrompt`
-> — a *separate* knob about the response schema — is now SDK-verified as a 27.0 `Bool?` on
-> `ContextOptions` (`:3068-3072`). None of the seven `Tool` conformances across Origami and Book
-> Tracker mentions the property, so even Apple's own code runs on whatever the default value is.
-> Resolving the remaining questions needs the symbol page for `Tool.includesSchemaInInstructions`
-> or a runtime probe (`print(MyTool().includesSchemaInInstructions)` — one line in a `#Playground`).
-> **Do not set it speculatively to save tokens.**
+> sample can omit it and compile. The default *value* is now measured: ✅ **Probe-verified,
+> 2026-07-31** (`probes/` `fm.tool-schema-flag-default`) — **the default returns `true`**, on both
+> the macOS 26.5 host and the 27.0 sim runtime. What remains open is (b) what the model is told
+> about the tool when the flag is `false` — whether the tool becomes invisible or is advertised by
+> name only. (c) `ContextOptions.includeSchemaInPrompt` — a *separate* knob about the response
+> schema — is SDK-verified as a 27.0 `Bool?` on `ContextOptions` (`:3068-3072`); see 17.1 §4.11 for
+> the probe-verified finding that its two spellings are one knob. None of the seven `Tool`
+> conformances across Origami and Book Tracker mentions the property, so Apple's own code runs on
+> the (now known) `true` default. **Do not set it to `false` speculatively to save tokens** — the
+> `false` semantics are still unmeasured.
 
 ---
 
@@ -1235,15 +1239,19 @@ the observed symptom is uglier:
 > tool array was not reaching the inference layer. Watch for the string **"Tool Choice requires tools"**
 > in the console; it means "required mode, empty toolset", regardless of what you thought you passed.
 
-> 🔴 **GAP — what Apple's framework does when `.required` meets an empty toolset.** We have a provider
-> implementation that throws `requiredToolsMissing`, and a beta bug report where the first-party path
-> emits `LanguageModelError` code `-1` with an internal `GuidedGenerationError` string. We do **not**
-> know the documented, non-buggy behaviour: whether a specific `LanguageModelError` case exists for it,
-> or whether the mode is simply ignored. **The 2026 sample projects do not resolve this** — no sample
-> sets `toolCallingMode`, and neither of the two shipped `LanguageModelError` switches (Origami's and
-> the hiking-trails app's `Error+DisplayMessage.swift`) carries a case that would plausibly cover it;
-> both end in `default: break`, so the type is non-frozen and the list is not exhaustive. Resolving
-> this needs the full `LanguageModelError` case list or a clean 27.0 GA device test.
+> ✅ **Probe-verified, 2026-07-31 — `.required` with an empty toolset throws, and it throws the
+> *generic* error.** (was a 🔴 GAP; `probes/` `fm.required-mode-no-tools`, run on the 27.0 sim
+> runtime.) The call does not hang and the mode is not ignored: `respond` throws an error whose
+> NSError **domain** is `FoundationModels.LanguageModelError` with **code `-1`** — exactly the
+> shape the forums thread above reported — and which carries wrapped underlying errors via
+> `NSMultipleUnderlyingErrorsKey`. Crucially, it does **NOT** cast to the Swift
+> `LanguageModelError` type (`casts=[]` in the probe output), so a
+> `catch let e as LanguageModelError` clause never sees it; only NSError-domain matching does.
+> The beta "bug report" behaviour is therefore the actual behaviour on this runtime — there is no
+> dedicated error case. See 17.3 §6.3, where this confirms the "one value, two checks" concern for
+> this failure mode. The forums thread's *other* anomaly (the tool array not reaching inference
+> even when non-empty) remains a separate open question; the probe passed a genuinely empty
+> toolset.
 
 ---
 
@@ -2052,8 +2060,8 @@ because getting it wrong costs you nothing at compile time and everything at run
 >
 > So `BarcodeReaderTool()` in the sample above is the all-defaults call, and both members that §2 calls
 > the model-facing contract are overridable at the call site. If your instructions name the tool by a
-> string, pass that string as `name:` rather than guessing at the derived default (§4.2, and the 🔴 GAP
-> at §2 about what the derived name looks like).
+> string, pass that string as `name:` rather than relying on the derived default (§4.2 — and note the
+> derived default is now probe-verified in §2 as the verbatim type name).
 
 > ✅ **VERIFIED — availability: iOS / iPadOS / macOS / visionOS 27.0+.**
 >
@@ -2339,12 +2347,12 @@ before you write a single test. See
 |---|---|---|
 | `protocol Tool<Arguments, Output> : Sendable` | 26.0 · watchOS 27.0 | ✅ docs |
 | `Tool.call(arguments:)` — `@concurrent … async throws -> Output` | 26.0 | ✅ docs |
-| `Tool.name` — **optional**; `let`, computed `var`, or omitted | 26.0 | ✅ Apple sample code · the derived string itself 🔴 GAP |
+| `Tool.name` — **optional**; `let`, computed `var`, or omitted | 26.0 | ✅ Apple sample code · derived string ✅ probe-verified 2026-07-31: verbatim type name (§2) |
 | `Tool.description` — the only genuinely required member besides `call` | 26.0 | ✅ docs + Apple sample code |
 | `Tool.Output` associated type (`typealias Output = String`) | 26.0 | ✅ Apple sample code · non-`String` output 🔴 GAP |
 | `Tool.Arguments` via `typealias` to an out-of-line `@Generable` type | 26.0 | ✅ Apple sample code |
 | `Tool.parameters: GenerationSchema` | 26.0 | ✅ docs + compiled source |
-| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:2996, :3007-3009`) · default *value*/semantics 🔴 GAP |
+| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:2996, :3007-3009`) · default value ✅ probe-verified 2026-07-31: `true` (§4.4) · `false` semantics 🔴 GAP |
 | `Tool.SessionProperty` | **27.0** | ✅ docs |
 | `LanguageModelSession(tools:instructions:)` | 26.0 | ✅ docs |
 | `LanguageModelSession.ToolCallError` (`.tool`, `.underlyingError`) | 26.0 · **no watchOS** | ✅ docs |

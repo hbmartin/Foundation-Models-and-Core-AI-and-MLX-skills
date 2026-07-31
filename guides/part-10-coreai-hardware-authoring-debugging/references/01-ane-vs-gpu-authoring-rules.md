@@ -1925,15 +1925,18 @@ and the base invocation (✅ **VERIFIED** — `working-with-coreai/SKILL.md:99`)
 xcrun coreai-build compile model.aimodel --platform iOS
 ```
 
-> 🔴 **GAP — `coreai-build`'s residency report.**
+> 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.**
 > Apple's skill says *"compile and check residency"* but **no source in this corpus shows what the
-> residency output looks like** — not the flag that produces it, not the format, not whether it is
-> per-op or per-segment. The two `coreai-build` invocations above are the only ones attested
-> anywhere: `--platform` and `--preferred-compute`. Session 325 does not cover `coreai-build` at
-> all. **What would resolve it:** `xcrun coreai-build compile --help` — ⚠️ currently impossible:
-> checked 2026-07-29, the `coreai-build` wrapper is **absent from the Xcode 27.0 beta toolchain**
-> (27A5228h; only the underlying `usr/bin/aimodelc` stub ships, with no `--help`) — or the Apple
-> doc page *"Compiling Core AI models ahead of time"* at
+> residency output looks like on a real asset** — not the format, not whether it is per-op or
+> per-segment. Session 325 does not cover `coreai-build` at all. The `--help` run this box used to
+> ask for has now happened: the wrapper turned out to ship in the optional **Metal Toolchain
+> component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app — which is what
+> the 2026-07-29 "absent from the beta toolchain" check was actually seeing — and the full surface
+> is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The residency-shaped
+> surface it reveals: **`coreai-build inspect --compute`** (*"Show compute types"*, off by
+> default) and `inspect --ops` (operation distribution), with `--json` output. **What would still
+> resolve it:** that inspect output captured on a real compiled asset, or the Apple doc page
+> *"Compiling Core AI models ahead of time"* at
 > `developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time`.
 > **Safe default meanwhile:** use the **Core AI Debugger** instead. It is a standalone app
 > (`developer.apple.com/core-ai-debugger/`) that, per session 325, *"executes your model on specific
@@ -1942,7 +1945,9 @@ xcrun coreai-build compile model.aimodel --platform iOS
 > graph. Failing that, `coreai_torch.debugging.benchmarker.benchmark_coreai_program` gives per-module
 > timings, and a segmentation point shows up as an implausibly expensive layer.
 
-**The `--preferred-compute` default is `none`.** This is corroborated **community-measured**
+**The `--preferred-compute` default is `none`.** Now ✅ **tool-verified** (2026-07-31,
+`coreai-build compile --help`, `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`): values
+`{gpu, neural-engine, none}`, default `none`. The community report had it right
 (`john-rocky/coreai-model-zoo`, `knowledge/compute-units-and-authoring.md:115-127`): AOT
 `--preferred-compute` *"defaults to `none`(compiler decides), and a 'compiles but runs on CPU' case
 needs an explicit `--preferred-compute neural-engine`."* Apple's own `common_issues.md:109-112`
@@ -3696,7 +3701,7 @@ preference policy[^sample-routing-policy]) ·
 | Gap | What is unknown | What would resolve it | Safe default |
 | --- | --- | --- | --- |
 | Core AI sample code | There is none | An Apple sample under `/documentation/coreai` | Use `apple/coreai-models` as the sample |
-| `coreai-build` residency output | The flag, the format, whether it is per-op — and the wrapper is absent from the Xcode 27.0 beta toolchain (checked 2026-07-29; §4) | A seed shipping `coreai-build`, then `compile --help`; the AOT-compilation doc page | Use the Core AI Debugger, or `benchmark_coreai_program` per-module timings |
+| `coreai-build` residency output | The output format, whether it is per-op — **narrowed 2026-07-31**: the wrapper ships in the Metal Toolchain component (not Xcode-beta.app; the 2026-07-29 "absent" check hit a bare install), and its captured `--help` names the likely surface, `inspect --compute` / `--ops` / `--json` (§4; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) | That inspect output on a real compiled asset; the AOT-compilation doc page | Use the Core AI Debugger, or `benchmark_coreai_program` per-module timings |
 | `HardwareConstraints` / `AllocationType` | Full signature; `interleave` vs `alignments` semantics; the enum cases | The `coreai` Python API reference | Do not hand-author them; go through `coreai_models.export.ios` |
 | `LegalizeToCoreOptions` | Whether it exists at all | The `coreai` Python API reference | Use `state_names=` as `export/macos.py` does |
 | ~~`SpecializationOptions` on iOS~~ | **CLOSED 2026-07-29** — the captured beta Swift interface declares it `iOS 27.0`-available (§8.1) | — | Still use `.default` per Apple's guidance; function-name policy remains specific to `coreai-models.PreparedModel`[^sample-routing-policy] |

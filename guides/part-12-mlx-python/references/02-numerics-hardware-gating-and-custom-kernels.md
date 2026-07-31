@@ -97,8 +97,9 @@ is `973e27f`. That has two consequences you must hold onto:
 > To resolve: `git -C <mlx-repo> fetch --unshallow` and re-run.
 > Source: `notes/repos/mlx-tensorops-kernels.md` §13.
 
-> ⚠️ **The NAX path is new and actively being fixed.** Four NAX correctness pull requests were open
-> or newly merged in the three days before **2026-07-27**: **#3912** (fp quantized matmul corruption
+> ⚠️ **The NAX path is new and actively being fixed.** Four NAX correctness pull requests opened in
+> the three days before **2026-07-27** — and #3912/#3922/#3924 were **all still open, unmerged, on
+> a 2026-07-31 `gh` re-check**: **#3912** (fp quantized matmul corruption
 > when the quantized dim is not a multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary
 > handling), **#3924** (a tile-shape `static_assert` for `tile_matmad_nax` — added because the
 > function has **no `else` branch**, so odd tile shapes compile to *nothing* and the GEMM produces

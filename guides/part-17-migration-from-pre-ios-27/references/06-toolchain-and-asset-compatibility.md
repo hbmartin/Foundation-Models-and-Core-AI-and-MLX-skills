@@ -94,8 +94,10 @@ What follows:
 - A shell, and the ability to run `find` and `python3 -c` over the tree where your `.aimodel`
   bundles live. §3's audit is four lines and you should run it before you read §4.
 - **Xcode 27** plus the **Metal Toolchain** component if you AOT-compile. `xcrun coreai-build` is a
-  macOS 27 host tool — and note that in the Xcode 27.0 beta we checked on 2026-07-29 the binary
-  that actually ships is spelled **`aimodelc`**, with `coreai-build` absent; see §7.
+  macOS 27 host tool — and the component is not optional decoration: `coreai-build` **lives in the
+  Metal Toolchain**, not in Xcode-beta.app (resolved 2026-07-31 — the app bundle carries only the
+  `aimodelc` stub, which is why our 2026-07-29 check of a bare install found `coreai-build`
+  absent); see §7.
 - For the §3 recovery: the ability to create **two** isolated Python virtual environments with
   *different* `coreai-core` wheel generations in them. This is not optional; §3.6 explains why.
 - A **real device** for anything in §5, §6 or §7. Specialization is per-hardware and per-OS. A
@@ -1970,24 +1972,28 @@ So you will be running `coreai-build compile`. Which brings us to the trap.
 > where `<arch>` is the device architecture identifier returned by `deviceArchitectureName` at
 > runtime."*
 >
-> 🔴 **GAP — the full flag list is not Apple-published.** Apple's prose names `--platform`,
-> `--min-deployment-version`, `--output` and `--preferred-compute`, and *alludes* to an
-> architecture-selection flag without naming it. `--architecture` and `--expect-frequent-reshapes`
-> come from community `--help` captures. **What would resolve it:** `xcrun coreai-build compile
-> --help` on a machine with Xcode 27 + Metal Toolchain, pasted verbatim.
+> ✅ **GAP — RESOLVED 2026-07-31 — the full flag list, captured first-hand.** `xcrun coreai-build
+> compile --help` has now been run on this machine and pasted verbatim into
+> **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`** (`coreai-build 3600.79.1`). The
+> community synopsis above is confirmed flag-for-flag — `--architecture` (repeatable) and
+> `--expect-frequent-reshapes` are real, `--preferred-compute` takes `{gpu, neural-engine, none}`
+> (default `none`), `--platform` defaults to macOS — and the subcommand list is `compile` |
+> `package` | **`inspect`** (flags `--io/--metadata/--storage/--compute/--ops/--json`) | a
+> previously-unknown **`metadata`** (edits author/license/description/argument descriptions).
 >
-> ⚠️ **And the tool itself has moved under our feet — checked directly 2026-07-29.** On this
-> machine, the Xcode 27.0 beta (`27A5228h`) contains **no `coreai-build` binary anywhere in the
-> app bundle**, and `xcrun coreai-build` fails with *"unable to find utility"*. What ships instead
-> is **`aimodelc`** at `Contents/Developer/usr/bin/aimodelc` (`xcrun aimodelc` resolves), which
-> demands a command type of **`package` or `compile`** — the same two verbs the community
-> `coreai-build` capture documents — and requires `--output`. The binary embeds the diagnostic
-> *"note: Please use 'xcrun coreai-build' instead."*, i.e. the shipped tool defers to a spelling
-> that does not ship in this beta. The community `--help` capture above was taken 2026-06-10 on an
-> earlier toolchain (`27A5194q`-era), where `coreai-build` evidently existed. Treat the CLI name as
-> **in flux across betas**: scripts should try `xcrun coreai-build` and fall back to
-> `xcrun aimodelc`, and this is one more reason §10's provenance record should capture the exact
-> tool path and version string, not just "compiled with Xcode 27".
+> ✅ **And the "tool moved under our feet" mystery is solved — 2026-07-31.** The 2026-07-29
+> observation was accurate but incomplete: the Xcode 27.0 beta (`27A5228h`) contains **no
+> `coreai-build` binary anywhere in the app bundle** — because **`coreai-build` ships in the
+> optional Metal Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), mounted
+> under `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/`.
+> What the app bundle ships is **`aimodelc`** at `Contents/Developer/usr/bin/aimodelc`, which
+> demands a command type of **`package` or `compile`** and requires `--output`; its embedded
+> diagnostic *"note: Please use 'xcrun coreai-build' instead."* defers to the tool in the *other,
+> optional component* — not to a tool missing from the product. With the component installed,
+> `xcrun --no-cache --find coreai-build` resolves it (plain `xcrun --find` can fail from a stale
+> cache). Practical consequences: **CI must run the `-downloadComponent MetalToolchain` step** or
+> it reproduces the "absent" state, and §10's provenance record should capture the exact tool path
+> and version string, not just "compiled with Xcode 27".
 
 ### ⚠️ The silent failure
 
@@ -3217,7 +3223,8 @@ If more than one thing applies, this is the order that minimises wasted work:
 | `bookmarkData` / `init?(resolvingBookmark:)` / `deleteEntry(referencedBy:)` verbatim (§6) | Same interface `:14-20, 41` |
 | `import CoreAI` is an umbrella: `CoreAI` → `@_exported CoreAIDelegates` → `@_exported` Asset/Common/Compiler/Runtime, all `-public-module-name CoreAI`; `CoreAICache`/`CoreAICommon`/`CoreAICompiler` have empty public surfaces | `CoreAI-27.0-macos.swiftinterface:5`; `CoreAIDelegates-27.0:5-8`; the three stub interfaces |
 | No public error type in `CoreAIRuntime`; `CoreAIAsset.AssetError` is the only public Core AI error (relevant to §3/§7 triage — see [17.5 §5.2](05-coreml-to-coreai.md)) | `CoreAIRuntime-27.0-macos.swiftinterface` (grep), `CoreAIAsset-27.0:229-247` |
-| `coreai-build` **absent** from the Xcode 27.0 beta; `aimodelc` present (`package`\|`compile`, `--output` required), embedding *"Please use 'xcrun coreai-build' instead"*; `xcrun coreai-build` fails to resolve (§7) | Run directly on this machine, 2026-07-29 |
+| `coreai-build` **absent** from the bare Xcode 27.0 beta app bundle; `aimodelc` present (`package`\|`compile`, `--output` required), embedding *"Please use 'xcrun coreai-build' instead"*; `xcrun coreai-build` fails to resolve (§7) | Run directly on this machine, 2026-07-29 |
+| `coreai-build 3600.79.1` **found in the Metal Toolchain component**; full `--help` for `compile`/`package`/`inspect`/`metadata` captured; `--preferred-compute {gpu, neural-engine, none}`; 24 `--architecture` codes enumerated by validation probing (§7) | `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, run 2026-07-31 |
 
 | Claim | Source |
 |---|---|
@@ -3265,11 +3272,12 @@ engineer, measured on **one M4 Max and one iPhone 17 Pro**, on **beta** software
 5. **Whether specialization is cancellable** (§5). Resolved by a device test.
 6. **Whether the pre-export PT2E quantisation path swallows failures** the way the post-MLIR path does
    (§8). Resolved by reading `export/pipeline.py` and `export/compression.py` end to end.
-7. **`coreai-build compile --help`'s full flag list** (§7) — Apple's prose names four flags and
-   alludes to a fifth. Resolved by pasting a real `--help`. *(Checked 2026-07-29: the Xcode 27.0
-   beta `27A5228h` ships no `coreai-build` at all — the binary is `aimodelc`, whose `--help` emits
-   only command-type/`--output` demands rather than a flag listing, and which embeds "Please use
-   'xcrun coreai-build' instead". The gap now includes which spelling survives to release.)*
+7. ~~**`coreai-build compile --help`'s full flag list** (§7)~~ **CLOSED 2026-07-31** — a real
+   `--help` is pasted in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The 2026-07-29
+   confusion (beta `27A5228h` ships no `coreai-build`; `aimodelc` embeds "Please use 'xcrun
+   coreai-build' instead") resolved: the tool lives in the **optional Metal Toolchain component**,
+   not the app bundle. Both spellings coexist by design — `coreai-build` is the developer CLI,
+   `aimodelc` the Xcode-internal stub.
 8. **Whether Python's `AIModelAssetMetadata` exposes creator-defined keys** (§10). Resolved by
    `help()` in an environment with the wheel.
 9. **`AIProgram._load_bytecode` / `AIModelAsset.load`** are private/undocumented (§3.7) and may move.

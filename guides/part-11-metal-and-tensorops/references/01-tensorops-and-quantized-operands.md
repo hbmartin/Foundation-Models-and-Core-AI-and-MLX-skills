@@ -176,6 +176,20 @@ The headers sit under `…/Metal.xctoolchain/usr/metal/<ver>/lib/clang/<ver>/inc
 > ⚠️ **The cryptex path contains a build-specific token** (`MetalToolchain-v17.6.109.0.iAeIa2`).
 > It **will** differ on your machine. Resolve it with `xcrun`; never paste it into a script.
 
+> ✅ **27-ERA TOOLCHAIN DELTA (2026-07-31)** — the Metal Toolchain component for Xcode 27.0 beta
+> (27A5228h; component build 27A5228f, `Apple metal version 32023.921`) was installed and probed
+> for this guide. Two changes of note. First, the mount moved: `xcrun -sdk macosx --find metal` now
+> resolves under `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/…`
+> rather than a `com.apple.security.cryptexd` path — the never-hardcode rule above pays for itself.
+> Second, the language headers grow: the include tree is now 71 files, `metal_tensor` 2,204 →
+> **6,264** lines (the templated `slice` overloads move to `:4875-5001`), `metal_packed_numeric`
+> 119 → **314**, and `metal_tensor:325-379` gains the multiplane machinery — `tensor_plane_scales`
+> and `tensor_blockwise<PlaneTag, ElementType, BlockSizes...>`, all inside
+> `#if defined(__HAVE_TENSOR_MULTIPLANE__)`. §2.2 and §5.4 carry this toolchain's compile-probe
+> results. One installation trap: the first `xcrun … metal` after installing the component can
+> still fail with *"cannot execute tool 'metal' due to missing Metal Toolchain"* from a stale xcrun
+> cache — run it once with `xcrun --no-cache` and the cache refreshes.
+
 **3. MLX's shipping kernels**, in `ml-explore/mlx` — a real, compiling, in-production call site
 written by Apple against the same headers. When a header says something is possible and MLX does it,
 that is as close to proof as static analysis gets.
@@ -287,9 +301,15 @@ There is a matching community claim worth recording rather than repeating:
 > for that snapshot; do not use it to deny Xcode 27's documented host-side multiplane API.
 > **Update (2026-07-29): both spellings are confirmed** — the macOS 27.0 beta SDK's
 > `MPPTensorOpsTraits.h:135-187` and `MPPTensorOpsMatMul2dImpl.h:6241-6316` use exactly
-> `metal::tensor_blockwise` and `__HAVE_TENSOR_MULTIPLANE__` (✅ block above). Which `-std=metal`
-> level defines the macro remains untested here (the Metal Toolchain component was not installed on
-> the checking machine), so the "= 4.1" half of the claim stays community-attributed.
+> `metal::tensor_blockwise` and `__HAVE_TENSOR_MULTIPLANE__` (✅ block above).
+> ✅ **Toolchain-verified, 2026-07-31** (Metal compiler from Xcode 27.0 beta 27A5228h,
+> `metal 32023.921`): the "= 4.1" half is now measured fact — `__HAVE_TENSOR_MULTIPLANE__` is
+> defined at `-std=metal4.1` only, `__HAVE_TENSOR__` at `metal4.0` and `metal4.1` (probe table in
+> §2.2), and a `matmul2d` whose right operand is a
+> `tensor_blockwise<tensor_plane_scales, device metal_fp8_ue8m0_format, 32, 1>`-tagged
+> `metal_fp8_e4m3_format` tensor (right-transposed, per the asserts above) **compiles to AIR at
+> `-std=metal4.1`** and fails at `metal4.0` with `use of undeclared identifier
+> 'tensor_plane_scales'` — the scale-plane types themselves are 4.1-gated.
 > Same author's conclusion after building it: *"you can get block-32 scaling at Metal 4.0 by staging
 > the dequant in threadgroup memory"* — which is this guide's thesis, arrived at independently.
 > Attribute as **community-measured**, not Apple.
@@ -554,19 +574,60 @@ The related feature macros, all verified present in the headers:
 | `__HAVE_PACKED_NUMERIC_TYPE__` | `packed_numeric_type<Format, N>` (`metal_packed_numeric:38`) |
 | `__HAVE_EXECUTION_UNIT__` | the execution-scope types (`__exec/units.h:9`) |
 
-> 🔴 **GAP — which `-std=metal` version and which target define these.** Not determined. The
-> practical proxy: MLX requires `MLX_METAL_VERSION >= 400`, i.e. **Metal 4**, plus deployment target
-> ≥ 26.2. **What would resolve it:** compiling a one-line probe kernel with
-> `#if !defined(__HAVE_TENSOR__) #error … #endif` at each `-std=metal` level.
-> **Safe default:** target Metal 4 and deployment 26.3+, and add the probe to your build:
+> ✅ **Toolchain-verified, 2026-07-31** — Metal compiler from Xcode 27.0 beta (27A5228h), Metal
+> Toolchain component 27A5228f, `Apple metal version 32023.921`. An `#error` probe compiled after
+> `#include <metal_stdlib>` at every modern `-std` level the driver accepts (`-std=bogus` makes it
+> enumerate them: `ios-`/`macos-metal1.0`–`2.4`, then unified `metal3.0`, `metal3.1`, `metal3.2`,
+> `metal4.0`, `metal4.1`) answers both halves of the question:
+>
+> | `-std=` | `__HAVE_TENSOR__` | `__HAVE_TENSOR_MULTIPLANE__` |
+> |---|---|---|
+> | `metal3.0` / `metal3.1` / `metal3.2` | undefined | undefined |
+> | `metal4.0` | **defined** | undefined |
+> | `metal4.1` | **defined** | **defined** |
+>
+> The defining site is the **language version alone**. The toolchain's `metal_config` carries one
+> feature block per version, compared with `==` — each block enumerates its full feature set:
+>
+> ```cpp
+> #if __METAL_VERSION__ == 400        // metal_config:1669 (metal 32023.921)
+> #define __HAVE_TENSOR__ 1           // :1839
+> #define __HAVE_TENSOR_VECTOR_ACCESSOR__ 1
+> // …
+> #if __METAL_VERSION__ == 410        // metal_config:1880
+> #define __HAVE_TENSOR__ 1           // :2063
+> #define __HAVE_TENSOR_GET_STRIDE_BYTES__ 1
+> #define __HAVE_TENSOR_MULTIPLANE__ 1
+> #define __HAVE_TENSOR_VECTOR_ACCESSOR__ 1
+> ```
+>
+> The same two blocks split the rest of the table above: `metal4.0` defines
+> `__HAVE_INT4B_FORMAT_TYPE__`, `__HAVE_PACKED_NUMERIC__` / `__HAVE_PACKED_NUMERIC_TYPE__` and
+> `__HAVE_EXECUTION_UNIT__`; `metal4.1` adds `__HAVE_INT2B_FORMAT_TYPE__`,
+> `__HAVE_INT8B_FORMAT_TYPE__`, all four `__HAVE_METAL_FP4_E2M1` / `FP8_E4M3` / `FP8_E5M2` /
+> `FP8_UE8M0` `_FORMAT_TYPE__` macros, and `__HAVE_PACKED_NUMERIC_TYPE_PACK_UNPACK__`
+> (`metal_config:1930-1984`; every macro named here was also confirmed by an `#error` probe at both
+> levels, not just read from the header).
+>
+> **The deployment target plays no part in the macros.** The probe results are identical with
+> `-mmacosx-version-min=15.0`, `26.0` and `27.0` — min-OS feeds
+> `__ENVIRONMENT_OS_VERSION_MIN_REQUIRED__`, which §1.2's availability macros use to *select ABI
+> entry points*, never to hide the API. And the failure mode is exactly as described above: a
+> minimal `matmul2d` kernel (Apple's first worked example, corrected per §0.3) compiles cleanly at
+> `-std=metal4.0` and `metal4.1`, while at `-std=metal3.2` the first diagnostic is
+> `error: expected namespace name` on `using namespace mpp;` — the header expanded to nothing.
+>
+> The `#error` probe is still worth keeping in your build, with the message now exact:
 >
 > ```cpp
 > #if !defined(__HAVE_TENSOR__)
-> #  error "TensorOps unavailable: raise -std=metal to metal4.0+ and MTL deployment target to 26.2+"
+> #  error "TensorOps unavailable: compile with -std=metal4.0 or metal4.1"
 > #endif
 > ```
 >
-> Twelve characters of `#error` will save you an afternoon.
+> Twelve characters of `#error` will save you an afternoon. (MLX's practical proxy —
+> `MLX_METAL_VERSION >= 400` plus deployment ≥ 26.2 — agrees with the measurement; the deployment
+> half of its condition governs the runtime ABI, §1.2, not compilation.)
 
 ### 2.3 `MTLTensor` is not `metal::tensor`
 
@@ -1353,14 +1414,26 @@ overload:
 | `B.static_slice<32, dynamic_extent>(tgid.x*32, 0)` | `B.slice<32, dynamic_extent>(tgid.x*32, 0)` |
 | `C.static_slice<32, 64>(tgid.x*32, tgid.y*64)` | `C.slice<32, 64>(tgid.x*32, tgid.y*64)` |
 
-> 🔴 **GAP.** `static_slice` may exist in a newer Metal toolchain than the one shipped with Xcode
-> 26.6 — a rename in either direction is plausible. We can only say it is absent from
-> `v17.6.109.0` / `metal 32023.883`. **What would resolve it:** the same grep on a 27-era toolchain.
-> Partial 27 check (2026-07-29): the macOS 27.0 beta SDK's `MPPTensorOpsMatMul2d.h` still spells
-> `static_slice` only inside `//` comments (`:165-167`, `:205-216`); the 27-era Metal Toolchain
-> component was not installed on the checking machine, so the language-header grep is still pending.
-> **Safe default:** write `slice<Extents...>(indices...)`. It compiles today, has the same
-> semantics, and if Apple later adds `static_slice` as an alias your code keeps working.
+> ✅ **Toolchain-verified, 2026-07-31 — `static_slice` does not exist in the 27-era toolchain
+> either.** Metal compiler from Xcode 27.0 beta (27A5228h), Metal Toolchain component 27A5228f,
+> `Apple metal version 32023.921`: `grep -rn "static_slice"` over its language-header tree
+> (`…/Metal.xctoolchain/usr/metal/32023/lib/clang/32023/include/metal/`, all 71 files) returns
+> **zero hits**, and compiling Apple's interior-tile example verbatim fails at both `-std=metal4.0`
+> and `-std=metal4.1` with
+>
+> ```
+> error: no member named 'static_slice' in 'metal::tensor<device half,
+>        metal::extents<int, 18446744073709551615, 18446744073709551615>>'
+> ```
+>
+> while the same kernel spelled `slice<dynamic_extent, 64>` / `slice<32, dynamic_extent>` /
+> `slice<32, 64>` compiles cleanly at `-std=metal4.0`. The templated overloads (now at
+> `metal_tensor:4875-5001` in this toolchain) are SFINAE-constrained exactly as declared above — a
+> wrong-arity call such as `slice<64>(0)` on a rank-2 tensor is rejected with `no matching member
+> function for call to 'slice'`. The macOS 27.0 beta SDK's `MPPTensorOpsMatMul2d.h` still spells
+> `static_slice` only inside `//` comments (`:165-167`, `:205-216`) — eight occurrences, none
+> compiled. **Write `slice<Extents...>(indices...)`:** it compiles, has the semantics the comments
+> describe, and if Apple ever adds `static_slice` as an alias your code keeps working.
 
 ### 5.5 Why bother with compile-time extents
 
@@ -1664,7 +1737,8 @@ And then the "check shown below" is spelled **`cT.get_mask(i)`** — twice, at `
 > ✅ **VERIFIED (negative result)** — `grep -rn "get_mask"` over the entire Metal toolchain include
 > directory returns **zero hits**. It is not a member of `cooperative_tensor`, it is not in the
 > Layout concept, it is not anywhere. The only occurrences on this machine are those two Apple
-> comments.
+> comments. (Re-checked 2026-07-31 against the 27-era toolchain shipped for Xcode 27.0 beta
+> 27A5228h, `metal 32023.921`: still zero hits across all 71 language headers.)
 
 **The real name is `is_valid_element`,** and there are three overloads on the cooperative tensor
 plus one on the iterator:

@@ -1697,9 +1697,13 @@ discovered what happens if you get it wrong.
 > but a `.swiftinterface` prints neither a stored property's default value nor which members feed
 > the synthesised `Hashable`, so unknowns 1 and 3 survive the dump.
 > **What would still resolve them:** printing `SpecializationOptions.default.expectFrequentReshapes`
-> on device; a run of `coreai-build compile --help` (⚠️ not currently possible — the tool is absent
-> from the Xcode 27.0 beta toolchain, see §13); and a controlled device A/B of first-load time
+> on device; and a controlled device A/B of first-load time
 > with the flag on and off, on both a static-shape and a dynamic-shape asset, on a non-beta OS.
+> (`coreai-build compile --help` has now been run — 2026-07-31, via the Metal Toolchain component,
+> see §13 — and confirms the compile-side flag spelling `--expect-frequent-reshapes`, *"Hint that
+> inference will be run with frequently changing input shapes."*, but says nothing about the
+> load-time default or the `Hashable` question:
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`.)
 >
 > **Safe default meanwhile:**
 > - **Do not set it** for static-shape graphs. Apple doesn't, and the one person who tried it
@@ -1838,59 +1842,49 @@ And then Apple stops, with a pointer rather than a list:
 
 Which tells you there is at least an architecture-selection flag Apple declines to name in prose.
 
-### 🔴 GAP — the CLI surface
+### ✅ The CLI surface — gap resolved 2026-07-31
 
-> 🔴 **GAP — nobody in this corpus has run `xcrun coreai-build compile --help`, and as of
-> 2026-07-29 nobody *can* on the current beta: `coreai-build` is not in the Xcode 27.0 beta
-> toolchain.**
+> ✅ **GAP — RESOLVED 2026-07-31.** `xcrun coreai-build --help` and every subcommand's `--help`
+> have now been run on this machine and captured verbatim in
+> **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`**. The resolution of the 2026-07-29
+> mystery: **`coreai-build` ships in the optional Metal Toolchain component**
+> (`xcodebuild -downloadComponent MetalToolchain`), **not in Xcode-beta.app itself**. With the
+> component installed, `xcrun --no-cache --find coreai-build` resolves to
+> `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/coreai-build`,
+> version **3600.79.1** — the same version number as the CoreAI framework's
+> `-user-module-version`. (Plain `xcrun --find` can still fail from a stale cache; `--no-cache`
+> is the reliable spelling.)
 >
-> ⚠️ **Availability, checked 2026-07-29 against Xcode 27.0 beta (27A5228h):**
-> - `xcrun --find coreai-build` **fails**, and an exhaustive `find` of `Xcode-beta.app` turns up
->   **no file named `coreai*` at all** — the wrapper Apple's article documents is **not present in
->   this beta**.
-> - The underlying compiler **is** present:
->   `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc` (project stamp `IDEMLKit-25131.2`,
->   linking `IDEMLCompilerCore.framework`). Run bare, it errors *"Command type 'package' or
->   'compile' must be specified"*; `compile` then demands `--output <output_file_path>`; it
->   implements **no `--help`**. Its own binary contains the notes *"'aimodelc' is a tool used by
->   the Xcode compiler."* and *"Please use 'xcrun coreai-build' instead."* — Apple's stub itself
->   names `coreai-build` as the intended entry point, which this beta then does not ship.
+> **The history, kept because the distribution split is reader-critical:** checked 2026-07-29
+> against a bare Xcode 27.0 beta install (27A5228h), `xcrun --find coreai-build` **failed**, and
+> an exhaustive `find` of `Xcode-beta.app` turned up **no file named `coreai*` at all** — the
+> wrapper is genuinely absent from the app bundle. What the bundle ships is
+> `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc` (project stamp `IDEMLKit-25131.2`,
+> linking `IDEMLCompilerCore.framework`; command types `package`/`compile` only, no `--help`),
+> whose binary embeds *"'aimodelc' is a tool used by the Xcode compiler."* and *"Please use
+> 'xcrun coreai-build' instead."* — a stub pointing at a tool that lives in a **different,
+> optional component**. A build machine that installs only Xcode will not have `coreai-build`;
+> add the `-downloadComponent MetalToolchain` step (§13's one-time setup) before the compile step.
 >
-> So: the Xcode build phase can compile `.aimodel` files (via `aimodelc`), but the documented
-> developer-facing CLI is missing from this beta. This is a statement about beta 27A5228h, not
-> about the tool's existence — Apple's AOT article, its agent skills, its own `aimodelc` stub and
-> community reports all attest `coreai-build`. Expect it in a later seed or the GM. The flag
-> surface below is retained on that basis. (The `aimodelc` findings also corroborate two community
-> claims: the binary's path, and a `package` subcommand — while `inspect` is *not* among
-> `aimodelc`'s command types.)
+> **The captured surface (✅ verified 2026-07-31, `coreai-build 3600.79.1`):**
+> - Subcommands: **`compile` | `package` | `inspect` | `metadata`** — `inspect` exists after all
+>   (flags `--io`/`--metadata`/`--storage`/`--compute`/`--ops`/`--json`, the first two on by
+>   default), and **`metadata`** (set author/license/description/per-argument descriptions, or a
+>   whole-file `--json` update) was previously unknown anywhere in the corpus.
+> - `compile`: `<input>` positional; `--output` (defaults to the current directory);
+>   `--platform {iOS, macOS, watchOS, visionOS, tvOS}` (default **macOS**);
+>   `--min-deployment-version` (default **27.0**); `--preferred-compute {gpu, neural-engine,
+>   none}` (default **none**) — the long-sought value list, hyphenated exactly as the community
+>   reported; `--architecture` (repeatable — *"If omitted compiles for all supported
+>   architectures"*); and `--expect-frequent-reshapes`.
 >
-> **What is verified:** the six tokens in the table above, from Apple's article. That is all.
+> The community synopsis (`john-rocky`, 2026-06-10) is thereby confirmed token-for-token, as are
+> both community claims this guide had flagged: the `none` default and the extra subcommands.
 >
-> **What is reported by community sources and must NOT be treated as Apple-official:** a captured
-> `--help` synopsis (`john-rocky`, dated 2026-06-10, single-author community material) reading:
-> ```
-> coreai-build compile <input.aimodel> [--output <dir>] [--platform iOS|macOS|watchOS|visionOS|tvOS ...]
->     [--min-deployment-version 27.0] [--preferred-compute gpu|neural-engine|none]
->     [--architecture <arch> ...] [--expect-frequent-reshapes]
-> ```
-> Two further community claims: `--preferred-compute` **defaults to `none`** (the compiler decides),
-> and there are additional subcommands — **`coreai-build inspect`** and **`coreai-build package`** —
-> the first of which also appears in an Apple-repo issue thread. Apple's documentation names
-> **neither**.
->
-> **What is unknown:** the complete flag list; the accepted values of `--preferred-compute` and how
-> they map onto `ComputeUnitKind` (`neural-engine` with a hyphen versus `.neuralEngine`?); any
-> published enumeration of architecture codes; whether `--architecture` can be repeated (the
-> community synopsis shows `...`, implying yes); whether subcommands beyond `compile` and `inspect`
-> exist and are supported.
->
-> **What would resolve it:** one person with Xcode 27 and the Metal Toolchain running
-> `xcrun coreai-build --help` and `xcrun coreai-build compile --help` and pasting the output.
->
-> **Safe default meanwhile:** build your compile step out of **only the six Apple-documented
-> tokens**, and treat everything else as an experiment you must verify by loading the artifact on a
-> real device. In particular, do not put `--architecture` in a CI script you cannot test — see the
-> silent failure below.
+> **Still unresolved:** how `--preferred-compute`'s values map onto `ComputeUnitKind` semantics at
+> runtime, and what the flags *do* on device — the help text names them, nothing more. And the
+> silent failure below is unchanged: a green compile still proves nothing about the architecture
+> choice, so keep validating by loading the artifact on a real device.
 
 ### What it emits
 
@@ -2003,15 +1997,26 @@ This is the AOT footgun, and it is exactly the shape this series exists to docum
 > 4. **Add a device smoke test that loads each shipped variant on real hardware.** A compile is not
 >    a test.
 
-> 🔴 **GAP — the set of architecture codes.**
-> There is **no published enumeration** of `deviceArchitectureName` values anywhere in Apple's
-> documentation. Community reports name a handful — `h18p`, `h16g`, `h16s`, `h16c`, `h17p`, and a
-> claimed fan-out of *"20 per-arch `.aimodelc`"* for `--platform macOS` (`h13c…h17s`) and *"8"* for
-> `--platform iOS` (`h13g h14g h15g h16g h16p h17g h17p h18p`) — all from a single community source,
-> dated 2026-06-10, on beta software. **Do not build a lookup table from these.**
-> **What would resolve it:** Apple documenting the codes, or `coreai-build compile --help` listing
-> them.
-> **Safe default meanwhile:** read the code at runtime with `AIModel.deviceArchitectureName`, ship
+> ✅ **GAP — RESOLVED 2026-07-31 — the set of architecture codes, enumerated by probing.**
+> Apple still publishes no enumeration, and `compile --help` does not list the codes either. But
+> the codes could be enumerated against the shipped `coreai-build` 3600.79.1 (Metal Toolchain
+> component) by using the compiler's own validation as an oracle — it validates `--architecture`
+> *before* touching the input file, with three distinct responses (unknown code / valid code but
+> wrong platform / "Input model is missing the source bytecode." = accepted). Full matrix and
+> method: **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`**, final section.
+>
+> **24 valid codes**: `h11p h11g h12p h13p h13s h13c h13g h14p h14s h14c h14g h15p h15s h15c h15g
+> h16p h16s h16c h16g h17p h17s h17c h17g h18p`. Observed grammar: `h<generation><variant>`, with
+> `p` = phone-class, `s`/`c` = Mac-class, `g` present from `h13g` up. At the default 27.0
+> deployment target, macOS accepts `h13s…h17g` (plus `h17p`), iOS accepts `h11p…h18p`; **`h17p` is
+> the one code accepted on both**. The community-attested **`h18p` is confirmed valid** (newest
+> phone-class code; no `h19*`/`h20*` exists in this toolchain). This corroborates the community
+> fan-out counts above in spirit, though the exact per-platform sets differ from the 2026-06-10
+> report — betas moved.
+>
+> **What the enumeration does *not* give you:** the code→device mapping. Which physical device
+> reports which code is still community-attested only (`iPhone18,1` → `h18p`, device-validated).
+> **Safe default unchanged:** read the code at runtime with `AIModel.deviceArchitectureName`, ship
 > every variant `coreai-build` produces (hosted remotely, per Apple's own advice, since each device
 > downloads exactly one), and never map a marketing name to a code in your own code.
 
@@ -2058,12 +2063,17 @@ either WWDC session**. Its consequences:
 - The NOTE names iPhone, iPad, Mac and Vision Pro. **Apple Watch and Apple TV are not in the list**,
   even though Core AI's framework page lists watchOS 27 and tvOS 27 as supported platforms.
 
-> 🔴 **GAP — what `--platform watchOS` and `--platform tvOS` actually do.**
-> The framework supports seven platforms; the AOT hardware NOTE names four device families; the
-> community-captured `--help` synopsis lists `watchOS` and `tvOS` among the `--platform` values.
-> Whether passing those produces artifacts, produces zero artifacts, or errors, is **unverified**.
-> **What would resolve it:** running `xcrun coreai-build compile x.aimodel --platform watchOS` and
-> reporting the exit code and the output directory contents.
+> 🔴 **GAP — what `--platform watchOS` and `--platform tvOS` actually do. Narrowed 2026-07-31.**
+> The framework supports seven platforms; the AOT hardware NOTE names four device families; and
+> `watchOS`/`tvOS` among the `--platform` values is now ✅ **tool-verified**, not just
+> community-reported (`coreai-build compile --help`, capture in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). Architecture-validation probing on a
+> macOS 26.5 host adds: `--platform tvOS` accepts codes `h11p` and `h14p`, while `--platform
+> watchOS` accepted **none** of the swept codes (caveat: possibly missing device-support data on
+> that host). Whether a full compile actually *produces* artifacts for these platforms remains
+> **unverified** — the probe validates flags, not output.
+> **What would resolve it:** running `xcrun coreai-build compile x.aimodel --platform watchOS` on
+> a real `.aimodel` and reporting the exit code and the output directory contents.
 > **Safe default meanwhile:** for watchOS and tvOS, plan for the `.aimodel` JIT path — keep models
 > small, and use the §3 gating UI. Do not assume an AOT artifact will exist.
 
@@ -2570,12 +2580,15 @@ xcrun coreai-build compile MyModel.aimodel \
 # → compiled/MyModel.<arch>.aimodelc, one per device architecture
 
 # Optionally override compute-unit selection:
-#   --preferred-compute <value>        ← ✅ flag verified; values 🔴 GAP
+#   --preferred-compute gpu|neural-engine|none   ← ✅ values verified 2026-07-31 (default: none)
 # Everything else:
-xcrun coreai-build compile --help      # ← nobody in this corpus has run this
-# ⚠️ 2026-07-29: `xcrun --find coreai-build` FAILS on Xcode 27.0 beta (27A5228h) —
-# the wrapper is not in this beta. The underlying `usr/bin/aimodelc` IS
-# (command types: package|compile; no --help). See §13.
+xcrun coreai-build compile --help      # ← run 2026-07-31; capture in
+#   notes/sdk-interfaces/coreai-build-help-27.0-beta.txt
+#   (subcommands: compile|package|inspect|metadata)
+# ⚠️ coreai-build ships in the Metal Toolchain COMPONENT, not Xcode-beta.app —
+# the xcodebuild -downloadComponent step above is mandatory, and use
+# `xcrun --no-cache --find coreai-build` if plain `xcrun --find` fails (stale
+# cache). The bundle's own `usr/bin/aimodelc` is only a stub. See §13.
 ```
 
 ### Decision table
@@ -2689,8 +2702,8 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 | 5 | The exact composition of `.default` / `.persistent` in terms of `PurgeConditions` | Printing the raw values, or Apple documenting them | §6 |
 | 6 | Whether the `AIModel` returned by `specialize(…, cache: groupCache)` is backed by the group entry | Compare `bookmarkData` against `groupCache.model(for:options:)`'s | §8 |
 | 7 | **`expectFrequentReshapes`: default value, semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** (spelling now SDK-verified; defaults don't print in an interface) | Printing `SpecializationOptions.default.expectFrequentReshapes` on device, plus a controlled A/B | §11 |
-| 8 | **The full `coreai-build` CLI surface**, `--preferred-compute` values, architecture codes, and any subcommands beyond `compile`/`package` — ⚠️ the wrapper is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29); the underlying `aimodelc` is present, has command types `package`/`compile` only, and no `--help` | A later seed/GM shipping `coreai-build`, then `compile --help` once | §13 |
-| 9 | What `--platform watchOS` / `--platform tvOS` produce, given the AOT hardware gate names neither | Running the compile and reporting the output | §14.1 |
+| 8 | ~~The full `coreai-build` CLI surface, `--preferred-compute` values, architecture codes, and any subcommands beyond `compile`/`package`~~ **CLOSED 2026-07-31: `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app; `--help` captured (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) — subcommands `compile`/`package`/`inspect`/`metadata`, `--preferred-compute {gpu, neural-engine, none}`, 24 architecture codes enumerated by probing** | — | §13 |
+| 9 | What `--platform watchOS` / `--platform tvOS` produce, given the AOT hardware gate names neither (narrowed 2026-07-31: tvOS accepts codes `h11p`/`h14p` per the validation probe; watchOS accepted none of the swept codes on a macOS 26.5 host) | Running the compile on a real `.aimodel` and reporting the output | §14.1 |
 | 10 | **Whether iOS can JIT a portable `.aimodel` at all**, or whether the reported `Code=2` failures are purely platform-tag mismatches | Export a small model `--platform iOS`, load the **uncompiled** asset on an iPhone | §14.4 |
 | 11 | Whether the macOS 26 vs 27 export-lowering regression is a beta bug, a deliberate change, or model-specific | Independent reproduction on a second model and a later build | §16.3 |
 

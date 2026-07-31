@@ -142,8 +142,10 @@ Xcode 27.0 beta (`27A5228h`) — `FoundationModels` 26.5 **and** 27.0 (the BEFOR
 made 17.3's mapping table symmetric and put the adapter sunset's `obsoleted: 27.0` annotation on
 record for 17.2), the Core AI module family (`CoreAI` umbrella, `CoreAIDelegates`, `CoreAIRuntime`,
 `CoreAIAsset` — the module map and the only-public-error-type finding in 17.5), and `Evaluations` —
-plus direct toolchain probes of the same beta (`aimodelc` present, `coreai-build` and `fm` absent,
-`ba-package foundation-models package` alive) used in 17.2 and 17.6. Forum threads 836673 (the
+plus direct toolchain probes of the same beta (`aimodelc` present in the app bundle, `fm` absent,
+`ba-package foundation-models package` alive; `coreai-build` absent from the bare install on
+2026-07-29 but found 2026-07-31 in the optional Metal Toolchain component, its `--help` captured to
+`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) used in 17.2 and 17.6. Forum threads 836673 (the
 iOS 27 refusal regression, with reproduction detail), 835777 (guardrail change under a shipping
 app), 829108 (`compatibleAdapterNotFound` via TestFlight), 835987 (watchOS 27 `CoreImage`), 835211
 and 836760 (the Siri-enablement gating change); two Apple-staff statements on the adapter

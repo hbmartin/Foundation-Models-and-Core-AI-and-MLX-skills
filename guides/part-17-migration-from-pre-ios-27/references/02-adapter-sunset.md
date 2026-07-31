@@ -96,10 +96,15 @@ and matter to §6's token budgeting.
 
 - **Xcode 27** for anything in §6–§8. For §3 you need whatever Xcode 26 toolchain your 26.x build
   currently uses; the `ba-package` subcommand lives there.
-- **A physical device on 27.0 or later.** The Simulator punches out to the host macOS to run the
-  system model, so a Simulator result on a macOS 26 host tells you about macOS 26. This is the
-  single largest source of phantom bug reports in this area — an Apple Designer says so directly,
-  quoted in [Part 1, reference 02](../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md).
+- **A physical device on 27.0 or later.** Simulator inference is host-backed, so a Simulator
+  result on a macOS 26 host tells you about macOS 26 — the single largest source of phantom bug
+  reports in this area; an Apple Designer says so directly, quoted in
+  [Part 1, reference 02](../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md).
+  One measured nuance (✅ **Probe-verified, 2026-07-31**, `probes/` on the 27.0 sim runtime):
+  the sim runtime resolves the base model's availability and assets independently of the host's
+  Apple Intelligence toggle — plain and guided inference genuinely run there — but tool-calling
+  and attachment assets are absent, and nothing about adapters changes: adapter behaviour still
+  needs the physical device.
 - **An evaluation set before you start.** You are about to change the thing that made your feature
   work. If you cannot measure the difference you cannot make this migration safely, and §6's
   "just prompt it better" advice is unfalsifiable without one.
