@@ -1,7 +1,3 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
 part-04-beyond-the-built-in-model/README.md	85	41-private-cloud-compute-eligibility-reasoning-and-quota-ux	SILENT-FAILURE	runtime-unavailable	PCC without its entitlement fatalErrors past do/catch; availability ignores quota; reasoning tokens eat the 32K unseen.
 part-04-beyond-the-built-in-model/README.md	107	42-core-ai-mlx-and-any-openai-compatible-server-behind-languagemodelsession	SILENT-FAILURE	runtime-unavailable	GPU-pipelined Core AI returns no logits so @Generable cannot work — variant:nil auto-detect hides which engine you got.
 part-04-beyond-the-built-in-model/README.md	135	43-authoring-a-languagemodel-provider-package	SILENT-FAILURE	footgun-api	A near-miss prewarm signature compiles but binds the protocol's no-op default — your prewarm is never called.

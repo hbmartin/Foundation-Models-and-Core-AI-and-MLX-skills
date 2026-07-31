@@ -10,10 +10,14 @@ verified against the real macOS **26.5 and 27.0-beta SDK Swift interfaces** (Xco
 `27A5228h`, captured in `notes/sdk-interfaces/` — including the Core AI SubFrameworks, the
 `_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels` cross-import overlays, and
 Xcode-bundled `Evaluations`), and every GitHub-tracked defect status was re-checked live.
+The 2026-07-31 refresh workflow also binds each stable SDK-named artifact to its Xcode, SDK, and
+Metal-component identity in a hashed manifest, refuses a same-SDK/different-Xcode overwrite, and
+runs ordinary drift checks from a temporary capture. CLI evidence follows the same rule, including
+the separately installed `coreai-build` surface.[^capture-workflow]
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every ⚠️ callout in the series (1,757,
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,757,
   of which 1,399 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
 - **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
@@ -264,13 +268,13 @@ to resolve — a header to read, a command to run, a device to test on. Nothing 
 invented, and no gap has been quietly papered over with a plausible-looking identifier.
 
 The single largest cluster has one cause: **this series was written on macOS 26.5.2 / Xcode 26.6.**
-Anything that requires a shipping macOS 27 toolchain — `fm --help`, `xcrun coreai-build --help`, the
-Instruments 27 lane names, the `CoreAI` and `FoundationModels` `.swiftinterface` dumps — could not
-be checked at writing time, only reasoned about. Two of those have since been captured from the
-Xcode 27.0 beta on this machine: the `.swiftinterface` dumps (2026-07-29, `notes/sdk-interfaces/`)
-and `xcrun coreai-build --help` (2026-07-31 — the tool turned out to ship in the optional **Metal
-Toolchain component**, not Xcode itself; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`),
-and the affected guides carry dated resolution notes.
+Some questions require a macOS 27 runtime (`fm --help`, Instruments 27 lane names); others require
+the Xcode 27 SDK or one of its separately installed components. The `CoreAI` and
+`FoundationModels` interfaces were captured from Xcode 27.0 beta on 2026-07-29. `coreai-build` was
+captured on the same host on 2026-07-31 after installing the optional **Metal Toolchain component**
+with `xcodebuild -downloadComponent MetalToolchain`; it is not part of the Xcode app bundle and
+does not require upgrading the host OS merely to inspect its CLI. The affected guides carry dated
+resolution notes and the capture lives at `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`.
 
 [`../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`](../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md) is the
 precise shopping list: seven independent items, each with the literal commands to run and the guides
@@ -294,3 +298,11 @@ headers shipped in the Xcode SDK, and a crawl of the MLX documentation site.[^re
 [^repository-snapshots]: The reproducibility manifest in
     [`scripts/clone-research-repos.sh`](../scripts/clone-research-repos.sh) records the 16 repositories
     and exact full commit SHA for each checkout.
+[^capture-workflow]: [`scripts/dump-sdk-interfaces.sh`](../scripts/dump-sdk-interfaces.sh) owns the
+    managed capture and `capture-manifest.json`; [`scripts/diff-interfaces.sh`](../scripts/diff-interfaces.sh)
+    performs read-only temporary drift captures. The operational steps live in
+    [`notes/NEXT-BETA-CHECKLIST.md`](../notes/NEXT-BETA-CHECKLIST.md) and
+    [`notes/FRESHNESS-RUNBOOK.md`](../notes/FRESHNESS-RUNBOOK.md). Apple's
+    [Core AI AOT documentation](https://developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time)
+    is the primary source for installing the Metal Toolchain component before capturing
+    `coreai-build`.

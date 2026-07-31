@@ -13,37 +13,57 @@ the repo root.
 
 ## 0. The re-dump ritual (do this first, in order)
 
-- [ ] Point the toolchain at the new beta and confirm what you got:
+- [ ] Point this shell at the new beta and confirm what you got. Keep the selection process-local;
+  the capture scripts respect `DEVELOPER_DIR` and never change global `xcode-select` state:
   ```bash
-  sudo xcode-select -s /Applications/Xcode-beta.app
-  xcodebuild -version && xcrun --sdk macosx --show-sdk-version
+  export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+  xcodebuild -version
+  xcrun --sdk iphoneos --show-sdk-version
+  xcrun --sdk macosx --show-sdk-version
   ```
-- [ ] Dump + drift in one step — `scripts/diff-interfaces.sh` runs
-  `scripts/dump-sdk-interfaces.sh` and then git-diffs every fresh capture against the
-  committed one, filtered to `public|open|@available|case ` lines:
+- [ ] Preflight the complete capture identity before writing evidence. This checks Xcode and SDK
+  versions plus the separately installed Metal Toolchain, `metal`, and `coreai-build` identities:
+  ```bash
+  ./scripts/dump-sdk-interfaces.sh --check-only
+  ```
+  The capture manifest makes a stable SDK filename safe: a different Xcode build cannot silently
+  overwrite an existing `*-27.0-macos.swiftinterface` merely because both betas report SDK 27.0.
+- [ ] Dump + drift in one step — `scripts/diff-interfaces.sh` captures into a temporary
+  destination, then compares every fresh artifact against the committed managed capture without
+  mutating it, filtered to `public|open|@available|case ` lines:
   ```bash
   ./scripts/diff-interfaces.sh                # fresh dumps vs HEAD
   ./scripts/diff-interfaces.sh --against <tag-of-previous-beta>   # if HEAD moved
   ```
   A same-version re-dump with no toolchain change must read "clean — no drift" for
   every framework (that is the verified 2026-07-31 baseline output). Anything else IS
-  the beta's API drift — start the guide pass from those lines. One known benign
-  wrinkle: Evaluations may report a few "raw +/- lines below the filter" — the
-  committed capture is the arm64 slice while fresh dumps prefer arm64e, so only the
-  `swift-module-flags` header line differs, zero declarations. It disappears once an
-  arm64e capture is committed.
+  the beta's API drift — start the guide pass from those lines. Slice selection is deterministic:
+  OS SDK frameworks prefer arm64e, while Xcode-bundled developer frameworks such as Evaluations
+  prefer their ordinary arm64 host slice.
 - [ ] Cross-major comparisons on request, one framework at a time:
   ```bash
   ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels
   ./scripts/diff-interfaces.sh --baseline 26.5 --framework Speech
   ```
-- [ ] CLI help capture, by hand. `dump-sdk-interfaces.sh` invokes `fm`/`coreai-build`
-  by bare name (line 71: `"$t" --help`), so a tool that only resolves through xcrun —
-  which is how `coreai-build` ships today (see item 1) — writes "command not found"
-  into its `-help-sdk*.txt` capture. Until that script is fixed, capture manually:
+- [ ] If the drift is intentional and you need to retain a same-SDK/new-Xcode candidate for review,
+  capture it to a fresh staging directory. Do not copy its manifest over the managed one: that
+  would discard the independently owned 26.5 and legacy records.
   ```bash
-  xcrun coreai-build --help > notes/sdk-interfaces/coreai-build-help-sdk$(xcrun --sdk macosx --show-sdk-version).txt 2>&1
-  xcrun fm --help           # still expected ABSENT from the toolchain; see item 2
+  capture_candidate_dir="$(mktemp -d)"
+  ./scripts/dump-sdk-interfaces.sh --dest "$capture_candidate_dir"
+  ```
+  Promote only the reviewed artifacts and merge their manifest ownership using the procedure in
+  `notes/sdk-interfaces/README.md`, then finish with
+  `./scripts/dump-sdk-interfaces.sh --check-only`. There is deliberately no blind auto-promotion
+  mode.
+- [ ] Confirm the CLI surfaces in the same managed capture. `dump-sdk-interfaces.sh` resolves tools
+  through `xcrun`, captures top-level and all four `coreai-build` subcommand help pages, and writes
+  the canonical `notes/sdk-interfaces/coreai-build-help-<macOS-SDK-version>.txt`. The manifest
+  records hashes and the Xcode/SDK/Metal identities; the legacy `-27.0-beta.txt` evidence remains
+  separately managed and is not overwritten:
+  ```bash
+  ./scripts/dump-sdk-interfaces.sh
+  xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
   ```
 - [ ] Re-run the runtime probes **if `probes/` exists**. As of 2026-07-31 a
   `probes/` Swift package is being assembled (in progress, untracked): probes that
@@ -64,40 +84,34 @@ the repo root.
   `scripts/build-indexes.sh`: re-run `python3 scripts/extract-callouts.py`, then
   **classify any NEW ⚠️ callout rows by hand** (symptom ids per
   `notes/synthesis/SYMPTOM-TAXONOMY.md` — this is the one step that needs judgment,
-  not automation), assemble the per-part `part-NN.tsv` files, then:
+  not automation), update the committed per-part `part-NN.tsv` files under
+  `notes/synthesis/callout-classifications/`, then:
   ```bash
-  ./scripts/build-indexes.sh <classified-dir>
+  ./scripts/build-indexes.sh
   ```
 
 ---
 
-## 1. `coreai-build` — it APPEARED (2026-07-31), watch where it lands next
+## 1. `coreai-build` — component-scoped and captured (resolved 2026-07-31)
 
-State change since the 2026-07-29 pass, found while building this checklist — **no new
-Xcode involved**: the Metal Toolchain component download (`xcodebuild
--downloadComponent MetalToolchain`, suggested in NEEDED item 6) brought it in.
-`xcrun --find coreai-build` now resolves into
-`…/DVTDownloads/MetalToolchain/mounts/…/Metal.xctoolchain/usr/bin/coreai-build`,
-version `coreai-build 3600.79.1`, subcommands `compile` | `package` | `inspect` |
-`metadata`, and a real `--help`. The guides still say it is absent — that is a pending
-guide edit, not yet made.
+The 2026-07-29 negative check was a component-installation result, not a beta-product result:
+`coreai-build` is not inside Xcode-beta.app. Apple's Core AI documentation requires the optional
+Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`); after installation,
+`xcrun --no-cache --find coreai-build` resolves into
+`…/DVTDownloads/MetalToolchain/mounts/…/Metal.xctoolchain/usr/bin/coreai-build`, version
+`coreai-build 3600.79.1`. Its `compile` | `package` | `inspect` | `metadata` surfaces are captured,
+and the affected guides now distinguish the app bundle from the required component. See Apple's
+[*Compiling Core AI models ahead of time*](https://developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time).
 
-Where the absence hedge lives: `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 2;
-`guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md`
-§13 (the "⚠️ not currently possible — the tool is absent" note near line 1700);
-`guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md`
-(line ~2512); `guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md`
-(lines ~21, 71–73, 128); `guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md`
-§7 and its header (lines ~96–98, the `aimodelc` stub that says *"Please use 'xcrun
-coreai-build' instead"*).
-
-- [ ] Does it move from the Metal Toolchain mount into Xcode proper?
+- [ ] Does it move from the Metal Toolchain mount into Xcode proper, or change independently of
+  the Xcode build?
   ```bash
-  xcrun --find coreai-build && xcrun coreai-build --version
+  xcodebuild -showComponent MetalToolchain -json
+  xcrun --no-cache --find coreai-build && xcrun coreai-build --version
   ```
-- [ ] Capture the subcommand surfaces NEEDED item 2 still wants — the full
-  `--preferred-compute` value list and the device-architecture code enumeration
-  (only `h18p` known, from a blog):
+- [ ] Re-capture every subcommand surface. The 2026-07-31 baseline has
+  `--preferred-compute {gpu, neural-engine, none}` and 24 accepted architecture codes; a new
+  component can drift even when the macOS SDK version remains `27.0`:
   ```bash
   xcrun coreai-build help compile; xcrun coreai-build help inspect
   xcrun coreai-build help package; xcrun coreai-build help metadata

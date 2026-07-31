@@ -1,104 +1,157 @@
 #!/usr/bin/env bash
-# The per-beta ritual: re-dump the currently-selected Xcode's SDK interfaces
-# (via scripts/dump-sdk-interfaces.sh) and show, per framework, how the fresh
-# capture drifts from the committed one — added/removed public declarations,
-# counted and sampled, so a new beta's API drift fits on one screen. Read-only
-# apart from rewriting the notes/sdk-interfaces/ dumps themselves (which is what
-# dump-sdk-interfaces.sh always does); git decides what actually changed.
+# Compare a temporary capture of the selected Xcode against committed evidence.
+# Normal mode never rewrites notes/sdk-interfaces. Cross-major mode compares two
+# already-tracked SDK versions and is also read-only.
 #
-#   ./scripts/diff-interfaces.sh                          # fresh dump vs HEAD
-#   ./scripts/diff-interfaces.sh --against v1.0           # ...vs another git ref
+#   ./scripts/diff-interfaces.sh
+#   ./scripts/diff-interfaces.sh --against v1.0
+#   ./scripts/diff-interfaces.sh --framework Speech --examples 20
 #   ./scripts/diff-interfaces.sh --baseline 26.5 --framework Speech
-#                                                         # cross-major: Speech-26.5 vs newest Speech
-#   ./scripts/diff-interfaces.sh --examples 20            # more sample lines per framework
-#
-# The drift filter keeps diff lines that begin (after indent) with
-# public|open|@available|case — i.e. declaration-level changes. Doc comments,
-# SPI noise and attribute reshuffles below that bar are counted but not shown.
-# "clean — no drift" for every framework is the expected output when the dumps
-# are freshly committed and the selected Xcode has not changed since.
 
-set -uo pipefail
-cd "$(dirname "$0")/.."
-DEST="notes/sdk-interfaces"
+set -euo pipefail
 
-AGAINST="HEAD"
-BASELINE=""
-FRAMEWORK=""
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+REPO_ROOT="$(CDPATH='' cd -- "$SCRIPT_DIR/.." && pwd)"
+CAPTURE_SCRIPT="$SCRIPT_DIR/dump-sdk-interfaces.sh"
+TRACKED_DIR="$REPO_ROOT/notes/sdk-interfaces"
+
+AGAINST='HEAD'
+BASELINE=''
+FRAMEWORK=''
 EXAMPLES=8
-while [ $# -gt 0 ]; do
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+need_value() {
+  [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value"
+}
+
+while [ "$#" -gt 0 ]; do
   case "$1" in
-    --against)   AGAINST="${2:?--against needs a git ref}"; shift 2 ;;
-    --baseline)  BASELINE="${2:?--baseline needs an SDK version, e.g. 26.5}"; shift 2 ;;
-    --framework) FRAMEWORK="${2:?--framework needs a name, e.g. Speech}"; shift 2 ;;
-    --examples)  EXAMPLES="${2:?--examples needs a number}"; shift 2 ;;
-    -h|--help)   sed -n '2,20p' "$0"; exit 0 ;;
-    *) echo "unknown argument: $1 (see header of scripts/diff-interfaces.sh)" >&2; exit 2 ;;
+    --against)
+      need_value "$@"
+      AGAINST="$2"
+      shift 2
+      ;;
+    --baseline)
+      need_value "$@"
+      BASELINE="$2"
+      shift 2
+      ;;
+    --framework)
+      need_value "$@"
+      FRAMEWORK="$2"
+      shift 2
+      ;;
+    --examples)
+      need_value "$@"
+      EXAMPLES="$2"
+      shift 2
+      ;;
+    -h|--help)
+      sed -n '2,9p' "$0"
+      exit 0
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
   esac
 done
 
-# Unified-diff drift filter: keep +/- lines whose content starts with a
-# declaration keyword. (+++/--- file headers don't survive the keyword match.)
+case "$EXAMPLES" in
+  ''|*[!0-9]*) die '--examples must be a non-negative integer' ;;
+esac
+
+# Unified-diff filter for public surface changes. The raw-line count is also
+# reported so changes below this intentionally narrow filter remain visible.
 DRIFT_RE='^[+-][[:space:]]*(public |open |@available|case )'
 
-report_drift() { # $1=label  $2=diff-file
+report_drift() { # $1=label, $2=unified-diff file
+  local label="$1"
+  local diff_file="$2"
   local added removed raw
-  added=$(grep -E "$DRIFT_RE" "$2" | grep -c '^+')
-  removed=$(grep -E "$DRIFT_RE" "$2" | grep -c '^-')
-  raw=$(grep -c '^[+-]' "$2")
-  if [ ! -s "$2" ]; then
-    printf "  %-28s clean — no drift\n" "$1"
+  added="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^+' || true)"
+  removed="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^-' || true)"
+  raw="$(grep -E -c '^[+-]' "$diff_file" || true)"
+  if [ ! -s "$diff_file" ]; then
+    printf '  %-32s clean — no drift\n' "$label"
   elif [ "$((added + removed))" -eq 0 ]; then
-    printf "  %-28s no declaration drift (%s raw +/- lines below the filter)\n" "$1" "$raw"
+    printf '  %-32s no declaration drift (%s raw +/- lines)\n' "$label" "$raw"
   else
-    printf "  %-28s +%s / -%s declaration lines (%s raw +/- lines); first %s:\n" \
-      "$1" "$added" "$removed" "$raw" "$EXAMPLES"
-    grep -E "$DRIFT_RE" "$2" | head -"$EXAMPLES" | sed 's/^/      /'
+    printf '  %-32s +%s / -%s declaration lines (%s raw +/- lines); first %s:\n' \
+      "$label" "$added" "$removed" "$raw" "$EXAMPLES"
+    if [ "$EXAMPLES" -gt 0 ]; then
+      grep -E "$DRIFT_RE" "$diff_file" | head -n "$EXAMPLES" | sed 's/^/      /' || true
+    fi
   fi
 }
 
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdk-interface-diff.XXXXXX")"
+trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 
-# ---- cross-major mode: one framework, two SDK versions, plain file diff -------
+# ---- Cross-major mode: compare two tracked snapshots; no Xcode required. ------
 if [ -n "$BASELINE" ]; then
-  [ -n "$FRAMEWORK" ] || { echo "--baseline needs --framework <name> (cross-major is per-framework by design: the diffs are huge)" >&2; exit 2; }
-  base="$DEST/${FRAMEWORK}-${BASELINE}-macos.swiftinterface"
-  [ -f "$base" ] || { echo "no capture at $base" >&2; exit 2; }
-  # Newest other capture of the same framework = highest embedded SDK version.
-  newest="$(ls "$DEST/$FRAMEWORK"-*-macos.swiftinterface 2>/dev/null | grep -v "$BASELINE" | sort -V | tail -1)"
-  [ -n "$newest" ] || { echo "no non-$BASELINE capture of $FRAMEWORK to compare against" >&2; exit 2; }
-  echo "=== $FRAMEWORK: $(basename "$base") -> $(basename "$newest") ==="
-  diff -u "$base" "$newest" > "$TMP/d" 2>/dev/null
-  report_drift "$FRAMEWORK" "$TMP/d"
+  [ -n "$FRAMEWORK" ] || \
+    die '--baseline requires --framework (cross-major diffs are intentionally per-framework)'
+  base="$TRACKED_DIR/${FRAMEWORK}-${BASELINE}-macos.swiftinterface"
+  [ -f "$base" ] || die "no tracked capture for $FRAMEWORK at SDK $BASELINE"
+  newest="$(find "$TRACKED_DIR" -maxdepth 1 -type f \
+    -name "${FRAMEWORK}-*-macos.swiftinterface" -print | \
+    grep -v -- "-${BASELINE}-macos.swiftinterface$" | LC_ALL=C sort -V | tail -n 1 || true)"
+  [ -n "$newest" ] || die "no non-$BASELINE capture of $FRAMEWORK is tracked"
+  printf '=== %s: %s -> %s ===\n' "$FRAMEWORK" "$(basename "$base")" "$(basename "$newest")"
+  diff -u "$base" "$newest" > "$TMP/diff" || true
+  report_drift "$FRAMEWORK" "$TMP/diff"
   exit 0
 fi
 
-# ---- normal mode: fresh dump, then git-diff each current-SDK capture ----------
-./scripts/dump-sdk-interfaces.sh
-echo
-SDKVER="$(xcrun --sdk macosx --show-sdk-version 2>/dev/null)"
-echo "=== drift of fresh ${SDKVER} dumps vs ${AGAINST} ==="
+# ---- Normal mode: capture elsewhere, then compare bytes to a git object. ------
+git -C "$REPO_ROOT" rev-parse --verify "$AGAINST^{commit}" >/dev/null 2>&1 || \
+  die "unknown git revision: $AGAINST"
 
+FRESH_DIR="$TMP/fresh"
+"$CAPTURE_SCRIPT" --dest "$FRESH_DIR"
+
+read -r SDK_VERSION XCODE_BUILD <<EOF
+$(python3 - "$FRESH_DIR/capture-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+capture = manifest["captures"][-1]
+print(capture["sdks"]["macosx"]["version"], capture["xcode"]["build"])
+PY
+)
+EOF
+
+printf '\n=== temporary Xcode %s / SDK %s capture vs %s ===\n' \
+  "$XCODE_BUILD" "$SDK_VERSION" "$AGAINST"
 found=0
-for f in "$DEST"/*-"$SDKVER"-macos.swiftinterface; do
-  [ -f "$f" ] || continue
-  found=1
-  fw="$(basename "$f" | sed "s/-$SDKVER-macos\.swiftinterface//")"
-  if [ -n "$FRAMEWORK" ] && [ "$fw" != "$FRAMEWORK" ]; then continue; fi
-  if ! git cat-file -e "$AGAINST:$f" 2>/dev/null; then
-    # Not in the ref at all: a brand-new capture (new framework, or first dump
-    # of a new SDK version). Whole-file counts instead of a diff.
-    printf "  %-28s NEW capture (absent from %s): %s lines, %s public decls\n" \
-      "$fw" "$AGAINST" "$(wc -l < "$f" | tr -d ' ')" \
-      "$(grep -cE '^[[:space:]]*(public |open )' "$f")"
+for fresh in "$FRESH_DIR"/*-"$SDK_VERSION"-macos.swiftinterface; do
+  [ -f "$fresh" ] || continue
+  framework="$(basename "$fresh" | sed "s/-${SDK_VERSION}-macos\.swiftinterface$//")"
+  if [ -n "$FRAMEWORK" ] && [ "$framework" != "$FRAMEWORK" ]; then
     continue
   fi
-  git diff "$AGAINST" -- "$f" > "$TMP/d"
-  report_drift "$fw" "$TMP/d"
+  found=1
+  name="$(basename "$fresh")"
+  tracked_path="notes/sdk-interfaces/$name"
+  if ! git -C "$REPO_ROOT" cat-file -e "$AGAINST:$tracked_path" 2>/dev/null; then
+    printf '  %-32s NEW capture: %s lines, %s public declarations\n' \
+      "$framework" "$(wc -l < "$fresh" | tr -d ' ')" \
+      "$(grep -E -c '^[[:space:]]*(public |open )' "$fresh" || true)"
+    continue
+  fi
+  git -C "$REPO_ROOT" show "$AGAINST:$tracked_path" > "$TMP/baseline"
+  diff -u "$TMP/baseline" "$fresh" > "$TMP/diff" || true
+  report_drift "$framework" "$TMP/diff"
 done
-[ "$found" -eq 1 ] || echo "  (no $DEST/*-$SDKVER-*.swiftinterface captures found — did the dump fail?)"
 
-echo
-echo "Cross-major on request, e.g.: ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels"
-echo "If a new beta produced drift: commit the new dumps, then work the watch-list in notes/NEXT-BETA-CHECKLIST.md."
+[ "$found" -eq 1 ] || die "no matching SDK $SDK_VERSION interface captures were produced"
+
+printf '\nTracked evidence was not modified. To retain this candidate, run:\n'
+printf '  ./scripts/dump-sdk-interfaces.sh --dest <empty-candidate-directory>\n'
+printf 'Promotion is a reviewed file-and-manifest change; see notes/sdk-interfaces/README.md.\n'

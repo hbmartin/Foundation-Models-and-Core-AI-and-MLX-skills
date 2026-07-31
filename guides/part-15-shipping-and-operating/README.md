@@ -123,8 +123,9 @@ and a safe default. Two numbers worth carrying in from §4.5: omitting
 > `CoreAIDelegates.AIModelError error 3` breadcrumb) is confirmed **non-public** — the loading APIs
 > throw untyped, so there is nothing to pattern-match — and the **absence** of any progress API for
 > specialization and of any API to size or locate the Core AI cache is now SDK-confirmed, not just
-> unindexed (§5.3, §6.4, §11.6). And a 2026-07-31 resolution: `coreai-build`, absent from the bare
-> Xcode 27.0 beta install when checked 2026-07-29, turns out to ship in the optional **Metal
+> unindexed (§5.3, §6.4, §11.6). And a 2026-07-31 resolution: `coreai-build` is not part of the
+> Xcode 27.0 beta app bundle and failed to resolve on the 2026-07-29 install because the optional
+> **Metal
 > Toolchain component** — its full `--help` is now captured, and probing it enumerated the 24 valid
 > `--architecture` codes, though the code→*device* mapping (the M4 Max disagreement above) remains
 > community-only (§4.2).

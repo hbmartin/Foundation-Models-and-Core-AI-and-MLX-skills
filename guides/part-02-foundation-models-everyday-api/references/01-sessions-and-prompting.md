@@ -1353,13 +1353,14 @@ struct Transcript      // 26.0 (watchOS 27.0)
 //           Sendable, Sequence
 init(entries:)
 var history: ArraySlice<Transcript.Entry> { get set }        // 27.0
-var structuredTranscript: StructuredTranscript { get }       // 27.0
+var structuredTranscript: Evaluations.StructuredTranscript { get } // 27.0; Evaluations extension
 ```
 
 ✅ **VERIFIED** — `/transcript`, `/transcript/history`, `/transcript/structuredtranscript`. One
 module caveat on the last line: `structuredTranscript` is not declared by FoundationModels — the
-**Evaluations** framework adds it to `Transcript` in an extension, so it exists only where
-Evaluations is linked (✅ SDK-verified, `Evaluations-27.0-macos.swiftinterface:281-286`; §12).
+**Evaluations** framework adds it to `Transcript` in an extension, so the source file must
+`import Evaluations`; linking the framework alone does not put the extension into scope
+(✅ SDK-verified, `Evaluations-27.0-macos.swiftinterface:281-286`; §12).[^structured-transcript-import]
 `MutableCollection` + `RangeReplaceableCollection` is why in-place edits, `removeAll(where:)` and
 `replaceSubrange` all work. `Codable` is why you can persist a conversation to disk and rehydrate it
 — and why `JSONEncoder().encode(session.transcript)` is the cheapest debugging aid in this stack;
@@ -2067,9 +2068,14 @@ the join uses a **space** separator (their tests define a private `joined()` hel
 `.instructions` to `nil`, i.e. the summariser never sees your system prompt.
 
 **`Transcript.structuredTranscript` has one known consumer, and it is the Evaluations framework.**
-✅ **VERIFIED, verbatim** — Book Tracker, `SearchBooks.swift:525-563`:
+✅ **VERIFIED, selected verbatim lines** — Book Tracker, `SearchBooks.swift`; the file imports both
+modules before the call site at `:525-563`:
 
 ```swift
+import Evaluations
+import FoundationModels
+
+// …
         return ModelSubject(
             value: response.content,
             transcript: session.transcript.structuredTranscript
@@ -2089,7 +2095,9 @@ at. Full treatment in [Part 6 · Evaluations](../../part-06-evaluations/).
 > (`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:272-286`): Evaluations declares
 > `public struct StructuredTranscript : Sendable` (`:272`) and grafts
 > `var structuredTranscript: StructuredTranscript { get }` onto `FoundationModels.Transcript` in an
-> extension (`:283`) — so the property only exists in code that links Evaluations. And you *can*
+> extension (`:283`) — so the property only exists in source files that import Evaluations. Merely
+> linking the framework is insufficient because the declaring extension is otherwise out of scope.
+> And you *can*
 > read one yourself: it is five public vars with a fully defaulted memberwise init —
 > `toolCalls: [Transcript.ToolCall]`, `toolOutputs: [Transcript.ToolOutput]`,
 > `instructionText: String`, `prompts: [String]`, `responses: [Transcript.Response]`. Its consumer
@@ -2679,6 +2687,8 @@ None of these gaps is filled with a guess anywhere in this guide. If you resolve
 | watchOS support for `LanguageModelSession` | — | — | ✅ |
 
 [^refusal-explanation-response]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), the `String` carried by the response wrapper.
+
+[^structured-transcript-import]: Apple documents [`Transcript.structuredTranscript`](https://developer.apple.com/documentation/foundationmodels/transcript/structuredtranscript) as the structured representation used by Evaluations. The captured Xcode 27 interfaces settle declaration ownership: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:282-285` declares `extension FoundationModels.Transcript { public var structuredTranscript: Evaluations.StructuredTranscript }`, while the FoundationModels interface has no such member. Swift makes an extension's members available through the module that declares it, so each use site needs `import Evaluations`; a linker setting is not a source-level import.
 
 ### Where to go next
 

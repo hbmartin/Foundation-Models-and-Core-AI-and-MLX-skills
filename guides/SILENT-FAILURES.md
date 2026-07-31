@@ -83,8 +83,8 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 7**
 
 - [Indexing by hand while ignoring interleaveLayout reads the wrong elements — the strides are block strides for that axis](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#78-strides-and-interleavelayout) — 7.1
-- [Output scalarType can differ from the input's — inspecting the array itself is the only safe way to decode it](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
 - [Assuming the output dtype from the input descriptor misreads bytes — outputs can be a different scalar type](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
+- [Output scalarType can differ from the input's — inspecting the array itself is the only safe way to decode it](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
 - [EXIF orientation is handled by no layer — the same JPEG tensorizes differently depending on the loader](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#124-silent-failure-exif-orientation-is-nobodys-job-so-it-is-yours) — 7.1
 - [apple/coreai-models has zero EXIF handling and its two image entry points disagree — rotated photos give wrong tensors](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#124-silent-failure-exif-orientation-is-nobodys-job-so-it-is-yours) — 7.1 🔇
 - [NDArray.from_descriptor only sizes the buffer — on Linux unzeroed state reads garbage; allocate np.zeros explicitly](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#verify-the-conversion-before-you-write-a-line-of-swift) — 7.3
@@ -543,8 +543,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Stop-token step 2 replaces rather than unions (matching Python) — earlier EOS ids silently discarded](part-13-mlx-swift/references/02-generation-tools-and-caching.md#63-stop-tokens-four-sources-one-of-which-overwrites-the-others) — 13.2
 - [kvScheme overrides kvBits and typo'd scheme strings are silently ignored — no quantization, no message](part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) — 13.2
 - [RotatingKVCache.toQuantized() is never called — rotating layers silently stay fp16 whatever kvBits says](part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) — 13.2
-- [Sample output: 36 layers will stay fp16 silently under the requested kvBits](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
 - [Detection-script print: layers whose cache type can't quantize stay fp16 silently despite kvBits](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
+- [Sample output: 36 layers will stay fp16 silently under the requested kvBits](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
 - [progressHandler is ignored for local-directory loads — no progress events ever arrive on that path](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#53-complete-a-model-from-a-directory-you-already-have) — 13.3
 - [The SDK never gates image input on .vision — without the adapter's check, images go to text-only models silently](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#64-silent-failure-prevented-the-vision-gate-the-sdk-does-not-do) — 13.3
 - [TranscriptConverter drops entries with only debug-level logs — transcript content quietly missing from the prompt](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#81-transcriptconverter-entries-in-chatmessages-out) — 13.3
@@ -719,11 +719,11 @@ Start from the symptom column that matches what you observe. Within each section
 - [summarizeHistory destroys tool-call metadata; swapping it in for hand-rolled compaction loses tool context](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#77-superseded-hand-rolled-context-management) — 17.1
 - [finalize(backend: CoreAI) frees the original dense weights in place; without a checkpoint the source model is gone](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#64-what-does-carry-over-the-optimization-stage) — 17.5
 - [Audit before you repack: coreai-build package destroys the producer metadata that identifies bad exports](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#34-the-negative-list-four-things-that-do-not-fix-it) — 17.6
+- [AIModel(resolvingBookmark:) returns nil, not an error, once an OS update purges the cached entry](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6
 - [Stale bookmarks return nil while malformed ones throw; the nil path fires for every user after every OS update](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6 🔇
 - [The nil-return branch is the path every user takes after every OS update; handle it by re-specializing](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#what-fix-it-means) — 17.6
-- [Bookmark data pins nothing; only a live AIModel pins its cache entry, so storage pressure can purge under a bookmark](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#and-the-one-bookmarks-specific-trap) — 17.6
 - [Bookmarks-specific trap: bookmark data does not pin the cache entry it references](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#and-the-one-bookmarks-specific-trap) — 17.6
-- [AIModel(resolvingBookmark:) returns nil, not an error, once an OS update purges the cached entry](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6
+- [Bookmark data pins nothing; only a live AIModel pins its cache entry, so storage pressure can purge under a bookmark](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#and-the-one-bookmarks-specific-trap) — 17.6
 
 
 ## Compiles but unavailable
@@ -786,8 +786,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [ComputeStream(commandQueue:) is absent on watchOS; encoded inferences on one stream serialize by read/write dependencies](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#the-types) — 7.1
 - [AOT compiles only for Apple-Intelligence-capable devices (A17 Pro+, M1+) — older hardware isn't covered](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#141-aot-only-compiles-for-apple-intelligence-capable-devices) — 7.2
 - [ComputeStream(commandQueue:) does not exist on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#computestream) — 7.3
-- [AsyncValue's NDArray initializer is unavailable on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-two-async-value-types) — 7.3
 - [The second async-value initializer is likewise absent on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-two-async-value-types) — 7.3
+- [AsyncValue's NDArray initializer is unavailable on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-two-async-value-types) — 7.3
 - [Grammar-constrained decoding needs logits — @Generable and forcedContinuation are unavailable on the GPU-pipelined path](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#technique-2-the-next-token-stays-on-the-gpu) — 7.3
 - [Missing tokenizer/ falls back to a HuggingFace Hub fetch — instant on your Mac's cache, a network request on user devices](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#27-languagebundle-the-strict-loader) — 7.4 🔇
 - [Guided generation and the fastest engine are mutually exclusive — the pipelined path exposes no logits](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#78-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive) — 7.4
@@ -1148,8 +1148,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [--n-bits and --group-size override BOTH encoders — passing 4 silently drags the text encoder down from w6/gs8](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
 - [export.py --n-bits applies to both encoders — 4 silently drags the text encoder from its 6-bit/gs8 default](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#54-the-other-lever-the-sam3-recipe-used-instead) — 9.2
 - [fp32 matmuls on MLX's NAX path silently run at TF32 relaxed precision unless MLX_ENABLE_TF32 disables it](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#12-the-master-matrix) — 9.3
-- [The converter narrows int64/fp64 to 32-bit silently — NDArray has 64-bit ScalarTypes the converter never produces](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [64-bit types are narrowed on the way in: int64 to int32 and fp64 to fp32, silently](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-64-bit-types-are-narrowed-on-the-way-in) — 9.3
+- [The converter narrows int64/fp64 to 32-bit silently — NDArray has 64-bit ScalarTypes the converter never produces](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [MLX's own caveat: mxfp8 results differ on <1% of elements and can exceed 1 ULP for small values; nvfp4 matches exactly](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#63-python-signatures) — 9.3
 - [MLX float32 matmuls silently run at TF32 on the NAX path — PR #3883 exists because users keep being surprised](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#65-the-four-gates-on-mlxs-accelerated-quantized-path) — 9.3
 - [Failure #12: MLX fp32 matmul at default env runs TF32 relaxed precision — set MLX_ENABLE_TF32=0 and diff](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) — 9.3
@@ -1372,10 +1372,10 @@ Start from the symptom column that matches what you observe. Within each section
 - [Why the asset break is vicious: inspect still reads the broken asset perfectly and nothing warns](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#33-why-it-is-vicious-inspect-still-works) — 17.6
 - [inspect prints signatures, weights and dtypes from an asset the runtime aborts on; it looks recoverable and is not](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#33-why-it-is-vicious-inspect-still-works) — 17.6 🔇
 - [A missing per-arch .aimodelc surfaces as ENOENT 'no such file or directory', sending you to debug file paths](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#7-coreai-build-compile-exits-0-for-architectures-a-device-will-reject) — 17.6
-- [A green compile validates nothing about the arch choice; a mis-targeted .aimodelc passes CI and fails on device load](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6 🔇
-- [Int4 quantization failures are swallowed by a try/except while the bundle manifest still claims quantization succeeded](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6
-- [compiler.py swallows quantize_weights failures and ships unquantized weights while metadata claims int4 success](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6 🔇
-- [coreai-build compile exits 0 for any architecture; only an on-device load reveals a wrong-arch artifact](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6
+- [coreai-build compile exits 0 for any architecture; only an on-device load reveals a wrong-arch artifact](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-1) — 17.6
+- [A green compile validates nothing about the arch choice; a mis-targeted .aimodelc passes CI and fails on device load](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-1) — 17.6 🔇
+- [Int4 quantization failures are swallowed by a try/except while the bundle manifest still claims quantization succeeded](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-2) — 17.6
+- [compiler.py swallows quantize_weights failures and ships unquantized weights while metadata claims int4 success](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-2) — 17.6 🔇
 
 
 ## Version drift
@@ -1675,8 +1675,8 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 15**
 
 - [The individual symbol pages disagree with the framework page — Apple docs conflict on this behavior](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#shipping-models-background-assets-per-architecture-variants-and-updates) — 15.1
-- [Reference pages say deleting an in-use entry throws; Apple's other doc says deferred — code for both outcomes](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#74-deleting-an-entry-that-is-still-in-use-the-docs-contradict-each-other) — 15.1
 - [Apple's docs contradict each other on deleting a cache entry a live AIModel still references](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#74-deleting-an-entry-that-is-still-in-use-the-docs-contradict-each-other) — 15.1
+- [Reference pages say deleting an in-use entry throws; Apple's other doc says deferred — code for both outcomes](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#74-deleting-an-entry-that-is-still-in-use-the-docs-contradict-each-other) — 15.1
 - [Bookmark cleanup hits the same doc contradiction as §7.4 — in-use deletion is documented both ways](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#86-cleaning-up-a-bookmark-you-are-done-with) — 15.1
 
 **Part 16**
@@ -1720,10 +1720,10 @@ Start from the symptom column that matches what you observe. Within each section
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
 - ['8K context on iOS 27' is an uncorroborated third-party comment; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
 - [No .coreaimodel, .aiasset or coreai-torch convert exist; real spellings are .aimodel/.aimodelc, both directories](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#27-mlmodel-mlmodelc-aimodel-aimodelc-and-both-are-directories) — 17.5
-- [The utilities README's install line cannot resolve; only prerelease tags exist](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6
 - [upgrade.md tells you to import MLXLMHuggingFace or MLXEmbeddersHuggingFace; neither module exists in the package](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
 - [The migration doc's own Breaking Changes fix is stale: grep confirms neither named HuggingFace module exists](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6 🔇
-- [README says .package(from: 1.0.0) but only 1.0.0-beta1 and beta3 tags exist; SwiftPM's from: excludes prereleases](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure) — 17.6 🔇
+- [The utilities README's install line cannot resolve; only prerelease tags exist](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-3) — 17.6
+- [README says .package(from: 1.0.0) but only 1.0.0-beta1 and beta3 tags exist; SwiftPM's from: excludes prereleases](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-silent-failure-3) — 17.6 🔇
 
 
 ## API footguns
@@ -1815,8 +1815,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [ImageAttachment path must be pathlib.Path; a plain str dies on path.is_file() with AttributeError, not a friendly error.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#111-the-prompt-model) — 5.2
 - [Prompts expand any non-str iterable: a consumed generator retries as an empty prompt; a dict contributes only its keys.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#112-the-iterable-trap) — 5.2
 - [Transcript-loaded tools are historical only; forget to re-pass instances and the replayed session can never call tools.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#124-replaying-a-transcript) — 5.2
-- [session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-the-cleanup-that-crashes-the-interpreter) — 5.2
 - [Manual cleanup of native session resources crashes the interpreter — never call the internal _release() yourself.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-the-cleanup-that-crashes-the-interpreter) — 5.2
+- [session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-the-cleanup-that-crashes-the-interpreter) — 5.2
 - [except fm.FoundationModelsError misses image failures — PromptError/ImagePromptError subclass plain Exception; catch both.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#14-what-the-python-sdk-cannot-do) — 5.2
 
 **Part 6**
@@ -1829,8 +1829,8 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Python load_function raises KeyError for a missing name; Swift returns nil — ported parity tests change shape](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#41-the-distinction-stated-by-apple) — 7.1
 - [preferredStrides/minimumByteCount on an unresolved dynamic descriptor is a programming error — resolve dimensions first](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#64-ndarraydescriptor-and-the-1-sentinel) — 7.1
-- [Span is non-escapable and not a Sequence — shape.reduce(1,*) does not compile; write your own product helper](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#75-span-does-not-conform-to-sequence) — 7.1
 - [shape/strides come back as Span<Int>: no map/reduce/for-in — the obvious element-count reduce does not compile](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#75-span-does-not-conform-to-sequence) — 7.1
+- [Span is non-escapable and not a Sequence — shape.reduce(1,*) does not compile; write your own product helper](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#75-span-does-not-conform-to-sequence) — 7.1
 - [NDArray.RawView init(metalBuffer:) is explicitly unsafe aliasing and absent on watchOS — you own the synchronization](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#77-the-raw-views-mtlbuffer-and-iosurface-interop) — 7.1
 - [InferenceValue.ndArray is a consuming read dressed as a getter — a nil-check consumes the value](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
 - [The ndArray property consumes the InferenceValue on first access despite reading like a plain getter](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
@@ -2345,9 +2345,9 @@ Start from the symptom column that matches what you observe. Within each section
 - [keep:4 attention sinks make rotating caches unquantizable/unmergeable in Python; the Swift guard is unverified](part-13-mlx-swift/references/02-generation-tools-and-caching.md#84-where-the-cache-actually-gets-created) — 13.2
 - [gpt-oss attention sinks are incompatible with quantized SDPA — a family-specific hard stop](part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) — 13.2
 - [Detection-script print: caches without rollback or prefix reuse make speculative decoding unsafe](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
-- [Sample output: rotating layers present — trimmability is temporary (issue #424)](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
-- [Detection-script print: surfaces the kvBits and quantizedKVStart combination so the trade-off is visible](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
 - [Detection-script print: rotating layers make trimmability temporary — it lapses once the window wraps (#424)](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
+- [Detection-script print: surfaces the kvBits and quantizedKVStart combination so the trade-off is visible](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
+- [Sample output: rotating layers present — trimmability is temporary (issue #424)](part-13-mlx-swift/references/02-generation-tools-and-caching.md#94-how-to-detect-all-three-in-your-own-app) — 13.2
 - [swift test does not work on this package — use xcodebuild with -skipPackagePluginValidation (and -skipMacroValidation)](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#swift-test-does-not-work-on-this-package-use-xcodebuild) — 13.3
 - [Scope note on the logger: some drops surface only at debug level — logging bounds what it can save you from](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#76-silent-failure-the-prewarm-witness-must-match-exactly) — 13.3
 - [The mapper's precedence ladder exists to avoid a silent failure — internalise it before writing your own](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#82-samplingmodemapper-three-cases-one-precedence-ladder) — 13.3

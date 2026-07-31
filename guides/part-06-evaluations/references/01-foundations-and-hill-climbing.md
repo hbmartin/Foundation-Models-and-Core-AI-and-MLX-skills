@@ -468,7 +468,13 @@ the function you are calling; do not stringify a `Prompt` by hand.
 > (`SearchBooks.swift:562-566`).
 
 **The transcript is opt-in, and it is what tool-call evaluation runs on.** If you ever intend to add
-`ToolCallEvaluator`, pass it now:
+`ToolCallEvaluator`, pass it now. Because the accessor is declared by an Evaluations extension—not by
+FoundationModels—the source file must import both modules:[^eval-structured-transcript-import]
+
+```swift
+import Evaluations
+import FoundationModels
+```
 
 > ✅ **VERIFIED** — the canonical `subject(from:)` from
 > `/documentation/evaluations/evaluating-language-model-responses`, verbatim including comments:
@@ -488,8 +494,10 @@ the function you are calling; do not stringify a `Prompt` by hand.
 > }
 > ```
 >
-> `Transcript.structuredTranscript` is a **FoundationModels** property (iOS 27.0+) that bridges into
-> `Evaluations.StructuredTranscript`.
+> `Transcript.structuredTranscript` is an **Evaluations extension on
+> `FoundationModels.Transcript`** (27.0+), returning `Evaluations.StructuredTranscript`. It is not a
+> FoundationModels member, and it is unavailable at the use site unless that source file imports
+> Evaluations.
 
 Note the comment Apple wrote into their own sample: ***"Create the model response the same way you do
 in your app."*** That is not filler. It is the single most consequential rule in this section, and
@@ -2529,7 +2537,7 @@ struct MyFeatureTests {
 |---|---|---|
 | Everything in `Evaluations` | **27.0** — iOS / iPadOS / Mac Catalyst / macOS / visionOS / watchOS | Beta. **No tvOS.** No back-deployment. |
 | The `.evaluates` trait, the Evaluations report | **Xcode 27** | Report is an Xcode feature, not library code |
-| `Transcript.structuredTranscript` | **27.0** (FoundationModels) | required for `ToolCallEvaluator` |
+| `Transcript.structuredTranscript` | **27.0** (Evaluations extension) | requires `import Evaluations`; required for `ToolCallEvaluator` |
 | `PrivateCloudComputeLanguageModel` | **27.0** | needs an entitlement; see Part 4 guide 1 |
 | `SystemLanguageModel(guardrails:)` | **27.0** | `.permissiveContentTransformations` used by Book Tracker |
 | `SystemLanguageModel` | **26.0** (watchOS **27.0**) | three model versions: 26.0–26.3, 26.4, 27.0 |
@@ -2716,3 +2724,5 @@ kept and marked, so you can see what moved:
 - [`../../part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`](../../part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md) — the `Tool` protocol, and the transcript anatomy `StructuredTranscript` mirrors.
 - [`../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md`](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) — PCC as a judge or a generator, and the entitlement it needs.
 - [`../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) — what to do when Evaluations' Swift-only constraint blocks you.
+
+[^eval-structured-transcript-import]: Apple documents [`StructuredTranscript`](https://developer.apple.com/documentation/evaluations/structuredtranscript) in the Evaluations framework and uses `session.transcript.structuredTranscript` in its [language-model evaluation flow](https://developer.apple.com/documentation/evaluations/evaluating-language-model-responses). The captured Xcode 27 interface provides the ownership detail the abbreviated sample omits: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:282-285` declares the accessor in an `extension FoundationModels.Transcript`, with return type `Evaluations.StructuredTranscript`; the FoundationModels interface contains no declaration. Therefore `import Evaluations`, rather than framework linkage alone, brings the accessor into scope.

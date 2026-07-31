@@ -1173,8 +1173,9 @@ and reported, **not** verified as Apple-sanctioned usage.
 > confirmed flag-for-flag, including `--preferred-compute {gpu, neural-engine, none}` (default
 > `none`) and the `--platform` default of macOS. Full capture:
 > `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The 2026-07-29 finding that made this
-> unverifiable — `xcrun --find coreai-build` failing on the beta, no `coreai*` file in
-> `Xcode-beta.app` — was accurate for a bare install: **the wrapper ships in the optional Metal
+> unverifiable — `xcrun --find coreai-build` failing and no `coreai*` file in
+> `Xcode-beta.app` — accurately described an installation without the optional component:
+> **the wrapper ships in the Metal
 > Toolchain component** (`xcodebuild -downloadComponent MetalToolchain`), resolving via
 > `xcrun --no-cache --find coreai-build` to
 > `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/`.
@@ -1600,12 +1601,15 @@ invalidCompiledModel
 > meaning of code 3 remains open in the community issue archive
 > (`notes/repos/issues-coreai-stack.md:1462`).
 >
-> **PRACTICE (unchanged in substance, now grounded):** do not pattern-match on `AIModelError`
-> cases — in the macOS 27.0 beta SDK the type is not public and cannot be named. Treat **any**
-> throw from `AIModel(contentsOf:options:)` on a `.aimodelc` as "this compiled variant is unusable
-> on this device" and fall back to the portable `.aimodel` (§5.5). Log `String(describing: error)`
-> and `(error as NSError).code` so that when the reports arrive you can tell code 3 from
-> everything else. Full treatment of the error surface: Part 7, guide 7.1 §13.
+> **PRACTICE:** do not pattern-match on `AIModelError` cases — in the macOS 27.0 beta SDK the type
+> is not public and cannot be named. But the converse matters just as much: an **untyped** throw
+> does not prove that the compiled variant is corrupt or incompatible. Preserve task cancellation,
+> log the dynamic type plus `NSError` domain/code, and **rethrow an unclassified error**. Fall back
+> to the portable asset only after an evidence-backed classifier identifies an integrity or
+> compatibility failure; that classifier must default to `false`. Leave the cache intact on the
+> fallback path too — deletion belongs in a separate bounded repair test after the cache itself has
+> been isolated as the cause.
+> Full treatment of the public error surface: Part 7, guide 7.1 §13.[^untyped-fallback-policy]
 
 Note also that `invalidCompiledModel` is a **package-level** name from `apple/coreai-models`, not a
 Core AI framework symbol. If you are not using that package you will never see the string. Do not
@@ -1715,8 +1719,9 @@ how to measure it, which applies equally to a smoke test: run *"an env-gated hea
 file"*, because *"numbers measured through a chat UI are not comparable to anything"*
 (community, `notes/repos/john-rocky-models.md:885-888`).
 
-**Layer 3 — a runtime fallback so the failure degrades instead of breaking.** This is the one that
-protects users when layers 1 and 2 miss something.
+**Layer 3 — a guarded runtime fallback.** A verified compiled-asset incompatibility can degrade to
+the portable model; an unknown or transient failure remains an error instead of triggering
+destructive recovery or expensive surprise work.
 
 ```swift
 import CoreAI
@@ -1727,16 +1732,18 @@ enum ModelLoader {
 
     private static let log = Logger(subsystem: "com.example.app", category: "coreai")
 
-    /// Loads the compiled variant if it is present and usable; otherwise falls
-    /// back to the portable `.aimodel`.
+    /// Loads the compiled variant when present. Uses the portable `.aimodel`
+    /// when no variant exists or a caller verifies compiled incompatibility.
     ///
-    /// The fallback is not optional. Pre-A17-Pro devices get no compiled variant
-    /// at all (Apple's documented AOT hardware gate), and §5.1 means a compiled
-    /// variant that exists may still be un-loadable.
+    /// Keep a portable fallback: pre-A17-Pro devices get no compiled variant at
+    /// all (Apple's documented AOT hardware gate). If a compiled variant exists
+    /// but throws, fall back only when the caller can positively identify an
+    /// integrity/compatibility failure; unknown failures are rethrown.
     static func load(
         compiled compiledURL: URL?,
         portable portableURL: URL,
-        options: SpecializationOptions
+        options: SpecializationOptions,
+        isVerifiedCompiledIncompatibility: (any Error) -> Bool = { _ in false }
     ) async throws -> AIModel {
 
         if let compiledURL, FileManager.default.fileExists(atPath: compiledURL.path) {
@@ -1744,10 +1751,13 @@ enum ModelLoader {
                 let model = try await AIModel(contentsOf: compiledURL, options: options)
                 log.info("Loaded compiled variant \(compiledURL.lastPathComponent, privacy: .public)")
                 return model
+            } catch let cancellation as CancellationError {
+                // A fallback is new work. Never turn task cancellation into a
+                // portable-model specialization that the caller no longer wants.
+                throw cancellation
             } catch {
-                // Do NOT try to classify this. `AIModelError` is not documented
-                // (§5.3) and the observed failures include a hard SIGSEGV that
-                // never reaches this catch at all. Log everything and move on.
+                // `AIModelError` is not public (§5.3). Log what is observable,
+                // but do not infer "corrupt cache" from an untyped throw.
                 let nsError = error as NSError
                 log.error("""
                     Compiled variant failed: \(compiledURL.lastPathComponent, privacy: .public) \
@@ -1755,8 +1765,11 @@ enum ModelLoader {
                     domain=\(nsError.domain, privacy: .public) code=\(nsError.code) \
                     desc=\(String(describing: error), privacy: .public)
                     """)
-                // Purge the bad entry so a retry does not re-read a poisoned cache.
-                try? AIModelCache.default.deleteEntries(for: compiledURL)
+                // Preserve the specialization cache. This failure may be transient;
+                // an untyped throw is not evidence that the entry is poisoned.
+                guard isVerifiedCompiledIncompatibility(error) else {
+                    throw error
+                }
             }
         }
 
@@ -1766,9 +1779,8 @@ enum ModelLoader {
 }
 ```
 
-The `deleteEntries(for:)` call in the catch block is borrowed from a shipping community app's
-recovery ladder, whose comment explains the reasoning better than a paraphrase would
-(`notes/repos/noema-ios.md:389-411`, community source):
+Cache deletion still belongs in a **separate, bounded repair path** after evidence points at a stale
+specialization. A shipping community app uses this recovery step (`notes/repos/noema-ios.md:389-411`):
 
 ```swift
 // Clear every cached variant of this model: each SpecializationOptions change
@@ -1778,13 +1790,19 @@ try? AIModelCache.default.deleteEntries(for: url)
 ```
 
 That app's full ladder is: **cache probe → load → on failure, delete all entries for that URL and
-retry → on second failure, retry with `.default` options**. It is a good shape, and §9 explains why
-the last rung is a symptom of a deeper problem you should fix instead.
+retry → on second failure, retry with `.default` options**. It is useful evidence that cache repair
+can recover a wedged specialization, not a universal rule for every `AIModel` throw. Apple's own
+caching article uses `deleteEntries(for:)` when the source model is being replaced and the previous
+specialization is no longer valid; keep that lifecycle operation distinct from generic error
+handling.[^untyped-fallback-policy] §9 explains why the last rung is a symptom of a deeper problem
+you should fix instead.
 
-**Layer 4 — an honest error.** If both the compiled and the portable path fail, do not report
-"network error". `ModelPreparationFailure.noVariantForArchitecture(String)` from §2.3 exists so the
-user-facing string can be *"This device isn't supported yet"* and your telemetry can carry
-`AIModel.deviceArchitectureName`, which is the one string that will let you fix it.
+**Layer 4 — an honest error.** If a verified fallback reaches the portable path and that fails — or
+an unclassified compiled load is rethrown — do not report "network error".
+Use `ModelPreparationFailure.noVariantForArchitecture(String)` from §2.3 only when the architecture
+variant is positively missing; keep an unknown load failure as a generic model-preparation error.
+In either case, telemetry should carry `AIModel.deviceArchitectureName`, the one string that lets
+you distinguish an asset-map defect from a transient runtime failure.
 
 ---
 
@@ -1982,7 +2000,7 @@ is a second cost after specialization, and it is a good use of the tail of the f
 > loading surface is four members, `bookmarkData`, `init?(resolvingBookmark:)`,
 > `init(contentsOf:options:)` and `static specialize(...)` (✅ **SDK-verified** —
 > `CoreAIDelegates-27.0-macos.swiftinterface:14-27`), and the adjacent `AIModelCache` surface
-> (`:28-43`) adds only cache lookup and deletion. None of it reports progress.
+> (`:28-43`) adds cache selection/construction, lookup, and deletion. None of it reports progress.
 >
 > **STILL THE RULE:** do not fake a progress bar. Show an indeterminate indicator with **explanatory
 > text and an honest time estimate**, and — because you know your own model — hardcode a
@@ -3885,8 +3903,8 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 | 1 | **The 2026 Background Assets API for Core AI.** No Apple sample, no WWDC26 transcript, no docs page shows BA delivering a `.aimodel`/`.aimodelc`. §3.2 | The WWDC25 "Discover Apple-Hosted Background Assets" transcript; the current `backgroundassets` reference; any Apple sample. `coreai` currently has **zero** sample-code projects. | Build against your own `ModelDelivery` protocol; implement with `URLSession` first. |
 | 2 | **The packaging CLI for model asset packs.** Only `xcrun ba-package foundation-models package` is attested, and it is adapter-specific (adapters are discontinued in 27). §3.3 | `xcrun ba-package --help` on Xcode 27. | Do not script packaging until you have run `--help`. |
 | 3 | **The `deviceArchitectureName` value set** — narrowed 2026-07-31: the set of codes the *compiler* accepts is now enumerated (24, `h11p…h18p`, via validation probing; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`), but which code each *device* reports remains community-attested and internally contested for Macs (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
-| 4 | ~~**`--architecture` / `--expect-frequent-reshapes` spellings.**~~ **CLOSED 2026-07-31: both flags tool-verified via `compile --help` — `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), which is why the bare-install check of 2026-07-29 found it absent. Probing also enumerated the 24 valid `--architecture` codes (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`); the code→device mapping stays open as gap #3.** §4.2 | — | Unchanged: verify on your own machine (with the component installed) before writing a build script. |
-| 5 | ~~**`AIModelError` is not documented.**~~ **CLOSED 2026-07-29 by the SDK interface dump: `AIModelError` is not public in the macOS 27.0 beta SDK; the loading APIs throw untyped; `AssetError` is the only public error type.** §5.3 | — | Unchanged: do not pattern-match. Treat any throw from a `.aimodelc` load as "unusable here" and fall back. |
+| 4 | ~~**`--architecture` / `--expect-frequent-reshapes` spellings.**~~ **CLOSED 2026-07-31: both flags tool-verified via `compile --help` — `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), which is why the component-less check of 2026-07-29 could not resolve it. Probing also enumerated the 24 valid `--architecture` codes (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`); the code→device mapping stays open as gap #3.** §4.2 | — | Unchanged: verify on your own machine (with the component installed) before writing a build script. |
+| 5 | ~~**`AIModelError` is not documented.**~~ **CLOSED 2026-07-29 by the SDK interface dump: `AIModelError` is not public in the macOS 27.0 beta SDK; the loading APIs throw untyped; `AssetError` is the only public error type.** §5.3 | — | Do not pattern-match the private type or infer permanent incompatibility from an untyped throw. Preserve cancellation; log and rethrow unknowns. An injected incompatibility classifier must default false; keep cache repair separate and bounded. |
 | 6 | **Deleting an in-use cache entry: throws or defers?** The reference pages and the prose article disagree; the beta interface confirms the `throws` spellings only. §7.4 | A five-line device test. | Write code correct under both: release models, then delete, then retry a throw. |
 | 7 | ~~**No progress API for specialization.**~~ **CONFIRMED ABSENT in the macOS 27.0 beta interface (2026-07-29): the full public loading surface has no progress reporting.** §6.4 | Apple shipping one in a later release. | Indeterminate indicator plus honest text and a measured estimate. |
 | 8 | **No API to size or locate the Core AI cache** — API absence now SDK-confirmed (the beta `AIModelCache` surface is exactly the documented members; the `CoreAICache` module's public surface is empty); the on-disk location remains unknown. §11.6 | Apple adding one, or a container diff locating the store. | Report source-asset sizes, label the figure honestly, ship a Remove button that reclaims the rest. |
@@ -3903,8 +3921,9 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 `notes/sdk-interfaces/*-27.0-macos.swiftinterface`) — `CoreAIDelegates` (the `AIModel` loading and
 `AIModelCache` surface; closed gaps #5 and #7 and confirmed the API-absence half of #8),
 `CoreAIAsset` (`AssetError`), `CoreAIRuntime`, and the empty-in-this-beta `CoreAICache`. Plus the
-toolchain checks: 2026-07-29, `coreai-build` absent from the bare beta install, `usr/bin/aimodelc`
-present; 2026-07-31, `coreai-build 3600.79.1` found in the Metal Toolchain component and its full
+toolchain checks: 2026-07-29, the component-less install could not resolve `coreai-build` and the
+Xcode app bundle contained only `usr/bin/aimodelc`; 2026-07-31, `coreai-build 3600.79.1` found in
+the Metal Toolchain component and its full
 `--help` captured (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; closed gap #4).
 
 **Apple documentation** (harvested 2026-07-27 via `sosumi.ai` plus Apple's raw DocC JSON API;
@@ -3977,3 +3996,14 @@ Apple badge
     defines the available byte count used by the preflight. Apple marks its corresponding
     [`URLResourceKey`](https://developer.apple.com/documentation/foundation/urlresourcekey/volumeavailablecapacityforimportantusagekey)
     as a required-reason API that must be declared in `PrivacyInfo.xcprivacy`.
+
+[^untyped-fallback-policy]: The captured
+    [`CoreAIDelegates` interface](../../../notes/sdk-interfaces/CoreAIDelegates-27.0-macos.swiftinterface)
+    spells `AIModel.init(contentsOf:options:)` as `async throws` without a public typed-error
+    contract; that tells a caller what can be caught by name, not why a particular operation failed.
+    Apple's [*Managing model specialization and caching*](../../../docs/Managing%20model%20specialization%20and%20caching.md#delete-cached-assets-you-no-longer-need)
+    deletes entries when an old source model is replaced, and the live
+    [Core AI caching documentation](https://developer.apple.com/documentation/coreai/managing-model-specialization-and-caching)
+    gives the same lifecycle example. Swift's
+    [`CancellationError`](https://developer.apple.com/documentation/swift/cancellationerror) is the
+    standard signal to propagate before starting fallback work.

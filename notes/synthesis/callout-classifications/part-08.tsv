@@ -1,7 +1,3 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
 part-08-coreai-pytorch-conversion/README.md	16	part-8-core-ai-converting-a-model-from-pytorch	CALLOUT	caution-note	Series-wide evidence note: zero Apple sample code — guides rest on shipped repo source, docs prose, and SDK dumps
 part-08-coreai-pytorch-conversion/README.md	91	81-torchexport-to-aimodel-and-the-io-state-dynamic-shape-contract	SILENT-FAILURE	garbage-output	optimize() deletes a broadcasting-significant expand_dims — 17 dB PSNR at model scale, shape still validates (issue #49)
 part-08-coreai-pytorch-conversion/README.md	122	82-when-an-op-will-not-convert-coverage-composite-ops-custom-lowerings-externalization	SILENT-FAILURE	ignored-input	Unmatched ExternalizeSpec warns, never raises — a typo ships a slower model; assert on composite_declaration in the IR

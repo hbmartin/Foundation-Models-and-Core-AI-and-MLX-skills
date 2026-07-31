@@ -1,9 +1,0 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
-#
-# Deliberately unclassified: guides/README.md:16 — the series-navigation line
-# that mentions the callout count while describing SILENT-FAILURES.md. It is
-# prose about the index, not a callout, so it carries no row here.
-README.md	214	silent-failure-callouts	SILENT-FAILURE	caution-note	The stack's defining property: most defects do not throw — expect silence, plausible wrong numbers, and quiet degradation.

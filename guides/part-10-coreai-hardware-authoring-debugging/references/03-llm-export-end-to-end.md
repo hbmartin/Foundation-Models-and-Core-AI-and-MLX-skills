@@ -2479,8 +2479,8 @@ coreai-build compile <input.aimodel> [--output <dir>]
 > **not in Xcode-beta.app at all**; it ships in the optional **Metal Toolchain component**
 > (`xcodebuild -downloadComponent MetalToolchain`) and resolves via `xcrun --no-cache --find
 > coreai-build` to `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/
-> Metal.xctoolchain/usr/bin/coreai-build`. A 2026-07-29 check of the bare beta (27A5228h) had
-> found `xcrun --find coreai-build` failing and only
+> Metal.xctoolchain/usr/bin/coreai-build`. A 2026-07-29 check of Xcode beta `27A5228h` without that
+> optional component had found `xcrun --find coreai-build` failing and only
 > `Contents/Developer/usr/bin/aimodelc` present (command types `package`/`compile`, `--output`
 > required, no `--help`, binary embedding *"'aimodelc' is a tool used by the Xcode compiler"* and
 > *"Please use 'xcrun coreai-build' instead"*) — an accurate observation of an install without

@@ -1,7 +1,3 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
 part-10-coreai-hardware-authoring-debugging/README.md	19	read-this-before-you-trust-a-signature-anywhere-in-this-part	HEADING	caution-note	Scope note: Core AI has no compiling first-party samples, so verify every signature in this part before trusting it.
 part-10-coreai-hardware-authoring-debugging/README.md	98	101-authoring-for-the-neural-engine-and-for-the-gpu-two-opposite-rulesets	SILENT-FAILURE	perf-cliff	ANE-authored model quietly runs on GPU: the coreai-models loader infers compute unit from entrypoint names.
 part-10-coreai-hardware-authoring-debugging/README.md	136	102-the-debug-gauge-the-core-ai-instrument-and-the-core-ai-debugger	SILENT-FAILURE	misleading-signal	Debug gauge appears only with direct CoreAI linking; via a package there is no row, reading as if the model never ran.

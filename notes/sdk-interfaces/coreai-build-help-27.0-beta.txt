@@ -1,5 +1,5 @@
 # coreai-build help surface — captured 2026-07-31
-# Tool: /Users/haroldmartin/Library/Developer/DVTDownloads/MetalToolchain/mounts/e0303a069097c7034cc5befc63a7a7c2c8ee7720/Metal.xctoolchain/usr/bin/coreai-build (version: coreai-build 3600.79.1)
+# Tool: Metal.xctoolchain/usr/bin/coreai-build (version: coreai-build 3600.79.1)
 # Source: Metal Toolchain component 27A5228f installed into Xcode 27.0 beta (27A5228h); host macOS 26.5.2
 
 ===== coreai-build --help =====

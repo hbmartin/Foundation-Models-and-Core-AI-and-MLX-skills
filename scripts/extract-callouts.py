@@ -8,6 +8,7 @@ anchor: GitHub-style slug of the nearest preceding heading.
 excerpt: the callout's own text, up to ~400 chars, newlines flattened.
 """
 import os, re, sys, csv
+from collections import defaultdict
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 
@@ -24,12 +25,28 @@ def slugify(h):
         # everything else dropped (github slug rule approximation)
     return re.sub(r'-{2,}', '-', ''.join(out)).strip('-')
 
+def unique_slug(base, used, next_suffix):
+    """Return GitHub's first-unsuffixed, then -1, -2, ... heading anchor."""
+    candidate = base
+    if candidate in used:
+        suffix = next_suffix[base] or 1
+        candidate = f"{base}-{suffix}"
+        while candidate in used:
+            suffix += 1
+            candidate = f"{base}-{suffix}"
+        next_suffix[base] = suffix + 1
+    else:
+        next_suffix[base] = 1
+    used.add(candidate)
+    return candidate
+
 def flatten(text, limit=400):
     t = re.sub(r'\s+', ' ', text).strip()
     return t[:limit]
 
 rows = []
 for dirpath, dirnames, filenames in os.walk(ROOT):
+    dirnames.sort()
     for fn in sorted(filenames):
         if not fn.endswith('.md') or fn in ('SILENT-FAILURES.md', 'API-INDEX.md'):
             continue  # never index the generated index pages themselves
@@ -37,7 +54,9 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
         rel = os.path.relpath(path, ROOT)
         with open(path, encoding='utf-8') as f:
             lines = f.readlines()
-        heading = ''
+        heading_anchor = ''
+        used_slugs = set()
+        next_suffix = defaultdict(int)
         i = 0
         n = len(lines)
         while i < n:
@@ -45,8 +64,9 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             m = re.match(r'^(#{1,6})\s+(.*)', line)
             if m:
                 heading = m.group(2).strip()
+                heading_anchor = unique_slug(slugify(heading), used_slugs, next_suffix)
                 if '⚠️' in line:
-                    rows.append((rel, i + 1, slugify(heading), 'HEADING',
+                    rows.append((rel, i + 1, heading_anchor, 'HEADING',
                                  flatten(re.sub(r'^#+\s*', '', line)), ''))
                 i += 1
                 continue
@@ -66,12 +86,12 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', text)
                 title = flatten(tm.group(1), 160) if tm else ''
                 kind = 'SILENT-FAILURE' if re.search(r'SILENT FAILURE', text, re.I) else 'CALLOUT'
-                rows.append((rel, start + 1, slugify(heading), kind, title, flatten(text)))
+                rows.append((rel, start + 1, heading_anchor, kind, title, flatten(text)))
                 continue
             # inline occurrence (prose, list item, table row)
             tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', line)
             title = flatten(tm.group(1), 160) if tm else ''
-            rows.append((rel, i + 1, slugify(heading), 'INLINE', title, flatten(line)))
+            rows.append((rel, i + 1, heading_anchor, 'INLINE', title, flatten(line)))
             i += 1
 
 w = csv.writer(sys.stdout, delimiter='\t', lineterminator='\n')

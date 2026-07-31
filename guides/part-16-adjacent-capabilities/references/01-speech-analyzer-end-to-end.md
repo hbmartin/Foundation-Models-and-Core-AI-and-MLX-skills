@@ -397,9 +397,14 @@ this API has, and it is worth reading before the more realistic listings later i
 ```swift
 import Speech
 
+enum SpeechSetupError: Error {
+    case unsupportedLocale
+    case noCompatibleAudioFormat
+}
+
 // Step 1: Modules
-guard let locale = SpeechTranscriber.supportedLocale(equivalentTo: Locale.current) else {
-    /* Note unsupported language */
+guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale.current) else {
+    throw SpeechSetupError.unsupportedLocale
 }
 let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 
@@ -412,7 +417,9 @@ if let installationRequest = try await AssetInventory.assetInstallationRequest(s
 let (inputSequence, inputBuilder) = AsyncStream.makeStream(of: AnalyzerInput.self)
 
 // Step 4: Analyzer
-let audioFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
+guard let audioFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+    throw SpeechSetupError.noCompatibleAudioFormat
+}
 let analyzer = SpeechAnalyzer(modules: [transcriber])
 
 // Step 5: Supply audio
@@ -457,8 +464,11 @@ if let lastSampleTime {
 ```
 ✅ VERIFIED — reproduced from `/documentation/speech/speechanalyzer`, including the out-of-order
 step comments (Apple numbers step 7 above step 6 because the results task must be running before
-analysis starts). The `else` call is corrected against the current method declaration: it is
-`async` and nonthrowing, and it can finish a session before the analyzer consumes any input.[^speech-cancel]
+analysis starts), with three local compile corrections: the async locale lookup is awaited, its
+placeholder failure now exits the `guard`, and the optional analyzer format is unwrapped before
+converter construction. The `else` call is also corrected against the current method declaration:
+it is `async` and nonthrowing, and it can finish a session before the analyzer consumes any
+input.[^speech-cancel]
 
 Three things to notice in that listing, because they are easy to skim past:
 
@@ -466,12 +476,13 @@ Three things to notice in that listing, because they are easy to skim past:
    both are **synchronous** — no `await`. If you write `let input = try converter.convert(...)`
    and then `yield(input)`, you have a type error, not a subtle bug, so this one at least fails
    loudly.
-2. **`audioFormat` is an `AVAudioFormat?` and Apple passes it into
-   `AnalyzerInputConverter(analyzerFormat:)` without unwrapping it.** The snippet is loose:
-   ✅ **SDK-verified**, the initializer takes a **non-optional** `AVAudioFormat`
-   (`Speech-27.0-macos.swiftinterface:520`), so Apple's canonical example does not compile as
-   printed — unwrap the format yourself, which you need to do anyway because `nil` means missing
-   assets (§5.5). This closes what was gap G3.
+2. **`bestAvailableAudioFormat(compatibleWith:)` returns `AVAudioFormat?`, while
+   `AnalyzerInputConverter(analyzerFormat:)` requires `AVAudioFormat`.** The `guard` above is not
+   optional ceremony: it is the compile-correct bridge between those contracts. Apple's canonical
+   page passes the optional result directly and therefore does not compile as printed; the local
+   interface and the two official symbol pages agree on the mismatch.[^speech-audio-format-contract]
+   Handle `nil` as a setup failure—which can indicate missing assets (§5.5)—before constructing the
+   converter. This closes what was gap G3.
 3. **The results loop lives in its own `Task`, started before analysis.** That structure is not
    decoration. §9 is entirely about what happens when you get the lifetime of that task wrong.
 
@@ -4012,6 +4023,13 @@ as extensions of Foundation types — see §8.2).
     [`cancelAndFinishNow()`](https://developer.apple.com/documentation/speech/speechanalyzer/cancelandfinishnow%28%29)
     page declares `final func cancelAndFinishNow() async`, describes it as finishing analysis
     immediately, and specifies that it can finish before any input has been consumed.
+
+[^speech-audio-format-contract]: Apple documents
+    [`bestAvailableAudioFormat(compatibleWith:)`](https://developer.apple.com/documentation/speech/speechanalyzer/bestavailableaudioformat%28compatiblewith:%29)
+    as returning an optional `AVAudioFormat?`, but
+    [`AnalyzerInputConverter.init(analyzerFormat:configurationHandler:)`](https://developer.apple.com/documentation/speech/analyzerinputconverter/init%28analyzerformat:configurationhandler:%29)
+    takes a non-optional `AVAudioFormat`. The captured Xcode 27 interface confirms both declarations
+    at `notes/sdk-interfaces/Speech-27.0-macos.swiftinterface:254-255` and `:520`, respectively.
 
 **Apple sample code** — ⚠️ iOS 26 / WWDC25, cited only for the iOS 26 baseline and clearly labelled
 as such at every use:

@@ -1,7 +1,3 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
 part-05-prototyping-profiling-non-swift/README.md	90	51-playground-scheme-simulation-and-reading-a-foundation-models-trace	SILENT-FAILURE	misleading-signal	Simulator inference runs on the host Mac; an Xcode 27 SDK on macOS 26 manufactures error -1 that looks like your bug.
 part-05-prototyping-profiling-non-swift/README.md	135	52-the-fm-cli-and-the-foundation-models-sdk-for-python	SILENT-FAILURE	ignored-input	A schema flag that fails to apply still yields prose on stdout with exit 0; jq errors lines later, blaming the wrong stage.
 part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md	41	what-this-covers	INLINE	caution-note	The instrument's trace file is a sensitive artefact: it captures prompt and response data in the clear.
@@ -59,8 +55,8 @@ part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2678	125-what-this-workflow-is-good-for	CALLOUT	caution-note	Transcripts are user words: exporting them off-device is a data-collection decision — consent, redaction, retention.
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2689	13-memory-across-the-boundary	HEADING	resource-growth	Native memory and fds cross the Python/Swift boundary — batches leak unless sessions are recreated and releases run.
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2771	132-the-fd-leak-and-why-the-fix-is-not-in-any-release	CALLOUT	resource-growth	pip's apple-fm-sdk 0.2.1 still has the image fd leak; the fix landed 2026-07-07 on git main only — install from main.
-part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2823	134-the-cleanup-that-crashes-the-interpreter	HEADING	footgun-api	session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.
-part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2825	134-the-cleanup-that-crashes-the-interpreter	CALLOUT	footgun-api	Manual cleanup of native session resources crashes the interpreter — never call the internal _release() yourself.
+part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2823	134-the-cleanup-that-crashes-the-interpreter	HEADING	footgun-api	Manual cleanup of native session resources crashes the interpreter — never call the internal _release() yourself.
+part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2825	134-the-cleanup-that-crashes-the-interpreter	CALLOUT	footgun-api	session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2877	136-how-to-know-whether-you-are-leaking	CALLOUT	empty-output	pytest collects test_memory_stress.py and runs nothing — it defines no test_ functions; invoke it with python directly.
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2905	100-iterations	CALLOUT	docs-vs-reality	test_composed_prompt_cleanup.py's docstring promises an fd-count regression test; the file has only four mocked unit tests.
 part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md	2990	14-what-the-python-sdk-cannot-do	CALLOUT	footgun-api	except fm.FoundationModelsError misses image failures — PromptError/ImagePromptError subclass plain Exception; catch both.

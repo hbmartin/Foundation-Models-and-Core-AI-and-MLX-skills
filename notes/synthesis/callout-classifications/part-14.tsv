@@ -1,7 +1,3 @@
-# file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
-# Classified per notes/synthesis/SYMPTOM-TAXONOMY.md. line/anchor/kind
-# mirror scripts/extract-callouts.py output; re-extract and re-classify
-# NEW rows after editing guides, then run scripts/build-indexes.sh.
 part-14-bridges-between-stacks/README.md	19	read-this-before-you-trust-anything-in-this-part	HEADING	caution-note	Read-first note: this part rests on source reads of community bridges, not Apple documentation
 part-14-bridges-between-stacks/README.md	105	141-bridges-into-core-ai-mlx2coreai-swift-lm-and-the-community-zoo	SILENT-FAILURE	garbage-output	Pass anything but the full monotonic position_ids and KV lands at the wrong cache slice — logits stay plausible
 part-14-bridges-between-stacks/README.md	212	sources-for-this-part	INLINE	caution-note	No WWDC transcript is cited anywhere in this part — nothing here has Apple-session backing
