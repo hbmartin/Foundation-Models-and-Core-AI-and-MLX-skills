@@ -88,6 +88,7 @@ export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 ./scripts/dump-sdk-interfaces.sh --check-only       # Xcode + SDK + Metal component identity
 ./scripts/diff-interfaces.sh                        # temp capture + one-screen drift vs HEAD
 # managed capture includes coreai-build top-level + all subcommand help surfaces
+./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification   # snippet-level drift
 cd probes && swift test && cd ..                    # re-run probes on the new runtime
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```

@@ -54,7 +54,7 @@ TARGETS = {
               "arm64-apple-ios{v}-simulator"),
 }
 # Frameworks that live under <platform>/Developer/Library/Frameworks (Xcode-bundled).
-XCODE_ONLY_MODULES = {"Evaluations"}
+XCODE_ONLY_MODULES = {"Evaluations", "Testing", "XCTest"}
 # Modules structurally absent from the 26-generation SDKs.
 ABSENT_ON_26 = {"CoreAI", "Evaluations"}
 
@@ -444,7 +444,8 @@ def compile_variants(fence, mk, imports, tc, opts, xfail):
     else:
         order = [mk.wrap]
     last = None
-    needs_xcode_fw = bool(set(imports) & XCODE_ONLY_MODULES)
+    body_modules = set(hoist_imports(fence.body)[0])
+    needs_xcode_fw = bool((set(imports) | body_modules) & XCODE_ONLY_MODULES)
     for wrap in order:
         source, linemap, _modules = synthesize(fence, imports, wrap)
         result = typecheck(source, tc, linemap=linemap,
@@ -526,12 +527,21 @@ def verify_fence(fence, toolchains, opts):
     target = opts.guess_target
     tc = toolchains[target]
     verdict, wrap, result = compile_variants(fence, Markers(), imports, tc, opts, False)
+    # iOS-only snippets (UIKit, WidgetKit, …) can never compile against the macOS
+    # SDK — fall back to the simulator target before calling them failures.
+    if (verdict == "fail" and "no such module" in result.first_error
+            and target != "sim27" and "sim27" in toolchains):
+        v2, w2, r2 = compile_variants(fence, Markers(), imports,
+                                      toolchains["sim27"], opts, False)
+        if v2 == "pass":
+            target, verdict, wrap, result = "sim27", v2, w2, r2
     row[col[target]] = verdict
     row["wrap"] = wrap
     row["status"] = "UNCLASSIFIED-PASS" if verdict == "pass" else "UNCLASSIFIED-FAIL"
     row["first_error"] = result.first_error
     row["err_line"] = result.err_line
     row["_guess_imports"] = imports
+    row["_pass_target"] = target
     return row
 
 
@@ -620,7 +630,7 @@ def write_markers(rows, guides_root, opts):
     for r in rows:
         new_info = None
         if r["status"] == "UNCLASSIFIED-PASS":
-            new_info = f"compile:{opts.guess_target}"
+            new_info = f"compile:{r.get('_pass_target', opts.guess_target)}"
             extra = r.get("_needed_imports")
             if extra:
                 new_info += " imports:" + ",".join(extra)
@@ -657,10 +667,10 @@ def write_markers(rows, guides_root, opts):
 def refine_needed_imports(rows, toolchains, opts):
     """For each UNCLASSIFIED-PASS row, find whether guess-injected imports were
     actually needed: recompile with hoisted-only; record extras if required."""
-    tc = toolchains[opts.guess_target]
     for r in rows:
         if r["status"] != "UNCLASSIFIED-PASS":
             continue
+        tc = toolchains[r.get("_pass_target", opts.guess_target)]
         fence = r["_fence"]
         verdict, _, _ = compile_variants(fence, Markers(), [], tc, opts, False)
         if verdict == "pass":
@@ -725,6 +735,7 @@ def main(argv=None):
             pass
     if opts.guess:
         needed.add(opts.guess_target)
+        needed.add("sim27")  # iOS-only-module fallback target
     toolchains = {}
     if not opts.stub_compiler:
         for name in sorted(needed):

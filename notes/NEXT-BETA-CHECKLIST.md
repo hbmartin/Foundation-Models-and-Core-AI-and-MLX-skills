@@ -48,6 +48,14 @@ the repo root.
   exact report (verified 2026-07-31: +4 / −17 lines) is "clean" for 27.0. Flag-surface changes
   appear as additional lines. From the next SDK version on, scripted captures compare against
   scripted captures and a no-change run reads genuinely clean.
+- [ ] Re-verify the guide snippets against the new SDK (added 2026-07-31; grammar and
+  committed baseline in `notes/snippet-verification/README.md`):
+  ```bash
+  ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification
+  ```
+  Any fence that WAS green and turns red **is the beta's snippet-level API drift**, with
+  the failing symbol named by the compiler at a mapped guide line. Fold fixes into the
+  guides, re-run, commit the refreshed `results.tsv` + `report.md`.
 - [ ] Cross-major comparisons on request, one framework at a time:
   ```bash
   ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels
