@@ -1,0 +1,19 @@
+{
+  "" : {
+    "diagnostics" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport-primary.dia",
+    "emit-module-dependencies" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport-primary-emit-module.dia",
+    "pch" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport-primary.swiftdeps"
+  },
+  "/Volumes/ExtStor/FM and MLX and CoreAI/probes/Sources/ProbeSupport/ProbeSupport.swift" : {
+    "const-values" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.swiftconstvalues",
+    "dependencies" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.d",
+    "diagnostics" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.dia",
+    "index-unit-output-path" : "/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.o",
+    "llvm-bc" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.bc",
+    "object" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.o",
+    "swift-dependencies" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport.swiftdeps",
+    "swiftmodule" : "/Volumes/ExtStor/FM and MLX and CoreAI/probes/.build/out/Intermediates.noindex/Probes.build/Debug/ProbeSupport-t.build/Objects-normal/arm64/ProbeSupport~partial.swiftmodule"
+  }
+}
