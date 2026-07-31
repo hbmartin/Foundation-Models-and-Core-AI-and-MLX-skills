@@ -17,7 +17,7 @@ def generation_date():
     if epoch is not None:
         try:
             instant = datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc)
-        except (ValueError, OverflowError) as exc:
+        except (ValueError, OverflowError, OSError) as exc:
             sys.exit(f"invalid SOURCE_DATE_EPOCH {epoch!r}: {exc}")
         return instant.date().isoformat()
     return datetime.datetime.now(datetime.timezone.utc).date().isoformat()

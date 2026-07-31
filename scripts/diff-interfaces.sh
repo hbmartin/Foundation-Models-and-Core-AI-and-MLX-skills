@@ -29,6 +29,19 @@ need_value() {
   [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value"
 }
 
+version_sort() {
+  python3 -c '
+import re
+import sys
+
+def key(value):
+    return [(0, int(piece)) if piece.isdigit() else (1, piece)
+            for piece in re.split(r"([0-9]+)", value)]
+
+sys.stdout.writelines(sorted(sys.stdin, key=key))
+'
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --against)
@@ -64,6 +77,7 @@ done
 case "$EXAMPLES" in
   ''|*[!0-9]*) die '--examples must be a non-negative integer' ;;
 esac
+command -v python3 >/dev/null 2>&1 || die 'python3 is required'
 
 # Unified-diff filter for public surface changes. The raw-line count is also
 # reported so changes below this intentionally narrow filter remain visible.
@@ -75,7 +89,8 @@ report_drift() { # $1=label, $2=unified-diff file
   local added removed raw
   added="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^+' || true)"
   removed="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^-' || true)"
-  raw="$(grep -E -c '^[+-]' "$diff_file" || true)"
+  raw="$(awk '/^[+-]/ && $0 !~ /^(\+\+\+|---)([[:space:]]|$)/ { count++ }
+    END { print count + 0 }' "$diff_file")"
   if [ ! -s "$diff_file" ]; then
     printf '  %-32s clean — no drift\n' "$label"
   elif [ "$((added + removed))" -eq 0 ]; then
@@ -119,7 +134,7 @@ if [ -n "$BASELINE" ]; then
   [ -f "$base" ] || die "no tracked capture for $FRAMEWORK at SDK $BASELINE"
   newest="$(find "$TRACKED_DIR" -maxdepth 1 -type f \
     -name "${FRAMEWORK}-*-macos.swiftinterface" -print | \
-    grep -v -- "-${BASELINE}-macos.swiftinterface$" | LC_ALL=C sort -V | tail -n 1 || true)"
+    grep -v -- "-${BASELINE}-macos.swiftinterface$" | version_sort | tail -n 1 || true)"
   [ -n "$newest" ] || die "no non-$BASELINE capture of $FRAMEWORK is tracked"
   printf '=== %s: %s -> %s ===\n' "$FRAMEWORK" "$(basename "$base")" "$(basename "$newest")"
   diff -u "$base" "$newest" > "$TMP/diff" || true
@@ -146,6 +161,9 @@ PY
 )
 EOF
 
+[ -n "$SDK_VERSION" ] && [ -n "$XCODE_BUILD" ] || \
+  die 'capture manifest did not provide required SDK version and Xcode build values'
+
 printf '\n=== temporary Xcode %s / SDK %s capture vs %s ===\n' \
   "$XCODE_BUILD" "$SDK_VERSION" "$AGAINST"
 found=0
@@ -169,7 +187,12 @@ for fresh in "$FRESH_DIR"/*-"$SDK_VERSION"-macos.swiftinterface; do
   report_drift "$framework" "$TMP/diff"
 done
 
-[ "$found" -eq 1 ] || die "no matching SDK $SDK_VERSION interface captures were produced"
+if [ "$found" -ne 1 ]; then
+  if [ -n "$FRAMEWORK" ]; then
+    die "no SDK $SDK_VERSION interface capture matched requested framework: $FRAMEWORK"
+  fi
+  die "no matching SDK $SDK_VERSION interface captures were produced"
+fi
 
 # CLI-help drift: compare each fresh *-help-*.txt against the newest committed
 # help capture for the same tool. Filenames can differ across captures
@@ -182,7 +205,7 @@ if [ -z "$FRAMEWORK" ]; then
     [ -f "$fresh" ] || continue
     tool="$(basename "$fresh" | sed 's/-help-.*\.txt$//')"
     committed="$(git -C "$REPO_ROOT" ls-tree --name-only "$AGAINST" notes/sdk-interfaces/ | \
-      grep -E "^notes/sdk-interfaces/${tool}-help-.*\.txt$" | LC_ALL=C sort -V | tail -n 1 || true)"
+      grep -E "^notes/sdk-interfaces/${tool}-help-.*\.txt$" | version_sort | tail -n 1 || true)"
     if [ -z "$committed" ]; then
       printf '  %-32s NEW capture: %s lines\n' "$tool --help" \
         "$(wc -l < "$fresh" | tr -d ' ')"

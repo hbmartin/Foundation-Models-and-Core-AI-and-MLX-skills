@@ -125,8 +125,8 @@ and a safe default. Two numbers worth carrying in from §4.5: omitting
 > specialization and of any API to size or locate the Core AI cache is now SDK-confirmed, not just
 > unindexed (§5.3, §6.4, §11.6). And a 2026-07-31 resolution: `coreai-build` is not part of the
 > Xcode 27.0 beta app bundle and failed to resolve on the 2026-07-29 install because the optional
-> **Metal
-> Toolchain component** — its full `--help` is now captured, and probing it enumerated the 24 valid
+> **Metal Toolchain component was not installed** — its full `--help` is now captured, and probing it
+> enumerated the 24 valid
 > `--architecture` codes, though the code→*device* mapping (the M4 Max disagreement above) remains
 > community-only (§4.2).
 

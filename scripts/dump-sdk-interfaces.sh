@@ -141,10 +141,12 @@ COMPONENT_TOOLCHAIN_ROOT="$(CDPATH='' cd -- "$COMPONENT_SEARCH_PATH/Metal.xctool
 [ "$COMPONENT_TOOLCHAIN_ROOT" = "$COREAI_TOOLCHAIN_ROOT" ] || \
   die 'xcrun tools do not resolve from the MetalToolchain reported by the selected Xcode'
 
-COREAI_BUILD_VERSION="$("$COREAI_BUILD_PATH" --version 2>&1 | sed -n '1p')" || \
+COREAI_BUILD_VERSION="$("$COREAI_BUILD_PATH" --version)" || \
   die 'coreai-build --version failed'
-METAL_VERSION="$("$METAL_PATH" --version 2>&1 | sed -n '1p')" || \
+METAL_VERSION="$("$METAL_PATH" --version)" || \
   die 'metal --version failed'
+COREAI_BUILD_VERSION="$(printf '%s\n' "$COREAI_BUILD_VERSION" | sed -n '1p')"
+METAL_VERSION="$(printf '%s\n' "$METAL_VERSION" | sed -n '1p')"
 [ -n "$COREAI_BUILD_VERSION" ] && [ -n "$METAL_VERSION" ] || \
   die 'tool version output was empty'
 
@@ -153,7 +155,11 @@ FM_VERSION=''
 FM_PRESENT=0
 if FM_PATH="$(xcrun --no-cache --find fm 2>/dev/null)"; then
   FM_PRESENT=1
-  FM_VERSION="$("$FM_PATH" --version 2>&1 | sed -n '1p' || true)"
+  if FM_VERSION="$("$FM_PATH" --version)"; then
+    FM_VERSION="$(printf '%s\n' "$FM_VERSION" | sed -n '1p')"
+  else
+    FM_VERSION=''
+  fi
 else
   FM_PATH=''
 fi
@@ -330,8 +336,6 @@ done
 COREAI_HELP_NAME="coreai-build-help-${MACOS_SDK_VERSION}.txt"
 {
   printf '# coreai-build help surface\n'
-  printf '# Version: %s\n' "$COREAI_BUILD_VERSION"
-  printf '# Toolchain: %s\n' "$TOOLCHAIN_IDENTIFIER"
   for args in '--help' 'compile --help' 'package --help' 'inspect --help' 'metadata --help'; do
     printf '\n===== coreai-build %s =====\n' "$args"
     # Intentional word splitting: args is a fixed list above, never user input.
@@ -347,7 +351,6 @@ if [ -n "$FM_PATH" ]; then
   FM_HELP_NAME="fm-help-${MACOS_SDK_VERSION}.txt"
   {
     printf '# fm help surface\n'
-    [ -z "$FM_VERSION" ] || printf '# Version: %s\n' "$FM_VERSION"
     printf '\n===== fm --help =====\n'
     "$FM_PATH" --help
   } > "$CAPTURE_DIR/$FM_HELP_NAME"
@@ -568,7 +571,8 @@ while IFS= read -r name; do
   mv "$tmp_target" "$DEST/$name"
 done < "$ADDITIONS"
 
-if [ ! -f "$DEST/capture-manifest.json" ] || ! cmp -s "$MERGED_MANIFEST" "$DEST/capture-manifest.json"; then
+if [ -s "$ADDITIONS" ] && { [ ! -f "$DEST/capture-manifest.json" ] || \
+  ! cmp -s "$MERGED_MANIFEST" "$DEST/capture-manifest.json"; }; then
   tmp_manifest="$DEST/.capture-manifest.json.capture.$$"
   cp "$MERGED_MANIFEST" "$tmp_manifest"
   mv "$tmp_manifest" "$DEST/capture-manifest.json"
