@@ -3894,7 +3894,7 @@ operating on device).*
 
 [^sample-routing-policy]: The structure classifier and preferences live in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218),
     whereas Core AI separately documents `.default` as selecting the compute-unit combination that
     minimizes latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 
@@ -3904,3 +3904,9 @@ operating on device).*
     [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
     The authoritative [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L53-L78)
     describes E8M0 block scales, automatic dequantization, and the custom-format fallback.
+
+[^stride-scope]: The `.contiguous()` warning is specific to the Python authoring path documented in
+    the pinned `coreai-models`
+    [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98).
+    The Core AI API itself exposes explicit strides and specialization-selected layouts:
+    [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).

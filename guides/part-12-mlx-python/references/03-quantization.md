@@ -411,8 +411,9 @@ cases for int2, FP4, FP8, and E8M0 and auxiliary scale planes.[^metal27-formats]
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1546-1549`: "`fp8_e8m0` and `fp8_e4m3`
 > are defined in `mlx/backend/metal/kernels/fp8.h` (`fp8_e8m0` at `fp8.h:51-52`), and `fp4_e2m1` in
 > `fp4.h`. They are **plain structs with hand-written bit manipulation**, loaded from a `uint8_t`
-> by reinterpret-cast. The quoted negative conclusion describes the Xcode 26.6 snapshot used by
-> that research note, not the Xcode 27 API.
+> by reinterpret-cast. There is no hardware fp8 type and no Metal `fp8` at all." That final
+> negative conclusion describes the Xcode 26.6 snapshot used by the research note, not the
+> Xcode 27 API.
 
 Here is the scale decode, in full:
 

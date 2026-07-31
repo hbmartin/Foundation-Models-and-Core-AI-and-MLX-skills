@@ -51,7 +51,8 @@ Read this guide for:
   whose template parameters differ *in kind*; and the masked-element API, whose real spelling is
   **not** what Apple's own doc comment says (§6).
 - **The Xcode 26.6 element types.** Thirteen shader-side types, including `int8_t`, `uint8_t`,
-  `metal::int4b_format`, and `metal::uint4b_format` (§2.3). Xcode 27's host-side `MTLTensorDataType`
+  `metal::int4b_format`, and `metal::uint4b_format` (the complete `__tensor_ops_datatype` enum is
+  transcribed in `notes/repos/mlx-tensorops-kernels.md` §8). Xcode 27's host-side `MTLTensorDataType`
   separately adds int2, FP4, FP8, and E8M0 formats — and the macOS 27.0 beta SDK's MPP headers add
   the matching *shader-side* element types: `metal::int2b_format` / `uint2b_format`,
   `metal::metal_fp4_e2m1_format`, `metal::metal_fp8_e4m3_format` / `…_e5m2_format` as operands, and
@@ -77,7 +78,7 @@ Read this guide for:
 
 - **Xcode 26.6 or later** for the 26.x shader surface (this guide was verified against Build
   `17F113`), or **Xcode 27** for multiplane tensors, and a **deployment
-  target of 26.2 or higher — see §1 and [guide 11.2 §0.2](02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation),
+  target of 26.2 or higher** — see §1 and [guide 11.2 §0.2](02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation),
   where a wrong deployment target silently deletes every accelerated kernel from your build.
 - **The Metal toolchain**, which is *not* inside `Xcode.app`. It is a cryptex mount. Find it with
   `xcrun -sdk macosx --find metal` and **never hardcode the path** — it contains a build-specific
@@ -233,7 +234,7 @@ custom format… dequantizing the data into a cooperative tensor, which can now 
 to the `matmul2d` op."* The second half is the 26.3 feature and it is real. The first half describes
 something with no shading-language surface in the 26.x SDK.
 
-> ✅ **XCODE 27 UPDATE.** Apple's current documentation and feature-set tables close the old gap:
+> ✅ **VERIFIED (Xcode 27 update).** Apple's current documentation and feature-set tables close the old gap:
 > multiplane tensors are a host-side `MTLTensor` facility, and int2, FP4, FP8, and E8M0 formats are
 > valid tensor data types. Use the 27.0 surface when that is your deployment floor; keep in-kernel
 > dequantization for 26.x targets and custom formats.[^metal27-dtypes]
@@ -342,10 +343,10 @@ Take them one at a time.
 | Version | Feature added | Consequence for your code |
 |---|---|---|
 | **26.0** | TensorOps introduced (WWDC25 session 262, "Combine Metal 4 machine learning and graphics") | `matmul2d`, `convolution2d`, tensors, cooperative tensors as *destinations* |
-| **26.1** | **bfloat** tensor support | `bfloat` becomes a legal element type (§2.3) |
+| **26.1** | **bfloat** tensor support | `bfloat` becomes a legal element type (§1.5) |
 | **26.2** | *nothing named in the ladder* | but see §1.2 — the headers say otherwise |
 | **26.3** | **cooperative tensors as matmul *inputs*** | `get_left_input_cooperative_tensor(src)`, `get_right_input_cooperative_tensor(src)`, `is_compatible_as_left_input` — the in-register dequantization path (§6.6) |
-| **26.4** | **4-bit and 8-bit integer tensors** | `int8_t`, `uint8_t`, `metal::int4b_format`, `metal::uint4b_format` as tensor element types (§2.3) |
+| **26.4** | **4-bit and 8-bit integer tensors** | `int8_t`, `uint8_t`, `metal::int4b_format`, `metal::uint4b_format` as tensor element types (§1.5) |
 
 Two things this table settles for the original 26.x surface:
 

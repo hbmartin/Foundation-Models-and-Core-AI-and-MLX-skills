@@ -2512,7 +2512,7 @@ unless you pass `--dequantize`. DoRA's `fuse` additionally folds the magnitude:
 
 Note the duck-typing: `if hasattr(m, "fuse")`. Anything exposing a `fuse` participates —
 `LoRALinear`, `LoRASwitchLinear`, `LoRAEmbedding`, `DoRALinear`, `DoRAEmbedding`, and AFM 7's
-`FusedLoRALinear` (§13.9). Anything not exposing it (a plain `nn.Linear` from `--fine-tune-type
+`FusedLoRALinear`. Anything not exposing it (a plain `nn.Linear` from `--fine-tune-type
 full`) does not, which is why fusing a full fine-tune is a no-op (§4.3).
 
 ### 11.2 The flags

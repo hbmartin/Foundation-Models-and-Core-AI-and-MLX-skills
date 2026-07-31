@@ -3001,7 +3001,7 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | `summarizeHistory` never fires | `entryThreshold ≥ rollingWindow` size, or the trailing entry is not a `.prompt` | 13.4, 13.5 |
 | History window starts with an orphaned response | `rollingWindow(entries:)` cutting between a prompt and its response — a known, pinned bug | 13.3 |
 | Strange answers after an aborted turn | `.preserveTranscript` left a partially-generated trailing entry | 14.3 |
-| Crash inside `LanguageModelSession` on assignment | `session.transcript = …` while `isResponding` was `true` | 14.4 |
+| `LanguageModelSession.Error.transcriptMutationWhileResponding` thrown on assignment | `session.transcript = …` while `isResponding` was `true` | 14.4 |
 | Spinner never clears | the turn's only output was a tool call; the stream yielded zero partials | 15.7 |
 | `LanguageModelError.contextSizeExceeded` in a long session | trimming that silently never ran | 13.5 |
 

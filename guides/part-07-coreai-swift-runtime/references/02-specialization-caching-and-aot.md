@@ -2717,6 +2717,6 @@ this guide is Beta. Re-verify signatures against the shipping SDK before relying
 
 [^sample-routing-policy]: The classifier and preferences are source code in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218),
     whereas Core AI separately documents `.default` as selecting the compute-unit combination that
     minimizes latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

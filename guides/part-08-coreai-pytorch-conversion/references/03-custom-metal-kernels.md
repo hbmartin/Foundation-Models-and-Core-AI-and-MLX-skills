@@ -1814,9 +1814,11 @@ negative result forward to an Xcode 27 target.[^xcode27-scale-planes]
 
 **(c) OS 27 has an E8M0 auxiliary scale-plane mechanism.**
 
-> ✅ **XCODE 27 CORRECTION.** Session 330’s `dataType`, `blockFactors` and auxiliary-plane map are
-> present in `MTLTensorAuxiliaryPlaneDescriptor`, `MTLTensorAuxiliaryPlaneDescriptorMap`, and
-> `MTLTensorDescriptor.auxiliaryPlanes`. The supported scale plane uses unsigned E8M0 and defaults
+> ✅ **VERIFIED (Xcode 27 correction).** Session 330’s `dataType`, `blockFactors` and auxiliary-plane
+> map are present in `MTLTensorAuxiliaryPlaneDescriptor`, `MTLTensorAuxiliaryPlaneDescriptorMap`, and
+> `MTLTensorDescriptor.auxiliaryPlanes` — declared in the macOS 27.0 beta SDK's
+> `Metal.framework/Headers/MTLTensor.h` (`:164`, `:191`, `:288`, the last gated
+> `API_AVAILABLE(macos(27.0), ios(27.0))`). The supported scale plane uses unsigned E8M0 and defaults
 > to block width 32. TensorOps consumes supported data and scale planes together and handles their
 > dequantization.[^xcode27-scale-planes]
 >
@@ -2529,12 +2531,14 @@ three-entrypoint SAM3 conversion); `models/sam3/README.md`.
 
 ### 17.3 Primary — SDK headers
 
-`MetalPerformancePrimitives.framework` and `Metal.framework` headers from both the Xcode 26.6
-baseline and Xcode 27, via `notes/repos/mlx-tensorops-kernels.md` and
-`notes/transcripts/coreai-python-metal.md` §2:
-`MPPTensorOpsMatMul2d.h`, `__impl/MPPTensorOpsTypes.h`, `__impl/MPPTensorOpsAvailability.h`,
-`MTLTensor.h`. Used for the dtype set, the supported matmul combinations, the feature macros and the
-26.x deployment baseline, plus the OS 27 low-bit types and auxiliary planes.[^xcode27-scale-planes]
+`MetalPerformancePrimitives.framework` and `Metal.framework` headers from two captures. The Xcode
+26.6 baseline is read via `notes/repos/mlx-tensorops-kernels.md` and
+`notes/transcripts/coreai-python-metal.md` §2; the OS 27 half — the low-bit types and auxiliary
+planes — is read directly from the macOS 27.0 beta SDK's shipped headers
+(`MPPTensorOpsMatMul2d.h`, `__impl/MPPTensorOpsTypes.h`, `__impl/MPPTensorOpsAvailability.h`,
+`MTLTensor.h`). Used for the dtype set, the supported matmul combinations, the feature macros and
+the 26.x deployment baseline, plus the OS 27 low-bit types and auxiliary
+planes.[^xcode27-scale-planes]
 
 ### 17.4 Community — attributed, never presented as Apple
 
@@ -2615,6 +2619,6 @@ which is where the kernel body itself gets written.
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

@@ -2399,7 +2399,8 @@ var serverModel: any LanguageModel = {
 
 ## 13. Declared gaps
 
-Everything in this guide that we could not verify, collected. None of these contains a guess.
+Everything in this guide that we could not verify, collected — plus, where a formerly open question
+has since been settled (§13.1), the resolution. None of these contains a guess.
 
 ### 13.1 ✅ Image input is supported; operating limits remain open
 

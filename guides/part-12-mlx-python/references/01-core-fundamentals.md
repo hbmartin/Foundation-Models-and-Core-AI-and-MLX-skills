@@ -589,7 +589,8 @@ And the reassurance you need in order to sprinkle `mx.eval` freely while debuggi
 
 Once an array is evaluated it holds data and is detached from its inputs — the C++ tutorial states
 this outright: *"Once an array is evaluated, it has data and is detached from its inputs."*
-(`examples/cpp/tutorial.cpp`.) That detachment is the mechanism behind §13's memory-leak callout.
+(`examples/cpp/tutorial.cpp`.) That detachment also means an evaluated array owns real buffer
+memory — the raw ingredient in §3.5's functional-cache leak.
 
 ### 2.4 Control flow on array values forces evaluation
 
@@ -807,7 +808,7 @@ This is the defect class that makes MLX genuinely hard to debug, and it deserves
 > Shape *mismatches* in particular are caught at record time in most cases, because MLX propagates
 > shapes eagerly. What is **not** caught at record time is everything that depends on data or on
 > execution: device-specific dtype restrictions (`float64` on the GPU), out-of-bounds gather indices
-> (which are undefined behaviour, not an error — §13.2), and any backend failure such as an
+> (which are undefined behaviour, not an error), and any backend failure such as an
 > allocation refusal or a Metal command-buffer error.
 >
 > **How to find the real line.** Bisect with `mx.eval`. Add an `mx.eval(...)` after each stage and

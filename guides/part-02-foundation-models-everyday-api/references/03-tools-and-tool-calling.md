@@ -2297,11 +2297,6 @@ misbehaving on the day you ran it.
 For the model-in-the-loop half, greedy sampling plus a transcript assertion is a reasonable
 poor-person's trajectory test on any OS where the Evaluations framework is not available to you:
 
-Greedy sampling stabilizes token selection; it does **not** eliminate the current OS 27 defect in
-which some prompts combining tool calling and guided generation call tools excessively. Apple's beta
-4 release notes recommend adjusting instructions, prompts, and attachment labels.[^excessive-tool-calls]
-Keep a repeated-call ceiling and run the trajectory test on every supported OS build.
-
 ```swift
 let toolCallNames = session.transcript.compactMap { entry -> [String]? in
     guard case let .toolCalls(calls) = entry else { return nil }
@@ -2310,6 +2305,11 @@ let toolCallNames = session.transcript.compactMap { entry -> [String]? in
 
 #expect(toolCallNames == ["searchBooks", "getBookDetails"])
 ```
+
+Greedy sampling stabilizes token selection; it does **not** eliminate the current OS 27 defect in
+which some prompts combining tool calling and guided generation call tools excessively. Apple's beta
+4 release notes recommend adjusting instructions, prompts, and attachment labels.[^excessive-tool-calls]
+Keep a repeated-call ceiling and run the trajectory test on every supported OS build.
 
 > ✅ **SDK-verified (2026-07-29)** — `Transcript.ToolCalls` conforms to `RandomAccessCollection`
 > with `Element == Transcript.ToolCall` (`FoundationModels-27.0-macos.swiftinterface:2484-2509`),

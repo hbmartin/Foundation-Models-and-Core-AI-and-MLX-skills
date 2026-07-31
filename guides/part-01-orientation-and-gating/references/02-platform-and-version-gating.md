@@ -1522,7 +1522,7 @@ request — treat the whole source as unreliable.
 
 One formerly open discrepancy is now settled:
 
-> ✅ **On-device context size is 4,096 tokens per session.** Apple Technical Note TN3193 states the
+> ✅ **VERIFIED — on-device context size is 4,096 tokens per session.** Apple Technical Note TN3193 states the
 > number and its scope directly.[^tn3193-context] A shipping third-party app still contains an
 > undated comment claiming an 8,192-token result on iOS 27, but no Apple source corroborates it.
 > Continue to read `SystemLanguageModel.default.contextSize` at runtime so model selection and future

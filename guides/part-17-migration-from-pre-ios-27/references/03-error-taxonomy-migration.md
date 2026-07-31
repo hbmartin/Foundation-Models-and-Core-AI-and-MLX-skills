@@ -1050,8 +1050,11 @@ TN3193 is not the only place. Watch for these when you are reading:
   }
   ```
 
-  ✅ **VERIFIED** — both blocks verbatim from the same Apple page, harvested 2026-07-27. Note the
-  `(let refusal, _)` two-value pattern in the second, which is the 26 arity. The 27 equivalent is
+  ✅ **VERIFIED** — both blocks reproduced from the same Apple page, harvested 2026-07-27; the
+  second block's `explanation` handling is corrected against the SDK interface (the accessor
+  returns a `Response<String>`, so the message is its `.content` — Apple's printed snippet binds
+  `message` directly). Note the `(let refusal, _)` two-value pattern in the second, which is the
+  26 arity. The 27 equivalent is
   `catch LanguageModelError.refusal(let refusal)` with a single `Refusal` payload — and
   `refusal.explanation` survives (§11).
 
@@ -1928,7 +1931,8 @@ though the accessor names did not.
 time for the model to generate"* — and the 26.5 header's `Response<String>` return type confirms it
 was already an inference-backed accessor, not a field. Reading it is a second inference call.
 
-Apple's usage example, verbatim (written against the **deprecated** two-value spelling — §5.3):
+Apple's usage example, reproduced (written against the **deprecated** two-value spelling — §5.3 —
+with the `explanation` handling corrected to read `.content` from the `Response<String>`):
 
 ```swift
 do {
@@ -1947,7 +1951,7 @@ do {
 }
 ```
 
-✅ **VERIFIED** — verbatim from Apple's safety article. The 27 rewrite:
+✅ **VERIFIED** — reproduced from Apple's safety article with the correction noted above. The 27 rewrite:
 
 ```swift
 import FoundationModels

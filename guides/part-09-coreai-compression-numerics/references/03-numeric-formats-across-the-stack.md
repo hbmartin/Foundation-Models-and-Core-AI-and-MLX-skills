@@ -1029,7 +1029,8 @@ Reading the optional `coreai-models` package shows a second consequence for call
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `ModelStructure.swift:71-80`: recognized structures select
 > that helper’s Neural Engine preference. Direct `AIModel` callers choose their own
-> `SpecializationOptions`; function names do not form a Core AI framework routing contract.
+> `SpecializationOptions`, and Apple's specialization documentation describes no function-name
+> routing in the framework itself — the name policy is that helper's code alone.
 > [^sample-routing-policy]
 
 The per-function compression recipe in the same repo is a small masterclass in matching format to
@@ -1333,6 +1334,10 @@ the scale `dataType` and per-dimension `blockFactors`; the default and currently
 is unsigned FP8 E8M0, and the first block factor is 32. A populated
 `MTLTensorAuxiliaryPlaneDescriptorMap` is attached through `MTLTensorDescriptor.auxiliaryPlanes`.
 [^xcode27-scale-planes]
+
+> ✅ **SDK-verified** — the macOS 27.0 beta SDK's `Metal.framework/Headers/MTLTensor.h` declares
+> `MTLTensorAuxiliaryPlaneDescriptor` (`:164`), `MTLTensorAuxiliaryPlaneDescriptorMap` (`:191`),
+> and `MTLTensorDescriptor.auxiliaryPlanes`, gated `API_AVAILABLE(macos(27.0), ios(27.0))` (`:288`).
 
 That changes the execution rule by deployment target:
 
@@ -2534,7 +2539,7 @@ sessions 325 and 330 · Apple Tech Talk 111432.*
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s `.default` behavior is documented separately in
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 

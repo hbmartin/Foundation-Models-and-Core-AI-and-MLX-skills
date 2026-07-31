@@ -165,7 +165,7 @@ honest performance picture, where the same author on the same machine measured a
 > dtype casts materialize as full-size tensors, so replacing one cheap op with a kernel is usually a
 > regression your kernel's own timing will never show.
 
-> ✅ **XCODE 27 CORRECTION — scale planes are real.** Xcode 27 adds `MTLTensor` data types for int2,
+> ✅ **VERIFIED (Xcode 27 correction) — scale planes are real.** Xcode 27 adds `MTLTensor` data types for int2,
 > FP4, FP8 and unsigned E8M0 scales, plus `MTLTensorAuxiliaryPlaneDescriptor.blockFactors` and
 > `MTLTensorDescriptor.auxiliaryPlanes`. For supported E8M0 block-scaled tensors, TensorOps can consume
 > the data and scale planes together. Keep the cooperative-tensor hand-dequantization path for 26.x and
@@ -267,7 +267,7 @@ issues are resolved: `coreai-torch#37` closed as completed 2026-07-13 and `#44` 
 
 [^sample-routing-policy]: The name classifier and compute-unit preferences live in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218),
     while Core AI’s documented default independently selects the compute-unit combination that minimizes
     inference latency: [Managing model specialization and caching](../../docs/Managing%20model%20specialization%20and%20caching.md).
 

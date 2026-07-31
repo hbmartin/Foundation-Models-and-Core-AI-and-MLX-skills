@@ -107,11 +107,12 @@ spellings are corrected against Apple's shipping sample: it is `Profile { … }.
 
 > ⚠️ **SILENT FAILURE** — the `body` is **not** evaluated once per turn (a community count found 7
 > evaluations across 3 turns), so a side effect in it runs an unpredictable number of times. Keep it pure.
-> Two more: a tool named in your instructions prose but absent from the toolset produces an infinite loop
-> with no thrown error — an entire WWDC session exists to teach you to find it — and assigning to
-> `session.transcript` while `isResponding` is `true` is session misuse surfaced as
+> One more silent one: a tool named in your instructions prose but absent from the toolset produces an
+> infinite loop with no thrown error — an entire WWDC session exists to teach you to find it. And one
+> loud cousin worth listing beside them: assigning to `session.transcript` while `isResponding` is
+> `true` is session misuse surfaced as the typed
 > `LanguageModelSession.Error.transcriptMutationWhileResponding`; guard every write so the response
-> task never reaches that typed failure.[^transcript-mutation-error]
+> task never reaches that failure.[^transcript-mutation-error]
 
 > ✅ **Closed 2026-07-29 against the 27.0 beta interface** — the lifecycle closures are now read
 > verbatim: each of `onPrompt`/`onResponse`/`onReasoning`/`onToolCall`/`onToolOutput` has a

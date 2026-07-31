@@ -2440,7 +2440,8 @@ Before you trust a tool evaluation:
 
 - [ ] `subject(from:)` returns `ModelSubject(value:transcript: session.transcript.structuredTranscript)`.
       (§17.2)
-- [ ] A canary metric asserts `subject.transcript != nil` on every sample. (§17.2)
+- [ ] The harness treats a thrown `EvaluationError.missingTranscript(evaluatorType:)` as a setup
+      failure to fix, not as a sample to skip. (§17.2)
 - [ ] The session in `subject(from:)` is built the same way the feature builds it — same model, same
       guardrails, same instructions, same tools. (§17.3)
 - [ ] Both `allPass` **and** `percentagePass` are aggregated, not just the strict one. (§17.1)
@@ -2471,7 +2472,7 @@ Before you trust a tool evaluation:
 | Scores dropped when the dataset grew | expected. Four hypotheses — read the bottom twenty rows first | §10.1 |
 | Evaluation is green and the output is visibly bad | the dataset, the metric, or the judge is wrong; not the feature | §10 |
 | Sample count silently fell after you changed the output type | `JSONLoader` skipped rows it could not decode | §9.3 |
-| Tool metrics are 0% everywhere, or blank | `ModelSubject` built without `transcript:` | §17.2 |
+| Evaluation run throws `EvaluationError.missingTranscript` | `ModelSubject` built without `transcript:` | §17.2 |
 | Tool evaluation passes but the shipping feature misbehaves | the evaluation built the session differently (guardrails, instructions, options) | §17.3 |
 | A correct trajectory fails on ordering | two independent calls were listed `ordered:`; use `unordered:` or `.anyOrder` | §13.4, §14.1 |
 | Trajectory fails intermittently on a free-text argument | `.exact` on a value the model paraphrases | §15 |

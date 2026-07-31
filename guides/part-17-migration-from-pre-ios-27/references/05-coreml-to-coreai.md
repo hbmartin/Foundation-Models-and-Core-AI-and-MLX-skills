@@ -34,8 +34,9 @@ The move from `MLModel` to `AIModel`, told as a *decision* rather than a *proced
   caching, feature providers → a plain named dictionary, and the file extensions — including the
   fact that `.aimodel` and `.aimodelc` are **directories**, not files.
 - **§3 — What does not announce itself.** Five silent failures specific to *this* migration, headed
-  by the big one: a converted model that loads, runs, produces correct numbers, and quietly executes
-  on the wrong compute unit.
+  by the big one: adopt the optional `coreai-models` loader without reading its policy and a
+  converted model can load, run, produce correct numbers, and quietly execute on a compute unit
+  you did not intend.
 - **§4 — What genuinely improves, and why.** States (KV caches as first-class in-place inputs),
   multi-function assets (including how recognized names select the optional `coreai-models`
   loader’s Neural Engine preference), the Core AI Debugger's sync points and PSNR comparison
@@ -2499,6 +2500,6 @@ Every 🔴 in this guide, in one place, so a future pass can close them.
 
 [^sample-routing-policy]: The classifier and preferences are implemented in the optional
     `apple/coreai-models` package’s pinned
-    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
     Core AI’s documented `.default` behavior is separate:
     [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

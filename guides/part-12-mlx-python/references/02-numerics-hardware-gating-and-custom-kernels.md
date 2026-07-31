@@ -61,8 +61,8 @@ profiler, a differential test, or a bug report from a user on different hardware
   here only as consumers of the same NAX gate (§4.4).
 - **Writing Metal shaders in the TensorOps / cooperative-tensor style**, `mpp::tensor_ops::matmul2d`,
   `metal::cooperative_tensor`, execution scopes. That is
-  [Part 11](../../part-11-metal-and-tensorops/). §11 of this guide explains the boundary: what you
-  *can* reach from a Python-authored kernel, and what needs the C++ extension path.
+  [Part 11](../../part-11-metal-and-tensorops/). §7 covers what you *can* reach from a
+  Python-authored kernel; the C++ extension path is out of scope for this reference.
 - **Distributed MLX**, `mlx.launch`, JACCL/RDMA. Part 12's distributed guide.
 - **MLX in Swift.** [Part 13](../../part-13-mlx-swift/). Note in passing that fixes propagate
   **mlx → mlx-c → mlx-swift → mlx-swift-lm / mlx-swift-examples**, four tag bumps, so Swift lags
@@ -74,10 +74,10 @@ profiler, a differential test, or a bug report from a user on different hardware
   interpreter: `python -c "import platform; print(platform.processor())"` must print `arm`
   (✅ `docs/src/install.rst` troubleshooting).
 - For §4 and §5 to be more than theory, **hardware on both sides of the gate** — one M5-class
-  (architecture generation 17) machine and one earlier one. If you only have one, §12's probe
-  script tells you which side you are on, and `MLX_METAL_GPU_ARCH` lets you *simulate* the far side
-  (§4.5).
-- For §7–§10, nothing beyond MLX itself. Custom Metal kernels are JIT-compiled from a Python string;
+  (architecture generation 17) machine and one earlier one. If you only have one, §4.5's probe
+  script tells you which side you are on, and `MLX_METAL_GPU_ARCH` lets you *simulate* the far
+  side (§4.5).
+- For §7–§9, nothing beyond MLX itself. Custom Metal kernels are JIT-compiled from a Python string;
   **you do not need Xcode, a `.metal` file, or a build step.** That is the whole point of the API.
 - Willingness to read a number and ask "on what hardware, at what OS, measured by whom." Every
   figure in this guide carries that attribution, and several of the most-quoted MLX numbers in
@@ -216,10 +216,10 @@ Specifically, on MLX 0.32.x:
 
 None of these produce a warning, an exception, a log line, or a queryable flag. Question 2 and
 question 3 are answerable today only by reading MLX's source, running a differential test against a
-CPU-stream or `float64` reference, or capturing a Metal trace. §12 gives you the tooling.
+CPU-stream or `float64` reference, or capturing a Metal trace. §4.5 and §5.5 give you the tooling.
 
 The rest of this guide is: §1–§2 answer question 1 properly, §3–§4 answer question 3, §5 answers
-question 2 for the one op where it hurts most, and §6–§11 are about deliberately taking control of
+question 2 for the one op where it hurts most, and §6–§9 are about deliberately taking control of
 question 2 yourself by writing the kernel.
 
 ---
@@ -892,7 +892,7 @@ A short, opinionated policy:
 
 1. **In tests: `MLX_ENABLE_TF32=0`, set before `import mlx`.** Copy MLX's own harness. If you cannot
    control import order (pytest plugins, notebooks), set it in `conftest.py` at module scope or in
-   the shell, and assert it with a §12-style probe.
+   the shell, and assert it with a §4.5-style probe.
 2. **In production: leave it on, and stop asserting bit equality.** A strict `rtol=1e-5`
    batch-equivalence assertion **cannot hold on gen-17, in any dtype** (community conclusion,
    mlx#3897). Decide what your product actually needs — usually "the argmax is stable and the
@@ -903,7 +903,8 @@ A short, opinionated policy:
    unified memory makes this cheap to try: `with mx.stream(mx.cpu): ...`. The CPU stream measured
    4.1e-07 relative error in §3.4's table — fp32-class, as expected.
 5. **Log the environment.** A single line in your run banner — MLX version, architecture string,
-   `MLX_ENABLE_TF32` as your process saw it — turns a week of bisection into a diff. §12 prints one.
+   `MLX_ENABLE_TF32` as your process saw it — turns a week of bisection into a diff. §4.5's
+   `mx.device_info()` probe supplies the version and architecture fields.
 
 ---
 
@@ -942,7 +943,7 @@ MLX sits:
 | Lowest level | **Metal Performance Primitives and TensorOps** — *"direct access to neural accelerators from your metal shaders"* |
 
 So: **using MLX at all puts you on the third tier, where neural accelerators are used on your
-behalf.** §3 is the fine print on that sentence, and §7–§11 are about deliberately dropping to the
+behalf.** §3 is the fine print on that sentence, and §7–§9 are about deliberately dropping to the
 fourth.
 
 ### 4.2 The version story, stated carefully

@@ -344,10 +344,10 @@ if (model_file := config.get("model_file")) is not None:
 ```
 
 `--trust-remote-code` is present on the **model-loading** mlx-lm commands, and it gates two different
-things there. It is intentionally absent from `manage`, `upload`, and `share`, which do not load a
-model architecture or tokenizer.[^trust-cli-source]
-remote *tokenizer* code and the *architecture* file. The environment variable
-`MLX_LM_TRUST_REMOTE_CODE=1` works for the CLI tools.
+things there: remote *tokenizer* code and the *architecture* file. It is intentionally absent from
+`manage`, `upload`, and `share`, which do not load a model architecture or
+tokenizer.[^trust-cli-source] The environment variable `MLX_LM_TRUST_REMOTE_CODE=1` works for the
+CLI tools.
 
 The CVE was reported against Docker Model Runner, which embeds mlx-lm. If you are running a server
 that will load models chosen by a request body (`"model": "..."` is a per-request field — §4), you

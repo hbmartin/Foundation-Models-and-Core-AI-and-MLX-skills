@@ -58,7 +58,8 @@ three things you need in order to write a *fused* kernel rather than a sequence 
 
 - **The basics.** `metal::tensor<ElementType, Extents, Descriptor, Tags...>`, `tensor_handle` /
   `tensor_offset` / `tensor_inline`, `.slice()` / `.static_slice()`, the full `matmul2d_descriptor`
-  positional argument list, the 13-entry dtype enum and the ~50 legal operand triples (69 in the
+  positional argument list, the 13-entry dtype enum (transcribed in full in
+  `notes/repos/mlx-tensorops-kernels.md` §8) and the ~50 legal operand triples (69 in the
   macOS 27.0 beta SDK — guide 01 §0.2): guide 01 in
   this part. This guide assumes them and cites them where it leans on them.
 - **Quantised matmul in depth.** Xcode 27 has a documented host-side scale-plane mechanism, and the

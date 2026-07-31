@@ -79,7 +79,7 @@ What falls out is a surface with an unusual failure profile:
 | If your situation is… | Read | Why |
 |---|---|---|
 | "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.3](references/02-cooperative-tensors-and-flash-attention.md) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
-| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | It is 26.x throughout; §1.5 is the deployment-target cheat sheet |
+| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
 | `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
 | "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
 | `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists. Real spellings: templated `slice<…>()` and `is_valid_element` |
