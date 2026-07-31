@@ -1277,6 +1277,8 @@ struct TrailChatView: View {
 > long-lived tool you must find out, and per-reply `status == .complete` (above) is not the same
 > thing as sequence termination. Resolving this needs an empirical test that issues two searches
 > against one tool instance and checks whether the second batch arrives. **Write that test.**
+> **Safe default:** adopt Apple's per-query lifetime — construct a fresh tool per request and
+> cancel the listener `Task` when the call ends — so nothing you ship depends on the answer.
 
 ---
 

@@ -3,3 +3,7 @@
 # Third-party research clones (628M). Reproduce with scripts/clone-research-repos.sh.
 # Anchor this rule so the tracked evidence corpus under notes/repos/ remains visible.
 /repos/
+reviews_triage/
+
+# SwiftPM build products (were accidentally committed by PR #3; untracked since)
+probes/.build/

@@ -3034,6 +3034,9 @@ tooling.
 > this gap is closed above: `[ContextualStringsTag : [String]]`, SDK-verified, and the old
 > `[String]` presumption was wrong. The *limit* half remains open — there is no documented cap and
 > no documented behaviour when the list is large, and an interface dump cannot show one.
+> **What would resolve it:** an Apple doc statement of a cap, or an on-device sweep — time
+> `setContext(_:)` and measure recognition of a sentinel name as the list grows (10² → 10³ → 10⁴
+> entries); a cliff in either curve is the cap.
 > **Safe default:** keep it in the low hundreds and prioritise — put the names actually visible on
 > screen at the front, not the user's entire address book.
 
@@ -3669,7 +3672,10 @@ treat the *behavioural* description here as inference from the name until that p
 type of `priority:` is **`TaskPriority`**, ✅ SDK-verified above, so the old hesitation about
 guessing it is retired. The default retention remains genuinely unknowable from the interface —
 the analyzer initializers take `options: SpeechAnalyzer.Options? = nil` and whatever `nil` maps
-to is internal. **Safe default:** use `SpeechAnalyzer(modules:)` without options, which is what
+to is internal. **What would resolve it:** an Apple doc page for `SpeechAnalyzer.Options` naming
+the default, or an on-device footprint comparison — run one transcription with `options: nil` and
+again with each explicit retention, and see whose memory curve the `nil` run matches.
+**Safe default:** use `SpeechAnalyzer(modules:)` without options, which is what
 both Apple's canonical example and its 2026 article do. Reach for `Options` only when you have a
 measured reason.
 

@@ -18,8 +18,10 @@
 //  * asset-dependent probes (the AIModelCache family) — need a compiled
 //    `.aimodel`/`.aimodelc` on disk. Pass its path via PROBE_AIMODEL_URL; they
 //    XCTSkip otherwise. Produce an asset with `xcrun aimodelc package|compile
-//    --output …` (Xcode 27 beta ships aimodelc; `coreai-build` does not exist —
-//    see notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 2).
+//    --output …` or `xcrun coreai-build compile|package …` — coreai-build ships
+//    in the optional Metal Toolchain component (`xcodebuild -downloadComponent
+//    MetalToolchain`; resolve it via `xcrun --no-cache --find coreai-build`) —
+//    see notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 2 (resolved 2026-07-31).
 
 #if canImport(CoreAI)
 import CoreAI

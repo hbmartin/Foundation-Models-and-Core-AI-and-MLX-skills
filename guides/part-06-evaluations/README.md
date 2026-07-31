@@ -151,6 +151,11 @@ against your own ratings.
 > value, typed `Input.ExpectedValue`. Also worth knowing before you search for help: the Evaluations
 > developer forum contains **exactly three threads**, one unanswered. There is essentially no community
 > knowledge yet.
+> **What would resolve the rest:** an Apple doc pass on `ScoringMode`, and a probe that forces a
+> judge's session to throw mid-run (the `eval.subject-throws` probe in `probes/` is the pattern —
+> it answered the same question for subject inference). **Safe default:** omit `scoringMode:` as
+> Apple does at all three of its call sites, and treat a run whose judge threw as invalid rather
+> than trusting whatever aggregate it still reports.
 
 ### [6.3 — `SampleGenerator`, synthetic datasets, and evaluating tool trajectories](references/03-synthetic-data-and-tool-trajectories.md)
 Two subjects that share a chapter because both are about honesty. First, getting *enough* data: the two

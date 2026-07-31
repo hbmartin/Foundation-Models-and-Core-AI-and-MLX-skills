@@ -1,4 +1,0 @@
-module ProbeSupport {
-header "ProbeSupport-Swift.h"
-export *
-}

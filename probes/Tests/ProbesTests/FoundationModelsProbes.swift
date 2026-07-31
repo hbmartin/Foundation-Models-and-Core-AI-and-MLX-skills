@@ -32,17 +32,10 @@ private struct FetchWeatherReportTool: Tool {
 }
 
 /// A tool that records whether it ran and echoes its argument.
-private final class EchoCounter: @unchecked Sendable {
-    private let lock = NSLock()
-    private var _count = 0
-    var count: Int { lock.withLock { _count } }
-    func increment() { lock.withLock { _count += 1 } }
-}
-
 private struct EchoTool: Tool {
     let name = "echo"
     let description = "Echoes the given text back. Use this tool whenever asked."
-    let counter: EchoCounter
+    let counter: Probe.Counter
     @Generable
     struct Arguments {
         var text: String
@@ -57,7 +50,7 @@ private struct AlwaysThrowingTool: Tool {
     struct Boom: Error {}
     let name = "lookup"
     let description = "Looks up a record. Use this tool whenever asked."
-    let counter: EchoCounter
+    let counter: Probe.Counter
     @Generable
     struct Arguments {
         var key: String
@@ -218,7 +211,7 @@ final class FoundationModelsProbes: XCTestCase {
 
         @Sendable func run(profileMode: GenerationOptions.ToolCallingMode,
                            optionsMode: GenerationOptions.ToolCallingMode) async -> String {
-            let counter = EchoCounter()
+            let counter = Probe.Counter()
             let tool = EchoTool(counter: counter)
             let profile = LanguageModelSession.Profile {
                 Instructions("You are a test assistant. When asked to echo, use the echo tool.")
@@ -543,7 +536,7 @@ final class FoundationModelsProbes: XCTestCase {
         try skipUnlessModelAvailable()
 
         struct Veto: Error {}
-        let counter = EchoCounter()
+        let counter = Probe.Counter()
         let tool = EchoTool(counter: counter)
         let profile = LanguageModelSession.Profile {
             Instructions("You are a test assistant. When asked to echo, use the echo tool.")
@@ -617,7 +610,7 @@ final class FoundationModelsProbes: XCTestCase {
         try skipUnlessModelAvailable()
 
         @Sendable func run(policy: TranscriptErrorHandlingPolicy?) async -> String {
-            let counter = EchoCounter()
+            let counter = Probe.Counter()
             let tool = AlwaysThrowingTool(counter: counter)
             let session = LanguageModelSession(
                 tools: [tool],
@@ -690,12 +683,9 @@ final class FoundationModelsProbes: XCTestCase {
         try skipUnlessModelAvailable()
 
         let allowed = ["umami", "saffron", "bergamot", "tamarind"]
-        let schema: GenerationSchema
-        do {
-            schema = GenerationSchema(type: String.self,
+        let schema = GenerationSchema(type: String.self,
                                       description: "A flavor from the approved list.",
                                       anyOf: allowed)
-        }
         let n = Int(Probe.env("PROBE_ENUM_RUNS") ?? "10") ?? 10
         var violations: [String] = []
         var errors = 0

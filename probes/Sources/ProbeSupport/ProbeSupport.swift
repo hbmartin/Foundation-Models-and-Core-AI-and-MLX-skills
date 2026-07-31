@@ -42,6 +42,16 @@ public enum Probe {
         return s
     }
 
+    /// Thread-safe call counter for probe fixtures (tools, session providers)
+    /// that need to record "did I run, and how often" across concurrency domains.
+    public final class Counter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+        public init() {}
+        public var count: Int { lock.withLock { _count } }
+        public func increment() { lock.withLock { _count += 1 } }
+    }
+
     /// Race an async operation against a wall-clock bound. Returns nil on timeout.
     /// Used so a hung model call degrades to a recorded timeout instead of a hung
     /// test run.
