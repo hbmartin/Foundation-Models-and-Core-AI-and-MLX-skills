@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Regenerate guides/SILENT-FAILURES.md and guides/API-INDEX.md from the current guides.
 #
-#   ./scripts/build-indexes.sh <classified-dir>
+#   ./scripts/build-indexes.sh notes/synthesis/callout-classification
 #
-# <classified-dir> holds one part-NN.tsv per part with rows
+# The classified dir holds one part-NN.tsv per part with rows
 #   file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
 # (symptom ids per notes/synthesis/SYMPTOM-TAXONOMY.md). Classification is the
 # one step that needs judgment: re-run scripts/extract-callouts.py, classify any

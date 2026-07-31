@@ -324,7 +324,7 @@ final class EvaluationsProbes: XCTestCase {
             throw XCTSkip("SystemLanguageModel unavailable: \(SystemLanguageModel.default.availability)")
         }
 
-        let invocations = EvalCounter()
+        let invocations = Probe.Counter()
         let generator = SampleGenerator<ModelSample<String>>(
             Prompt("Generate one-sentence book blurbs."),
             samples: [ModelSample<String>(prompt: "seed blurb", expected: "A cozy mystery.")],
@@ -353,12 +353,5 @@ final class EvaluationsProbes: XCTestCase {
             detail: "sessionProviderInvocations=\(invocations.count) samples=\(counts.0) invalidSamples=\(counts.1) \(Probe.runtimeDescription)"
         )
     }
-}
-
-private final class EvalCounter: @unchecked Sendable {
-    private let lock = NSLock()
-    private var _count = 0
-    var count: Int { lock.withLock { _count } }
-    func increment() { lock.withLock { _count += 1 } }
 }
 #endif

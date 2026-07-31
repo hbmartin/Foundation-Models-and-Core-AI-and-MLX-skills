@@ -1271,6 +1271,11 @@ Confirmed spellings here: `Transcript.Entry.response(_:)`,
 > `assetIDs` is just one key of the general response-metadata bag (the 27-only initializer
 > `init(id:metadata:segments:)` drops the label entirely). Its *semantics* remain undocumented;
 > `[""]` still has no better reading than "no model produced this."
+> **What would resolve it:** an Apple doc page for `Transcript.Response.metadata`, or a device
+> dump of what the framework itself writes there — respond once on a 27 runtime and print the
+> response entry's `assetIDs`/`metadata` (the `probes/` package's transcript probes are the
+> pattern to copy). **Safe default:** keep passing `[""]` for hand-built entries — it is Apple's
+> own sample value — and never branch on the field when reading a transcript back.
 
 ### 7.4 Restoring a saved conversation
 

@@ -13,8 +13,8 @@ Xcode-bundled `Evaluations`), and every GitHub-tracked defect status was re-chec
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every ⚠️ callout in the series (1,765,
-  of which 1,407 describe a concrete silent failure), in one page, sorted by the symptom you
+- **[The silent-failure index](SILENT-FAILURES.md)** — every ⚠️ callout in the series (1,757,
+  of which 1,399 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
 - **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
   presence flags against the captured 26.5 / 27.0-beta SDK interfaces.

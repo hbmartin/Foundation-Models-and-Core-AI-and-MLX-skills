@@ -25,7 +25,7 @@ def norm(s):
 FW_RULES = [
     (r'^(LanguageModel|SystemLanguageModel|PrivateCloudCompute|ChatCompletions|MLXLanguageModel|CoreAILanguageModel|Generable|Guide\b|GenerationError|GeneratedContent|Transcript|Instructions|Prompt\b|Profile|DynamicProfile|Tool\b|Tool\.|Session|Respond|QuotaUsage|UnavailableReason|Refusal|Feedback|Adapter|SystemModels)', 'FoundationModels'),
     (r'^(AIModel|InferenceFunction|InferenceValue|NDArray|NDArrayDescriptor|ImageDescriptor|ComputeStream|AssetError|AIModelCache|AssetPack|Specializ)', 'CoreAI'),
-    (r'^(MLX|GPUArray|mx\.)', 'MLX'),
+    (r'^(MLX|GPUArray)', 'MLX'),
     (r'^(Speech|SFSpeech|SFCustom|DictationTranscriber|AnalyzerInput|AssetInventory|AssetInputSequence|CaptureInputSequence|AnalyzerInputConverter|SpeechDetector|SpeechTranscriber)', 'Speech'),
     (r'^(CSSearchable|CSUser|CSSuggestion|CSImport|Spotlight)', 'CoreSpotlight'),
     (r'^(AppIntent|AppEntity|AppEnum|AppShortcut|IndexedEntity|EntityCollection|SyncableEntity|RelevantEntities|OwnershipProviding|IndexedEntityQuery|ValueRepresentation|UnionValue|StringSearchCriteria|SnippetIntent|LongRunningIntent|ExecutionTargets|AssistantSchema|EntityQuery|IntentDescription|TypeDisplayRepresentation|DisplayRepresentation)', 'AppIntents'),
@@ -47,13 +47,15 @@ def guess_fw(sym):
 counts = defaultdict(lambda: defaultdict(int))  # sym -> file -> count
 for dirpath, _, filenames in os.walk(ROOT):
     for fn in sorted(filenames):
-        if not fn.endswith('.md'):
+        # Never scan the generated index pages: the symbol index would index
+        # itself, inflating every count on each regeneration.
+        if not fn.endswith('.md') or fn in ('SILENT-FAILURES.md', 'API-INDEX.md'):
             continue
         path = os.path.join(dirpath, fn)
         rel = os.path.relpath(path, ROOT)
         text = open(path, encoding='utf-8').read()
-        # strip fenced code blocks: symbols there are usage, not reference; keep them,
-        # actually keep fences too — they are where signatures live. But strip the fence markers.
+        # Inline `code` spans only; fenced blocks contribute nothing (a fence
+        # line never forms a span), so no stripping pass is needed.
         for m in SPAN.finditer(text):
             s = norm(m.group(1))
             if SYM.match(s) and not re.search(r'\.(swift|py|md|json|txt|h)$', s):

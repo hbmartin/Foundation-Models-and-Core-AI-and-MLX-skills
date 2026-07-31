@@ -1977,10 +1977,12 @@ is a second cost after specialization, and it is a good use of the tail of the f
 > macOS 27.0 beta SDK.** Apple's `AIModel` surface has `init(contentsOf:options:) async throws`
 > and `static func specialize(...) async throws` and **nothing else**: no `Progress`, no delegate,
 > no `AsyncSequence` of phases. Our full harvest of the 312-symbol Core AI index
-> (`notes/web/apple-docs-coreai.md:7`) turned up no such API, and the SDK interface dump captured
-> 2026-07-29 settles that there is no unindexed overload either — the complete public loading
-> surface is eight members (✅ **SDK-verified** —
-> `CoreAIDelegates-27.0-macos.swiftinterface:14-43`), none of which reports progress.
+> (`notes/web/apple-docs-coreai.md:7`) found nothing of the kind, and the SDK interface dump
+> captured 2026-07-29 settles that there is no unindexed overload either — the complete public
+> loading surface is four members, `bookmarkData`, `init?(resolvingBookmark:)`,
+> `init(contentsOf:options:)` and `static specialize(...)` (✅ **SDK-verified** —
+> `CoreAIDelegates-27.0-macos.swiftinterface:14-27`), and the adjacent `AIModelCache` surface
+> (`:28-43`) adds only cache lookup and deletion. None of it reports progress.
 >
 > **STILL THE RULE:** do not fake a progress bar. Show an indeterminate indicator with **explanatory
 > text and an honest time estimate**, and — because you know your own model — hardcode a

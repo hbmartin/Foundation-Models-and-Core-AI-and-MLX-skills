@@ -121,6 +121,9 @@ inside an `Instructions { }` block, not only a `Prompt { }` block.
 > to re-send. The semantics are undocumented. To resolve: an Apple doc page for `Attachment`'s
 > `InstructionsRepresentable` conformance, or an empirical `usage`-property comparison between an
 > image in instructions vs. the same image in a prompt on a device running 27.0.
+> **Safe default:** attach images to the `Prompt`, never to `Instructions` — every source in the
+> corpus does it that way, and prompt-side attachment leaves the cached instruction prefix
+> byte-stable (§4.3 of guide 3.1 is why that matters).
 
 ---
 

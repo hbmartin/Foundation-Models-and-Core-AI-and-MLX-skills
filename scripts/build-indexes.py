@@ -4,10 +4,13 @@
 Usage: build_indexes.py <classified_dir> <symbols_tsv> <guides_dir> <out_dir>
 Writes <out_dir>/SILENT-FAILURES.md and <out_dir>/API-INDEX.md
 """
-import os, re, sys
+import os, re, sys, time
 from collections import defaultdict, Counter
 
 classified_dir, symbols_tsv, guides_dir, out_dir = sys.argv[1:5]
+
+TODAY = time.strftime('%Y-%m-%d')
+TAXONOMY_MD = 'notes/synthesis/SYMPTOM-TAXONOMY.md'
 
 SYMPTOMS = [
     ("garbage-output",      "Wrong output",           "Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors."),
@@ -27,6 +30,15 @@ SYMPTOMS = [
     ("caution-note",        "General cautions",       "Warnings and considerations that are not themselves silent failures."),
 ]
 SYMPTOM_TITLE = {k: t for k, t, _ in SYMPTOMS}
+
+# The taxonomy doc is the classification contract; refuse to build against a
+# drifted copy of it (ids only — presentation titles/descriptions may differ).
+if os.path.exists(TAXONOMY_MD):
+    doc_ids = set(re.findall(r'^\| ([a-z][a-z-]+) \|', open(TAXONOMY_MD, encoding='utf-8').read(), re.M)) - {'id'}
+    if doc_ids != set(SYMPTOM_TITLE):
+        sys.exit(f"symptom ids in {TAXONOMY_MD} disagree with SYMPTOMS in this script: "
+                 f"doc-only={sorted(doc_ids - set(SYMPTOM_TITLE))} "
+                 f"script-only={sorted(set(SYMPTOM_TITLE) - doc_ids)}")
 
 def load_rows():
     rows = []
@@ -94,7 +106,7 @@ out.append("The defining property of this stack is that most defects *do not thr
            "below links to the guide section that documents the failure, its trigger, and the "
            "safe default. Entries are classified by **what you see** (or fail to see), not by "
            "which API is at fault, because the symptom is what you start from at 2 a.m.\n")
-out.append("> Generated from the guides on 2026-07-29 by `scripts/` tooling; regenerate after "
+out.append(f"> Generated from the guides on {TODAY} by `scripts/` tooling; regenerate after "
            "editing guides rather than editing this file by hand.\n")
 out.append("\n## How to use this page\n")
 out.append("Start from the symptom column that matches what you observe. Within each section, "
@@ -120,8 +132,8 @@ for key, title, desc in SYMPTOMS:
         p = part_of(r['file'])
         if p != cur_part:
             cur_part = p
-            pretty = p.replace('part-', 'Part ').lstrip('0') if p != 'root' else 'Series'
-            out.append(f"\n**{cur_part}**\n" if p == 'root' else f"\n**{p}**\n")
+            pretty = f"Part {part_num(r['file'])}" if p != 'root' else 'Series'
+            out.append(f"\n**{pretty}**\n")
         marker = ' 🔇' if r['kind'] == 'SILENT-FAILURE' else ''
         out.append(f"- [{r['blurb']}]({link(r)}) — {guide_label(r['file'])}{marker}")
     out.append("")
@@ -162,7 +174,7 @@ out.append("> `26.5` / `27.0` = the bare symbol name appears in the correspondin
            "`.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature "
            "match — the guides carry the signature-level citations). Package types (MLX, "
            "`ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. "
-           "Generated 2026-07-29; regenerate rather than hand-edit.\n")
+           f"Generated {TODAY}; regenerate rather than hand-edit.\n")
 for fw in FW_ORDER:
     entries = by_fw.get(fw, [])
     if not entries:
