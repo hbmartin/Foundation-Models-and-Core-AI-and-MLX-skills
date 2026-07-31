@@ -127,7 +127,10 @@ your Swift app exported verbatim, tools, images, memory, and the session-334 eva
 > argument grammar — the biggest single hole — is entirely unknown, as are exit codes, stderr discipline
 > and streaming behaviour. The guide therefore tells you what `fm` *does*, refuses to tell you what to
 > type, puts every invocation behind a wrapper function, and hands you seven `--help` commands that close
-> the whole gap in ninety seconds on a real Mac.
+> the whole gap in ninety seconds on a real Mac. One route is now eliminated (checked 2026-07-29):
+> `fm` is **not in the Xcode 27.0 beta toolchain** — `xcrun --find fm` fails and `Xcode-beta.app`
+> contains no `fm` binary on a macOS 26.5 host — so the ninety seconds require a machine actually
+> running macOS 27, exactly as Apple's "pre-installed with macOS 27" framing implies (guide 5.2 §3).
 
 > ⚠️ **SILENT FAILURE — a shell pipeline cannot tell "the model declined" from "the model answered in
 > prose".** If a schema flag does not apply — wrong spelling, malformed schema, an OS that ignored it —

@@ -52,7 +52,7 @@ three long guides rather than a quickstart. Four things underpin it:
    truth about different things.
 
 Underneath all four sits the sharpest single fact in the part: **`AIProgram.optimize()` is not always
-semantics-preserving**, it is an open bug with zero comments as of 2026-07-27, and its measured impact on a
+semantics-preserving**, it is an open bug with zero comments as of 2026-07-29, and its measured impact on a
 real model was **17 dB PSNR** against eager PyTorch — below the floor for *2-bit palettization*. It is
 shape-sensitive, so a parity test on toy tensors passes while production is broken.
 
@@ -89,7 +89,7 @@ passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymIn
 multi-function split; and the Python-side verification gate that catches everything above for free.
 
 > ⚠️ **SILENT FAILURE — `optimize()` can change your model's semantics.** `coreai-torch#49`, **open with
-> zero comments** as of 2026-07-27 (FB23695952): the optimizer deletes a broadcasting-significant
+> zero comments** as of 2026-07-29 (FB23695952): the optimizer deletes a broadcasting-significant
 > `expand_dims` in the expanded squared-distance form, and the output shape still validates because the
 > inputs are square. **17 dB PSNR** at model scale; **78–85 dB** with `optimize()` off. Reproduces under
 > `cpu_only()`, so it is the compiler, not a delegate. Unequal input lengths do **not** reproduce it, so a
@@ -254,14 +254,16 @@ authoring and optimization*) and 330 (*Optimize custom machine learning operatio
 plus Apple Tech Talk 111432 for the TensorOps version ladder, the Xcode 26.6 SDK as the baseline,
 and Xcode 27 `MTLTensor.h` / MPP headers for the int2/FP4/FP8/E8M0 and scale-plane additions.
 [^xcode27-scale-planes] **Community sources** —
-`coreai-torch` issues #1, #2, #6, #9, #10, #11, #21, #49, #51 and PRs #5/#7/#13/#18/#22/#29/#32/#40/#41/#45,
+`coreai-torch` issues #1, #2, #5, #6, #9, #10, #11, #21, #49, #51 and PRs #7/#13/#18/#22/#29/#32/#40/#41/#45,
 `coreai-models` #66/#118/PR #69, and `john-rocky`'s `coreai-model-zoo` knowledge files — supply every latency
 and accuracy number that is not Apple's, each labelled **community-measured** at its point of use with
 hardware, OS build and date where the source gave them. **Apple published no performance figure for any of
 this except the SAM3 76% and the Qwen3-MoE tok/s deltas, both with hardware and methodology unstated.** All
 three guides were last verified 2026-07-27 against `coreai-torch` 0.4.1, `coreai-core` 1.0.0b2,
-`coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; every open issue cited was checked
-on that date, and `coreai-torch#49` was still unresolved.
+`coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; the state of every issue and PR
+cited was re-checked 2026-07-29, and `coreai-torch#49` was still unresolved. The 0.4.0-artifact incident
+issues are resolved: `coreai-torch#37` closed as completed 2026-07-13 and `#44` closed as completed
+2026-07-24.
 
 [^sample-routing-policy]: The name classifier and compute-unit preferences live in the optional
     `apple/coreai-models` package’s pinned

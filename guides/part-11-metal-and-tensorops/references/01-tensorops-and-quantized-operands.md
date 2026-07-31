@@ -11,7 +11,10 @@ implementation on a macro spelled `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_26_2`,
 target ≥ 26.2**. Both statements are true and they are not the same statement. §1 reconciles them
 and tells you which number to put in your build settings. The original TensorOps surface is 26.x;
 Xcode 27 adds host-side multiplane tensors and the int2, FP4, FP8, and E8M0 data types described in
-session 330.[^metal27-multiplane]
+session 330 — and, as of the **macOS 27.0 beta SDK** (checked 2026-07-29), the same formats land
+*shader-side* in the MPP headers themselves, together with a blockwise ue8m0 scale-plane path and a
+second deployment gate, `…_DEPLOYMENT_TARGET_27_0`. §0.2 and §1.2 carry the
+citations.[^metal27-multiplane]
 
 This guide is written **against the headers**, which are on your disk right now. Where a WWDC
 session and a header disagree, the header wins and the guide says so.
@@ -49,7 +52,10 @@ Read this guide for:
   **not** what Apple's own doc comment says (§6).
 - **The Xcode 26.6 element types.** Thirteen shader-side types, including `int8_t`, `uint8_t`,
   `metal::int4b_format`, and `metal::uint4b_format` (§2.3). Xcode 27's host-side `MTLTensorDataType`
-  separately adds int2, FP4, FP8, and E8M0 formats.[^metal27-dtypes]
+  separately adds int2, FP4, FP8, and E8M0 formats — and the macOS 27.0 beta SDK's MPP headers add
+  the matching *shader-side* element types: `metal::int2b_format` / `uint2b_format`,
+  `metal::metal_fp4_e2m1_format`, `metal::metal_fp8_e4m3_format` / `…_e5m2_format` as operands, and
+  `metal::metal_fp8_ue8m0_format` as a scale dtype (§0.2).[^metal27-dtypes]
 
 ## What this does *not* cover
 
@@ -134,6 +140,17 @@ declarations ship inside Xcode:
 > The same framework is present under `iPhoneOS.sdk`, `iPhoneSimulator.sdk`,
 > `AppleTVSimulator.sdk`, and `/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk`.
 
+> ✅ **27.0-BETA DELTA** — the same directory in the **macOS 27.0 beta SDK** (Xcode 27 beta, checked
+> 2026-07-29) keeps the identical file set but grows exactly where the new formats land:
+> `MPPTensorOpsMatMul2d.h` 642 → **664** lines — the growth is 22 new rows in the dtype
+> support-matrix comment, and the only compiled change in the file is a SFINAE substitution on the
+> cooperative-tensor getters, `__is_thread_addrspace_v<…>` → `__is_unqualified_v<…>` (seven
+> clauses; noted where §6.3 quotes the 26.6 spelling) — plus
+> `__impl/MPPTensorOpsMatMul2dImpl.h` 8,963 → **16,754** lines, `MPPTensorOpsTypes.h` 150 → 180,
+> `MPPTensorOpsTraits.h` 135 → 198, `MPPTensorOpsAvailability.h` 12 → 13 (one new macro — §1.2).
+> `MPPTensorOpsConvolution2d.h` and `MPPTensorOpsConvolution2dImpl.h` are unchanged apart from a
+> one-token diff. §0.2 and §1 read the contents of that delta.
+
 If you searched for this framework and failed, you probably looked under `Toolchains/`. It is not
 there. It is under `Platforms/…/SDKs/…/System/Library/Frameworks/`, like any other SDK framework.
 
@@ -190,7 +207,8 @@ and `blockFactors`; `MTLTensorDescriptor.auxiliaryPlanes` attaches the plane map
 > ```
 >
 > The same searches over that 26.6 `metal_tensor` + `metal_cooperative_tensor` snapshot (2,788 lines)
-> also returned zero. This result must not be generalized to Xcode 27.
+> also returned zero. This result must not be generalized to Xcode 27 — the 27.0-beta positive
+> result is in the ✅ block at the end of this section.
 
 For a 26.x target, three sources support the custom-dequantization fallback:
 
@@ -220,6 +238,44 @@ something with no shading-language surface in the 26.x SDK.
 > valid tensor data types. Use the 27.0 surface when that is your deployment floor; keep in-kernel
 > dequantization for 26.x targets and custom formats.[^metal27-dtypes]
 
+> ✅ **VERIFIED — the macOS 27.0 beta SDK puts the scale-plane mechanism in the *shader-side* MPP
+> headers too** (Xcode 27 beta, checked 2026-07-29). This is no longer only a host-side `MTLTensor`
+> story:
+>
+> - **The matmul dtype matrix grows by 22 rows.** `MPPTensorOpsMatMul2d.h:62-83` (27.0 SDK) adds
+>   `int2b_format` / `uint2b_format` as right-hand operands against `int8_t`/`uint8_t`/`half`/`bfloat`
+>   (accumulating to `int32_t`/`half`/`bfloat`/`float`), and the floating quantized rows:
+>   `half × metal_fp4_e2m1_format`, `half × metal_fp8_e4m3_format`, `half × metal_fp8_e5m2_format`,
+>   plus same-format pairs `fp4×fp4`, `e4m3×e4m3`, `e5m2×e5m2` — each accumulating to `half` or
+>   `float`. Note **e5m2 is included** (`:76-77`, `:82-83`); coverage is wider than session 330's
+>   "FP8" shorthand. The 26.6 matrix's 47 rows are unchanged above them.
+> - **Blockwise scale factors are real, with exact constraints.**
+>   `__impl/MPPTensorOpsMatMul2dImpl.h:6241-6316` (27.0 SDK) reads a scale plane off an input tensor
+>   through a `metal::tensor_blockwise<metal::tensor_plane_scales, …>` tag (all of it inside
+>   `#if defined(__HAVE_TENSOR_MULTIPLANE__)`) and `static_assert`s the contract, verbatim messages:
+>   scale dtype **must be `metal_fp8_ue8m0_format`**; scale factors are **rank 1 or 2**; **"Scale
+>   block size 0 must be 32"** and, for rank 2, **"Scale block size 1 must be 1"**; **"Left tensor
+>   must not be transposed if it has scale factors"**; **"Right tensor must be transposed if it has
+>   scale factors"**; and **"Destination tensor cannot have scale factors"** (`:6315`). That is
+>   MX-style block-32 scaling, matching the Feature Set Tables' reservation of ue8m0 for scale planes.
+> - **The supporting traits and datatypes ship alongside.** `MPPTensorOpsTraits.h:135-187` adds
+>   `is_tensor_blockwise` / `has_tensor_blockwise_v` / `tensor_blockwise_tag` over
+>   `metal::tensor_blockwise`; `MPPTensorOpsTypes.h:45-64` adds `__tensor_ops_datatype_int2`,
+>   `_uint2`, `_fp4_e2m1`, `_fp8_e4m3`, `_fp8_e5m2` and `_fp8_ue8m0`, and `:120-155` maps the
+>   corresponding `metal::` element types behind new feature macros: `__HAVE_INT2B_FORMAT_TYPE__`,
+>   `__HAVE_METAL_FP4_E2M1_FORMAT_TYPE__`, `__HAVE_METAL_FP8_E4M3_FORMAT_TYPE__`,
+>   `__HAVE_METAL_FP8_E5M2_FORMAT_TYPE__`, `__HAVE_METAL_FP8_UE8M0_FORMAT_TYPE__`.
+> - **ue8m0 is a scale dtype, not an operand dtype.** It appears in the datatype enum and the
+>   scale-plane asserts and **nowhere in the matmul support matrix** — you cannot multiply ue8m0
+>   tensors; you scale with them.
+> - **`convolution2d` gets none of this.** The 27.0 conv headers are unchanged from 26.6 apart from
+>   one token, and a grep for the new formats over `MPPTensorOpsConvolution2dImpl.h` returns zero
+>   hits. Quantized-format matmul is a `matmul2d`-only feature in this SDK.
+>
+> Deployment consequence: the new ABI is gated on a new macro, deployment target **≥ 27.0** — §1.2.
+> The shader-side dequantization path in this guide remains the technique for 26.x targets and for
+> formats outside this list.
+
 There is a matching community claim worth recording rather than repeating:
 
 > 🟡 **RECONSTRUCTED / community-cited.** A community research note in `john-rocky/coreai-model-zoo`
@@ -228,6 +284,11 @@ There is a matching community claim worth recording rather than repeating:
 > matmul2d + uniform int4 = 4.0."* Neither `tensor_blockwise` nor `__HAVE_TENSOR_MULTIPLANE__`
 > appeared in the Xcode 26.6 Metal toolchain inspected on 2026-07-27. Treat the spelling as unverified
 > for that snapshot; do not use it to deny Xcode 27's documented host-side multiplane API.
+> **Update (2026-07-29): both spellings are confirmed** — the macOS 27.0 beta SDK's
+> `MPPTensorOpsTraits.h:135-187` and `MPPTensorOpsMatMul2dImpl.h:6241-6316` use exactly
+> `metal::tensor_blockwise` and `__HAVE_TENSOR_MULTIPLANE__` (✅ block above). Which `-std=metal`
+> level defines the macro remains untested here (the Metal Toolchain component was not installed on
+> the checking machine), so the "= 4.1" half of the claim stays community-attributed.
 > Same author's conclusion after building it: *"you can get block-32 scaling at Metal 4.0 by staging
 > the dequant in threadgroup memory"* — which is this guide's thesis, arrived at independently.
 > Attribute as **community-measured**, not Apple.
@@ -291,7 +352,9 @@ Two things this table settles for the original 26.x surface:
 - **Base TensorOps does not require 27.** The capabilities in this table land in 26.x; do not gate
   `matmul2d` itself on iOS 27 or macOS 27.
 - **The Xcode 26.6 dtype set stops at 4-bit and 8-bit integers.** Xcode 27 extends the host-side
-  tensor formats with int2, FP4, FP8, and E8M0; those additions do not rewrite the 26.x history.[^metal27-dtypes]
+  tensor formats with int2, FP4, FP8, and E8M0 — and the macOS 27.0 beta SDK extends the
+  *shader-side* `matmul2d` operand matrix with the same formats (§0.2); those additions do not
+  rewrite the 26.x history.[^metal27-dtypes]
 
 The host-side `MTLTensor` enum corroborates the 26.4 date from a third angle:
 
@@ -359,6 +422,23 @@ The same split repeats for `num_elements`, `get_element_pointer`, `get_element_i
 **So the 26.2 macro is the deployment-target switch that makes left- and right-operand cooperative
 tensors representable at all.** That is the same capability the Tech Talk assigns to 26.3.
 
+The 27.0 beta SDK adds a second gate directly below the first — ✅ **VERIFIED**,
+`__impl/MPPTensorOpsAvailability.h:11` (macOS 27.0 beta SDK, checked 2026-07-29):
+
+```c
+#define __TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0 ((__ENVIRONMENT_OS_VERSION_MIN_REQUIRED__) >= 270000)
+```
+
+The 26.2 macro keeps its 20 uses unchanged in the 27.0 `MPPTensorOpsMatMul2dImpl.h`; the new macro
+appears **12 times**, and what it gates is again an ABI, not a feature flag: `_v2` run entry points
+whose signatures carry `leftScaleDataType` / `rightScaleDataType` and per-dimension scale block
+sizes (e.g. `__tensorops_impl_matmul2d_op_run_dv_f16_dv_f16_dv_f16_v2`,
+`MPPTensorOpsMatMul2dImpl.h:1059` ff.), plus real copy/move-construct and copy/move-assign entry
+points for cooperative tensors (`…_op_cooperative_tensor_copy_construct`, `:218` ff. — below the
+macro these fall back to an element-by-element loop). The pattern from §1.2 repeats one major
+version later: **the scale-plane and quantized-format ABI is representable only at deployment
+target ≥ 27.0.**
+
 ### 1.3 Reconciling the two
 
 Two facts, both verified, one apparent conflict:
@@ -377,7 +457,9 @@ with no per-symbol `@available` annotation.
 
 > 🔴 **GAP.** We cannot prove that reading. What would resolve it: per-symbol availability
 > annotations (there are none in the header), or Apple documentation for
-> `get_left_input_cooperative_tensor`. Neither exists in the corpus.
+> `get_left_input_cooperative_tensor`. Neither exists in the corpus. The macOS 27.0 beta SDK
+> headers were checked on 2026-07-29: **still no per-symbol annotations** — only the two
+> framework-wide macros (26.2, and the new 27.0 gate of §1.2).
 > **Safe default, and it costs you nothing:** set your deployment target to **26.3**. It satisfies
 > the header's 26.2 macro *and* the narrated feature date, and it is below the 26.4 you need for
 > 4-bit/8-bit tensor element types anyway. If you use int4/int8 operands, **26.4** is your real
@@ -395,9 +477,10 @@ and earlier
 > *"We added support for 4- and 8-bit integer types in **an update to macOS and iOS 26**."*
 
 Both are right. The core `matmul2d` API and its 4-bit/8-bit integer expansion are 26.x; the native
-MX/E8M0 multiplane representation belongs to Xcode 27. The mistake is not recognizing 27.0 support;
-it is applying that floor to all of TensorOps instead of only to the newer tensor formats and
-auxiliary-plane surface.[^metal27-multiplane]
+MX/E8M0 multiplane representation belongs to Xcode 27 — and is now visible in the 27.0 beta SDK's
+own MPP headers, behind the 27.0 deployment gate (§0.2, §1.2). The mistake is not recognizing 27.0
+support; it is applying that floor to all of TensorOps instead of only to the newer tensor formats
+and auxiliary-plane surface.[^metal27-multiplane]
 
 ### 1.5 The version cheat sheet
 
@@ -409,6 +492,7 @@ Put this in your build settings and move on.
 | `bfloat` element type | **26.1** | narrated ladder |
 | cooperative tensors as matmul **inputs** (`get_left/right_input_cooperative_tensor`) | **26.2** by the header ABI, **26.3** by Apple's ladder — **use 26.3** | §1.3 |
 | `int8_t` / `uint8_t` / `int4b_format` / `uint4b_format` element types | **26.4** | `MTLTensorDataTypeInt4 API_AVAILABLE(macos(26.4))` |
+| int2 / FP4 / FP8 operand formats, ue8m0 blockwise scale planes | **27.0** | `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0` (`MPPTensorOpsAvailability.h:11`, 27.0 beta SDK) gates the scale-aware `_v2` ABI — §0.2, §1.2 |
 | MLX's accelerated ("NAX") kernels at all | **26.2** *and* Metal 4 *and* SDK ≥ 26.2 | [Guide 11.2 §0.2](02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation) — all three, or they silently vanish |
 
 ---
@@ -1271,6 +1355,9 @@ overload:
 > 🔴 **GAP.** `static_slice` may exist in a newer Metal toolchain than the one shipped with Xcode
 > 26.6 — a rename in either direction is plausible. We can only say it is absent from
 > `v17.6.109.0` / `metal 32023.883`. **What would resolve it:** the same grep on a 27-era toolchain.
+> Partial 27 check (2026-07-29): the macOS 27.0 beta SDK's `MPPTensorOpsMatMul2d.h` still spells
+> `static_slice` only inside `//` comments (`:165-167`, `:205-216`); the 27-era Metal Toolchain
+> component was not installed on the checking machine, so the language-header grep is still pending.
 > **Safe default:** write `slice<Extents...>(indices...)`. It compiles today, has the same
 > semantics, and if Apple later adds `static_slice` as an alias your code keeps working.
 
@@ -1500,6 +1587,14 @@ the layout.
 >   INLINE cooperative_tensor_destination_t<LeftOperandType, RightOperandType, ElementType, CoordType, CoopArgs...>
 >   get_destination_cooperative_tensor() thread const
 > ```
+
+(Those are the 26.6 spellings. In the macOS 27.0 beta SDK — checked 2026-07-29 — the element-type
+clauses on all of these getters read `__is_unqualified_v<…>` instead of
+`__is_thread_addrspace_v<…>`: same intent, pass unqualified element types like `half` or `float`.
+In the same header Apple's fourth worked example now writes the destination getter's operand types
+as `__remove_addrspace_t<decltype(mA)>` rather than bare `decltype(mA)`
+(`MPPTensorOpsMatMul2d.h:274,293`, 27.0 SDK) — worth copying if you target 27, since a
+kernel-parameter tensor's `decltype` carries its address space.)
 
 **Read those two SFINAE clauses side by side.** They are not the same kind of thing:
 

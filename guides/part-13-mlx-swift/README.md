@@ -127,7 +127,7 @@ explains why an upstream fix takes four tag bumps to reach your app.
 > stale references and **the model loses all context generated after `quantizedKVStart`**. `#424` —
 > `SpeculativeTokenIterator` discards `trimPromptCache`'s return value, and once one sliding layer
 > wraps the rollback silently returns `0`, so **generation continues on a transcript containing
-> tokens that were never emitted**. Both OPEN as of 2026-07-27; treat the status as a snapshot.
+> tokens that were never emitted**. Both OPEN as of 2026-07-29; treat the status as a snapshot.
 
 > 🔴 **GAP — no verified public API for registering a custom `ToolCallParser`.** `ToolCallProcessor.init`
 > takes a closed `String`-backed `ToolCallFormat` enum you cannot extend. If your model's wire format

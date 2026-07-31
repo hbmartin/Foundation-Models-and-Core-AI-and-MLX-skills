@@ -52,9 +52,12 @@ Session 246 is spoken narration over slides. **Apple read the concepts aloud; no
 signatures aloud.** The sample project is the missing half: it is compiling, shipping Apple code,
 so wherever it speaks it **outranks** both the transcript and the community field note, and this
 guide has been written to follow it. What the sample does *not* exercise — the file source, the
-contact resolver, custom pipeline stages, `GuidanceProfile` — stays 🟡 or 🔴, and there is now a
-sharper reason to be suspicious of those three: **Apple's own reference implementation of this
-feature does not use them.**
+contact resolver, custom pipeline stages, `GuidanceProfile` — is now nonetheless ✅ **SDK-verified**
+at the declaration level: the `_CoreSpotlight_FoundationModels` cross-import overlay interface was
+captured on 2026-07-29 (`notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface`),
+and it vindicated the field note's spellings almost everywhere. The suspicion that survives is
+behavioural, and it is still sharp: **Apple's own reference implementation of this feature does not
+use any of them**, so their runtime behaviour remains untested.
 
 ---
 
@@ -535,14 +538,31 @@ whole API, from Apple's own code:
 Read that carefully, because several things in it correct what a transcript reconstruction would
 have told you.
 
-**The configuration has two members, not four.** `sources:` and `guide:`. `contactResolver:` and
-`customStages:` — both real *concepts* in session 246, §11 and §12 — appear nowhere in Apple's
-reference implementation of this feature. They may exist as defaulted parameters; the sample simply
-never reaches for them. Treat them as 🟡 until you have seen a header.
+**The configuration has five members; Apple's sample reaches for two.** The header has now been
+seen — ✅ **SDK-verified**
+(`notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:49-59`):
 
-**`guide:` takes a value directly, not a `Guide(level:format:)` composite.** `.focused()` — with
-parentheses, so it has defaulted parameters — and `.complete`, a plain member with none. There is
-no `format:` in sight. See §10.
+```swift
+// _CoreSpotlight_FoundationModels overlay — activated by importing both
+// CoreSpotlight and FoundationModels. The full memberwise init, defaults included (:58):
+public init(
+    sources: [SearchSource] = [],
+    guide: SpotlightSearchTool.Guide? = nil,
+    contactResolver: (any ContactResolver)? = nil,
+    customStages: [any CustomStage] = [],
+    maximumResponseSize: Int? = nil
+)
+```
+
+So `contactResolver:` and `customStages:` are real defaulted parameters after all (§11, §12), plus
+one member no source in this corpus had ever named: **`maximumResponseSize: Int?`**. The tool
+itself takes only `init(configuration: Configuration = Configuration(sources: [.coreSpotlight]))`
+(`:384`) — so the bare `SpotlightSearchTool()` defaults to the Core Spotlight source.
+
+**`guide:` is a `Guide?`, and both spellings are real.** The sample's `.focused()` / `.complete`
+are `Guide`'s own static members — but a `Guide(level:format:)` memberwise init *also* exists
+(`init(level: GuidanceLevel = .complete, format: FormatLevel = .structured)`, `:65-69`), so the
+community field note was right about the composite too. See §10.
 
 **The two `.coreSpotlight` labels are one initialiser, not two.** `searchableIndexDelegate:` and
 `fetchAttributes:` are passed together in a single `.init(...)`, and the source case takes the
@@ -550,10 +570,11 @@ value with a leading dot — you never spell a `CoreSpotlightSource` type name a
 
 | Member | Shape | Evidence |
 |---|---|---|
-| `sources` | array of source cases; `.coreSpotlight(.init(searchableIndexDelegate:fetchAttributes:))` is the only one anyone has written | ✅ sample `Session.swift:118-125` + ✅ `246:43` for the file-source *concept* only |
-| `guide` | a value: `.focused()` or `.complete` | ✅ sample `Session.swift:126` |
-| `contactResolver` | 🟡 named by the community field note; absent from Apple's sample | 🟡 field note + ✅ `246:84-85` for the concept |
-| `customStages` | 🟡 named by the community field note; absent from Apple's sample | 🟡 field note + ✅ `246:94-105` for the concept |
+| `sources` | `[SearchSource]`, default `[]`; statics `.coreSpotlight` / `.coreSpotlight(CoreSpotlightSource)` / `.files` / `.files(FileSource)` | ✅ SDK-verified `:35-44` + ✅ sample `Session.swift:118-125` |
+| `guide` | `Guide?`, default `nil`; statics `.complete` / `.focused(_: ContentDomain = .items)` / `.dynamic(GuidanceProfile)`, or `Guide(level:format:)` | ✅ SDK-verified `:65-80` + ✅ sample `Session.swift:126` |
+| `contactResolver` | `(any ContactResolver)?`, default `nil` — a protocol, §11 | ✅ SDK-verified `:52`, `:313-315`; still absent from Apple's sample |
+| `customStages` | `[any CustomStage]`, default `[]` — instances, not metatypes, §12 | ✅ SDK-verified `:53-56`, `:217-243`; still absent from Apple's sample |
+| `maximumResponseSize` | `Int?`, default `nil` — named in no transcript, doc or field note; semantics untested | ✅ SDK-verified `:57` |
 
 ### 5.1 The file source
 
@@ -566,18 +587,35 @@ graph, the tool can search **files on disk inside your app's sandbox**. For a do
 this is often the more natural source — you do not have to mirror your document tree into the
 Spotlight index just to make it reachable.
 
-> 🔴 **GAP** — I cannot give you the file source's spelling. Apple said "`FileSource`" aloud at
-> `246:43`; the community field note, working from a compiled call site, describes the second
-> source as `.files`. **These may be the same thing under two names** (a `.files(FileSource(...))`
-> case would satisfy both), or the note's author may have been paraphrasing. **No source in this
-> corpus shows a constructed file source** — and, notably, **Apple's own session-246 sample does not
-> exercise one either**; it passes a single-element `sources:` array containing only
-> `.coreSpotlight`. In particular I cannot tell you: whether it takes a directory URL, an array of
-> URLs, a UTType filter, or nothing at all; whether it requires the files to be already
-> Spotlight-indexed; or whether it works outside the sandbox with a security-scoped bookmark.
-> Resolving this now needs the `.swiftinterface` for the overlay or one line of
-> `swift-symbolgraph-extract` output — the sample project, which used to be the obvious answer, has
-> been obtained and does not contain it.
+> ✅ **RESOLVED (2026-07-29)** — both spellings were right, because they are two halves of one API.
+> The overlay declares a `FileSource` struct **and** a `.files` static on `SearchSource`
+> (✅ **SDK-verified**, `_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:26-31`, `:35-44`):
+>
+> ```swift
+> public struct FileSource : Sendable {
+>     public var fetchAttributes: [SearchableItemAttribute]
+>     public var maximumResultCount: Int?
+>     public var scopes: [URL]                                  // set after init
+>     public init(fetchAttributes: [SearchableItemAttribute] = [])
+> }
+> // SearchSource statics: .coreSpotlight, .coreSpotlight(CoreSpotlightSource),
+> //                       .files, .files(FileSource)
+> ```
+>
+> So it takes an **array of URLs**, via the settable `scopes` var rather than the initialiser —
+> `.files(FileSource(...))` is exactly the shape the field note's `.files` and Apple's spoken
+> "`FileSource`" jointly predicted. No UTType filter exists on the type. Still unverified, because
+> **no source in this corpus constructs one** (Apple's sample passes only `.coreSpotlight`):
+> whether the files must already be Spotlight-indexed, and whether security-scoped bookmarks work
+> outside the sandbox. Those need a running test, not a header.
+>
+> **Capture note (updated 2026-07-29):** the earlier dump of the parent
+> `CoreSpotlight.swiftinterface` was correct to come back empty — the tool-side types live in the
+> **`_CoreSpotlight_FoundationModels` cross-import overlay**, a module that activates only when a
+> file imports both `CoreSpotlight` and `FoundationModels`, now captured to
+> `notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface` (513 lines,
+> macOS 27.0 beta). That is why §3's "import both frameworks" rule is load-bearing: with either
+> import missing, `SpotlightSearchTool` and every type in this section simply do not exist.
 
 ### 5.2 `fetchAttributes` and `SearchableItemAttribute`
 
@@ -613,11 +651,16 @@ attributes.append(SearchableItemAttribute(rawValue: Self.distanceKey!.keyName))
 Then describe it in your instructions — *"distance (trail distance in miles, stored as a custom
 attribute)"* — so the model knows what the number means. §3.1.
 
-> 🔴 **GAP** — the list of static members above is **the set Apple's sample happens to use**, not a
-> complete enumeration. `SearchableItemAttribute` almost certainly has more statics covering the
-> rest of `CSSearchableItemAttributeSet`; nothing in this corpus enumerates them. Since
-> `init(rawValue:)` is public you are never blocked — you can always spell an attribute by its
-> `kMDItem…` key name — but you will not get autocompletion for it.
+> ✅ **RESOLVED (2026-07-29) — the complete enumeration exists, and it is large.** The macOS 27.0
+> beta CoreSpotlight Swift interface declares `public struct SearchableItemAttribute : Hashable,
+> Sendable, RawRepresentable` (`rawValue: String`, public `init(rawValue:)`) with **176
+> `public static let` members** covering the breadth of `CSSearchableItemAttributeSet` —
+> ✅ **SDK-verified** (`notes/sdk-interfaces/CoreSpotlight-27.0-macos.swiftinterface:19-207`;
+> availability `macOS 27.0, iOS 27.0, visionOS 27.0`, no tvOS/watchOS). All eleven of the sample's
+> members are in the list (e.g. `.namedLocation:193`, `.latitude:188`, `.rating:118`,
+> `.stateOrProvince:184`), alongside everything from `.displayName` and `.textContent` to
+> `.mailboxIdentifiers` and `.fontNames`. Autocompletion will show you the rest;
+> `init(rawValue:)` remains the escape hatch for custom `kMDItem…`/`CSCustomAttributeKey` names.
 
 Whether `fetchAttributes:` actually changes what the model sees is the subject of the next section,
 and the answer as of the 27.0 betas was reported to be "no". Read on before you rely on it.
@@ -1214,22 +1257,26 @@ struct TrailChatView: View {
 }
 ```
 
-> 🟡 **RECONSTRUCTED** — `reply.label` and `reply.queryToken`. Both are named by the community field
-> note and `label` is ✅ VERIFIED as a *concept* by `246:107` ("each reply comes with a handy
-> LLM-generated label describing the content"), but **Apple's sample uses neither** — it reads only
-> `reply.content` and de-duplicates by identifier. Their existence as members, their types, and
-> whether `label` is `Optional` are unverified. The `queryToken` boundary logic in §9.2 is Apple's
-> stated design; the sample's fresh-tool-per-query approach sidesteps the need for it, which may be
-> why it does not appear.
+> ✅ **SDK-verified (2026-07-29)** — `reply.label` and `reply.queryToken` are real members, and there
+> are two more. `SearchReply` carries `content`, `label: String?` (yes, `Optional` — keep the
+> fallback), `queryToken: SearchReply.QueryToken` (`Hashable` — the §9.2 boundary logic is
+> mechanically supported), `stageToken: SearchReply.StageToken` (also `Hashable`, correlating
+> pipeline-stage output, §12.3), and `status: Status` — an enum of `.partial` / `.complete`, which
+> is per-reply progress signalling no source in this corpus had named
+> (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:341-379`). **Apple's sample still uses
+> none of them** — it reads only `reply.content` and de-duplicates by identifier.
 
-> 🔴 **GAP** — **stream termination is still unverified.** The sample's listener is a `Task` that
-> the caller cancels; it never relies on the sequence finishing, and it never issues a second query
-> against the same tool. So we still do not know whether `searchResults` completes at the end of a
-> tool call, at the end of a session, or not at all. Apple's per-query tool lifetime means you do
-> not *need* to know — which is a decent argument for adopting it — but if you want one long-lived
-> tool you must find out. Resolving this needs a `.swiftinterface` for the overlay, or an empirical
-> test that issues two searches against one tool instance and checks whether the second batch
-> arrives. **Write that test.**
+> 🔴 **GAP** — **stream termination is still unverified.** The overlay interface has now been
+> captured and it answers the *type* half only: `searchResults` is
+> `some AsyncSequence<SearchReply, Never>` (`:381-383`) — it can never throw, but an opaque
+> `AsyncSequence` says nothing about whether it ever *finishes*. The sample's listener is a `Task`
+> that the caller cancels; it never relies on the sequence finishing, and it never issues a second
+> query against the same tool. So we still do not know whether `searchResults` completes at the end
+> of a tool call, at the end of a session, or not at all. Apple's per-query tool lifetime means you
+> do not *need* to know — which is a decent argument for adopting it — but if you want one
+> long-lived tool you must find out, and per-reply `status == .complete` (above) is not the same
+> thing as sequence termination. Resolving this needs an empirical test that issues two searches
+> against one tool instance and checks whether the second batch arrives. **Write that test.**
 
 ---
 
@@ -1264,7 +1311,7 @@ tokens come out of your context window.**
 > as real and the digits as indicative, and measure your own with `SystemLanguageModel.default`'s
 > token-counting API before you trust it. What is not in doubt is the direction: complete guidance
 > is several times the size of a 4K context window. (That note's spellings — `.focused(.items)`,
-> `format: .compact` — are superseded by §10.2; the *measurement* stands.)
+> `format: .compact` — are now ✅ SDK-verified real API, §10.2; the *measurement* stands too.)
 
 Apple states the same conclusion qualitatively, and it is the single most actionable sentence in
 the session:
@@ -1311,21 +1358,28 @@ SpotlightSearchTool(configuration: .init(sources: […], guide: .complete))
 SpotlightSearchTool(configuration: .init(sources: […], guide: .focused()))
 ```
 
-Note what is **not** here. There is no `Guide(level:format:)` composite initialiser in Apple's code,
-no `format:` argument, and no `.compact` / `.structured` pair at this level. The community field
-note reported a `Guide(level:format:)` call site on a June beta; whatever it was compiling against,
-the shipping sample does not use that shape, and per the precedence rules the sample wins. If you
-have written `SpotlightSearchTool.Guide(level:format:)` anywhere, change it.
+Both shapes turn out to be real, and the earlier correction to the field note was wrong.
+✅ **SDK-verified** (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:65-104`):
+`SpotlightSearchTool.Guide` is a struct of `level: GuidanceLevel` and `format: FormatLevel`, with
+**both** a memberwise `init(level: GuidanceLevel = .complete, format: FormatLevel = .structured)`
+and the statics Apple's sample uses — `.complete`, `.focused(_ domain: ContentDomain = .items)`,
+`.dynamic(_ profile: GuidanceProfile)` (`:74-80`). `GuidanceLevel` is an enum with the same three
+cases; `FormatLevel` is `.structured` / `.compact` (`:85-104`). So `Guide(level:format:)` from the
+June field note compiles today — the sample's `.focused()` is simply the sugar that leaves
+`format:` at its `.structured` default. If this guide previously told you to change a
+`Guide(level:format:)` call site, un-change it.
 
-> 🔴 **GAP** — **what `.focused()` takes.** The empty parens prove there is at least one defaulted
-> parameter and give no clue what it is. The field note's `.focused(.items)` suggests a content
-> domain; `246:68`'s "dates, persons, locations and more" suggests plausible siblings. **Plausible
-> is not verified and I will not guess them.** In the meantime `.focused()` with no arguments is
-> what Apple ships, and it works. Resolving this needs the overlay's `.swiftinterface`.
+> ✅ **RESOLVED (2026-07-29)** — **what `.focused()` takes: a `ContentDomain`, defaulting to
+> `.items`.** The field note's `.focused(.items)` was exact. `ContentDomain` offers `.audio`,
+> `.calendar`, `.communications`, `.documents`, `.items`, `.visualMedia` — each as a bare static
+> and as a function taking a per-domain config struct (e.g. `.calendar(Calendar(organizer:
+> attendees:location:date:))`) whose fields are all `[SearchableItemAttribute]?`
+> (✅ **SDK-verified**, `:109-198`). The types were not in the earlier parent-framework capture
+> because they live in the `_CoreSpotlight_FoundationModels` overlay (§5.1's capture note).
 
-> 🔴 **GAP** — **whether a third `.dynamic(GuidanceProfile)` member exists.** The field note names
-> it and thread 833651 mentions trying `.dynamic`, so something by that name almost certainly
-> exists; Apple's sample uses only the two members above. See §10.3.
+> ✅ **RESOLVED (2026-07-29)** — **the third member exists: `.dynamic(GuidanceProfile)`**, both as a
+> `GuidanceLevel` case and as a `Guide` static (✅ **SDK-verified**, `:79`, `:102`). Apple's sample
+> still uses only `.complete` and `.focused()`. See §10.3.
 
 ### 10.3 `GuidanceProfile` — surgical scoping
 
@@ -1342,19 +1396,23 @@ The reasoning is precisely the reasoning behind trimming any prompt: capability 
 model can never usefully act on are pure context tax, and worse, they are a *distraction* — a model
 told it can filter by recipient will sometimes try to, against an index that has no recipients.
 
-> 🟡 **RECONSTRUCTED** — the parameter **labels** come from the community field note:
-> `GuidanceProfile(textMatch:similarityMatch:numericMatch:dates:people:contentType:attributes:)`.
-> The **value types are not verified**, and neither is the type's existence in shipping form:
-> **`GuidanceProfile` appears nowhere in Apple's session-246 sample**, which is the reference
-> implementation of the very app Apple used to motivate the feature at `246:76-79`. I have written
-> the values as `Bool` below because that is the shape the labels suggest, but they could equally be
-> per-capability enums or an option set. **Do not ship this without checking it against the SDK.**
+> ✅ **SDK-verified (2026-07-29)** — the field note's labels were exact, and the type ships. The
+> overlay declares
+> `GuidanceProfile(textMatch:similarityMatch:numericMatch:dates:people:contentType:attributes:)`
+> with **every capability flag an optional `Bool?` defaulting to `nil`** — tri-state, not the
+> guessed plain `Bool`: `nil` presumably means "framework default", not "off" — and
+> `attributes: [SearchableItemAttribute]? = nil`, the *same* element type as `fetchAttributes`
+> (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:203-212`). That last fact closes
+> §13's question about custom attributes: `SearchableItemAttribute(rawValue:)` works here too.
+> What remains unverified is behavioural: **`GuidanceProfile` still appears nowhere in Apple's
+> session-246 sample**, and §10.4's prompt-sensitivity warning stands.
 >
-> For custom attributes specifically there is now a verified alternative that does not need this
-> type at all — `fetchAttributes` plus `SearchableItemAttribute(rawValue:)`, §5.2. Prefer it.
+> For custom attributes specifically there is still a simpler verified alternative —
+> `fetchAttributes` plus `SearchableItemAttribute(rawValue:)`, §5.2. Prefer it for *visibility*;
+> use the profile only when you need *guidance*.
 
 ```swift
-// 🟡 RECONSTRUCTED — labels verified, value types inferred.
+// ✅ labels and types SDK-verified; every parameter is optional with a nil default.
 let profile = GuidanceProfile(
     textMatch: true,          // literal / keyword matching over indexed text
     similarityMatch: true,    // the semantic index — needs semantic donation, see §2.4
@@ -1368,7 +1426,7 @@ let profile = GuidanceProfile(
 let tool = SpotlightSearchTool(configuration: .init(
     sources: [.coreSpotlight(.init(searchableIndexDelegate: delegate,
                                    fetchAttributes: Self.fetchAttributes))],
-    guide: .dynamic(profile)          // 🟡 member existence unverified — §10.2
+    guide: .dynamic(profile)          // ✅ SDK-verified static — §10.2
 ))
 ```
 
@@ -1414,20 +1472,35 @@ user's identity**". That is narrower than a general people-lookup service. It is
 *self* and the user's known relationships into index-matchable values, so that the tool can filter
 rather than the model inventing a name.
 
-> 🔴 **GAP** — **the `contactResolver` type is unverified, and so is its existence as a shipping
-> `Configuration` label.** What is attested: a named `Configuration` parameter with `nil` as a legal
-> value, from one community field note's compiled call site. What is not verified, at all: whether
-> it is a protocol you conform to, a closure, or a concrete type; whether it is called synchronously
-> or `async`; what it is passed (a string from the prompt? nothing?); and what it returns
-> (`CNContact`? an array of identifier strings? a dedicated type?). **There is no example of a
-> constructed contact resolver anywhere in this corpus** — not in the transcript, not in the docs,
-> not in any repo, not in any forum thread, and **not in Apple's own session-246 sample**, whose
-> `Configuration` carries only `sources:` and `guide:`. Anything you read that shows one is either
-> from a source this guide does not have, or invented. Resolving this needs the
-> `_CoreSpotlight_FoundationModels` interface.
+> ✅ **RESOLVED (2026-07-29)** — the `_CoreSpotlight_FoundationModels` interface has been captured,
+> and every open question has a small answer. `contactResolver` is a shipping `Configuration`
+> label, `(any ContactResolver)? = nil` (`:52`, `:58`). The type is a **protocol**, it is
+> **synchronous**, it is passed **nothing**, and it returns a dedicated struct
+> (✅ **SDK-verified**, `_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:313-326`):
+>
+> ```swift
+> public protocol ContactResolver : Sendable {
+>     func userIdentity() -> ResolvedContact
+> }
+> public struct ResolvedContact : Sendable {
+>     public var displayName: String
+>     public var names: [String]
+>     public var nameComponents: [PersonNameComponents]
+>     public var emailAddresses: [String]
+>     public var phoneNumbers: [String]
+>     public init(displayName: String)
+> }
+> ```
+>
+> Note how much that shape confirms the reading above: the one requirement is `userIdentity()` —
+> no prompt string comes in, no general people lookup goes out. It resolves **self**, as a bundle
+> of index-matchable values, exactly as `246:84-85` described. **There is still no example of a
+> constructed contact resolver anywhere in this corpus** — not in Apple's session-246 sample either
+> — so how the tool actually *uses* the returned values against the index remains untested.
 
-Until then, the practical substitute is boring and works: resolve the reference yourself before
-the prompt reaches the model, and put the resolved value in the instructions.
+Even with the type verified, the practical substitute below is still boring and still works:
+resolve the reference yourself before the prompt reaches the model, and put the resolved value in
+the instructions.
 
 ```swift
 // Pre-resolution in your own code — no unverified API required.
@@ -1519,26 +1592,51 @@ That example is worth dwelling on because it is a genuinely good argument for th
 every item, cheaply, without any of it entering the context. The LLM's job shrinks to: decide that
 happiness is the relevant axis, set a threshold, and phrase the answer.
 
-> 🟡 **RECONSTRUCTED** — the protocol conformances are attested as a *list* by the community field
-> note: "`CustomStage: Generable & Codable & Sendable` — pipeline stages with
-> `inputTypes`/`outputTypes` and `execute(items:/scoredItems:/count:/table:/text:…)`." Everything
-> below — whether `inputTypes` is static, its element type, the exact `execute` overload set,
-> whether registration takes a metatype or an instance — is inferred. **This will not compile
-> as written.** It is here to show the shape of the idea.
+> ✅ **SDK-verified (2026-07-29)** — the protocol is real and the field note's list was right. From
+> the overlay (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:217-243`):
+>
+> ```swift
+> public protocol CustomStage : Generable, Decodable, Encodable, Sendable {
+>     static var name: String { get }
+>     static var description: String { get }
+>     static var inputTypes: [SearchPipelineDataType] { get }
+>     static var outputTypes: [SearchPipelineDataType] { get }
+>     // Seven overloads, one per SearchPipelineDataType; ALL have default
+>     // implementations (:244-266) — implement only the ones your inputTypes name.
+>     func execute(items: [SearchableItem]) async throws -> SearchPipelineData
+>     func execute(scoredItems: [ScoredSearchableItem]) async throws -> SearchPipelineData
+>     func execute(groupedItems: [SearchableItemAttribute: [SearchableItem]]) async throws -> SearchPipelineData
+>     func execute(count: Int) async throws -> SearchPipelineData
+>     func execute(table: SearchResultsTable) async throws -> SearchPipelineData
+>     func execute(statisticName: String, value: Double) async throws -> SearchPipelineData
+>     func execute(text: String) async throws -> SearchPipelineData
+> }
+> ```
+>
+> `SearchPipelineDataType` is a `String`-raw-value enum: `.items`, `.scoredItems`, `.groupedItems`,
+> `.count`, `.table`, `.statistic`, `.text` (`:286-309`) — the same seven shapes as §12.1's reply
+> cases. Every `execute` returns a `SearchPipelineData`, a payload enum over those same seven
+> shapes (`:270-282`), and registration takes **instances**: `customStages: [any CustomStage]`
+> (`:53-58`). `SearchableItem` wraps a `CSSearchableItem` as its single `item` property
+> (`CoreSpotlight-27.0-macos.swiftinterface:13-15`); a scored result is
+> `ScoredSearchableItem(item:score:)` (`:410-414` in the overlay).
 >
 > Note also that **custom pipeline stages are absent from Apple's session-246 sample** — the same
 > hiking-trails app Apple used at `246:98-105` to motivate the happiness-score stage ships without
-> one. That is not proof the API is missing, but combined with §12.4 it is a strong signal that this
-> is the least-baked corner of the tool.
+> one. That is not proof against the API — the header above is — but combined with §12.4 it is a
+> strong signal that this is the least-exercised corner of the tool.
 
 ```swift
 import CoreSpotlight
 import FoundationModels
 import NaturalLanguage
 
-// 🟡 RECONSTRUCTED — conformance list verified, member signatures inferred.
+// ✅ signatures SDK-verified against the overlay; behaviour still subject to §12.4.
 @Generable
 struct HappinessScoreStage: CustomStage {
+
+    static let name = "happinessScore"
+    static let description = "Computes a 0-1 happiness score over each hike's personal notes."
 
     @Guide(description: """
     Only include hikes whose computed happiness score is at least this value, \
@@ -1547,17 +1645,16 @@ struct HappinessScoreStage: CustomStage {
     """)
     var minimumScore: Double
 
-    // 🟡 element type of these arrays is unknown; some stage-data-type enum.
-    static let inputTypes = [.items]
-    static let outputTypes = [.scoredItems]
+    static let inputTypes: [SearchPipelineDataType] = [.items]
+    static let outputTypes: [SearchPipelineDataType] = [.scoredItems]
 
-    func execute(items: [CSSearchableItem]) async throws -> [ScoredItem] {
-        items.compactMap { item in
-            guard let notes = item.attributeSet.contentDescription else { return nil }
+    func execute(items: [SearchableItem]) async throws -> SearchPipelineData {
+        .scoredItems(items.compactMap { wrapped in
+            guard let notes = wrapped.item.attributeSet.contentDescription else { return nil }
             let score = Self.sentiment(of: notes)
             guard score >= minimumScore else { return nil }
-            return ScoredItem(item: item, score: score)
-        }
+            return ScoredSearchableItem(item: wrapped, score: score)
+        })
     }
 
     /// Plain NaturalLanguage sentiment, mapped from [-1, 1] to [0, 1].
@@ -1574,7 +1671,7 @@ let tool = SpotlightSearchTool(configuration: .init(
     sources: [.coreSpotlight(.init(searchableIndexDelegate: delegate,
                                    fetchAttributes: Self.fetchAttributes))],
     guide: .focused(),
-    customStages: [HappinessScoreStage.self]      // 🟡 label and metatype-vs-instance unverified
+    customStages: [HappinessScoreStage(minimumScore: 0.6)]  // ✅ instances, not metatypes (:53-58)
 ))
 ```
 
@@ -1603,24 +1700,30 @@ truncate it, and have a fallback for when it is absent.
 
 ```swift
 for await reply in tool.searchResults {
-    switch reply.content {                      // ✅ case names verified; payload types 🟡 except items
+    switch reply.content {                      // ✅ case names and payload types SDK-verified
     case .items(let batch):        show(items: batch.map(\.item), titled: reply.label)
     case .scoredItems(let scored): show(items: scored.map(\.item.item), titled: reply.label)
     case .groupedItems(let groups): show(groups: groups, titled: reply.label)
-    case .count(let n):            show(metric: "\(n)", titled: reply.label ?? "Count")
-    case .table(let table):        show(table: table, titled: reply.label ?? "Breakdown")
-    case .statistic(let value):    show(metric: value.formatted(), titled: reply.label)
-    case .text(let text):          show(text: text, titled: reply.label)
+    case .count(let n):            show(metric: "\(n.value)", titled: reply.label ?? n.header ?? "Count")
+    case .table(let table):        show(table: table, titled: reply.label ?? table.header ?? "Breakdown")
+    case .statistic(let stat):     show(metric: stat.value.formatted(), titled: reply.label ?? stat.header ?? stat.name)
+    case .text(let result):        show(text: result.body, titled: reply.label ?? result.header)
     @unknown default:              break        // the enum is non-frozen; do not crash
     }
 }
 ```
 
 The seven case names and the `@unknown default` requirement are ✅ **VERIFIED** from
-`Session.swift:170-180`. The **associated-value types of `.count`, `.table`, `.statistic` and
-`.text` are not** — Apple's sample matches those four cases without binding them
-(`case .count, .table, .statistic, .text: continue`), so nobody in this corpus has seen what a
-`table` payload actually is.
+`Session.swift:170-180` — Apple's sample matches the last four cases without binding them. The
+**associated-value types are now SDK-verified** from the overlay
+(`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:341-350`, payload structs `:418-477`):
+`.count` carries a `SearchCount` (`value: Int, header: String?`), `.statistic` a `SearchStatistic`
+(`name: String, value: Double, header: String?`), `.text` a `SearchTextResult`
+(`body: String, header: String?`), and `.table` a `SearchResultsTable` — typed `Column`s
+(`.string/.integer/.double/.date/.boolean`), `Row`s of `Value`s (same five cases plus `.none`),
+and its own optional `header`. Note the pattern: every aggregate payload carries its **own**
+`header: String?` in addition to the reply-level `label`, so you have two model-generated titles
+to choose from — prefer `reply.label`, fall back to the payload header.
 
 ### 12.4 The beta-era caveat
 
@@ -1693,16 +1796,16 @@ let session = LanguageModelSession(tools: [spotlight]) {
 
 **Use dynamic guidance.** That is the `attributes:` parameter of `GuidanceProfile` from §10.3 —
 "You can even specify the exact list of metadata attributes, that the model should consider during
-a search" (`246:78`). Precise, scoped, and blocked on the same 🔴 GAP: the value type of
-`attributes:` is unverified, so I cannot show you a custom attribute key going into it.
+a search" (`246:78`). Precise, scoped, and no longer blocked: the parameter's declared type is
+known.
 
-> 🔴 **GAP** — how a **custom** (non-system) attribute key is expressed in
-> `GuidanceProfile(attributes:)`. Custom attributes on `CSSearchableItemAttributeSet` are set
-> through key-value coding with a string key; the profile's `attributes:` array may take those
-> strings, may take `SearchableItemAttribute` values as `fetchAttributes` does, or may take
-> something else entirely. This matters less than it used to — `fetchAttributes` above is a verified
-> path to the same outcome — but if you need *guidance* on a custom attribute rather than merely
-> *visibility* of it, this is still unresolved. Resolving it needs the parameter's declared type.
+> ✅ **RESOLVED (2026-07-29)** — `GuidanceProfile(attributes:)` is
+> `[SearchableItemAttribute]? = nil` — the **same element type as `fetchAttributes`**
+> (✅ **SDK-verified**, `_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:210-211`). So a
+> custom key goes in exactly the way §5.2 already showed:
+> `SearchableItemAttribute(rawValue: key.keyName)` works in both places, and *guidance* on a custom
+> attribute uses the same spelling as *visibility* of it. What one costs against the other in
+> tokens and retrieval quality is behavioural and still unmeasured (§10.4).
 
 ---
 
@@ -2112,8 +2215,10 @@ to it. Apple's `ImageReference` type — ✅ VERIFIED from the docs as `struct I
 image" and `func resolved(in:) -> Transcript.ImageAttachment?`) — is the mechanism by which a tool's
 `Arguments` can name an image from the transcript. That is how a tool receives an image.
 
-**Instantiation is bare.** `BarcodeReaderTool()` — no configuration in Apple's sample. Whether one
-is available is exactly the open question below.
+**Instantiation is bare, and that is the whole API.** `BarcodeReaderTool()` — no configuration in
+Apple's sample, and none exists: the only initialiser is
+`init(name: String? = nil, description: String? = nil)` (✅ **SDK-verified**, see below). There are
+no symbology, language or region-of-interest knobs to find.
 
 ### When to use these instead of asking the model
 
@@ -2130,19 +2235,23 @@ answer is in `241:L66`: "in ways it **can't natively**". Concretely:
   developer-reported) is that the model reliably *lists* objects in an image but produces
   **unreliable bounding boxes**. If you need coordinates, use Vision, not the LLM.
 
-> 🔴 **GAP** — **the declarations of `OCRTool` and `BarcodeReaderTool` are unverified.** What is
-> verified: both names; that they are Vision-backed; that they live in the **Vision** framework
-> (documentation paths `/documentation/Vision/OCRTool` and `/documentation/Vision/BarcodeReaderTool`);
-> and one compiling call site for `BarcodeReaderTool()`. What is **not** verified, for either type:
-> whether the initialiser takes configuration (recognition languages, revision, symbology filter,
-> region of interest, accuracy/speed trade-off); the `Arguments` type the model generates; the
-> output shape handed back to the model; whether either needs an explicit `import Vision` alongside
-> `FoundationModels`, or materialises through a cross-import overlay the way `SpotlightSearchTool`
-> does; and their exact availability annotations. **No `OCRTool` call site exists anywhere in this
-> corpus** — the sample above is `BarcodeReaderTool`, and I will not extrapolate one from the
-> other. Resolving this needs the two Vision documentation pages, which were not harvested, or the
-> Vision headers from the Xcode 27 SDK. Apple's own deep-dive session is **"What's new in image
-> understanding"** (`241:L62`), also not in this corpus.
+> ✅ **RESOLVED (2026-07-29)** — **the declarations of `OCRTool` and `BarcodeReaderTool` have been
+> read, and the "cross-import overlay" guess was the right one** — the `SpotlightSearchTool`
+> pattern exactly. Both live in **`_Vision_FoundationModels`**, the overlay module the compiler
+> activates only when a file imports both `Vision` and `FoundationModels`
+> (✅ **SDK-verified**, `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`
+> for `BarcodeReaderTool`, `:49-83` for `OCRTool`), which is why the parent `Vision.swiftinterface`
+> capture was — correctly — empty. The surface: `struct`s conforming to `FoundationModels.Tool,
+> @unchecked Sendable`; `init(name: String? = nil, description: String? = nil)` and **nothing
+> else** — no language, symbology or region-of-interest knobs; a nested `Generable` `Arguments`
+> struct whose model-facing fields are not emitted in the interface (they surface via
+> `generationSchema` at runtime); and an **opaque** `Output` — `call(arguments:) async throws ->
+> some PromptRepresentable`, so the output type cannot be named in user code. Availability is in
+> the attributes too: both tvOS-unavailable; `BarcodeReaderTool` includes watchOS 27.0,
+> `OCRTool` is watchOS-unavailable. Full treatment in
+> [reference 03](03-tools-and-tool-calling.md) §10. Still true: **no `OCRTool` call site exists
+> anywhere in this corpus**, and Apple's deep-dive session **"What's new in image understanding"**
+> (`241:L62`) is still not in it.
 
 ---
 
@@ -2189,10 +2298,10 @@ answer is in `241:L66`: "in ways it **can't natively**". Concretely:
 | API | Earliest OS | Platforms | Evidence |
 |---|---|---|---|
 | `SpotlightSearchTool` | **27.0** | iOS, iPadOS, macOS, visionOS. **No watchOS.** | ✅ `246:21`; sample builds at `IPHONEOS_DEPLOYMENT_TARGET = 27.0` |
-| `SpotlightSearchTool.Configuration` (`sources:`, `guide:`) | **27.0** | as above | ✅ sample `Session.swift:116-158` |
+| `SpotlightSearchTool.Configuration` (`sources:guide:contactResolver:customStages:maximumResponseSize:`, all defaulted) | **27.0** | as above | ✅ SDK-verified (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:49-59`) + sample `Session.swift:116-158` |
 | `SearchableItemAttribute` | **27.0** | as above | ✅ sample `Session.swift:116-131` |
-| `GuidanceProfile` / `CustomStage` / `contactResolver` | **27.0** | as above | 🟡 community field note only — **absent from Apple's sample** |
-| `OCRTool`, `BarcodeReaderTool` (Vision) | **27.0** | 🔴 not stated in any source read here | ✅ names, `241:L59-61` + Apple docs |
+| `GuidanceProfile` / `CustomStage` / `contactResolver` | **27.0** | as above | ✅ SDK-verified (overlay `:203-212`, `:217-243`, `:313-326`) — still **absent from Apple's sample**, so behaviour is untested |
+| `OCRTool`, `BarcodeReaderTool` (`_Vision_FoundationModels` overlay) | **27.0** | iOS, iPadOS, macOS, visionOS; `BarcodeReaderTool` also watchOS, `OCRTool` not; no tvOS | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:12-13`, `:46-48`) + `241:L59-61` |
 | `GenerationOptions.ToolCallingMode` | **27.0** | wherever Foundation Models is | ✅ Apple docs |
 | `ImageReference` | **27.0** | wherever Foundation Models is | ✅ Apple docs + Origami sample |
 | `CSSearchableIndex`, `CSSearchableItem`, `CSSearchableIndexDelegate` | predates 26.0 | CoreSpotlight platforms | ✅ shipping app source |
@@ -2203,28 +2312,33 @@ answer is in `241:L66`: "in ways it **can't natively**". Concretely:
 
 Every 🔴 in this guide, in one place, so you know exactly what to go and measure. Apple's
 session-246 sample project (`246:134`: "Download our sample code to see the hiking trails app in
-action") has been obtained and read, and it closed nine of these; what remains would mostly be
-resolved by one artefact nobody in this corpus has — **the `.swiftinterface` for
-`_CoreSpotlight_FoundationModels` from the Xcode 27 SDK**.
+action") has been obtained and read, and it closed nine of these. On **2026-07-29** the macOS 27.0
+beta `CoreSpotlight.swiftinterface` was captured
+(`notes/sdk-interfaces/CoreSpotlight-27.0-macos.swiftinterface`), closing §5.2's attribute
+enumeration — and later the same day the artefact this table kept asking for landed: the
+**`_CoreSpotlight_FoundationModels` cross-import overlay interface**
+(`notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface`, 513 lines,
+macOS slice), which carries the entire tool-side surface and closed every declaration-shaped row
+below. What survives is **behavioural**: things a header cannot answer.
 
 | § | Unknown | What would resolve it |
 |---|---|---|
 | 2.3 | Whether `searchableItems(forIdentifiers:searchableItemsHandler:)` fires for **entity-indexed** content (`indexAppEntities`) as opposed to `CSSearchableItem`-donated content | Test app that indexes only via `IndexedEntity` and signposts the delegate |
 | 2.4 | Donation and semantic-index best practice | WWDC25 "Supporting semantic search with Core Spotlight" |
-| 5.1 | The file source's real spelling and parameters — `FileSource` vs `.files` | Overlay interface (the sample does not exercise it) |
-| 5.2 | The complete list of `SearchableItemAttribute` statics | Overlay interface — `init(rawValue:)` is a working escape hatch meanwhile |
+| 5.1 | ~~`FileSource` vs `.files`~~ — **✅ RESOLVED 2026-07-29**: both — `.files(FileSource)`; URLs via the settable `scopes: [URL]` | Resolved — overlay `:26-31`, `:35-44`. Still open behaviourally: whether files must be pre-indexed; security-scoped bookmarks |
+| 5.2 | ~~The complete list of `SearchableItemAttribute` statics~~ — **✅ RESOLVED 2026-07-29**: 176 statics enumerated | Resolved — `CoreSpotlight-27.0-macos.swiftinterface:19-207` |
 | 7 | Whether the index delegate is called at all on current builds; the 27.0 `protectionClass` overload | CoreSpotlight headers + an instrumented run |
-| 9.3 | Payload types of `.count` / `.table` / `.statistic` / `.text`; `label` and `queryToken` as members; **whether the stream terminates** | Overlay interface + a two-search test against one tool |
-| 10.2 | What `.focused()` takes; whether a `.dynamic(_:)` member exists | Overlay interface |
-| 10.3 | `GuidanceProfile` parameter **value types**, and whether the type ships at all | Overlay interface |
-| 11 | The `contactResolver` type — protocol, closure or concrete; its inputs and outputs; whether the label ships | Overlay interface |
-| 12.2 | `CustomStage` member signatures; `inputTypes`/`outputTypes` element type; metatype vs instance registration | Overlay interface |
+| 9.3 | ~~Payload types; `label`/`queryToken` as members~~ — **✅ RESOLVED 2026-07-29** (overlay `:341-379`, `:418-477`; plus `stageToken` and `status`). **Whether the stream terminates** is still open — `some AsyncSequence<SearchReply, Never>` does not say | A two-search test against one tool instance |
+| 10.2 | ~~What `.focused()` takes; whether `.dynamic(_:)` exists~~ — **✅ RESOLVED 2026-07-29**: `ContentDomain = .items`; yes | Resolved — overlay `:74-80`, `:95-198` |
+| 10.3 | ~~`GuidanceProfile` value types / existence~~ — **✅ RESOLVED 2026-07-29**: ships; all flags `Bool?`, `attributes: [SearchableItemAttribute]?` | Resolved — overlay `:203-212`. Behavioural prompt-sensitivity (§10.4) still open |
+| 11 | ~~The `contactResolver` type~~ — **✅ RESOLVED 2026-07-29**: a `Sendable` protocol, sync `userIdentity() -> ResolvedContact`, no inputs | Resolved — overlay `:313-326`. How the tool *uses* the values: still untested |
+| 12.2 | ~~`CustomStage` signatures; element types; registration~~ — **✅ RESOLVED 2026-07-29**: seven defaulted `execute` overloads over `SearchPipelineDataType`; **instance** registration | Resolved — overlay `:217-266`, `:286-309` |
 | 12.4 | Whether custom stages are routed on current builds | Signposted `execute` on a current build |
-| 13 | Whether `GuidanceProfile(attributes:)` can express **custom** attribute keys | The parameter's declared type |
+| 13 | ~~Whether `GuidanceProfile(attributes:)` can express custom keys~~ — **✅ RESOLVED 2026-07-29**: yes, `[SearchableItemAttribute]?` — `init(rawValue:)` works | Resolved — overlay `:210-211` |
 | 14.1 | Pre-flight check for the tool's own model-catalog asset; current status | Apple statement / release notes |
 | 14.3 | Current status of the description-vs-schema mismatch | Test on a current build with a non-Apple model |
 | 16 | Whether **result coverage** is a framework metric or something you compute yourself | Part 6 of this series |
-| 17 | **Both Vision tools' full declarations** | `/documentation/Vision/{OCRTool,BarcodeReaderTool}` or Vision headers |
+| 17 | ~~Both Vision tools' full declarations~~ — **✅ RESOLVED 2026-07-29**: in the `_Vision_FoundationModels` cross-import overlay; `Arguments` `Generable`, `Output` opaque `some PromptRepresentable` | Resolved — `_Vision_FoundationModels-27.0-macos.swiftinterface:14-83` |
 
 Closed by the sample, and no longer gaps: the `Configuration` shape; `.coreSpotlight`'s single
 two-label initialiser; the `guide:` values; the entitlement question; the exact

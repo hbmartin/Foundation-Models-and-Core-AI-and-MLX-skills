@@ -34,9 +34,10 @@ how you keep control of the loop once it can:
   **no thrown error at all** (the bug WWDC26's Instruments session is built around); and a turn whose
   only output is a tool call streams **zero** partials, which hangs any first-token spinner.
 - Transcript rollback on a thrown tool error, and `transcriptErrorHandlingPolicy`.
-- The built-in Vision-backed tools (`OCRTool`, `BarcodeReaderTool`) — their real declarations, the
-  watchOS asymmetry between them, the ⚠️ attachment label they silently require, and an honest account
-  of what is still unpublished.
+- The built-in Vision-backed tools (`OCRTool`, `BarcodeReaderTool`) — their real declarations, now
+  SDK-verified from the `_Vision_FoundationModels` cross-import overlay (import both parents or the
+  symbols do not exist), the watchOS asymmetry between them, the ⚠️ attachment label they silently
+  require, and the opaque `Output` you cannot name.
 - Why tool-calling reliability is a *per-model* property, evidenced by the ten distinct wire formats
   `mlx-swift-lm` has to parse.
 
@@ -815,18 +816,21 @@ transcript is rendered to the model — belongs to
 > Documented as: *"If true, the model's name, description, and parameters schema will be injected into
 > the instructions of sessions that leverage this tool."*
 
-> 🔴 **GAP (narrowed) — the default *value* and runtime effect of `includesSchemaInInstructions`.** The
-> 26.5 interface settles that the property exists as a `Bool` requirement **and** that a default
-> implementation exists — so the earlier open question of whether the property was real, and whether
-> you must supply it, is closed. What the interface does **not** reveal is the default getter's return
-> value: we still do not know (a) whether it returns `true`, or (b) what the model is told about the
-> tool when the flag is `false` — whether the tool becomes invisible or is advertised by name only.
-> (c) `ContextOptions.includeSchemaInPrompt` — a *separate* knob about the response schema — is
-> **27-only** and grep-verified absent from the 26.5 interface, so any interaction cannot be checked
-> here. None of the seven `Tool` conformances across Origami and Book Tracker mentions the property,
-> so even Apple's own code runs on whatever the default value is. Resolving the remaining questions
-> needs the symbol page for `Tool.includesSchemaInInstructions` or the 27.0 SDK interface. **Do not
-> set it speculatively to save tokens.**
+> 🔴 **GAP (narrowed further, 2026-07-29) — the default *value* and runtime effect of
+> `includesSchemaInInstructions`.** The interfaces settle the declaration side completely: it is a
+> `Bool` protocol requirement (`FoundationModels-27.0-macos.swiftinterface:2996`, unchanged from
+> 26.5) with a default implementation in the `Tool` extension (`:3007-3009`), which is why every
+> sample can omit it and compile. What **neither** the 26.5 nor the 27.0 interface reveals is the
+> default getter's return *value* — swiftinterface files do not emit non-inlinable bodies, and this
+> one is not `@inlinable` (checked 2026-07-29). So we still do not know (a) whether the default
+> returns `true`, or (b) what the model is told about the tool when the flag is `false` — whether
+> the tool becomes invisible or is advertised by name only. (c) `ContextOptions.includeSchemaInPrompt`
+> — a *separate* knob about the response schema — is now SDK-verified as a 27.0 `Bool?` on
+> `ContextOptions` (`:3068-3072`). None of the seven `Tool` conformances across Origami and Book
+> Tracker mentions the property, so even Apple's own code runs on whatever the default value is.
+> Resolving the remaining questions needs the symbol page for `Tool.includesSchemaInInstructions`
+> or a runtime probe (`print(MyTool().includesSchemaInInstructions)` — one line in a `#Playground`).
+> **Do not set it speculatively to save tokens.**
 
 ---
 
@@ -908,9 +912,14 @@ hand-assembling transcript entries for a restore path, that pairing is load-bear
 **There is a second view of the same data.** `Transcript` exposes **`structuredTranscript`**, and that
 is the form the Evaluations framework's `ToolCallEvaluator` requires — Book Tracker passes
 `session.transcript.structuredTranscript` into `ModelSubject(value:transcript:)` and nothing works
-without it (✅ `BookTracker/…/SearchBooks.swift:525-563`). Its element type was not harvested, so treat
-it for now as "the handle trajectory evaluation wants", not as a documented shape you can walk yourself.
-The plain `Transcript` collection is what you iterate by hand.
+without it (✅ `BookTracker/…/SearchBooks.swift:525-563`). Both the property and its type belong to
+the **Evaluations** framework (shipped inside Xcode 27, like XCTest), not to FoundationModels —
+Evaluations grafts `structuredTranscript` onto `Transcript` in an extension. ✅ **SDK-verified**
+(`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:272-286`): `StructuredTranscript` is a
+plain `Sendable` struct of five public vars — `toolCalls: [Transcript.ToolCall]`,
+`toolOutputs: [Transcript.ToolOutput]`, `instructionText: String`, `prompts: [String]`,
+`responses: [Transcript.Response]` — so you *can* walk it yourself in test code. The plain
+`Transcript` collection is still what you iterate in app code, which never links Evaluations.
 
 `Transcript` is also **`Encodable`**, which makes the single cheapest debugging aid in the corpus a
 four-line function: dump it after every state change, behind a debug flag.
@@ -1831,17 +1840,27 @@ struct Gated<Wrapped: Tool>: Tool where Wrapped.Output == String {
 }
 ```
 
-> 🔴 **GAP — the exact `onToolCall` / `onToolOutput` signatures.** Compiled test code shows
-> `.onToolCall { toolCallCount += 1 }` with **zero** arguments; Apple's article shows
-> `.onToolCall { toolCall in … }` with **one**, and `.onToolOutput { toolCall, output in … }` with
-> **two**. `.onResponse` appears in both zero- and one-argument forms. These are presumably overloads,
-> but we have not read the declarations, so we cannot tell you which arities exist, whether the closures
-> are `async`, `throws`, or `@Sendable`, or what type `toolCall` is. Resolving this needs the
-> `/documentation/foundationmodels/languagemodelsession/dynamicprofile/ontoolcall(perform:)` page or the
-> 27.0 generated interface. **The 2026 sample projects do not help** — none of the three uses a
-> lifecycle modifier at all, which is itself worth knowing: Apple's most agentic shipping sample does
-> its bookkeeping in the tool body and in an `@Observable` orchestrator, not in `onToolCall`.
-> **Write the arity you need and let the compiler tell you.**
+> ✅ **RESOLVED (2026-07-29) — the exact `onToolCall` / `onToolOutput` signatures, from the 27.0
+> interface.** They are overload *pairs* on `LanguageModelSession.DynamicProfile` — a zero-argument
+> convenience that forwards to the payload-taking form — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:963-977`):
+>
+> ```swift
+> func onToolCall(perform action: @escaping () async throws -> Void) -> some DynamicProfile
+> func onToolCall(perform action: @escaping (Transcript.ToolCall) async throws -> Void) -> some DynamicProfile
+> func onToolOutput(perform action: @escaping () async throws -> Void) -> some DynamicProfile
+> func onToolOutput(perform action: @escaping (Transcript.ToolCall, Transcript.ToolOutput) async throws -> Void) -> some DynamicProfile
+> ```
+>
+> (Attributes elided: each closure is `@_inheritActorContext nonisolated(nonsending) sending`.) So:
+> both arities exist for each hook, the closures **are** `async throws`, `toolCall` is
+> `Transcript.ToolCall`, and `onToolOutput`'s two arguments are the call and its
+> `Transcript.ToolOutput`. The same pattern holds for `onPrompt` (`Transcript.Prompt`, `:939-945`),
+> `onResponse` (`Transcript.Response`, `:947-953`) and `onReasoning` (`Transcript.Reasoning`,
+> `:955-961`); only `onActivate`/`onDeactivate` differ — zero-argument, `async`, **non-throwing**
+> (`:979-981`). **The 2026 sample projects still do not use any of them** — Apple's most agentic
+> shipping sample does its bookkeeping in the tool body and in an `@Observable` orchestrator, not in
+> `onToolCall`.
 
 ### 9.4 The tool as a request for consent
 
@@ -2013,16 +2032,22 @@ because getting it wrong costs you nothing at compile time and everything at run
 
 ### What the two declarations actually say
 
-> ✅ **VERIFIED** — both are **`struct`s in the Vision framework**, not FoundationModels
-> (`/documentation/Vision/BarcodeReaderTool`, `/documentation/Vision/OCRTool`). Both conform to
-> `Sendable, SendableMetatype, FoundationModels.Tool` — note the fully qualified spelling, which is
-> Vision's own way of saying that this is the same `Tool` protocol §2 dissects, adopted from outside
-> the framework that defines it. Both take the same initialiser:
+> ✅ **SDK-verified** — both are `struct`s conforming to `FoundationModels.Tool, @unchecked Sendable`,
+> and they live in the **`_Vision_FoundationModels` cross-import overlay**
+> (`notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-47` for
+> `BarcodeReaderTool`, `:49-83` for `OCRTool`) — a module the compiler links automatically **only
+> when a file imports both `Vision` and `FoundationModels`**. Apple's docs file them under
+> `/documentation/Vision/…`, but the symbols are in *neither* parent framework's interface, which is
+> why the earlier SDK dumps came back empty. Practical consequence: the sample's two `import` lines
+> are load-bearing — drop either one and the type does not exist. Both take the same initialiser,
+> and it is the **entire** configuration surface — no language, symbology or region-of-interest
+> knobs exist:
 >
 > ```swift
 > import Vision
+> import FoundationModels   // both imports required — the overlay is the module
 >
-> init(name: String? = nil, description: String? = nil)
+> init(name: String? = nil, description: String? = nil)   // ✅ SDK-verified, :17 and :52
 > ```
 >
 > So `BarcodeReaderTool()` in the sample above is the all-defaults call, and both members that §2 calls
@@ -2032,35 +2057,48 @@ because getting it wrong costs you nothing at compile time and everything at run
 
 > ✅ **VERIFIED — availability: iOS / iPadOS / macOS / visionOS 27.0+.**
 >
-> ⚠️ **`BarcodeReaderTool` also lists watchOS. `OCRTool` does not.** That difference is verified on the
-> two pages; its *cause* is not. It is consistent with "watchOS gets barcode scanning for the wallet-ish
-> cases and OCR was cut", and equally consistent with a documentation slip. We are not smoothing it
-> over and neither should you: if you ship to watchOS, put your OCR path behind `#if os(watchOS)` and
-> treat the tool as absent until a compile against the SDK says otherwise.
+> ⚠️ **`BarcodeReaderTool` also lists watchOS. `OCRTool` does not.** No longer a possible
+> documentation slip: the overlay interface says the same thing in attributes — `BarcodeReaderTool`
+> is `@available(… watchOS 27.0 …)` while `OCRTool` carries `@available(watchOS, unavailable)`
+> (✅ **SDK-verified**, `_Vision_FoundationModels-27.0-macos.swiftinterface:12-13` vs `:46-48`; both
+> are tvOS-unavailable). The *reason* is still unstated, but the split is real: if you ship to
+> watchOS, put your OCR path behind `#if os(watchOS)` — the symbol genuinely is not there.
 
-> 🟡 **Outputs, in Apple's prose only — these are not published signatures.**
-> `BarcodeReaderTool` produces an **array of `Barcode`**, each carrying the decoded content plus the
-> **symbology**. `OCRTool` produces a **`String`**, across **30+ languages**. Both descriptions come
-> from the pages' prose, so treat them as a statement of what the tools *do*, not as the type you can
-> write down in a `typealias`.
+> 🟡 **Outputs, in Apple's prose only — and now provably not nameable.** `BarcodeReaderTool`
+> produces an **array of `Barcode`**, each carrying the decoded content plus the **symbology**;
+> `OCRTool` produces a **`String`**, across **30+ languages** — both descriptions come from the
+> pages' prose, so treat them as a statement of what the tools *do*. The interface settles the
+> other half: you were never going to write these types in a `typealias`, because `Output` **is the
+> opaque return type of `call(arguments:) async throws -> some PromptRepresentable`**
+> (✅ **SDK-verified**, `_Vision_FoundationModels-27.0-macos.swiftinterface:34-39`, `:70-76`).
+> Write any code that touches these outputs generically against `PromptRepresentable`; there is no
+> concrete type to name.
 
-> 🔴 **GAP (narrowed) — the associated types are still unpublished.** The two pages give the
-> conformance, the initialiser and the availability, and stop. They do not publish `Arguments`, they do
-> not publish `Output`, and they do not publish the **`Barcode`** type the barcode prose promises — so
-> there is no way to tell from the web whether the tools take an `ImageReference`, an attachment label,
-> a symbology filter or nothing at all, nor what you would have to write to wrap or shadow one.
+> ✅ **RESOLVED (2026-07-29) — the associated types, read from the overlay interface.** The earlier
+> dump missed them because the symbols live in the `_Vision_FoundationModels` **cross-import
+> overlay** (activated by importing both parents), not in `Vision.swiftinterface` — the parent
+> capture's emptiness was correct, not a failure. What the overlay declares
+> (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`, `:49-83`), identically shaped for
+> both tools:
 >
-> **What would resolve it:** an SDK interface dump — `swift-symbolgraph-extract` over the Vision module
-> in the 27.0 SDK, or Xcode's generated Swift interface for `Vision`. Nothing further on the web will;
-> the doc pages are the web's entire story. Anyone writing
-> [`04-spotlight-rag-and-system-tools.md`](04-spotlight-rag-and-system-tools.md) should do the dump
-> first.
+> - **`Arguments`** — a real nested struct, `Generable` by extension (`:43-45`, `:81-83`), with the
+>   full macro surface emitted: `static var generationSchema: GenerationSchema`,
+>   `var generatedContent: GeneratedContent`, a nested `PartiallyGenerated : Identifiable,
+>   ConvertibleFromGeneratedContent` (`id: GenerationID`), and `init(_ content: GeneratedContent)
+>   throws`. Note what the interface does **not** emit: any named argument property. The
+>   model-facing field names surface only through `generationSchema` at runtime, and the only public
+>   initialiser is from `GeneratedContent` — these are types the *model* instantiates, not you.
+> - **`Output`** — `@_opaqueReturnTypeOf` the tool's own `call`; i.e. the opaque
+>   `some PromptRepresentable` above. You cannot name it; the associated-type question is answered
+>   "write generic code against `PromptRepresentable`".
+> - `nonisolated(nonsending) func call(arguments:) async throws -> some PromptRepresentable`
+>   (`:34`, `:70`).
 >
 > Still true, and still the reason this section is short: **neither `OCRTool` nor `BarcodeReaderTool`
 > appears anywhere in Origami, Book Tracker or the hiking-trails app**, despite Origami being the sample
 > that does image analysis. The multimodal-prompting article's six lines remain the only published call
 > site in existence, and **no `OCRTool()` call site exists anywhere in the corpus** — its `init` is
-> known from the symbol page, not from anyone's shipping code.
+> now SDK-verified, but nobody's shipping code exercises it.
 
 ### The third built-in tool, and a caution
 
@@ -2273,11 +2311,10 @@ let toolCallNames = session.transcript.compactMap { entry -> [String]? in
 #expect(toolCallNames == ["searchBooks", "getBookDetails"])
 ```
 
-> 🟡 **RECONSTRUCTED** — `Transcript.ToolCalls` is documented as an entry holding multiple `ToolCall`s
-> and `ToolCall.toolName` is a verified property, but `ToolCalls`'s own `Collection` conformance was not
-> harvested; if `.map` does not compile, reach for whatever accessor the type exposes. The
-> `session.properties.<name>` counter assertion from §7.1 is ✅ verified compiled code and needs no such
-> caveat.
+> ✅ **SDK-verified (2026-07-29)** — `Transcript.ToolCalls` conforms to `RandomAccessCollection`
+> with `Element == Transcript.ToolCall` (`FoundationModels-27.0-macos.swiftinterface:2484-2509`),
+> so `.map(\.toolName)` compiles. The `session.properties.<name>` counter assertion from §7.1 is
+> ✅ verified compiled code as well.
 
 Where the Evaluations framework *is* available to you, do not hand-roll this. `ToolCallEvaluator` over
 `session.transcript.structuredTranscript` gives you ordering, disallowed calls, and per-argument
@@ -2307,7 +2344,7 @@ before you write a single test. See
 | `Tool.Output` associated type (`typealias Output = String`) | 26.0 | ✅ Apple sample code · non-`String` output 🔴 GAP |
 | `Tool.Arguments` via `typealias` to an out-of-line `@Generable` type | 26.0 | ✅ Apple sample code |
 | `Tool.parameters: GenerationSchema` | 26.0 | ✅ docs + compiled source |
-| `Tool.includesSchemaInInstructions` | 26.0 | ✅ exists · semantics/default 🔴 GAP |
+| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:2996, :3007-3009`) · default *value*/semantics 🔴 GAP |
 | `Tool.SessionProperty` | **27.0** | ✅ docs |
 | `LanguageModelSession(tools:instructions:)` | 26.0 | ✅ docs |
 | `LanguageModelSession.ToolCallError` (`.tool`, `.underlyingError`) | 26.0 · **no watchOS** | ✅ docs |
@@ -2315,7 +2352,7 @@ before you write a single test. See
 | `Transcript.ToolCall(id:toolName:arguments:)` | 26.0 (`metadata:` overload 27.0) | ✅ docs |
 | `Transcript.ToolOutput(id:toolName:segments:)` | 26.0 | ✅ docs |
 | `Transcript.ToolDefinition(name:description:parameters:)` / `(tool:)` | 26.0 | ✅ docs |
-| `Transcript.structuredTranscript` (feeds `ToolCallEvaluator`) | **27.0** as used | ✅ Apple sample code · element type 🔴 GAP |
+| `Transcript.structuredTranscript` (feeds `ToolCallEvaluator`) | **27.0** as used | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript` (`Evaluations-27.0-macos.swiftinterface:272-286`) |
 | `Transcript: Encodable` | 26.0 | ✅ Apple sample code |
 | `GenerationOptions.ToolCallingMode` (`.allowed`/`.disallowed`/`.required`, `.kind`) | **27.0** | ✅ docs + compiled source |
 | `GenerationOptions(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)` | **27.0** | ✅ docs |
@@ -2325,13 +2362,13 @@ before you write a single test. See
 | `.transcriptErrorHandlingPolicy(_:)` profile modifier | **27.0** | ✅ docs |
 | `session.transcript` — now `{ get set }` | **27.0** | ✅ docs |
 | `session.isResponding` | 26.0 | ✅ docs |
-| `.onToolCall(perform:)` / `.onToolOutput(perform:)` | **27.0** | ✅ exist · arities 🔴 GAP |
+| `.onToolCall(perform:)` / `.onToolOutput(perform:)` | **27.0** | ✅ SDK-verified — both arities each, `async throws`, payloads `Transcript.ToolCall` / `(ToolCall, ToolOutput)` (`FoundationModels-27.0-macos.swiftinterface:963-977`) |
 | `@SessionPropertyEntry` / `@SessionProperty(\.…)` / `session.properties` | **27.0** | ✅ docs + compiled source |
 | `ImageReference` (image arguments in tools) | **27.0** | ✅ docs |
-| `BarcodeReaderTool` — `struct`, Vision; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · **also watchOS** | ✅ docs · `Arguments`/`Output`/`Barcode` 🔴 GAP |
-| `OCRTool` — `struct`, Vision; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · ⚠️ **no watchOS** | ✅ docs · `Arguments`/`Output` 🔴 GAP |
+| `BarcodeReaderTool` — `struct`, `_Vision_FoundationModels` overlay; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · **also watchOS** | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`) — `Arguments` is `Generable`, `Output` is opaque `some PromptRepresentable` (§10) |
+| `OCRTool` — `struct`, `_Vision_FoundationModels` overlay; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · ⚠️ **no watchOS** (SDK-confirmed) | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:49-83`) — same shape as `BarcodeReaderTool` (§10) |
 | `Attachment.label(_:)` — **required** for image tool calls | **27.0** | ✅ docs + Apple sample code · ⚠️ silently no-ops if omitted |
-| `SpotlightSearchTool` (CoreSpotlight) | **27.0** | ✅ forum code · known schema bug |
+| `SpotlightSearchTool` (`_CoreSpotlight_FoundationModels` overlay) | **27.0** | ✅ SDK-verified (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:330-394`) · known schema bug |
 
 ### 13.2 The checklist
 

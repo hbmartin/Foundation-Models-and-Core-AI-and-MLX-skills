@@ -53,7 +53,8 @@ Work down this table. If any row applies to you, jump to the guide named in the 
 
 ### [17.1 — What changed between iOS 26 and iOS 27: the complete checklist](references/01-what-changed-checklist.md)
 The exhaustive diff, organised by framework, with each item marked as *additive*, *behavioural*,
-*renamed* or *withdrawn*. Includes the version-floor table (26.0 / 26.2 / 26.4 / 27.0), the
+*renamed* or *withdrawn*. Includes the version-floor table (26.0 / 26.4 / 27.0, plus the separate
+TensorOps ladder), the
 availability-gating change that now ties `SystemLanguageModel.default.availability` to whether the
 user has Siri enabled, and the Python-SDK generation lag. **Start here if more than two rows of the
 triage table apply to you.**
@@ -62,16 +63,21 @@ triage table apply to you.**
 What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic
 forward paths: re-frame the task as prompting plus guided generation; move the specialised model to
 Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through
-`MLXFoundationModels`. Covers what happens to `.fmadapter` assets, `SystemLanguageModel.Adapter`,
-the Adapter Training Toolkit (which stops at 26.0.0), and `xcrun ba-package foundation-models` —
-all now historical. Includes the `compatibleAdapterNotFound` failure that developers hit shipping
-adapters through TestFlight, for readers still supporting a 26.x build.
+`MLXFoundationModels`. Covers what happens to `.fmadapter` assets, `SystemLanguageModel.Adapter`
+(now `deprecated: 26.4, obsoleted: 27.0` in the 27 SDK interface — the sunset is header-level fact,
+not just forum replies), the Adapter Training Toolkit (which stops at 26.0.0), and
+`xcrun ba-package foundation-models` — which, surprisingly, still ships in the Xcode 27.0 beta even
+though the API that consumed its output is obsoleted. Includes the `compatibleAdapterNotFound`
+failure that developers hit shipping adapters through TestFlight, for readers still supporting a
+26.x build.
 
 > 🔴 **GAP** — Apple named the migration path (Core ML / Core AI plus Background Assets) but has
 > documented it end to end nowhere. This guide constructs it from parts and says so explicitly.
 
 ### [17.3 — Error taxonomy migration: `GenerationError` → `LanguageModelError`](references/03-error-taxonomy-migration.md)
-The mapping table, old case to new case, including the cases with no counterpart. Why a rebuild
+The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and
+27.0 beta `FoundationModels.swiftinterface` dumps), with every destination confirmed by the per-case
+deprecation messages Apple attached to the old enum in the 27 SDK. Why a rebuild
 changes which `catch` fires without a compiler diagnostic. The distinction that trips up nearly
 everyone: a **model-level refusal** (`LanguageModelError`, "the model refused to answer" / "may
 contain sensitive content") is a different mechanism from a **guardrail violation**
@@ -111,8 +117,9 @@ independent of your source.
 - Re-specialisation and cache invalidation on OS update, and why `bookmarkData` can stop resolving.
 
 > 🔴 **GAP** — the current status of several beta-era defects listed here is unknown as of
-> 2026-07-27 and must be re-tested against current betas before you act on them. Each carries its
-> own callout.
+> 2026-07-29 and must be re-tested against current betas before you act on them. Each carries its
+> own callout. (The GitHub-tracked issues behind 17.5/17.6 were re-checked against live state via
+> `gh` on 2026-07-29 — see each callout; the beta-only reproductions remain unverified.)
 
 ---
 
@@ -130,11 +137,18 @@ independent of your source.
 
 ## Sources for this part
 
-Forum threads 836673 (the iOS 27 refusal regression, with reproduction detail), 835777 (guardrail
-change under a shipping app), 829108 (`compatibleAdapterNotFound` via TestFlight), 835987 (watchOS
-27 `CoreImage`), 835211 and 836760 (the Siri-enablement gating change); two Apple-staff statements
-on the adapter discontinuation; `apple/coreai-models` commit #123 ("Move away from deprecated FM
-API"); `apple/foundation-models-utilities` commit `376ca60`, whose message doubles as a precise
+The compiler-emitted SDK interfaces captured to `notes/sdk-interfaces/` on 2026-07-29 from the
+Xcode 27.0 beta (`27A5228h`) — `FoundationModels` 26.5 **and** 27.0 (the BEFORE/AFTER pair that
+made 17.3's mapping table symmetric and put the adapter sunset's `obsoleted: 27.0` annotation on
+record for 17.2), the Core AI module family (`CoreAI` umbrella, `CoreAIDelegates`, `CoreAIRuntime`,
+`CoreAIAsset` — the module map and the only-public-error-type finding in 17.5), and `Evaluations` —
+plus direct toolchain probes of the same beta (`aimodelc` present, `coreai-build` and `fm` absent,
+`ba-package foundation-models package` alive) used in 17.2 and 17.6. Forum threads 836673 (the
+iOS 27 refusal regression, with reproduction detail), 835777 (guardrail change under a shipping
+app), 829108 (`compatibleAdapterNotFound` via TestFlight), 835987 (watchOS 27 `CoreImage`), 835211
+and 836760 (the Siri-enablement gating change); two Apple-staff statements on the adapter
+discontinuation; `apple/coreai-models` commit #123 ("Move away from deprecated FM API");
+`apple/foundation-models-utilities` commit `376ca60`, whose message doubles as a precise
 beta1 → beta3 framework API changelog; `ml-explore/mlx-swift-lm` 3.x upgrade documentation and its
 dual-SDK CI configuration; and community forensics on the export-lowering regression and the
 `coreai-torch` 0.4.0 incident, both attributed as community-measured in the guides themselves.

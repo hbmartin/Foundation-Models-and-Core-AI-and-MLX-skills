@@ -47,7 +47,9 @@ has a shipping app and a `catch` ladder they wrote a year ago.
   (9, with payload field names), and two compiling Apple sample projects (5). Plus why the enum is
   **non-frozen** and why `@unknown default` beats the `default: break` that Apple's samples use.
 - **The mapping table**: every deprecated `GenerationError` case, its new home, and the four that
-  changed *type* rather than name — including the one with **no counterpart at all**.
+  changed *type* rather than name — including the one whose successor is **not an error enum at
+  all** (`decodingFailure` → `GeneratedContent.ParsingError`, per the SDK's own deprecation
+  message).
 - **The coexistence problem.** Apple's own Technical Note TN3193 names the context-overflow error
   `LanguageModelSession.GenerationError.exceededContextWindowSize(_:)` while Apple's 2026 sample
   code catches `LanguageModelError.contextSizeExceeded`. Both spellings are live, both are correct
@@ -200,7 +202,9 @@ The 26 → 27 transition contains a second, structurally identical migration tha
 > ✅ **VERIFIED** — `Transcript.Entry` case list from `/documentation/foundationmodels/transcript`,
 > cross-checked against the six-case enum reproduced in Apple's own
 > `foundation-models-language-model-protocol` agent skill (`SKILL.md:503-510`) and against
-> `EntrySummary.swift:36-52` in `apple/foundation-models-utilities`.
+> `EntrySummary.swift:36-52` in `apple/foundation-models-utilities`. Now also ✅ **SDK-verified**:
+> `case reasoning(Transcript.Reasoning)` and `case attachment(Transcript.AttachmentSegment)` are in
+> the 27.0 interface (`27.0:2231, 2253`).
 
 Same framework, same release, two API surfaces changed. One tells you at build time. The other
 does not. There is no principle distinguishing them — it is simply that a new enum case in a type
@@ -265,25 +269,34 @@ genuinely different things rather than a taxonomy for its own sake.
 | `LanguageModelSession.Error` | **iOS 27.0 Beta** | You used the *session* wrong | The framework, before it reaches a model |
 | `SystemLanguageModel.Error` | **iOS 27.0 Beta** (no watchOS) | Apple's on-device model is not usable right now | `SystemLanguageModel` only |
 | `PrivateCloudComputeLanguageModel.Error` | **iOS 27.0 Beta** | PCC-specific: quota, network, service | `PrivateCloudComputeLanguageModel` only |
-| `GeneratedContent.ParsingError` | iOS 26.0 (type), used throughout 27 | Generated text did not parse into your `Generable` type | Guided generation and `GeneratedContent` decoding |
+| `GeneratedContent.ParsingError` | **iOS 27.0 Beta** (nested in a 26.0 type — see §7) | Generated text did not parse into your `Generable` type | Guided generation and `GeneratedContent` decoding |
 | `LanguageModelSession.ToolCallError` | iOS 26.0 (no watchOS) | Your `Tool.call(arguments:)` threw | The framework, wrapping *your* error |
 | `LanguageModelSession.GenerationError` | iOS 26.0 (no watchOS) | **Deprecated.** The 26.x omnibus error | Xcode-26-built binaries |
 
 ✅ **VERIFIED** — every row from the documentation harvest of 2026-07-27
-(`notes/web/apple-docs-fm-evals-speech.md` §5.1–§5.6 and §1). The declarations, verbatim:
+(`notes/web/apple-docs-fm-evals-speech.md` §5.1–§5.6 and §1), and now ✅ **SDK-verified** in the
+27.0 beta interface (captured 2026-07-29). The declarations, with their interface locations:
 
 ```swift
-enum LanguageModelError                 // iOS 27.0+ Beta … watchOS 27.0+ Beta
-enum LanguageModelSession.Error         // iOS 27.0+ Beta
-enum SystemLanguageModel.Error          // iOS 27.0+ Beta — NO watchOS
-enum PrivateCloudComputeLanguageModel.Error  // iOS 27.0+ Beta
+enum LanguageModelError                 // iOS 27.0+ Beta … watchOS 27.0+ Beta   — 27.0:1486-1496
+enum LanguageModelSession.Error         // iOS 27.0+ Beta (incl. watchOS)        — 27.0:1986-1994
+enum SystemLanguageModel.Error          // iOS 27.0+ Beta — NO watchOS           — 27.0:564-577
+enum PrivateCloudComputeLanguageModel.Error  // iOS 27.0+ Beta (incl. watchOS)   — 27.0:151-155
 struct LanguageModelSession.ToolCallError    // iOS 26.0+ — NO watchOS
-enum LanguageModelSession.GenerationError    // iOS 26.0+ — NO watchOS — DEPRECATED
+enum LanguageModelSession.GenerationError    // iOS 26.0+ — NO watchOS — DEPRECATED 27.0 — 27.0:3466-3510
 ```
+
+(Line numbers are into `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`. All four
+new types are `tvOS unavailable`; `SystemLanguageModel.Error` is additionally `watchOS unavailable`,
+which is the header-level proof of the "NO watchOS" note.)
 
 `LanguageModelError` conforms to `Copyable`, `CustomDebugStringConvertible`, `Error`, `Escapable`,
 `LocalizedError`, `Sendable`, `SendableMetatype`. Note what is **absent** from that list: `@frozen`.
-§3.3 is about why that absence is load-bearing.
+That absence is no longer an inference from documentation rendering: the interface declares
+`public enum LanguageModelError : Foundation.LocalizedError` with **no `@frozen`** (`27.0:1486`),
+in a file where `@frozen` is printed when present — `SystemLanguageModel.Availability` two thousand
+lines earlier reads `@frozen public enum Availability` (`27.0:348`). §3.3 is about why that
+absence is load-bearing.
 
 ### 2.1 The mental model that makes the split memorable
 
@@ -296,7 +309,8 @@ Read the four new types as answering four different questions, in the order the 
    programmer error: `.concurrentRequests` ("Multiple requests were made to the session
    concurrently") and `.transcriptMutationWhileResponding` ("The session's transcript was mutated
    while a request was in progress"). Neither carries a payload — a deliberate change from
-   `GenerationError.concurrentRequests(_:)`, which did.
+   `GenerationError.concurrentRequests(_:)`, which did. (✅ **SDK-verified** — both are bare cases,
+   and the enum is `Equatable` and `Hashable`; `27.0:1986-1994`.)
 3. **`LanguageModelError` — "did the model produce a response?"** Nine cases, from timeouts through
    refusals to context overflow. This is the workhorse and it is model-agnostic: it is the type your
    own `LanguageModelExecutor` is expected to throw too.
@@ -339,15 +353,29 @@ static let revertTranscript               // "Revert the transcript back to the 
 > "show an error and let the user try again in the same session," `.revertTranscript` is almost
 > certainly what you want, and it is worth checking which one your session actually has.
 >
-> 🔴 **GAP — the default.** Neither the reference page nor the article states which policy is the
-> default, and we have not seen the property's declaration site (it is presumably a session or
-> profile property; the exact spelling of the setter is not published in any source we hold).
+> The declaration site is no longer a mystery. ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:1885-1892, 937, 2752-2757`): the setter has **two**
+> spellings, both real —
+>
+> ```swift
+> // On the session — a settable, OPTIONAL property (iOS 27.0+):
+> final var transcriptErrorHandlingPolicy: TranscriptErrorHandlingPolicy? { get set }
+> // As a DynamicProfile modifier:
+> func transcriptErrorHandlingPolicy(_: TranscriptErrorHandlingPolicy?) -> some DynamicProfile
+> // The type itself: a Sendable struct with exactly the two statics, nothing else:
+> public struct TranscriptErrorHandlingPolicy : Sendable {
+>     public static let revertTranscript: TranscriptErrorHandlingPolicy
+>     public static let preserveTranscript: TranscriptErrorHandlingPolicy
+> }
+> ```
+>
+> 🔴 **GAP — the default, narrowed but still open.** The property is **Optional**, and `nil` means
+> "the framework's default behaviour" — which the interface, read 2026-07-29, does not name.
+> Neither the reference page nor the article states which policy `nil` maps to either. (The 26.5
+> interface remains **grep-0 absent** of the type — it is a genuine 27 addition.)
 > **Safe default:** set it explicitly at the point you construct the session rather than relying on
-> the framework default, and file a Feedback if you cannot find the setter. The 26.5 SDK interface
-> has now been read and `TranscriptErrorHandlingPolicy` is **grep-0 absent** from it — confirming it
-> is a genuine 27 addition, not something we simply missed — so resolving the *default* needs the
-> **27** `FoundationModels.swiftinterface` specifically (`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` §5),
-> not the 26.5 dump we hold.
+> the framework default. Resolving `nil`'s meaning now needs documentation or a device test — a
+> `.swiftinterface` cannot say which behaviour an Optional's `nil` selects.
 
 ### 2.3 `ToolCallError` did not change, and that is a trap of its own
 
@@ -384,7 +412,10 @@ layers away from the cause.
 
 Three independent sources describe this enum. They agree, but they do not *look* like they agree,
 because each one shows a different slice. Reconciling them is worth doing once, carefully, because
-the shape of the disagreement tells you something important about the enum.
+the shape of the disagreement tells you something important about the enum. (Since this section was
+written, a fourth source — the captured 27.0 `.swiftinterface` — has confirmed the reconciliation
+outright: nine cases, every payload field, §3.2. The three-source reconciliation is kept because it
+shows how far you can get, and how carefully you must step, when you cannot read the header.)
 
 ### 3.1 Source A — Apple's documentation: nine cases with descriptions
 
@@ -443,6 +474,16 @@ The documentation independently corroborates one payload's shape:
 and a `.tokenCount` property (✅ **VERIFIED**, index link extraction from the harvest). The
 initializer's argument order matches the skill's field list exactly, which is good evidence that the
 skill's other rows are equally faithful.
+
+And the 27.0 interface now confirms **every row of the table above, field for field**
+(✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1499-1622`): each of the nine
+payload structs is declared with exactly the payload-specific fields the skill listed, plus
+`debugDescription: String` and `metadata: [String: any Sendable]` on all nine, and every initializer
+defaults `metadata` to `[:]` — which is why the two-argument construction below compiles. The skill
+was faithful. Two structs deserve a note: `Refusal`'s stored surface is just the universal pair, with
+`init(explanation:debugDescription:metadata:)` taking the explanation as input (`:1552`) and the
+readable `explanation` being the async accessor of §11; and `UnsupportedLanguageOrLocale.languageCode`
+is spelled exactly `languageCode: Locale.LanguageCode` (`:1598`).
 
 And here is the exact construction pattern, from compiling shipped source in the same repo:
 
@@ -523,7 +564,11 @@ cases (`.rateLimited`, `.unsupportedCapability`, `.unsupportedTranscriptContent`
 
 ### 3.4 Why the enum is non-frozen, and how we know
 
-Two independent signals, one direct and one by contrast:
+The header now says it directly: the 27.0 interface declares `public enum LanguageModelError` with
+no `@frozen`, and `@frozen public enum Availability` in the same file (✅ **SDK-verified**,
+`27.0:1486` vs `:348`). The two signals below were how this guide established it before the
+interface was captured, and they are kept because the reasoning pattern is reusable on any enum
+whose header you have not read:
 
 1. **Both Apple samples end the switch with a `default` clause.** For an enum declared in the same
    module, or for a `@frozen` enum in a different module, an exhaustive switch needs no default and
@@ -590,15 +635,14 @@ Markers on that block:
 - ✅ `error.debugDescription` in the `@unknown default` arm is available because
   `LanguageModelError` conforms to `CustomDebugStringConvertible` (verified conformance list, §5.1
   of the harvest).
-- 🟡 **RECONSTRUCTED** — `Locale.LanguageCode.identifier` is standard Foundation, but that
-  `languageCode` is spelled exactly `languageCode` on the payload comes from the skill only; no
-  compiling use of that payload exists in our corpus.
-- 🔴 **GAP** — whether `RateLimited.resetDate` is the *only* field on that payload, and whether
-  `Timeout` / `GuardrailViolation` carry anything beyond the universal `debugDescription` and
-  `metadata`, is unverified. `SKILL.md` lists no additional fields, but it lists *payload-specific*
-  fields, so silence there is weak evidence of absence. **Safe default:** treat
-  `debugDescription` + `metadata` as the guaranteed surface on every payload and reach for anything
-  else defensively. An SDK `.swiftinterface` dump for `FoundationModels` resolves this in one command.
+- ✅ **SDK-verified** — the `languageCode` spelling, previously reconstructed from the skill alone:
+  `UnsupportedLanguageOrLocale` declares `public var languageCode: Locale.LanguageCode`
+  (`27.0:1598`). `Locale.LanguageCode.identifier` is standard Foundation.
+- ✅ **RESOLVED** (was a 🔴 GAP) — the payload inventories are now closed. The 27.0 interface shows
+  `RateLimited` carries **exactly** `resetDate: Date?` plus the universal pair (`27.0:1517-1521`),
+  and `Timeout` and `GuardrailViolation` carry **nothing beyond** `debugDescription` and `metadata`
+  (`27.0:1611-1615, 1530-1534`). `SKILL.md`'s silence really was absence. `debugDescription` +
+  `metadata` remain the guaranteed surface on every payload, current and future.
 
 ### 3.6 `metadata` — the escape hatch worth wiring up on day one
 
@@ -675,18 +719,22 @@ explanation used in §11. The enum also vends `errorDescription`, `recoverySugge
 annotated *(Deprecated)*) corroborates the same nine names. **This is now the authoritative BEFORE
 side of the migration.**
 
-> **Confidence asymmetry, stated once for the whole table.** The **BEFORE** column below is now
-> SDK-interface-verified — the cleanest class there is. The **AFTER** column is not: this machine
-> runs 26.5, no 27 `FoundationModels.swiftinterface` has been read, and `LanguageModelError` is
-> **grep-0 absent** from the 26.5 interface (it is a genuine 27 addition). So every 27 destination
-> rests on the documentation harvest, and only four of the mapping targets —
-> `.contextSizeExceeded`, `.guardrailViolation`, `.unsupportedLanguageOrLocale`, `.refusal` — are
-> *also* exercised in compiling sample code. The four that are **documentation-only** —
-> `SystemLanguageModel.Error.assetsUnavailable`, `LanguageModelError.unsupportedGenerationGuide`,
-> `LanguageModelSession.Error.concurrentRequests`, `LanguageModelError.rateLimited` — are strong but
-> neither sample- nor header-proven; treat them one tier softer than the BEFORE side, and see §4.4
-> for `.decodingFailure`, which has no confirmed 27 counterpart at all. Reading the 27 SDK interface
-> makes the table symmetric; the command is in `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` §5.
+> **The table is now symmetric — both columns are SDK-interface-verified.** The 27.0 beta
+> `FoundationModels.swiftinterface` has now been read (captured 2026-07-29 from the Xcode 27.0 beta,
+> macOS 27.0 SDK, module 2.0.62.1.402), and it settles the AFTER side to the same standard as the
+> BEFORE side: `LanguageModelError` and its nine cases are declared at
+> `FoundationModels-27.0-macos.swiftinterface:1486-1496`, `SystemLanguageModel.Error.assetsUnavailable`
+> at `:571-577`, `LanguageModelSession.Error` at `:1986-1994`, and `GeneratedContent.ParsingError`
+> at `:1350-1362`. Better still, **the mapping itself is now Apple's own, at header level**: the
+> 27.0 interface keeps the deprecated `GenerationError` (`iOS/macOS/visionOS, introduced: 26.0,
+> deprecated: 27.0`, `:3466-3510`) and annotates **every case** with a per-case migration message —
+> `exceededContextWindowSize` → *"Use ``LanguageModelError/contextSizeExceeded(_:)`` instead."*,
+> `assetsUnavailable` → *"Use ``SystemLanguageModel/Error/assetsUnavailable(_:)`` instead."*,
+> `concurrentRequests` → *"Use ``LanguageModelSession/Error/concurrentRequests`` instead."*,
+> `decodingFailure` → *"Use ``GeneratedContent/ParsingError`` instead."* — and so on for all nine.
+> Every destination in the table below is therefore no longer a documentation inference; it is the
+> annotation Apple attached to the deprecated case in the SDK. See §4.4 for what the
+> `.decodingFailure` row's message does and does not settle.
 
 ### 4.1 The table
 
@@ -700,7 +748,7 @@ side of the migration.**
 | `.rateLimited(_:)` | `LanguageModelError.rateLimited(_:)` | Same name, new enum. |
 | `.unsupportedLanguageOrLocale(_:)` | `LanguageModelError.unsupportedLanguageOrLocale(_:)` | Same name, new enum. |
 | `.refusal(_:_:)` — **two** associated values | `LanguageModelError.refusal(_:)` — **one** | **Arity change.** Any `case .refusal(let r, let c)` pattern must lose an argument. |
-| `.decodingFailure(_:)` | 🔴 **no documented counterpart** | See §4.4. |
+| `.decodingFailure(_:)` | **`GeneratedContent.ParsingError`** — a struct, not an enum case | **Left the error-enum family entirely.** ✅ SDK-named successor; see §4.4 for what that does and does not settle. |
 
 **Cases that are new in 27 with no 26 ancestor** — these are failures your 26.x code has never seen
 and therefore has no handler for:
@@ -713,9 +761,15 @@ and therefore has no handler for:
 | `.transcriptMutationWhileResponding` | `LanguageModelSession.Error` | Exists because `session.transcript` became **mutable** in 27 |
 | `.quotaLimitReached(_:)` / `.networkFailure(_:)` / `.serviceUnavailable(_:)` | `PrivateCloudComputeLanguageModel.Error` | Exist because PCC exists |
 
-✅ **VERIFIED** — all destinations from the documentation harvest §5.1–§5.4. The `.transcriptMutationWhileResponding`
-rationale is corroborated by an Apple Frameworks Engineer on forum thread **835927**: *"In iOS 27,
-session's `transcript` property is now **mutable**, and transcript has a **`history` accessor**."*
+✅ **VERIFIED** — all destinations from the documentation harvest §5.1–§5.4, and now ✅ **SDK-verified**:
+the new-case declarations are in the 27.0 interface (`.timeout` / `.unsupportedCapability` /
+`.unsupportedTranscriptContent` at `FoundationModels-27.0-macos.swiftinterface:1486-1496`,
+`.transcriptMutationWhileResponding` at `:1988`, the three PCC cases at `:151-155`). The
+`.transcriptMutationWhileResponding` rationale is corroborated by an Apple Frameworks Engineer on
+forum thread **835927** — *"In iOS 27, session's `transcript` property is now **mutable**, and
+transcript has a **`history` accessor**."* — and the interface shows the mechanism: `session.transcript`
+gains a 27.0-only mutating accessor (`:1872-1878`) and `Transcript.history` is a settable
+`ArraySlice<Transcript.Entry>` (`:2640-2646`).
 
 ### 4.2 Three rows change *type*, not name — and that is the invisible half
 
@@ -750,25 +804,41 @@ refusal on 27.0, and vice versa. **Migrating the spelling is necessary and not s
 have UI copy, telemetry buckets, or retry policy keyed on "guardrail violation," re-measure it
 against 27 before you ship. §16 is how.
 
-### 4.4 `decodingFailure` — the row with no home
+### 4.4 `decodingFailure` — the row that left the enum family
 
 `GenerationError.decodingFailure(_:)` is real on the BEFORE side — ✅ **SDK-verified** at
 `FoundationModels-26.5-macos.swiftinterface:429` as `case decodingFailure(...GenerationError.Context)`
-— yet it has no case with a matching name anywhere in the 27 taxonomy.
+— and it has no case with a matching name anywhere in the 27 taxonomy. This guide previously carried
+that as an open gap with `GeneratedContent.ParsingError` as the "most plausible successor."
 
-🔴 **GAP.** The most plausible successor is **`GeneratedContent.ParsingError`**, on the following
-reasoning: (a) `decodingFailure` was the 26.x error for "the model's output would not decode into
-your `Generable` type"; (b) `GeneratedContent.ParsingError` is a 27-era type whose documented
-initializer is `ParsingError(rawContent:debugDescription:)` — *raw content* plus a description is
-exactly the payload a decode failure needs; (c) Apple's Origami sample checks
-`GeneratedContent.ParsingError` in the same ladder, in the same position, that a 26.x app would
-have handled `decodingFailure`; and (d) it is thrown from user code in Apple's shipped package
-(`apple/foundation-models-utilities`, `:298`) when content fails to parse.
+**The successor question is now closed, by Apple, in the header.** ✅ **SDK-verified**
+(`FoundationModels-27.0-macos.swiftinterface:3491-3494`): the deprecated case carries the annotation
+*"Use ``GeneratedContent/ParsingError`` instead."* — the only row in the enum whose named
+replacement is a standalone struct rather than an error-enum case. The circumstantial reasoning the
+gap used to rest on (the payload shape, Origami's ladder position, the
+`foundation-models-utilities` throw site at `:298`) all pointed at the answer the SDK now states.
+The 27.0 interface also settles the type's real shape, and it corrects one detail this guide
+previously quoted from the initializer label alone (`:1350-1362`):
 
-**What is unknown:** whether the framework itself throws `GeneratedContent.ParsingError` for a
-guided-generation decode failure, or whether it throws some `LanguageModelError` case, or whether
-that failure mode is now handled internally by re-prompting. No source we hold shows the framework
-throwing it.
+```swift
+public struct ParsingError : LocalizedError, Sendable {      // iOS 27.0+ — NOT a 26.0 type
+    public var rawContent: String                            // a String, not a GeneratedContent
+    public var underlyingError: (any Error)?
+    public var debugDescription: String
+    public init(rawContent: String, underlyingError: (any Error)? = nil, debugDescription: String)
+}
+```
+
+Three corrections that declaration forces: the type is **iOS 27.0+**, not 26.0 (it is nested in a
+26.0 `GeneratedContent` extension, which is what made the availability easy to misread);
+`rawContent` is a **stored public property** you can read in a `catch` (and it is a `String`); and
+there is a middle `underlyingError:` parameter the documentation snippet omitted.
+
+🔴 **GAP — narrowed, not gone.** What the header cannot settle is *behaviour*: whether the framework
+itself throws `GeneratedContent.ParsingError` for a guided-generation decode failure, or throws some
+`LanguageModelError` case, or handles that failure mode internally by re-prompting. No source we
+hold shows the framework throwing it — the deprecation message tells you what to *catch*, not what
+is *thrown*. (27.0 interface read 2026-07-29; a `.swiftinterface` cannot answer this.)
 
 **What would resolve it:** one device run — a `@Generable` type with a schema the model reliably
 fails to satisfy, and a `print(type(of: error))` in the catch.
@@ -950,11 +1020,12 @@ identifier as you go. The *advice* in it is not version-specific at all.
 | Can you tell how far over you were? | **No** | **Yes** |
 | Recovery Apple documents | New session seeded with a condensed transcript | Same, plus `historyTransform` / `summarizeHistory` modifiers (27) |
 
-The BEFORE column of that table is now SDK-verified: the 26.5 interface confirms the
+Both columns of that table are now SDK-verified: the 26.5 interface confirms the
 `exceededContextWindowSize` spelling, its `GenerationError.Context` payload, and that the payload
-holds nothing but `debugDescription` — which is precisely why the "how far over were you?" answer is
-**No** on the left and **Yes** on the right. The middle row is the substantive upgrade and §12 builds
-on it.
+holds nothing but `debugDescription`; the 27.0 interface confirms `contextSizeExceeded` and its
+typed `ContextSizeExceeded` payload (`contextSize: Int`, `tokenCount: Int` — `27.0:1499-1512`) —
+which is precisely why the "how far over were you?" answer is **No** on the left and **Yes** on the
+right. The middle row is the substantive upgrade and §12 builds on it.
 
 ### 5.3 Where else the two taxonomies coexist in Apple's own material
 
@@ -1158,14 +1229,21 @@ checklist, derived from your own users rather than from this table.
 Short section, disproportionate importance.
 
 ```swift
-struct GeneratedContent.ParsingError
-init(rawContent: GeneratedContent, debugDescription: String)
+// ✅ SDK-verified — FoundationModels-27.0-macos.swiftinterface:1350-1362. iOS 27.0+.
+struct GeneratedContent.ParsingError : LocalizedError, Sendable
+var rawContent: String                     // stored, readable — the model's actual output
+var underlyingError: (any Error)?
+var debugDescription: String
+init(rawContent: String, underlyingError: (any Error)? = nil, debugDescription: String)
 ```
 
-✅ **VERIFIED** — the initializer signature `ParsingError(rawContent:debugDescription:)` is exercised
-in compiling Swift in `apple/foundation-models-utilities` (`:298`, recorded in
-`notes/repos/foundation-models-utilities.md`), and the type appears in Apple's `GeneratedContent`
-symbol index. Origami checks it by name: `if self is GeneratedContent.ParsingError { … }`.
+✅ **VERIFIED** — the two-argument construction `ParsingError(rawContent:debugDescription:)` is
+exercised in compiling Swift in `apple/foundation-models-utilities` (`:298`, recorded in
+`notes/repos/foundation-models-utilities.md`) — it compiles because `underlyingError` defaults to
+`nil` — and the type appears in Apple's `GeneratedContent` symbol index. Origami checks it by name:
+`if self is GeneratedContent.ParsingError { … }`. Note the availability: the struct itself is
+**iOS 27.0+** even though it is nested in the 26.0 `GeneratedContent` (`27.0:1350-1356`) — this
+guide previously recorded it as a 26.0 type, which the interface corrects.
 
 **It is a separate type.** Not a case of `LanguageModelError`. Not nested under
 `LanguageModelSession`. Which means:
@@ -1191,10 +1269,10 @@ do {
 
 1. Give it its own arm, as Apple's sample does. §14's ladder has one.
 2. Log `rawContent` when you catch it. That is the model's actual output, and it is the only way to
-   see *why* it did not parse. The field is on the initializer; whether it is exposed as a stored
-   property with the same name is 🟡 **RECONSTRUCTED** — the name `rawContent` is verified from the
-   initializer label, the *property* is not separately attested. If `error.rawContent` does not
-   compile, fall back to `String(describing: error)` and file a Feedback asking for the accessor.
+   see *why* it did not parse. ✅ **SDK-verified** — `rawContent` is a stored `public var` of type
+   `String` (`27.0:1357`), so `error.rawContent` compiles; the guide previously carried this as
+   reconstructed from the initializer label. Log `underlyingError` too — the interface reveals the
+   struct carries one (`:1358`), and it is where a wrapped decoding error will be.
 
 Related, and worth knowing about even though it is not the same thing: the **`SpotlightSearchTool`**
 schema mismatch surfaces as a `LanguageModelSession.ToolCallError` whose underlying error message is
@@ -1204,7 +1282,7 @@ schema mismatch surfaces as a `LanguageModelSession.ToolCallError` whose underly
 
 | Where the parse failed | What you catch |
 |---|---|
-| Model output → your `@Generable` type | `GeneratedContent.ParsingError` (probable — see §4.4 GAP) |
+| Model output → your `@Generable` type | `GeneratedContent.ParsingError` (the SDK-named successor to `.decodingFailure`; that the framework throws it here is still unproven — see §4.4) |
 | Model output → a tool's `Arguments` type | `LanguageModelSession.ToolCallError` wrapping "Failed to parse generated content." |
 | Your own decoding of a `GeneratedContent` via `value(_:forProperty:)` | Whatever you throw — commonly `GeneratedContent.ParsingError`, which is why the initializer is public |
 
@@ -1308,9 +1386,10 @@ Apple's docs put it this way, verbatim:
 
 ✅ **VERIFIED** — `/documentation/foundationmodels/languagemodelexecutor` area, harvested 2026-07-27.
 
-The payload carries `capability: LanguageModelCapabilities.Capability`, and the known capability
-values are `.vision`, `.toolCalling`, `.reasoning`, `.guidedGeneration` (✅ **VERIFIED** — exercised
-in compiling source in `apple/foundation-models-utilities`).
+The payload carries `capability: LanguageModelCapabilities.Capability`, and the capability values
+are `.vision`, `.toolCalling`, `.reasoning`, `.guidedGeneration` (✅ **VERIFIED** — exercised in
+compiling source in `apple/foundation-models-utilities`; now also ✅ **SDK-verified** — those four
+statics are the complete public set on `Capability` in the 27.0 interface, `27.0:1468-1483`).
 
 This is a **new failure mode with no 26.x analogue**: in 26 there was one model and it either did
 the thing or it did not. In 27, the same code can throw `.unsupportedCapability(.vision)` on one
@@ -1822,17 +1901,18 @@ not optional advice.
 The `Refusal` payload is the one that grew a real API, and it has a sharp edge.
 
 ```swift
-// LanguageModelError.Refusal
+// LanguageModelError.Refusal — ✅ SDK-verified, 27.0:1541-1551 and :1637-1645
 var explanation: LanguageModelSession.Response<String> { get async throws }
 var explanationStream: LanguageModelSession.ResponseStream<String> { get }
-init(explanation: String, ...)     // initializer input, not the accessor's return type
+init(explanation: String, debugDescription: String, metadata: [String: any Sendable] = [:])
 ```
 
 ✅ **VERIFIED** — `SKILL.md:549-557` in `apple/foundation-models-utilities` lists
 `.refusal(Refusal)` with *"`explanation: String` (required by the public initializer); surfaced via
-`refusal.explanation` / `refusal.explanationStream`."* The SDK contract settles the important
-distinction: the initializer accepts a `String`, while the accessor asynchronously returns a
-response wrapper whose message is in `.content`.[^refusal-response]
+`refusal.explanation` / `refusal.explanationStream`."* The 27.0 interface confirms all three
+declarations verbatim, and settles the important distinction: the initializer accepts a `String`,
+while the accessor asynchronously returns a response wrapper whose message is in
+`.content`.[^refusal-response]
 
 The `explanation` / `explanationStream` API is **not new to 27** — it carries across the migration.
 ✅ **SDK-verified** on the BEFORE side too: the 26.5 `LanguageModelSession.GenerationError.Refusal`
@@ -2010,8 +2090,9 @@ nonisolated(nonsending) final func tokenCount(for transcriptEntries: some Collec
 `MacOSX26.5.sdk` `FoundationModels.swiftinterface`, module 1.5.2). This **closes** the gap the guide
 previously carried: the four non-`Instructions` overloads were 🟡 **RECONSTRUCTED** from TN3193's
 prose and are now header-proven, mapping one-to-one onto TN3193's *"instructions, prompts, tools,
-schemas and transcript entries."* These are structural 26.4 APIs, so ✅ verified in 26.5 and stable
-into 27 unless the 27 interface says otherwise.
+schemas and transcript entries."* These are structural 26.4 APIs, ✅ verified in 26.5 — and the 27
+interface does not say otherwise: all five overloads appear unchanged in the 27.0 dump
+(`FoundationModels-27.0-macos.swiftinterface:406-430`).
 
 ### 12.3 Apple's documented recovery, verbatim
 
@@ -2089,11 +2170,14 @@ func respondWithOverflowRecovery(
   thread 835927, quoted above.
 - ✅ `transcript.history` existing as an accessor *"for updating everything except the
   instructions"* is verified from the same reply.
-- 🔴 **GAP** — the exact spelling of the assignment (`session.transcript = …` versus a mutating
-  method versus assigning through `transcript.history`) is **not published** in any source we hold,
-  and `condense(_:targetSaving:)` is a function you write. **Safe default:** use the documented
-  `newContextualSession(with:)` pattern from §12.3, which is verbatim Apple and definitely compiles,
-  until you have confirmed the mutation spelling against the SDK.
+- ✅ **RESOLVED** (was a 🔴 GAP) — the mutation spelling is now SDK-confirmed. `session.transcript`
+  has a 27.0-only mutating accessor (`get` + `_modify`, `27.0:1872-1878`), so **both**
+  `session.transcript = condensed` and in-place mutation through it compile. `Transcript.history`
+  is a settable `ArraySlice<Transcript.Entry>` (`_read set _modify`, `27.0:2640-2646`), so
+  `session.transcript.history = …` is the everything-but-instructions form the engineer described.
+  `Transcript` also gains `MutableCollection` and `RangeReplaceableCollection` conformances in 27
+  (`27.0:2617, 2627`), so entry-level surgery works directly. `condense(_:targetSaving:)` remains a
+  function you write — the composition above is still 🟡 ours, but every spelling in it is now real.
 
 **Retry exactly once.** If the retry also overflows, your instructions plus one prompt already exceed
 the budget, and retrying again is an infinite loop with a token cost. Fall back to chunking.
@@ -2316,7 +2400,10 @@ migration, that discrepancy is worth knowing.
 > `init(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)`. So
 > `GenerationOptions(toolCallingMode: .required)` compiles by defaulting the others, but you cannot
 > omit `toolCallingMode` and still select that overload.
-> ✅ **VERIFIED** — `/documentation/foundationmodels/generationoptions`, harvested 2026-07-27.
+> ✅ **VERIFIED** — `/documentation/foundationmodels/generationoptions`, harvested 2026-07-27; now
+> also ✅ **SDK-verified** verbatim: `init(samplingMode: … = nil, temperature: … = nil,
+> maximumResponseTokens: … = nil, toolCallingMode: ToolCallingMode?)` — three defaults, then none
+> (`27.0:3181-3184`).
 
 ### 13.5 The Simulator trap — the single largest generator of phantom errors
 
@@ -2402,8 +2489,12 @@ try allFeedback.write(to: url)
 `/documentation/foundationmodels/languagemodelsession/logfeedbackattachment(sentiment:issues:desiredoutput:)`
 and `/documentation/foundationmodels/languagemodelfeedback`, harvested 2026-07-27.
 `LanguageModelFeedback.Sentiment` is `.negative` / `.neutral` / `.positive` and is `CaseIterable`.
-🔴 **GAP** — only `Issue.Category.incorrect` is confirmed by example; the full category list is
-unverified.
+✅ **RESOLVED** (was a 🔴 GAP) — the full `Issue.Category` list is now SDK-verified
+(`27.0:3382-3392`): a `CaseIterable`, iOS 26.0+ enum with exactly **eight** cases —
+`.unhelpful`, `.tooVerbose`, `.didNotFollowInstructions`, `.incorrect`, `.stereotypeOrBias`,
+`.suggestiveOrSexual`, `.vulgarOrOffensive`, `.triggeredGuardrailUnexpectedly`. The last one is
+worth noticing in this guide specifically: Apple ships a purpose-built category for reporting the
+§9/§10 problem — a guardrail that fired when it should not have.
 
 Building a `desiredOutput` entry (verbatim from Apple):
 
@@ -2667,9 +2758,10 @@ extension ModelFailure {
   `ToolCallError` reference page.
 - 🟡 **RECONSTRUCTED** — the `ModelFailure` enum, `Outcome`, `run(_:)` and both presentation
   extensions are **ours**. They are the shape this guide recommends, not an Apple API.
-- 🟡 `PrivateCloudComputeLanguageModel.Error`'s cases are ✅ verified by name; that they are matched
-  without binding (`case .quotaLimitReached:`) assumes payload cases, which is what the docs show
-  (`.quotaLimitReached(_:)`). If a case turns out to be payload-free, the pattern still compiles.
+- ✅ `PrivateCloudComputeLanguageModel.Error`'s three cases are SDK-verified as payload cases —
+  `.networkFailure(NetworkFailure)`, `.quotaLimitReached(QuotaLimitReached)`,
+  `.serviceUnavailable(ServiceUnavailable)` (`27.0:151-155`) — so matching them without binding,
+  as the ladder does, is legal Swift against the real declarations.
 - 🔴 **GAP** — whether `catch LanguageModelError.someCase` **as a catch-clause pattern** reliably
   matches, particularly on a streamed response. Thread **831404** is titled *"Cannot pattern match
   `LanguageModelError` from a response stream"* (**FB23061009**), and Apple's own reply used
@@ -3001,16 +3093,25 @@ struct RefusalRegressionTests {
 `MetricsAggregator.computeMean(of:)`; the `.evaluates(_:)` and `.evaluates(_:info:)` Swift Testing
 traits; `EvaluationContext.current.result`; `result.aggregateValue(.mean(of:))`. All from the
 documentation harvest §19 plus Apple's **Book Tracker** sample (`BookTags.swift:149-167`,
-`SearchBooks.swift:525-563`).
+`SearchBooks.swift:525-563`) — and the core of it now ✅ **SDK-verified** against the captured
+`Evaluations-27.0-macos.swiftinterface` (2026-07-29): the `Evaluation` protocol with `subject(from:)
+async throws` (`:463-471`), `ModelSample` (`:747`), `ArrayLoader` (`:658`), `ModelSubject` (`:622`),
+`Metric` (`:682`), the two-argument `Evaluator` closure (`:288-291`), `computeMean(of:)` (`:721`),
+and `aggregateValue(_:)` (`:540`). One placement fact the sample hides: `Transcript.structuredTranscript`
+is declared in the **Evaluations** module, not FoundationModels (`Evaluations-27.0:280-286`), so it
+exists only under `import Evaluations`.
 
 🟡 **RECONSTRUCTED** — the *composition* is ours. Specifically: the never-throw `subject(from:)`
 pattern, the outcome-code encoding, `looksLikeRefusal`, `aggregateMetrics(using:)` on this type, and
 the OS-version stamp. Each element is verified; this arrangement of them is not Apple's.
 
-🔴 **GAP** — Apple's harvest notes that `EvaluatorsBuilder` exposes `buildBlock`, `buildExpression`
-and `buildOptional` but **no `buildEither`**, so `if`/`else` inside an `evaluators` block is probably
-unsupported (bare `if` probably is). Unverified. **Safe default:** keep `evaluators` free of
-branching, as above.
+✅ **RESOLVED** (was a 🔴 GAP) — the `Evaluations` interface has now been read (this framework ships
+inside Xcode, and the dump was captured 2026-07-29 from the Xcode 27.0 beta):
+`EvaluatorsBuilder` declares exactly `buildExpression`, `buildBlock` and `buildOptional`, and **no
+`buildEither`** (`Evaluations-27.0-macos.swiftinterface:645-649`). So `if`/`else` inside an
+`evaluators` block does not compile; a bare `if` (no `else`) does, via `buildOptional`. Keeping
+`evaluators` free of branching, as above, remains the recommendation — a conditionally-present
+evaluator makes runs harder to diff anyway.
 
 ### 16.5 Why this specific design
 
@@ -3064,7 +3165,7 @@ want a model judge to grade refusal *defensibility* rather than just detect a ch
 | `LanguageModelSession.Error` | 27.0 Beta | 2, no payloads: `.concurrentRequests`, `.transcriptMutationWhileResponding` |
 | `SystemLanguageModel.Error` | 27.0 Beta, **no watchOS** | `.assetsUnavailable(_:)` |
 | `PrivateCloudComputeLanguageModel.Error` | 27.0 Beta | `.quotaLimitReached`, `.networkFailure`, `.serviceUnavailable` |
-| `GeneratedContent.ParsingError` | 26.0 | `init(rawContent:debugDescription:)` — a struct, not an enum |
+| `GeneratedContent.ParsingError` | **27.0 Beta** | `rawContent: String`, `underlyingError`, `init(rawContent:underlyingError:debugDescription:)` — a struct, not an enum |
 | `LanguageModelSession.ToolCallError` | 26.0, **no watchOS** | struct: `tool`, `underlyingError` — **wraps** |
 | `LanguageModelSession.GenerationError` | 26.0, **no watchOS**, **DEPRECATED** | 9 old cases |
 
@@ -3079,7 +3180,7 @@ GenerationError.guardrailViolation           → LanguageModelError.guardrailVio
 GenerationError.rateLimited                  → LanguageModelError.rateLimited
 GenerationError.unsupportedLanguageOrLocale  → LanguageModelError.unsupportedLanguageOrLocale
 GenerationError.refusal(_:_:)                → LanguageModelError.refusal(_:)                 (arity 2 → 1)
-GenerationError.decodingFailure              → 🔴 no documented counterpart (probably GeneratedContent.ParsingError)
+GenerationError.decodingFailure              → GeneratedContent.ParsingError                  (SDK-named; a struct, not a case)
 
 new in 27:  LanguageModelError.timeout
             LanguageModelError.unsupportedCapability
@@ -3088,9 +3189,10 @@ new in 27:  LanguageModelError.timeout
             PrivateCloudComputeLanguageModel.Error.{quotaLimitReached, networkFailure, serviceUnavailable}
 ```
 
-The **left** column of every row above is now SDK-interface-verified (the nine 26.5
-`GenerationError` cases, §4); the **right** column is documentation/sample-attested, since no 27
-`FoundationModels.swiftinterface` has been read on this 26.5 machine.
+**Both columns of every row above are now SDK-interface-verified** — the left from the nine 26.5
+`GenerationError` cases (§4), the right from the 27.0 interface's declarations *and* from the
+per-case deprecation messages Apple attached to the old enum, which state each destination by name
+(`27.0:3466-3510`).
 
 ### 17.3 Guardrails vs refusals, in one table
 
@@ -3149,12 +3251,21 @@ The **left** column of every row above is now SDK-interface-verified (the nine 2
 | Same interface `:599-623` | The **five** `tokenCount(for:)` overloads verbatim — closes the §12.2 gap |
 | Same interface `:544, 581, 585` | `SystemLanguageModel.init(useCase:guardrails:)` / `init(adapter:guardrails:)` and `Guardrails.permissiveContentTransformations` (§10.1) |
 | Same interface — **grep-0 absences** | `LanguageModelError` and `TranscriptErrorHandlingPolicy` are absent from 26.5, confirming both are genuine 27 additions (§2.2, §4) |
+| `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface` (Xcode 27.0 beta 27A5228h, macOS 27.0 SDK, module `2.0.62.1.402`, captured 2026-07-29) `:1486-1496` | **The authoritative AFTER side.** `LanguageModelError`'s nine cases, availability incl. watchOS 27.0, non-frozen (no `@frozen`; contrast `:348`) |
+| Same interface `:1499-1622` | All nine payload structs, field for field — closes the §3.5 payload gaps (`RateLimited` = `resetDate: Date?` only; `Timeout` / `GuardrailViolation` = universal pair only); `Refusal.init(explanation:debugDescription:metadata:)`; `languageCode: Locale.LanguageCode` |
+| Same interface `:564-577, 1986-1994, 151-155` | `SystemLanguageModel.Error.assetsUnavailable` (watchOS unavailable); `LanguageModelSession.Error`'s two bare cases, `Equatable`/`Hashable`; PCC `Error`'s three payload cases |
+| Same interface `:3466-3510` | The deprecated `GenerationError` with **per-case migration messages naming every §4.1 destination** — including `decodingFailure` → `GeneratedContent.ParsingError` |
+| Same interface `:1350-1362` | `ParsingError`'s real shape: iOS 27.0+, stored `rawContent: String`, `underlyingError: (any Error)?` (§7) |
+| Same interface `:1885-1892, 937, 2752-2757` | `transcriptErrorHandlingPolicy` — the settable Optional session property, the profile modifier, and the two-static struct (§2.2) |
+| Same interface `:1872-1878, 2640-2646, 2617, 2627` | The transcript mutation spellings (§12.4): `session.transcript` `_modify`; settable `Transcript.history`; `MutableCollection` / `RangeReplaceableCollection` |
+| Same interface `:3382-3392, 3181-3184, 1468-1483, 406-430` | The eight `Issue.Category` cases (§13.6); the no-default `toolCallingMode:` initializer (§13.4); the four `Capability` statics (§8.3); the five `tokenCount(for:)` overloads carried into 27 (§12.2) |
+| `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:645-649` (ships in Xcode, not the OS SDK; captured 2026-07-29) | `EvaluatorsBuilder` has no `buildEither` — closes the §16 builder gap |
 
-⚠️ **Scope note:** this interface is the **26.5** surface. It proves the migration's BEFORE side to
-the header; it says nothing about the 27 `LanguageModelError` / `SystemLanguageModel.Error` /
-`LanguageModelSession.Error` types, which are grep-0 absent from it. Everything in the AFTER column
-of §4/§17 therefore remains at documentation/sample tier until a **27**
-`FoundationModels.swiftinterface` is read — see `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` §5.
+⚠️ **Scope note:** the 26.5 interface proves the BEFORE side and the 27.0 interface proves the
+AFTER side; the two dumps together are what made §4's table symmetric. What no `.swiftinterface`
+can prove is **behaviour** — which type the runtime actually throws for a given failure, what an
+Optional's `nil` default selects, whether a catch-clause case pattern matches on a stream. Those
+gaps below stay open and say so.
 
 ### Primary — Apple sample-code projects (strongest *compiling-app* class)
 
@@ -3241,19 +3352,19 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 | # | Gap | What would resolve it | § |
 |---|---|---|---|
-| 1 | The default `TranscriptErrorHandlingPolicy`, and the spelling of its setter | **27** `FoundationModels.swiftinterface` — the type is grep-0 absent from the 26.5 dump we now hold | §2.2 |
-| 2 | Whether `Timeout` / `GuardrailViolation` / `RateLimited` payloads carry fields beyond those in `SKILL.md` | Same dump | §3.5 |
-| 3 | Whether any thrown value can satisfy two of the four new type checks (NSError bridging) | Print `type(of:)` + `NSError.domain` for each failure mode on a device | §6.3 |
-| 4 | `GenerationError.decodingFailure`'s successor | A `@Generable` type the model reliably fails, with `print(type(of: error))` | §4.4 |
-| 5 | Whether `GeneratedContent.ParsingError.rawContent` is exposed as a readable property | Compile `error.rawContent` against the SDK | §7 |
+| 1 | ~~The spelling of the `TranscriptErrorHandlingPolicy` setter~~ ✅ **RESOLVED 2026-07-29** (session property + profile modifier, `27.0:1885-1892, 937`). **Still open:** which behaviour the Optional's `nil` default selects | Documentation of the default, or a device test — the interface was read and cannot say | §2.2 |
+| 2 | ~~Whether `Timeout` / `GuardrailViolation` / `RateLimited` payloads carry fields beyond those in `SKILL.md`~~ ✅ **RESOLVED 2026-07-29** — they do not (`27.0:1499-1622`) | — | §3.5 |
+| 3 | Whether any thrown value can satisfy two of the four new type checks (NSError bridging) | Print `type(of:)` + `NSError.domain` for each failure mode on a device. *(27.0 interface read 2026-07-29 — declarations cannot settle runtime bridging)* | §6.3 |
+| 4 | ~~`GenerationError.decodingFailure`'s successor~~ ✅ **RESOLVED 2026-07-29** — the SDK's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`). **Still open:** whether the framework itself throws it for a guided-generation decode failure | A `@Generable` type the model reliably fails, with `print(type(of: error))` | §4.4 |
+| 5 | ~~Whether `GeneratedContent.ParsingError.rawContent` is exposed as a readable property~~ ✅ **RESOLVED 2026-07-29** — stored `public var rawContent: String` (`27.0:1357`) | — | §7 |
 | 6 | **Which `LanguageModelError` case thread 836673 actually caught** | The reporter re-running with §3.5's `classify` | §9.2 |
 | 7 | Whether `.permissiveContentTransformations` does anything at all in Book Tracker's guided path | Device A/B on blocked content, with and without the argument | §10.3 |
 | 8 | The meaning of `SensitiveContentAnalysisML` 15, `ModelManagerError` 1046, `UnifiedAssetFramework` 5000, and `LanguageModelError` code `-1` | Apple documentation, or an Apple answer on 831448 | §13 |
-| 9 | Whether `catch LanguageModelError.<case>` reliably matches, especially on streams | Closure of **FB23061009** | §14.1 |
-| 10 | The exact spelling for mutating `session.transcript` / `transcript.history` in 27 | SDK dump, or an Apple sample that does it | §12.4 |
+| 9 | Whether `catch LanguageModelError.<case>` reliably matches, especially on streams | Closure of **FB23061009**. *(27.0 interface read 2026-07-29 — the declarations are ordinary payload cases, so the reported failure is a runtime/stream matter the header cannot settle)* | §14.1 |
+| 10 | ~~The exact spelling for mutating `session.transcript` / `transcript.history` in 27~~ ✅ **RESOLVED 2026-07-29** — both spellings compile (`27.0:1872-1878, 2640-2646`) | — | §12.4 |
 | 11 | Whether `SystemLanguageModel` throws `.unsupportedCapability` on the AFM 3 Core (non-Advanced) tier | A vision prompt on a non-Advanced device | §8.3 |
-| 12 | The full `LanguageModelFeedback.Issue.Category` list | Documentation, or SDK dump | §13.6 |
-| 13 | ~~The `tokenCount(for:)` overloads beyond the `Instructions` one~~ ✅ **RESOLVED** — all five are header-verified in the 26.5 SDK interface (`:599-623`) | — | §12.2 |
+| 12 | ~~The full `LanguageModelFeedback.Issue.Category` list~~ ✅ **RESOLVED 2026-07-29** — eight cases (`27.0:3382-3392`) | — | §13.6 |
+| 13 | ~~The `tokenCount(for:)` overloads beyond the `Instructions` one~~ ✅ **RESOLVED** — all five are header-verified in the 26.5 SDK interface (`:599-623`) and carried unchanged into 27.0 (`:406-430`) | — | §12.2 |
 
 ### Where to go next
 
@@ -3277,7 +3388,10 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 ---
 
-*Guide last revised 2026-07-28, against Xcode 27 / OS 27 beta-era sources. Every Foundation Models
-symbol above carries an evidence marker; where a marker says 🔴 GAP, nobody in this corpus has run
-the thing, and the guide says so rather than guessing. Nothing here has been validated against a
-release build of iOS 27 — because as of this revision there isn't one.*
+*Guide last revised 2026-07-29, against Xcode 27 / OS 27 beta-era sources — including, as of this
+revision, the compiler-emitted `FoundationModels.swiftinterface` from **both** sides of the
+migration (26.5 and the 27.0 beta), which closed four of this guide's thirteen ledger gaps
+outright, narrowed two more to their behavioural halves, and made §4's mapping table symmetric. Every Foundation Models symbol above carries an evidence marker;
+where a marker says 🔴 GAP, nobody in this corpus has run the thing, and the guide says so rather
+than guessing. Nothing here has been validated against a release build of iOS 27 — because as of
+this revision there isn't one.*

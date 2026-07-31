@@ -54,7 +54,7 @@ Read this guide to learn:
   mlx-lm's implementation, their real argparse defaults, their hard limits, and when the extra
   compute pays for itself.
 - **⚠️ The corruption bugs.** Four separate defects in quantized matmul paths, with issue numbers
-  and precise status as of 2026-07-27. One of them leaves output rows **unwritten**, exposing
+  and precise status as of 2026-07-29. One of them leaves output rows **unwritten**, exposing
   recycled Metal allocator memory — which is sometimes coincidentally plausible, which is why it
   went unnoticed.
 - **A verification recipe** you should run before every ship: quantized versus unquantized, one
@@ -526,7 +526,7 @@ These are the exact strings `mlx/ops.cpp` raises. Knowing them saves a debugging
 > }
 > ```
 
-The consequence, from the issue that tracks it (**mlx#3911, OPEN** as of 2026-07-27):
+The consequence, from the issue that tracks it (**mlx#3911, OPEN** as of 2026-07-29):
 
 > ✅ **VERIFIED** — quoted from mlx#3911 via `notes/repos/issues-mlx-stack.md:464`:
 > "Without tensor-scale support, NVFP4 on Metal has ~137x less dynamic range than NVIDIA Blackwell
@@ -2020,15 +2020,16 @@ arithmetic — it produces no arithmetic at all**, leaving output rows unwritten
 the recycled Metal buffer last held. Sometimes that is obviously garbage. Sometimes it is
 coincidentally plausible. That is the whole problem.
 
-**Status legend.** Every entry below is marked with its state *as of 2026-07-27*, the date these
-notes were taken. Statuses move. Check the issue before you rely on this table.
+**Status legend.** Every entry below is marked with its state *as of 2026-07-29* (re-checked
+against live GitHub via `gh` on 2026-07-29; the notes behind this section were taken 2026-07-27).
+Statuses move. Check the issue before you rely on this table.
 
-| # | Defect | Issue / PR | Status 2026-07-27 | Affects |
+| # | Defect | Issue / PR | Status 2026-07-29 | Affects |
 |---|---|---|---|---|
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **OPEN**, fix PR **OPEN** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** | **OPEN** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
-| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | mx/nv fp modes |
+| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **OPEN** (opened 2026-07-26) | all NAX GEMM |
 | 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** | **OPEN** — but **throws**, does not corrupt | nvfp4 on Apple silicon |
@@ -2039,7 +2040,7 @@ machine most of this section is history rather than a hazard — but "most" is n
 
 ### 9.1 The bad one: affine `gather_qmm` leaves rows unwritten — mlx#3856
 
-**Status: issue OPEN, fix PR #3922 OPEN, as of 2026-07-27.**
+**Status: issue OPEN, fix PR #3922 OPEN, as of 2026-07-29.**
 
 > ✅ **VERIFIED** — mlx#3856 (OPEN, 9 comments), summarised at
 > `notes/repos/issues-mlx-stack.md:379-427`.
@@ -2154,7 +2155,7 @@ about tile bounds, not about precision.
 > - **Upstream:** mlx PR **#3922**, "Fix sorted gather_qmm NAX boundary handling" — clamps the
 >   remaining row/column counts in `int` before narrowing to `short`.
 >
-> Both **OPEN** as of 2026-07-27.
+> Both **OPEN** as of 2026-07-29.
 
 Your options, in order of preference:
 
@@ -2172,7 +2173,7 @@ Your options, in order of preference:
 
 ### 9.2 The second, independent gather defect — mlx#3887
 
-**Status: OPEN as of 2026-07-27.**
+**Status: OPEN as of 2026-07-29.**
 
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:429-431`: "`gather_qmm` sorted-rhs path
 > corrupt for **`K % 64 != 0`** on M5/NAX: `!align_K` tail bounds the load with `BK` instead of the
@@ -2234,7 +2235,7 @@ its *shape* — a mode-specific block-size assumption — is the kind of defect 
 
 ### 9.4 fp quantized matmul when the quantized dim is not a multiple of 32 — PR #3912
 
-**Status: OPEN, opened 2026-07-24.**
+**Status: OPEN as of 2026-07-29, opened 2026-07-24.**
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1994`: PR **3912**, 2026-07-24, OPEN:
 > *"Fix fp quantized matmul corruption when the quantized dim is not a multiple of 32"*. Also
@@ -2243,13 +2244,18 @@ its *shape* — a mode-specific block-size assumption — is the kind of defect 
 Same family, third alignment constant. Note that 32 is the block size of `mxfp4` and `mxfp8`, so
 this is the fp modes' analogue of §9.2.
 
-> 🔴 **GAP** — the notes record this PR's **title and date only**. The precise trigger, the
-> affected kernels, the hardware scope (whether it is NAX-only like #3856/#3887 or general), and
-> the error magnitude are **all unknown to this guide**. Resolving it needs the PR body and diff
-> read directly at `github.com/ml-explore/mlx/pull/3912`.
-> **Safe default: keep every quantized dimension a multiple of 64.** 64 is a multiple of 32, so
-> that single rule covers §6.1's fast-path gate, §9.2's gather tail, and this PR simultaneously.
-> There is no configuration in which `K % 64 == 0` costs you anything.
+> ✅ **VERIFIED** — PR body read via `gh` on **2026-07-29** (PR still **OPEN**). The trigger is
+> `K % 32 == 16`, which only **`nvfp4`** (group size 16) can legally produce — `mx.quantize`
+> accepts `K = 1040`, and the fp quantized Metal kernels tile the quantized dim by 32 without
+> bounding the 16-wide tail. Affected: the **GPU matrix path** of `quantized_matmul` /
+> `gather_qmm` (`fp_qmm_t_impl` and siblings in `fp_quantized.h`, introduced with Metal nvfp4
+> support in #2946). The CPU backend and the vector (decode) kernels handle the same shapes
+> correctly — *"a model can decode perfectly and corrupt during prefill."* **Not NAX-only:** the
+> PR's reproducer is an M3 Pro. Magnitude in that reproducer: max |err| ≈ 40, **72% of outputs
+> wrong**, versus ~1e-3 on the aligned/CPU/vector paths.
+> **Safe default until the PR merges: keep every quantized dimension a multiple of 64.** 64 is a
+> multiple of 32, so that single rule covers §6.1's fast-path gate, §9.2's gather tail, and this
+> PR simultaneously. There is no configuration in which `K % 64 == 0` costs you anything.
 
 ### 9.5 fp quantized matvec with output dim < 8 — PR #3804
 
@@ -2811,7 +2817,7 @@ OPEN BUGS    #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
              #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
              #3912  fp quantized matmul, quantized dim % 32 != 0
              #3924  tile_matmad_nax missing else, odd tile shapes
-             (all OPEN as of 2026-07-27; #3854 nvfp4 split-K is MERGED)
+             (all OPEN as of 2026-07-29; #3854 nvfp4 split-K is MERGED)
 
 MITIGATION   K % 64 == 0, gathered rows padded to 64, pin your mlx version.
 
@@ -2861,11 +2867,12 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > **Safe default:** benchmark the shapes you care about (§6.5) and satisfy `K % 64 == 0` and
 > `transpose=True` unconditionally.
 
-> 🔴 **GAP 3 — PR #3912's trigger, scope and magnitude.**
-> The notes record only the title and date: *"Fix fp quantized matmul corruption when the quantized
-> dim is not a multiple of 32"*, opened 2026-07-24, OPEN. Whether it is NAX-gated like #3856 and
-> #3887, which kernels it touches, and how large the error is are all unknown here.
-> **Resolution:** read the PR body and diff at `github.com/ml-explore/mlx/pull/3912`.
+> ✅ **GAP 3 — RESOLVED 2026-07-29 — PR #3912's trigger, scope and magnitude.**
+> The PR body was read live via `gh` on 2026-07-29 (PR still **OPEN**): trigger `K % 32 == 16`,
+> legal only for `nvfp4` (group size 16); affected kernels `fp_qmm_t_impl` and siblings in
+> `fp_quantized.h`, GPU matrix path only (CPU and vector/decode kernels correct); **not**
+> NAX-gated — reproduced on an M3 Pro; magnitude max |err| ≈ 40 with 72% of outputs wrong in the
+> reproducer. Full detail now in §9.4.
 > **Safe default:** keep every quantized dimension a multiple of 64.
 
 > 🔴 **GAP 4 — `gather_qmm`'s index dtype and rank contract.**

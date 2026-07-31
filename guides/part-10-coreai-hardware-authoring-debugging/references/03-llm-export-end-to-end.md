@@ -749,12 +749,15 @@ Consequences:
   silently. Apple's own guidance in the `working-with-coreai` skill is to *"use `.default`
   specialization options unless you deliberately pin a compute unit."*
 
-> 🟡 **RECONSTRUCTED** — `SpecializationOptions(preferredComputeUnitKind:)` and
-> `.expectFrequentReshapes` are read from Apple's shipping Swift, so the *members* are verified; the
-> full initializer surface of `SpecializationOptions` is not, because the type lives in the closed
-> `CoreAI.framework`. The Python mirror exposes `cpu_only()`, `default()` and
-> `from_preferred_compute_unit_kind(ComputeUnitKind.gpu()/.ane()/…)`. See Part 7 for the runtime
-> treatment.
+> ✅ **SDK-verified (upgraded from 🟡 on 2026-07-29)** — the full public surface of
+> `SpecializationOptions` is now read from the macOS 27.0 beta interface
+> (`CoreAIDelegates-27.0-macos.swiftinterface:89-106`): statics `.default` and `.cpuOnly`, exactly
+> one initializer `init(preferredComputeUnitKind: ComputeUnitKind)`, get-only
+> `allowedComputeUnitKinds: Set<ComputeUnitKind>` and `preferredComputeUnitKind: ComputeUnitKind?`,
+> and the settable `expectFrequentReshapes: Bool`. `ComputeUnitKind` is `.cpu`/`.gpu`/
+> `.neuralEngine` plus static `availableKinds` (`:72-88`). The Python mirror exposes `cpu_only()`,
+> `default()` and `from_preferred_compute_unit_kind(ComputeUnitKind.gpu()/.ane()/…)`. See Part 7
+> for the runtime treatment.
 
 ⚠️ **SILENT FAILURE — a segmenter or speech asset crashes the auto-detect path rather than throwing.**
 `EngineFactory.autoDetectVariant` calls `preconditionFailure` for any structure other than
@@ -2411,8 +2414,8 @@ Three levers, in increasing order of control:
 2. **Specialize ahead of first use** at runtime, from your app.
 3. **AOT-compile** with `xcrun coreai-build compile` and ship `.aimodelc` per architecture.
 
-> 🟡 **RECONSTRUCTED** — the runtime cache/specialize API is quoted in the community notes as WWDC 324
-> verbatim:
+> ✅ **SDK-verified (upgraded from 🟡 on 2026-07-29)** — the runtime cache/specialize API quoted in
+> the community notes as WWDC 324 verbatim:
 >
 > ```swift
 > let cache = AIModelCache.default
@@ -2423,10 +2426,14 @@ Three levers, in increasing order of control:
 > try await AIModel.specialize(contentsOf: modelURL)
 > ```
 >
-> `AIModelCache` reportedly can delete unused entries, control retention policy, and **share a cache
-> across apps in one app group**. Treat the *shape* as right and the exact signatures as provisional
-> — this is spoken narration transcribed by a third party, and Part 7 is the guide that owns these
-> types. Do not copy this into production without checking it against the SDK.
+> now checks out against the macOS 27.0 beta interface
+> (`CoreAIDelegates-27.0-macos.swiftinterface`): `AIModelCache.default` and
+> `init?(appGroup:)` (`:27-32` — the app-group sharing is real API, not narration),
+> `model(for:options:) throws -> AIModel?` (`:33-36`), the four `delete*` methods (`:37-43`),
+> `Policy`/`PurgeConditions` retention control (`:44-71`), and
+> `AIModel.specialize(contentsOf:options:cache:cachePolicy:) async throws -> AIModel` — all
+> arguments after the URL defaulted, so the one-argument spelling above compiles (`:22-26`).
+> Part 7 is the guide that owns these types.
 
 ### 10.2 The compile command
 
@@ -2461,6 +2468,16 @@ coreai-build compile <input.aimodel> [--output <dir>]
 > extension**, and `aimodelc` lives at `Xcode-beta.app/…/usr/bin/aimodelc`. Output is
 > `modelName.architectureName.aimodelc`, matching the filename `ModelBundle.swift:103` tells you to
 > write into `metadata.json`.
+>
+> ⚠️ **Availability, checked 2026-07-29 on Xcode 27.0 beta (27A5228h):** the `coreai-build`
+> wrapper is **not present in this beta** — `xcrun --find coreai-build` fails and no `coreai*`
+> file exists anywhere in `Xcode-beta.app`. The underlying
+> `Contents/Developer/usr/bin/aimodelc` **is** present (confirming the community path claim): its
+> command types are `package` and `compile`, `compile` requires `--output`, and it implements no
+> `--help` — its binary embeds the notes *"'aimodelc' is a tool used by the Xcode compiler"* and
+> *"Please use 'xcrun coreai-build' instead"*. The flag synopsis above therefore cannot currently
+> be re-verified on this beta; treat every flag beyond Apple's documented six as community-attested
+> until a seed ships `coreai-build`.
 
 Output is **one `.aimodelc` per requested architecture**, each roughly **2× the `.aimodel` size**
 (it embeds the precompiled graph). Ship them as Background Assets; the app detects its architecture
@@ -2492,9 +2509,13 @@ not just a build step.
 🔴 **GAP — Apple publishes no architecture-name table.** We have no Apple documentation mapping
 device identifiers to `--architecture` values, and none of the four WWDC transcripts names one.
 **Resolving this needs `coreai-build compile --help` output from a shipping Xcode 27, or an Apple
-doc page.** Meanwhile: **compile for every architecture the tool offers for your platform** (it is
-cheap and produces one directory per arch), ship the set, and select at runtime — rather than
-guessing a single name from a marketing model number.
+doc page** — and note that as of 2026-07-29 the `coreai-build` wrapper is absent from the Xcode
+27.0 beta toolchain (§10.2), so the `--help` route is closed until a later seed. Meanwhile:
+**compile for every architecture the tool offers for your platform** (it is cheap and produces one
+directory per arch), ship the set, and select at runtime — rather than guessing a single name from
+a marketing model number. On device, `AIModel.deviceArchitectureName` is the authority
+(✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:107-112` — it exists and returns
+`String`; the SDK does not enumerate the values either).
 
 ### 10.4 When you must AOT-compile
 

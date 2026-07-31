@@ -471,6 +471,16 @@ mirror and had to be recovered from Apple's raw DocC JSON, so it is worth reprod
 > - ***Time Profiler*** — *"Profiles running threads on all cores at regular intervals for all
 >   processes."*
 
+> ✅ **SDK-verified, 2026-07-29** — that four-instrument composition is now confirmed from the
+> shipped toolchain, not just DocC prose. The Xcode 27.0 beta's
+> `Instruments.app/Contents/Resources/templates/Core AI.tracetemplate` archives exactly four
+> instrument identifiers — **`com.apple.dt.instruments.coreai`**, **`com.apple.ane`** (Neural
+> Engine), **`com.apple.xray.instrument-type.metal-gpu`**, and
+> **`com.apple.xray.instrument-type.coresampler2`** (the Time Profiler sampler) — plus the template
+> description *"Monitors an application's machine learning activity executed through Core AI."*
+> `xcrun xctrace list templates` lists **Core AI** and `list instruments` lists **Core AI** and
+> **Neural Engine** by name.
+
 That composition is the answer to the most common Core AI question — *"did my model actually run on
 the Neural Engine?"* You do not answer it by reading `SpecializationOptions`; you answer it by
 looking at whether the Neural Engine instrument shows activity aligned with your Inference events.
@@ -606,8 +616,14 @@ Two inferences worth drawing from those strings, both of which change how you re
 > evidence for *what the strings look like on screen* in the Xcode 27 build you have. **Nobody here
 > has run Xcode 27's Instruments.** In particular: the detail-pane column set, whether there is a
 > per-compute-unit breakdown column for each Inference event, whether the template works against the
-> Simulator, and whether there is a cache-hit metric are all **unknown**. **Resolution:** an Xcode 27
-> install, a device, and one recorded trace. **Safe default meanwhile:** navigate by the four
+> Simulator, and whether there is a cache-hit metric are all **unknown**.
+>
+> **Narrowed 2026-07-29:** the template file itself was inspected in the Xcode 27.0 beta and its
+> four-instrument composition is now ✅ (see §3.2) — so *what exists* is settled. The on-screen
+> strings remain out of reach from the toolchain alone: Instruments streams instrument definitions
+> from the **recording target** at attach time (a sweep of the host Instruments.app finds none of
+> the known lane names), so no amount of host-side inspection produces them.
+> **Resolution:** an Xcode 27 install, **a device or Mac running an OS 27**, and one recorded trace. **Safe default meanwhile:** navigate by the four
 > category names above (they are Apple's own, and appear in event labels, not just legends), expand
 > every track to its function level, and do not script or automate against any string in the UI.
 
@@ -942,13 +958,18 @@ other options, run `coreai-build compile --help`."*
 > `--preferred-compute neural-engine` / `gpu`, with `h16c` for M-series Macs — **community-reported,
 > not Apple-published, and unverified here**. Whether `coreai-build` has subcommands beyond `compile`
 > (an `inspect` and a `package` are attested only in community bug reports; see §15) is likewise
-> undocumented. **Resolution:** run `xcrun coreai-build compile --help` on a Mac with Xcode 27 and
-> the Metal Toolchain. **Safe default meanwhile:** use only the five documented flags, and discover
+> undocumented. **Resolution:** run `xcrun coreai-build compile --help` — ⚠️ **currently
+> impossible: checked 2026-07-29, the `coreai-build` wrapper is absent from the Xcode 27.0 beta
+> toolchain (27A5228h)**. The underlying `usr/bin/aimodelc` stub *is* present; its command types
+> are `package` and `compile` (partially corroborating the community `package` claim, and offering
+> no `inspect`), it requires `--output`, and it has no `--help`. Its binary says *"Please use
+> 'xcrun coreai-build' instead"* — so the wrapper is coming, just not in this seed.
+> **Safe default meanwhile:** use only the five documented flags, and discover
 > the architecture string at runtime rather than hardcoding it:
 >
 > ```swift
-> let arch = AIModel.deviceArchitectureName          // ✅ verified: static, returns String
-> let assetName = "MyModel.\(arch).aimodelc"
+> let arch = AIModel.deviceArchitectureName          // ✅ SDK-verified: static, returns String
+> let assetName = "MyModel.\(arch).aimodelc"         //    (CoreAIDelegates-27.0:107-112)
 > ```
 
 And the hardware gate that neither transcript mentions and that will decide whether AOT is even

@@ -7,7 +7,9 @@ fallback buys you anything, and there is no release-notes page to diff against �
 `/documentation/updates/coreai` returns **404**. You need **Xcode 27** and the **Metal Toolchain**, a
 separate download (`xcodebuild -downloadComponent MetalToolchain`); without it any target containing a
 `.aimodel` fails to build with a *missing Metal compiler* error that never mentions Core AI. Three
-Metal-interop APIs **drop watchOS**, and `apple/coreai-models` is **macOS 27 and iOS 27 only**.
+Metal-interop APIs **drop watchOS** per their doc pages (the captured macOS 27.0 beta SDK interface
+declares them `watchOS 27.0` — see 7.1 §16.3), and `apple/coreai-models` is **macOS 27 and iOS 27
+only**.
 
 **Who this is for:** Swift developers who have a converted model and must make it load, run and stay fast
 on a device. Producing the `.aimodel` is [Part 8](../part-08-coreai-pytorch-conversion/); choosing Core AI
@@ -62,7 +64,7 @@ The three-line version — `try await AIModel(contentsOf:)`, `loadFunction(named
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I have a `.aimodel` and want it running today" | [7.1 §0–§9](references/01-runtime-and-ndarray.md) | The whole object model; §14 is a runner you can paste |
-| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](references/01-runtime-and-ndarray.md) | 🔴 no documented error type; preferred strides or interleave; `Span` is not a `Sequence` |
+| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](references/01-runtime-and-ndarray.md) | ✅ SDK-verified: untyped throws, `AssetError` only; preferred strides or interleave; `Span` is not a `Sequence` |
 | "My first launch stalls for minutes" | [7.2 §1–§5](references/02-specialization-caching-and-aot.md) | Specialization. Gate on `model(for:options:)`, pre-specialize behind explanatory UI |
 | "The stall came back after I was sure I'd paid it" | [7.2 §4, §6](references/02-specialization-caching-and-aot.md) | The key is `(asset, options)` — or an OS update, which purges everything regardless of policy |
 | "Inference intervals grow along the Instruments timeline" | [7.3 §1–§5](references/03-states-and-pipelined-execution.md) | No states. The one bug here that announces itself visually |
@@ -95,12 +97,14 @@ survives a model re-export, the three low-level performance APIs session 324 nam
 > *output* reinterprets bits into numeric garbage (§7.10); and EXIF orientation is nobody's job — Apple's
 > own repo applies it on one path and not the other, so the same JPEG yields two orientations (§12.4).
 
-> 🔴 **GAP — you cannot name the error you would catch (§13).** Across all 312 indexed symbols the only
-> type grouped under "Errors" is `AssetError`, whose every case is about the *asset file*; nothing
-> documents what `AIModel.init`, `loadFunction`, `run`, `encode` or the cache `delete*` methods throw,
-> and several `- Throws:` clauses render as orphaned notes with no type. §13.2 gives a catch-broadly,
-> degrade-don't-retry ladder plus a helper that prints the dynamic type — run it once and the gap is
-> resolved for your own codebase.
+> ✅ **ANSWERED (was the part's biggest GAP) — the error you catch is `AssetError`, or nothing (§13).**
+> The macOS 27.0 beta SDK interface, captured 2026-07-29, settles it: `AIModel.init`, `loadFunction`,
+> `run`, `encode` and the cache `delete*` methods all throw **untyped** errors, and the only public
+> error type in the entire Core AI surface is `CoreAIAsset.AssetError` — five `Kind` cases, all about
+> the asset file (`unsupportedVersion`, `invalidFeatureType`, `corruptedMetadata`, `invalidName`,
+> `duplicateName`). No public inference/specialization/cache error enum exists in this beta; the
+> community-sighted `AIModelError` is internal to `CoreAIDelegates`. §13.2's catch-`AssetError`-then-
+> catch-broadly, degrade-don't-retry ladder is therefore not a workaround but the correct shape.
 
 ### [7.2 — Specialization, the model cache, and ahead-of-time compilation](references/02-specialization-caching-and-aot.md)
 The single largest source of first-launch stalls, wedged loads and mysterious disk growth. Specialization
@@ -124,7 +128,9 @@ five-rung recovery ladder for wedged loads.
 > entry a live `AIModel` still references and the reference pages say *"an error is thrown"* while the
 > prose article says Core AI *"defers deletion."* The guide quotes both, gives a device test that would
 > settle it, and shows code correct under either reading. Also open: the full `coreai-build` CLI surface
-> (nobody in this corpus has run `--help`), and cancellation semantics for `specialize`.
+> — and note `coreai-build` is **absent from the Xcode 27.0 beta toolchain** (`xcrun --find` fails,
+> checked 2026-07-29), so the `--help` run that would close it is currently impossible — and
+> cancellation semantics for `specialize`.
 
 ### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
 A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable:
@@ -239,7 +245,12 @@ loop, and [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) unle
 
 ## Sources for this part
 
-Strongest first. **Apple source read on disk:** `apple/coreai-models` at commit `5ed9981` (2026-07-23) —
+Strongest first. **SDK module interfaces, read on disk** (captured 2026-07-29 from the Xcode 27.0
+beta, 27A5228h, macOS 27.0 SDK; stored in `notes/sdk-interfaces/`): `CoreAI` (umbrella),
+`CoreAIDelegates` (the loading/caching/options surface and the re-exports), `CoreAIRuntime`
+(1,428 lines), `CoreAIAsset`, and the empty-in-this-beta `CoreAICache`/`CoreAICommon`/
+`CoreAICompiler` — the evidence class that finally closed the error-type gap and confirmed every
+runtime signature in 7.1/7.2. **Apple source read on disk:** `apple/coreai-models` at commit `5ed9981` (2026-07-23) —
 the three LLM engines and the VLM engine, `ModelStructure.swift` (the structure→compute-unit mapping, the
 strongest guidance on `SpecializationOptions` anywhere), the bundle readers, `NDArray+Helpers.swift`,
 `ImagePreprocessor.swift`, the two xgrammar wrappers, `CoreAILanguageModel.swift`, the four Python bundle

@@ -989,7 +989,7 @@ VLMs, with no error.** Three linked issues document this:
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
-- **`#420` (OPEN as of 2026-07-27)** — M-RoPE state dropped **across `ChatSession` turns**:
+- **`#420` (OPEN as of 2026-07-29)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
   cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399;
@@ -2235,7 +2235,8 @@ Gemma 4's `model_type` is `"gemma4"`, not `"gemma"`.
 > the correct `<|tool_call>` / `<tool_call|>` tags and a `prefix gemma4 ⇒ .gemma4` rule** — i.e.
 > both root causes named in `#259` appear to be addressed in the code, while the issue remains
 > open. The most likely explanation is that the issue predates the fix and was never closed.
-> **Status as of 2026-07-28: code appears fixed at HEAD; issue still open; not independently
+> **Status as of 2026-07-29: code appears fixed at HEAD; issue still open (re-checked via `gh`;
+> 3 comments, last activity 2026-07-10); not independently
 > re-tested by this guide.** Do not rely on either state — run the check in §7.8.
 
 The registry presets set the format explicitly where inference cannot:
@@ -2915,7 +2916,7 @@ incoherent output."* `ChatSession` prepends `.system(instructions)` **on every t
 twice in the token stream and once in the KV — which is exactly the mismatch that produces fluent
 nonsense.
 
-**(2) `saveCache` drops `LMOutput.State`** (`#443`, OPEN as of 2026-07-27), so a restored VLM cache
+**(2) `saveCache` drops `LMOutput.State`** (`#443`, OPEN as of 2026-07-29), so a restored VLM cache
 has no M-RoPE deltas. §4.3.
 
 ### 8.7 Cross-turn reuse, and the `attentionWithCacheUpdate` footgun
@@ -3032,13 +3033,14 @@ and both destroy output quality rather than crashing. They are here not as a bug
 each one is a **class of error** that will recur — one about value semantics, one about ignored
 return values — and recognising the class is more useful than memorising the instance.
 
-**Status of everything in this section: as of 2026-07-28**, based on a `gh`-CLI pass over
-`ml-explore/mlx-swift-lm` on 2026-07-27 plus a source read at HEAD `3cbf928` (2026-07-24). Re-check
+**Status of everything in this section: as of 2026-07-29**, based on a `gh`-CLI pass over
+`ml-explore/mlx-swift-lm` on 2026-07-29 plus a source read at HEAD `3cbf928` (2026-07-24). Re-check
 before you build around either.
 
 ### 9.1 `maybeQuantizeKVCache` replaces array elements instead of mutating objects
 
-**Issue: `mlx-swift-lm#312`. Status: OPEN (6 comments) as of 2026-07-27. Fix in flight: PR #358.**
+**Issue: `mlx-swift-lm#312`. Status: OPEN (6 comments) as of 2026-07-29. Fix in flight: PR #358
+(still open, no activity since 2026-07-10).**
 
 #### What happens
 
@@ -3164,7 +3166,7 @@ from the command line is not what you get from the API.
 
 ### 9.2 `SpeculativeTokenIterator` discards `trimPromptCache`'s return value
 
-**Issue: `mlx-swift-lm#424`. Status: OPEN as of 2026-07-27.**
+**Issue: `mlx-swift-lm#424`. Status: OPEN as of 2026-07-29 (one comment, no maintainer fix).**
 
 #### What happens
 
@@ -3273,7 +3275,7 @@ is the combination at risk. Concretely:
 Not required by the brief, but it belongs next to the other two because it is the third member of
 the family "Swift's type system makes a Python idiom unsound."
 
-**Issue: `mlx-swift-lm#406`. Status: OPEN as of 2026-07-27.**
+**Issue: `mlx-swift-lm#406`. Status: OPEN as of 2026-07-29 (zero comments).**
 
 ```swift
 let previous = self.offset          // Swift Int → baked as a constant in the compiled graph

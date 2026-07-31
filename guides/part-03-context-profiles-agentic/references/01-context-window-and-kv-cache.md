@@ -555,6 +555,19 @@ technote states the number plainly, and it is now the fourth independent Apple c
 > published claim that any device reports something other than 4096, and because **the defensive shape
 > of its code is still the right one** — see §3.4.
 
+> ✅ **New SDK evidence (2026-07-29), and it cuts both ways.** The captured interfaces expose
+> `contextSize`'s inlinable getter body. In the **26.5 SDK** it is a hardcoded
+> `return 4096` — the back-deployed implementation returns the constant unconditionally
+> (`FoundationModels-26.5-macos.swiftinterface:634-642`). In the **27.0 SDK** the same getter
+> becomes `if #available(iOS 27.0, macOS 27.0, …) { return _contextSize }` — a call into the
+> framework — `else { return 4096 }` (`FoundationModels-27.0-macos.swiftinterface:441-458`). Read
+> what that does and does not establish: on any pre-27 runtime the answer is the compiled-in
+> constant **4096, always**; on a 27 runtime the value is **dynamic**, so a device *could* report
+> something else — the plumbing the noema comment would require genuinely exists — but the
+> interface does not show what `_contextSize` returns, and no Apple source publishes a figure
+> other than 4096. TN3193's number stands as the documented expectation; §3.4's read-don't-hardcode
+> rule is now visibly what the SDK itself is built for.
+
 **Why this does not make the number safe to hardcode.** Apple's 26.4 announcement said the point of
 these APIs is *"to adapt your app to the hardware it's running on"* (session 241, `241:L14-19`);
 `PrivateCloudComputeLanguageModel` reports **32K** through the same property; and dynamic profiles can
@@ -756,14 +769,15 @@ Three notes on that:
 
 `tokenCount(for:)` is a `SystemLanguageModel` method. It is not on the `LanguageModel` protocol.
 
-> 🔴 **GAP — there is no documented way to count tokens for a non-system model.**
-> `PrivateCloudComputeLanguageModel` exposes `contextSize` but our harvest of its symbol page lists
-> `isAvailable`, `availability`, `quotaUsage`, `contextSize`, `supportedLanguages` and
-> `supportsLocale(_:)` — **no `tokenCount`**. For a custom `LanguageModel` provider there is likewise
-> no protocol requirement for it. So on PCC or a bring-your-own-model backend, your only token
-> accounting is `Usage` *after* the fact (§5), or a tokeniser you own. What would resolve this: the
-> `PrivateCloudComputeLanguageModel` symbol index, or a `LanguageModel` protocol header. **Safe
-> default meanwhile:** meter with `SystemLanguageModel.tokenCount(for:)` even when you intend to run
+> ✅ **CONFIRMED against the 27.0 beta interface (2026-07-29) — there is no way to count tokens for
+> a non-system model.** All five `tokenCount(for:)` overloads are `final` methods on
+> `SystemLanguageModel` (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:398-432`);
+> the `LanguageModel` protocol's complete requirement set is `capabilities` +
+> `executorConfiguration` + the `Executor` associated type (`:1440-1444`) — no `tokenCount`; and
+> `PrivateCloudComputeLanguageModel`'s surface (`:45-252`) has `contextSize` (an `async throws`
+> `Int` property, `:135-137`) but no `tokenCount` either. So on PCC or a bring-your-own-model
+> backend, your only token accounting is `Usage` *after* the fact (§5), or a tokeniser you own.
+> **Safe default:** meter with `SystemLanguageModel.tokenCount(for:)` even when you intend to run
 > on PCC — the tokenisers differ, so the number is an estimate, but an estimate that is 32K-safe is
 > also 4K-safe if you are budgeting for the smaller model, which is the direction that matters.
 
@@ -2521,9 +2535,9 @@ correct-looking, and quietly makes the model do the wrong thing.
 | `Transcript.Entry` | 6 cases: `.instructions` `.prompt` `.response` `.reasoning` `.toolCalls` `.toolOutput` | 26.0; `.reasoning` **27.0** |
 | `Transcript.Segment` | 4 cases: `.text` `.attachment` `.structure` `.custom` | 26.0; `.attachment` **27.0** |
 | `Transcript.history` | `var history: ArraySlice<Transcript.Entry> { get set }` | **27.0** |
-| `Transcript.structuredTranscript` | `var structuredTranscript: StructuredTranscript { get }` | **27.0** (no Mac Catalyst) |
+| `Transcript.structuredTranscript` | `var structuredTranscript: StructuredTranscript { get }` — ✅ SDK-verified: declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; exists only where Evaluations is linked (`Evaluations-27.0-macos.swiftinterface:272-286`) | **27.0** (no Mac Catalyst) |
 | `SystemLanguageModel.contextSize` | `@backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4) final var contextSize: Int` | **26.4**, back-deploys to 26.0 |
-| `SystemLanguageModel.tokenCount(for:)` | `nonisolated(nonsending) final func tokenCount(for instructions: Instructions) async throws -> Int` | **26.4**, no back-deploy |
+| `SystemLanguageModel.tokenCount(for:)` | five overloads — `some PromptRepresentable` / `Instructions` / `[any Tool]` / `GenerationSchema` / `some Collection<Transcript.Entry>`, all `nonisolated(nonsending) … async throws -> Int` (✅ `FoundationModels-27.0-macos.swiftinterface:398-432`) | **26.4**, no back-deploy |
 | `PrivateCloudComputeLanguageModel.contextSize` | `var contextSize: Int { get async throws }` | **27.0**[^pcc-context-size] |
 | `LanguageModelSession.transcript` | `final var transcript: Transcript { get set }` — settable in 27 | 26.0 (get) · **27.0** (set) |
 | `LanguageModelSession.isResponding` | `final var isResponding: Bool { get }` | 26.0 |
@@ -2540,10 +2554,17 @@ correct-looking, and quietly makes the model do the wrong thing.
 | `rollingWindow(entries:)` / `(size:)` | `RollingWindowSize.entries(Int)` only case | **27.0** (utilities package) |
 | `summarizeHistory(entryThreshold:model:instructions:summaryPostamble:)` | first two have **no defaults** | **27.0** (utilities package) |
 
-> 🔴 **GAP — the version floor of the `promptPrefix:` label.** `prewarm()` is iOS 26; whether the
-> `promptPrefix:` overload is also 26 or arrived in 27 is not recorded on any page we fetched. Safe
-> default: call bare `prewarm()` if you support 26, and gate the prefix form behind
-> `#available(iOS 27, …)` until someone checks the symbol page.
+> ✅ **RESOLVED (2026-07-29) — `promptPrefix:` is a 26-era label, not a 27 addition.** There is no
+> bare `prewarm()`/`prewarm(promptPrefix:)` pair — it is **one** declaration with a defaulted
+> parameter, `final public func prewarm(promptPrefix: Prompt? = nil)`, and it sits in the plain
+> iOS 26.0/macOS 26.0 extension of `LanguageModelSession` in **both** captured interfaces —
+> ✅ **SDK-verified** (`FoundationModels-26.5-macos.swiftinterface:342`;
+> `FoundationModels-27.0-macos.swiftinterface:1918-1922`, where the extension is
+> `@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0)`). No availability gate needed on
+> the label when building with a 26.4+ SDK. (Caveat kept honest: a 26.5 interface proves the
+> *26.5-SDK* view; whether the label was present in the original 26.0 SDK is not answerable from
+> these captures, but the declared floor is 26.0 and there is no back-deploy shim to suggest
+> otherwise.)
 
 ### 13.2 Numbers, with attribution
 

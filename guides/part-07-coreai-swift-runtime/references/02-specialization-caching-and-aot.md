@@ -508,19 +508,26 @@ Two notes on that code:
 > or loading the model fails."* These are not behaviour statements; they are the *conditions* under
 > which those calls throw.
 
-> 🔴 **GAP — what error type do these throw?**
-> Nothing in the 312-symbol Core AI index documents the error type thrown by
-> `AIModel.init(contentsOf:)`, `loadFunction(named:)`, `run(…)`, or any of the cache `delete*`
-> methods. `AssetError` exists and covers **asset** operations only (`corruptedMetadata`,
-> `duplicateName`, `invalidFeatureType(String)`, `invalidName`, `unsupportedVersion(String)`), and
-> it is publicly initializable, so it is clearly not the sealed system error for inference.
-> **What would resolve it:** an SDK `.swiftinterface` dump from Xcode 27, or a `do { } catch let e
-> as NSError { print(e.domain, e.code) }` on a real failing load.
-> **Safe default meanwhile:** catch `AssetError` explicitly where you are doing asset work, then
-> catch the general `Error` — do not write a typed `catch` you cannot prove exists, and do log
-> `(error as NSError).domain` and `.code` so your crash reports are useful. Community bug reports
-> in this corpus show at least two shapes escaping: `CoreAIDelegates.AIModelError error 3` and an
-> `NSPOSIXErrorDomain Code=2`, which tells you the errors are **not** all one type.
+> ✅ **RESOLVED (was a GAP) — they throw *untyped* errors, and no public error type for
+> specialization, loading, inference or cache work exists in the macOS 27.0 beta SDK.**
+> The SDK `.swiftinterface` dump this box used to ask for was captured 2026-07-29 (Xcode 27.0
+> beta, 27A5228h; `notes/sdk-interfaces/`). It shows: `AIModel.init(contentsOf:options:)` and
+> `specialize(…)` are plain `async throws`, `loadFunction(named:)` and every `AIModelCache` method
+> plain `throws` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:22-26, :33-43,
+> :119-122`), and both `run` overloads plus `encode` untyped as well
+> (`CoreAIRuntime-27.0-macos.swiftinterface:92-103`). The only public error type in the entire
+> Core AI surface is `CoreAIAsset.AssetError`
+> (✅ **SDK-verified** — `CoreAIAsset-27.0-macos.swiftinterface:230-247`), whose five `Kind` cases —
+> `unsupportedVersion(String)`, `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`,
+> `duplicateName` — cover **asset** operations only; it is publicly initializable, a reporting
+> type, not the system's inference error.
+> **What this means in practice:** catch `AssetError` explicitly where you are doing asset work,
+> then catch the general `Error` — there is no typed `catch` to write for specialization or
+> inference failures in this beta, and do log `(error as NSError).domain` and `.code` so your
+> crash reports are useful. Community bug reports in this corpus show at least two shapes
+> escaping: `CoreAIDelegates.AIModelError error 3` (an `AIModelError` exists internally but is
+> **not present in the beta SDK's public interface**) and an `NSPOSIXErrorDomain Code=2` — the
+> errors are **not** all one type. Full treatment: guide 7.1 §13.
 
 ---
 
@@ -730,16 +737,21 @@ struct AIModelCache.Policy: Codable, Equatable, Hashable, Sendable, SendableMeta
     static let `default`: AIModelCache.Policy
     static let persistent: AIModelCache.Policy
     init(purgeConditions: AIModelCache.Policy.PurgeConditions)
-    var purgeConditions: AIModelCache.Policy.PurgeConditions { get }
+    var purgeConditions: AIModelCache.Policy.PurgeConditions   // settable, per the SDK interface
 }
 
 struct AIModelCache.Policy.PurgeConditions: OptionSet, SetAlgebra, Codable, Sendable {
+    let rawValue: UInt
+    init(rawValue: UInt)
     static let sourceAssetChangedOrDeleted: PurgeConditions
     static let storagePressure: PurgeConditions
 }
 ```
 
-> ✅ **VERIFIED** — both types and all members quoted from the reference pages.
+> ✅ **VERIFIED** — both types and all members quoted from the reference pages, and confirmed
+> against the SDK (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:44-71`). One
+> doc discrepancy: the reference page shows `purgeConditions` as `{ get }`, but the beta interface
+> declares it a settable `public var`.
 
 There are exactly **three** ways a cached specialization can go away. Apple lists them as a term
 list in the article:
@@ -915,9 +927,12 @@ Apple documentation, published in the same doc set, in the same release.
 > 🔴 **GAP — the deletion-while-referenced behaviour is genuinely unresolved.**
 >
 > **What is unknown:** whether `deleteEntry`/`deleteEntries`/`deleteAll` throw when an `AIModel`
-> holds the entry, or return successfully and defer the deletion. Also unknown: *which* error is
-> thrown, if it throws (see the error-type gap in §3), and whether the deferred-deletion reading
-> means the entry stops being findable by `model(for:options:)` immediately or only after dealloc.
+> holds the entry, or return successfully and defer the deletion. The macOS 27.0 beta interface
+> confirms all four are spelled plain `throws` (✅ **SDK-verified** —
+> `CoreAIDelegates-27.0-macos.swiftinterface:37-43`) but cannot say *when* they throw. Also known
+> now (§3): if it throws, the error is **untyped** — there is no public cache error type in the
+> beta SDK to match on. Still unknown: whether the deferred-deletion reading means the entry stops
+> being findable by `model(for:options:)` immediately or only after dealloc.
 >
 > **What would resolve it:** a five-line device test —
 > ```swift
@@ -1676,9 +1691,14 @@ discovered what happens if you get it wrong.
 >    contains several unrelated MPSGraph compiler crashes in the same window, which makes a beta bug
 >    entirely plausible.
 >
-> **What would resolve it:** an SDK `.swiftinterface` dump showing the property's default and
-> whether it participates in the synthesised `Hashable`; a run of `coreai-build compile --help` on
-> a machine with Xcode 27 and the Metal Toolchain; and a controlled device A/B of first-load time
+> **What the SDK dump did and did not resolve (2026-07-29):** the captured beta interface
+> confirms the spelling — `public var expectFrequentReshapes: Bool`, the only settable property on
+> `SpecializationOptions` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:100`) —
+> but a `.swiftinterface` prints neither a stored property's default value nor which members feed
+> the synthesised `Hashable`, so unknowns 1 and 3 survive the dump.
+> **What would still resolve them:** printing `SpecializationOptions.default.expectFrequentReshapes`
+> on device; a run of `coreai-build compile --help` (⚠️ not currently possible — the tool is absent
+> from the Xcode 27.0 beta toolchain, see §13); and a controlled device A/B of first-load time
 > with the flag on and off, on both a static-shape and a dynamic-shape asset, on a non-beta OS.
 >
 > **Safe default meanwhile:**
@@ -1820,7 +1840,29 @@ Which tells you there is at least an architecture-selection flag Apple declines 
 
 ### 🔴 GAP — the CLI surface
 
-> 🔴 **GAP — nobody in this corpus has run `xcrun coreai-build compile --help`.**
+> 🔴 **GAP — nobody in this corpus has run `xcrun coreai-build compile --help`, and as of
+> 2026-07-29 nobody *can* on the current beta: `coreai-build` is not in the Xcode 27.0 beta
+> toolchain.**
+>
+> ⚠️ **Availability, checked 2026-07-29 against Xcode 27.0 beta (27A5228h):**
+> - `xcrun --find coreai-build` **fails**, and an exhaustive `find` of `Xcode-beta.app` turns up
+>   **no file named `coreai*` at all** — the wrapper Apple's article documents is **not present in
+>   this beta**.
+> - The underlying compiler **is** present:
+>   `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc` (project stamp `IDEMLKit-25131.2`,
+>   linking `IDEMLCompilerCore.framework`). Run bare, it errors *"Command type 'package' or
+>   'compile' must be specified"*; `compile` then demands `--output <output_file_path>`; it
+>   implements **no `--help`**. Its own binary contains the notes *"'aimodelc' is a tool used by
+>   the Xcode compiler."* and *"Please use 'xcrun coreai-build' instead."* — Apple's stub itself
+>   names `coreai-build` as the intended entry point, which this beta then does not ship.
+>
+> So: the Xcode build phase can compile `.aimodel` files (via `aimodelc`), but the documented
+> developer-facing CLI is missing from this beta. This is a statement about beta 27A5228h, not
+> about the tool's existence — Apple's AOT article, its agent skills, its own `aimodelc` stub and
+> community reports all attest `coreai-build`. Expect it in a later seed or the GM. The flag
+> surface below is retained on that basis. (The `aimodelc` findings also corroborate two community
+> claims: the binary's path, and a `package` subcommand — while `inspect` is *not* among
+> `aimodelc`'s command types.)
 >
 > **What is verified:** the six tokens in the table above, from Apple's article. That is all.
 >
@@ -2508,6 +2550,11 @@ static var AIModel.deviceArchitectureName: String { get }
 
 > ✅ **VERIFIED** — every declaration above is quoted from the Core AI reference pages. The `import
 > CoreAI` module name and the `"main"` default function name are from Apple's integration article.
+> ✅ **SDK-verified** (2026-07-29): every declaration in this block also matches the captured
+> macOS 27.0 beta interface — the loading/cache/options surface is declared in `CoreAIDelegates`
+> (`CoreAIDelegates-27.0-macos.swiftinterface:14-122`) and reaches you because `import CoreAI` is
+> an umbrella re-export of it; the asset surface is `CoreAIAsset-27.0-macos.swiftinterface:11-21`.
+> All throws are untyped — see §3.
 
 ### The CLI, in one block
 
@@ -2526,6 +2573,9 @@ xcrun coreai-build compile MyModel.aimodel \
 #   --preferred-compute <value>        ← ✅ flag verified; values 🔴 GAP
 # Everything else:
 xcrun coreai-build compile --help      # ← nobody in this corpus has run this
+# ⚠️ 2026-07-29: `xcrun --find coreai-build` FAILS on Xcode 27.0 beta (27A5228h) —
+# the wrapper is not in this beta. The underlying `usr/bin/aimodelc` IS
+# (command types: package|compile; no --help). See §13.
 ```
 
 ### Decision table
@@ -2563,7 +2613,19 @@ xcrun coreai-build compile --help      # ← nobody in this corpus has run this
 
 ## 19. Sources and evidence ledger
 
-### Primary — Apple documentation (strongest available here; there is no sample code)
+### Primary — SDK module interfaces (strongest; captured 2026-07-29)
+
+The shipped `.swiftinterface` files from the Xcode 27.0 beta (27A5228h) macOS 27.0 SDK, stored
+under `notes/sdk-interfaces/`. `CoreAI` is an umbrella (`@_exported import CoreAIDelegates`);
+`CoreAIDelegates` re-exports `CoreAIAsset`/`CoreAICommon`/`CoreAICompiler`/`CoreAIRuntime` and
+itself declares the entire loading, caching and options surface this guide covers
+(`CoreAIDelegates-27.0-macos.swiftinterface:14-122`). `CoreAICache`, `CoreAICommon` and
+`CoreAICompiler` have empty public Swift surfaces in this beta — in particular, the on-device
+specialization cache has **no public API in a `CoreAICache` module**; everything public is
+`AIModelCache` in `CoreAIDelegates`. Used for: closing the error-type gap (§3), confirming every
+declaration in §18, and the `purgeConditions` settability discrepancy (§6).
+
+### Primary — Apple documentation (strongest doc-class evidence; there is no sample code)
 
 | Source | Used for |
 |---|---|
@@ -2620,14 +2682,14 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 
 | # | Gap | What would resolve it | Section |
 |---|---|---|---|
-| 1 | The error type thrown by `AIModel.init`, `loadFunction`, `run`, and the cache `delete*` methods | An SDK `.swiftinterface` dump, or an `NSError` domain/code print from a real failure | §3 |
-| 2 | **Deletion while an `AIModel` is live: throws (reference) or defers (article)?** | A five-line device test with and without a live reference | §7 |
+| 1 | ~~The error type thrown by `AIModel.init`, `loadFunction`, `run`, and the cache `delete*` methods~~ **CLOSED 2026-07-29 by the SDK interface dump: untyped throws; `AssetError` is the only public error type in the beta SDK** | — | §3 |
+| 2 | **Deletion while an `AIModel` is live: throws (reference) or defers (article)?** (interface confirms `throws` spellings only) | A five-line device test with and without a live reference | §7 |
 | 3 | Cancellation semantics of `specialize` / `init(contentsOf:)` | Cancel a `Task` mid-specialization and inspect the cache | §5 |
 | 4 | Where the cache lives on disk and how large an entry is | Container inspection before/after a specialization | §6 |
 | 5 | The exact composition of `.default` / `.persistent` in terms of `PurgeConditions` | Printing the raw values, or Apple documenting them | §6 |
 | 6 | Whether the `AIModel` returned by `specialize(…, cache: groupCache)` is backed by the group entry | Compare `bookmarkData` against `groupCache.model(for:options:)`'s | §8 |
-| 7 | **`expectFrequentReshapes`: default value, semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** | `.swiftinterface` dump plus a controlled device A/B | §11 |
-| 8 | **The full `coreai-build` CLI surface**, `--preferred-compute` values, architecture codes, and any subcommands beyond `compile`/`inspect` | Running `xcrun coreai-build compile --help` once | §13 |
+| 7 | **`expectFrequentReshapes`: default value, semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** (spelling now SDK-verified; defaults don't print in an interface) | Printing `SpecializationOptions.default.expectFrequentReshapes` on device, plus a controlled A/B | §11 |
+| 8 | **The full `coreai-build` CLI surface**, `--preferred-compute` values, architecture codes, and any subcommands beyond `compile`/`package` — ⚠️ the wrapper is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29); the underlying `aimodelc` is present, has command types `package`/`compile` only, and no `--help` | A later seed/GM shipping `coreai-build`, then `compile --help` once | §13 |
 | 9 | What `--platform watchOS` / `--platform tvOS` produce, given the AOT hardware gate names neither | Running the compile and reporting the output | §14.1 |
 | 10 | **Whether iOS can JIT a portable `.aimodel` at all**, or whether the reported `Code=2` failures are purely platform-tag mismatches | Export a small model `--platform iOS`, load the **uncompiled** asset on an iPhone | §14.4 |
 | 11 | Whether the macOS 26 vs 27 export-lowering regression is a beta bug, a deliberate change, or model-specific | Independent reproduction on a second model and a later build | §16.3 |

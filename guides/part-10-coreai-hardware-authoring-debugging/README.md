@@ -113,7 +113,10 @@ uncompressed).
 
 > 🔴 **GAP — `coreai-build`'s residency report.** Apple's skill says "compile and check residency" and
 > no source shows what that output looks like — not the flag, not the format, not whether it is per-op.
-> Also open: `HardwareConstraints` / `AllocationType`, and `LegalizeToCoreOptions(mutable_arg_action:)`
+> And it cannot currently be checked: the `coreai-build` wrapper is **absent from the Xcode 27.0 beta
+> toolchain** (27A5228h, checked 2026-07-29); only the underlying `aimodelc` stub ships, with no
+> `--help`. Also open: `HardwareConstraints` / `AllocationType`, and
+> `LegalizeToCoreOptions(mutable_arg_action:)`
 > — prescribed by a skill file, present in **zero** other files across three Apple repos.
 
 ### [10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger](references/02-debugging-and-profiling.md)
@@ -183,9 +186,13 @@ edit everyone forgets, the three Swift engines, the hybrid/SSM wall, and the `ml
 
 > 🔴 **GAP — nine declared, each with a safe default.** The `--architecture` name table is
 > community-measured only (`h18p` = iPhone 17 Pro, `h16c` = M4 Max) and **`coreai-build compile` exits
-> 0 for any architecture you ask for**, so only a device load validates the choice. Whether AOT is
-> strictly required on iOS is unresolved — compile everything you ship. Also open: the `.aimodel`'s
-> inner `metadata.json` schema, and what `COREAI_QUERY_BUCKET_SIZE` does.
+> 0 for any architecture you ask for**, so only a device load validates the choice — and note the
+> `coreai-build` wrapper is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29;
+> 10.3 §10.2 has the `aimodelc` details). Whether AOT is strictly required on iOS is unresolved —
+> compile everything you ship. Also open: the `.aimodel`'s inner `metadata.json` schema, and what
+> `COREAI_QUERY_BUCKET_SIZE` does. Two former gaps closed against the captured macOS 27.0 beta SDK
+> interface: `SpecializationOptions` is available on iOS (10.1 §8.1), and the runtime
+> cache/specialize API narrated in WWDC 324 is spelled exactly as transcribed (10.3 §10.1).
 
 ---
 

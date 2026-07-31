@@ -83,8 +83,11 @@ is explicit:
 ✅ **VERIFIED** — read from the `MetalPerformancePrimitives` headers in the Xcode SDK.
 
 > ⚠️ WWDC26 session 330 describes this API as "new in iOS/macOS 27". **The header says 26.2.**
-> Precedence rules put the header above the transcript, so treat 26.2 as the floor. This is one of
-> the several already-superseded transcript claims the series warns about. See
+> Precedence rules put the header above the transcript, so treat 26.2 as the floor *for the base
+> API*. The sliver of "27" the session got right is the newer quantized surface: the macOS 27.0
+> beta SDK adds a second macro, `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0`
+> (`MPPTensorOpsAvailability.h:11`, checked 2026-07-29), gating the new int2/FP4/FP8 operand
+> formats and ue8m0 blockwise scale planes — those are 27.0-only. See
 > [Part 11](../../part-11-metal-and-tensorops/).
 
 MLX's own gating agrees, in three independent places (CMake SDK version, CMake deployment target,
@@ -228,10 +231,10 @@ read from its own symbol page.
 | Framework | Availability | Notes |
 |---|---|---|
 | **Core AI** | `iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta, tvOS 27.0+ Beta, visionOS 27.0+ Beta, watchOS 27.0+ Beta` | ✅ **VERIFIED** — framework index. Widest platform coverage of anything here — it is the only one with **tvOS**. |
-| **Evaluations** | `iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta, visionOS 27.0+ Beta, watchOS 27.0+ Beta` | ✅ **VERIFIED** — framework index. Everything in it is 27.0; **Swift-only** (Apple staff, thread 833729). No tvOS. |
+| **Evaluations** | `iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta, visionOS 27.0+ Beta, watchOS 27.0+ Beta` | ✅ **VERIFIED** — framework index. Everything in it is 27.0; **Swift-only** (Apple staff, thread 833729). No tvOS. Ships **inside Xcode** like XCTest — in the Xcode 27 beta's platform `Developer/Library/Frameworks`, not in the OS SDKs (checked 2026-07-29; [Part 6](../../part-06-evaluations/)). |
 | **Speech** (baseline) | `iOS 26.0+ … tvOS 26.0+, visionOS 26.0+` | ✅ **VERIFIED**. `SpeechAnalyzer`, `SpeechTranscriber`, `AnalyzerInput`, `AssetInventory`, `SpeechDetector`. **Has tvOS.** |
 | **Speech** (2026 additions) | `iOS 27.0+ Beta … tvOS 27.0+ Beta, visionOS 27.0+ Beta` | ✅ **VERIFIED**. `AnalyzerInputConverter`, `AssetInputSequenceProvider`, `CaptureInputSequenceProvider`. |
-| **MetalPerformancePrimitives / TensorOps** | **26.2** | ✅ **VERIFIED** — SDK header macro, above. Session 330's "27" is superseded. |
+| **MetalPerformancePrimitives / TensorOps** | **26.2** (base surface) · **27.0** (int2/FP4/FP8 operands, ue8m0 scale planes) | ✅ **VERIFIED** — SDK header macros, above. Session 330's "27" is superseded for the base API; the 27.0 beta SDK's second gate covers only the new quantized formats ([Part 11 guide 1 §1.2](../../part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md)). |
 
 Two per-symbol oddities worth knowing because they will bite exactly one person on your team:
 
@@ -1513,7 +1516,7 @@ request — treat the whole source as unreliable.
 | **`.aiasset` file extension** | Fabricated. No such thing appears in any Apple document, header or repository in this corpus. |
 | **A `coreai-torch convert` CLI** | Fabricated. The conversion entry point is a Python API; the only Core AI command-line tool documented by Apple is **`xcrun coreai-build compile`**. |
 | **An on-device LoRA training API in Foundation Models** | Fabricated. One community article describes `FineTuningExample(prompt:completion:)`, "training times under 10 minutes on A17 Pro", a 50 MB adapter cap and pausing below 20% battery. **None of it is attested by any other source.** What actually happened is the opposite: custom adapters were **discontinued** in OS 27, confirmed twice by Apple staff. |
-| **"TensorOps is new in iOS/macOS 27"** | Superseded. The SDK header gates on **26.2**. Session 330's framing is wrong for this API. |
+| **"TensorOps is new in iOS/macOS 27"** | Superseded for the base API — the SDK header gates on **26.2**. Only the newer quantized surface (int2/FP4/FP8 operands, ue8m0 scale planes) is 27.0, behind a second macro in the macOS 27.0 beta SDK (checked 2026-07-29). |
 | **"The 2M-download PCC limit is annual"** | Wrong. It is **cumulative/lifetime** first-time downloads across any of your apps. |
 | **"`developer.apple.com/apple-intelligence/private-cloud-compute/`"** | 404s. Use `developer.apple.com/private-cloud-compute/`. |
 

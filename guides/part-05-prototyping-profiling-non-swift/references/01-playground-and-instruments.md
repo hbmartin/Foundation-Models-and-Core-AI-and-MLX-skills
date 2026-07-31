@@ -591,7 +591,8 @@ final class FeedbackCollector {
 
 ### 3.2 The non-Swift hole
 
-> ✅ **VERIFIED** — community-tracked, `python-apple-fm-sdk` issue **#5** (OPEN as of 2026-07-27):
+> ✅ **VERIFIED** — community-tracked, `python-apple-fm-sdk` issue **#5** (OPEN as of 2026-07-29,
+> one comment, no activity since 2026-03-07):
 > feedback submission — `LanguageModelFeedback` and `logFeedbackAttachment` — **is Swift-only and is not
 > exposed by the Python SDK.** If you are prototyping in Python (see this part's `fm` CLI and Python SDK
 > guide), you must reproduce the issue in Swift before you can report it.
@@ -1050,9 +1051,20 @@ all:
 > four names down, do not let a coding agent fill them in, and be suspicious of any document that lists
 > six lane names without a citation.**
 >
-> **What would resolve it:** anyone with Xcode 27 opening the Foundation Models template and reading the
-> lane headers off the timeline, or a screenshot in the Instruments help / release notes. It is a
-> thirty-second job for someone with the toolchain and it has not been done here.
+> **Narrowed 2026-07-29, from the Xcode 27.0 beta on this machine.** The template itself is now on
+> disk and was inspected: `Instruments.app/Contents/Resources/templates/Foundation Models.tracetemplate`
+> (also listed by `xcrun xctrace list templates`). Its archive records **exactly one instrument,
+> `com.apple.FoundationModels`** ("Inspect Foundation Models usage") — all six lanes belong to that one
+> instrument, so the lane names live in the instrument's definition, not the template. And that
+> definition is **not in the host toolchain**: a full-text sweep of Instruments.app for the known lane
+> name "Model Inference" finds nothing, because modern instruments stream their definitions from the
+> **recording target** at attach time. Consequence: the thirty-second job needs more than the
+> toolchain — it needs a recording target running an OS 27 (device or Mac); the toolchain alone,
+> which this project now has, cannot produce the names.
+>
+> **What would resolve it:** anyone with Xcode 27 opening the Foundation Models template **against an
+> OS 27 target** and reading the lane headers off the timeline, or a screenshot in the Instruments
+> help / release notes.
 >
 > **What to do meanwhile:** the two named lanes carry the diagnoses in §8 and §10, which are the two
 > highest-value reads in the instrument. Work from those, and treat the other lanes as unlabelled context

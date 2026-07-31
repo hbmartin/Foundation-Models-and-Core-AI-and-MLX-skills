@@ -1743,7 +1743,7 @@ four must pass.
 > Complex dtypes are excluded outright.
 >
 > ⚠️ Upstream PR #3883 ("Warn once when float32 ops silently run at TF32 precision", open as of
-> 2026-07-16) exists because users are being surprised by this. **This is the MLX analogue of the
+> 2026-07-29) exists because users are being surprised by this. **This is the MLX analogue of the
 > Core AI silent-fallback problem**: a precision reduction that produces correct-looking numbers and
 > announces itself nowhere.
 

@@ -481,7 +481,11 @@ not a compile error; §6.5 covers what actually happens.
 > ```
 >
 > On PCC the property is asynchronous and throwing:
-> `var contextSize: Int { get async throws }`.[^pcc-context-size]
+> `var contextSize: Int { get async throws }`.[^pcc-context-size] Now also ✅ **SDK-verified**:
+> `nonisolated(nonsending) final public var contextSize: Swift.Int { get async throws }`
+> (`FoundationModels-27.0-macos.swiftinterface:129-139`) — a computed property, not a constant;
+> there is no 32K literal anywhere in the interface, so the published figure is documentation, and
+> the property is the only programmatic source.
 
 The trap: `contextSize` was **announced** in a 27-era session but **shipped** in the 26.4 SDK for
 `SystemLanguageModel`. So `SystemLanguageModel.default.contextSize` must **not** be wrapped in an
@@ -791,14 +795,18 @@ and then file bugs against the wrong one.
 Note what is and is not in that list. iOS, macOS, watchOS, visionOS. **iPadOS follows iOS.** tvOS and
 Mac Catalyst are absent from every PCC availability statement in our corpus.
 
-> 🔴 **GAP — tvOS and Mac Catalyst availability for `PrivateCloudComputeLanguageModel`.** Neither
-> appears in the docs snippet, in session 319, or in any forum answer we hold. Their absence from one
-> code sample is weak evidence of unavailability, not proof. **What would resolve it:** the
-> availability line on `/documentation/foundationmodels/privatecloudcomputelanguagemodel`, which we
-> have as a type declaration but not as a platform list beyond "iOS 27.0+ Beta". **Safe default
-> meanwhile:** include only the four platforms Apple's own snippet lists, and let the `else` branch
-> handle everything else. You lose nothing on a platform that turns out to support it; you avoid
-> shipping a `#available` that silently opens a door to an unimplemented framework.
+> ✅ **RESOLVED (2026-07-29) — the availability annotations, read from the 27.0 interface.** Every
+> `PrivateCloudComputeLanguageModel` declaration is
+> `@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)` with an explicit
+> `@available(tvOS, unavailable)` — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:43-48` and repeated on every extension). So:
+> **tvOS: unavailable, stated in the SDK.** watchOS 27.0 is *included* — notable, because
+> `SystemLanguageModel` is `watchOS, unavailable` (`:253-256`), making PCC the only Apple-hosted
+> `LanguageModel` on watch. **Mac Catalyst:** there is no `macCatalyst` attribute anywhere in the
+> interface, and the module is built with `-target-variant arm64e-apple-ios27.0-macabi` (`:3`), so
+> Catalyst inherits the iOS 27.0 floor at the *declaration* level — whether the PCC service answers
+> a Catalyst process at runtime is still unobserved. Apple's four-platform `#available` snippet is
+> exactly right; copy it.
 
 A community-shipping variant of the same check omits watchOS and includes visionOS
 (`AFMLLMClient.swift:91`: `if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *)`) — a reminder that
@@ -1055,11 +1063,15 @@ which is a Part 4 provider-authoring concern, not a PCC concern. Two practical c
 1. **`ReasoningLevel` is not exhaustively switchable in a future-proof way.** If you switch over it,
    handle `.custom` (and consider `@unknown default`, since nothing in our sources marks the enum
    frozen).
-2. 🔴 **GAP — `.custom(_:)`'s associated value type.** Our index records the case as `custom(_:)` with
-   no payload type. It could be a `String`, an `Int`, or a nested struct. **What would resolve it:**
-   `/documentation/foundationmodels/contextoptions/reasoninglevel-swift.enum/custom(_:)`.
-   **Safe default meanwhile:** do not construct `.custom` against PCC. Nothing suggests the PCC model
-   accepts one, and §6.6 shows what happens when a model is handed a level it does not support.
+2. ✅ **RESOLVED (2026-07-29) — `.custom(_:)`'s associated value is a `String`.** The full enum is
+   read verbatim from the 27.0 interface: `case light`, `case moderate`, `case deep`,
+   `case custom(Swift.String)` — ✅ **SDK-verified**
+   (`FoundationModels-27.0-macos.swiftinterface:3077-3083`; not `@frozen`, so keep the
+   `@unknown default`). Note also that both fields of `ContextOptions` are **Optional** —
+   `includeSchemaInPrompt: Bool?`, `reasoningLevel: ReasoningLevel?`, `init` defaults both to `nil`
+   (`:3068-3072`). **Safe default unchanged:** do not construct `.custom` against PCC. Nothing
+   suggests the PCC model accepts an arbitrary string, and §6.6 shows what happens when a model is
+   handed a level it does not support.
 
 Note also `includeSchemaInPrompt` on the same struct — `ContextOptions` is a general "how does my
 prompt reach the model" bag, not a reasoning-only type. That is the distinction session 339 draws:
@@ -1388,15 +1400,15 @@ creates: in a dynamic profile that switches models by mode (§4.4), a `.reasonin
 attached to the wrong branch fails at *request* time, in the branch you tested least. Attach
 reasoning modifiers to the same branch that attaches `.model(serverModel)`, never above the switch.
 
-> 🔴 **GAP — whether `PrivateCloudComputeLanguageModel` publicly exposes `capabilities`.** `capabilities`
-> is a requirement of the `LanguageModel` protocol (✅ docs), PCC conforms to `LanguageModel` (✅ docs),
-> and Apple's docs show reading it off a model value (`if selectedModel.capabilities.contains(.guidedGeneration)`,
-> `:1823`). But the PCC symbol page's member list in our notes does **not** include `capabilities`, so
-> we cannot say the property is surfaced on the concrete class rather than only through a protocol
-> existential. **What would resolve it:** the full member list on
-> `/documentation/foundationmodels/privatecloudcomputelanguagemodel`. **Safe default meanwhile:** if
-> `pccModel.capabilities.contains(.reasoning)` compiles for you, use it as a runtime probe; if it does
-> not, fall back to the documented capability table (§3.2) and the typed error in §9.
+> ✅ **RESOLVED (2026-07-29) — yes, `capabilities` is public on the concrete class.** The PCC
+> `LanguageModel` conformance declares `final public var capabilities: LanguageModelCapabilities
+> { get }` (and `executorConfiguration`) directly on `PrivateCloudComputeLanguageModel` —
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:96-105`). So
+> `pccModel.capabilities.contains(.reasoning)` compiles as a concrete property read; the declared
+> `Capability` statics are `.vision`, `.guidedGeneration`, `.reasoning`, `.toolCalling`
+> (`:1468-1483`). What the property *returns* on a real PCC-entitled device is still unobserved —
+> use it as the runtime probe, with the documented capability table (§3.2) and the typed error in
+> §9 as the cross-check.
 
 ---
 
@@ -1493,19 +1505,17 @@ Type notes, precisely:
 - **`isLimitReached: Bool`** is a top-level convenience on `QuotaUsage`, *not* a case of `Status`. Both
   Apple's snippet and shipping third-party code read it directly.
 - **`Status`** has at least `.belowLimit(_:)`, whose associated value exposes `isApproachingLimit: Bool`.
-  🔴 **GAP — the full `Status` case list is unverified.** Our notes say so explicitly
-  (`notes/web/apple-docs-fm-evals-speech.md:1758`: *"Exact `Status` case list UNVERIFIED"*). There is
-  presumably a limit-reached case, and possibly an unknown/indeterminate one. **What would resolve
-  it:** `/documentation/foundationmodels/privatecloudcomputelanguagemodel/quotausage-swift.struct/status-swift.enum`.
-  **Safe default meanwhile:** follow Apple's own snippet exactly — test `isLimitReached` **first**,
-  then `if case .belowLimit(let info) = status`, and let everything else fall through to the normal
-  state. Do not write an exhaustive `switch` over `Status`; you cannot know it is exhaustive.
-- **`resetDate`** is optional-shaped. Docs: *"Use `resetDate` to inspect when a person's quota
-  refreshes. **This value is empty when the reset date isn't known or when the person is well below
-  their limit.**"* 🟡 The declared type is not in our notes — "empty" implies `Date?`, and shipping
-  code passes it straight into an app enum case `limitReached(resetDate:)`
-  (`AppleFoundationModelAvailability.swift:167-169`, community). Treat it as optional and never render
-  a bare unwrapped date.
+  ✅ **RESOLVED (2026-07-29) — the full `Status` case list is exactly two:**
+  `case belowLimit(Status.BelowLimit)` and `case limitReached(Status.LimitReached)` —
+  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:224-241`). `BelowLimit` carries
+  `isApproachingLimit: Bool`; `LimitReached` is an empty payload struct; there is no
+  unknown/indeterminate case, and the enum is **not** `@frozen`. **Keep following Apple's snippet
+  shape anyway** — test `isLimitReached` first, then `if case .belowLimit(let info) = status` —
+  because a non-frozen enum can grow and the convenience `Bool` insulates you.
+- **`resetDate`** is `Date?` — ✅ **SDK-verified**
+  (`FoundationModels-27.0-macos.swiftinterface:211`), matching the docs' *"this value is empty when
+  the reset date isn't known or when the person is well below their limit."* Never render a bare
+  unwrapped date.
 - **`limitIncreaseSuggestion: LimitIncreaseSuggestion?`** is optional, and its optionality is the
   signal. `show()` presents **system** UI for the upgrade — you do not build the upgrade flow, and you
   do not know what it contains. Shipping code checks `!= nil` to decide whether to offer the
@@ -1899,17 +1909,20 @@ internet and cannot reach Apple's servers"*, which is the case that should trigg
 on-device retry (§5.6), whereas `.serviceUnavailable` is closer to "Apple is having a bad day" and
 should trigger the same fallback with a different message.
 
-> 🔴 **GAP — the relationship between `PrivateCloudComputeLanguageModel.Error` and `LanguageModelError`.**
-> Our corpus flags this explicitly (`notes/transcripts/fm-ecosystem.md:2076-2078`): PCC's error appears
-> to be a **nested type separate from** `LanguageModelError`, and the relationship is unclear. Open
-> questions we cannot answer: does a PCC quota failure ever arrive as `LanguageModelError.rateLimited`
-> instead? Are PCC errors ever *wrapped* in a `LanguageModelError`? Does
-> `PrivateCloudComputeLanguageModel.Error` conform to `LocalizedError` the way `LanguageModelError`
-> does? **What would resolve it:** the `/documentation/foundationmodels/privatecloudcomputelanguagemodel/error`
-> page's conformance list, or a device trace of a real quota exhaustion. **Safe default meanwhile:**
-> catch **both** types, and treat `LanguageModelError.rateLimited` as a quota-shaped condition too —
-> the cost of handling it twice is one extra `catch` clause; the cost of missing it is an unhandled
-> error in front of a user.
+> 🔴 **GAP (narrowed 2026-07-29) — the relationship between
+> `PrivateCloudComputeLanguageModel.Error` and `LanguageModelError`.** The declaration side is now
+> settled: PCC's error is `public enum Error : Swift.Error, Foundation.LocalizedError`, nested on
+> the class, with exactly the three cases in the table and payload structs
+> (`NetworkFailure`/`QuotaLimitReached`/`ServiceUnavailable`, each `Sendable` with
+> `debugDescription`; `QuotaLimitReached` also carries `limitIncreaseSuggestion:` and
+> `resetDate: Date?`) — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:150-204`). So: yes, it conforms to `LocalizedError`
+> (and `CustomDebugStringConvertible`, `:160-166`); it is a **disjoint type** from
+> `LanguageModelError` with no conformance or wrapping relationship visible in the interface. What
+> the interface cannot show is **runtime routing**: whether a PCC quota failure ever arrives as
+> `LanguageModelError.rateLimited` instead (both types exist and both have a quota-ish case).
+> **Safe default unchanged:** catch **both** types, and treat `LanguageModelError.rateLimited` as a
+> quota-shaped condition too — the cost is one extra `catch` clause.
 
 > 🟡 **RECONSTRUCTED — the payload-less catch pattern.** Every case carries an associated value, so
 > `catch PrivateCloudComputeLanguageModel.Error.quotaLimitReached` (no binding) relies on Swift's
@@ -2065,7 +2078,7 @@ Old → new mapping, for the ones that are not obvious
 | `unsupportedGuide` | `LanguageModelError.unsupportedGenerationGuide` |
 | `assetsUnavailable` | `SystemLanguageModel.Error.assetsUnavailable` |
 | `concurrentRequests` | `LanguageModelSession.Error.concurrentRequests` |
-| `decodingFailure` | 🔴 no obvious successor — possibly `GeneratedContent.ParsingError`, **unverified** |
+| `decodingFailure` | ✅ `GeneratedContent.ParsingError` — stated by the SDK's own per-case deprecation message, *"Use ``GeneratedContent/ParsingError`` instead."* (`FoundationModels-27.0-macos.swiftinterface:3491-3494`, verified 2026-07-29) |
 
 ### 9.4 Two error codes that mean nothing and will still find you
 

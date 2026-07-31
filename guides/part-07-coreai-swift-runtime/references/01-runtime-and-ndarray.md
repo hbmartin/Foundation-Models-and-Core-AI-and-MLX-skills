@@ -6,9 +6,11 @@
 **iOS 27.0 · iPadOS 27.0 · macOS 27.0 · Mac Catalyst 27.0 · tvOS 27.0 · visionOS 27.0 ·
 watchOS 27.0**, all marked **Beta** in Apple's documentation as of this writing (2026-07-27).
 There is no back-deployment: Core AI is a *new framework* in the 27 cycle, not a rename of
-Core ML, and nothing here exists on a 26.x SDK. Three APIs are narrower than the framework —
-`NDArray.RawView.init(metalBuffer:…)`, `InferenceFunction.AsyncValue.init(unsafeBuffer:…)` and
-`ComputeStream.init(commandQueue:)` **drop watchOS** — and are marked as such where they appear.
+Core ML, and nothing here exists on a 26.x SDK. Three APIs are narrower than the framework *per
+the doc pages* — `NDArray.RawView.init(metalBuffer:…)`, `InferenceFunction.AsyncValue.init(unsafeBuffer:…)`
+and `ComputeStream.init(commandQueue:)` **drop watchOS** — and are marked as such where they
+appear. (⚠️ The captured macOS 27.0 beta SDK interface declares all three `watchOS 27.0`; see
+§16.3 for the discrepancy.)
 Build with **Xcode 27**, and install the **Metal Toolchain** (see §0.3) or your first build with a
 `.aimodel` in it will fail.
 
@@ -48,8 +50,9 @@ Read this guide to learn:
 - **Image-typed inputs and outputs** — `CVMutablePixelBuffer`, `ImageDescriptor` — and the fact
   that image orientation is *entirely your problem*, which Apple's own repository demonstrates by
   getting it wrong two different ways.
-- **The error-type gap**, prominently, because it blocks something you need to do on day one:
-  writing a correct `catch` block.
+- **The error-type answer** — settled against the macOS 27.0 beta SDK interface: the runtime's
+  throws are untyped, `AssetError` is the only public error type, and §13 shows the `catch` block
+  that follows from that.
 
 ## What this does *not* cover
 
@@ -135,7 +138,7 @@ Two consequences you should hold onto while reading:
 - [10. States and pre-allocated outputs: `MutableViews`](#10-states-and-pre-allocated-outputs-mutableviews)
 - [11. The three low-level performance APIs](#11-the-three-low-level-performance-apis)
 - [12. Image-typed values, and whose problem orientation is](#12-image-typed-values-and-whose-problem-orientation-is)
-- [13. 🔴 The error-type gap, and how to write a `catch` block anyway](#13--the-error-type-gap-and-how-to-write-a-catch-block-anyway)
+- [13. ✅ The error-type answer, and how to write a `catch` block](#13--the-error-type-answer-and-how-to-write-a-catch-block)
 - [14. A complete runner you can paste](#14-a-complete-runner-you-can-paste)
 - [15. Quick reference](#15-quick-reference)
 - [16. Sources and evidence ledger](#16-sources-and-evidence-ledger)
@@ -559,8 +562,10 @@ write a cache-eviction path:
 > **defers deletion** until that instance is deallocated."*
 >
 > Those are different contracts. **Assume it throws** — write the release-then-delete-then-retry
-> path, since that is correct under both readings. Resolving this needs either a `.swiftinterface`
-> dump or a device experiment; see §13 for why you cannot even name the error you would catch.
+> path, since that is correct under both readings. The macOS 27.0 beta `.swiftinterface` dump
+> (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:37-43`) confirms all four delete
+> APIs are spelled as plain `throws`, but an interface cannot say *when* they throw — resolving the
+> contract still needs a device experiment. And the error they would throw is untyped; see §13.
 
 ---
 
@@ -704,13 +709,14 @@ Engine preference. Direct `AIModel` callers choose their own `SpecializationOpti
 > [Part 16](../../part-16-adjacent-capabilities/) for the vision-pipeline treatment.
 
 > ⚠️ **`SpecializationOptions.expectFrequentReshapes` is real but undocumented.** ✅ VERIFIED as a
-> mutable property in Apple's shipping Swift (above) and in the documentation's member list
-> (`var expectFrequentReshapes: Bool` — the only non-`get`-only property on the type). Its
-> documentation page carries an abstract — *"Setting to allow more optimal specialization if the
-> model performs frequent reshapes based on usage"* — and **no Discussion section at all**. 🔴 The
-> **default value is undocumented**, and no initializer sets it. Safe default: leave it alone
-> unless your model has dynamic shapes that change every call, in which case follow Apple's own
-> code and set it on a `var` copy of the options.
+> mutable property in Apple's shipping Swift (above) and now ✅ **SDK-verified**
+> (`CoreAIDelegates-27.0-macos.swiftinterface:100`): `public var expectFrequentReshapes: Bool`, the
+> only settable property on the type. Its documentation page carries an abstract — *"Setting to
+> allow more optimal specialization if the model performs frequent reshapes based on usage"* — and
+> **no Discussion section at all**. 🔴 The **default value is still undocumented** — a stored
+> property's initial value does not print in a `.swiftinterface`, and no initializer sets it. Safe
+> default: leave it alone unless your model has dynamic shapes that change every call, in which
+> case follow Apple's own code and set it on a `var` copy of the options.
 
 ---
 
@@ -1506,30 +1512,31 @@ Apple also documents when the interleaved form is *necessary* rather than merely
 > ✅ **VERIFIED** — full enumeration from `/documentation/coreai/ndarray/scalartype`. `int4` doc,
 > verbatim: *"Four-bit signed integers can represent values in the range **[-8, 7]**. Widely used in
 > model quantization for efficient storage and computation."* Note there is **no `int1`** (only
-> `uint1`) and **no `uint0`**.
+> `uint1`) and **no `uint0`**. All 35 cases confirmed, byte for byte, against the SDK
+> (✅ **SDK-verified** — `CoreAIRuntime-27.0-macos.swiftinterface:1361-1396`).
 
 Why those exist at all is a Part 9 question — they are the storage types Core AI Optimization
 produces. What matters *here* is the runtime consequence:
 
-> 🔴 **GAP — how do you get a typed `View` for a sub-byte or 8-bit-float scalar type?**
+> ✅ **RESOLVED (was a GAP) — there is no typed `View` for sub-byte or 8-bit-float scalar types in
+> the macOS 27.0 beta SDK.**
 >
-> `view(as:)` requires `T : BitwiseCopyable`, and there is **no Swift standard type** for `int4`,
-> `uint3`, `float8e4m3fn` or `float8e8m0fn`. Nothing in the 312-symbol index provides a Core AI
-> `Int4` or `Float8E4M3FN` type either. Additionally, `RawView.view(as:)`'s note references
-> **`self.scalarType.type`** — a member that **does not appear anywhere in the 312-symbol index**,
-> so it is undocumented or internal.
+> The interface dump settles both halves (✅ **SDK-verified** —
+> `CoreAIRuntime-27.0-macos.swiftinterface`, captured 2026-07-29):
 >
-> **What is unknown:** whether typed views exist for sub-byte types at all, and what
-> `ScalarType.type` is.
+> - `view(as:)` requires `T : BitwiseCopyable` (`:591-599`), and the module declares **no element
+>   type** for `int4`, `uint3`, `float8e4m3fn` or `float8e8m0fn` — no Core AI `Int4` or
+>   `Float8E4M3FN` exists anywhere in the public surface. The raw-bytes path is the only public
+>   route to these tensors.
+> - **`ScalarType.type` is not in the public interface.** The `ScalarType` declaration
+>   (`:1359-1408`) contains only the 35 cases, `CaseIterable`/`Hashable` machinery, and nothing
+>   else — the member `RawView.view(as:)`'s doc note references is internal, leaked into the docs.
 >
-> **What would resolve it:** a dump of `CoreAI.swiftinterface` from the Xcode 27 SDK, or a
-> `ScalarType.allCases` walk on device printing whatever `.type` resolves to.
->
-> **Safe default meanwhile:** treat sub-byte and 8-bit-float tensors as **opaque**. Use `rawView()`
-> / `mutableRawView()` and `withUnsafeBytes` / `withUnsafeMutableBytes`, and do your own bit
-> unpacking. In practice you rarely need to: these types appear as *weight storage* inside the
-> model, not as function I/O. If one shows up as an input or output scalar type, that is worth a
-> second look at the export before you write an unpacker.
+> **Safe default (unchanged, now the *only* option):** treat sub-byte and 8-bit-float tensors as
+> **opaque**. Use `rawView()` / `mutableRawView()` and `withUnsafeBytes` / `withUnsafeMutableBytes`,
+> and do your own bit unpacking. In practice you rarely need to: these types appear as *weight
+> storage* inside the model, not as function I/O. If one shows up as an input or output scalar
+> type, that is worth a second look at the export before you write an unpacker.
 
 ### 7.10 ⚠️ SILENT FAILURE: assuming the output dtype from the input descriptor
 
@@ -2788,42 +2795,66 @@ platform-conditional.
 
 ---
 
-## 13. 🔴 The error-type gap, and how to write a `catch` block anyway
+## 13. ✅ The error-type answer, and how to write a `catch` block
 
-This is the most consequential unknown in the Core AI Swift API, and it blocks something you have to
-do on day one.
+This was the most consequential unknown in the Core AI Swift API, and it blocked something you have
+to do on day one. It is now settled — by reading the SDK itself.
 
-### 13.1 The gap, stated precisely
+### 13.1 The answer, stated precisely
 
-> 🔴 **GAP — the error type thrown by `AIModel.init`, `loadFunction`, `run`, `encode` and the cache
-> deletion methods is not documented anywhere.**
+> ✅ **VERIFIED (SDK) — in the macOS 27.0 beta interface, the throwing runtime APIs throw *untyped*
+> errors, and the only public error type in the entire Core AI Swift surface is
+> `CoreAIAsset.AssetError`.**
 >
-> **What we checked.** All 312 indexed Core AI symbols. The framework's documentation groups exactly
-> **one** type under "Errors":
+> On 2026-07-29 the shipped module interfaces were dumped from the Xcode 27.0 beta (27A5228h)
+> macOS 27.0 SDK into `notes/sdk-interfaces/`. The structural discovery first:
+> **`CoreAI` is an umbrella.** The `CoreAI` module is a one-line
+> `@_exported public import CoreAIDelegates`, and `CoreAIDelegates` in turn re-exports
+> `CoreAIAsset`, `CoreAICommon`, `CoreAICompiler` and `CoreAIRuntime`
+> (`CoreAIDelegates-27.0-macos.swiftinterface:5-8`). `CoreAICommon`, `CoreAICompiler` and
+> `CoreAICache` have **empty public Swift surfaces** in this beta.
+>
+> With the whole surface in hand, the error question closes:
+>
+> - **`CoreAIRuntime` declares no public error type at all.** Every throwing API is a plain,
+>   untyped `throws` / `async throws`: both `run` overloads
+>   (✅ **SDK-verified** — `CoreAIRuntime-27.0-macos.swiftinterface:96-103`), `encode` (`:92-95`),
+>   and the async value getters on `AsyncValue` / `AsyncMutableValue` (`:28-36`, `:60-68`).
+> - **The loading surface lives in `CoreAIDelegates`, and it is untyped too:**
+>   `AIModel.init(contentsOf:options:)` and `AIModel.specialize(…)` are `async throws`
+>   (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:22-26`),
+>   `loadFunction(named:)` is `throws -> InferenceFunction?` (`:119-122`), and all four cache
+>   `delete*` methods plus `model(for:options:)` are plain `throws` (`:33-43`).
+> - **The one public error type** is `AssetError` in `CoreAIAsset`
+>   (✅ **SDK-verified** — `CoreAIAsset-27.0-macos.swiftinterface:230-237`, `Kind` at `:239-247`):
 >
 > ```swift
-> struct AssetError: Error, LocalizedError, Sendable, SendableMetatype
-> var kind: AssetError.Kind { get }
-> var debugMessage: String? { get }
-> var errorDescription: String? { get }
-> init(kind: AssetError.Kind, debugMessage: String?)
->
-> enum Kind: Sendable, SendableMetatype {
->     case corruptedMetadata            // "the asset metadata is corrupted"
->     case duplicateName                // "a component with that name already exists in the asset"
->     case invalidFeatureType(String)
->     case invalidName
->     case unsupportedVersion(String)   // "a more recent version of this library generated the asset"
+> public struct AssetError: Error, LocalizedError {     // CoreAIAsset-27.0:230-237
+>     public var kind: AssetError.Kind
+>     public var debugMessage: String?
+>     public init(kind: AssetError.Kind, debugMessage: String?)
+>     public var errorDescription: String? { get }
+> }
+> extension AssetError {                                // CoreAIAsset-27.0:239-247
+>     public enum Kind: Sendable {
+>         case unsupportedVersion(String)   // "a more recent version of this library generated the asset"
+>         case invalidFeatureType(String)
+>         case corruptedMetadata            // "the asset metadata is corrupted"
+>         case invalidName
+>         case duplicateName                // "a component with that name already exists in the asset"
+>     }
 > }
 > ```
 >
-> ✅ VERIFIED — and its abstract is *"An error that occurs during **model asset operations**."* Every
+> Its documentation abstract is *"An error that occurs during **model asset operations**."* Every
 > case is about the *asset file*: metadata, names, versions. **Nothing in it describes an inference
-> failure, a specialization failure, a compute-unit failure, or a cache-eviction conflict.**
+> failure, a specialization failure, a compute-unit failure, or a cache-eviction conflict — and in
+> the macOS 27.0 beta interface, no public type does.** There is no public inference,
+> specialization or cache error enum to catch.
 >
 > Note also that `AssetError` has a **public initializer**, so it is not a sealed system error — app
-> code can construct one. That is a hint that it is a *reporting* type for asset tooling rather than
-> the framework's error taxonomy.
+> code can construct one. It is a *reporting* type for asset tooling, not the framework's error
+> taxonomy; the framework does not publish one.
 >
 > **What Apple's own documentation does instead of naming a type.** Several `- Throws:` clauses are
 > malformed in the published docs and render as orphaned Notes with no type attached:
@@ -2832,10 +2863,10 @@ do on day one.
 > - on `AIModelCache.model(for:options:)`: *"If a cache entry was found but the specialized asset
 >   failed to load."*
 >
-> Those are truncated sentences where a type name should be. There is no page anywhere that says
-> what is thrown.
+> Those clauses now read as consistent with the interface: there is no type name to print, because
+> the throws are untyped.
 >
-> **What we *do* know, from the field.** ⚠️ **Community-reported**, from a `apple/coreai-models`
+> **What about `AIModelError`?** ⚠️ **Community-reported**, from a `apple/coreai-models`
 > GitHub issue thread (2026-07, macOS 27 beta, AOT-compiled `.aimodelc`): a failed load surfaced as
 >
 > ```
@@ -2843,30 +2874,24 @@ do on day one.
 > invalidCompiledModel                      ← as re-mapped by llm-runner / LanguageBundle
 > ```
 >
-> So there *is* something spelled `AIModelError`, living under something spelled `CoreAIDelegates`,
-> surfacing in `NSError` style with a numeric code. **It is not in the public symbol index**, its
-> case table has never been read, and you cannot pattern-match on a type you cannot name. Treat that
-> string as a diagnostic breadcrumb, not an API.
+> The interface dump confirms what that breadcrumb implied: something spelled `AIModelError` exists
+> *inside* `CoreAIDelegates`, but it is **not present in the module's public interface in the
+> macOS 27.0 beta SDK** — it is internal, surfacing only through `NSError` bridging with a numeric
+> code. You still cannot pattern-match on it, and that is now a verified fact about the beta SDK
+> rather than a documentation hole.
 >
-> **What this blocks:** writing `catch let error as SomeCoreAIError` and branching on
-> "out of memory" vs "corrupt asset" vs "compute unit unavailable" vs "OS updated and invalidated
-> your cache". You cannot do that today.
->
-> **What would resolve it, in order of cost:**
-> 1. A dump of the shipped module interface —
->    `$(xcrun --show-sdk-path)/System/Library/Frameworks/CoreAI.framework/Modules/CoreAI.swiftmodule/*.swiftinterface`
->    on a machine with Xcode 27. This would settle it in one command and would also close the
->    `ScalarType.type` gap in §7.9 and the macOS-availability question in §16.3.
-> 2. A deliberate failure on device with the diagnostic helper in §13.2, which prints the dynamic
->    type and the `NSError` domain/code.
-> 3. An Apple-staff forum answer or a `/documentation/updates/coreai` page appearing (it currently
->    404s).
+> **What this means for your `catch` blocks:** match `AssetError` (and switch on its five `Kind`
+> cases above) for asset operations; everything else — specialization, load, run, cache deletion —
+> must go through a generic `catch`, logging the `NSError` domain/code for diagnostics. Branching on
+> "out of memory" vs "compute unit unavailable" vs "cache invalidated" is not possible with the
+> public API in this beta. If a later seed publishes an error taxonomy, this section will be
+> revised; the diagnostic helper in §13.2 is how you would notice first.
 
-### 13.2 The safe default: catch broadly, log richly, degrade
+### 13.2 The practice: catch `AssetError`, then catch broadly, log richly, degrade
 
-Until the taxonomy is published, correct Core AI error handling has three properties: it **catches
-everything**, it **records enough to diagnose later**, and it **degrades rather than retrying
-blindly**.
+Because the beta SDK publishes no taxonomy beyond `AssetError`, correct Core AI error handling has
+three properties: it **catches everything**, it **records enough to diagnose later**, and it
+**degrades rather than retrying blindly**.
 
 ```swift
 import CoreAI
@@ -2902,9 +2927,9 @@ func describeCoreAIError(_ error: any Error) -> String {
 ```
 
 `String(reflecting: type(of: error))` is the important line. It gives you the fully-qualified
-dynamic type of whatever was actually thrown — which is precisely the information the documentation
-is missing. **If you run this and get a type name, you have resolved the gap for your own codebase,
-and you should write it down.**
+dynamic type of whatever was actually thrown — including non-public types like
+`CoreAIDelegates.AIModelError` that the interface hides (§13.1). **Log it: it is your only window
+into the internal taxonomy, and the first place a future seed's public error type will show up.**
 
 Now the ladder. Note the ordering rule: **the specific named type first, the broad catch last** —
 Swift matches `catch` clauses in order, so a bare `catch` above a typed one makes the typed one dead
@@ -2947,8 +2972,8 @@ func prepareFeature(modelURL: URL,
         return .needsRedownload
 
     } catch {
-        // EVERYTHING else — specialization failure, load failure, OOM, an
-        // undocumented AIModelError. We cannot distinguish these today (§13.1).
+        // EVERYTHING else — specialization failure, load failure, OOM, the
+        // non-public AIModelError. We cannot distinguish these today (§13.1).
         log.error("Core AI failure: \(describeCoreAIError(error), privacy: .public)")
         return .unavailable(reason: error.localizedDescription)
     }
@@ -3368,6 +3393,11 @@ print("logits \(shape): \(logits.prefix(8))")
 
 ### 15.1 The whole runtime API on one screen
 
+> ✅ **SDK-verified as a whole (2026-07-29):** every declaration in this block was checked against
+> the captured macOS 27.0 beta interfaces (`CoreAIRuntime` / `CoreAIDelegates` / `CoreAIAsset` —
+> see §16.1). `import CoreAI` works because `CoreAI` is an umbrella re-export of `CoreAIDelegates`,
+> which re-exports the rest.
+
 ```swift
 import CoreAI      // iOS/iPadOS/macOS/Mac Catalyst/tvOS/visionOS/watchOS 27.0+ (Beta)
 
@@ -3406,7 +3436,8 @@ struct InferenceFunction: Sendable, SendableMetatype
   struct Outputs       { mutating func remove(_: String) -> InferenceValue?
                          var count: Int; var names: some Collection<String> }
   struct MutableViews  { init(); mutating func insert(…, for: String) }    // 3 overloads
-  final class AsyncValue          // Sendable; init(NDArray) / (CVReadOnlyPixelBuffer) / (unsafeBuffer:…)
+  final class AsyncValue          // Sendable; init(NDArray) / (CVReadOnlyPixelBuffer) /
+                                  //   (unsafeBuffer:…) / (AsyncMutableValue)
                                   // var ndArray: NDArray? { get async throws }
   struct AsyncMutableValue        // init(NDArray) / (CVMutablePixelBuffer) / (descriptor:) / (unsafeBuffer:…)
   struct AsyncMutableViews { init(); mutating func insert(_: inout AsyncMutableValue, for: String) }
@@ -3485,8 +3516,9 @@ struct NDArrayDescriptor: Equatable, Sendable
 
 // ───────── Streams & configuration ─────────
 final class ComputeStream
-  convenience init(); init(commandQueue: any MTLCommandQueue)     // ⚠️ no watchOS on the latter
-  final func currentWorkCompleted() async                          // non-throwing
+  convenience init(); init(commandQueue: any MTLCommandQueue)     // docs say no watchOS on the
+  final func currentWorkCompleted() async                          //   latter; SDK declares
+                                                                   //   watchOS 27.0 (§16.3). non-throwing
 
 struct SpecializationOptions: Hashable, Sendable                   // ⚠️ part of the cache key
   static let `default`; static let cpuOnly
@@ -3508,9 +3540,12 @@ final class AIModelCache: Sendable
   struct Policy { static let `default`, persistent; init(purgeConditions:) }
 
 // ───────── Errors ─────────
-struct AssetError: Error, LocalizedError, Sendable      // ⚠️ ASSET operations only — see §13
-  enum Kind { case corruptedMetadata, duplicateName, invalidFeatureType(String),
-                   invalidName, unsupportedVersion(String) }
+struct AssetError: Error, LocalizedError               // ⚠️ ASSET operations only — see §13
+  enum Kind { case unsupportedVersion(String), invalidFeatureType(String),
+                   corruptedMetadata, invalidName, duplicateName }
+// ✅ SDK-verified: the ONLY public error type in the whole Core AI surface
+// (CoreAIAsset-27.0-macos.swiftinterface:230-247). Everything else throws untyped.
+// (Docs also list Sendable on AssetError; the beta interface does not declare it.)
 ```
 
 ### 15.2 `nil` vs `throws` vs trap — the cheat sheet
@@ -3561,13 +3596,25 @@ struct AssetError: Error, LocalizedError, Sendable      // ⚠️ ASSET operatio
 8. **Bound your fan-out.** `Sendable` is a correctness guarantee, not a memory guarantee.
 9. **Build optimized.** `-Onone` changes the performance class, not just the constant factor.
 10. **Wrap every Core AI error in your own type at the boundary**, with `underlying: any Error`.
-    Until the taxonomy is published (§13), an unnamed error must never reach your control flow.
+    The beta SDK publishes no taxonomy beyond `AssetError` (§13), so an unnamed error must never
+    reach your control flow.
 
 ---
 
 ## 16. Sources and evidence ledger
 
 ### 16.1 What was read for this guide
+
+**SDK module interfaces** (captured 2026-07-29 from the Xcode 27.0 beta, 27A5228h, macOS 27.0 SDK —
+now the strongest evidence class in this guide, stronger than doc pages): the shipped
+`.swiftinterface` files for `CoreAI` (a one-line umbrella re-exporting `CoreAIDelegates`),
+`CoreAIDelegates` (which re-exports `CoreAIAsset`, `CoreAICommon`, `CoreAICompiler`,
+`CoreAIRuntime` and adds the `AIModel` loading/caching surface), `CoreAIRuntime` (1,428 lines —
+`AIModel`, `InferenceFunction`, `InferenceValue`, `NDArray` and all views, `NDArrayDescriptor`,
+`ImageDescriptor`, `ComputeStream`), `CoreAIAsset` (`AIModelAsset`, `AssetError`), plus
+`CoreAICache`/`CoreAICommon`/`CoreAICompiler`, whose public Swift surfaces are **empty** in this
+beta. All under `notes/sdk-interfaces/*-27.0-macos.swiftinterface`. Citations in this guide of the
+form `Module-27.0-macos.swiftinterface:lines` refer to these captures.
 
 **Apple documentation** (harvested 2026-07-27 via `sosumi.ai` plus Apple's raw DocC JSON API at
 `developer.apple.com/tutorials/data/documentation/<path>.json`, which preserves `termList` and
@@ -3626,42 +3673,53 @@ declared signatures on the adjacent pages.
 | `NDArrayDescriptor.minimumByteCount` | passes `RawView.init` arguments **out of declared order** (`shape:` before `scalarType:`) and omits `try await` on the `async throws` `run` |
 | `InferenceFunction.AsyncValue` overview | omits the **required `to:` stream argument** on `encode`, and misspells a variable (`embeddingsOutputs` vs `embeddingOutputs`) |
 | `MutableView.copyElements(from:)` | doc references **`layout.scalarCount`**, a symbol absent from the public API — an internal-doc leak |
-| `AIModel.init(contentsOf:options:)`, `AIModel.specialize`, `AIModelCache.model(for:options:)` | `- Throws:` clauses render as **orphaned Notes with no type**, which is the visible form of the §13 gap |
+| `AIModel.init(contentsOf:options:)`, `AIModel.specialize`, `AIModelCache.model(for:options:)` | `- Throws:` clauses render as **orphaned Notes with no type** — consistent, per §13, with the throws being untyped in the SDK |
 
 Also: Apple's own prose contains the typos *"vaiews"* (`AsyncMutableValue` overview) and *"the the"*
 (`ComputeStream` overview). Harmless, but useful confirmation that a quotation is verbatim rather
 than paraphrased.
 
-### 16.3 Open questions this guide could not close
+### 16.3 Open questions — updated 2026-07-29 against the SDK interface dump
 
-Each of these is stated as a 🔴 GAP in the body with a safe default. Collected here for anyone in a
-position to resolve them.
+The macOS 27.0 beta `.swiftinterface` capture (§16.1) closed four of the ten questions this guide
+originally carried. The ledger, updated:
 
-1. **The inference/specialization/cache error taxonomy** (§13). Not in the 312 symbols. Community
-   sighting of `CoreAIDelegates.AIModelError error 3`. Resolvable with one `.swiftinterface` dump.
-2. **`NDArray.ScalarType.type`** (§7.9). Referenced by `RawView.view(as:)`'s own documentation;
-   absent from the symbol index. Same fix.
-3. **Typed views for sub-byte and 8-bit-float scalar types** (§7.9). No Swift standard type exists;
-   no Core AI type is documented.
-4. **Whether `CVMutablePixelBuffer` / `IOSurface` gives a real zero-copy camera path** (§12.2).
+**Closed by the interface dump:**
+
+1. ~~**The inference/specialization/cache error taxonomy** (§13).~~ **Closed:** the throws are
+   untyped; `AssetError` is the only public error type; `AIModelError` is not public in the beta
+   SDK. See §13.1.
+2. ~~**`NDArray.ScalarType.type`** (§7.9).~~ **Closed:** not present in the beta interface — an
+   internal member leaked into `RawView.view(as:)`'s documentation.
+3. ~~**Typed views for sub-byte and 8-bit-float scalar types** (§7.9).~~ **Closed:** none exist in
+   the beta SDK; the raw-bytes path is the only public route.
+4. ~~**macOS symbol availability.**~~ **Closed:** every declaration in the captured macOS 27.0
+   interfaces carries `@available(macOS 27.0, …)`. The symbol pages' missing-macOS
+   `metadata.platforms` arrays are a docs-generation bug, as suspected. ⚠️ A related surprise ran
+   the *other* way: the doc pages mark `NDArray.RawView.init(metalBuffer:…)`,
+   `AsyncValue.init(unsafeBuffer:…)` and `ComputeStream.init(commandQueue:)` **unavailable on
+   watchOS**, but the captured interface declares all three `watchOS 27.0`
+   (`CoreAIRuntime-27.0-macos.swiftinterface:26`, `:40-45`, `:1034-1041`). Metal's own
+   watchOS absence is the practical constraint; treat the docs' watchOS note as advisory.
+
+**Still open:**
+
+5. **Whether `CVMutablePixelBuffer` / `IOSurface` gives a real zero-copy camera path** (§12.2).
    `RawView.init(ioSurface:)` exists; Apple's own vision package never uses it.
-5. **How a value is *marked* as an image at conversion time.** Neither transcript covers it and we
+6. **How a value is *marked* as an image at conversion time.** Neither transcript covers it and we
    could not find a `coreai-torch` page for it. Blocks writing the image half of §12 with the same
    confidence as the tensor half.
-6. **`SpecializationOptions.expectFrequentReshapes`' default value and semantics** (§4.3). Real API,
-   used by Apple, documented with an abstract and no Discussion.
-7. **Deletion-while-referenced: throws or defers?** (§3.4). The reference pages and the prose article
-   state different contracts.
-8. **macOS symbol availability.** ⚠️ Worth knowing: the framework page lists macOS and Mac Catalyst,
-   but **every individual symbol page's `metadata.platforms` array omits macOS**, while the same
-   JSON's `declarations` section *does* list Mac Catalyst. Since Core AI Debugger requires a macOS 27
-   host, `coreai-build` runs on macOS, the Instruments template runs on macOS, and
-   `apple/coreai-models` declares `.macOS("27.0")` in `Package.swift`, this is almost certainly a
-   docs-generation bug rather than a real restriction. Treat macOS 27 as supported; confirm against
-   the SDK if it matters to you.
+7. **`SpecializationOptions.expectFrequentReshapes`' default value and semantics** (§4.3). The
+   interface confirms the spelling (`public var expectFrequentReshapes: Bool`) but a
+   `.swiftinterface` does not print stored-property defaults, so the default remains unknown.
+8. **Deletion-while-referenced: throws or defers?** (§3.4). The reference pages and the prose
+   article state different contracts; the interface confirms only the `throws` spellings, not the
+   behaviour. Needs a device test.
 9. **`ComputeStream` guidance beyond "serialized as needed"** — how many concurrent streams are
    advisable, and how a stream interacts with `run`'s implicit one. Undocumented.
-10. **`AIModelAsset.removeDerivedArtifacts()`** — no abstract, no discussion, no known caller.
+10. **`AIModelAsset.removeDerivedArtifacts()`** — spelling confirmed
+    (`CoreAIAsset-27.0-macos.swiftinterface:19`, `mutating`, `throws`); still no abstract, no
+    discussion, no known caller.
 
 ### 16.4 Corrections applied while writing
 

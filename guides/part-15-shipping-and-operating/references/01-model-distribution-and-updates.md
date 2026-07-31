@@ -810,7 +810,11 @@ that is where to look first.
 > <id>`** (`notes/transcripts/fm-core.md:2129`), which is adapter-specific and therefore dead in 27.
 > **We have no evidence of a Core AI equivalent.** Whether models are packaged with a different
 > `ba-package` subcommand, with a generic one, or entirely through Xcode is unverified. Resolving
-> it needs `xcrun ba-package --help` on a machine with Xcode 27.
+> it needs `xcrun ba-package --help` on a machine with Xcode 27. One adjacent 2026-07-29
+> toolchain observation, reported for completeness rather than as an answer: the Core AI compiler
+> stub `aimodelc` in the Xcode 27.0 beta names `package` as one of its two command types
+> (`'package' or 'compile'`) — that is the Xcode build compiler, not evidenced as a Background
+> Assets packaging path, and the documented `coreai-build` wrapper is absent from this beta.
 
 ### 3.4 The delivery protocol: keep Core AI independent of the transport
 
@@ -1163,14 +1167,18 @@ and reported, **not** verified as Apple-sanctioned usage.
 
 > 🟡 **RECONSTRUCTED** — `--architecture` and `--expect-frequent-reshapes` spellings. Apple confirms
 > an architecture flag exists but never names it; the spelling comes from a community `--help` dump
-> plus consistent third-party usage. High confidence in the shape, and it is trivially verifiable
-> on your own machine: run `xcrun coreai-build compile --help` before you write it into a build
-> script.
+> plus consistent third-party usage. High confidence in the shape — but it is **not currently
+> verifiable**: as of 2026-07-29, `xcrun --find coreai-build` fails on the Xcode 27.0 beta
+> (27A5228h) and no `coreai*` file exists anywhere in `Xcode-beta.app`. The wrapper is **not in
+> this beta toolchain**. Re-run `xcrun coreai-build compile --help` on the first seed that ships
+> it, before you write these flags into a build script.
 
-**Also note the compiler binary.** `xcrun coreai-build compile` is the verb; the community archive
-reports the underlying binary as `aimodelc`, living at `Xcode-beta.app/.../usr/bin/aimodelc`
-(community-measured, `notes/repos/john-rocky-models.md:1117-1120`). Useful only for debugging a
-toolchain installation.
+**Also note the compiler binary.** `xcrun coreai-build compile` is the verb; the underlying binary
+is `aimodelc`, living at `Xcode-beta.app/.../usr/bin/aimodelc` — community-reported
+(`notes/repos/john-rocky-models.md:1117-1120`) and **toolchain-confirmed 2026-07-29**: the stub is
+present in beta 27A5228h, accepts command types `package` and `compile` only, requires `--output`,
+implements no `--help`, and its binary embeds *"Please use 'xcrun coreai-build' instead"* — naming
+a wrapper the same beta does not ship. Useful only for debugging a toolchain installation.
 
 ### 4.3 Output naming and the runtime lookup
 
@@ -1559,27 +1567,25 @@ tool (same source):
 invalidCompiledModel
 ```
 
-> 🔴 **GAP — `AIModelError` is not a documented Core AI symbol.** Apple's Core AI reference
-> enumerates exactly one error type, `AssetError`, with five `Kind` cases (`corruptedMetadata`,
-> `duplicateName`, `invalidFeatureType`, `invalidName`, `unsupportedVersion`) — ✅ VERIFIED
-> (`notes/web/apple-docs-coreai.md:1104-1116`). `AIModelError` appears nowhere in the 312-symbol
-> index. It surfaces at runtime as `CoreAIDelegates.AIModelError error 3` and the meaning of code
-> 3 is an explicitly open question in the community issue archive
+> ✅ **RESOLVED (was a GAP) — `AIModelError` is confirmed non-public, and the throws are untyped.**
+> The SDK interface dump this box used to ask for was captured 2026-07-29 (Xcode 27.0 beta,
+> 27A5228h; `notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
+> `AIModel.init(contentsOf:options:)` and `specialize(…)` as plain untyped `async throws`
+> (✅ **SDK-verified** — `:22-26`) and the cache methods as untyped `throws` (`:33-43`); **no
+> `AIModelError` appears anywhere in the public interface** — it is internal, surfacing only via
+> `NSError` bridging as `CoreAIDelegates.AIModelError error 3`. The only public error type in the
+> whole Core AI surface is `AssetError`, with five `Kind` cases (`unsupportedVersion(String)`,
+> `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`, `duplicateName`) — ✅
+> **SDK-verified** (`CoreAIAsset-27.0-macos.swiftinterface:230-247`), matching the doc pages. The
+> meaning of code 3 remains open in the community issue archive
 > (`notes/repos/issues-coreai-stack.md:1462`).
 >
-> Apple's reference also notes, correctly, that *"the errors thrown by `AIModel.init`,
-> `loadFunction`, `run`, and cache deletion are **not documented anywhere**"*
-> (`notes/web/apple-docs-coreai.md:1119`). This is a real hole in the framework's documentation, not
-> a hole in our research.
->
-> **What would resolve it:** an SDK interface dump of `CoreAIDelegates`, or Apple documenting the
-> `AIModel` error domain.
->
-> **SAFE DEFAULT:** do not pattern-match on `AIModelError` cases — you cannot, since the type is not
-> public API you can name reliably. Treat **any** throw from `AIModel(contentsOf:options:)` on a
-> `.aimodelc` as "this compiled variant is unusable on this device" and fall back to the portable
-> `.aimodel` (§5.5). Log `String(describing: error)` and `(error as NSError).code` so that when the
-> reports arrive you can tell code 3 from everything else.
+> **PRACTICE (unchanged in substance, now grounded):** do not pattern-match on `AIModelError`
+> cases — in the macOS 27.0 beta SDK the type is not public and cannot be named. Treat **any**
+> throw from `AIModel(contentsOf:options:)` on a `.aimodelc` as "this compiled variant is unusable
+> on this device" and fall back to the portable `.aimodel` (§5.5). Log `String(describing: error)`
+> and `(error as NSError).code` so that when the reports arrive you can tell code 3 from
+> everything else. Full treatment of the error surface: Part 7, guide 7.1 §13.
 
 Note also that `invalidCompiledModel` is a **package-level** name from `apple/coreai-models`, not a
 Core AI framework symbol. If you are not using that package you will never see the string. Do not
@@ -1947,15 +1953,16 @@ is a second cost after specialization, and it is a good use of the tail of the f
 
 ### 6.4 ⚠️ Specialization reports no progress
 
-> 🔴 **GAP — there is no progress API for specialization.** Apple's `AIModel` surface has
-> `init(contentsOf:options:) async throws` and `static func specialize(...) async throws` and
-> **nothing else**: no `Progress`, no delegate, no `AsyncSequence` of phases. Our full harvest of
-> the 312-symbol Core AI index (`notes/web/apple-docs-coreai.md:7`) turned up no such API.
+> ✅ **CONFIRMED ABSENCE (was a GAP) — there is no progress API for specialization in the
+> macOS 27.0 beta SDK.** Apple's `AIModel` surface has `init(contentsOf:options:) async throws`
+> and `static func specialize(...) async throws` and **nothing else**: no `Progress`, no delegate,
+> no `AsyncSequence` of phases. Our full harvest of the 312-symbol Core AI index
+> (`notes/web/apple-docs-coreai.md:7`) turned up no such API, and the SDK interface dump captured
+> 2026-07-29 settles that there is no unindexed overload either — the complete public loading
+> surface is eight members (✅ **SDK-verified** —
+> `CoreAIDelegates-27.0-macos.swiftinterface:14-43`), none of which reports progress.
 >
-> **What would resolve it:** an SDK interface dump showing an unindexed overload, or Apple shipping
-> one. There is no evidence either exists.
->
-> **SAFE DEFAULT:** do not fake a progress bar. Show an indeterminate indicator with **explanatory
+> **STILL THE RULE:** do not fake a progress bar. Show an indeterminate indicator with **explanatory
 > text and an honest time estimate**, and — because you know your own model — hardcode a
 > conservative estimate measured on your slowest supported device. Apple's own sample string is a
 > good model for tone: `"Preparing AI features. This may take a while…"` ✅ VERIFIED
@@ -3529,13 +3536,17 @@ enum ModelStorageAudit {
 }
 ```
 
-> 🔴 **GAP — there is no API to measure or locate the Core AI cache.** `AIModelCache` exposes
-> `default`, `init?(appGroup:)`, `model(for:options:)` and four delete methods, and **nothing
-> else** — no size property, no entry enumeration, no on-disk location. Our full 312-symbol harvest
-> flags "where `AIModelCache.default` stores entries on disk" as an open question
-> (`notes/web/apple-docs-coreai.md:2017`).
+> 🔴 **GAP (API absence now SDK-confirmed) — there is no API to measure or locate the Core AI
+> cache.** `AIModelCache` exposes `default`, `init?(appGroup:)`, `model(for:options:)`, four
+> delete methods and the `Policy`/`PurgeConditions` types, and **nothing else** — no size property,
+> no entry enumeration, no on-disk location. That is no longer just the doc index talking: the
+> macOS 27.0 beta interface dump (2026-07-29) shows exactly that surface
+> (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:27-71`), and the `CoreAICache`
+> SubFramework module — the obvious place for a richer cache API — has an **empty public Swift
+> surface** in this beta (`CoreAICache-27.0-macos.swiftinterface`). Where entries live on disk
+> remains open (`notes/web/apple-docs-coreai.md:2017`).
 >
-> **What would resolve it:** Apple adding a size/enumeration API, or somebody diffing the app
+> **What would resolve the rest:** Apple adding a size/enumeration API, or somebody diffing the app
 > container before and after a specialization on a device to locate the store. The latter would give
 > you a path, not a supported API — do not ship code that reads it.
 >
@@ -3852,11 +3863,11 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 | 1 | **The 2026 Background Assets API for Core AI.** No Apple sample, no WWDC26 transcript, no docs page shows BA delivering a `.aimodel`/`.aimodelc`. §3.2 | The WWDC25 "Discover Apple-Hosted Background Assets" transcript; the current `backgroundassets` reference; any Apple sample. `coreai` currently has **zero** sample-code projects. | Build against your own `ModelDelivery` protocol; implement with `URLSession` first. |
 | 2 | **The packaging CLI for model asset packs.** Only `xcrun ba-package foundation-models package` is attested, and it is adapter-specific (adapters are discontinued in 27). §3.3 | `xcrun ba-package --help` on Xcode 27. | Do not script packaging until you have run `--help`. |
 | 3 | **The `deviceArchitectureName` value set.** Community enumeration only; internally contested for Macs (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
-| 4 | **`--architecture` / `--expect-frequent-reshapes` spellings.** Apple confirms an arch flag exists but never names it. §4.2 | `xcrun coreai-build compile --help`. | Verify on your own machine before writing a build script. |
-| 5 | **`AIModelError` is not documented.** Surfaces as `CoreAIDelegates.AIModelError error 3`; Apple documents only `AssetError`, and explicitly documents no errors for `AIModel.init` / `loadFunction` / `run` / cache deletion. §5.3 | An SDK interface dump, or Apple documenting the domain. | Do not pattern-match. Treat any throw from a `.aimodelc` load as "unusable here" and fall back. |
-| 6 | **Deleting an in-use cache entry: throws or defers?** The reference pages and the prose article disagree. §7.4 | A five-line device test. | Write code correct under both: release models, then delete, then retry a throw. |
-| 7 | **No progress API for specialization.** §6.4 | An unindexed overload, or Apple shipping one. No evidence either exists. | Indeterminate indicator plus honest text and a measured estimate. |
-| 8 | **No API to size or locate the Core AI cache.** §11.6 | Apple adding one. | Report source-asset sizes, label the figure honestly, ship a Remove button that reclaims the rest. |
+| 4 | **`--architecture` / `--expect-frequent-reshapes` spellings.** Apple confirms an arch flag exists but never names it. §4.2 — ⚠️ and `coreai-build` is **absent from the Xcode 27.0 beta toolchain** (checked 2026-07-29; only the `aimodelc` stub ships, no `--help`) | A seed shipping `coreai-build`, then `compile --help`. | Verify on your own machine before writing a build script. |
+| 5 | ~~**`AIModelError` is not documented.**~~ **CLOSED 2026-07-29 by the SDK interface dump: `AIModelError` is not public in the macOS 27.0 beta SDK; the loading APIs throw untyped; `AssetError` is the only public error type.** §5.3 | — | Unchanged: do not pattern-match. Treat any throw from a `.aimodelc` load as "unusable here" and fall back. |
+| 6 | **Deleting an in-use cache entry: throws or defers?** The reference pages and the prose article disagree; the beta interface confirms the `throws` spellings only. §7.4 | A five-line device test. | Write code correct under both: release models, then delete, then retry a throw. |
+| 7 | ~~**No progress API for specialization.**~~ **CONFIRMED ABSENT in the macOS 27.0 beta interface (2026-07-29): the full public loading surface has no progress reporting.** §6.4 | Apple shipping one in a later release. | Indeterminate indicator plus honest text and a measured estimate. |
+| 8 | **No API to size or locate the Core AI cache** — API absence now SDK-confirmed (the beta `AIModelCache` surface is exactly the documented members; the `CoreAICache` module's public surface is empty); the on-disk location remains unknown. §11.6 | Apple adding one, or a container diff locating the store. | Report source-asset sizes, label the figure honestly, ship a Remove button that reclaims the rest. |
 | 9 | **Raw composition of `.default` / `.persistent` purge conditions.** 🟡 inferred from prose. §11.2 | Reading back `purgeConditions` on device. | Use the shipped constants; do not construct your own policy yet. |
 | 10 | **The "(on iOS)" qualifier on `AIModelCache(appGroup:)`'s invalid-identifier case.** §10.3 | Calling it with a bogus identifier on macOS 27 and iOS 27. | Treat `nil` as the only failure signal everywhere. |
 | 11 | **Specialized-asset size and specialization scratch requirements.** No Apple figure. §11.4 | Measuring your model on your slowest device. | Budget 3× the asset plus 512 MB headroom, then replace with a measurement. |
@@ -3865,6 +3876,12 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 ---
 
 ## Sources
+
+**SDK module interfaces** (captured 2026-07-29 from the Xcode 27.0 beta, 27A5228h, macOS 27.0 SDK;
+`notes/sdk-interfaces/*-27.0-macos.swiftinterface`) — `CoreAIDelegates` (the `AIModel` loading and
+`AIModelCache` surface; closed gaps #5 and #7 and confirmed the API-absence half of #8),
+`CoreAIAsset` (`AssetError`), `CoreAIRuntime`, and the empty-in-this-beta `CoreAICache`. Plus the
+2026-07-29 toolchain check: `coreai-build` absent, `usr/bin/aimodelc` present (gap #4).
 
 **Apple documentation** (harvested 2026-07-27 via `sosumi.ai` plus Apple's raw DocC JSON API;
 312-symbol index verified complete, `notes/web/apple-docs-coreai.md`)

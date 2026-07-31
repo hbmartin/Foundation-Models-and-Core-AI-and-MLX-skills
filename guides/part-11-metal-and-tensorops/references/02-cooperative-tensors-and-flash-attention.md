@@ -9,7 +9,8 @@ tensors as `matmul2d` *inputs*** — the single capability this whole guide is b
 in Tech Talk 111432. Separately, the `MetalPerformancePrimitives` headers shipped in the **Xcode 26.6**
 SDK annotate their deployment gate as **26.2**. Both facts are true and they describe different
 things; §0.2 reconciles them. Xcode 27 separately adds native multiplane quantized tensors and int2,
-FP4, FP8, and E8M0 formats.[^metal27-multiplane] You also need **Metal 4** (`__METAL_VERSION__` ≥ 400) and a toolchain
+FP4, FP8, and E8M0 formats — present shader-side in the macOS 27.0 beta SDK's MPP headers, behind a
+new 27.0 deployment gate (§0.2, §0.3).[^metal27-multiplane] You also need **Metal 4** (`__METAL_VERSION__` ≥ 400) and a toolchain
 that defines `__HAVE_TENSOR__`, or the entire header expands to nothing and you get a baffling
 "no member named `matmul2d`" instead of a missing-feature error.
 
@@ -57,9 +58,11 @@ three things you need in order to write a *fused* kernel rather than a sequence 
 
 - **The basics.** `metal::tensor<ElementType, Extents, Descriptor, Tags...>`, `tensor_handle` /
   `tensor_offset` / `tensor_inline`, `.slice()` / `.static_slice()`, the full `matmul2d_descriptor`
-  positional argument list, the 13-entry dtype enum and the ~50 legal operand triples: guide 01 in
+  positional argument list, the 13-entry dtype enum and the ~50 legal operand triples (69 in the
+  macOS 27.0 beta SDK — guide 01 §0.2): guide 01 in
   this part. This guide assumes them and cites them where it leans on them.
-- **Quantised matmul in depth.** Xcode 27 has a documented host-side scale-plane mechanism; in-kernel
+- **Quantised matmul in depth.** Xcode 27 has a documented host-side scale-plane mechanism, and the
+  macOS 27.0 beta SDK carries its shader-side half in the MPP headers (guide 01 §0.2); in-kernel
   custom dequantisation remains the fallback for 26.x targets and custom formats. Guide 01 and §0.3
   distinguish the two paths.[^metal27-multiplane]
 - **`convolution2d`.** `MPPTensorOpsConvolution2d.h` exists (177 lines public + 4,914 lines of
@@ -280,6 +283,10 @@ exactly the fallback §4.4 documents.
 > per-symbol `@available`-style annotation on
 > `get_left_input_cooperative_tensor(src)` / `is_compatible_as_left_input` that would let you assert
 > "this exact overload is 26.3." The Xcode 26.6 SDK ships all of them together behind one macro.
+> The macOS 27.0 beta SDK was checked on 2026-07-29: still no per-symbol annotations — it *adds* a
+> second framework-wide macro, `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0`
+> (`MPPTensorOpsAvailability.h:11`), gating the new scale-aware ABI (guide 01 §1.2), and leaves the
+> 26.2 gate untouched.
 > **What would resolve it:** a diff of `MPPTensorOpsMatMul2d.h` across the 26.0, 26.1, 26.3 and 26.4
 > SDKs, or an Apple documentation page carrying per-symbol availability.
 > **Safe default:** set `MACOSX_DEPLOYMENT_TARGET` / `IPHONEOS_DEPLOYMENT_TARGET` to **26.3** if you
@@ -328,9 +335,16 @@ MLX's build system encodes the same three conditions in CMake — ✅ **VERIFIED
 Read this before choosing a representation, because the answer depends on the SDK and deployment
 floor.
 
-**Xcode 27 has a native host-side scale-plane mechanism.** `MTLTensorAuxiliaryPlaneDescriptor`
-configures a plane's data type and `blockFactors`, `MTLTensorDescriptor.auxiliaryPlanes` attaches
-the plane map, and the current data-type enum includes int2, FP4, FP8, and E8M0.[^metal27-dtypes]
+**Xcode 27 has a native scale-plane mechanism, host-side and — as of the 27.0 beta SDK —
+shader-side.** `MTLTensorAuxiliaryPlaneDescriptor` configures a plane's data type and
+`blockFactors`, `MTLTensorDescriptor.auxiliaryPlanes` attaches the plane map, and the current
+data-type enum includes int2, FP4, FP8, and E8M0.[^metal27-dtypes] On the shader side, the macOS
+27.0 beta SDK's MPP headers (checked 2026-07-29) extend the `matmul2d` support matrix with
+`int2b`/`uint2b`, `metal_fp4_e2m1_format`, `metal_fp8_e4m3_format` and `metal_fp8_e5m2_format`
+operands (`MPPTensorOpsMatMul2d.h:62-83`, 27.0 SDK) and accept a blockwise
+`metal::tensor_plane_scales` plane of `metal_fp8_ue8m0_format` scale factors — block size 32, left
+operand untransposed, right operand transposed, never on the destination
+(`__impl/MPPTensorOpsMatMul2dImpl.h:6241-6316`, 27.0 SDK; the full contract is in guide 01 §0.2).
 The Xcode 26.6 shader-side snapshot inspected for this guide did not contain that surface:
 
 1. ✅ **VERIFIED, version-scoped absence** — case-insensitive searches for `scale`, `plane`, `block_factor`,
@@ -2030,7 +2044,7 @@ gates the whole accelerated path on `MLX_ENABLE_TF32` for float32 inputs
 (`mlx/utils.h:195-197`, `matmul.cpp:916-918`). One feature, two halves. If you set
 `relaxed_precision = true` in your own kernel, you are opting into the same trade and you should
 expose the same escape hatch to your callers. Upstream PR **#3883** ("Warn once when float32 ops
-silently run at TF32 precision", open as of 2026-07-21) exists because MLX's users were surprised by
+silently run at TF32 precision", still open as of 2026-07-29) exists because MLX's users were surprised by
 it — which is a good reason to make yours explicit.
 
 ---
@@ -3102,7 +3116,7 @@ No error, no assertion, no NaN — just wrong output for certain tile shapes. Th
 (`steel/gemm/nax.h:834,838,842`), not that the shape is one the dispatch handles.
 
 PR #3924's title — *"Add a tile-shape `static_assert` to `tile_matmad_nax`"* — is the
-acknowledgement that this is a real defect, open as of 2026-07-26.
+acknowledgement that this is a real defect, still open as of 2026-07-29.
 
 ### 13.3 What to do about it
 

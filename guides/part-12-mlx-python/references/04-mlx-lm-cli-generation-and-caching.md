@@ -2322,7 +2322,8 @@ speculation — has a proposed path through `ArraysCache`, since the proposal in
 `ArraysCache.checkpoint()/rollback()/trim()` (about 18 lines; `trim` is a no-op because the state
 is state-based, not offset-based). A Swift sibling is open as mlx-swift-lm#425 with PR #426.
 
-> 🔴 **GAP — n-gram speculation is not merged.** As of our read, mlx-lm#1497 is an OPEN proposal.
+> 🔴 **GAP — n-gram speculation is not merged.** As of 2026-07-29 (live `gh` check), mlx-lm#1497
+> is an OPEN proposal.
 > **What would resolve it:** checking whether `--ngram-spec` appears in `mlx_lm.generate --help` on
 > `main`. **Safe default:** for hybrid models today, there is no speculative decoding. Plan
 > throughput around single-token decode.

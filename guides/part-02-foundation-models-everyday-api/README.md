@@ -112,9 +112,20 @@ be set, with the precedence rule; transcript rollback on a thrown tool error and
 > turn whose entire contribution is a tool call streams **zero** partials, so any spinner that waits for
 > the first token hangs there — Apple's Origami sample carries an explicit `didReceivePartial` flag for it.
 
-> 🔴 **GAP** — the declarations of `OCRTool` and `BarcodeReaderTool` (they live in **Vision**, not
-> FoundationModels) were never harvested, and neither was the exact string `Tool.name` derives when you
-> omit it, nor the semantics of `includesSchemaInInstructions`. The guide says so rather than guessing.
+> ✅ **RESOLVED (2026-07-29)** — the declarations of `OCRTool` and `BarcodeReaderTool` were finally
+> found, and the reason nobody could find them is itself the reader-critical fact: they live in the
+> **`_Vision_FoundationModels` cross-import overlay**, a module the compiler activates only when a
+> file imports **both** `Vision` and `FoundationModels` — the symbols are in *neither* parent
+> interface. ✅ **SDK-verified**
+> (`notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-47` and `:49-83`):
+> both are `struct`s conforming to `FoundationModels.Tool`, `init(name: String? = nil, description:
+> String? = nil)`, each with a real nested `Generable` `Arguments` struct and an **opaque**
+> `Output` — `call(arguments:)` returns `some PromptRepresentable`, so the output type cannot be
+> named in user code. Still open: the exact string `Tool.name` derives when you omit it, and the
+> default *value* of `includesSchemaInInstructions` (the requirement and its default implementation
+> are SDK-verified; the getter's body is not emitted). Closed by the FoundationModels capture: the
+> `onToolCall`/`onToolOutput` signatures — both arities, `async throws`,
+> `Transcript.ToolCall`/`ToolOutput` payloads (`FoundationModels-27.0-macos.swiftinterface:963-977`).
 
 ### [2.4 — Local RAG with `SpotlightSearchTool`, plus OCR and barcodes](references/04-spotlight-rag-and-system-tools.md)
 Apple's answer to "RAG on device without a vector database": the model writes and executes queries
@@ -140,15 +151,17 @@ feature on *result coverage* rather than on how the answers read.
 > timeout, no warning. Call the handler with `[]` on every path.
 
 > 🔴 **GAP — the parts of this surface Apple's own reference app never touches.** Apple's session-246
-> sample project has now been obtained and read, and it closed nine gaps — the `Configuration` shape, the
-> entitlement question, the delegate signature, the `SearchReply` case list and its non-frozen-ness, and
-> the wire name `spotlight_search`. What remains is what the sample does **not** exercise:
-> `GuidanceProfile`'s value types, the `contactResolver` type, the file source's spelling, and
-> `CustomStage`'s members are still 🟡 from one community field note — and their absence from Apple's own
-> reference implementation is now a sharper reason to be suspicious of them. Also open: whether the index
-> delegate fires at all for entity-indexed (`indexAppEntities`) content. Three separate beta-era defects
-> (model-catalog error 5000, the tool never being invoked, and an Apple-confirmed description-vs-schema
-> mismatch) still have **unknown current status**.
+> sample project closed nine gaps — the `Configuration` shape, the entitlement question, the delegate
+> signature, the `SearchReply` case list and its non-frozen-ness, and the wire name `spotlight_search`.
+> The declaration-shaped remainder is now closed too: the **`_CoreSpotlight_FoundationModels`
+> cross-import overlay interface** was captured 2026-07-29 (✅ SDK-verified —
+> `notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface`), settling
+> `GuidanceProfile`'s value types, the `ContactResolver` protocol, `.files(FileSource)`, and
+> `CustomStage`'s members. What stays open is **behavioural**: none of those four appear in Apple's own
+> reference implementation, so their runtime behaviour is untested; the index delegate's firing for
+> entity-indexed (`indexAppEntities`) content is unknown; and three beta-era defects (model-catalog
+> error 5000, the tool never being invoked, and an Apple-confirmed description-vs-schema mismatch)
+> still have **unknown current status**.
 
 ### [2.5 — Image input, and what the model cannot do with pixels](references/05-image-input-and-attachments.md)
 `Attachment` and every source it accepts, the `orientation:` parameter, labels and `ImageReference` for
@@ -163,9 +176,10 @@ regression head's output, and Apple's own answer on the forums is a redirect to 
 > Related: `summarizeHistory` flattens attachments away, after which the model answers about images it
 > can no longer see, from its own earlier description of them.
 
-> 🔴 **GAP** — Apple has published **no** per-image token cost, no formula, and no resize policy. The two
-> figures in circulation (896 px, 576 tokens) are developer inference and a cross-backend community
-> constant. Read `response.usage` and measure your own.
+> 🔴 **GAP** — Apple has published **no** per-image token cost, no formula, and no resize policy — and
+> the 27.0 beta interface (checked 2026-07-29) carries no constant for it either. The two figures in
+> circulation (896 px, 576 tokens) are developer inference and a cross-backend community constant. Read
+> `response.usage` and measure your own.
 
 ### [2.6 — The complete failure taxonomy: availability, errors, guardrails and refusals](references/06-availability-errors-and-guardrails.md)
 The largest guide in the part, organised as symptom → cause → fix across five failure planes. The 2026

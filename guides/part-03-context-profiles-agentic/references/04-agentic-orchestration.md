@@ -286,7 +286,9 @@ Four API facts to bank from those 75 lines, because several contradict what the 
   SwiftUI's `some View`. ✅ verified.
 - **`Profile { … }.model(x)`**, a content closure plus a modifier — **not** `Profile(model:) { … }`.
   The initialiser form appears in transcript reconstructions and in no compiling code we have. ✅
-  verified; the `init(model:)` spelling is 🔴 unverified and you should not use it.
+  verified — and as of 2026-07-29 settled against the SDK: `Profile` has exactly one initializer
+  (the builder-closure form) and **no `model:` label exists in the 27.0 beta interface**
+  (`FoundationModels-27.0-macos.swiftinterface:785-798`; `.model(_:)` modifier at `:921-923`).
 - **`.temperature(1.0)`** takes a `Double`. **`.reasoningLevel(.deep)`** is exactly as narrated.
 - **`.historyTransform(_:)` takes `([Transcript.Entry]) -> [Transcript.Entry]`**, and a plain
   function reference is accepted. It is handed the *entry array*, not a `Transcript`.
@@ -614,11 +616,14 @@ Profile { BrainstormInstructions(orchestrator: orchestrator) }
 
 > The one-argument `onToolCall { call in … }` form with `call.toolName` is ✅ verified from Apple's
 > dynamic-profiles article; the zero-argument `onToolCall { … }` form is ✅ verified from compiled test
-> code (`mlx-swift-lm`, `StructuredToolOutputSessionTests.swift:62-65`). 🔴 **GAP:** whether both
-> arities exist as overloads, and whether the closure may be `async` or `throws`, is unverified. A
-> community security note attributed to WWDC26 session 347 states that **throwing from `onToolCall`
-> blocks the tool from running** — treat that as secondary evidence and verify on device before
-> relying on it as a security control.
+> code (`mlx-swift-lm`, `StructuredToolOutputSessionTests.swift:62-65`). ✅ **RESOLVED (2026-07-29):**
+> both arities exist as declared overloads — the zero-argument form forwards to the
+> `(Transcript.ToolCall)` form — and the closures are **`async throws`**
+> (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:963-969`). So the detector above
+> may await and may throw. A community security note attributed to WWDC26 session 347 states that
+> **throwing from `onToolCall` blocks the tool from running** — the throw *does* compile, but
+> Apple's documented behaviour is that it propagates to the caller and aborts the whole turn, so
+> verify on device before relying on it as a per-call veto.
 
 The structural fix is one `enum ToolNames` read by both the conformance and the instructions string,
 as in §2.4. It cannot catch a tool you forgot to put in the array — detector 1 can, and it is four
@@ -2012,11 +2017,14 @@ There is an obvious-looking alternative: use the `onToolCall` lifecycle modifier
 > }
 > ```
 
-🔴 **GAP:** we cannot verify that `onToolCall` is `async` or `throws`, nor that throwing from it
-blocks the tool. The only compiled `onToolCall` we have is a synchronous zero-argument closure
-incrementing a counter (✅ `StructuredToolOutputSessionTests.swift:62-65`), and the only one-argument
-form is from Apple's dynamic-profiles article, which does not show it throwing. Resolving this needs
-the symbol page or a device test.
+✅ **RESOLVED on the signature (2026-07-29):** `onToolCall`'s closure **is** `async throws` — both
+the zero-argument and the `(Transcript.ToolCall)` overloads are declared
+`@escaping … async throws -> Void` (✅ **SDK-verified**,
+`FoundationModels-27.0-macos.swiftinterface:963-969`) — so the sketch *compiles*: you may `await
+confirmWithUser(call)` and you may throw. 🔴 What remains unverified is the *effect* of the throw:
+the community note says "the tool never runs and control returns to the loop"; Apple's documented
+wording is that the error **propagates to the caller's `respond`** — turn-level abort, not a
+per-call veto. A device test is still the only way to observe which transcript state results.
 
 Even if it works exactly as sketched, **Origami's shape is better for user-facing consent**, for three
 reasons that hold regardless:
@@ -2591,12 +2599,15 @@ Two cautions before you adopt:
 > `SkillActivations.swift:23-56`, whose **complete** public surface is `init()`, `activate(_:)`,
 > `deactivate(_:)`, `isActive(_:)`, `activeSkillNames`.
 
-> 🔴 **GAP — `Skills` versus `SkillActivation`.** Session 242 names a `Skills` type; a Developer
-> Forums thread (835165) names a `SkillActivation` module that reportedly fails to build. Whether
-> these are the same thing under two names, or a framework symbol and a package symbol, is unresolved.
-> The package's own symbols — `Skill`, `Skills`, `SkillActivations` (plural) — are ✅ verified from
-> source at `376ca60`. **Safe default: take the spellings from the package you actually resolved in
-> your `Package.resolved`, not from a session or a forum thread.**
+> 🔴 **GAP (narrowed 2026-07-29) — `Skills` versus `SkillActivation`.** One half is now settled: the
+> FoundationModels 27.0 beta interface contains **no** `Skill`, `Skills`, or `SkillActivation`
+> symbol (grep-verified against
+> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`), so whatever session 242 and
+> thread 835165 were naming, it is **not a framework type** — the package symbols (`Skill`,
+> `Skills`, `SkillActivations`, ✅ verified from source at `376ca60`) are the only shipping
+> spellings. What thread 835165's failing `SkillActivation` module actually was remains unresolved.
+> **Safe default: take the spellings from the package you actually resolved in your
+> `Package.resolved`, not from a session or a forum thread.**
 
 Full treatment — all four `Skill` initializers, the schema construction, `strictSchema`, the
 history modifiers the package also ships — in
@@ -2696,7 +2707,14 @@ and the complete argument-matcher vocabulary the sample exercises:
 > matches the intent, not the exact string**."*
 
 ⚠️ Only `.string(_)` appears as a value wrapper anywhere in the corpus. 🔴 `.number` / `.bool` /
-`.array` are unverified.
+`.array` are unverified — and remain so after the 2026-07-29 SDK capture: the wrapper type belongs
+to the **Evaluations** framework, whose interface was not captured (no
+`Evaluations-27.0-macos.swiftinterface` exists in `notes/sdk-interfaces/`). One observation worth
+recording: the shape exactly matches `GeneratedContent.Kind`, whose full case list *is*
+SDK-verified (`null` / `bool(Bool)` / `number(Double)` / `string(String)` /
+`array([GeneratedContent])` / `structure(properties:orderedKeys:)`,
+`FoundationModels-27.0-macos.swiftinterface:1333-1341`) — if the matcher's value type is that
+enum, the siblings exist; nothing here proves it is.
 
 And the wiring, which has one non-obvious requirement:
 
@@ -2866,7 +2884,7 @@ and [Part 6 · `01-foundations-and-hill-climbing.md`](../../part-06-evaluations/
 | `.toolCallingMode(_:)` | ✅ | 27.0 | `mlx-swift-lm` compiled test |
 | `.onToolCall { }` (0-arg) | ✅ | 27.0 | `mlx-swift-lm` compiled test |
 | `.onToolCall { call in }` (1-arg, `call.toolName`) | ✅ | 27.0 | Apple dynamic-profiles article |
-| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolOutput` | ✅ (listed) | 27.0 | doc mirror; 242 names only `onResponse` |
+| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolOutput` | ✅ SDK-verified — overload pairs, `async throws` (activate/deactivate: `async`, non-throwing) | 27.0 | `FoundationModels-27.0-macos.swiftinterface:939-981` |
 | `@SessionPropertyEntry` (no parens) on a `var` with an initial value | ✅ | 27.0 | compiled test `:14-18` |
 | `@SessionProperty(\.keyPath)` | ✅ | 27.0 | compiled test `:51-52` |
 | `session.properties.<name>` | ✅ | 27.0 | compiled test `:120` |
@@ -2880,10 +2898,10 @@ and [Part 6 · `01-foundations-and-hill-climbing.md`](../../part-06-evaluations/
 | `PrivateCloudComputeLanguageModel()` · `.availability` · `.quotaUsage` · `.supportsLocale(_:)` | ✅ | 27.0 | docs + shipping code |
 | `Skills` · `Skill` · `SkillActivations` | ✅ | package 27.0 | `foundation-models-utilities` @ `376ca60` |
 | `TrajectoryExpectation` · `ToolExpectation` · `ToolCallEvaluator` | ✅ | Xcode 27 | Book Tracker `SearchBooks.swift` |
-| `session.transcript.structuredTranscript` | ✅ | 27.0 | Book Tracker `:525-563` |
-| `Profile(model:) { … }` initializer | 🔴 unverified | — | appears in reconstructions only — **do not use** |
-| `DynamicProfileModifier` requirements | 🔴 unverified | — | named at 242:83, shape unknown |
-| structured (`@Generable`) tool `Output` on Apple's stack | 🔴 unverified | — | documented; every sample returns `String` |
+| `session.transcript.structuredTranscript` | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; `StructuredTranscript` is Evaluations' type, absent from FoundationModels by design | 27.0 | Book Tracker `:525-563`; `Evaluations-27.0-macos.swiftinterface:272-286` |
+| `Profile(model:) { … }` initializer | ✅ **absent from the 27.0 beta interface** (checked 2026-07-29) — `Profile` has exactly one init, the builder-closure form | — | `FoundationModels-27.0-macos.swiftinterface:785-798` — **do not use** |
+| `DynamicProfileModifier` requirements | ✅ SDK-verified — `associatedtype Body: DynamicProfile`; `@DynamicProfileBuilder func body(content: Self.Content) -> Body`; `typealias Content = DynamicProfileModifierContent<Self>`; applied via `.modifier(_:)` | 27.0 | `FoundationModels-27.0-macos.swiftinterface:876-917` |
+| structured (`@Generable`) tool `Output` on Apple's stack | 🔴 runtime-unverified — the constraint `associatedtype Output: PromptRepresentable` is SDK-verified (`:2991`), so it compiles; every sample still returns `String` | — | documented; no sample demonstrates it |
 
 ### 11.3 The silent failures in this guide
 

@@ -683,16 +683,19 @@ Three things, in descending order of practical value.
 reading a tutorial or an LLM-generated snippet that hand-rolls an `AnyLanguageModel`, it is written
 against beta 1 and is now redundant.
 
-> 🔴 **GAP — whether the framework's own eraser uses the same trick.** We do not know how
-> `FoundationModels`' shipped `.model(any LanguageModel)` builds *its* composite cache key, or whether
-> it includes the executor type at all. The `foundation-models-utilities` note lists this as open
-> question 15. It matters because if the framework's key does *not* include the executor type, two
-> providers keyed on the same string could collide in one session's store. Resolving this needs the
-> generated Swift interface for `FoundationModels` 27.0, or a two-provider device test with
-> deliberately colliding configurations. **Meanwhile: make your configuration's identity fields
-> package-specific.** A `modelID` of `"qwen3-0.6b"` is a collision waiting to happen; prefix it, or
-> include your bundle URL, or add a `providerID` constant. This costs nothing and closes the hazard
-> regardless of how the framework behaves.
+> 🔴 **GAP (checked 2026-07-29, still open) — whether the framework's own eraser uses the same
+> trick.** The named resolution has been half-run: the FoundationModels 27.0 interface *was*
+> captured, and it shows the shipped modifier pair — `.model(_ model: any LanguageModel)` and
+> `.model(_ model: some LanguageModel)` (✅ **SDK-verified**,
+> `FoundationModels-27.0-macos.swiftinterface:921-923`) — but **no public `AnyLanguageModel` type
+> and no visible cache-key machinery**: whatever erasure the framework performs is internal, and a
+> `.swiftinterface` does not emit internal storage. So how the composite cache key is built —
+> and whether it includes the executor type — remains unknowable from the interface; only the
+> two-provider device test with deliberately colliding configurations would settle it.
+> **Meanwhile: make your configuration's identity fields package-specific.** A `modelID` of
+> `"qwen3-0.6b"` is a collision waiting to happen; prefix it, or include your bundle URL, or add a
+> `providerID` constant. This costs nothing and closes the hazard regardless of how the framework
+> behaves.
 
 **`AnyHashable` is a legitimate tool here.** The eraser stores the wrapped configuration as
 `AnyHashable`, which is the standard-library box that preserves both `==` and `hash` across
@@ -907,8 +910,12 @@ Also note the `transcript` parameter. Apple passes it, nobody in the corpus read
 obvious why it exists: for a provider that can prefill, `prewarm` is the moment to prefill the
 instructions entry and whatever prompt is already there. Nothing in the corpus demonstrates that.
 
-> 🔴 **GAP — what the `transcript` argument to `prewarm` actually contains.** The parameter is in the
-> requirement and in all three conformances' signatures, and none of them reads it. We do not know
+> 🔴 **GAP — what the `transcript` argument to `prewarm` actually contains.** The requirement's
+> signature is now ✅ **SDK-verified** — `func prewarm(model: Self.Model, transcript: Transcript)`,
+> concrete `Transcript`, with the default implementation in an extension
+> (`FoundationModels-27.0-macos.swiftinterface:1673, :1866-1868`) — which confirms §6.2's
+> exact-signature trap from the SDK side. But the parameter's *contents* remain unobserved: it is
+> in the requirement and in all three conformances' signatures, and none of them reads it. We do not know
 > whether it is empty at the point a developer calls `session.prewarm()` before any turn, whether it
 > carries the instructions entry, or whether it is the full history on a later prewarm. Resolving it
 > needs one `print(transcript.count)` on a device. **Meanwhile, do not build prefill-on-prewarm as

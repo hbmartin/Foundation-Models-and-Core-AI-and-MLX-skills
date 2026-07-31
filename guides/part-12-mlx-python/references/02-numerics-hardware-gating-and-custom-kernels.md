@@ -766,10 +766,10 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 > **Why it is like this.** The kernel-side `relaxed_precision = true` (§3.1) is unconditional, so the
 > host-side flag is the *only* precision control available, and it is all-or-nothing. This is
 > acknowledged upstream: **mlx PR #3883, "Warn once when float32 ops silently run at TF32 precision"
-> — OPEN as of 2026-07-27**, and **mlx#3860** was retitled in-thread to
+> — OPEN as of 2026-07-29**, and **mlx#3860** was retitled in-thread to
 > *"fp32 matmul silently defaults to TF32-class precision (`MLX_ENABLE_TF32=1`), undocumented on both
 > backends"*. A one-time log line at actual TF32 engagement was agreed in-thread; **mlx PR #3894**
-> (open) documents the default. Neither had landed at the time of writing.
+> (open) documents the default. Neither had landed as of 2026-07-29.
 >
 > **Safe default.** In any test suite, set `MLX_ENABLE_TF32=0` **before importing mlx**. That is
 > exactly what MLX's own test harness does — `python/tests/mlx_tests.py` sets
@@ -875,8 +875,9 @@ Community-measured consequences, each attributed:
 - **`mlx-lm/tests/test_models.py::test_ssm`** fails out of the box on any M5 with mlx ≥ 0.32.
 - **mlx-lm PR #1595** pins `MLX_ENABLE_TF32=0` in `tests/test_models.py` — but **not** in
   `test_generate.py`.
-- **mlx-swift #357 (OPEN)** — *"[BUG] tests fail due to TF32"*, the Swift-side manifestation of the
-  same thing.
+- **mlx-swift-lm #357 (OPEN as of 2026-07-29)** — *"[BUG] tests fail due to TF32"*, the Swift-side
+  manifestation of the same thing. (Previously miscited here as `mlx-swift` #357, which is an
+  unrelated merged PR; the TF32 bug lives in `ml-explore/mlx-swift-lm`.)
 
 And the methodological quote from mlx#3897 that deserves to be pinned above every benchmark you
 write:

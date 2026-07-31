@@ -78,7 +78,7 @@ written from memory; if a spelling is inferred rather than read, it says so.
 | `Attachment.init(_:orientation:)` | *"Creates an attachment from a …"* | 27.0 | ✅ Apple symbol page |
 | `Attachment.init(imageURL:orientation:)` | *"Creates an attachment from a file URL pointing to an image."* | 27.0 | ✅ Apple symbol page + Apple's Python-SDK Swift shim |
 | `Attachment.label(_:)` — ⚠️ **required** for tool calls, no-ops silently if omitted (§6.4) | `func label(_:) -> Attachment` | 27.0 | ✅ Apple symbol page + `Origami/Models/DataModels/Photo.swift:77-91` |
-| `ImageAttachmentContent` | `struct ImageAttachmentContent` — *"Holds image data"* | 27.0 | ✅ symbol page exists; 🔴 members undocumented; **never appears at a call site in any Apple sample** |
+| `ImageAttachmentContent` | `struct ImageAttachmentContent : Sendable, Equatable` | 27.0 | ✅ symbol page + SDK-verified (`FoundationModels-27.0-macos.swiftinterface:2779-2781`) — **deliberately opaque**: no public members beyond `==`; it exists as the phantom `Content` of `Attachment<ImageAttachmentContent>`, whose four inits are constrained on it (`:2784-2789`); **never appears at a call site in any Apple sample** |
 | `ImageReference` | `struct ImageReference`, conforms `Generable` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/ImageAnalysis.swift:11-21` |
 | `ImageReference.attachmentLabel` | `var attachmentLabel: String` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/BrainstormModel.swift:142-144`, `:168-171` |
 | `ImageReference.resolved(in:)` | `func resolved(in:) -> Transcript.ImageAttachment?` | 27.0 | ✅ Apple symbol page |
@@ -110,13 +110,15 @@ day one. (✅ verified: `skills/foundation-models-language-model-protocol/SKILL.
 `github.com/apple/foundation-models-utilities`.)
 
 **`Attachment` conforms to `PromptRepresentable` *and* `InstructionsRepresentable`.** That is on the
-symbol page, and it means an attachment is legal inside an `Instructions { }` block, not only a
-`Prompt { }` block.
+symbol page and now ✅ **SDK-verified** — `extension Attachment : PromptRepresentable,
+InstructionsRepresentable` with both representation properties
+(`FoundationModels-27.0-macos.swiftinterface:2767-2776`) — and it means an attachment is legal
+inside an `Instructions { }` block, not only a `Prompt { }` block.
 
-> 🔴 **GAP — images in instructions.** No source in the corpus shows an image attached to
-> `Instructions` rather than a `Prompt`, and nothing describes how such an image interacts with
-> the instruction-caching that makes instructions cheap to re-send. The conformance is real; the
-> semantics are undocumented. To resolve: an Apple doc page for `Attachment`'s
+> 🔴 **GAP — images in instructions.** The conformance compiles (SDK-verified above), but no source
+> in the corpus shows an image attached to `Instructions` rather than a `Prompt`, and nothing
+> describes how such an image interacts with the instruction-caching that makes instructions cheap
+> to re-send. The semantics are undocumented. To resolve: an Apple doc page for `Attachment`'s
 > `InstructionsRepresentable` conformance, or an empirical `usage`-property comparison between an
 > image in instructions vs. the same image in a prompt on a device running 27.0.
 
@@ -280,6 +282,16 @@ Three things to steal from those fifteen lines:
 
 1. **`Attachment(_:)` takes a `UIImage`/`NSImage` with no bridging step.** No `.cgImage` dance, no
    `ImageAttachmentContent` construction at the call site.
+   > ⚠️ **Where those overloads live (2026-07-29).** The FoundationModels 27.0 beta interface
+   > declares exactly **four** image inits on `Attachment<ImageAttachmentContent>` — `CGImage`,
+   > `CIImage`, `CVPixelBuffer`, and `imageURL:`, each with `orientation:
+   > CGImagePropertyOrientation? = nil` (✅ **SDK-verified**,
+   > `FoundationModels-27.0-macos.swiftinterface:2784-2789`). There is **no `UIImage`/`NSImage`
+   > overload in that module's interface** — yet Origami compiles `Attachment(image)` with both.
+   > Both facts stand: the toolkit-type overloads must be supplied by an overlay outside the
+   > FoundationModels module proper (they are not in the captured macOS interface), so if you are
+   > auditing availability or writing cross-platform wrappers, the four-source list above is the
+   > module's own contract and `UIImage`/`NSImage` acceptance is verified only at the call site.
 2. **`Prompt {}` — the empty prompt — is a legal graceful-degradation value.** Apple returns it when
    decoding fails rather than throwing. That composes cleanly, because…
 3. **…`Prompt` values splice into a `Prompt` builder, including arrays of them.** The same sample
@@ -427,7 +439,9 @@ Here is the honest state of the world:
 > VLMs") asked exactly this question and **was never answered**. To resolve this we would need
 > either an Apple doc/technote on image tokenization, or a controlled experiment on a 27.0 device
 > reading `response.usage` across a sweep of input resolutions. **Nobody in this corpus has run
-> that experiment.**
+> that experiment.** (The 27.0 beta interface was checked 2026-07-29: it contains no per-image
+> token constant, no resize-policy symbol, and no image-related member on `Usage` — the answer is
+> not in the SDK surface.)
 
 Two numbers circulate. Neither is Apple's, and you should treat them accordingly.
 
@@ -501,17 +515,16 @@ Both initializers take an `orientation:`. Apple's own comment tells you when:
 Attachment(imageTwo, orientation: .right)
 ```
 
-`.right` is the only case name attested in the corpus. The type is almost certainly
-`CGImagePropertyOrientation` — `Transcript.ImageAttachment` exposes `var orientation` described as
-*"The display orientation of the image"*, and a forum poster's working code reads
-`Attachment(modelImage.cgImage, orientation: modelImage.orientation)` where `modelImage.orientation`
-came from their own image wrapper.
+`.right` is the only case name attested at an Apple call site in the corpus, and the type is no
+longer inferred:
 
-> 🟡 **RECONSTRUCTED — the orientation type.** The parameter exists (✅), `.right` is a real case
-> (✅, Apple's sample), and the property round-trips onto `Transcript.ImageAttachment.orientation`
-> (✅). The concrete *type* is never spelled out on any page in the corpus. `CGImagePropertyOrientation`
-> is the overwhelmingly likely answer — it is the standard EXIF-orientation enum on Apple platforms
-> and it has a `.right` case — but treat the type name as inferred and let Xcode confirm it.
+> ✅ **VERIFIED (2026-07-29) — the orientation type is `CGImagePropertyOrientation`, optional,
+> defaulting to `nil`.** Every `Attachment` image init is declared `orientation:
+> ImageIO.CGImagePropertyOrientation? = nil` — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:2785-2789`), and the same signature appears on all
+> four `Transcript.ImageAttachment` inits (`:2369-2372`), whose stored property is a non-optional
+> `var orientation: CGImagePropertyOrientation { get }` (`:2366-2368`). So the standard
+> EXIF-orientation enum it is; `nil` means "the framework was told nothing."
 
 There is one conspicuous thing about the parameter: **Apple's own shipping multimodal sample never
 uses it.** Origami attaches `UIImage(data:)` / `NSImage(data:)` values and calls
@@ -1099,13 +1112,20 @@ dense document is not to be trusted and its barcode decoding does not exist. Bot
 **Vision** framework's documentation, not Foundation Models'. Deeper coverage of the built-in tools
 is in [Spotlight RAG and system tools](./04-spotlight-rag-and-system-tools.md).
 
-> 🔴 **GAP — the tools' own API surface.** `OCRTool` and `BarcodeReaderTool` are documented at
-> `/documentation/Vision/OCRTool` and `/documentation/Vision/BarcodeReaderTool`; **neither page was
-> fetched into this corpus.** Their initializer parameters (recognition languages? symbologies?
-> region of interest?), their `Arguments` types and their failure modes are unknown here. And
-> **neither type appears in any of Apple's three 2026 sample projects** — the snippet above is the
-> whole of the published evidence, and it comes from a documentation page, not from compiling code.
-> Resolve by reading those two Vision pages.
+> ✅ **RESOLVED (2026-07-29) — the tools' own API surface, from the cross-import overlay.** The
+> parent `Vision.swiftinterface` was empty of them because they were never there: both tools live
+> in **`_Vision_FoundationModels`**, the overlay module the compiler activates only when a file
+> imports **both** `Vision` and `FoundationModels`
+> (✅ **SDK-verified**, `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`
+> `BarcodeReaderTool`, `:49-83` `OCRTool`). The surface is minimal:
+> `init(name: String? = nil, description: String? = nil)` is the whole configuration — **no
+> symbology or language knobs exist**; `Arguments` is a real nested `Generable` struct whose
+> model-facing fields are not emitted in the interface (the schema surfaces at runtime via
+> `generationSchema`); and the output is an **opaque** `some PromptRepresentable` — you cannot name
+> the type, only compose it into prompts. `BarcodeReaderTool` is additionally watchOS 27.0;
+> `OCRTool` is watchOS-unavailable; both are tvOS-unavailable. Failure modes remain unknown, and
+> **neither type appears in any of Apple's three 2026 sample projects** — the snippet above is
+> still the whole of the published call-site evidence.
 
 ---
 
@@ -1197,16 +1217,27 @@ That last row is the composite pattern and the one worth internalising: **locali
 model, then describe with the language model.** You crop before you attach, which is cheaper in
 tokens, faster, and dramatically more accurate than asking one model to do both jobs.
 
-> 🔴 **GAP — Vision framework API names beyond `ClassifyImageRequest`.** The only 2026-era Vision
-> request type attested anywhere in this corpus is `ClassifyImageRequest()` with
-> `.perform(on: ciImage)`, from Apple's `ImageReference` documentation. Apple's forum reply names
-> *"saliency and classification APIs"* as a category without naming a single type. The forum corpus
-> also contains the legacy `VNRecognizeTextRequest` (a `VN`-prefixed, pre-Swift-Vision type, from a
-> 2025-era thread) and a `TrackObjectRequest` mentioned in a thread about `performAll()` not
-> parallelising. **The modern Swift Vision request names for object detection, rectangle detection,
-> and saliency are not verified here and are deliberately not guessed.** Resolve by reading
-> `/documentation/vision` for the 27.0 release; a dedicated Vision guide does not exist in this
-> series yet.
+> ✅ **RESOLVED (2026-07-29) — the modern Swift Vision request names, read from the captured macOS
+> 27.0 Vision interface** (`notes/sdk-interfaces/Vision-27.0-macos.swiftinterface`; all are
+> `public struct … : ImageProcessingRequest`). The ones this guide's decision table needs:
+>
+> | Job | Request type | Citation |
+> |---|---|---|
+> | Classification | `ClassifyImageRequest` | `Vision-27.0-macos.swiftinterface:2533` |
+> | Text recognition (OCR) | `RecognizeTextRequest` | `:2568` |
+> | Document structure + text | `RecognizeDocumentsRequest` | `:2386` |
+> | Barcodes | `DetectBarcodesRequest` (result `[BarcodeObservation]`, `symbologies:` knob) | `:920-946` |
+> | Saliency (attention) | `GenerateAttentionBasedSaliencyImageRequest` | `:340` |
+> | Saliency (objectness) | `GenerateObjectnessBasedSaliencyImageRequest` | `:95` |
+> | Rectangle detection | `DetectRectanglesRequest` | `:2499` |
+> | Foreground/person masks | `GenerateForegroundInstanceMaskRequest` / `GeneratePersonInstanceMaskRequest` | `:1954`, `:1911` |
+> | Your own Core ML model | `CoreMLRequest` | `:1626` |
+>
+> There is no general-purpose "detect arbitrary objects" request in the interface (animals, faces,
+> humans, text and rectangles are the built-in detectors — `RecognizeAnimalsRequest:876`,
+> `DetectFaceRectanglesRequest:3014`, `DetectHumanRectanglesRequest:1744`) — which is exactly why
+> §9.4's Core AI route exists for custom detection. A dedicated Vision guide still does not exist
+> in this series.
 
 ### 9.4 The Core AI route: real detection and real segmentation
 
@@ -1501,12 +1532,17 @@ Two further caveats about that Linux claim, from a full read of the repository:
 > `availability`, `quotaUsage`, `contextSize`, `supportedLanguages`, `supportsLocale(_:)`; there is no
 > vision-related member. The per-user daily quota is expressed in *requests* counted against the
 > user's iCloud account, and the quota API exposes only coarse states (reached / below / approaching)
-> — a developer asked for actual numbers and was told they don't exist (FB23378161). So:
+> — a developer asked for actual numbers and was told they don't exist (FB23378161). One item has
+> moved since: the 27.0 interface confirms `PrivateCloudComputeLanguageModel` **publicly exposes**
+> `capabilities: LanguageModelCapabilities` via its `LanguageModel` conformance (✅ **SDK-verified**,
+> `FoundationModels-27.0-macos.swiftinterface:98-101`), and `.vision` is a declared `Capability`
+> (`:1470-1473`) — so the check is one property read. What its *value* is on a real PCC-entitled
+> device is still unknown. So:
 >
 > - Whether a PCC request carrying five images costs the same quota as a text request: **unknown**.
 > - Whether PCC has different image size or count limits than the on-device model: **unknown**.
-> - Whether PCC's `capabilities` includes `.vision`: **unknown** — and this is the one you can
->   actually test, since it is a property read.
+> - Whether PCC's `capabilities` **contains** `.vision`: **unknown** — the property is SDK-verified
+>   readable; nobody in this corpus has printed it.
 >
 > **Do not assume parity with the on-device model.** Resolve by reading
 > `PrivateCloudComputeLanguageModel.capabilities` on a 27.0 device with the PCC entitlement, then
@@ -1739,20 +1775,28 @@ The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schem
 
 ### 12.2 Every gap this guide declared
 
-1. **Images in `Instructions`** — the `InstructionsRepresentable` conformance is real; the semantics
-   and caching behaviour are undocumented. (§1)
+1. **Images in `Instructions`** — the `InstructionsRepresentable` conformance is now SDK-verified
+   (`FoundationModels-27.0-macos.swiftinterface:2767-2776`); the semantics and caching behaviour
+   are undocumented. (§1)
 2. **Per-image token cost** — no Apple figure, no formula, and the forum thread that asked
    (833783) was never answered. The two circulating numbers (896 px, 576 tokens) are developer
    inference and a cross-backend community constant respectively. (§4.2)
 3. **Whether `tokenCount(for:)` counts attachments** — expressible in the C API, undocumented in
    behaviour. (§4.2)
-4. **The `orientation:` parameter's type** — `CGImagePropertyOrientation` is inferred, never spelled
-   out in any source read. (§5.1, marked 🟡 rather than 🔴)
-5. **`ImageAttachmentContent`'s members** — the symbol page is a 1,370-byte stub with no members, and
-   the type **never appears at a call site in any Apple sample**. You are not expected to construct
-   one; what it holds is still unknown. (§1)
-6. **`OCRTool` / `BarcodeReaderTool` API surface** — their Vision doc pages were not fetched. (§8.3)
-7. **Modern Swift Vision request names beyond `ClassifyImageRequest`** — deliberately not guessed. (§9.3)
+4. ~~The `orientation:` parameter's type~~ — **✅ RESOLVED 2026-07-29**:
+   `CGImagePropertyOrientation? = nil`, SDK-verified on every image init
+   (`FoundationModels-27.0-macos.swiftinterface:2785-2789`, `:2369-2372`). (§5.1)
+5. ~~`ImageAttachmentContent`'s members~~ — **✅ RESOLVED 2026-07-29**: the 27.0 interface shows it
+   is *deliberately opaque* — `Sendable, Equatable`, no other public members; it exists as the
+   phantom `Content` type parameter of `Attachment`
+   (`FoundationModels-27.0-macos.swiftinterface:2779-2789`). You are not expected to construct one. (§1)
+6. ~~`OCRTool` / `BarcodeReaderTool` API surface~~ — **✅ RESOLVED 2026-07-29**: both live in the
+   `_Vision_FoundationModels` **cross-import overlay** (import both parents to get them);
+   `init(name:description:)` is the whole configuration, `Arguments` is `Generable`, `Output` is
+   opaque `some PromptRepresentable`
+   (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-83`). (§8.3)
+7. ~~Modern Swift Vision request names beyond `ClassifyImageRequest`~~ — **✅ RESOLVED
+   2026-07-29** from the captured `Vision-27.0-macos.swiftinterface` (table in §9.3). (§9.3)
 8. **Quality/latency numbers for YOLOS, SAM 3, EfficientSAM in `apple/coreai-models`** — none exist
    in the repo. (§9.4)
 9. **PCC image input** — one spoken demo in session 319, one Apple sample *architected* to flip its
