@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1757 of them, 1399 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1756 of them, 1398 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -28,7 +28,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 153 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
 | [Version drift](#version-drift) | 86 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 157 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [Docs vs reality](#docs-vs-reality) | 156 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 255 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
 | [General cautions](#general-cautions) | 358 | Warnings and considerations that are not themselves silent failures. |
 
@@ -1545,7 +1545,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Profile(model:) { } appears in conference write-ups, never in Apple code — the model is applied as a modifier.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#32-the-model-is-a-modifier-not-an-initialiser-label) — 3.2
 - [Scope note: the README's '5000 tokens' summarisation trigger doesn't exist — the API threshold counts entries.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: the '5000 tokens' ghost.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
-- [The README's .package(from:"1.0.0") can never resolve — only prerelease tags exist and from: excludes prereleases.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#11-the-dependency-line-in-the-readme-does-not-work) — 3.3 🔇
+- ["The README's .package(from:""1.0.0"") can never resolve — only prerelease tags exist and from: excludes prereleases."](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#11-the-dependency-line-in-the-readme-does-not-work) — 3.3 🔇
 - [Apple's SKILL.md claims summarizeHistory defaults model: — the shipping source has no default; you must pass one.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#3-the-three-history-modifiers-signature-by-signature) — 3.3
 - [Heading: the '5000 tokens' ghost — a README trigger the API cannot express.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#6-the-5000-tokens-ghost) — 3.3
 - [The package's modifiers use the lossy session-wide history property that session 242 says not to prefer.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#the-conflict-stated-plainly) — 3.3
@@ -1557,7 +1557,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 4**
 
-- [Apple's slide and docs say 4K on-device context; a shipping app measures 8K on iOS 27 — probe contextSize.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#32-the-comparison-table) — 4.1
 - [The PCC article implies any LanguageModel fits the legacy inits — the API types them SystemLanguageModel only.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#42-the-documentation-contradiction-and-how-it-resolves) — 4.1
 - [An Apple doc page stacks .reasoningLevel(.deep) with a redundant ContextOptions(reasoningLevel:) — do not copy it.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#63-setting-the-level-two-places) — 4.1
 - [Transcript and docs disagree on the quota-simulation scheme page and menu title — the limit-reached option matches.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#8-simulating-quota-states-in-xcode) — 4.1

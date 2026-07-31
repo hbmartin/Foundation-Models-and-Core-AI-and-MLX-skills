@@ -447,20 +447,18 @@ Two rows deserve annotation.
 practice, a PCC-only (or custom-provider-only) knob. Setting it on a `SystemLanguageModel` session is
 not a compile error; §6.5 covers what actually happens.
 
-**"Context size: 4K"** is the number Apple prints, and it is contradicted by field reports on 27:
+**"Context size: 4K"** is the number Apple prints, and it is now settled:
 
-> ⚠️ **CONFLICT — the on-device 4K figure.** Apple's slide (`319:44`) and the docs table both say
-> **4K**. A comment in shipping third-party app code says otherwise
-> (`Noema/AFMLLMClient.swift:133-135`, community-measured):
+> ✅ **SETTLED — the on-device figure is 4,096.** Apple's slide (`319:44`), the docs table, and
+> **TN3193** ("Managing the on-device foundation model's context window", read 2026-07-27) all state
+> it plainly, and the 2026-07-31 runtime probe measured `contextSize == 4096` on the iOS 27.0
+> simulator runtime (`probes/`, `fm.contextSize`). The contrary claim — a comment in shipping
+> third-party app code (`Noema/AFMLLMClient.swift:133-135`, community-measured) that the iOS 27
+> model reports 8K — is uncorroborated by Apple and now rests entirely on iOS 27 *hardware*; treat
+> it as a footnote, not a live conflict. Apple's DTS Engineer in thread 790736 (iOS 26 era) still
+> applies: *"There is no guarantee that this will stay the same forever or across devices."*
 >
-> > "The on-device context is selected by the installed system model. **iOS 26 reports 4K while the
-> > iOS 27 model reports 8K.** `contextSize` is available in the Xcode 26.4+ SDK, so it must not be
-> > hidden behind the Xcode 27 gate."
->
-> Meanwhile Apple's DTS Engineer in thread 790736 (iOS 26 era) said the limit is *"around 4,000"* and
-> explicitly warned: *"There is no guarantee that this will stay the same forever or across devices."*
->
-> **Ruling: do not hardcode 4096.** Read `contextSize`. The PCC side of the table is better
+> **Ruling: still do not hardcode 4096.** Read `contextSize`. The PCC side of the table is better
 > corroborated — a shipping app hardcodes `static let privateCloudContextLimit = 32_768`
 > (`Noema/AppleFoundationModelRegistry.swift:7`) and the docs article states 32K in prose — but even
 > there, prefer the property. Note that forum thread 833642's 32K figure came from a **community**

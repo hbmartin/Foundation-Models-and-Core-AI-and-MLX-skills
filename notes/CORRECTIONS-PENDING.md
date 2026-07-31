@@ -3,11 +3,21 @@
 Findings that arrived AFTER a guide was drafted, or that supersede what a note said. Every item
 here must be reconciled before the affected guide is considered done.
 
-Status legend: 🔧 not yet applied · ✅ applied
+Status legend: 🔧 not yet applied · ✅ applied · ⚠️ partially applied
+
+**Reconciled 2026-07-31.** Every item was audited against the guides on disk; the markers below are
+now authoritative. Ten items were found fully applied; C6's last residue (the part-17/part-16
+reassertions of the retracted ANE-routing claim) was fixed during the reconciliation pass; C7
+remains ⚠️ partial — its facts landed but the owning non-LLM guide is unwritten, tracked as open
+backlog. Where a register entry was itself superseded by later evidence (C3's scale-plane deletion
+and 26.2 floor), the item now carries a superseded note; the guides follow the later finding.
 
 ---
 
-## 🔧 C1 — Siri-enablement gating is a BUG, not behaviour
+## ✅ C1 — Siri-enablement gating is a BUG, not behaviour
+
+**Applied:** part-01 ref 02 §7.4 ("an acknowledged defect, not a gate", Frameworks-Engineer quote),
+part-02 ref 06 (~:276–285), part-17 ref 01 (~:48, ~:1495).
 
 **Affects:** `part-01-orientation-and-gating/references/02-platform-and-version-gating.md`,
 and any guide that repeats the availability story (Part 2 guide 06, Part 17 guide 01).
@@ -27,7 +37,11 @@ as unresolved-as-of-2026-07-27. This materially changes the advice.
 
 ---
 
-## 🔧 C2 — The second Core Spotlight on-ramp is `indexAppEntities`
+## ✅ C2 — The second Core Spotlight on-ramp is `indexAppEntities`
+
+**Applied:** part-02 ref 04 §2.3 "One index, three consumers" (mechanism at ~:249, diagram
+~:282–287, Part 16 cross-link). The declared delegate-invocation gap is preserved in the guide's
+gap table, as instructed below.
 
 **Affects:** `part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md`
 
@@ -49,7 +63,16 @@ as a declared gap.
 
 ---
 
-## 🔧 C3 — Part 11 must be rebuilt around what MPP actually ships
+## ✅ C3 — Part 11 must be rebuilt around what MPP actually ships
+
+**Applied — with two register bullets superseded by later evidence.** Part 11 is written and tells
+the *current* story: the **27.0 SDK headers DO ship blockwise scale planes** (`tensor_blockwise` +
+`tensor_plane_scales`, ue8m0-only — see `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 6, which
+inverted this item's "scale planes do not exist" finding for the 27 surface; the 26.x absence below
+remains true), and the availability story is the Tech Talk ladder per C10.5, **not** the "26.2"
+this item's required-change paragraph asks for. All other bullets (reduce_rows, descriptor arity,
+execution aliases, the two silent failures, NAX freshness, the mlx-core.md source fix) landed in
+part-11 refs 01/02.
 
 **Affects:** all of `part-11-metal-and-tensorops/`.
 
@@ -93,9 +116,10 @@ toolchain):
 
 **Required change:** delete the scale-plane material entirely — there is no compiling example of it
 anywhere. Rewrite the guide around "TensorOps gives you 4- and 8-bit integer operands and no scale
-mechanism; here is how MLX builds MX and NV formats on top of that." Correct the availability
-floor to 26.2. Correct guide 35's source list, which currently cites `notes/repos/mlx-core.md` for
-material that file does not contain.
+mechanism; here is how MLX builds MX and NV formats on top of that." ~~Correct the availability
+floor to 26.2.~~ (Superseded — use C10.5's ladder; see the Applied note above. The scale-plane
+deletion is likewise superseded for the 27 surface.) Correct guide 35's source list, which
+currently cites `notes/repos/mlx-core.md` for material that file does not contain.
 
 **Two ⚠️ SILENT FAILURE callouts this creates:**
 1. `reduce_rows`' `identity` defaults to `sum_identity` (zero) **regardless of the operation**, so
@@ -109,7 +133,10 @@ odd tile shapes. Present NAX as new and sharp-edged.
 
 ---
 
-## 🔧 C4 — `@Generable` is unavailable on the fast BYO-model path
+## ✅ C4 — `@Generable` is unavailable on the fast BYO-model path
+
+**Applied:** part-01 map decision-table row (~:1068) + §5.1; part-04 ref 02 §5 ("The logits
+constraint"); attributed as community-measured.
 
 **Affects:** `part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md`
 (already briefed), `part-04-beyond-the-built-in-model/` (all guides), and the Part 1 decision table.
@@ -124,7 +151,11 @@ the Part 1 backend decision table as a column, and needs a full section in Part 
 
 ---
 
-## 🔧 C5 — Prefix reuse is worth ~101×, but not for hybrid architectures
+## ✅ C5 — Prefix reuse is worth ~101×, but not for hybrid architectures
+
+**Applied:** part-01 §5.2 + decision-table row; part-03 ref 01 (~:2226–2273, incl. the
+hybrid-model table); part-04 ref 04 §9.4; part-07 ref 03. The `trimKVCache` return-value contract
+appears verbatim in all three reference guides.
 
 **Affects:** `part-03-context-profiles-agentic/` (KV cache guide), `part-04-beyond-the-built-in-model/`
 (provider executor guide), `part-07-coreai-swift-runtime/` (states guide), Part 1 decision table.
@@ -148,7 +179,14 @@ returned value, not the requested one.
 
 ---
 
-## 🔧 C6 — Splitting a model into multiple functions is what routes it to the ANE
+## ✅ C6 — Splitting a model into multiple functions is what routes it to the ANE
+
+**Applied — and rescoped.** The claim as written above was later narrowed: the split drives the
+optional `coreai-models` **loader's** ANE preference (`ModelStructure.swift` classifier), a package
+loading policy, not a Core AI framework routing contract. The rescoped framing landed in parts
+7/8/9/10/14 behind the shared `[^sample-routing-policy]` footnote; the last two reassertions of the
+unscoped claim (part-17 ref 02 §7.6 + tables, part-16 ref 01 §14.2) were fixed 2026-07-31. The
+re-encode caveat is in part-07 ref 04 and part-17 ref 02 §7.6.
 
 **Affects:** `part-07-coreai-swift-runtime/`, `part-08-coreai-pytorch-conversion/`,
 `part-10-coreai-hardware-authoring-debugging/`.
@@ -166,7 +204,16 @@ cache. The 76% figure requires caller-side work that Apple's own package does no
 
 ---
 
-## 🔧 C7 — Non-LLM Core AI needs coverage that the 50-topic list lacked
+## ⚠️ C7 — Non-LLM Core AI needs coverage that the 50-topic list lacked
+
+**Partially applied — OPEN BACKLOG.** Every verified fact below landed, scattered: llm-benchmark-only
++ no published non-LLM numbers (part-10 ref 03, part-09 ref 02, part-16 ref 01), zero
+`CVPixelBuffer`/EXIF handling and the two box conventions (part-17 ref 05), swallowed diffusion
+quantisation (part-09 ref 01 §17.2, part-10 ref 03), `BundleKind`/`SpeechBundle` (part-17 ref 06,
+part-07 README). **What was asked for and does not exist: an owning guide for
+`CoreAISegmentation`/`CoreAIObjectDetection`/`CoreAIDiffusion`** — part-07 ref 04 defers non-LLM
+products to Part 16, and Part 16 covers only `CoreAISpeech` (§14). Source when written:
+`notes/repos/coreai-models-nonllm.md`.
 
 **Affects:** new guides needed in `part-07-coreai-swift-runtime/` and
 `part-16-adjacent-capabilities/`.
@@ -192,7 +239,12 @@ Notable, all ✅ verified against source:
 
 ---
 
-## 🔧 C8 — Add three App Intents / Siri guides to Part 16
+## ✅ C8 — Add three App Intents / Siri guides to Part 16
+
+**Applied:** all three guides exist — part-16 refs `02-app-schema-domains.md`,
+`03-onscreen-awareness.md`, `04-entities-spotlight-and-foundation-models.md` — and are listed in
+`guides/README.md`. The transcript gap declared at the end of this item is also closed (see note
+there).
 
 **Affects:** `part-16-adjacent-capabilities/`.
 
@@ -221,13 +273,19 @@ is an unresolved naming hazard. Apple's DTS engineer deflected the key architect
 Feedback Assistant (FB23813341) **without answering**, and Apple's docs contradict the observed
 behaviour by claiming "Schema application is optional but recommended" — say so.
 
-🔴 **GAP:** WWDC26 sessions **240, 343, 344 and 345 are absent from our transcript corpus.** Their
-pages carry chapters, code and MP4 URLs. A dedicated transcript pass is warranted before these
-three guides are written.
+~~🔴 GAP: WWDC26 sessions 240, 343, 344 and 345 are absent from our transcript corpus.~~
+**RESOLVED** — the C10 recovery pass fetched all four (plus Tech Talk 111432); they live in
+`transcripts/` and the three guides were written against them.
 
 ---
 
-## 🔧 C9 — Apple's own sample code corrects 66 items, several already written into Parts 1–2
+## ✅ C9 — Apple's own sample code corrects 66 items, several already written into Parts 1–2
+
+**Applied** (spot-checked rows a–p): `Tool.name` "optional to implement" wording (part-02 ref 03),
+the 5-case `LanguageModelError` list + "`SystemLanguageModel.Error` is tested first" (part-02
+ref 06), the zero-partials silent failure (part-02 refs 01 §6.4 + 02), DynamicProfile-as-projection
+anchoring part-03 ref 02, and the Part 6 rows (`ModelSubject`, `ToolCallEvaluator` +
+`structuredTranscript`, hand-rolled Cohen's kappa in part-06 ref 03).
 
 **Source:** `notes/web/apple-sample-code.md` (2,108 lines; §2 is a 66-row corrections table).
 **Status of evidence:** these are ✅ VERIFIED against compiling Apple sample projects — the
@@ -284,7 +342,12 @@ Also re-confirmed: **`coreai` has zero sample-code projects.**
 
 ---
 
-## 🔧 C10 — Seven recovered transcripts resolve three long-standing gaps and add one silent failure
+## ✅ C10 — Seven recovered transcripts resolve three long-standing gaps and add one silent failure
+
+**Applied** (all sub-items): C10.1 in part-02 refs 03 §10 + 05 (watchOS asymmetry kept un-smoothed);
+C10.2's required-label callout in both refs 03 and 05; C10.3 in part-16 ref 04 §11.4; C10.4 in
+part-12 ref 05 §§16–19 + 24 (with the global `--batch-size` named as a silent failure); C10.5 in
+part-11 (see the superseded note on C3); C10.6 in part-16 ref 02 §14.1.
 
 **Source:** `notes/transcripts/missing-sessions.md` (3,216 lines) plus seven new raw transcripts in
 `transcripts/`: `wwdc2026-{233,237,240,343,344,345}.txt` and `tech-talks-111432.txt`.
@@ -307,8 +370,10 @@ Availability **iOS / iPadOS / macOS / visionOS 27.0+ Beta**.
 unverified cause. Do not smooth it over.
 Outputs (Apple prose only, not a published signature): barcode → an **array of `Barcode`** carrying
 decoded content plus symbology; OCR → a **`String`**, 30+ languages.
-🔴 **Still a genuine GAP:** the `Arguments` / `Output` associated types and the `Barcode` type are
-**not published**. Resolving needs an SDK interface dump. Keep the gap, narrowed.
+~~🔴 Still a genuine GAP: the `Arguments` / `Output` associated types and the `Barcode` type are
+not published. Resolving needs an SDK interface dump.~~ **RESOLVED 2026-07-29** — the captured
+`_Vision_FoundationModels` cross-import overlay answers it (`Output` is a deliberately unnameable
+opaque `some PromptRepresentable`); cited in part-02 ref 03 §10.
 
 ### C10.2 — ⚠️ NEW SILENT FAILURE: image tool calls require an attachment label
 **Affects:** guides 2.3 and 2.5, **both already written and already corrected once.**
@@ -318,7 +383,7 @@ omitted.** This is exactly the class of defect the series exists to document, an
 either guide yet. Needs a callout in both.
 
 ### C10.3 — `.system.searchInApp` is a RENAME, not a new schema
-**Affects:** the Part 16 App Intents guides (not yet written).
+**Affects:** the Part 16 App Intents guides (since written; see C8).
 
 Confirmed twice on session 343's page (transcript + Apple code sample), verbatim: *"The `.system`
 search schema introduced in iOS 17 is now named `.system.searchInApp`."* It takes
@@ -341,7 +406,7 @@ across four machines.
 ⚠️ **`--batch-size` is GLOBAL and must be scaled by N.** Easy to get silently wrong.
 
 ### C10.5 — TensorOps: restate the version story; scale-plane non-existence is now SETTLED
-**Affects:** `part-11-metal-and-tensorops/` (not yet written). **This supersedes C3's version bullet.**
+**Affects:** `part-11-metal-and-tensorops/` (since written). **This supersedes C3's version bullet.**
 
 Tech Talk 111432 gives an explicit per-point-release ladder:
 **26.0** intro (WWDC25 session 262) · **26.1** bfloat · **26.3** cooperative tensors as matmul
@@ -369,7 +434,11 @@ conflates the last two. Deserves its own callout box.
 
 ---
 
-## 🔧 C11 — TN3193 read: the context-window conflict is SETTLED at 4096
+## ✅ C11 — TN3193 read: the context-window conflict is SETTLED at 4096
+
+**Applied:** part-03 ref 01 §3.3 ("settled by TN3193") + §2.6 (the six mitigations); part-17 ref 03
+§5 (the coexistence wrinkle) + §12.5; part-02 ref 06 catches both spellings. Residual stale
+presentations of the conflict as open (part-03 README, part-04 ref 01) were fixed 2026-07-31.
 
 **Affects:** `part-03-…/references/01-context-window-and-kv-cache.md` (which declared this an open
 gap and correctly flagged that TN3193 had never been read), `part-02-…/references/06-availability-
@@ -422,7 +491,13 @@ everything the guides say about cache invalidation still rests on session 242 pl
 
 ---
 
-## 🔧 C12 — The 26.5 FoundationModels .swiftinterface was on this machine all along
+## ✅ C12 — The 26.5 FoundationModels .swiftinterface was on this machine all along
+
+**Applied** — and the "apply after the 27 interface is read" precondition at the end of this item
+was met on 2026-07-29 (both interface sets captured): the nine-case `GenerationError` ↔
+`LanguageModelError` mapping (part-17 ref 03 §§3–5), `Tool` protocol requirements +
+`includesSchemaInInstructions` (part-02 ref 03 §4.4, default `true` probe-verified 2026-07-31),
+five `tokenCount(for:)` overloads (part-03 ref 01), and the negative-evidence version floors.
 
 **Source:** `notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface` (copied verbatim from
 MacOSX26.5.sdk; module version 1.5.2, Swift 6.3.2, `-target arm64e-apple-macos26.5`) and the
@@ -484,5 +559,7 @@ unless noted". BUT the error namespace is NOT stable (see below), so do not blan
 `QuotaUsage`, `LanguageModelError`. And **Vision 26.5 has 0 hits for `BarcodeReaderTool`/`OCRTool`** —
 confirming those are 27-only, matching the transcript pass.
 
-### Apply when? AFTER the running Part-17+sweep workflow finishes (it edits 2.3/2.5/3.1), as ONE
-consolidated SDK pass — ideally together with the 27 interface once Xcode 27 is installed.
+### Apply when? ~~AFTER the running Part-17+sweep workflow finishes (it edits 2.3/2.5/3.1), as ONE
+consolidated SDK pass — ideally together with the 27 interface once Xcode 27 is installed.~~
+**Done** — the sweep finished, both interface sets were captured 2026-07-29, and the consolidated
+pass landed (see the Applied note at the top of this item).

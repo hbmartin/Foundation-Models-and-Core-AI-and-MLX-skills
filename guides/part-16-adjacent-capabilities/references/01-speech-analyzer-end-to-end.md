@@ -3792,9 +3792,10 @@ The bundle layout is a **convention hardcoded in an initializer**, not a manifes
 So adopting `CoreAISpeech` means producing the two-model split yourself, from PyTorch, through the
 Core AI conversion path — which is [Part 8](../../part-08-coreai-pytorch-conversion/) territory and
 is a substantially larger project than "add a Swift package". The split itself is not incidental,
-either: per [Part 7](../../part-07-coreai-swift-runtime/), splitting a model into multiple
-entrypoints is what routes it to the Neural Engine, so the encoder/decoder division is a
-performance requirement as much as an architectural one.
+either: the `coreai-models` loader derives its Neural Engine preference from exactly this kind of
+multi-entrypoint structure — a package loading policy, not a framework routing contract, per
+[Part 10.1 §8](../../part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md) —
+so the encoder/decoder division carries a performance consequence as well as an architectural one.
 
 ### 14.3 Other sharp edges worth knowing before you commit
 
