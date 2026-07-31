@@ -120,6 +120,24 @@ class IndexToolingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('1970-01-01', (fixture[-1] / 'SILENT-FAILURES.md').read_text(encoding='utf-8'))
 
+    def test_source_date_epoch_is_timezone_independent(self):
+        row = ['guide.md', '3', 'section', 'CALLOUT', 'caution-note', 'A warning']
+        honolulu, honolulu_result = self.run_builder(
+            [row], env={'SOURCE_DATE_EPOCH': '0', 'TZ': 'Pacific/Honolulu'}
+        )
+        kiritimati, kiritimati_result = self.run_builder(
+            [row], env={'SOURCE_DATE_EPOCH': '0', 'TZ': 'Pacific/Kiritimati'}
+        )
+        self.addCleanup(honolulu[0].cleanup)
+        self.addCleanup(kiritimati[0].cleanup)
+        self.assertEqual(honolulu_result.returncode, 0, honolulu_result.stderr)
+        self.assertEqual(kiritimati_result.returncode, 0, kiritimati_result.stderr)
+        for filename in ('SILENT-FAILURES.md', 'API-INDEX.md'):
+            self.assertEqual(
+                (honolulu[-1] / filename).read_bytes(),
+                (kiritimati[-1] / filename).read_bytes(),
+            )
+
     def test_unknown_symptom_fails(self):
         fixture, result = self.run_builder(
             [['guide.md', '3', 'section', 'CALLOUT', 'not-a-symptom', 'A warning']]

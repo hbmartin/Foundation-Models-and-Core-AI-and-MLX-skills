@@ -14,10 +14,18 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 GUIDES = REPO / 'guides'
 CLASSIFIED = REPO / 'notes' / 'synthesis' / 'callout-classifications'
+LEGACY_CLASSIFIED = REPO / 'notes' / 'synthesis' / 'callout-classification'
 
 
 class RepositoryIndexTests(unittest.TestCase):
     maxDiff = 2000
+
+    def test_only_canonical_classification_directory_has_files(self):
+        self.assertTrue(CLASSIFIED.is_dir())
+        self.assertFalse(
+            any(path.is_file() for path in LEGACY_CLASSIFIED.rglob('*')),
+            'remove the stale singular classification directory; use callout-classifications',
+        )
 
     def run_command(self, *arguments, env=None):
         return subprocess.run(
