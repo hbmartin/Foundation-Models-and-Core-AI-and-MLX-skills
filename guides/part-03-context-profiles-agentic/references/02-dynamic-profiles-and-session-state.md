@@ -45,8 +45,9 @@ Concretely:
 - Session properties — `@SessionPropertyEntry` on `SessionPropertyValues`, `@SessionProperty(\.…)`
   in profiles and tools, `session.properties` from outside — and the built-in `history` property,
   which is **lossy and global** where `historyTransform` is **lossless and profile-scoped**.
-- `transcriptErrorHandlingPolicy`, the newly-mutable `session.transcript`, and why mutating it while
-  `isResponding == true` is a **trap, not a thrown error**.
+- `transcriptErrorHandlingPolicy`, the newly-mutable `session.transcript`, and the dedicated
+  `LanguageModelSession.Error.transcriptMutationWhileResponding` failure for mutating it while a
+  request is in progress.[^transcript-mutation-error]
 - Apple's own shipped history modifiers in `foundation-models-utilities`, including the one Apple
   ships with a test that pins its buggy behaviour, and the composition rule that makes **every
   composed example in Apple's own repository inert**.
@@ -2415,7 +2416,7 @@ in the transcript is a confident lie about what the assistant previously said.
 **Use `.revertTranscript` (the default) unless you are specifically building resume-after-cancel.** If
 you do use `.preserveTranscript`, write the repair step at the same time as the flag, not later.
 
-### 14.4 ⚠️ The mutable transcript is guarded by a trap, not an error
+### 14.4 ⚠️ The mutable transcript has a dedicated session error
 
 > ✅ **VERIFIED** — `242:165-167`: *"To facilitate that, **the `transcript` property on session is now
 > mutable**. Remember though, **you can only modify the transcript when the session's `isResponding`
@@ -2424,10 +2425,10 @@ you do use `.preserveTranscript`, write the repair step at the same time as the 
 
 > ✅ **VERIFIED** — the declaration confirms it: `final var transcript: Transcript { get set }`.
 
-> ⚠️ **SILENT FAILURE — inverted.** "Programmer error" in Apple's vocabulary means a **trap**: your
-> process dies. It is not a thrown Swift error, there is no `try`, and no `catch` will save you. This
-> is one of the very few places in the Foundation Models framework where a mistake is loud — and it is
-> loud in production, on a user's device, as a crash.
+> ⚠️ **CALLER BUG, TYPED FAILURE.** “Programmer error” classifies this as misuse; it does not prove
+> a fatal process trap. Foundation Models defines
+> `LanguageModelSession.Error.transcriptMutationWhileResponding` for exactly this condition.[^transcript-mutation-error]
+> Treat it as a bug in the session owner and prevent it at the mutation boundary:
 >
 > **Guard every single assignment:**
 >
@@ -2468,8 +2469,8 @@ extension LanguageModelSession {
 }
 ```
 
-Two notes on that helper. It returns `false` rather than trapping, so a repair attempted at a bad
-moment becomes a retry rather than a crash — you decide when to try again. And it takes the whole
+Two notes on that helper. It returns `false` before attempting an invalid mutation, so a repair at a
+bad moment becomes a retry rather than a failed response — you decide when to try again. And it takes the whole
 `Transcript`, because `session.transcript` is a `Transcript`, not an entry array; use
 `Transcript(entries:)` to rebuild one.
 
@@ -2921,8 +2922,8 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
    boundaries, not per turn.
 10. `.required` tool calling is a `while` loop; a session property plus a conditional
     `toolCallingMode` is the profile-shaped exit.
-11. Guard every `session.transcript = …` with `!session.isResponding`. Mutating during a response is a
-    **trap**.
+11. Guard every `session.transcript = …` with `!session.isResponding`. Mutating during a response is
+    session misuse represented by `LanguageModelSession.Error.transcriptMutationWhileResponding`.[^transcript-mutation-error]
 12. If you compose `foundation-models-utilities` history modifiers, `entryThreshold` must be
     **strictly less** than the rolling-window size, or summarisation never fires.
 
@@ -3067,3 +3068,5 @@ The rulings that precedence produced are tabulated in §16.4 — most importantl
 `Profile { }.model(_:)` beats `Profile(model:) { }`, that `some DynamicProfile` is legal despite every
 transcript-derived reconstruction saying otherwise, and that the utilities package's own README loses
 to the utilities package's own source.
+
+[^transcript-mutation-error]: Apple, [`LanguageModelSession.Error.transcriptMutationWhileResponding`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/error/transcriptmutationwhileresponding), “The session’s transcript was mutated while a request was in progress.”

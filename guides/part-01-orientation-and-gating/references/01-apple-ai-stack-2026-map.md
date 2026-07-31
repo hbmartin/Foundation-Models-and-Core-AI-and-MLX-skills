@@ -1063,8 +1063,8 @@ before you rely on a ⚠️.
 | **Zero marginal cost, at any volume** | `SystemLanguageModel` first; PCC second if eligible | ✅ | Apple charges you nothing for either. PCC's cost lands on your *user* as a daily quota. Everything else costs device resources or server bills. |
 | **Zero device cost — no app-size or memory budget** | `SystemLanguageModel` or PCC | ✅ | Core AI and MLX both mean weights: download size, disk, and wired memory. The system model lives in Apple's process; a community harness measured its own in-process peak at **27 MB**, which is harness overhead, *not* the model. |
 | **You need a specific model** (domain fine-tune, specific language coverage, a named open-weight family) | `CoreAILanguageModel` or `MLXLanguageModel` | ⚠️ **only on MLX or sequential Core AI** | The system model is sealed. You cannot swap its weights, and as of OS 27 you cannot ship a custom LoRA adapter for it either — see the note below. |
-| **You need >4K–8K context** | PCC (32K), or a Core AI / MLX model you chose for its context | ⚠️ same caveat on the Core AI branch | Read `contextSize`; don't assume. Some Core AI recipes ship 32K–131K context (`gemma3-*-it` at 131072, `qwen3-4b`/`8b` at 40960). |
-| **You need explicit reasoning** | PCC (`.light` / `.moderate` / `.deep`), or a reasoning model via Core AI / MLX | ⚠️ same caveat on the Core AI branch | `SystemLanguageModel` does not do reasoning. `CoreAILanguageModel` detects `.reasoning` from tokenizer markers (`<think>`, `<|reasoning_start|>`). |
+| **You need more than the on-device model's 4,096-token context** | PCC (32K), or a Core AI / MLX model you chose for its context | ⚠️ same caveat on the Core AI branch | Apple specifies 4,096 tokens per on-device session; still read `contextSize` so model choice and future OS revisions remain explicit.[^tn3193-context] Some Core AI recipes ship 32K–131K context (`gemma3-*-it` at 131072, `qwen3-4b`/`8b` at 40960). |
+| **You need explicit reasoning** | PCC (`.light` / `.moderate` / `.deep`), or a reasoning model via Core AI / MLX | ⚠️ same caveat on the Core AI branch | `SystemLanguageModel` does not do reasoning. `CoreAILanguageModel` detects `.reasoning` from tokenizer markers (`<think>`, `<code>&lt;&#124;reasoning_start&#124;&gt;</code>`). |
 | **You need guided generation (`@Generable`)** | `SystemLanguageModel`, PCC, MLX, or a *sequential* Core AI variant | ✅ by construction | ⚠️ Core AI's **fastest** engine does not expose logits, so `.guidedGeneration` is unavailable on it — and every Core AI number in §6 was measured on that engine. This is the one place where "fastest" and "flagship feature" are mutually exclusive. [§5.1](#51-the-first-cliff-generable-and-the-fastest-engine). |
 | **Multi-turn chat, an agent loop, or RAG — turn-2 TTFT is the felt metric** | A **pure-attention** model. **Not** Qwen3.5, Qwen3.6, LFM2.5 or Granite 4. | — (orthogonal) | Prefix reuse is worth ~**101×** on turn-2 TTFT at 4k context. Linear-attention and hybrid SSM models **structurally cannot have it** and re-prefill the whole conversation every turn. [§5.2](#52-the-second-cliff-prefix-reuse-and-the-models-that-cannot-have-it). |
 | **Lowest energy per token on iPhone** | `SystemLanguageModel`, then the ANE | ✅ system model; ⚠️ engine-dependent on a bundle | Community-measured on M4 Max: Apple FM at **0.11 J/tok**, ~2× better than GPU runtimes and ~4× better than the CoreML/ANE path. §6.3 explains why low *power* ≠ low *energy*. |
@@ -1798,11 +1798,11 @@ Collected here so downstream readers and agents do not mistake absence for nonex
 > first-party code, which is the evidence class that corrected 66 items elsewhere in this guide.
 > Weight §3.3 and Parts 7–10 accordingly. **Resolution:** re-run the index sweep when a sample ships.
 
-> 🔴 **GAP — the on-device model's actual context size on iOS 27.**
-> Apple's slide and Apple's docs say **4K**. A shipping app's source comments that device probing
-> returns **8192** on iOS 27. Both cannot be right for the same build.
-> **Resolution:** print `SystemLanguageModel.default.contextSize` on an iOS 27 device and compare with
-> `tokenCount(for:)` on a known prompt. In the meantime: **read the property, do not hardcode.**
+> ✅ **SETTLED — the on-device model has a 4,096-token context per session.**
+> Apple Technical Note TN3193 states the number and scope directly: instructions, prompts, tools,
+> schemas, transcript history, and the response all share the same 4,096-token budget.[^tn3193-context]
+> The uncorroborated 8,192-token source comment remains useful only as a reminder to read
+> `SystemLanguageModel.default.contextSize` at runtime instead of hardcoding a policy decision.
 
 > 🔴 **GAP — the on-device model's parameter count and quantization.**
 > Community reverse-engineering puts Apple's on-device weights at roughly 2-bit base plus 4-bit task
@@ -1860,3 +1860,7 @@ Two more honest notes about this guide's own sourcing:
 *Last structural update: 2026-07-27. Written against iOS 27 / macOS 27 / Xcode 27 betas. Every
 measured number in §6 is community-measured on beta operating systems and should be re-verified
 before it is quoted.*
+
+[^tn3193-context]: Apple, [TN3193: Managing the on-device foundation model's context
+    window](https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window)
+    (4,096 tokens per `LanguageModelSession`).

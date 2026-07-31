@@ -41,10 +41,12 @@ three long guides rather than a quickstart. Four things underpin it:
    `entrypoint_name` are the dictionary keys your Swift caller types, across a language boundary with no
    compile-time check. Omit them and you inherit FX placeholder names — which Apple's own docs say are
    *"observed behavior from the FX graph, not a stable contract from PyTorch."*
-3. **Entrypoint names are a routing decision, not a label.** Apple's shipped Swift runtime classifies an
-   asset by its *function names* and picks the compute unit from that classification. Name a segmenter's
-   three functions anything but `image_encode` / `text_encode` / `detect` and the same weights specialize for
-   the GPU instead of the Neural Engine, silently.
+3. **Entrypoint names are routing policy in Apple’s optional `coreai-models` helper, not a Core AI
+   framework contract.** That package’s `PreparedModel` classifies an asset by its *function names* and
+   supplies a corresponding compute-unit preference. If—and only if—you load through that helper, naming a
+   segmenter’s functions anything but `image_encode` / `text_encode` / `detect` selects its dynamic/GPU
+   policy. A direct `AIModel` load uses your `SpecializationOptions`; `.default` lets Core AI choose the
+   CPU/GPU/Neural Engine combination that minimizes latency.[^sample-routing-policy]
 4. **Coverage is per-overload, not per-op** — a rule Apple states once, in a subordinate clause in a "how to
    read this page" preamble. The error says *unsupported*, the doc says *supported*, both are telling the
    truth about different things.
@@ -66,7 +68,7 @@ shape-sensitive, so a parity test on toy tensors passes while production is brok
 | "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md) → [§11.4](references/01-conversion-and-the-io-contract.md) | The `optimize()` miscompile, then the A/B gate that catches it and its whole family |
 | "My model has a KV cache" | [8.1 §9](references/01-conversion-and-the-io-contract.md) | Mutable buffers become states, with **no opt-out**, in an order that is an observed-behaviour assumption |
 | "Which names should my inputs and outputs have?" | [8.1 §7.5](references/01-conversion-and-the-io-contract.md) | Apple's own engines duck-type on substrings, and the LLM path reads states **positionally** |
-| "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md) | Yes — but for the compute-unit routing, not (only) the advertised 76% |
+| "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md) | Split when stages run at different cadences; preserve Apple’s names if you also adopt `coreai-models`’ sample routing policy |
 | "`unsupported ATen ops` — but the docs list that op", or the error appears only with `dynamic_shapes=` | [8.2 §2](references/02-op-coverage-composites-and-externalization.md) → [§4](references/02-op-coverage-composites-and-externalization.md) | The overload rule, and a two-minute diagnosis that queries the registry instead of the docs |
 | "I need an op Core AI has never heard of" | [8.2 §7](references/02-op-coverage-composites-and-externalization.md) | `register_torch_lowering`, `allow_override`, the six-way dispatch ladder, Apple's own shipping call site |
 | "I want attention / RoPE / RMSNorm to hit a fast kernel" | [8.2 §5](references/02-op-coverage-composites-and-externalization.md), [§8](references/02-op-coverage-composites-and-externalization.md) | Composite ops and `ExternalizeSpec` — including Apple's verbatim shipping spec list |
@@ -99,8 +101,9 @@ multi-function split; and the Python-side verification gate that catches everyth
 > converts, saves, loads and is numerically fine — with your fused attention composite gone. An in-place
 > mutation of a `forward` argument silently moves it from an input to a **state**, changing the calling
 > convention. Two same-shape buffers can reorder across a PyTorch upgrade and every check still passes. And
-> naming a segmenter's functions anything but `image_encode` / `text_encode` / `detect` lands the asset on
-> the **GPU instead of the Neural Engine**, with a log line rather than an error.
+> loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
+> **GPU preference** instead of its Neural Engine preference, with a log line rather than an error. Direct
+> Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
 
 > 🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
 > the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog and whether
@@ -162,12 +165,13 @@ honest performance picture, where the same author on the same machine measured a
 > dtype casts materialize as full-size tensors, so replacing one cheap op with a kernel is usually a
 > regression your kernel's own timing will never show.
 
-> 🔴 **GAP — the scale-plane API narrated in session 330 does not exist.** Zero hits across the shipped MPP
-> and Metal headers; MLX hand-dequantizes in software; Apple's own M5 Tech Talk presents the opposite
-> mechanism. Plausible scale-plane code is in circulation — do not write it; dequantize in-kernel into a
-> cooperative tensor (26.3+). Also open: the MSL language version the embedded source compiles at, the
-> accepted `MetalParameter` attribute strings, the symbolic path through `result_shapes`. As calibration:
-> **three of Apple's own end-to-end `tests/dsl/` suites are skipped** and CI deselects the whole marker.
+> ✅ **XCODE 27 CORRECTION — scale planes are real.** Xcode 27 adds `MTLTensor` data types for int2,
+> FP4, FP8 and unsigned E8M0 scales, plus `MTLTensorAuxiliaryPlaneDescriptor.blockFactors` and
+> `MTLTensorDescriptor.auxiliaryPlanes`. For supported E8M0 block-scaled tensors, TensorOps can consume
+> the data and scale planes together. Keep the cooperative-tensor hand-dequantization path for 26.x and
+> custom formats whose scale type or block geometry the auxiliary-plane contract does not represent.
+> [^xcode27-scale-planes] Still open: the MSL language version the embedded source compiles at, the
+> accepted `MetalParameter` attribute strings, and the symbolic path through `result_shapes`.
 
 ---
 
@@ -247,8 +251,9 @@ hybrid/linear-attention models are deliberately rejected by the Swift runtime), 
 v0.4.1 release notes and the bundled `coreai-core` 1.0.0b2 changelog. **WWDC26 transcripts**, used for
 framing and cross-checked against source before any API-shaped claim: 325 (*Dive into Core AI model
 authoring and optimization*) and 330 (*Optimize custom machine learning operations with Metal tensors*),
-plus Apple Tech Talk 111432 for the TensorOps version ladder and the Xcode 26.6 SDK
-`MetalPerformancePrimitives` headers for the dtype set and feature macros. **Community sources** —
+plus Apple Tech Talk 111432 for the TensorOps version ladder, the Xcode 26.6 SDK as the baseline,
+and Xcode 27 `MTLTensor.h` / MPP headers for the int2/FP4/FP8/E8M0 and scale-plane additions.
+[^xcode27-scale-planes] **Community sources** —
 `coreai-torch` issues #1, #2, #6, #9, #10, #11, #21, #49, #51 and PRs #5/#7/#13/#18/#22/#29/#32/#40/#41/#45,
 `coreai-models` #66/#118/PR #69, and `john-rocky`'s `coreai-model-zoo` knowledge files — supply every latency
 and accuracy number that is not Apple's, each labelled **community-measured** at its point of use with
@@ -257,3 +262,17 @@ this except the SAM3 76% and the Qwen3-MoE tok/s deltas, both with hardware and 
 three guides were last verified 2026-07-27 against `coreai-torch` 0.4.1, `coreai-core` 1.0.0b2,
 `coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; every open issue cited was checked
 on that date, and `coreai-torch#49` was still unresolved.
+
+[^sample-routing-policy]: The name classifier and compute-unit preferences live in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    while Core AI’s documented default independently selects the compute-unit combination that minimizes
+    inference latency: [Managing model specialization and caching](../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^xcode27-scale-planes]: Apple’s OS 27 API reference documents the scale-plane descriptor, the tensor
+    descriptor’s auxiliary-plane map, and the new tensor datatypes:
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes), and
+    [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype).
+    The automatic-dequantization and custom-format fallback are also stated in the authoritative
+    [WWDC26 session 330 transcript](../../transcripts/wwdc2026-330.txt#L53-L78).

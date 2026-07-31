@@ -57,9 +57,9 @@ wrong or slow. This guide is about the contract each line establishes.
 - **§9** — `state_names=`: mutable buffers and in-place-mutated inputs become Core AI *states*, with
   no opt-out, in an order that is itself an observed-behaviour assumption.
 - **§10** — multi-function assets: one `TorchConverter`, N exported programs, N entrypoint names.
-  Session 325 sells this as a latency trick. The shipped Swift code shows it is also **what routes
-  the model to the Neural Engine** — and that Apple's own package does not do the caller-side work
-  the latency claim depends on.
+  Session 325 sells this as a latency trick. Apple's optional `coreai-models` Swift loader also uses
+  recognized entrypoint sets to select **that package's** Neural Engine preference; direct Core AI
+  callers choose their own specialization options.[^sample-routing-policy]
 - **§11** — the Python-side verification gate: load both models, run the same input, assert a small
   delta. Core AI specializes and runs natively from Python via a `name -> numpy` dict, so this costs
   you nothing and catches every silent failure in this guide.
@@ -2050,7 +2050,7 @@ model lost an occluded flower in the demo, and the Debugger traced the low-PSNR 
 detector — which holds only **4% of the parameters** (the two encoders are 96%), so compressing it
 bought almost nothing and cost quality. §12 is about the metadata that made that traceable.
 
-### 10.4 The finding that reframes the technique: the split is what routes to the ANE
+### 10.4 The sample-runtime finding: the split selects `coreai-models`’ ANE policy
 
 Reading the shipped Swift runtime shows the split is doing something the session never mentions.
 
@@ -2101,9 +2101,12 @@ Reading the shipped Swift runtime shows the split is doing something the session
 > }
 > ```
 
-**So: the three-function SAM3 split is not merely a latency trick — it is what routes the model to
-the Neural Engine.** A single-`main` SAM3 export is classified `.dynamic` and lands on the GPU. Same
-weights, same numerics, different silicon, because of the *names of the functions in the asset*.
+**Inside the optional `coreai-models` loader, the three-function SAM3 split is not merely a latency
+trick — it selects that package’s Neural Engine preference.** A single-`main` SAM3 export loaded
+through the same helper is classified `.dynamic` and receives its GPU preference. This is package
+policy, not a Core AI framework rule: direct `AIModel` callers choose their own
+`SpecializationOptions`, and `.default` asks Core AI to minimize latency across available compute
+units.[^sample-routing-policy]
 
 The detection is name-based, cheap, and happens **before** specialization:
 
@@ -2137,10 +2140,10 @@ The detection is name-based, cheap, and happens **before** specialization:
 
 > ⚠️ **Consequences you must design for.**
 >
-> 1. **Your entrypoint names are a routing decision, not a label.** Name your segmentation functions
->    `encode_img` / `encode_txt` / `run_detect` and Apple's runtime classifies the asset `.dynamic`,
->    specializes it for the GPU, and never tells you. The model works. It is on the wrong compute
->    unit. Match the vocabulary exactly: `image_encode`, `text_encode`, `detect`.
+> 1. **Your entrypoint names are a routing decision when you adopt the `coreai-models` loader.** Name
+>    your segmentation functions `encode_img` / `encode_txt` / `run_detect` and that helper classifies
+>    the asset `.dynamic` and requests the GPU. Match `image_encode`, `text_encode`, `detect` when you
+>    rely on this package policy; direct Core AI loaders may instead pass explicit or default options.
 > 2. **The fallback is silent by design.** A probe failure defaults to `.dynamic` with a log line, not
 >    an error.
 > 3. **This is `coreai-models`' policy, not the Core AI framework's.** If you write your own loader,
@@ -2862,10 +2865,10 @@ Every one of these raises at conversion time with an actionable message. They ar
 | 9 | typo an `ExternalizeSpec` target class | `UserWarning` only; composite never emitted | §11.5 `"composite_decl" in ir` |
 | 10 | pass a bare class instead of an `ExternalizeSpec` | "simple externalization" — no metadata, **no benefit** | §11.5 + `freqop` |
 | 11 | let an int64 value exceed int32 | silently narrowed and wrong | §11.1 with realistic magnitudes |
-| 12 | name a segmenter's functions anything but the trio | asset classified `.dynamic` → **specialized for GPU, not ANE** | assert `model.function_names` |
+| 12 | use `coreai-models.PreparedModel` with segmenter names other than the trio | helper classifies `.dynamic` → requests **GPU, not ANE** | assert `model.function_names`; inspect chosen options |
 | 13 | ship a three-function asset and expect the 76% | Apple's engine re-runs `image_encode` every call | measure; build your own cache |
 | 14 | convert with `Mode.RELEASE` or without `ENABLE_DEBUG_INFO` | Debugger source viewer and module navigator are empty | open the asset in the Debugger |
-| 15 | wrap a non-contiguous tensor in `NDArray` | strides ignored; raw memory read as contiguous | `.contiguous()` always |
+| 15 | pass a non-contiguous PyTorch tensor through the `coreai-models` Python wrapping path | that bridge reads the raw backing memory as contiguous | call `.contiguous()` at this bridge boundary; do not generalize this to Swift `NDArray`, which supports explicit strides[^stride-scope] |
 | 16 | read an `NDArray` after the `async with` exits | backing buffers no longer guaranteed valid | `.numpy()` inside the block |
 | 17 | build state with `NDArray.from_descriptor` | buffer sized but not zeroed on Linux → garbage first call | allocate `np.zeros` |
 | 18 | convert with `coreai-torch` 0.4.0 | asset rejected on device from OS 27 beta 2 | reconvert on 0.4.1+, or `strip_debug_info` |
@@ -3072,7 +3075,7 @@ Before you consider a conversion done:
 | SAM3 = 848M params, encoders 96% / detector 4% | **Apple-published**, `models/sam3/README.md` + session 325:60, 325:158 | Transcript rounds 848M to "850-million" |
 | PSNR bands >70 / >50 / ~40 dB | **Apple-published**, `working-with-coreai/SKILL.md` | float32 / fp16-on-device / 4-bit palettized |
 | 17 dB PSNR from `optimize()`; 78–85 dB without | **Community-measured**, `coreai-torch#49` | GeoTransformer; macOS 27.0 `26A5378j`/`26A5388g`, coreai-torch 0.4.1, torch 2.11.0, Python 3.12.13 |
-| `max|d|` 1.907e-06 → 1.022e+01 | **Community-measured**, `coreai-torch#49` | 32×32 square case; unequal 17×23 does **not** reproduce |
+| `max\|d\|` 1.907e-06 → 1.022e+01[^optimize-regression] | **Community-measured**, `coreai-torch#49` | 32×32 square case; unequal 17×23 does **not** reproduce |
 | MobileNetV3 ANE-vs-GPU max abs diff 0.199 | **Community-measured**, `coreai-torch#51` (`zli96`) | macOS 27 beta 3, coreai-torch 0.4.1, fp16 |
 | fp16 overflow thresholds (softplus 10.4, logsumexp 7.63…) | **Community-measured**, `coreai-torch#21` | ANE-specific earlier thresholds attributed to a 2^15-bounded internal representation |
 | RF-DETR output cosine ~0.65 with no error | **Community-measured**, `coreai-torch#11` (`john-rocky`) | macOS 27.0 `26A5353q`, M4 Max, coreai-torch 0.4.0 |
@@ -3144,3 +3147,18 @@ Two more, inherited from the corpus and worth carrying:
 `coreai-core` 1.0.0b2, `coreai-models` 0.2.0-pre, macOS 27.0 beta builds `26A5378j` / `26A5388g`.
 Every open issue referenced was checked on that date. `coreai-torch#49` — the `optimize()`
 miscompile — was **unresolved with zero comments**; re-check it before you ship.*
+
+[^sample-routing-policy]: The name classifier and preferences are implemented by the optional
+    `apple/coreai-models` package in its pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI itself documents `.default` as choosing the CPU/GPU/Neural Engine combination that minimizes
+    latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^stride-scope]: Apple’s `coreai-models` authoring note gives `.contiguous()` as the fix for its
+    PyTorch-to-`NDArray` wrapping path, while the Core AI API exposes explicit `strides` and
+    specialization-selected preferred layouts:
+    [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98) and
+    [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).
+
+[^optimize-regression]: The values and square-versus-rectangular reproducer come from
+    [`apple/coreai-torch` issue #49](https://github.com/apple/coreai-torch/issues/49).

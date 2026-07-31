@@ -38,8 +38,9 @@ What follows:
 - **Apple's prescribed workflow and its numeric acceptance gates** — architecture discovery by
   running code rather than reading it, bottom-up authoring order, and the four PSNR thresholds
   (>70 dB, >70 dB, ≥40 dB, ≥35 dB) that decide whether your re-authored model is correct.
-- **The mechanism that actually routes a model to the Neural Engine at runtime** — which is not the
-  platform you exported for, and not a flag, but the *shape of the function table inside the asset*.
+- **The optional `coreai-models` helper's compute-unit policy** — its loader derives a preference
+  from the *shape of the function table inside the asset*. Direct `AIModel` callers instead choose
+  their own `SpecializationOptions`.[^sample-routing-policy]
 - **The SAM3 case study**: three functions, asymmetric palettisation, and 1008 → 336 pixels.
 - **A consolidated silent-failure catalogue.** Nearly every defect in this domain compiles cleanly,
   converts cleanly, produces plausible-looking output, and is 30 dB worse than it should be.
@@ -139,7 +140,7 @@ this series, precisely because the repos are on disk — but there are some, and
    - [5.9 Masks and precomputed buffers](#59-masks-and-precomputed-buffers)
 6. [Apple's authoring workflow](#6-apples-authoring-workflow)
 7. [The verification gates](#7-the-verification-gates)
-8. [Structure decides the compute unit](#8-structure-decides-the-compute-unit)
+8. [How the optional `coreai-models` helper chooses a compute-unit preference](#8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference)
 9. [Case study: SAM3 re-authored for iPhone](#9-case-study-sam3-re-authored-for-iphone)
 10. [The silent-failure catalogue](#10-the-silent-failure-catalogue)
 11. [Quick reference](#11-quick-reference)
@@ -2876,7 +2877,7 @@ Three notes on the implementation:
 | ~18 dB, multimodal RoPE | M-RoPE pattern not reproduced exactly | `torch.cat([cos, cos], dim=-1)` then index `::2` |
 | ~20–30 dB, uniform | Wrong activation (SiLU vs GELU vs QuickGELU vs SwiGLU) | Print `type()` from the source model |
 | 5–15 dB, nonsensical | Comparing across layouts | Apply the layout transform first |
-| Garbage logits, not a PSNR band | Non-contiguous tensors handed to `NDArray` | `.contiguous()` on **all** tensors before wrapping |
+| Garbage logits, not a PSNR band | Non-contiguous tensors handed through the `coreai-models` Python wrapper | `.contiguous()` at that bridge boundary; Swift `NDArray` supports explicit strides[^stride-scope] |
 | Diverges only for long prefill | fp16 rounding compounding over per-token passes | Chunked prefill `S_q=64`, or fp32 KV in Python |
 | k and v swapped | Output dict key order is non-deterministic | Identify outputs by **shape**, not index |
 
@@ -2887,9 +2888,11 @@ That penultimate row is a runtime failure rather than a numerical one and it is 
 > *"**Cause**: The runtime reads raw memory as if contiguous, **ignoring tensor strides**."*
 > *"**Fix**: Call `.contiguous()` on ALL tensors before wrapping in `NDArray`."*
 
-⚠️ A non-contiguous tensor produces *wrong numbers, silently*, because the runtime does not consult
-strides. Any `permute`, `transpose`, `narrow` or slice can produce one. The rule is absolute and
-cheap: `.contiguous()` at the boundary, every time.
+⚠️ Through this Python/PyTorch wrapper, a non-contiguous tensor can produce *wrong numbers,
+silently* because the bridge reads its backing memory as contiguous. Any `permute`, `transpose`,
+`narrow` or slice can create that input. Call `.contiguous()` at this bridge boundary. Do not
+generalize the warning to Core AI's Swift `NDArray`, whose public API supports explicit strides.
+[^stride-scope]
 
 And the last row is a genuine oddity worth internalising
 (✅ **VERIFIED** — `common_issues.md:159-162`):
@@ -2948,13 +2951,15 @@ And two rules that are just hygiene, from the same file's general section
 
 ---
 
-## 8. Structure decides the compute unit
+## 8. How the optional `coreai-models` helper chooses a compute-unit preference
 
-Everything so far assumed you know which compute unit your model will land on. Here is how that is
-actually decided at runtime, and it is not what most people assume.
+Everything so far assumed you know which compute unit your model will land on. This section explains
+the policy in Apple’s optional `coreai-models` helper—not a Core AI framework naming contract.
 
-It is **not** the platform you exported for. It is **not** a flag in the bundle metadata. In Apple's
-own Swift runtime it is derived from **the names of the functions inside the asset**.
+In that helper, the preference is **not** inferred from the export platform or a bundle flag. Its
+Swift loader derives a `SpecializationOptions` preference from **the names of the functions inside
+the asset**. A direct `AIModel` caller chooses its own options; Core AI’s `.default` instead lets the
+framework select the CPU/GPU/Neural Engine combination that minimizes latency.[^sample-routing-policy]
 
 ✅ **VERIFIED** — `swift/Sources/CoreAIShared/Runtime/ModelStructure.swift:12-20`:
 
@@ -3048,7 +3053,7 @@ step you are trying to configure.
 
 ### 8.1 What this means in practice
 
-**Three recognised structures, and everything else is `.dynamic` → GPU:**
+**The helper recognizes three structures and maps everything else to its `.dynamic` → GPU policy:**
 
 | Function set in the asset | `ModelStructure` | Preferred compute unit |
 | --- | --- | --- |
@@ -3057,10 +3062,10 @@ step you are trying to configure.
 | `main` | `.dynamic` | GPU, `expectFrequentReshapes = true` |
 | anything else | `.dynamic` (with a warning log) | GPU |
 
-> ⚠️ **SILENT FAILURE — your entrypoint names are load-bearing.**
+> ⚠️ **SILENT FAILURE — your entrypoint names are load-bearing when using this helper.**
 > If you re-author a segmentation model for the Neural Engine — BC1S, Conv2d, fp16, static shapes,
 > the works — and then name your three entrypoints `encode_image`, `encode_text` and `predict`,
-> Apple's runtime classifies it as `.dynamic` and specialises it for the **GPU**. It works. It
+> `coreai-models` classifies it as `.dynamic` and requests the **GPU**. It works. It
 > produces correct output. It ignores everything you spent a week on.
 >
 > The only trace is one line in `CLILogger`:
@@ -3074,13 +3079,12 @@ step you are trying to configure.
 > `text_encode`, `detect` for a segmenter; `load_embeddings` + `extend_*` for an LLM — or supply your
 > own `SpecializationOptions` rather than relying on the derived ones.
 
-**This reframes the three-function split.** WWDC26 session 325 presents splitting SAM3 into three
+**This reframes the three-function split for users of the sample helper.** WWDC26 session 325 presents splitting SAM3 into three
 entrypoints as a *latency* technique — run each at a different cadence, get a 76% faster second
-inference. That is true. But reading `ModelStructure.swift` shows the split is **also what routes the
-model to the Neural Engine at all**, which is a much stronger reason to do it. A single-`main` SAM3
-export is `.dynamic` and goes to the GPU; the three-function export is `.multiFunctionSegmenter` and
-goes to the Neural Engine. The corpus's own note on this puts it plainly, and it is the correct
-reading of the code.
+inference. That is true. Reading `ModelStructure.swift` shows that the split also selects the
+helper’s Neural Engine preference. A single-`main` SAM3 export is `.dynamic` under this classifier;
+the three-function export is `.multiFunctionSegmenter`. Those consequences do not apply to a
+different loader unless it adopts the same policy.
 
 **`expectFrequentReshapes`.** The `.dynamic` branch sets it. It is the runtime's hint that shapes
 will change between calls, which is exactly what a dynamic-shape GPU model does and exactly what a
@@ -3454,8 +3458,8 @@ unless marked otherwise.
 | 4 | Cached pre-RoPE `K` | Next call attends to un-rotated keys | PSNR ~20 dB, **only after token 1** | Generate ≥ 64 tokens, compare to torch | `neural_engine_rules.md:397` |
 | 5 | Mismatched `transpose(-3,-1)` pair | Activations structurally shuffled | Wrong-but-plausible output | Layout-neutrality assert (§4.6) + PSNR | `neural_engine_rules.md:86` |
 | 6 | `enable_per_channel_scale=True` | rank-6 LUTs → ANE rejects → GPU fallback | Correct output, ANE never used | Residency check | `pipeline.py:136-142` |
-| 7 | Entrypoints named `encode_image`/… | `ModelStructure` → `.dynamic` → GPU preference | Correct output on the wrong accelerator | Log `PreparedModel.structure` | `ModelStructure.swift:190-218` |
-| 8 | Non-contiguous tensor → `NDArray` | Runtime ignores strides, reads raw memory | Wrong logits, no error | `.contiguous()` unconditionally | `common_issues.md:95-98` |
+| 7 | `coreai-models.PreparedModel` with entrypoints named `encode_image`/… | Helper’s `ModelStructure` → `.dynamic` → GPU preference | Correct output on an unintended accelerator | Log `PreparedModel.structure` | `ModelStructure.swift:190-218` |
+| 8 | Non-contiguous PyTorch tensor through the `coreai-models` Python wrapper | Bridge reads raw backing memory as contiguous | Wrong logits, no error | `.contiguous()` at this bridge boundary; Swift `NDArray` may use explicit strides[^stride-scope] | `common_issues.md:95-98` |
 | 9 | Stateful transform for decode | State resets between inference calls | Same token forever; looks like a sampler bug | Read `processedTokenCount`-equivalent across calls | `common_issues.md:146-148` |
 | 10 | `load_state_dict(..., strict=False)` | Renamed key silently unloaded | One layer at random init | Print source keys before remapping | `common_issues.md:173-176` |
 | 11 | GELU where source uses SiLU | Different nonlinearity, similar statistics | PSNR 20–30 dB, uniform across the model | `named_modules()` activation dump | `gpu_rules.md:32` |
@@ -3515,8 +3519,8 @@ Run through this before you spend an hour on conversion:
 - [ ] cos/sin precomputed outside the graph, passed in 4-D
 - [ ] `key_rope` — post-RoPE — is what reaches the cache
 - [ ] Softmax on `dim=1`
-- [ ] All tensors `.contiguous()` before `NDArray`
-- [ ] Entrypoints named `load_embeddings` + `extend_*`, or `image_encode`/`text_encode`/`detect`
+- [ ] Python/PyTorch tensors `.contiguous()` before the `coreai-models` wrapper; preserve explicit Swift `NDArray` strides[^stride-scope]
+- [ ] If using `coreai-models.PreparedModel`, entrypoints match its recognized structures; direct loaders choose their own options[^sample-routing-policy]
 - [ ] `enable_per_channel_scale` is `False` in every palettisation spec
 - [ ] Per-primitive PSNR ≥ 70 dB **before** you compose the model
 
@@ -3622,7 +3626,8 @@ BSD-3-Clause, `Copyright 2026 Apple Inc.`
 
 **Shipped Swift:**
 
-`swift/Sources/CoreAIShared/Runtime/ModelStructure.swift` (function-name → compute-unit derivation) ·
+`swift/Sources/CoreAIShared/Runtime/ModelStructure.swift` (the optional package’s function-name →
+preference policy[^sample-routing-policy]) ·
 `swift/Sources/CoreAIImageSegmenter/ImageSegmentationEngine.swift` (multi-function run loop) ·
 `Package.swift` (platform floor)
 
@@ -3682,7 +3687,7 @@ BSD-3-Clause, `Copyright 2026 Apple Inc.`
 | `gpu_rules.md` prescribes `LegalizeToCoreOptions(mutable_arg_action="hoistToArg")`; the symbol exists nowhere else | Declared a 🔴 GAP; the shipped `state_names=` path recommended instead (§5.6). |
 | `common_issues.md` says `await runner(**inputs)`; `working-with-coreai/SKILL.md` shows `await fn({...})` | Both reported; keyword form recommended first, version-pinning advised (§7.3). |
 | `neural_engine_rules.md` says BC1S everywhere; shipped LLM primitives use `(B, S, 1, D)` between blocks | Both true at different sites; resolved and explained in §2. |
-| `SKILL.md` implies "iOS ⇒ Neural Engine"; `ModelStructure.swift` derives the preference from function names | **Code wins.** §8. |
+| `SKILL.md` implies "iOS ⇒ Neural Engine"; the optional package's `ModelStructure.swift` derives its preference from function names | **Package code wins for `coreai-models.PreparedModel`; direct `AIModel` callers remain governed by their own options.** §8.[^sample-routing-policy] |
 
 ### 12.5 Open gaps, restated
 
@@ -3692,7 +3697,7 @@ BSD-3-Clause, `Copyright 2026 Apple Inc.`
 | `coreai-build` residency output | The flag, the format, whether it is per-op | `xcrun coreai-build compile --help`; the AOT-compilation doc page | Use the Core AI Debugger, or `benchmark_coreai_program` per-module timings |
 | `HardwareConstraints` / `AllocationType` | Full signature; `interleave` vs `alignments` semantics; the enum cases | The `coreai` Python API reference | Do not hand-author them; go through `coreai_models.export.ios` |
 | `LegalizeToCoreOptions` | Whether it exists at all | The `coreai` Python API reference | Use `state_names=` as `export/macos.py` does |
-| `SpecializationOptions` on iOS | Whether the Swift type is iOS-available | The `CoreAI` Swift interface | Use `.default` options; get your compute unit from model structure |
+| `SpecializationOptions` on iOS | Whether the Swift type is iOS-available | The `CoreAI` Swift interface | Use `.default`; treat function-name policy as specific to `coreai-models.PreparedModel`[^sample-routing-policy] |
 | Which ANE KV pattern to prefer | Apple ships two and recommends neither over the other | An Apple doc page on ANE KV caching | `KVCacheHandler` for the shipped LLM export path; read-only for hand-rolled models |
 | "Newer hardware generations support vector-valued LUT entries" | *Which* generations | `PalettizationSpec.cluster_dim` docs with availability | Leave `cluster_dim=1` unless you have measured a win on your target device |
 | The 76% figure's conditions | Device, warm-up, what was compared | Apple restating it with a methodology | Measure it yourself; the shipped engine will not give it to you (§9.5) |
@@ -3712,3 +3717,15 @@ BSD-3-Clause, `Copyright 2026 Apple Inc.`
   this guide's table.
 - **Part 7 — Core AI: the Swift runtime.** `AIModel`, `InferenceFunction`, `NDArray`, states, and
   the bundle format the assets in §9 are packaged into.
+
+[^sample-routing-policy]: The classifier and preferences described here are source code in the
+    optional `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI documents `.default` separately as selecting the compute-unit combination that minimizes
+    latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^stride-scope]: The `.contiguous()` warning is specific to the Python authoring path documented in
+    the pinned `coreai-models`
+    [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98).
+    The Core AI API itself exposes explicit strides and specialization-selected layouts:
+    [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).

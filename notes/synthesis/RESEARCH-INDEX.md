@@ -15,7 +15,7 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 | Fleet | Directory | Method |
 |---|---|---|
 | Transcripts | `transcripts/` | Deep-read of 16 WWDC26 session transcripts, grouped into 6 themes |
-| Repos | `repos/` | Local `--depth 50` clones read file-by-file, 14 repos + 3 issue-mining sweeps |
+| Repos | `repos/` | Local clones read file-by-file, 16 repos + 3 issue-mining sweeps; exact snapshots are pinned[^repo-snapshot-pins] |
 | Web/docs | `web/` | Live fetches of Apple developer docs, the MLX docs site, and community blogs |
 | Forums | `forums/` | RSS captures plus live thread fetches of `developer.apple.com/forums` |
 | Lead agent | `00–02*.md` | Independent grounding, written before and alongside subagent output |
@@ -69,7 +69,11 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 
 ---
 
-## `repos/` — source-tree deep dives (21 files)
+## `repos/` — source-tree deep dives (20 files)
+
+These deep dives are tracked evidence, distinct from the large third-party checkouts under the
+repository-root `repos/` directory. The reproduction script fetches each upstream repository at the
+exact full commit used during research rather than at a moving default branch.[^repo-snapshot-pins]
 
 ### Apple first-party
 
@@ -118,6 +122,12 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 | `proposal-by-task.md` | Topic proposal organized by **developer task / reader journey** (12 pillars, 56 topics). Strongest on ordering, on the five reader journeys, and on surfacing the silent-failure theme. |
 | `proposal-by-depth.md` | Topic proposal organized by **stack depth**, L0→L10 (11 pillars, 55 topics). Strongest on the vertical dependency structure and on the low-level Core AI / TensorOps material other lenses under-weighted. |
 | **`PROPOSED-GUIDE-TOPICS.md`** | **The merged, adjudicated final proposal — 50 guides in 16 parts.** Landscape summary, pillars, table of contents, per-topic detail (scope, key sections, sources, evidence strength, length, dependencies), the must-write-12 recommendation with a five-wave phasing plan, cross-cutting editorial rules, and an honest accounting of thin evidence. **This is the file to read.** |
+
+[^repo-snapshot-pins]: The exact revisions are recorded in
+    [`scripts/clone-research-repos.sh`](../../scripts/clone-research-repos.sh), including Apple
+    [`coreai-models@5ed9981`](https://github.com/apple/coreai-models/commit/5ed9981303b38d5a44aa6b45509bc4f6945029f5),
+    MLX [`mlx@973e27f`](https://github.com/ml-explore/mlx/commit/973e27f82ffe68dbd626cda31ba34997045d1eb7),
+    and [`mlx-lm@e5baded`](https://github.com/ml-explore/mlx-lm/commit/e5baded8c1d286754edb479ffbde4655a68e2758).
 
 ---
 

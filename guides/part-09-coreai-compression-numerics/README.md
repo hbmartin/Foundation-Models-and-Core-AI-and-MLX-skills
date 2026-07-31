@@ -108,7 +108,10 @@ narrative in the part.
 > throws produces a successful export of an **fp16 model** — *file size is the only signal*. A
 > **shared/tied weight can take its dtype from one config and its schedule from another** (issue #41,
 > OPEN), and the warning mentions only the schedule. **fp16 casting can zero an activation** (issue
-> #7, OPEN). And `finalize(CoreAI)` **destroys your float weights** — `deepcopy` before `prepare()`.
+> #7, OPEN). For eager-mode quantization and eager-only k-means palettization, finalizing with the
+> Core AI backend **frees the original dense weights in place**; this is not a universal behavior of
+> every `finalize()` backend or graph mode. Preserve a float reference with `deepcopy` before
+> `prepare()`.[^destructive-finalize-scope]
 
 > 🔴 **GAP — fourteen, tabulated in §20.3, and nothing is guessed inside any of them.** The sharpest:
 > whether diffusion `metadata.json` records the **attempted** or the **achieved** compression. If it
@@ -242,7 +245,8 @@ inspection and `coreai_utils` subtrees read file by file, plus `pyproject.toml`,
 `export/compiler.py`, `diffusion/presets.py`, `llm/export.py`); `apple/coreai-torch`;
 `ml-explore/mlx` at HEAD `973e27f` and `ml-explore/mlx-lm`; and the
 **MetalPerformancePrimitives headers shipped in the Xcode 26.6 SDK (Build 17F113)** — ~14,300 lines,
-which is what lets guide 03 §5 state the non-existence of scale planes flatly. **Apple's own agent
+which establish the 26.x baseline; guide 03 separately uses Xcode 27 `MTLTensor.h` and MPP headers
+for int2/FP4/FP8/E8M0 types and auxiliary scale planes.[^xcode27-scale-planes] **Apple's own agent
 skills**, vendored in `apple/coreai-models` and treated throughout as *stronger than session
 transcripts*: `model-authoring/SKILL.md` (the four PSNR gates at `:94-99`, the sizing table at
 `:149-153`), its 479-line `neural_engine_rules.md`, `gpu_rules.md`, `common_issues.md`,
@@ -258,3 +262,15 @@ symbol names are therefore marked 🟡 wherever used. **Community measurement** 
 benchmarks, frequently the only numbers in existence for what they measure, labelled
 🟠 COMMUNITY-MEASURED at every point of use. **Apple published no latency figure for any non-LLM model
 in `apple/coreai-models`**, and no M5 hardware backed any TensorOps claim in this part.
+
+[^destructive-finalize-scope]: The pinned `coreai-optimization` sources limit dense-weight freeing to
+    `ExportBackend.CoreAI` in eager quantization and document the same Core AI-specific behavior for
+    k-means palettization: [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/quantization/quantizer.py#L435-L482) and
+    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/palettization/kmeans/palettizer.py#L357-L425).
+
+[^xcode27-scale-planes]: Apple documents the OS 27 API in
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes), and
+    [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype); the
+    authoritative [WWDC26 session 330 transcript](../../transcripts/wwdc2026-330.txt#L53-L78)
+    describes automatic dequantization and the custom-format cooperative-tensor fallback.

@@ -73,7 +73,7 @@ What follows:
   Reference 03.
 - **Producing the `.aimodel` in the first place** — `coreai-torch`, op coverage, custom Metal
   kernels. Part 8.
-- **Compression** — quantization, palettization, which of the 33 `ScalarType` cases you can
+- **Compression** — quantization, palettization, which of the 35 `ScalarType` cases[^scalar-type-count] you can
   actually reach. Part 9.
 - **The Core AI Debugger, the debug gauge and the Instruments template** in depth. Part 10. They
   appear here only where they are the way you *see* specialization happening.
@@ -1432,10 +1432,10 @@ Community measurement corroborates the practical consequence, hard:
 And the structural reason: which compute unit you get is decided far more by **how the model was
 exported** than by what you ask for at load time. Apple's own runtime encodes that belief in code.
 
-### What Apple's own runtime actually does
+### What the optional `coreai-models` runtime actually does
 
-This is the strongest evidence available for how to choose options, because it is Apple's shipping
-Swift code rather than Apple's prose:
+This is useful evidence for one package’s option policy because it is Apple-maintained Swift code,
+but it is not a Core AI framework naming contract:
 
 > ✅ **VERIFIED** — `apple/coreai-models`,
 > `swift/Sources/CoreAIShared/Runtime/ModelStructure.swift:57-80`, verbatim:
@@ -1456,7 +1456,7 @@ Swift code rather than Apple's prose:
 > `extend_*` plus `load_embeddings` → `.chunkedStatic`; `image_encode` + `text_encode` + `detect`
 > → `.multiFunctionSegmenter`; a single `main` → `.dynamic`.
 
-Read as a decision rule, Apple's own heuristic is:
+Read as a decision rule, the helper’s heuristic is:
 
 | Model shape | Preferred unit | `expectFrequentReshapes` |
 |---|---|---|
@@ -1465,9 +1465,10 @@ Read as a decision rule, Apple's own heuristic is:
 | A single dynamic-shape `main` (the typical LLM export) | `.gpu` | **`true`** |
 
 Note the second row's implication, which is easy to miss and is the subject of a standing
-correction in this series: **splitting a model into several entrypoints is not only a latency
-trick — it is what routes the model to the Neural Engine.** A single-`main` SAM 3 export is
-classified `.dynamic` and lands on the GPU. Part 8 covers the authoring side.
+correction in this series: **when this helper loads the model, splitting it into recognized
+entrypoints selects its Neural Engine preference in addition to enabling different cadences.** A
+single-`main` SAM 3 export is classified `.dynamic` and receives the helper’s GPU preference. Direct
+`AIModel` callers choose their own options.[^sample-routing-policy] Part 8 covers the authoring side.
 
 And note what the code does *first*:
 
@@ -2648,3 +2649,12 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 
 *Guide last revised 2026-07-27, against Xcode 27 / OS 27 beta-era sources. Every Core AI symbol in
 this guide is Beta. Re-verify signatures against the shipping SDK before relying on them.*
+
+[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates 35 cases:
+    [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).
+
+[^sample-routing-policy]: The classifier and preferences are source code in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    whereas Core AI separately documents `.default` as selecting the compute-unit combination that
+    minimizes latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

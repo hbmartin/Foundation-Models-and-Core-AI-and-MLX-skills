@@ -741,6 +741,8 @@ confidently surfacing content that no longer exists.
 
 ---
 
+<a name="4-on-ramp-b-indexedentity-and-indexappentities"></a>
+
 ## 4. On-ramp B: `IndexedEntity` and `indexAppEntities(_:)`
 
 If your content is already modelled as `AppEntity`s — because you wrote App Shortcuts, or adopted a
@@ -753,7 +755,7 @@ is **no Apple sample project in this corpus that calls `indexAppEntities`**. The
 Apple's published code-sample block on the session 343 page (a separate artifact from the transcript
 prose, so their agreement is real corroboration), Apple's documentation page *"Making app entities
 available in Spotlight"*, and one Apple-staff forum answer. Strong evidence — but not the compiling
-first-party code that backs §3.
+first-party code that backs §3.[^indexed-entity-source]
 
 ### 4.1 Minimal adoption is one word
 
@@ -2593,3 +2595,7 @@ conference, are documented **"iOS 27.0+ Beta, macOS 27.0+ Beta."**
 *Guide compiled 2026-07-28 against research notes gathered 2026-07-27. Every API name, signature and
 quotation above traces to an artifact read during those passes; the eight items we could not verify
 carry 🔴 GAP boxes naming what is unknown, what would resolve it, and what to do meanwhile.*
+
+[^indexed-entity-source]: Apple, [“Making app entities available in Spotlight”](https://developer.apple.com/documentation/appintents/making-app-entities-available-in-spotlight),
+    documents `IndexedEntity` conformance and direct donation through
+    `CSSearchableIndex.indexAppEntities(_:)`.

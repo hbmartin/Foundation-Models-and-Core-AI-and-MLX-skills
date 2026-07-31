@@ -2,13 +2,14 @@
 
 **Part 11 · Metal and TensorOps · Reference 02**
 
-**Version floor.** Everything in this guide is **macOS 26 / iOS 26 point releases and later** — not
-27. TensorOps shipped in **26.0**; **bfloat** tensor element types arrived in **26.1**; **cooperative
+**Version floor.** The cooperative-tensor kernel API in this guide is **macOS 26 / iOS 26 point
+releases and later**. TensorOps shipped in **26.0**; **bfloat** tensor element types arrived in **26.1**; **cooperative
 tensors as `matmul2d` *inputs*** — the single capability this whole guide is built on — arrived in
 **26.3**; **4-bit and 8-bit integer tensors** arrived in **26.4**. That ladder is Apple's own, spoken
 in Tech Talk 111432. Separately, the `MetalPerformancePrimitives` headers shipped in the **Xcode 26.6**
 SDK annotate their deployment gate as **26.2**. Both facts are true and they describe different
-things; §0.2 reconciles them. You also need **Metal 4** (`__METAL_VERSION__` ≥ 400) and a toolchain
+things; §0.2 reconciles them. Xcode 27 separately adds native multiplane quantized tensors and int2,
+FP4, FP8, and E8M0 formats.[^metal27-multiplane] You also need **Metal 4** (`__METAL_VERSION__` ≥ 400) and a toolchain
 that defines `__HAVE_TENSOR__`, or the entire header expands to nothing and you get a baffling
 "no member named `matmul2d`" instead of a missing-feature error.
 
@@ -58,11 +59,11 @@ three things you need in order to write a *fused* kernel rather than a sequence 
   `tensor_offset` / `tensor_inline`, `.slice()` / `.static_slice()`, the full `matmul2d_descriptor`
   positional argument list, the 13-entry dtype enum and the ~50 legal operand triples: guide 01 in
   this part. This guide assumes them and cites them where it leans on them.
-- **Quantised matmul.** There is no scale-plane mechanism in the shipped shading-language API — that
-  is settled, from three independent sources — and the real story (in-kernel custom dequantisation
-  into a cooperative tensor) belongs to guide 01 plus this guide's §4. See §0.3.
+- **Quantised matmul in depth.** Xcode 27 has a documented host-side scale-plane mechanism; in-kernel
+  custom dequantisation remains the fallback for 26.x targets and custom formats. Guide 01 and §0.3
+  distinguish the two paths.[^metal27-multiplane]
 - **`convolution2d`.** `MPPTensorOpsConvolution2d.h` exists (177 lines public + 4,914 lines of
-  implementation) and was not read for this series. Declared as a gap in §15.
+  implementation) and was not read for this series.
 - **Host-side Metal 4 encoding.** `MTL4MachineLearningCommandEncoder`, `MTLTensor` allocation,
   residency sets. §10 covers only the one host-side fact you cannot write a correct kernel without:
   how threads-per-threadgroup must agree with your execution scope.
@@ -80,7 +81,7 @@ three things you need in order to write a *fused* kernel rather than a sequence 
   examples. Paths in §0.1. Any disagreement between this guide and those files: the files win.
 - **A device to test on.** Every claim in this guide is static analysis against headers and shipping
   source. Nothing here was compiled or executed for this series, and no M5-class hardware was
-  available. §15 says so plainly.
+  available. Treat reconstructed snippets as skeletons and validate them against a CPU reference.
 - **Guide 01 of this part**, read first.
 
 ---
@@ -90,7 +91,7 @@ three things you need in order to write a *fused* kernel rather than a sequence 
 - [§0 — Evidence, versions, and where the files are](#0--evidence-versions-and-where-the-files-are)
   - [0.1 The two header roots](#01-the-two-header-roots)
   - [0.2 The version ladder, and the 26.2 annotation](#02-the-version-ladder-and-the-262-annotation)
-  - [0.3 What is *not* in the shipped API](#03-what-is-not-in-the-shipped-api)
+  - [0.3 The 26.x fallback and Xcode 27 multiplane path](#03-the-26x-fallback-and-xcode-27-multiplane-path)
   - [0.4 How to read the evidence markers in this guide](#04-how-to-read-the-evidence-markers-in-this-guide)
 - [§1 — Why cooperative tensors exist](#1--why-cooperative-tensors-exist)
 - [§2 — What a cooperative tensor actually is](#2--what-a-cooperative-tensor-actually-is)
@@ -130,7 +131,7 @@ three things you need in order to write a *fused* kernel rather than a sequence 
   - [8.0 The shape of the problem](#80-the-shape-of-the-problem)
   - [8.1 Step 1 — a custom simdgroup mapping](#81-step-1--a-custom-simdgroup-mapping)
   - [8.2 Step 2 — slice input tiles by simdgroup ID](#82-step-2--slice-input-tiles-by-simdgroup-id)
-  - [8.3 Step 3 — Q@Kᵀ into a cooperative tensor](#83-step-3--qk-into-a-cooperative-tensor)
+  - [8.3 Step 3 — QK transpose into a cooperative tensor](#83-step-3--qk-transpose-into-a-cooperative-tensor)
   - [8.4 Step 4 — the row-max reduction](#84-step-4--the-row-max-reduction)
   - [8.5 Step 5 — `map_iterator` and softmax in place](#85-step-5--map_iterator-and-softmax-in-place)
   - [8.6 Step 6 — the second matmul, against V](#86-step-6--the-second-matmul-against-v)
@@ -141,8 +142,6 @@ three things you need in order to write a *fused* kernel rather than a sequence 
 - [§12 — Getting the kernel into a model](#12--getting-the-kernel-into-a-model)
 - [§13 — ⚠️ Freshness: NAX is new and still settling](#13--️-freshness-nax-is-new-and-still-settling)
 - [§14 — Performance: the three things that actually move the number](#14--performance-the-three-things-that-actually-move-the-number)
-- [§15 — Declared gaps](#15--declared-gaps)
-- [§16 — Checklist](#16--checklist)
 
 ---
 
@@ -324,31 +323,34 @@ MLX's build system encodes the same three conditions in CMake — ✅ **VERIFIED
 > NAX kernels are disabled", merged 2026-07-09). If you build a Metal 4 kernel into your own
 > project, add an explicit configure-time check rather than assuming the default is right.
 
-### 0.3 What is *not* in the shipped API
+### 0.3 The 26.x fallback and Xcode 27 multiplane path
 
-Read this before you go looking for it, because there is material in circulation that describes it.
+Read this before choosing a representation, because the answer depends on the SDK and deployment
+floor.
 
-**There is no scale-plane mechanism in the Metal shading-language TensorOps surface.** No plane
-descriptor, no `blockFactors`, no auxiliary plane map, no FP8 `E8M0` tensor element type. This is
-settled, from three independent sources:
+**Xcode 27 has a native host-side scale-plane mechanism.** `MTLTensorAuxiliaryPlaneDescriptor`
+configures a plane's data type and `blockFactors`, `MTLTensorDescriptor.auxiliaryPlanes` attaches
+the plane map, and the current data-type enum includes int2, FP4, FP8, and E8M0.[^metal27-dtypes]
+The Xcode 26.6 shader-side snapshot inspected for this guide did not contain that surface:
 
-1. ✅ **VERIFIED by absence** — case-insensitive searches for `scale`, `plane`, `block_factor`,
+1. ✅ **VERIFIED, version-scoped absence** — case-insensitive searches for `scale`, `plane`, `block_factor`,
    `blockFactor`, `fp8`, `fp4`, `e8m0`, `e4m3`, `quant` and `aux` across all ~14,300 lines of MPP
-   headers and all 2,788 lines of `metal_tensor` + `metal_cooperative_tensor` return **zero hits**.
+   headers and all 2,788 lines of that 26.6 `metal_tensor` + `metal_cooperative_tensor` snapshot
+   returned **zero hits**. This does not describe Xcode 27.
 2. ✅ **VERIFIED by counter-implementation** — MLX, written by Apple, against the same headers, for
    the same hardware, hand-dequantises in software (`QuantizedBlockLoader::load_unsafe` →
    `threadgroup T* dst`) and never passes a sub-byte tensor to `matmul2d`. Its `fp8_e8m0`,
    `fp8_e4m3` and `fp4_e2m1` are **MLX's own structs** in `fp8.h` / `fp4.h`, not Metal types.
-3. ✅ **VERIFIED by substitution** — Tech Talk 111432 devotes a segment to quantisation and never
-   mentions a scale plane. When it reaches "how do you run quantized models," it names the 26.3
+3. ✅ **VERIFIED fallback** — Tech Talk 111432 devotes a segment to the 26.x quantisation path. When
+   it reaches "how do you run quantized models," it names the 26.3
    cooperative-tensor-as-input feature and says it *"lets you build custom dequantization routines
-   inside your kernel."* That is the **opposite** mechanism from a scale plane: you dequantise, into
-   registers, yourself.
+   inside your kernel."* In that fallback, you dequantise into registers yourself.
 
 This matters here and not only in guide 01, because it reframes what cooperative tensors are *for*.
-They are not a convenience for post-processing a GEMM result. They are the mechanism Apple shipped
-**instead of** hardware dequantisation, and the same mechanism turns out to be exactly what a fused
-attention kernel needs. One feature, two headline uses.
+They are not only a convenience for post-processing a GEMM result. They are the 26.x/custom-format
+dequantisation mechanism and exactly what a fused attention kernel needs. On a 27.0 floor, prefer
+the native multiplane representation for its supported formats; keep this cooperative-tensor path
+when you need older deployment or custom layout/control.[^metal27-multiplane]
 
 ### 0.4 How to read the evidence markers in this guide
 
@@ -1959,7 +1961,7 @@ Two practical notes:
   is uniform across the threadgroup — fine. A condition that depended on `sgid` or on data would
   not be.
 
-### 8.3 Step 3 — Q@Kᵀ into a cooperative tensor
+### 8.3 Step 3 — QK transpose into a cooperative tensor
 
 ✅ **VERIFIED**, session 330 at 330:91:
 
@@ -3271,5 +3273,17 @@ uses SIMD group matrix, **the majority of our instruction types are math**. In t
 **almost all of the instructions are being executed by neural accelerators**."* If your instruction
 mix is mostly ALU, your `matmul2d` is not reaching the hardware you think it is — check §0.2's
 feature macros and §10.3's OS gate before you tune anything else.
+
+[^metal27-multiplane]: Apple documents
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes),
+    and [`MTLTensor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensor/auxiliaryplanes).
+    The repository's [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L27-L78)
+    describes the data and E8M0 scale planes and the role of `blockFactors`.
+[^metal27-dtypes]: Apple's current
+    [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype)
+    documentation lists Int2, UInt2, Float4E2M1, Float8E4M3, Float8E5M2, and Float8UE8M0. Apple's
+    [Metal Feature Set Tables](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf)
+    identify block-scaling support and the E8M0 scale-plane format.
 
 ---

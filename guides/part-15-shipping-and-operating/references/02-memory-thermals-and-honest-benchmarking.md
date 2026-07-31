@@ -324,7 +324,8 @@ static func currentMemoryBudgetSnapshot() -> MemoryBudgetSnapshot
 <key>com.apple.developer.private-cloud-compute</key><true/>
 ```
 
-✅ **VERIFIED** (`notes/repos/noema-ios.md` §2, read from `Noema/Noema.entitlements`). That source
+✅ **VERIFIED** (`notes/repos/noema-ios.md` §2, read from `Noema/Noema.entitlements`) for the three
+keys in that block. That source
 annotates the first line: *"`kernel.increased-memory-limit` — **mandatory** for shipping big local
 LLMs on iOS."* It is independently corroborated: **every** LLM, VLM and Stable Diffusion sample app
 in `mlx-swift-examples` enables it (✅ **VERIFIED**, `notes/repos/mlx-swift-examples.md` §5), and
@@ -332,7 +333,17 @@ in `mlx-swift-examples` enables it (✅ **VERIFIED**, `notes/repos/mlx-swift-exa
 
 `background-tasks.continued-processing.gpu` is the **iOS 26** `BGContinuedProcessingTask` GPU class,
 relevant if you want long GPU work to survive backgrounding; it is Part 15 guide 1's territory but
-it belongs on the same checklist.
+it belongs on the same checklist. The separate
+`background-tasks.continued-processing.inference` entitlement is required for background Neural
+Engine access through Core AI, Core ML, or MPS Graph. These entitlements authorize background
+hardware access; they do **not** set inference priority or force placement on a compute unit. Keep
+placement preferences in Core AI `SpecializationOptions` and verify actual placement in
+Instruments.[^background-inference-entitlement]
+
+```xml
+<!-- Apple-documented addition for background Neural Engine inference -->
+<key>com.apple.developer.background-tasks.continued-processing.inference</key><true/>
+```
 
 #### Per-device budgets, and the storage-tier surprise
 
@@ -2806,3 +2817,9 @@ note attributes a number to a file inside a repository, that inner citation is g
 | `notes/repos/apple-coreai-models.md` | Apple-published platform guidance: iOS "keep models under 2 GB", macOS "leave at least 6 GB of RAM headroom", use `os_proc_available_memory()`, prefer `.default` specialization options. |
 | `notes/transcripts/evals-mlx.md` | WWDC26 session 232: *"Agentic sessions usually comprise hundreds of thousands of tokens and most of those are not generated."* |
 | `notes/CORRECTIONS-PENDING.md` | Checked for items naming Part 15. None apply directly; C5's prefix-cache/hybrid constraint and C4's `@Generable`-needs-logits constraint are cross-referenced where they bear on measurement (§9.4) and backend choice (§8.1). |
+
+[^background-inference-entitlement]: Apple’s entitlement reference specifies the background Neural
+    Engine requirement for Core AI, Core ML, and MPS Graph:
+    [Background Inference](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.background-tasks.continued-processing.inference).
+    Compute-unit preference remains a separate Core AI concern documented in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

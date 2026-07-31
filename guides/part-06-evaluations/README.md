@@ -34,11 +34,12 @@ and keep a diffable record of every run so that when a point release lands you r
 guessing.
 
 There is a second insight that runs through all three guides and organises every warning in them: **a
-broken evaluation still produces a number**, and a number is precisely the thing you have just decided to
-trust. A `JSONLoader` that drops 63 of 100 rows reports an aggregate over 37. A judge with no prompt
-returns confident, stable, meaningless scores. A `ToolCallEvaluator` handed a `nil` transcript scores an
-empty trajectory against sixteen expectations. None of these throw. Guide 6.1 ends on the single defence
-that survives every one of them: **make the denominator an assertion, not an assumption.**
+broken evaluation may produce a misleading number or fail before producing metrics**, and both shapes
+need explicit checks. A `JSONLoader` that drops 63 of 100 rows reports an aggregate over 37. A judge with
+no prompt can return confident, stable, meaningless scores. A `ToolCallEvaluator` handed a `nil`
+transcript instead throws `EvaluationError.missingTranscript(evaluatorType:)`; it does not score an
+empty trajectory.[^missing-transcript] Guide 6.1's denominator assertion protects the silent cases;
+the tool-trajectory path must also treat this thrown error as a broken evaluation setup.
 
 ---
 
@@ -138,9 +139,9 @@ catch that.
 > **factory that may be called again mid-run** when the context window is exhausted, and the replacement
 > session has forgotten every sample generated so far — the symptom is a dataset whose second half is
 > measurably less diverse than its first. A validator written for a corpus rule ("reviews must vary in
-> length") is **vacuous** and accepts everything; the tell is an empty `invalidSamples`. And the big one:
-> `ModelSubject(value:)` without `transcript:` **compiles**, runs, and reports two beautiful metrics
-> computed over an empty trajectory.
+> length") is **vacuous** and accepts everything; the tell is an empty `invalidSamples`. A
+> `ModelSubject(value:)` without `transcript:` still **compiles**, but `ToolCallEvaluator` rejects it
+> with `EvaluationError.missingTranscript(evaluatorType:)` before scoring.[^missing-transcript]
 
 > 🔴 **GAP — the most consequential unanswered question in the part is a billing question.** Nobody has
 > established **whose PCC quota an evaluation run spends** — a 100-sample judge evaluation or an 87-sample
@@ -239,3 +240,5 @@ treated as verified statements while any Swift identifier heard only in narratio
 transcripts and the sample disagree — the evaluators property type, the `Evaluator` closure shape, the
 metric factories, `info:` versus "notes", the judge model, and κ's provenance — **the sample wins in every
 case**, and each guide's sources section says so explicitly.
+
+[^missing-transcript]: Apple, [`ModelSubject.transcript`](https://developer.apple.com/documentation/evaluations/modelsubject/transcript): tool-call evaluators require a structured transcript and throw `EvaluationError.missingTranscript(evaluatorType:)` when it is `nil`.

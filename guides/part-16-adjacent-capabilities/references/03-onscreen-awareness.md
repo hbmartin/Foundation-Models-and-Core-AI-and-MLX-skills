@@ -3,17 +3,17 @@
 **Part 16 · Adjacent capabilities · Reference 03**
 
 **Version floor: the 27 releases — iOS 27, iPadOS 27, macOS 27, watchOS 27, visionOS 27, with
-Xcode 27.** Every symbol that is new in this guide — `EntityIdentifier(for:identifier:)`, the
+Xcode 27.** The on-screen annotation surfaces that are new in this guide — the
 `.appEntityIdentifier` view modifiers, `NSUserActivity.appEntityIdentifier`,
 `displayRepresentations(for:requestedComponents:)`, `DisplayRepresentation.Components`, and the
-entity-annotation properties on notifications, Now Playing and AlarmKit — comes from WWDC26
+entity-annotation properties on notifications, Now Playing and AlarmKit — come from WWDC26
 sessions 240, 343 and 344, all of which frame themselves as *"the 27 releases."* Two things in
-this guide are **older and must not be version-confused with them**: `NSUserActivity` itself is a
-long-standing Foundation type that is merely gaining a new property, and `Transferable` /
-`FileRepresentation` / `SentTransferredFile` are **iOS 16-era Core Transferable** types that the
-2026 recipe reuses unchanged. The `.files.file` schema and `FileEntityIdentifier` carry no
-availability annotation we could read; that is 🔴 **GAP G3** below. Where we could establish an
-earliest OS, it is marked inline; where we could not, there is a gap box, never a guess.
+this guide are **older and must not be version-confused with them**: `EntityIdentifier` itself is
+iOS 16 / macOS 13, while `FileEntityIdentifier` is iOS 18 / macOS 15 and already supports both
+saved-file and draft identities.[^entity-identifier-api] `NSUserActivity` is a long-standing
+Foundation type that is merely gaining a new property, and `Transferable` / `FileRepresentation` /
+`SentTransferredFile` are **iOS 16-era Core Transferable** types that the 2026 recipe reuses
+unchanged.
 
 ⚠️ **A version-label warning you will hit reading Apple's own material.** Session 345 says *"our
 2027 releases"* three separate times; sessions 240 and 343 say *"the 27 releases."* These are the
@@ -70,9 +70,9 @@ Around that finding, this guide covers:
   session buries after the API tour and it is the most actionable item in the whole area.
 - **§5 — The verified working hand-off recipe.** `@AppEntity(schema: .files.file)` +
   `FileEntityIdentifier.file(url:)` + **`FileRepresentation`** — not `DataRepresentation` —
-  confirmed on device on iOS 27 by a developer who is not Apple. Plus the caveat that decides
-  whether it is usable for you: it needs **a real file on disk**, so transient in-memory renders
-  must be written out first. The write-out pattern is here.
+  confirmed on device on iOS 27 by a developer who is not Apple. Draft identifiers can represent
+  an unmaterialized document, but the verified transfer recipe still needs a real file payload;
+  §5.5 separates identity from export and provides the write-out pattern.[^file-identifier-api]
 - **§6 — Beyond the screen.** The same `EntityIdentifier` attaches to notifications, Now Playing
   and AlarmKit. Three surfaces, one pattern, one API asymmetry, one hard ban.
 - **§7 — Adoption order** — Apple's own five-step prioritisation from session 343 — and a
@@ -484,32 +484,14 @@ represents a situation that several entities are simultaneously relevant to (a n
 message in a conversation; a track that belongs to an artist and a playlist), you supply an ordered
 array. §6.2 covers why the *order* of that array is semantic.
 
-### 2.3 What we do not know about this type
+### 2.3 The verified `EntityIdentifier` surface
 
-> 🔴 **GAP G1 — `EntityIdentifier`'s full surface.**
->
-> **What is unknown:** we have exactly one initializer, `init(for:identifier:)`, seen in Apple code
-> samples. We do not know its conformances (`Hashable`? `Sendable`? `Codable`?), whether it can be
-> constructed from a type-erased entity, whether it exposes its components back as properties, or
-> whether there is an initializer that takes an entity *instance* instead of a metatype plus ID.
-> We also do not know its declared availability — it is new in the 27 releases by context, not by a
-> read annotation.
->
-> **What would resolve it:** the `/documentation/appintents/entityidentifier` page, or a dump of the
-> `AppIntents` module interface from the Xcode 27 SDK (`swift-api-digester`, or the `.swiftinterface`
-> in the SDK) — the same technique that settled the Metal Performance Primitives questions in
-> Part 11.
->
-> **Safe default:** construct it inline at the point of use, exactly as Apple's samples do, and do
-> not store it, subclass around it, or serialise it. Every verified use site constructs it fresh.
-
-> 🔴 **GAP G2 — is `EntityIdentifier` sendable across isolation domains?**
->
-> Every verified construction happens inside a SwiftUI view body, a `MediaSessionRepresentable`
-> computed property, or a notification-scheduling function — all plausibly main-actor. We have no
-> evidence about constructing one on a background executor.
->
-> **Safe default:** build them where you use them, on the actor you are already on.
+The current reference resolves the earlier API-shape questions. `EntityIdentifier` is a
+`Hashable`, `Sendable` value available from iOS 16 / macOS 13. It exposes `entityType` and the
+string-form `identifier`, and supplies both `init(for: Entity)` and
+`init(for: Entity.Type, identifier: Entity.ID)`.[^entity-identifier-api] It is not documented as
+`Codable`, so do not treat `Sendable` as permission to persist it; persist your entity's own stable
+ID and reconstruct the wrapper at the integration boundary.
 
 ### 2.4 The one thing `EntityIdentifier` does *not* do
 
@@ -1517,34 +1499,42 @@ Five details in that block are worth pulling out, because they are what make it 
 5. **`contentType: .image`** — a `UTType`. Use the type that matches what you actually write to
    disk; `.image` is the abstract supertype and is what the reporter used for images.
 
-> 🔴 **GAP G10 — `FileEntityIdentifier`'s full API and availability.**
+The current reference fills in the previously missing public surface. `FileEntityIdentifier` is a
+`Hashable`, `Codable`, `Sendable` value available from iOS 18 / macOS 15. In addition to
+`file(url:)` and the async-throwing `fileURL`, it provides `draft(identifier:)`,
+`draftIdentifier`, and `isDraft` for a document that has not been materialized on disk.[^file-identifier-api]
+
+> 🔴 **GAP G10 — saved-file persistence semantics.**
 >
-> **What is unknown:** its declared availability (it is new-in-27 by context, not by a read
-> annotation), whether `file(url:)` is the only factory, what it throws, whether `fileURL` performs
-> I/O or security-scoped resolution, and whether the identifier survives the file being moved or
-> renamed. We also do not know whether it is bookmark-backed (which would survive a move) or
-> path-backed (which would not).
+> **What remains unknown:** what `file(url:)` throws, whether `fileURL` performs I/O or
+> security-scoped resolution, and whether a saved-file identifier survives the file being moved or
+> renamed. We also do not know whether it is bookmark-backed or path-backed.
 >
-> **What would resolve it:** the `/documentation/appintents/fileentityidentifier` page — which our
-> documentation pass did **not** find linked from the `.files` domain page, itself a documentation
-> gap worth noting — or an SDK interface dump.
->
-> **Safe default:** treat the URL as the source of truth, keep the file where you put it for the
-> lifetime of the annotation, and handle `fileURL` returning `nil` at every call site.
+> **Safe default for saved files:** treat the URL as the source of truth, keep the file where you
+> put it for the lifetime of the annotation, and handle `fileURL` returning `nil` at every call
+> site.
 
-### 5.5 ⚠️ The caveat that decides whether this is usable: it needs a real file
+### 5.5 ⚠️ Draft identity exists; the verified hand-off still needs a real file payload
 
-> ✅ **VERIFIED (community, forum thread 838329 — raised by the original poster and unrefuted)** —
-> `.files.file` requires **a real file on disk at resolution time**. `FileEntityIdentifier.file(url:)`
-> needs a URL, and `entity.id.fileURL` must resolve. Transient in-memory renders — the exact case
-> the poster started with — have **no supported path**.
+`FileEntityIdentifier` does have an in-memory identity form. Use `draft(identifier:)` for a
+document that has not been materialized on disk; `isDraft` and `draftIdentifier` let entity code
+distinguish that state.[^file-identifier-api]
 
-Read that again if your content is generated. **If your app renders an image, a chart, a receipt, a
-QR code, a preview, or anything else that lives only in memory, none of §5.4 applies until you
-write it out.** There is no in-memory variant. The corpus states it flatly: *"no lightweight path
-for transient in-memory images."*
+```swift
+let identifier = FileEntityIdentifier.draft(identifier: render.contentHash)
+precondition(identifier.isDraft)
+```
 
-So the pattern is: **materialise, then annotate.**
+That corrects the identity claim, but it does **not** make bytes transferable. The only
+community-verified cross-app hand-off in §5.4 exports a `FileRepresentation` by resolving
+`entity.id.fileURL` and returning `SentTransferredFile`. A draft identifier intentionally has no
+file URL, and Apple documents no draft-backed replacement for that payload.[^file-identifier-api]
+For that verified hand-off path, an image, chart, receipt, QR code, or preview rendered in memory
+must still be materialized before export. If you only need stable entity identity before saving,
+use a draft identifier; if you need to send the content to another app, use the write-out pattern
+below and then replace or reconstruct the identifier with `file(url:)`.
+
+So the verified transfer pattern remains: **materialize, then annotate and export.**
 
 ```swift
 // The write-out pattern. The FileEntityIdentifier / EntityIdentifier lines are
@@ -1744,7 +1734,8 @@ build on: **for this specific capability, community evidence is the best evidenc
 | Your situation | Route | Confidence |
 |---|---|---|
 | Content is **already a file** (document, photo, attachment, export) | `@AppEntity(schema: .files.file)` + `FileEntityIdentifier.file(url:)` + `FileRepresentation` | ✅ community-verified on device, iOS 27 |
-| Content is **rendered in memory** (chart, preview, generated image) | Same, after the write-out pattern (§5.5) | ✅ recipe verified; ⚠️ the materialisation step is a workaround, not a blessed path |
+| Content is **rendered in memory** and only needs identity | `FileEntityIdentifier.draft(identifier:)` | ✅ Apple-documented from iOS 18; no file URL until materialized[^file-identifier-api] |
+| Content is **rendered in memory** and must be handed to another app | Materialize it, then use the saved-file recipe above (§5.5) | ✅ recipe verified; ⚠️ the materialization step remains necessary for this `FileRepresentation` payload |
 | Content is a **person** | `IntentValueRepresentation(exporting: \.person)` → `IntentPerson` | ✅ Apple code sample (240 @ 18:18) |
 | Content is a **place** | `ValueRepresentation` / `IntentValueRepresentation` → `PlaceDescriptor` | ✅ concept verified; ⚠️ naming hazard, GAP G9 |
 | Content is **structured app data with no matching system type** | **No verified route.** Reference works (§3); transfer does not. | 🔴 open — this is FB23813341 |
@@ -2344,10 +2335,8 @@ struct ScanEntityQuery: EntityQuery {
 }
 ```
 
-> ⚠️ **One unverified assumption in that listing:** that `FileEntityIdentifier` is `Hashable`, which
-> it must be to key a dictionary. Every published example of `displayRepresentations` returns
-> `[ID: DisplayRepresentation]`, and `AppEntity.ID` is conventionally `Hashable`, so this is a safe
-> bet — but it is a bet, and it belongs in GAP G10 rather than being asserted.
+`FileEntityIdentifier`'s documented `Hashable` conformance makes it a valid dictionary key; this
+part of the listing no longer rests on an assumption.[^file-identifier-api]
 
 `@Dependency` is the App Intents dependency-injection property wrapper:
 
@@ -2529,16 +2518,13 @@ Everything in this guide we could not verify, what would resolve it, and what to
 
 | # | Gap | What would resolve it | Safe default |
 |---|---|---|---|
-| G1 | **`EntityIdentifier`'s full surface** — one initializer seen; conformances, availability annotation, and any instance-based initializer unknown. (§2.3) | `/documentation/appintents/entityidentifier`, or an `AppIntents` SDK interface dump | Construct inline at the point of use, exactly as every Apple sample does; do not store or serialise |
-| G2 | **Is `EntityIdentifier` safe to construct off the main actor?** All verified sites are plausibly main-actor. (§2.3) | The type's `Sendable` conformance | Build them where you use them, on the actor you are already on |
-| G3 | **`.files.file` and `FileEntityIdentifier` availability.** New-in-27 by context; no read annotation. (Version floor) | The `.files` domain page's symbol table, or an SDK dump | Gate on the same floor as the rest of your Siri adoption — the 27 releases |
 | G4 | **The canvas annotation API** — `AppEntityUIElement`'s initializer spelling, the `bounds` type and coordinate space, the selection-state type, and the modifier that consumes them. (§3.5) | The **CosmoTunes sample project**, which contains `PianoRollView` and is published by Apple; or the docs page | Use shapes (b)/(c) unless you genuinely draw your items; let Xcode completion supply the spelling |
 | G5 | **UIKit/AppKit data-source protocol requirements** — one method signature known, from a forum post; the declaring protocol and the three sibling protocols' methods are unverified. (§3.6) | The four `*AppIntentsDataSource` doc pages, or an SDK dump | Implement `collectionView(_:appEntityIdentifierForItemAt:)` and let the compiler name the protocol |
 | G6 | **Does `NSUserActivity.appEntityIdentifier` work on shipping 27?** Two sessions say yes; one instrumented report says no callbacks on beta 3. (§3.2, §8.6, §10.3) | Testing it on a current build; an Apple statement | Adopt it, but verify in isolation with §1.6 before building on it; keep shape (b) as a control |
 | G7 | **`DisplayRepresentation.Components` cases beyond `.text`**, and whether it is an `OptionSet` or an enum. (§4.4) | The `Components` doc page, the CosmoTunes sample, or an SDK dump | **Never branch on it.** Pass it through to `displayRepresentation(with:)` unexamined — that code is correct for any case list |
 | G8 | **`displayRepresentation(with:)`'s exact signature** — `async` vs `async throws`, whether the macro synthesises a default. (§4.5) | The `AppEntity` protocol page, or the sample | Write it as shown; take the compiler's correction if it objects |
 | G9 | **`ValueRepresentation` vs `IntentValueRepresentation`** — same apparent role, two spellings, two sessions, no reconciling page. (§5.2) | The App Intents symbol index, or an SDK dump | Use whichever autocompletes; **do not port code between the spellings assuming equivalence** |
-| G10 | **`FileEntityIdentifier`'s API** — other factories, what `file(url:)` throws, whether `fileURL` does I/O, whether the identifier is bookmark- or path-backed, and whether the type is `Hashable`. (§5.4, §9.3) | `/documentation/appintents/fileentityidentifier` — not linked from the `.files` domain page, itself a documentation gap — or an SDK dump | Treat the URL as the source of truth; handle `fileURL` returning `nil` at every call site |
+| G10 | **Saved-file identifier persistence semantics** — what `file(url:)` throws, whether `fileURL` does I/O, and whether the identifier is bookmark- or path-backed. The factories, draft API, availability and `Hashable` conformance are now verified.[^file-identifier-api] | Apple documentation of the storage contract, or move/rename testing | Treat the URL as the source of truth; handle `fileURL` returning `nil` at every call site |
 | G11 | **The file lifetime contract for hand-off** — how long the file must survive, whether the system copies or hands over the URL, whether deleting mid-transfer errors or fails silently. (§5.5) | An Apple statement (none exists); or empirical deletion testing | Keep the file for the whole time the content is on screen plus a grace period; clean up coarsely |
 | G12 | **What happens if a `TransientAppEntity` identifier reaches an annotation surface** — compile error, assertion, or silent no-op. (§6.5) | Trying it; the `TransientAppEntity` docs page | Assume silent; decide transient-vs-persistent with the system-integration question explicit |
 | G13 | **`MPNowPlayingInfoPropertyAppEntityIdentifiers`** — spelling unverified against a header, and its relationship to the `NowPlaying`-framework route unknown. (§6.2) | The Media Player docs, or a header | Use the `MediaSessionRepresentable` / `MusicContent` route from the verified sample |
@@ -2617,9 +2603,24 @@ Read 2026-07-27 through the `sosumi.ai` markdown mirror
   ⚠️ **This page does not mention `FileEntityIdentifier` or `FileRepresentation`.** The linkage
   came entirely from the forum thread. That is a documentation gap and it is why the working recipe
   was undiscoverable from the docs.
+- `/documentation/appintents/entityidentifier` and `/fileentityidentifier` — fetched directly on
+  2026-07-28 to resolve the earlier availability, conformance, initializer, and draft-identity
+  gaps.[^entity-identifier-api][^file-identifier-api]
 - ⚠️ **`/documentation/appintents/making-onscreen-content-available-to-siri-and-apple-intelligence`
   returned HTTP 404.** The article is cited by name in thread 838329, so it exists or existed; the
   live equivalent appears to be the contextual-cues page. Noted in §5.6.
+
+[^entity-identifier-api]: Apple,
+    [`EntityIdentifier`](https://developer.apple.com/documentation/appintents/entityidentifier),
+    documents the type's two initializers, `entityType` and `identifier` properties, `Hashable` and
+    `Sendable` conformances, and iOS 16 / macOS 13 availability.
+[^file-identifier-api]: Apple,
+    [`FileEntityIdentifier`](https://developer.apple.com/documentation/appintents/fileentityidentifier),
+    documents iOS 18 / macOS 15 availability, `Hashable`, `Codable`, and `Sendable` conformances,
+    the saved-file and draft accessors, and both factories. The dedicated
+    [`draft(identifier:)`](https://developer.apple.com/documentation/appintents/fileentityidentifier/draft%28identifier%3A%29)
+    page specifies that draft identifiers are for documents not yet materialized on disk and
+    therefore have no file URL.
 
 ### Class 4 — Apple-staff forum answers
 
@@ -2695,14 +2696,15 @@ unanswered**. The one genuinely useful technical answer in the cluster came from
    in the corpus have truncated bodies and **no replies** — and the replies are where both the
    Apple answers and the community recipe live. This is a general lesson: the RSS captures
    systematically omit the authoritative half of every thread.
-4. **The remaining gaps:** most of G1–G13 would fall to a single `AppIntents` module-interface dump
-   from the Xcode 27 SDK (`swift-api-digester`, or the `.swiftinterface` in the SDK) — the same
-   technique that settled the Metal Performance Primitives questions in Part 11 — or to downloading
-   the CosmoTunes sample.
+4. **The remaining gaps:** several API-shape questions in G4–G15 would fall to a single
+   `AppIntents` module-interface dump from the Xcode 27 SDK (`swift-api-digester`, or the
+   `.swiftinterface` in the SDK) — the same technique that settled the identifier surface above —
+   or to downloading the CosmoTunes sample. Behavioral questions still require device testing.
 
 ---
 
-*Guide last verified 2026-07-27 against the sources above. The two forum threads it answers were
-open and unanswered by Apple on that date. If you are reading this after a later 27.x release,
-re-run §1.6's five-minute diagnostic before trusting §5.3's negative result: the one thing every
-party to this agrees on is that the behaviour is beta behaviour.*
+*Guide last verified 2026-07-27 against the sources above; the identifier API surface was
+re-verified directly on 2026-07-28.[^entity-identifier-api][^file-identifier-api] The two forum
+threads it answers were open and unanswered by Apple on the earlier date. If you are reading this
+after a later 27.x release, re-run §1.6's five-minute diagnostic before trusting §5.3's negative
+result: the one thing every party to this agrees on is that the behaviour is beta behaviour.*

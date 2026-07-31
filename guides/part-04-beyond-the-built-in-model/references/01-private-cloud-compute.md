@@ -480,7 +480,8 @@ not a compile error; §6.5 covers what actually happens.
 > final var contextSize: Int { get }
 > ```
 >
-> And on PCC (`notes/web/apple-docs-fm-evals-speech.md:1670`): `var contextSize: Int`.
+> On PCC the property is asynchronous and throwing:
+> `var contextSize: Int { get async throws }`.[^pcc-context-size]
 
 The trap: `contextSize` was **announced** in a 27-era session but **shipped** in the 26.4 SDK for
 `SystemLanguageModel`. So `SystemLanguageModel.default.contextSize` must **not** be wrapped in an
@@ -1175,19 +1176,24 @@ import os
 
 private let log = Logger(subsystem: "com.example.app", category: "pcc")
 
-func summarize(_ document: String, using session: LanguageModelSession) async throws -> String {
+func summarize(
+    _ document: String,
+    using session: LanguageModelSession,
+    model: PrivateCloudComputeLanguageModel
+) async throws -> String {
     let response = try await session.respond(
         to: "Summarize this document:\n\n\(document)",
         contextOptions: ContextOptions(reasoningLevel: .deep)
     )
 
     let usage = response.usage
+    let budget = try await model.contextSize
     log.info("""
         pcc turn: in=\(usage.input.totalTokenCount) \
         (cached \(usage.input.cachedTokenCount)) \
         out=\(usage.output.totalTokenCount) \
         (reasoning \(usage.output.reasoningTokenCount)) \
-        session total=\(session.usage.totalTokenCount) / budget \(model.contextSize)
+        session total=\(session.usage.totalTokenCount) / budget \(budget)
         """)
 
     return response.content
@@ -1195,8 +1201,8 @@ func summarize(_ document: String, using session: LanguageModelSession) async th
 ```
 
 > 🟡 **RECONSTRUCTED** — the *property names* above are verified from the docs index; the *composition*
-> (reading `session.usage.totalTokenCount` alongside `model.contextSize` in one log line) is our
-> pattern, not Apple's. `Usage.metadata` exists and is documented as *"Language models that provide
+> (reading `session.usage.totalTokenCount` alongside the awaited PCC `contextSize` in one log line) is
+> our pattern, not Apple's.[^pcc-context-size] `Usage.metadata` exists and is documented as *"Language models that provide
 > other kinds of usage statistics may encode them in metadata"* — its key set for PCC specifically is
 > unknown.
 
@@ -2150,7 +2156,7 @@ be even longer than the actual response"* (`319:52`), it can be the largest line
 
 Practical budget discipline:
 
-1. Read `model.contextSize` rather than assuming 32768 (§3.3).
+1. Read `try await model.contextSize` rather than assuming 32768 (§3.3).[^pcc-context-size]
 2. Log `usage.output.reasoningTokenCount` per turn (§6.4) and look at the distribution before you ship
    `.deep`.
 3. Use `tokenCount(for:)` — ✅ shipped in **iOS 26.4** per DTS Engineer, thread 817502 — to size
@@ -2382,55 +2388,28 @@ var serverModel: any LanguageModel = {
 
 Everything in this guide that we could not verify, collected. None of these contains a guess.
 
-### 13.1 🔴 GAP — image input on PCC
+### 13.1 ✅ Image input is supported; operating limits remain open
 
-This is the largest single hole and it is worth stating precisely, because there *is* a source and it
-is a weak one.
+The support question is settled by two Apple sources. Session 319's PCC demo feeds “the text and
+images” from a Markdown file into a `LanguageModelSession`, and Apple's multimodal prompting article
+explicitly recommends `PrivateCloudComputeLanguageModel` when image analysis needs more reasoning or
+context.[^pcc-images] Build PCC multimodal features using the same labeled `Attachment` prompt surface;
+keep an on-device fallback for availability, quota, and network failures.
 
-**What the source says.** Session 319's demo, described aloud:
+The remaining unknowns are narrower and operational:
 
-> `319:74-76`: *"an app that summarizes an article using the PCC model. I can select a **markdown
-> file**, and we take the **text and images**, feed that into a `LanguageModelSession`, and generate a
-> summary. This works great with the large context size that PCC offers."*
+1. Whether images consume PCC quota differently from text.
+2. PCC-specific size, resolution, format, or per-request image-count limits.
+3. PCC image-token accounting and how it interacts with reasoning tokens.
+4. Whether PCC advertises `.vision` through its concrete `capabilities` surface on every current SDK.
 
-**Why that is not enough.** "We take the text and images" is spoken narration over a demo. Nothing
-corroborates it:
-
-- The PCC documentation article does not mention image input.
-- The capability comparison table (§3.2) has five rows and none of them is vision.
-- The PCC symbol page's member list in our notes contains no image-related API.
-- No sample project sends an image to PCC. Origami's PCC path is opt-in-by-comment and its image work
-  (`ImageAnalysis.swift`, using `ImageReference`) is on-device.
-- Our own corpus flags it as an open question in exactly these terms
-  (`notes/transcripts/fm-ecosystem.md:2068-2070`): *"**Does PCC accept image attachments?** … No doc
-  corroboration; no statement about separate image limits or costs."*
-
-**What is specifically unknown**, beyond the yes/no:
-
-1. Whether `Attachment(image).label(id)` and `ImageReference` — the verified on-device round trip —
-   work at all against a PCC session.
-2. Whether images consume quota differently from text. On-device, image count per prompt is
-   *"unlimited, bounded by the context window"* and *"image input does not change which model services
-   the request"* (Apple staff, thread 833642) — **neither statement is about PCC**, and the second one
-   cannot be about PCC, since PCC *is* the other service.
-3. Whether there are size, resolution or format limits. None is published even for the on-device
-   model; thread 833783 asked and went unanswered.
-4. Whether reasoning interacts with image tokens.
-
-**What would resolve it:** the availability/capability list on
-`/documentation/foundationmodels/privatecloudcomputelanguagemodel`, or a device test that sends an
-`Attachment` to a PCC-backed session and inspects the thrown error (or absence of one).
-
-**Safe default meanwhile:** do not architect an image feature on PCC. Two workable alternatives:
-(a) run vision on-device — the rebuilt `SystemLanguageModel` accepts images directly, and `OCRTool` /
-`BarcodeReaderTool` exist for text and codes — then send the *extracted text* to PCC, which fits its
-actual strength of large-context reasoning; or (b) probe at runtime:
+A capability check is still useful for defensive routing, but it is not the basis for claiming that
+PCC image input is unsupported:
 
 ```swift
 // 🟡 RECONSTRUCTED probe. `capabilities` is a LanguageModel protocol requirement (✅),
 // `.vision` is a documented Capability member (✅ "The capability to accept image
-// inputs in prompts"), and PCC conforms to LanguageModel (✅). Whether the property
-// is surfaced on the concrete class is the open question (§6.7).
+// inputs in prompts"), and PCC conforms to LanguageModel (✅).
 if model.capabilities.contains(.vision) {
     // send the attachment
 } else {
@@ -2438,13 +2417,11 @@ if model.capabilities.contains(.vision) {
 }
 ```
 
-If that does not compile, take it as evidence and use path (a).
-
 ### 13.2 The rest, in one table
 
 | # | Unknown | What would resolve it | Safe default meanwhile |
 |---|---|---|---|
-| 1 | Image input on PCC (§13.1) | PCC symbol page capability list; a device test | Vision on-device → text to PCC |
+| 1 | PCC-specific image limits and token/quota accounting (§13.1) | Published limits or a controlled entitled-device test | Use labeled attachments, instrument `Usage`, and retain the on-device fallback.[^pcc-images] |
 | 2 | Full `QuotaUsage.Status` case list (§7.2) | `…/quotausage-swift.struct/status-swift.enum` | Test `isLimitReached` first, then `if case .belowLimit`; never `switch` exhaustively |
 | 3 | `resetDate`'s declared type (§7.2) | The `resetdate` symbol page | Treat as optional; never force-unwrap |
 | 4 | Relationship between `PrivateCloudComputeLanguageModel.Error` and `LanguageModelError` (§9.1) | The PCC `Error` page's conformance list | Catch both; treat `.rateLimited` as quota-shaped |
@@ -2514,7 +2491,7 @@ init()
 var isAvailable: Bool
 var availability: PrivateCloudComputeLanguageModel.Availability
 var quotaUsage: PrivateCloudComputeLanguageModel.QuotaUsage
-var contextSize: Int
+var contextSize: Int { get async throws }
 var supportedLanguages
 func supportsLocale(_:)
 
@@ -2716,3 +2693,6 @@ Always attributed as such in the text, never presented as an Apple figure.
 is marked "iOS 27.0+ Beta" on every symbol page we hold, several forum threads describe unreleased
 builds, and the eligibility page is a policy document that can change without a version number.
 Re-verify §1 before you make a business decision on it.*
+
+[^pcc-context-size]: Apple, [`PrivateCloudComputeLanguageModel.contextSize`](https://developer.apple.com/documentation/foundationmodels/privatecloudcomputelanguagemodel/contextsize), declared as an asynchronous, throwing getter.
+[^pcc-images]: [WWDC26 session 319 transcript, lines 74–76](../../../transcripts/wwdc2026-319.txt#L74-L76), and Apple, [“Analyzing images with multimodal prompting”](https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting), which directs image tasks needing greater reasoning or context to `PrivateCloudComputeLanguageModel`.

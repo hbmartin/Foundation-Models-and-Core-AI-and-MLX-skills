@@ -188,8 +188,9 @@ SAM 3 needs the hand-off, so it accepts loading all three graphs at once.
 
 And a fourth reason for pattern A that the WWDC framing understates. Session 325 presents splitting
 SAM 3 into `image_encode` / `text_encode` / `detect` as a **latency trick** (run each at a different
-cadence). Reading the shipped code shows the split is also **what routes the model to the Neural
-Engine** — see §4.2. That is a much stronger reason to do it.
+cadence). Reading the shipped code shows the split also **selects the Neural Engine preference when
+you use `coreai-models.PreparedModel`**—see §4.2. Direct Core AI callers
+choose their own options.[^sample-routing-policy]
 
 ---
 
@@ -1231,8 +1232,8 @@ Detection order is load-bearing and commented (`:190-218`):
 3. `main` → `.dynamic`.
 4. otherwise → `.dynamic`, with a warning.
 
-**And here is the payoff — the structure chooses the compute unit.** ✅ VERIFIED verbatim,
-`ModelStructure.swift:57-80`:
+**And here is the sample helper’s payoff — structure chooses the preference it supplies.** ✅
+VERIFIED verbatim, `ModelStructure.swift:57-80`:
 
 ```swift
 public var preferredDevice: String {
@@ -1254,11 +1255,12 @@ public var specializationOptions: SpecializationOptions {
 }
 ```
 
-Read that with §1.1. **Splitting SAM 3 into three entrypoints is not merely a latency trick — it is
-what routes the model to the Neural Engine.** A single-`main` SAM 3 export is classified `.dynamic`
-and lands on the GPU. WWDC26 session 325 presents the split as a way to run each stage at a
-different cadence (76% faster second inference, Apple-published, hardware unstated 🟡); the code
-shows a second, stronger reason that the session never states.
+Read that with §1.1. **When you use `coreai-models.PreparedModel`, splitting SAM 3 into the three
+recognized entrypoints selects that helper’s Neural Engine preference in addition to enabling
+different cadences.** A single-`main` SAM 3 export is classified `.dynamic` and receives its GPU
+preference. Direct Core AI loaders are not governed by these names.[^sample-routing-policy] WWDC26
+session 325 presents the split as a way to run each stage at a different cadence (76% faster second
+inference, Apple-published, hardware unstated 🟡).
 
 The same logic explains the iOS-vs-macOS LLM split. The iOS export emits `load_embeddings`,
 `gather_embeddings_<q>`, `extend_<ctx>_<q>` and `prompt_opt_<ctx>_<q>` — so it is `.chunkedStatic`,
@@ -3726,3 +3728,9 @@ hardware and OS where the source states it, and flagged where it does not.**
 `ml-explore/mlx-swift-lm` @ `3cbf928` (2026-07-24), and WWDC26 sessions 324 / 325 / 326.
 Guide compiled 2026-07-27. Everything here is beta-era: check the commit before you trust a
 signature.*
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

@@ -114,8 +114,8 @@ them (26.4 and 27.0) landed within a few months of each other.
 
 | Floor | What arrived | Platforms as declared | Notes |
 |---|---|---|---|
-| **26.0** | The Foundation Models framework itself: `SystemLanguageModel`, `LanguageModelSession`, `@Generable`, `@Guide`, `Tool`, `Transcript`, `Prompt`, `Instructions`, `GenerationOptions`, `GenerationSchema`, `DynamicGenerationSchema`, `GeneratedContent`, `Response`, `ResponseStream`, `LanguageModelFeedback` | `iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+, macOS 26.0+, visionOS 26.0+` — **no watchOS** | The 2025 release. Everything in the WWDC25 code-along. |
-| **26.4** | `SystemLanguageModel.contextSize`, `SystemLanguageModel.tokenCount(for:)`, `supportsLocale(_:)`, a **new on-device model**, and **reduced guardrail false positives** | `iOS 26.4+, iPadOS 26.4+, Mac Catalyst 26.4+, macOS 26.4+, visionOS 26.4+` | A mid-cycle model swap, not just an API addition. See §3. |
+| **26.0** | The Foundation Models framework itself: `SystemLanguageModel`, `LanguageModelSession`, `@Generable`, `@Guide`, `Tool`, `Transcript`, `Prompt`, `Instructions`, `GenerationOptions`, `GenerationSchema`, `DynamicGenerationSchema`, `GeneratedContent`, `Response`, `ResponseStream`, `LanguageModelFeedback`, `SystemLanguageModel.supportsLocale(_:)` | `iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+, macOS 26.0+, visionOS 26.0+` — **no watchOS** | The 2025 release. `supportsLocale(_:)` is part of the OS 26.0 model declaration.[^supports-locale-floor] |
+| **26.4** | `SystemLanguageModel.contextSize`, `SystemLanguageModel.tokenCount(for:)`, a **new on-device model**, and **reduced guardrail false positives** | `iOS 26.4+, iPadOS 26.4+, Mac Catalyst 26.4+, macOS 26.4+, visionOS 26.4+` | A mid-cycle model swap, not just an API addition. See §3. |
 | **27.0** | The `LanguageModel` / `LanguageModelExecutor` protocol pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, `LanguageModelError`, `Attachment` / image input, `GenerationOptions.ToolCallingMode`, `TranscriptErrorHandlingPolicy`, `LanguageModelSession.Usage`, `Transcript.history`, `Transcript.structuredTranscript`, Core AI, **watchOS** | `iOS 27.0+ Beta, … watchOS 27.0+ Beta` | The 2026 release. Everything marked *Beta* as of this writing. |
 
 And the floor that isn't an OS floor at all:
@@ -234,20 +234,21 @@ migration doc conflates them and will send a reader looking for bfloat support i
 > number for a symbol you can see in a header, quote the header's annotation and say it's a header
 > annotation.
 
-Two more TensorOps facts that belong in a 26 → 27 diff because they are commonly asserted and are
-**wrong**:
+Xcode 27 adds a separate low-bit and block-scaling wave that the Xcode 26 headers cannot reveal:
 
-- **Scale planes do not exist.** There is no `MTLTensor` scale-plane mechanism, no FP8 `E8M0`
-  block-scale descriptor, no auxiliary plane map. Three independent sources now agree: zero hits for
-  `scale`, `plane`, `fp8` or `e8m0` across ~17,000 lines of shipped headers; the M5 Tech Talk names
-  what shipped *instead* (cooperative tensors as matmul inputs, i.e. hand-written dequantisation into
-  a cooperative tensor); and MLX's own kernels implement exactly that pattern.
-- **The dtype set is int4 and int8 only.** `int2`, `fp4` and `fp8` are absent from
-  `__tensor_ops_datatype`. `fp8_e8m0` / `fp8_e4m3` / `fp4_e2m1` are **MLX's own structs**, not Metal
-  types.
+- **`MTLTensor` now has auxiliary scale planes.** `MTLTensorAuxiliaryPlaneDescriptor` describes a
+  scales plane and its `blockFactors`, while `MTLTensorDescriptor.auxiliaryPlanes` carries the map
+  used to associate that metadata with the tensor.[^metal-auxiliary-plane][^metal-auxiliary-map]
+- **The datatype set now includes int2, FP4, FP8, and E8M0.** These are Metal 27 datatypes, not merely
+  MLX helper structs; the framework uses the E8M0 auxiliary scale plane to dequantize low-bit values
+  automatically for an operation.[^metal-low-bit-types][^wwdc330]
 
-Full treatment is [Part 11](../../part-11-metal-and-tensorops/). It is listed here only so that a
-reader doing a 26 → 27 audit does not go looking for a TensorOps "27 release" that does not exist.
+Keep the release boundary explicit. On 27, prefer the native low-bit tensor plus auxiliary-plane
+contract. On 26.x, where those declarations are absent, cooperative-tensor/custom-kernel
+dequantization remains the compatible fallback; do not reference the 27 symbols from a 26-SDK build.
+
+Full treatment is [Part 11](../../part-11-metal-and-tensorops/). The important migration distinction
+is now **Xcode 26 fallback versus Xcode 27 native scale-plane support**, not “no 27 release.”
 
 ---
 
@@ -2260,7 +2261,8 @@ For pasting into a migration ticket.
 | | 26.0 | 26.4 | 27.0 | Xcode 27 | macOS 27 |
 |---|---|---|---|---|---|
 | Framework, `@Generable`, `Tool`, `Transcript` | ✅ | | | | |
-| `contextSize`, `tokenCount(for:)`, `supportsLocale(_:)` | | ✅ (back-deployed) | | | |
+| `supportsLocale(_:)` | ✅ | | | | |
+| `contextSize`, `tokenCount(for:)` | | ✅ (`contextSize` back-deployed) | | | |
 | Guardrail false-positive reduction | | ✅ | more in 27 | | |
 | `LanguageModel` protocol, PCC, `ContextOptions`, Dynamic Profiles, `Attachment`, `LanguageModelError`, `ToolCallingMode`, `TranscriptErrorHandlingPolicy`, `Usage`, `Transcript.history`, Core AI, watchOS | | | ✅ | | |
 | Evaluations framework | | | | ✅ | |
@@ -2483,6 +2485,12 @@ Collected so a future pass can close them. Each is a 🔴 **GAP** in the body wi
 | "How do I actually use Dynamic Profiles?" | [Part 3](../../part-03-context-profiles-agentic/) |
 | "How do I pick a backend?" | [Part 1](../../part-01-orientation-and-gating/) and [Part 4](../../part-04-beyond-the-built-in-model/) |
 | "How do I build the regression suite this guide keeps telling me to build?" | [Part 6](../../part-06-evaluations/) |
+
+[^supports-locale-floor]: The authoritative Xcode 26.5 interface places [`SystemLanguageModel.supportsLocale(_:)`](../../../notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface#L572-L591) in the OS 26.0 declaration; the following extension is the distinct OS 26.4 context-introspection surface.
+[^metal-auxiliary-plane]: Apple, [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor), including the scale-plane descriptor and block factors introduced for the Metal 27 tensor surface.
+[^metal-auxiliary-map]: Apple, [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes), the descriptor map that attaches auxiliary planes to an `MTLTensor`.
+[^metal-low-bit-types]: Apple, [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype), including the Metal 27 int2, FP4, FP8, and E8M0 datatype cases.
+[^wwdc330]: [WWDC26 session 330 transcript, lines 27–78](../../../transcripts/wwdc2026-330.txt#L27-L78), which introduces 2-bit/4-bit/8-bit formats, E8M0 scale planes, block factors, and automatic dequantization.
 
 ---
 

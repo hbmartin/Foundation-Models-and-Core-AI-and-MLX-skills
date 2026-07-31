@@ -148,9 +148,9 @@ bump.
 - [10. Streams and devices](#10-streams-and-devices)
 - [11. `nn.Module`: parameters as a tree](#11-nnmodule-parameters-as-a-tree)
 - [12. Saving, loading, exporting, and interop](#12-saving-loading-exporting-and-interop)
-- [13. The silent-failure catalogue](#13-the-silent-failure-catalogue)
-- [14. Quick reference](#14-quick-reference)
-- [15. Sources and evidence ledger](#15-sources-and-evidence-ledger)
+
+**Scope:** this reference intentionally ends at §12; the contents list includes only sections present
+in this file. API spellings and behavior are pinned to the inspected MLX revision.[^scope-source]
 
 ---
 
@@ -3732,3 +3732,4 @@ callable" is undocumented. **Safe default: treat `.mlxfn` as a build artefact, n
 Regenerate it from Python source on every MLX bump, and keep the Python that produced it in version
 control.**
 
+[^scope-source]: Source snapshot: [`ml-explore/mlx` at `973e27f`](https://github.com/ml-explore/mlx/tree/973e27f82ffe68dbd626cda31ba34997045d1eb7).

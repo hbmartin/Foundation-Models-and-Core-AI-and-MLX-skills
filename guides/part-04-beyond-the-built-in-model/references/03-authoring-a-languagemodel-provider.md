@@ -2396,7 +2396,7 @@ and the balance rule for custom errors (339:151–156):
 > | `.contextSizeExceeded(ContextSizeExceeded)` | `contextSize: Int`, `tokenCount: Int` | *"The transcript would exceed the model's context window. The developer can recover by trimming entries and retrying."* |
 > | `.rateLimited(RateLimited)` | `resetDate: Date?` | *"Provider returned 429 / a burst-throttling signal. Include `resetDate` when the provider tells you when retries will succeed."* |
 > | `.guardrailViolation(GuardrailViolation)` | — | *"Provider's safety system flagged the prompt or the response."* |
-> | `.refusal(Refusal)` | `explanation: String` (**required** by the public initializer) | *"Model declined to answer for non-safety reasons… Surfaced to the developer via `refusal.explanation` / `refusal.explanationStream`."* |
+> | `.refusal(Refusal)` | initializer input `explanation: String`; readable `explanation` is `async throws -> LanguageModelSession.Response<String>` | *"Model declined to answer for non-safety reasons… Read the generated message from `(try await refusal.explanation).content`."*[^refusal-response] |
 > | `.unsupportedCapability(UnsupportedCapability)` | `capability: LanguageModelCapabilities.Capability` | *"A capability you didn't declare was requested. **The framework throws this for you when you under-declare** — only throw it manually when your provider rejects a capability mid-stream."* |
 > | `.unsupportedTranscriptContent(UnsupportedTranscriptContent)` | `unsupportedContent: [Transcript.Entry]` | *"The transcript contains content the model can't process — unsupported file types, corrupted data, or a custom segment your provider doesn't recognize."* |
 > | `.unsupportedGenerationGuide(UnsupportedGenerationGuide)` | `schemaName: String?` | *"The generation schema uses a guide your provider doesn't support (e.g. an exotic regex pattern)."* |
@@ -3165,3 +3165,5 @@ public protocol LanguageModelExecutor: Sendable {
 **Not used as evidence:** the coffee/generative-game and SpeechAnalyzer sample projects (stale
 iOS 26 / WWDC25 leftovers); `skills/foundation-models-utilities/SKILL.md` except where explicitly
 flagged as stale.
+
+[^refusal-response]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), the generated `String` carried by the response.

@@ -2,8 +2,10 @@
 
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
-**Series status:** **complete as of 2026-07-28** — all 17 parts written. 76 guides
-(17 part READMEs + 59 reference guides), ~179,000 lines.
+**Series status:** **17-part published corpus, scope-audited as of 2026-07-28.** All 76 guides exist
+(17 part READMEs + 59 reference guides), and each contents list is expected to name only sections
+present in its file. Declared evidence gaps remain explicit rather than being counted as unwritten
+sections.[^series-scope]
 
 ---
 
@@ -32,7 +34,7 @@ what order; most readers need two or three of them, not all.
 In 2026 the four product lines stopped being alternatives and became **layers**. The Foundation
 Models framework is no longer "the API for Apple's on-device LLM" — `LanguageModelSession` now
 sits on a public `LanguageModel` / `LanguageModelExecutor` protocol pair, and there are five
-conformers: `SystemLanguageModel` (rebuilt, ~4K context, now accepts images),
+conformers: `SystemLanguageModel` (rebuilt, 4,096-token context, now accepts images),
 `PrivateCloudComputeLanguageModel` (32K, three reasoning levels, no API keys, per-user quota),
 `CoreAILanguageModel`, `MLXLanguageModel`, and `ChatCompletionsLanguageModel` — which quietly
 turns `mlx_lm.server`, Ollama, vLLM and LM Studio into Foundation Models backends today. So the
@@ -266,5 +268,13 @@ highest-leverage contribution available to this series.
 The research behind this series lives in [`../notes/`](../notes/) — roughly 90,000 lines across
 46 files, indexed at [`../notes/synthesis/RESEARCH-INDEX.md`](../notes/synthesis/RESEARCH-INDEX.md).
 Primary sources: 16 WWDC26 / Meet-with-Apple transcripts, 6 Apple documentation articles, 4 Apple
-Developer Forums topic captures, 17 cloned repositories, the MetalPerformancePrimitives headers
-shipped in the Xcode SDK, and a crawl of the MLX documentation site.
+Developer Forums topic captures, 16 pinned repository checkouts, the MetalPerformancePrimitives
+headers shipped in the Xcode SDK, and a crawl of the MLX documentation site.[^repository-snapshots]
+
+[^series-scope]: The inventory below links every part and reference. The intentionally shorter MLX
+    references declare their terminal sections in [Part 12](part-12-mlx-python/README.md#reading-order-and-what-you-can-defer).
+    Apple's [TN3193](https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window)
+    specifies the on-device model's 4,096-token context window.
+[^repository-snapshots]: The reproducibility manifest in
+    [`scripts/clone-research-repos.sh`](../scripts/clone-research-repos.sh) records the 16 repositories
+    and exact full commit SHA for each checkout.

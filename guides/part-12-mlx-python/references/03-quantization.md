@@ -296,8 +296,8 @@ written for, and §6 is about what happens when you change it.
 
 ### 2.1 The table
 
-This table is quoted verbatim from MLX's own `quantize` docstring. It is the authoritative list;
-anything not in it does not exist.
+This table is quoted verbatim from MLX's own `quantize` docstring. It is the authoritative list of
+**MLX quantization modes at the pinned revision**; it is not an inventory of Metal tensor formats.
 
 > ✅ **VERIFIED** — reproduced from `python/src/ops.cpp:4649-4660`, recorded at
 > `notes/repos/mlx-core.md:742-752`:
@@ -402,15 +402,17 @@ floating-point element type plus one shared 8-bit exponent-or-float scale per bl
 The element types are `E2M1` (fp4) and `E4M3` (fp8), per the docstring
 (`notes/repos/mlx-core.md:767`).
 
-### 2.4 ⚠️ `fp8_e8m0`, `fp8_e4m3` and `fp4_e2m1` are MLX's own structs — not Metal types
+### 2.4 ⚠️ MLX's `fp8_e8m0`, `fp8_e4m3`, and `fp4_e2m1` are its own structs
 
-This is the single most misunderstood fact about MLX quantization, and getting it wrong sends
-people looking for hardware features that do not exist.
+This implementation fact is easy to conflate with the platform surface. At the pinned MLX commit,
+these names are private software structs; Xcode 27 separately documents native `MTLTensorDataType`
+cases for int2, FP4, FP8, and E8M0 and auxiliary scale planes.[^metal27-formats]
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1546-1549`: "`fp8_e8m0` and `fp8_e4m3`
 > are defined in `mlx/backend/metal/kernels/fp8.h` (`fp8_e8m0` at `fp8.h:51-52`), and `fp4_e2m1` in
 > `fp4.h`. They are **plain structs with hand-written bit manipulation**, loaded from a `uint8_t`
-> by reinterpret-cast. **There is no hardware fp8 type and no Metal `fp8` at all.**"
+> by reinterpret-cast. The quoted negative conclusion describes the Xcode 26.6 snapshot used by
+> that research note, not the Xcode 27 API.
 
 Here is the scale decode, in full:
 
@@ -482,15 +484,11 @@ FP path's threadgroup type defaults to `bfloat` (`fp_quantized_nax.h:198-204`).
 
 Three consequences you should carry away:
 
-1. **There is no "hardware fp4" to enable.** MetalPerformancePrimitives' tensor data-type enum has
-   `int8_t` and `metal::int4b_format`/`uint4b_format` and *nothing else relevant* — no int2, no
-   fp4, no fp8, no E8M0 (`notes/repos/mlx-tensorops-kernels.md:1155-1157`, verified against the
-   shipped headers). MLX builds MX and NV entirely in its own software layer.
-2. **Anything claiming MLX feeds quantized tensors to `matmul2d` through a "scale plane" is
-   describing something that does not exist.** The research note is blunt about it: "A guide that
-   tells readers to feed quantized weights to `matmul2d` via scale planes would be describing
-   something that cannot be written against this SDK."
-   (`notes/repos/mlx-tensorops-kernels.md:1697-1698`)
+1. **This MLX revision does not opt into native FP4/FP8 tensor formats.** It builds MX and NV in its
+   software layer even though Xcode 27 now provides corresponding host-side tensor formats.
+2. **This MLX revision does not feed scale planes to `matmul2d`.** Its kernels hand-dequantize.
+   That remains useful for 26.x deployment and custom formats, but it is an implementation choice,
+   not proof that Xcode 27's documented multiplane API is absent.[^metal27-planes]
 3. **The dequantize cost is real and it is in the kernel.** Every group's scale is decoded and
    multiplied in software, per tile load. This is why group size has a performance dimension and
    not only a size one.
@@ -2912,14 +2910,10 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > **Safe default:** treat a zero result from §10.4 as inconclusive and fall back to §10.3, which
 > makes no allocator assumptions.
 
-**One thing that is emphatically *not* a gap**, because it keeps getting reintroduced by
-well-meaning readers: **MetalPerformancePrimitives has no scale-plane mechanism, and MLX does not
-use one.** This was verified three independent ways — a grep over ~17,000 lines of shipped headers
-finding zero hits for `scale`, `plane`, `fp8` or `e8m0`; the `__tensor_ops_datatype` enum
-containing `int8_t` and `int4b_format`/`uint4b_format` and nothing else relevant; and MLX's own
-kernels hand-dequantizing into threadgroup memory (§2.4). Any text describing MLX feeding 4-bit
-tensors to `matmul2d` through a scale plane is describing something that cannot be written against
-this SDK.
+**One thing that is emphatically *not* a gap:** the pinned MLX implementation does not use native
+scale planes. Its kernels hand-dequantize into threadgroup memory (§2.4). The older negative header
+search applied to Xcode 26.6 only; Xcode 27 documents auxiliary scale planes, so do not generalize
+MLX's current implementation into a platform limitation.[^metal27-planes]
 
 ---
 
@@ -2960,10 +2954,9 @@ Everything in this guide traces to one of these. Nothing was written from model 
 
 **Series corrections applied:**
 
-- `notes/CORRECTIONS-PENDING.md` — item **C3** (scale planes do not exist; `fp8_e8m0` / `fp8_e4m3` /
-  `fp4_e2m1` are MLX's own structs; the NAX freshness caution) and item **C10.5** (the TensorOps
-  version ladder; scale-plane non-existence promoted to settled). Both are reflected in §2.4 and in
-  the version-floor paragraph.
+- `notes/CORRECTIONS-PENDING.md` — item **C3** correctly identified `fp8_e8m0` / `fp8_e4m3` /
+  `fp4_e2m1` as MLX's own structs but overgeneralized a 26.6 negative header search. §2.4 now
+  distinguishes MLX's pinned implementation from Xcode 27's documented multiplane tensor API.
 
 **A note on precedence.** Where the brief for this guide and the research notes disagreed, the
 notes won and the difference is reported inline — most visibly in §7.4, where the community
@@ -2975,3 +2968,13 @@ value of reading only the routed experts, which is exactly what `mx.gather_qmm` 
 
 *Last verified against the corpus on **2026-07-27**. Bug statuses in §9 move; check the issues
 before relying on the table.*
+
+[^metal27-formats]: Apple's current [`MTLTensorDataType`](https://developer.apple.com/documentation/metal/mtltensordatatype)
+    documentation lists Int2, UInt2, Float4E2M1, Float8E4M3, Float8E5M2, and Float8UE8M0. These
+    platform formats are distinct from the like-named helper structs in the pinned MLX source.
+[^metal27-planes]: Apple documents
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes),
+    and [`MTLTensor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensor/auxiliaryplanes).
+    The repository's [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L27-L78)
+    describes the E8M0 scale plane and `blockFactors` relationship.

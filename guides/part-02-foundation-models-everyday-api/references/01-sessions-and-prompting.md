@@ -2142,7 +2142,7 @@ final class ItineraryGenerator {
             errorMessage = "Apple Intelligence isn't available right now."
         } catch let error as LanguageModelError {
             // Model-side: guardrails, refusal, context size, rate limiting, timeout…
-            errorMessage = describe(error)
+            errorMessage = await describe(error)
         } catch is GeneratedContent.ParsingError {
             // The model produced something the decoder could not read.
             errorMessage = "We had trouble understanding the response. Please try again."
@@ -2156,7 +2156,7 @@ final class ItineraryGenerator {
         generationTask = nil
     }
 
-    private func describe(_ error: LanguageModelError) -> String {
+    private func describe(_ error: LanguageModelError) async -> String {
         switch error {
         case .contextSizeExceeded:
             // See §9.3 and Part 3: compact the transcript rather than starting over.
@@ -2164,7 +2164,11 @@ final class ItineraryGenerator {
         case .guardrailViolation:
             return "That request was blocked by safety guardrails. Try rewording it."
         case .refusal(let refusal):
-            return "The model declined: \(refusal.explanation)"
+            // The explanation is another asynchronous model response, not a stored String.
+            guard let response = try? await refusal.explanation else {
+                return "The model declined that request."
+            }
+            return "The model declined: \(response.content)"
         case .rateLimited:
             return "Too many requests right now. Try again in a moment."
         case .timeout:
@@ -2277,7 +2281,7 @@ struct ItineraryView: View {
 | `catch` ladder with `SystemLanguageModel.Error` **first**, then `LanguageModelError`, then `GeneratedContent.ParsingError` | ✅ **VERIFIED** — the ordering and the type set are verbatim from two independent 27.0 samples' `Error+DisplayMessage.swift`; the three-type taxonomy itself from an Apple Frameworks Engineer, forum thread 831404 |
 | `catch let error as LanguageModelSession.Error` | ✅ **VERIFIED** declaration, but 🔴 **used by no Apple sample** — keep the clause, expect never to hit it |
 | Proactive `availability` gate *and* reactive error catching, together | 🟡 **deliberate** — Apple's 2026 samples do only the reactive half; see below |
-| `LanguageModelError.refusal(let refusal)` → `refusal.explanation` | ✅ **VERIFIED** — `explanation: String` is required by the public initializer as of Xcode 27 beta 3 |
+| `LanguageModelError.refusal(let refusal)` → `try await refusal.explanation` → `.content` | ✅ **VERIFIED** — the accessor is `async throws` and returns `LanguageModelSession.Response<String>`, whose generated text is in `content`.[^refusal-explanation-response] |
 | `usage.input.cachedTokenCount` etc. | ✅ **VERIFIED** property names |
 | `@Guide(description:_:)` with `.maximumCount(_:)` | ✅ **VERIFIED** — Apple's content-tagging sample uses exactly this form |
 | `ForEach(days)` over `[DayPlan.PartiallyGenerated]` | 🟡 **RECONSTRUCTED** — requires the partial element to be `Identifiable`; `GenerationID` exists and Apple's streaming samples do this, but we did not read the conformance. If it does not compile, use `ForEach(Array(days.enumerated()), id: \.offset)`. |
@@ -2582,6 +2586,8 @@ None of these gaps is filled with a guess anywhere in this guide. If you resolve
 | `LanguageModelSession.GenerationError` | ✅ | ✅ | ⚠️ deprecated |
 | `SystemLanguageModel.contextSize` / `.tokenCount(for:)` | — | ✅ | ✅ |
 | watchOS support for `LanguageModelSession` | — | — | ✅ |
+
+[^refusal-explanation-response]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), the `String` carried by the response wrapper.
 
 ### Where to go next
 

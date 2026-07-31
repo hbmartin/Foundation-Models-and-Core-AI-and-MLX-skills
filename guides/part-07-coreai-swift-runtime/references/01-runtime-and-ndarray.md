@@ -667,8 +667,8 @@ let function = try loadMainFunction(from: model)
 Session 324 mentions multi-function models in passing ("you can convert a single model with
 multiple functions"). Session 325 presents splitting SAM 3 into `image_encode` / `text_encode` /
 `detect` as a **latency** trick — run each at a different cadence, and the second inference is
-*76% faster* (Apple-published, session 325, no hardware stated). But reading Apple's shipped Swift
-shows the split is doing something else as well, and the something else is more important:
+*76% faster* (Apple-published, session 325, no hardware stated). But reading the optional
+`apple/coreai-models` Swift package shows that its loader does something else as well:
 
 > ✅ **VERIFIED** — `apple/coreai-models`,
 > `swift/Sources/CoreAIShared/Runtime/ModelStructure.swift:70-81`:
@@ -690,11 +690,11 @@ shows the split is doing something else as well, and the something else is more 
 > `image_encode` + `text_encode` + `detect` → `.multiFunctionSegmenter`; a bare `main` →
 > `.dynamic`.
 
-**The set of names in `functionNames` is what decides which compute unit the model targets.** A
-single-`main` model gets specialized for the GPU with `expectFrequentReshapes = true`; the same
-model split into three named entry points gets specialized for the **Neural Engine**. That is a
-much stronger reason to split a model than "the second call is faster", and it means
-`functionNames` is not a diagnostic detail — it is a load-bearing part of your deployment shape.
+**For callers using this package’s `PreparedModel` helper, the set of names in `functionNames`
+selects its compute-unit preference.** A single-`main` model receives the helper’s GPU preference
+with `expectFrequentReshapes = true`; the recognized three-entrypoint form receives its Neural
+Engine preference. Direct `AIModel` callers choose their own `SpecializationOptions`, and Core AI’s
+`.default` is independent of these names.[^sample-routing-policy]
 
 > ⚠️ **But Apple's own package does not cash the latency cheque for you.** ✅ VERIFIED —
 > `CoreAISegmentationEngine.runMultiFunctionInference` **re-runs `image_encode` on every
@@ -1486,10 +1486,10 @@ Apple also documents when the interleaved form is *necessary* rather than merely
 > the shape/stride equivalence is not possible. In such case the interleaved representation is the
 > only way to express the layout.**"*
 
-### 7.9 `ScalarType`: 33 cases, and the two that don't exist in Swift
+### 7.9 `ScalarType`: 35 cases, and the two that don't exist in Swift
 
 `NDArray.ScalarType` is `CaseIterable, Equatable, Hashable, Sendable, SendableMetatype` and has
-**33 cases** — far more than the Swift standard library has types:
+**35 cases** — far more than the Swift standard library has types.[^scalar-type-count]
 
 | Group | Cases |
 |---|---|
@@ -3473,7 +3473,7 @@ struct NDArray: Escapable, Sendable, ViewRepresentable, MutableViewRepresentable
   struct InterleaveLayout: Equatable, Sendable { init(dimension: Int, factor: Int) }
   protocol RangeExpression: Sendable { static var all: _AllRange { get }
                                        func relative(to: Range<Int>) -> Range<Int> }
-  enum ScalarType: CaseIterable, Hashable, Sendable   // 33 cases — see §7.9
+  enum ScalarType: CaseIterable, Hashable, Sendable   // 35 cases — see §7.9
 
 struct NDArrayDescriptor: Equatable, Sendable
   var shape: [Int]              // -1 == dynamic
@@ -3671,9 +3671,10 @@ Two claims in circulation are corrected in the body rather than repeated:
   it is `Sendable`. The **views** are the non-escapable part; session 324 says exactly that about
   `NDArray.MutableView` and nothing else. See §7.1.
 - **"Splitting a model into functions is a latency optimisation."** True, and incomplete. Reading
-  `ModelStructure.swift:70-81` shows the function-name set is what selects the **compute unit** at
-  specialization time — a three-function segmenter is specialized for the Neural Engine, a
-  single-`main` model for the GPU. See §4.3.
+  `ModelStructure.swift:70-81` shows that the optional `coreai-models` loader also uses the
+  function-name set to select **its compute-unit preference**—a three-function segmenter gets its
+  Neural Engine preference and a single-`main` structure gets its GPU preference. Direct `AIModel`
+  callers choose their own options. See §4.3.[^sample-routing-policy]
 
 Two known-fabricated claims that appear in third-party Core AI material and are **absent from this
 guide on purpose**: the extensions `.coreaimodel` and `.aiasset` (the real ones are `.aimodel`,
@@ -3689,7 +3690,16 @@ register.
 | KV caches, `states:` as a modelling technique, prefix reuse | this part's states guide; [Part 3](../../part-03-context-profiles-agentic/) |
 | Put a Core AI model behind `LanguageModelSession` | [Part 4](../../part-04-beyond-the-built-in-model/) |
 | Convert a PyTorch model, `state_names`, dynamic shapes | [Part 8](../../part-08-coreai-pytorch-conversion/) |
-| Why `ScalarType` has 33 cases; palettization and quantization | [Part 9](../../part-09-coreai-compression-numerics/) |
+| Why `ScalarType` has 35 cases; palettization and quantization | [Part 9](../../part-09-coreai-compression-numerics/) |
 | The Debugger, the gauge, the Instruments template, ANE authoring | [Part 10](../../part-10-coreai-hardware-authoring-debugging/) |
 | Vision pipelines, orientation, box conventions end to end | [Part 16](../../part-16-adjacent-capabilities/) |
 | Background Assets delivery, first-run UX, OS-update invalidation | [Part 15](../../part-15-shipping-and-operating/) |
+
+[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates the 35 cases in this
+    section: [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s `.default` behavior is documented separately in
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

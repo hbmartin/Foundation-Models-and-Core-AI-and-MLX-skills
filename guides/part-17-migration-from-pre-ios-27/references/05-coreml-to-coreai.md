@@ -37,8 +37,8 @@ The move from `MLModel` to `AIModel`, told as a *decision* rather than a *proced
   by the big one: a converted model that loads, runs, produces correct numbers, and quietly executes
   on the wrong compute unit.
 - **§4 — What genuinely improves, and why.** States (KV caches as first-class in-place inputs),
-  multi-function assets (and the finding that splitting an asset is what *routes it to the Neural
-  Engine*, not merely a latency trick), the Core AI Debugger's sync points and PSNR comparison
+  multi-function assets (including how recognized names select the optional `coreai-models`
+  loader’s Neural Engine preference), the Core AI Debugger's sync points and PSNR comparison
   against a PyTorch reference run, ahead-of-time compilation, and a memory-safe Swift API built on
   non-escapable views.
 - **§5 — What you give up, honestly.** A decade of samples, Stack Overflow answers and blog posts —
@@ -143,7 +143,8 @@ the Core AI framework landing page:
 
 > ✅ **VERIFIED** — Apple, *Run AI models in your app on Apple silicon*
 > (`/documentation/coreai`), verbatim: *"If your app uses model types other than neural networks,
-> such as decision trees or tabular feature engineering, see [Core ML](/documentation/CoreML)."*
+> such as decision trees or tabular feature engineering, see
+> [Core ML](https://developer.apple.com/documentation/coreml)."*[^coreml-boundary]
 
 Read it as a routing rule, because that is what it is. Apple put a pointer to Core ML on the front
 door of its brand-new inference framework. Frameworks that intend to absorb their predecessor
@@ -788,11 +789,11 @@ failure axis the others don't: **you have a working baseline, so "it produced an
 success.** It isn't. Your Core ML model also produced an answer, and it did so in 8 ms on the Neural
 Engine.
 
-### 3.1 ⚠️ SILENT FAILURE: your converted model runs correctly on the wrong compute unit
+### 3.1 ⚠️ SILENT FAILURE: the optional sample loader may request an unintended compute unit
 
-This is the big one, and it is specific to migrants because Core ML trained you to think of compute
-units as a *configuration* decision. In Core AI they are partly a **model-structure** decision, and
-nothing in the API tells you that.
+This matters to migrants who adopt Apple’s optional `coreai-models` package without noticing that its
+loader makes compute-unit preference partly a **model-structure** decision. It is not a Core AI
+framework naming contract.
 
 Here is the evidence, and it is unusually strong: it is Apple's own shipped Swift code.
 
@@ -819,17 +820,20 @@ Here is the evidence, and it is unusually strong: it is Apple's own shipped Swif
 > }
 > ```
 
-Read the `.dynamic` case again. **A model that exports as a single `main` function with dynamic
-shapes is classified `.dynamic` and steered to the GPU.** The Neural Engine path is reserved for
-assets that were *authored* as several static-shape functions.
+Read the `.dynamic` case again. **When loaded through this package, a model that exports as a single
+`main` function with dynamic shapes is classified `.dynamic` and receives its GPU preference.** The
+helper reserves its Neural Engine preference for the recognized static or segmenter structures.
+Direct `AIModel` callers choose their own `SpecializationOptions`; `.default` lets Core AI choose the
+CPU/GPU/Neural Engine combination that minimizes latency.[^sample-routing-policy]
 
 WWDC26 session 325 presents the same three-function SAM 3 split as a **latency** technique — run
 each entry point at its own cadence, get a 76% faster second inference. That framing is true and
-incomplete. Apple's shipped code shows the split is also **what routes the model to the Neural
-Engine at all**. That is a much stronger reason to do it, and it changes the shape of your migration:
+incomplete for users of this package. Its code shows the split also selects the helper’s Neural
+Engine preference, which changes the shape of a migration that adopts that loader:
 
 > **The migration consequence.** If your Core ML model ran on the Neural Engine, a naive
-> single-`main` `coreai-torch` conversion may land it on the GPU. The model will load. It will
+> single-`main` `coreai-torch` conversion loaded through `coreai-models.PreparedModel` may request the
+> GPU. The model will load. It will
 > produce correct numbers. It will be slower, and it will use more power, and **nothing anywhere
 > reports it.** There is no thrown error, no console warning, no API that returns "I fell back."
 >
@@ -1248,16 +1252,16 @@ else { throw MigrationError.missingFunction("segmenter entry points") }
 > article: *"Most models have a single function. If the model contains multiple functions, check
 > `functionNames` to see all available names."*
 
-**And now the finding that changes how this should be taught.** As §3.1 established, Apple's own
-Swift package classifies the three-function segmenter as `.multiFunctionSegmenter` and specializes it
-with `preferredComputeUnitKind: .neuralEngine`, while a single-`main` dynamic-shape asset is
-classified `.dynamic` and steered to the **GPU**. So the split is not merely a way to avoid re-running
-an encoder. **It is what gets the model onto the Neural Engine.**
+**And now the finding that changes how this should be taught.** As §3.1 established, the optional
+`coreai-models` package classifies the three-function segmenter as `.multiFunctionSegmenter` and
+requests `preferredComputeUnitKind: .neuralEngine`, while it classifies a single-`main` dynamic-shape
+asset `.dynamic` and requests the **GPU**. The split therefore selects that helper’s Neural Engine
+policy in addition to avoiding repeated encoder work; it does not control direct Core AI loads.
 
 If you are migrating a Core ML model that ran on the ANE, this is the most actionable paragraph in
 the guide: **plan for re-authoring, not just re-converting.** A mechanical `torch.export` of an
-existing architecture into one dynamic-shape `main` is the path of least resistance and it is also
-the path that gives up your accelerator. The re-authoring rules — static shapes, conv-instead-of-linear
+existing architecture into one dynamic-shape `main` is the path of least resistance, but when used
+with the sample loader it selects the GPU policy. The re-authoring rules — static shapes, conv-instead-of-linear
 projections, the ANE's layout preferences — are
 [Part 10 reference 01](../../part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md).
 
@@ -1568,9 +1572,10 @@ small, and it is not organized as a project you can open and run.
   `CoreAISpeech`, `CoreAIDiffusion`, `CoreAILanguageModels`) and the patterns extracted from them in
   [Part 7 reference 04](../../part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md).
 - **Budget engineering time for discovery, not just implementation.** The unknown-unknowns rate is
-  high. Two examples already in this guide — that a single-`main` export lands on the GPU, and that
+  high. Two examples already in this guide — that the `coreai-models` sample loader gives a
+  single-`main` export its GPU preference, and that
   `.aimodel` is a directory — are both facts you can only learn by reading Apple's *code*, not
-  Apple's *docs*.
+  Apple's *docs*.[^sample-routing-policy]
 
 ### 5.2 🔴 No documented error types, so you cannot write precise `catch` blocks
 
@@ -1908,8 +1913,10 @@ maps to a section above or a Part 8 section.
 4. **Name your inputs and outputs deliberately.** They are the contract your Swift code binds to
    (§2.4). Use keyword arguments; they are keyword-only.
 5. **Decide on dynamic shapes now.** Passing `dynamic_shapes=` to `torch.export.export` keeps a
-   traced length out of the asset; *not* passing it bakes your sample length in. But see §3.1 — a
-   dynamic-shape single-`main` asset is the one Apple's own classifier steers to the GPU.
+   traced length out of the asset; *not* passing it bakes your sample length in. If you adopt
+   `coreai-models.PreparedModel`, see §3.1: its classifier gives a dynamic single-`main` structure
+   the package's GPU preference. Direct `AIModel` callers choose their own options.
+   [^sample-routing-policy]
 6. **`to_coreai()`, then `optimize()`, then `save_asset()`.** In that order. `optimize()` is not
    optional and `to_coreai()` does not do it.
 7. **Run the Python-side parity check on the optimized program** (§3.4). Record the threshold you
@@ -1957,7 +1964,8 @@ For symmetry, because a table that only says "no" is not a decision aid:
    Core AI costs marginally more than rebuilding it into Core ML and leaves you on the framework
    receiving investment.
 3. **You have an expensive encoder and a cheap head.** Multi-function assets (§4.2) let you re-run
-   only what changed — and route the asset to the Neural Engine while you are at it.
+   only what changed. If you also adopt `coreai-models.PreparedModel`, recognized static structures
+   receive that helper's Neural Engine preference.[^sample-routing-policy]
 4. **You cannot explain a numeric regression.** The Debugger's operation-level PSNR comparison
    against a PyTorch reference (§4.3) is a capability with no Core ML analogue, and "quantization
    broke something and I cannot find where" is a very common reason a model never ships.
@@ -1971,10 +1979,12 @@ For symmetry, because a table that only says "no" is not a decision aid:
 This appears in planning documents constantly and deserves a specific caution, because it is the one
 motivation most likely to be *disappointed*.
 
-Moving a model to Core AI does not, by itself, put it on the Neural Engine. §3.1 showed the opposite:
-Apple's own classifier steers a single-`main` dynamic-shape asset to the **GPU**, and reserves the
-ANE preference for assets that were authored as multiple static-shape functions. And even with
+Moving a model to Core AI does not, by itself, put it on the Neural Engine. §3.1 shows that the
+optional `coreai-models.PreparedModel` classifier gives a single-`main` dynamic structure its
+**GPU** preference and recognized static structures its ANE preference. That package rule does not
+govern direct `AIModel` loads; those callers choose `SpecializationOptions`. Even with
 `preferredComputeUnitKind: .neuralEngine`, fallback occurs *at fused-pattern granularity*, silently.
+[^sample-routing-policy]
 
 So "we'll migrate for the ANE" is really "we'll re-author for the ANE, and use Core AI because that
 is where the re-authored model runs." That is a much larger project, and it is worth scoping it
@@ -2318,7 +2328,8 @@ process(y.view(as: Float.self))
 6. `Outputs.remove(_:)` is destructive; `InferenceValue.ndArray` is a consuming read.
 7. `contiguousElements` can be `nil`, and after specialization that is not hypothetical.
 8. Every state must be supplied on every `run`; there is no `stateCount`, only `stateNames.count`.
-9. A single-`main` dynamic-shape asset is steered to the **GPU** by Apple's own classifier.
+9. `coreai-models.PreparedModel` gives a single-`main` dynamic structure its **GPU** preference;
+   direct `AIModel` callers choose their own options.[^sample-routing-policy]
 10. There is no generated wrapper class, no sample project, and no documented runtime error type.
 
 ### 9.4 The three sentences to take away
@@ -2438,3 +2449,13 @@ Every 🔴 in this guide, in one place, so a future pass can close them.
   [Part 1 reference 01](../../part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md),
   whose decision table covers Core AI, MLX and the Foundation Models conformers together, and whose
   §4 carries the Core ML boundary in its own words.
+
+[^coreml-boundary]: Apple’s Core AI framework overview is the source of this routing guidance and
+    links to the full Core ML documentation URL:
+    [Run AI models in your app on Apple silicon](https://developer.apple.com/documentation/coreai).
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81).
+    Core AI’s documented `.default` behavior is separate:
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).

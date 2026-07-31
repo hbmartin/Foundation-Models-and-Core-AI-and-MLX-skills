@@ -218,7 +218,7 @@ loop, and [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) unle
   ANE-vs-GPU authoring rules: [Part 8](../part-08-coreai-pytorch-conversion/) and
   [Part 10](../part-10-coreai-hardware-authoring-debugging/). This part covers only the slice of authoring
   that produces a *state* (7.3 §3–§4), which you cannot debug from the Swift side alone.
-- **Why `NDArray.ScalarType` has 33 cases** — compression, palettization, and whether your 4-bit export
+- **Why `NDArray.ScalarType` has 35 cases**[^scalar-type-count] — compression, palettization, and whether your 4-bit export
   is any good: [Part 9](../part-09-coreai-compression-numerics/). **The Debugger, the gauge and the
   Instruments template in depth:** [Part 10](../part-10-coreai-hardware-authoring-debugging/); they
   appear here only as how you *see* a specialization event or a growing inference interval.
@@ -259,3 +259,6 @@ the prefix-reuse speedups — single-author, beta-era, self-declared uncontrolle
 `1amageek/swift-lm` and `lucasnewman/mlx2coreai` (two independent integrations corroborating the LLM
 state contract), and `ml-explore/mlx-swift-lm` for the xgrammar namespace-collision comment. **Apple
 published no latency figure for anything in this part** beyond one ~800 ms screenshot.
+
+[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates the 35 cases summarized
+    by this series: [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).

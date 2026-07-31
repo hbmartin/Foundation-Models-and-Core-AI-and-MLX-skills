@@ -253,9 +253,10 @@ subpackages = {"awq":"quant","dwq":"quant","dynamic_quant":"quant","gptq":"quant
 
 > ✅ **VERIFIED** — `mlx_lm/cli.py`, read this session.
 
-**One flag is on every single one of them: `--trust-remote-code`.** That is not stylistic. It is the
-remediation for **CVE-2026-5843** (commit `bfa25a1`, "Fix CVE-2026-5843: gate model_file execution
-behind trust_remote_code"). Before that commit, a `model_file` key in a downloaded repo's
+**Every model-loading command has `--trust-remote-code`; `manage`, `upload`, and `share` do not.**
+Those three utilities do not load a model architecture or tokenizer. On commands that do load a
+model, the flag is the remediation for **CVE-2026-5843** (commit `bfa25a1`, "Fix CVE-2026-5843:
+gate model_file execution behind trust_remote_code").[^trust-cli-source] Before that commit, a `model_file` key in a downloaded repo's
 `config.json` caused mlx-lm to `exec` an arbitrary Python file from that repo. Now:
 
 ```python
@@ -2794,15 +2795,14 @@ for everything above zero probability** — an aggressive truncation you did not
 `tokenizer.encode("\n") + list(tokenizer.eos_token_ids)`. A hand-built sampler that omits it can
 produce a model that never emits a paragraph break and never stops.
 
-**Safe default:** set `temp` first, explicitly, and assert your sampler is not the greedy
-short-circuit:
+**Safe default:** set `temp` first and validate the configuration deterministically. Do not call a
+stochastic sampler twice and assert the tokens differ: two valid random draws can match, making
+that test flaky.[^sampler-source]
 
 ```python
-sampler = make_sampler(temp=0.7, top_p=0.95, top_k=50, ...)
-# Cheap sanity check: a greedy sampler is deterministic, a sampled one is not.
-import mlx.core as mx
-probe = mx.random.normal((1, 128))
-assert not mx.array_equal(sampler(probe), sampler(probe)), "sampler collapsed to greedy"
+temperature = 0.7
+assert temperature > 0.0  # temp == 0 selects the greedy branch
+sampler = make_sampler(temp=temperature, top_p=0.95, top_k=50)
 ```
 
 ### 9.4 ⚠️ SILENT FAILURE — kwargs dropped by `stream_generate`
@@ -3073,3 +3073,11 @@ states it.
 **Not used:** no figure in this guide was recalled from memory, and no API name, flag, default or
 error string appears here without a file, line, or issue number behind it. Where we could not
 verify, §10.4 says so.
+
+[^trust-cli-source]: At the pinned revision, [`mlx_lm/cli.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/cli.py)
+    lists all 17 commands. [`manage.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/manage.py),
+    [`upload.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/upload.py),
+    and [`share.py`](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/share.py)
+    have no `--trust-remote-code` argument; the model-loading commands define it.
+[^sampler-source]: [`make_sampler` at the pinned mlx-lm revision](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/sample_utils.py#L10-L69)
+    returns `argmax` only for `temp == 0`; otherwise it constructs the sampling chain.

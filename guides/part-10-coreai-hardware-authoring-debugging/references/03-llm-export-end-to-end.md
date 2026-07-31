@@ -723,11 +723,12 @@ The Swift runtime parses those names back out:
 > `extend_<context>_<batch>` at index 2; `image_encode`+`text_encode`+`detect` →
 > `.multiFunctionSegmenter`; `main` → `.dynamic`; otherwise `.dynamic` with a warning.
 
-### 3.5 Structure decides the compute unit — not the platform
+### 3.5 The optional sample loader maps structure to a compute-unit preference
 
-The folk model "iOS means Neural Engine" is wrong in an important way. What actually happens is that
-**the Swift runtime probes the asset's function names and derives a compute-unit *preference* from
-the structure**:
+The folk model "iOS means Neural Engine" is wrong in an important way. In Apple’s optional
+`coreai-models` loader, **the Swift runtime probes the asset's function names and derives a
+compute-unit *preference* from the structure**. This is that package’s policy, not a Core AI
+framework naming contract; direct `AIModel` callers supply their own options.[^sample-routing-policy]
 
 > ✅ **VERIFIED** — `ModelStructure.swift`:
 >
@@ -1069,9 +1070,10 @@ Apple's own catalogue of traps, all ✅ **VERIFIED** from
 - **`si32`, not `i32`**, for input JSON descriptors.
 - Filter `torch.export` input specs to `{InputKind.USER_INPUT, InputKind.BUFFER}` before naming
   them — otherwise your `input_names` list is off by the number of parameters.
-- **Call `.contiguous()` on every tensor before wrapping it in an `NDArray`** — *"The runtime reads
-  raw memory as if contiguous, ignoring tensor strides."* ⚠️ Another silent one: a non-contiguous
-  tensor produces plausible garbage.
+- **At the `coreai-models` Python/PyTorch bridge, call `.contiguous()` before wrapping a tensor in
+  `NDArray`** — that wrapper reads raw backing memory as contiguous. Swift `NDArray` separately
+  supports explicit strides, so this is a bridge rule rather than a framework-wide one.
+  [^stride-scope]
 - **Output dict key order is non-deterministic** — identify outputs by shape, not by index.
 - `InferenceFunction.__call__` uses `**kwargs`: `await runner(**inputs)`, not `runner(inputs_dict)`.
 - If HF's `post_init()` fails on a missing `rope_parameters`, patch `ROPE_INIT_FUNCTIONS["default"]`.
@@ -2169,13 +2171,12 @@ and detector re-run. That is true and Apple-published. But there is a second, st
 only shows up in the shipped Swift:
 
 > ✅ **VERIFIED** — `CoreAIShared/Runtime/ModelStructure.swift`: a multi-function structure
-> (`.chunkedStatic` or `.multiFunctionSegmenter`) is what makes the runtime request
+> (`.chunkedStatic` or `.multiFunctionSegmenter`) is what makes the optional sample runtime request
 > `preferredComputeUnitKind: .neuralEngine`. A single `main` graph gets `.gpu`.
 
-**Splitting a model into multiple functions is what routes it to the Neural Engine.** For an LLM
-this is not a choice you make separately — it *is* the iOS export — but it explains why the iOS path
-looks the way it does, and it is the reason a "just add an entrypoint" refactor can change your
-compute unit.
+**Within `coreai-models`, splitting a model into recognized functions selects the Neural Engine
+preference.** For an LLM this is not a choice you make separately—it *is* the iOS export—but the
+framework itself does not impose this naming policy.
 
 ### 9.2 `optimize()` is in place, and it can hurt you
 
@@ -3673,7 +3674,7 @@ explains it.
 | Bundle is bigger than the config predicts; PSNR suspiciously good | Per-block / per-grouped-channel compression **silently skipped** non-divisible layers | `check_divisibility()`; compute achieved bit-width from the artifact | §7.5 |
 | Model quality collapses vs. the HF reference, tokenizer looks fine | `chat_template.jinja` missing → runner **silently falls back to raw completion** | Verify `tokenizer/` contents; check the source repo at gate time | §6.8 |
 | Correct-looking model produces garbage from a persistent runner | The `AIModel` was garbage-collected; only `load_function` was retained | Hold the model reference | §6.4 |
-| Non-contiguous tensor produces plausible garbage | Runtime reads raw memory as if contiguous, **ignoring strides** | `.contiguous()` before every `NDArray` | §5.7 |
+| Non-contiguous PyTorch tensor produces plausible garbage through the sample wrapper | Python bridge reads raw backing memory as contiguous | `.contiguous()` at that bridge; preserve explicit strides in Swift `NDArray`[^stride-scope] | §5.7 |
 | "ANE model" is slower than expected, ANE utilisation ~0 | `nn.functional.silu` lowered to `cast/swish/cast` — 3 ops the ANE can't run | `gate_pre * torch.sigmoid(gate_pre)` | §5.6 |
 | Exports behave like an old wheel on your machine only | `coreai_torch.egg-info` in cwd shadows the installed version via `sys.path[0]` | Never run python with the clone as cwd; assert the `producer` field | §9.5 |
 | Key/value cache swapped; output is fluent nonsense | `state_names` ordering — the converter *"cannot detect silent reordering"* | Always pass explicit names; gate token-exactness | §8.5 |
@@ -3822,7 +3823,7 @@ Stated explicitly because all of them are in circulation:
 | WWDC26 **325** *Dive into Core AI model authoring and optimization* | §5.1 (re-authoring definition), §6.6 (debugger, sync points), §9.1 (three-function split, 76 %), §7.7 | ⚠️ Line 241's *"per-channel scales"* conflicts with the shipped recipe (§7.7). The shipped code wins. |
 | WWDC26 **326** *Integrate on-device AI models in your app* | §2 (two paths), §11.1 (the FM bridge) | Verified against repo READMEs at every point |
 | WWDC26 **324** *Meet Core AI* | §10.1 (specialization) | Runtime cache/specialize API is 🟡 RECONSTRUCTED from spoken narration |
-| WWDC26 **330** *Optimize custom ML operations with Metal tensors* | Referenced only; Part 11 owns it | ⚠️ Its "scale plane" material is superseded — see Part 11 |
+| WWDC26 **330** *Optimize custom ML operations with Metal tensors* | Referenced only; Part 11 owns it | Its scale-plane material matches the OS 27 API; Part 11 distinguishes that surface from the 26.x fallback[^xcode27-scale-planes] |
 
 ### 18.3 Community — attributed, never presented as Apple
 
@@ -3857,9 +3858,9 @@ Recorded for the reader's benefit, because both versions circulate:
 3. **`.aimodelc` is "the compiled model file".** It is a **directory** containing its own
    `metadata.json`, which is why pointing a bundle loader at it produces a misleading version error
    (§1.2).
-4. **"iOS means Neural Engine."** The runtime derives its compute-unit *preference* from the asset's
-   **structure**, not from the platform — and community device testing found the GPU path is the only
-   working one at 4B (§3.5, §10.4).
+4. **"iOS means Neural Engine."** The optional `coreai-models` runtime derives its compute-unit
+   *preference* from asset **structure**, not platform; direct Core AI callers choose their own
+   options (§3.5, §10.4).[^sample-routing-policy]
 5. **`COREAI_CHUNK_THRESHOLD` "use 128 for MoE".** True as a memory guard, backwards as a throughput
    guide on a large-RAM Mac (§14.3).
 
@@ -3869,3 +3870,16 @@ Recorded for the reader's benefit, because both versions circulate:
 specialization), Part 8 (PyTorch conversion), Part 9 (compression and numerics), Part 11 (Metal and
 TensorOps · custom kernels), Part 14 (bridges between stacks · `mlx2coreai`), Part 15 (shipping and
 operating on device).*
+
+[^sample-routing-policy]: The structure classifier and preferences live in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L81),
+    whereas Core AI separately documents `.default` as selecting the compute-unit combination that
+    minimizes latency: [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
+
+[^xcode27-scale-planes]: Apple’s OS 27 references document the scale-plane descriptor and the
+    tensor descriptor’s auxiliary-plane map:
+    [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor) and
+    [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
+    The authoritative [WWDC26 session 330 transcript](../../../transcripts/wwdc2026-330.txt#L53-L78)
+    describes E8M0 block scales, automatic dequantization, and the custom-format fallback.

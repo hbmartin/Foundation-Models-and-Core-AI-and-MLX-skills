@@ -832,8 +832,10 @@ part. The one-line version, because it belongs in any map of this territory:
 > **Community-verified**, thread 838329, confirmed on device on iOS 27: `@AppEntity(schema:
 > .files.file)` + `FileEntityIdentifier.file(url:)` + `FileRepresentation` works for "send this
 > to \<contact\>". Plain custom `AppEntity` + `Transferable` + `DataRepresentation` **never
-> resolved** — `entities(for:)` was never called. **Caveat:** `.files.file` requires a real file
-> on disk at resolution time; transient in-memory renders must be written out first.
+> resolved** — `entities(for:)` was never called. **Caveat:** this verified `FileRepresentation`
+> hand-off requires a real file payload, so transient renders must be written out before export.
+> That is not an identity limitation: `FileEntityIdentifier.draft(identifier:)` can represent a
+> document before it is materialized, but the draft deliberately has no `fileURL` to transfer.[^file-identifier-drafts]
 
 ---
 
@@ -1571,8 +1573,9 @@ Note Apple's own header comment: **"Intent that re-runs the Siri search in app."
 mental model in six words. Siri hands you its own query string and gets out of the way.
 
 Now a complete, compilable version for an app that has no schema domain — the hiking-app case from
-thread 837249. Everything here is either from the sample above or from ordinary App Intents /
-SwiftUI usage:
+thread 837249. The important dependency detail is to construct one `NavigationModel`, store that
+object as the app's state, and register that exact object with `add(dependency:)`; `@Dependency`
+then resolves the same instance instead of a separately constructed model.[^app-dependency-registration]
 
 ```swift
 import AppIntents
@@ -1605,15 +1608,16 @@ final class NavigationModel {
 // I register once."  (✅ VERIFIED, transcript, WWDC26 344)
 
 @main
+@MainActor
 struct TrailLogApp: App {
-    @State private var navigation = NavigationModel()
+    @State private var navigation: NavigationModel
 
     init() {
-        // Register the shared instance so intents can resolve it.
-        AppDependencyManager.shared.add(key: NavigationModel.self) {
-            // Constructed on the main actor; see the note below.
-            MainActor.assumeIsolated { NavigationModel() }
-        }
+        let navigation = NavigationModel()
+        _navigation = State(initialValue: navigation)
+
+        // Register the same instance supplied to RootView below.
+        AppDependencyManager.shared.add(dependency: navigation)
     }
 
     var body: some Scene {
@@ -1651,11 +1655,10 @@ Three implementation notes on that listing:
 - **`@MainActor` on `perform()`** because it mutates UI state. Session 240 makes exactly this point
   about the Xcode-generated `draftMessage` stub: it *"needs to run on the main actor"* because it
   *"mutates UI state."* ✅ **VERIFIED (transcript, 240)**.
-- 🟡 **`AppDependencyManager.shared.add(key:_:)`** — the registration call is **reconstructed**.
-  Session 344 verifies the *`@Dependency` property wrapper* and its purpose in narration but shows
-  no registration call, and no Apple code sample in our corpus registers a dependency. The
-  registration API is long-standing App Intents surface rather than 2026 material, but treat the
-  exact spelling above as provisional and let Xcode's completion settle it.
+- **`AppDependencyManager.shared.add(dependency:)`** is Apple's documented registration spelling.
+  The official sample constructs one navigation model, stores it for the app, registers that same
+  value, and retrieves it from an intent with `@Dependency`; session 344 independently describes
+  the same-instance contract.[^app-dependency-registration]
 
 ### 8.4 What it does and does not buy you
 
@@ -3346,6 +3349,18 @@ strong evidence, but because in this area they are frequently the *only* evidenc
   error/limit table
 - `notes/CORRECTIONS-PENDING.md` — items C8, C10.3 and C10.6, applied in §8.2, §14.1 and §16
 - `transcripts/wwdc2026-{240,343,344,345}.txt` — the raw session prose
+
+[^app-dependency-registration]: Apple,
+    [*Creating your first app intent*](https://developer.apple.com/documentation/appintents/creating-your-first-app-intent),
+    §“Register dependencies to other parts of your code,” constructs one `NavigationModel`, stores
+    it on the app, registers it with `AppDependencyManager.shared.add(dependency:)`, and later
+    resolves it with `@Dependency`. The same-instance behavior is also stated in the authoritative
+    [WWDC26 session 344 transcript, lines 53–56](../../../transcripts/wwdc2026-344.txt#L53-L56).
+[^file-identifier-drafts]: Apple,
+    [`FileEntityIdentifier`](https://developer.apple.com/documentation/appintents/fileentityidentifier)
+    and [`draft(identifier:)`](https://developer.apple.com/documentation/appintents/fileentityidentifier/draft%28identifier%3A%29),
+    document draft identifiers for documents that are not yet materialized on disk and therefore
+    have no file URL. The saved-file factory is separately documented as `file(url:)`.
 
 ### How to re-verify any row of §5
 

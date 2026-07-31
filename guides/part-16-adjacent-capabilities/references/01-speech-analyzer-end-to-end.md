@@ -423,12 +423,13 @@ let lastSampleTime = try await analyzer.analyzeSequence(inputSequence)
 if let lastSampleTime {
     try await analyzer.finalizeAndFinish(through: lastSampleTime)
 } else {
-    try analyzer.cancelAndFinishNow()
+    await analyzer.cancelAndFinishNow()
 }
 ```
-✅ VERIFIED — reproduced verbatim from `/documentation/speech/speechanalyzer`, including the
-out-of-order step comments (Apple numbers step 7 above step 6 because the results task must be
-running before analysis starts).
+✅ VERIFIED — reproduced from `/documentation/speech/speechanalyzer`, including the out-of-order
+step comments (Apple numbers step 7 above step 6 because the results task must be running before
+analysis starts). The `else` call is corrected against the current method declaration: it is
+`async` and nonthrowing, and it can finish a session before the analyzer consumes any input.[^speech-cancel]
 
 Three things to notice in that listing, because they are easy to skim past:
 
@@ -512,13 +513,14 @@ func start(inputAudioFile:finishAfterFile:)
 
 // ── Finalizing / cancelling mid-session ────────────────────────────────────
 func cancelAnalysis(before:)   // "Stops analyzing audio predating the given time."
-func finalize(through:)        // "Finalizes the modules' analyses."
+func finalize(through:) async throws
+                               // "Finalizes the modules' analyses."
 
 // ── Finishing the session ──────────────────────────────────────────────────
-func cancelAndFinishNow()
-func finalizeAndFinishThroughEndOfInput()
-func finalizeAndFinish(through:)
-func finish(after:)
+func cancelAndFinishNow() async
+func finalizeAndFinishThroughEndOfInput() async throws
+func finalizeAndFinish(through:) async throws
+func finish(after:) async throws
 
 // ── Formats ────────────────────────────────────────────────────────────────
 static func bestAvailableAudioFormat(compatibleWith modules: [any SpeechModule]) async -> AVAudioFormat?
@@ -536,6 +538,8 @@ var volatileRange              // "The range of results that can change."
 func setContext(_:)
 var context
 ```
+`cancelAndFinishNow()` is the one nonthrowing finish operation in this group; it still requires
+`await`.[^speech-cancel]
 
 Two API-design notes that pay off later:
 
@@ -1482,6 +1486,10 @@ final class LiveTranscription {
         let lastAudioTime = try await analyzer.analyzeSequence(audioSequence)
         if let lastAudioTime {
             try await analyzer.finalizeAndFinish(through: lastAudioTime)
+        } else {
+            // No input was consumed, so there is no watermark to finalize. Finish immediately
+            // so the module result streams terminate.
+            await analyzer.cancelAndFinishNow()
         }
     }
 
@@ -1499,6 +1507,9 @@ final class LiveTranscription {
     // merge(_:) is §8.
 }
 ```
+
+The explicit `else` is required in a live session: `nil` means no audio was consumed, and
+`cancelAndFinishNow()` is the finish operation Apple documents as valid before any input.[^speech-cancel]
 
 > 🔴 **GAP — the `AsyncSequence` element/failure types of `provider.analyzerInputs`.** Apple
 > documents `analyzerInputs` as "an asynchronous sequence" of `AnalyzerInput` but publishes no
@@ -1569,6 +1580,8 @@ func transcribeFile(at url: URL, locale: Locale = .current) async throws -> Stri
             let lastAudioTime = try await analyzer.analyzeSequence(provider.analyzerInputs)
             if let lastAudioTime {
                 try await analyzer.finalizeAndFinish(through: lastAudioTime)
+            } else {
+                await analyzer.cancelAndFinishNow()
             }
         }
         group.addTask {
@@ -1583,6 +1596,9 @@ func transcribeFile(at url: URL, locale: Locale = .current) async throws -> Stri
     return String(text.characters)
 }
 ```
+
+The batch path handles the same empty-input state so its result-consuming task also receives stream
+termination rather than waiting indefinitely.[^speech-cancel]
 
 > 🟡 **RECONSTRUCTED — `AVURLAsset(url:)` as the argument to `provider(from:)`.** Apple's page says
 > the factory "reads from the first track of an asset or file" and names the parameter `from:`, but
@@ -1734,11 +1750,13 @@ timing metadata instead of pulling a copy of the samples back out.
 let lastAudioTime = try await analyzer.analyzeSequence(audioSequence)
 if let lastAudioTime {
     try await analyzer.finalizeAndFinish(through: lastAudioTime)
+} else {
+    await analyzer.cancelAndFinishNow()
 }
 ```
 ✅ VERIFIED — quoted verbatim from *"Recognizing speech in live audio"*, §"Analyze audio and display
-results". The identical pattern (with an `else { try analyzer.cancelAndFinishNow() }` branch)
-appears in the canonical example on `/documentation/speech/speechanalyzer`.
+results", with the zero-input branch completed from the current `SpeechAnalyzer` reference. The
+same branch appears in Apple's canonical analyzer example.[^speech-cancel]
 
 Everything about that pair repays study, because the return value is doing three jobs at once.
 
@@ -1833,7 +1851,7 @@ Four of them, and the choice is not arbitrary.
 |---|---|
 | `finalizeAndFinish(through:)` | **The default.** You have a watermark from `analyzeSequence` and you want everything up to it transcribed before the session ends. |
 | `finalizeAndFinishThroughEndOfInput()` | Your input sequence has a natural end and you want end-of-input to mean end-of-session. Apple names it as *the* exception to "terminating the input sequence does not finish the session" (§2.3). |
-| `cancelAndFinishNow()` | Nothing to finalise, or you are tearing down after an error. Note it is **not** `async` in the canonical example: `try analyzer.cancelAndFinishNow()`. |
+| `cancelAndFinishNow()` | Nothing to finalise, or you are tearing down after an error. It is **async and nonthrowing**: `await analyzer.cancelAndFinishNow()`.[^speech-cancel] |
 | `finish(after:)` | You want the session to end at a specific future time-code rather than at the current watermark. |
 
 Plus two mid-session methods that do not finish anything:
@@ -1844,12 +1862,9 @@ Plus two mid-session methods that do not finish anything:
 - `cancelAnalysis(before:)` — "Stops analyzing audio predating the given time." Discards a backlog.
   If your app fell behind during a burst and you would rather skip than lag, this is the lever.
 
-✅ VERIFIED — all six names and descriptions from `/documentation/speech/speechanalyzer`.
-
-> 🟡 **RECONSTRUCTED — which of these are `async`.** Apple's index page lists the names without
-> declarations; the canonical example shows `try await analyzer.finalizeAndFinish(through:)` and
-> `try analyzer.cancelAndFinishNow()` — so at least those two differ. Write the `await` and let the
-> compiler remove it if it is unnecessary.
+✅ VERIFIED — all six names and descriptions from `/documentation/speech/speechanalyzer`. The
+individual method pages provide their current concurrency and throwing declarations; this is no
+longer an API-shape gap.[^speech-cancel]
 
 ### 7.4 Stopping a live capture: two approaches, one recommendation
 
@@ -2231,6 +2246,8 @@ to look when proofreading.
 > in 0…1. Do not hardcode a key path from a guide — including this one.
 
 ---
+
+<a name="9--the-cancellation-shield"></a>
 
 ## 9. ⚠️ The cancellation shield
 
@@ -2704,7 +2721,7 @@ final class LiveDictation {
             } else {
                 // No audio was ever consumed. Nothing to finalise — but the result streams
                 // must still be terminated or the display task hangs forever (§2.3).
-                try analyzer.cancelAndFinishNow()
+                await analyzer.cancelAndFinishNow()
             }
         } catch {
             displayTask.cancel()
@@ -2762,6 +2779,9 @@ struct DictationView: View {
     }
 }
 ```
+
+The complete controller uses the same documented zero-input finish branch; this is what guarantees
+that `displayTask.value` can complete even when recording stops before the first sample.[^speech-cancel]
 
 ### 10.1 What to change for each variation
 
@@ -3614,7 +3634,6 @@ guessed at anywhere in the text above; each one has a stated safe default.
 | **G17** | `SpeechDetector.DetectionOptions` members; `SensitivityLevel`'s full case list; type of `reportResults:`. | Pages not fetched. Only `.medium` attested. | Fetch `/speechdetector/detectionoptions`, `/sensitivitylevel`. | `SpeechDetector()` — documented as "default settings", and `.medium` is Apple's recommendation. |
 | **G18** | `SpeechAnalyzer.Options.priority`'s type; the default `ModelRetention`. | Not published. | SDK interface dump. | `SpeechAnalyzer(modules:)` with no options, as both Apple examples do. |
 | **G19** | `prepareToAnalyze(in:)`'s parameter. | Not published. The `(in:withProgressReadyHandler:)` overload hints it is a format or context, not a duration. | SDK interface dump. | Skip prewarming until you have measured that first-result latency is a real problem. |
-| **G20** | Which `finish`/`finalize` methods are `async`. | Index page lists names without declarations; the canonical example shows both forms. | Compile. | Write `try await`; delete the `await` if the compiler objects. |
 | **G21** | Whether the modern stack needs speech-recognition authorization. | Apple's 2026 article requests **only** `AVCaptureDevice.requestAccess(for: .audio)`. The legacy `asking-permission-to-use-speech-recognition` article still exists. | Run on a device with speech recognition denied. | Request microphone access as Apple's article does. If you also support the legacy `SFSpeechRecognizer` path, request both. |
 | **G22** | The Info.plist usage-description key AVFoundation requires for microphone capture. | Not covered by any source read for this guide. | AVFoundation's capture-authorization documentation. | Consult AVFoundation's docs before shipping — a missing key is an immediate launch-time crash on device, so this one at least fails loudly. |
 | **G23** | Native macOS availability of the SpokenWord sample (§"What you need"). | The article's availability line omits macOS, though `CaptureInputSequenceProvider` lists macOS 27. | Fetch the sample project. | Treat the API as macOS 27 (its own page says so); expect to write macOS capture plumbing yourself. |
@@ -3637,7 +3656,7 @@ For auditability, since a previous batch in this series was found to contain a f
 | Quotes from an Apple staff forum reply | 1 | Thread 834149, "no new API has been released specific to that model" |
 | Read from `apple/coreai-models` source | §14 entirely | Line-numbered citations throughout |
 | **Assembled by us and marked 🟡** | ~8 listings | `makeTranscriber` composition, `switchLocale`, `transcribeFile`, `makeInputSequence`, `withTaskCancellationShield`, the `datagenerator` CLI, `TranscriptStore`, the §10 controller |
-| **Declared 🔴 unknown** | 25 | The table above |
+| **Declared 🔴 unknown** | 24 | The table above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
 
 Nothing in this guide is written from recollection of an API. Where a name, type or default could
 not be traced to a source read this session, it appears in the gap table rather than in a code
@@ -3710,6 +3729,13 @@ Everything cited in this guide, with the evidence class it belongs to.
 Cross-framework: `AttributeScopes.SpeechAttributes.TimeRangeAttribute`,
 `AttributeScopes.SpeechAttributes.ConfidenceAttribute`,
 `AttributedString.rangeOfAudioTimeRangeAttributes(intersecting:)` (Foundation).
+
+[^speech-cancel]: Apple, [`SpeechAnalyzer`](https://developer.apple.com/documentation/speech/speechanalyzer),
+    §“Finishing analysis,” publishes the finish methods' exact concurrency and throwing
+    declarations. The dedicated
+    [`cancelAndFinishNow()`](https://developer.apple.com/documentation/speech/speechanalyzer/cancelandfinishnow%28%29)
+    page declares `final func cancelAndFinishNow() async`, describes it as finishing analysis
+    immediately, and specifies that it can finish before any input has been consumed.
 
 **Apple sample code** — ⚠️ iOS 26 / WWDC25, cited only for the iOS 26 baseline and clearly labelled
 as such at every use:

@@ -665,7 +665,7 @@ these correctly.
 | `.contextSizeExceeded(ContextSizeExceeded)` | `contextSize: Int`, `tokenCount: Int` |
 | `.rateLimited(RateLimited)` | `resetDate: Date?` |
 | `.guardrailViolation(GuardrailViolation)` | — (no case-specific field) |
-| `.refusal(Refusal)` | `explanation: String` (required by the public initializer) |
+| `.refusal(Refusal)` | `explanation: LanguageModelSession.Response<String>` (`get async throws`); read generated text from `.content`.[^refusal-api] |
 | `.unsupportedCapability(UnsupportedCapability)` | `capability: LanguageModelCapabilities.Capability` |
 | `.unsupportedTranscriptContent(UnsupportedTranscriptContent)` | `unsupportedContent: [Transcript.Entry]` |
 | `.unsupportedGenerationGuide(UnsupportedGenerationGuide)` | `schemaName: String?` |
@@ -695,15 +695,10 @@ case .custom:
   )
 ```
 
-> 🔴 **GAP — is `LanguageModelError.Refusal.explanation` synchronous?** Apple's SKILL.md says
-> `explanation: String` is required by the *initializer*, and mentions both `refusal.explanation`
-> and `refusal.explanationStream` as read surfaces. But Apple's Safety article shows
-> `try? await refusal.explanation` — against the **deprecated** `GenerationError.Refusal`, whose
-> docs say the explanation "takes time for the model to generate". So the old type's accessor was
-> async and the new type's initializer takes a plain `String`, and no source in this corpus shows
-> the new type's *accessor* signature. Do not assume; write the call site so it compiles either way
-> (see §10, where the refusal branch reads `debugDescription` and treats `explanation` as optional
-> extra). What would resolve it: the `languagemodelerror/refusal` doc page or the SDK header.
+> ✅ **VERIFIED — the accessor is asynchronous and wrapped.** In the iOS 27 API,
+> `LanguageModelError.Refusal.explanation` is `get async throws` and returns
+> `LanguageModelSession.Response<String>`; retrieve the actual message from `response.content`.[^refusal-api]
+> The plain `String` accepted by the payload initializer does not change the accessor's return type.
 
 #### `unsupportedCapability` is thrown *for* you
 
@@ -1206,7 +1201,8 @@ do {
     )
 } catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
     // Generate an explanation for the refusal.
-    if let message = try? await refusal.explanation {
+    if let response = try? await refusal.explanation {
+        let message = response.content
         // Display the refusal message.
     }
 }
@@ -1221,12 +1217,11 @@ the model on demand.** It is not a constant. Asking for it costs an inference.
 > ✅ **VERIFIED (SDK interface)** — the deprecated accessor's async shape is confirmed in
 > `notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface` (module 1.5.2):
 > `GenerationError.Refusal` exposes `var explanation: Response<String> { get async throws }` plus a
-> streaming `var explanationStream: ResponseStream<String> { get }`. That settles the *26.x* side only.
-> The **27** `LanguageModelError.Refusal` accessor signature is a different type and is **not** in this
-> SDK — keep the §3.2 GAP open until the 27 interface is read.
+> streaming `var explanationStream: ResponseStream<String> { get }`. The iOS 27
+> `LanguageModelError.Refusal` accessor has the same asynchronous, response-wrapped shape.[^refusal-api]
 
-The 27 equivalent is `LanguageModelError.refusal(_:)` with a single `Refusal` payload. See the GAP
-in §3.2 about the exact accessor signature.
+The 27 equivalent is `LanguageModelError.refusal(_:)` with a single `Refusal` payload; await its
+`explanation` and read `.content` from the returned response.
 
 Note also that `generating: [String].self` in Apple's snippet is guided generation — which is
 exactly why this one throws instead of returning a polite paragraph.
@@ -3134,7 +3129,7 @@ Useful when you file — checking whether your issue is already tracked saves ev
 ### 11.4 Every gap and open uncertainty this guide declares
 
 Collected so you can see the shape of what is unknown, rather than discovering it mid-implementation.
-Sixteen of these are 🔴 **GAP** boxes (nothing in the corpus answers them); three rows are
+Entries marked 🔴 **GAP** remain unanswered by the corpus; three rows are
 🟡 **RECONSTRUCTED** — we have a reading, not a confirmation.
 
 | § | Unknown | What would resolve it |
@@ -3143,7 +3138,6 @@ Sixteen of these are 🔴 **GAP** boxes (nothing in the corpus answers them); th
 | 2.3 | Is `.appleIntelligenceNotEnabled` genuinely Siri-toggle-coupled? | Apple reply on 835211, or a non-beta reproduction |
 | 2.4 | No API exposes AFM 3 Core vs Core Advanced | SDK header, or an Apple answer |
 | 2.6 | Full PCC `UnavailableReason` case list | `privatecloudcomputelanguagemodel/availability` doc page |
-| 3.2 | Is `LanguageModelError.Refusal.explanation` sync or async? | `languagemodelerror/refusal` doc page or header |
 | 3.2 | `LanguageModelError`'s full case list — the enum is non-frozen and four of the nine documented cases appear in no sample | SDK header |
 | 3.6 | Is `GeneratedContent.ParsingError` the *formal* successor to `decodingFailure`, and do the payloads correspond? | Apple migration note, or the `generatedcontent/parsingerror` doc page |
 | 3.7 | `LanguageModelSession.Error` is caught by no Apple sample | Any compiling code that observes one |
@@ -3158,6 +3152,8 @@ Sixteen of these are 🔴 **GAP** boxes (nothing in the corpus answers them); th
 | 8.2 | Full `QuotaUsage.Status` case list | `status-swift.property` doc page |
 | 8.2 | Numeric quota values | None — Apple does not expose them (FB23378161) |
 | 9.2 | Full `LanguageModelFeedback.Issue.Category` list | `languagemodelfeedback/issue` doc page |
+
+[^refusal-api]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), which contains the generated `String`.
 
 ---
 

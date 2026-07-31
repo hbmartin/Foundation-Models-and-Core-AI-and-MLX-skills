@@ -106,7 +106,9 @@ spellings are corrected against Apple's shipping sample: it is `Profile { … }.
 > evaluations across 3 turns), so a side effect in it runs an unpredictable number of times. Keep it pure.
 > Two more: a tool named in your instructions prose but absent from the toolset produces an infinite loop
 > with no thrown error — an entire WWDC session exists to teach you to find it — and assigning to
-> `session.transcript` while `isResponding` is `true` is a **trap**, not a thrown error, so guard every write.
+> `session.transcript` while `isResponding` is `true` is session misuse surfaced as
+> `LanguageModelSession.Error.transcriptMutationWhileResponding`; guard every write so the response
+> task never reaches that typed failure.[^transcript-mutation-error]
 
 > 🔴 **GAP** — the declared signatures of the lifecycle closures (parameter types, whether they are `async`
 > or `throws`, which arities exist) are unverified; so is whether a `Profile(model:)` overload exists at all,
@@ -228,3 +230,5 @@ everything), **833692** (`.toolCallingMode` for strict RAG), **837226** ("Tool C
 prefix-reuse and model-switch measurements, the body-re-evaluation count and the 8192 `contextSize` probe,
 and are attributed as community-measured at every point of use, never as Apple figures. WWDC26 session
 **347** is *not* in the corpus; every claim traced to it is marked secondary and unverified.
+
+[^transcript-mutation-error]: Apple, [`LanguageModelSession.Error.transcriptMutationWhileResponding`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/error/transcriptmutationwhileresponding), “The session’s transcript was mutated while a request was in progress.”
