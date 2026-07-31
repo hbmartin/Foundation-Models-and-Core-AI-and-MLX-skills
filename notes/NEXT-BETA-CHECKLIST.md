@@ -247,11 +247,14 @@ Gap at `guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-t
   grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-26.5-macos.swiftinterface
   grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-27.0-macos.swiftinterface
   ```
-- [ ] The definitive answer stays a runtime probe on both OS generations — an interface cannot
-  distinguish a synthesized `<` from a hand-written one. The probe now exists:
-  `speech.assetInventory-status-order` in `probes/Tests/ProbesTests/SpeechProbes.swift`
-  (added 2026-07-31; runs on HOST-26 and SIM-27 with no skips). Re-run per beta and compare
-  against the sorted arrays recorded in `probes/README.md`.
+- [x] The definitive answer stays a runtime probe on both OS generations — an interface cannot
+  distinguish a synthesized `<` from a hand-written one. The probe now exists and has run
+  (2026-07-31): `speech.assetInventory-status-order` in
+  `probes/Tests/ProbesTests/SpeechProbes.swift` measured **26.5 host:
+  `unsupported<supported<downloading<installed`; 27.0 sim:
+  `unsupported<downloading<supported<installed`** — `<` is synthesized and the ordering really
+  changed (guide 16.1 §5.2 / G2 closed). Re-run per beta and compare against
+  `probes/README.md`.
 
 ## 8. AppIntents — the 26.4-annotation-vs-26.5-capture oddity
 

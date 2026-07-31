@@ -486,10 +486,32 @@ Two facts fall out of that trace that are not in the session:
   interception, and it is the name you must use when you refer to the tool in your instructions.
   ✅ **VERIFIED** — Apple's session-246 sample writes it into its own instructions text
   (`Session.swift:43`: *"Always use the spotlight_search tool to search trails before answering"*),
-  independently corroborated by the community field note's transcript capture.
+  independently corroborated by the community field note's transcript capture — and now
+  ✅ **probe-verified 2026-07-31**: `SpotlightSearchTool().name` returns `spotlight_search` at
+  runtime (`probes/`, `fm.spotlight-tool-surface`; `includesSchemaInInstructions` reads `true`).
+  Since derived tool names are verbatim type names (`fm.tool-derived-name`), this is a *declared*
+  name.
 - The generated arguments include **`searchTerms: [String]`**. ✅ **VERIFIED** — same note. This is
   one member of a much larger argument schema; see §14.3, where that schema turns out to be the
-  source of the tool's worst bug.
+  source of the tool's worst bug. The full schema is no longer a mystery: the same probe dumped
+  `tool.parameters` verbatim — a **complete query DSL** (discriminated `search | schema | help |
+  display` queries; `AllText`/`ContentType`/`Application` predicates; temporal models with
+  variables and `DateComponents`; pipeline stages including `Compute`, `Count` and `Custom`;
+  `x-order` annotations throughout). It is published nowhere else.
+
+> ⚠️ **Probe-measured 2026-07-31 — direct programmatic `call(arguments:)` is a dead end in this
+> beta, and it fails *in-band*, not by throwing.** From the SIM-27 test-runner app container
+> (`probes/`, `fm.spotlight-direct-call`): `CSSearchableItem` donation **works**, and
+> `tool.searchResults` emits a `SearchReply` (stage token `search`) per call — so the old "needs a
+> signed app container" assumption is refuted for donation and observation. But the argument
+> decode rejected every programmatic shape tried — a naive `{"query": "…"}`, the exact
+> `FullArguments` shape the tool's own error message prescribes, and an order-preserving
+> `GeneratedContent(properties:)` build — each returning a **code-100 JSON error inside the Prompt
+> output** ("Malformed tool arguments — retry with the schema below"), never a thrown error. Two
+> consequences worth designing around: (1) the tool's malformed-argument recovery is a message *to
+> the model*, invisible to any `catch`; (2) in 27A5228h/24A5390f the decoder effectively accepts
+> only model-generated arguments, so the delegate/attribute round-trip remains testable only
+> through a real model turn (which the sim's missing tool-calling assets block).
 
 The second `fetch_note` call in that trace is not part of Apple's design — it is the workaround
 from §8. Note where it sits in the trajectory: the model got `items` back, found they contained

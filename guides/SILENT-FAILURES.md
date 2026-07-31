@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1756 of them, 1398 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1760 of them, 1402 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -26,7 +26,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Performance cliffs](#performance-cliffs) | 143 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
 | [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
-| [Misleading signals](#misleading-signals) | 153 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
+| [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
 | [Version drift](#version-drift) | 86 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
 | [Docs vs reality](#docs-vs-reality) | 156 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 255 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
@@ -1196,6 +1196,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Assigning transcript.history mid-response compiles clean; the failure erupts as an error from an unrelated await.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#92-the-rule-only-when-isresponding-false) — 2.1 🔇
 - [Propagate .emptyTypeChoicesSchema — it catches unloaded .anyOf arrays; Apple's Skills writes try! there, which traps.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#71-generationschema-the-finished-immutable-article) — 2.2
 - [Refactor into a file importing only FoundationModels and the break reads like a missing SDK, not a missing import.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#3-the-cross-import-overlay-and-the-two-line-version) — 2.4 🔇
+- [spotlight_search never throws on malformed arguments; a code-100 JSON error rides inside the Prompt output, invisible to catch](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#4-the-trajectory-what-actually-happens-on-one-respond) — 2.4
 - [contextSizeExceeded throws but never says what filled the window — tool result payloads are the invisible culprit.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#101-the-number-that-decides-your-architecture) — 2.4 🔇
 - [A reactive-only design missing the SystemLanguageModel.Error arm mishandles availability failures silently.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#28-proactive-gate-or-reactive-catch-apple-changed-its-mind-quietly) — 2.6
 - [Availability failures are SystemLanguageModel.Error, not LanguageModelError — ladders on the latter miss them.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#34-systemlanguagemodelerror-one-case-and-it-is-not-on-watchos) — 2.6
@@ -1222,6 +1223,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Simulator inference runs on the host Mac's OS; version-skew errors surface as a bare -1 that reads as your bug.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#26-what-playground-will-not-tell-you-and-the-trap-under-it) — 5.1 🔇
 - [One availability branch is contaminated by a confirmed Apple bug — do not design around it.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#42-the-availability-branches-it-lets-you-reach) — 5.1
 - [availability returns .appleIntelligenceNotEnabled unless Siri is enabled, even with AI on — Apple-confirmed bug.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#42-the-availability-branches-it-lets-you-reach) — 5.1
+- [capabilities claims vision and tool calling on the 27.0 sim where both fail at runtime; it is a declaration, not a health check](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#134-a-device) — 5.1
 - [apple_fm_sdk.__version__ is hardcoded 0.1.0 on a 0.2.1 package; capability checks keyed on it test a constant.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#51-it-is-not-a-python-implementation-of-anything) — 5.2
 - [pytest outside the repo root fails on FileNotFoundError for fixtures — it reads like a broken install and is not.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#65-development-install) — 5.2
 - [Exceptions raised inside a tool's call() never reach your except block — they are stringified and fed to the model.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#103-tool-exceptions-never-reach-your-except-block) — 5.2
@@ -1362,6 +1364,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [compatibleAdapterNotFound really means the adapter is not downloaded yet; the name sends you auditing compatibility](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#42-apples-answer-one-missing-call) — 17.2 🔇
 - [A download that never starts yields an AsyncSequence with zero elements; 0% progress is indistinguishable from pending](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#45-the-sibling-failure-a-download-that-never-starts-and-never-complains) — 17.2 🔇
 - [A generic catch turns every user cancellation into an error banner; it reads as flakiness, not a ladder bug](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#62-what-the-ordering-does-do) — 17.3 🔇
+- [Prompting in an unsupported locale throws nothing; the model answers anyway, so a catch arm never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-gap-two-rows-now-measured-one-value-two-checks-the-concern-is-real) — 17.3
+- [unsupportedLanguageOrLocale is not raised by out-of-set prompts; gate with supportsLocale yourself](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-gap-two-rows-now-measured-one-value-two-checks-the-concern-is-real) — 17.3
 - [Server 429s arrive as RequestError.httpError, never .rateLimited; backoff keyed on .rateLimited never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#81-the-concrete-evidence) — 17.3 🔇
 - [availability/isAvailable can report healthy while the call still throws (catalog asset and PCC entitlement failures)](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#132-comappleunifiedassetframework-code5000-the-model-catalog) — 17.3 🔇
 - [A green Xcode 26 run proves MLX inference only; the FM adapter is not in that binary, so one check covers half](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#84-what-ran-where) — 17.4

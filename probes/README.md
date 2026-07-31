@@ -37,9 +37,21 @@ Environment knobs:
 - `PROBE_CONCURRENT_SESSIONS=16` — width of the concurrent-session probe (default 8).
 - `PROBE_ENABLE_PCC=1` — opt-in for the PCC probe (an unentitled process may `fatalError`
   constructing PCC — guide 2.6 §8.5 — so it is off by default to keep the suite crash-safe).
+- `PROBE_INSTRUMENTS_WORKLOAD=1` — unlocks the Instruments recording workload
+  (`instruments.fm-workload`; see `INSTRUMENTS-RECORDING.md`). Companions:
+  `PROBE_WORKLOAD_SECONDS` (default 300) and `PROBE_WORKLOAD_ATTACH_SECONDS` (default 20).
 
-**Verified 2026-07-31:** `swift test` on the host — 31 tests, 27 skipped, 0 failures,
-exit 0. SIM-27 full run — 24 tests, 1 skipped (PCC opt-in), 0 failures, `TEST SUCCEEDED`.
+**Instruments lane-name capture** (the one manual GUI session): `INSTRUMENTS-RECORDING.md`
+— workload command, attach procedure, transcription checklist, write-back list. A
+standalone fallback binary lives in `Workload/fmworkload.swift` (outside the package).
+
+**SIM-27 deep pass** (higher sample counts): prefix the SIM-27 command with
+`PROBE_ENUM_RUNS=100 PROBE_CONCURRENT_SESSIONS=16` — plain env prefixing reaches the
+test runner on this beta (verified 2026-07-31).
+
+**Verified 2026-07-31 (after the probe-suite extension):** `swift test` on the host —
+39 tests, 34 skipped, 0 failures, exit 0. SIM-27 full run — 32 tests, 2 skipped (PCC
+opt-in + the env-gated Instruments workload), 0 failures, `TEST SUCCEEDED`.
 
 ## Probe inventory
 
@@ -81,6 +93,14 @@ knob (asset/entitlement).
 | `eval.disallowed-arguments-narrowing` | do `disallowed` matchers narrow | 6.3 | SIM-27 · MAC-27 | ✅ YES, arguments narrow |
 | `eval.allowsAdditionalCalls-false` | semantics of `false` | 6.3 ledger | SIM-27 · MAC-27 | ✅ enforced; extra call fails `allPass` |
 | `eval.generator-unreachable-target` | unreachable `targetCount` behavior | 6.3 §3, §5 | SIM-27 · MAC-27 | ✅ gives up after retry budget, finishes short |
+| `speech.assetInventory-status-order` | `Status` `Comparable` ordering per OS generation | 16.1 §5.2 · G2 · NEXT-BETA §7 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ **ordering DIFFERS** — 26: `unsupported<supported<downloading<installed`; 27 sim: `unsupported<downloading<supported<installed` (`<` is synthesized) |
+| `fm.capabilities` | does `capabilities` reflect per-destination reality | 5.1 §13.4 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 sim: claims `.vision`+`.toolCalling` while both fail at runtime → static declaration; compare on MAC-27 |
+| `fm.attachment-label-recording` | `.label(_:)` token cost / transcript write-through / tool no-op | 2.5 §6.4 · 2.3 | MAC-27 · DEVICE-27 (SIM-27 partial) | 🟠 sim: all three halves blocked (images −1, tools 1026) — fingerprints recorded |
+| `fm.stream-zero-partials-tool-turn` | tool-only turn yields zero partials? | 2.1 §6.4 · 2.2 §9.6 · SILENT-FAILURES | MAC-27 · DEVICE-27 | 🟠 sim blocked by tool assets (1026) |
+| `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 | 🟠 sim: **silent success** — `am_ET` unsupported per `supportsLocale`, prompt answered anyway, no error; confirm on MAC-27 |
+| `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 | ✅ `spotlight_search`, `includesSchema=true`, full FullArguments DSL schema captured |
+| `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ donation + replies WORK; all three arg shapes rejected **in-band** (code-100 JSON, never throws) — direct decode effectively needs model-generated arguments in this beta |
+| `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 `PROBE_INSTRUMENTS_WORKLOAD=1`; procedure in `INSTRUMENTS-RECORDING.md` |
 
 ## Results harvested 2026-07-31 (verbatim probe output, both runs)
 
@@ -196,16 +216,69 @@ Readings, one line each:
   4–5 across runs, matching `.random(retries: 5)`), `sessionProviderInvocations=1`;
   rejected samples ARE observable via `invalidSamples`.
 
+## Results harvested 2026-07-31, second pass (probe-suite extension)
+
+Same runtimes as above (26.5.2 host · iOS 27.0 sim 24A5390f). Verbatim lines, trimmed:
+
+```
+PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,supported,downloading,installed]   (HOST-26)
+PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed]   (SIM-27)
+PROBE-RESULT name=fm.capabilities value=vision=true toolCalling=true guidedGeneration=true reasoning=false detail=availability=available   (SIM-27)
+PROBE-RESULT name=fm.attachment-label-recording value=unlabeledTokens=error(FoundationModels.LanguageModelError:-1) labeledTokens=error(…:-1) unlabeledRespond=threw(-1) segments=[no-prompt-entry] labeledRespond=threw(-1) segments=[no-prompt-entry] unlabeledTool=threw(1026) toolRan=false labeledTool=threw(1026) toolRan=false
+PROBE-RESULT name=fm.stream-zero-partials-tool-turn value=iteration-threw detail=type=ModelManagerError domain=ModelManagerServices.ModelManagerError code=1026 … toolRan=false
+PROBE-RESULT name=fm.unsupportedLanguageOrLocale-error value=supportedCount=23 currentSupported=true probeLocale=am_ET respond=succeeded content=እባክህ በአማርኛ መልስ ስጠኝ…
+PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true detail=parameters={ "$defs": { "AllText"… }  (full DSL schema >8 KB)
+PROBE-RESULT name=fm.spotlight-direct-call value=recorded detail=indexingAvailable=true donate=ok naiveCall=ok(code-100 in-band error) schemaCall=ok(code-100) orderedCall=ok(code-100) searchReplies=[SearchReply(stage "search", items([])) ×2]
+```
+
+Readings, one line each:
+
+- **16.1 §5.2 / G2 / NEXT-BETA §7** — the `AssetInventory.Status` `Comparable` ordering
+  **differs between OS generations** (`supported` and `downloading` swap), so `<` is the
+  **synthesized declaration-order** conformance and any code persisting or comparing
+  `Status` order across OS versions is version-dependent. Both generations measured; the
+  G2 gap closes with the sharpest possible answer.
+- **5.1 §13.4** — `SystemLanguageModel.capabilities` on the sim claims `.vision` and
+  `.toolCalling` while both fail at runtime with missing-asset errors → capabilities are
+  a **static declaration**, not a per-destination health check; the `-1` ambiguity cannot
+  be resolved by reading them. (`reasoning=false` is the one honest per-model bit.)
+- **17.3 §6.3** — prompting in a locale `supportsLocale(_:)` rejects (`am_ET`) does
+  **not** throw `.unsupportedLanguageOrLocale` on the sim — the model **silently
+  answers** (echoing the prompt language). A silent-failure finding for 2.6's locale
+  guidance: gate on `supportsLocale` yourself; the runtime will not stop you.
+  `.rateLimited`/`.timeout`/`.refusal`/`.unsupportedTranscriptContent`/`.unsupportedGenerationGuide`
+  remain deliberately unprobed (no clean trigger).
+- **2.4 §7 / 2.3 §2** — `SpotlightSearchTool().name` **is** `spotlight_search` (declared,
+  not derived — consistent with `fm.tool-derived-name`'s verbatim-type-name rule), and
+  its `parameters` schema is a **full query DSL** (discriminated `search|schema|help|display`
+  queries, `AllText`/`ContentType`/`Application` predicates, temporal models with
+  variables, pipeline stages incl. `Compute`/`Count`/`Custom`, `x-order` annotations) —
+  published nowhere; captured verbatim in the probe output.
+- **2.4 §7.1** — from the SIM-27 test-runner app container: `CSSearchableItem` donation
+  **works** and `tool.searchResults` emits a `SearchReply` (stage token `search`) per
+  call — the old "needs a signed app container" skip reason is refuted. But direct
+  `call(arguments:)` could not be made to decode in this beta: the naive shape, the
+  tool's own prescribed shape, and an order-preserving `init(properties:)` build were all
+  rejected **in-band** (a code-100 JSON error inside the returned Prompt — the tool
+  **never throws** on malformed arguments) with "Failed to parse generated content". Note
+  the self-describing error is itself the documented recovery path Apple intends for the
+  *model*; direct programmatic invocation effectively requires model-generated arguments
+  in 27A5228h/24A5390f.
+- **2.5 §6.4 / 2.3 / SILENT-FAILURES zero-partials** — both attachment-label and
+  tool-turn-streaming probes are blocked on the sim (images `-1`, tool assets `1026`,
+  identically for labeled and unlabeled) — fingerprints recorded; the real answers land
+  on MAC-27/DEVICE-27.
+
 ## SKIPPED — gaps no automated probe can decide
 
 | Gap | Guide § | Why skipped |
 |---|---|---|
 | `fm` CLI flag surface | 5.2 + NEEDED item 1 | CLI capture on a macOS 27 machine, not an XCTest |
-| Instruments 27 lane names (FM + Core AI templates) | 5.1 §6.3 · 10.2 §3.2 + NEEDED item 3 | lane names stream from a recording target into the Instruments UI; human-read |
+| Instruments 27 lane names (FM + Core AI templates) | 5.1 §6.3 · 10.2 §3.2 + NEEDED item 3 | still human-read — but the workload + full GUI procedure now exist: `INSTRUMENTS-RECORDING.md` + `instruments.fm-workload` |
 | Where a `#Playground` block executes | 5.1 §4 | Xcode UI behavior, not linkable API |
 | Xcode "Simulated Apple Foundation Models Availability" menu contents | 5.1 §8 | Xcode UI |
 | What a third-party `LanguageModel` populates in the FM instrument | 5.1 §10 | needs Instruments attached + human reading of lanes |
-| `SpotlightSearchTool` delegate invocation + attribute round-trip | 2.4 §7 | needs a signed app container with a populated Core Spotlight index; not reliable from a SwiftPM test bundle |
+| ~~`SpotlightSearchTool` delegate invocation + attribute round-trip~~ | 2.4 §7 | **converted to measurements 2026-07-31** (`fm.spotlight-tool-surface` + `fm.spotlight-direct-call`): donation + replies work from the sim runner container; direct argument decode is the residue (in-band code-100 rejections) |
 | `protectionClass` overload selection | 2.4 §7 | header question plus the app-container issue above |
 | Apple-hosted adapter behavior after the 27 upgrade | 17.2 §3 | needs a preserved 26.x-built app with a working Apple-hosted adapter |
 | Memory/thermal depth sweep for honest benchmarking | 15.2 | multi-hour thermal rig; out of scope for CI-shaped probes |
@@ -224,10 +297,21 @@ Readings, one line each:
 - `Package.swift` — swift-tools 6.2, platforms `.macOS(.v26)` / `.iOS(.v26)` (the `.v26`
   platform constants require the 6.2 manifest API).
 - `Sources/ProbeSupport` — the `PROBE-RESULT` printer, env knobs, timeout racing.
-- `Tests/ProbesTests/FoundationModelsProbes.swift` — 18 FM probes.
+- `Tests/ProbesTests/FoundationModelsProbes.swift` — 22 FM probes (also home of the
+  shared helpers, internal so the other probe files reuse them; `errorFingerprint`
+  decodes the concrete `LanguageModelError` case + payload on 27 runtimes).
 - `Tests/ProbesTests/CoreAIProbes.swift` — 7 Core AI probes, whole file
   `#if canImport(CoreAI)` (27-only module with no 26 API; also absent from the simulator
   SDK, so this file only exists in macOS/device builds).
 - `Tests/ProbesTests/EvaluationsProbes.swift` — 6 Evaluations probes,
   `#if canImport(Evaluations)` (Xcode-bundled framework, `anyAppleOS 27.0`-gated;
   `Evaluation.run(info:)` makes five of the six offline-decidable — they already ran).
+- `Tests/ProbesTests/SpeechProbes.swift` — the `AssetInventory.Status` ordering probe
+  (runs on every destination, no skips).
+- `Tests/ProbesTests/SpotlightProbes.swift` — the two `SpotlightSearchTool` probes
+  (CoreSpotlight + FoundationModels imports activate the cross-import overlay).
+- `Tests/ProbesTests/InstrumentsWorkloadProbes.swift` — the env-gated Instruments
+  recording workload (never a `PROBE-RESULT`; narrates `WORKLOAD` lines).
+- `Workload/fmworkload.swift` — standalone fallback recording target, deliberately
+  OUTSIDE the package (bare `swiftc` build + `simctl spawn`; see
+  `INSTRUMENTS-RECORDING.md`).

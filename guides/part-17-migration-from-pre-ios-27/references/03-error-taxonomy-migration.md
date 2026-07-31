@@ -1193,6 +1193,15 @@ runtime), and they land on opposite sides:
 |---|---|---|---|
 | Context overflow | `LanguageModelError` | `FoundationModels.LanguageModelError` / 0 | `LanguageModelError` only — **clean, single-type** |
 | `.required` with empty toolset | `NSError` | `FoundationModels.LanguageModelError` / **-1** | **nothing** (`casts=[]`); wraps via `NSMultipleUnderlyingErrorsKey` |
+| Prompt in an unsupported locale | **nothing thrown** | — | — (⚠️ **silent success**, see below) |
+
+⚠️ A third row measured 2026-07-31 (`probes/`, `fm.unsupportedLanguageOrLocale-error`) is a
+**non-throw**: prompting in Amharic — a locale `supportsLocale(_:)` explicitly rejects on that
+runtime (`am_ET`, 23 supported languages) — threw nothing at all; the model answered anyway. So
+`.unsupportedLanguageOrLocale` is not raised merely by prompting outside the supported set, and a
+locale gate has to be **your** `supportsLocale` check, not a `catch` arm. The remaining cases
+(`.rateLimited`, `.timeout`, `.refusal`, `.unsupportedTranscriptContent`,
+`.unsupportedGenerationGuide`) have no clean, non-abusive trigger and stay unmeasured.
 
 The second row **confirms the concern for that mode**: the framework really does throw a value
 whose NSError *domain* says `LanguageModelError` but which `catch let e as LanguageModelError`

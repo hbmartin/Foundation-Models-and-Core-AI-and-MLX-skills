@@ -2020,6 +2020,15 @@ device you'd like to run and profile your app on, update to the latest OS releas
 > decide. Safe default unchanged: **profile on a device.** Even if the template records against a
 > Simulator, the numbers would be the host Mac's, which is not a measurement of anything you ship.
 
+> ⚠️ **Probe-verified, 2026-07-31 — `capabilities` will not warn you about the Simulator's gaps.**
+> On the 27.0 sim runtime, `SystemLanguageModel.default.capabilities` reports
+> `vision=true toolCalling=true guidedGeneration=true reasoning=false` (`probes/`,
+> `fm.capabilities`) — while image attachments and tool calling both **fail at runtime** there
+> (`LanguageModelError -1` / missing `com.apple.modelcatalog` assets). So `capabilities` is a
+> **static declaration of what the model supports, not a per-destination health check**: you cannot
+> use `caps.contains(.vision)` to detect the sim's missing pieces, and the bare `-1` stays
+> ambiguous. (`reasoning=false` is the one honestly-model-specific bit on this runtime.)
+
 ---
 
 ## 14. Quick reference
