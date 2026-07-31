@@ -213,12 +213,16 @@ for capture in manifest["captures"]:
             raise SystemExit(f"error: manifest records {name} more than once")
         managed[name] = digest
 
+RECOVERY_HINT = ("; if a capture was interrupted, see notes/sdk-interfaces/README.md "
+                 "(Recovering from an interrupted capture)")
 unmanaged = sorted(set(artifact_names) - set(managed))
 missing = sorted(set(managed) - set(artifact_names))
 if unmanaged:
-    raise SystemExit("error: destination contains unmanaged capture artifacts: " + ", ".join(unmanaged))
+    raise SystemExit("error: destination contains unmanaged capture artifacts: "
+                     + ", ".join(unmanaged) + RECOVERY_HINT)
 if missing:
-    raise SystemExit("error: manifest-managed artifacts are missing: " + ", ".join(missing))
+    raise SystemExit("error: manifest-managed artifacts are missing: "
+                     + ", ".join(missing) + RECOVERY_HINT)
 
 for name, expected in sorted(managed.items()):
     data = (dest / name).read_bytes()
@@ -311,7 +315,15 @@ for fw in "${FRAMEWORKS[@]}"; do
       "$fw" "$(wc -l < "$CAPTURE_DIR/$out_name" | tr -d ' ')" "$out_name"
   else
     ABSENT_FRAMEWORKS="${ABSENT_FRAMEWORKS}${ABSENT_FRAMEWORKS:+,}${fw}"
-    printf '  %-32s absent or has no Swift interface\n' "$fw"
+    # Same manifest bucket either way; the run output distinguishes a C/ObjC-only
+    # framework (headers ship, no Swift interface) from one absent outright.
+    if [ -d "$MACOS_SDK_PATH/System/Library/Frameworks/$fw.framework/Headers" ] || \
+       [ -d "$MACOS_SDK_PATH/System/Library/SubFrameworks/$fw.framework/Headers" ] || \
+       [ -d "$MACOS_PLATFORM_PATH/Developer/Library/Frameworks/$fw.framework/Headers" ]; then
+      printf '  %-32s no Swift interface; C/ObjC headers present\n' "$fw"
+    else
+      printf '  %-32s absent from this SDK\n' "$fw"
+    fi
   fi
 done
 

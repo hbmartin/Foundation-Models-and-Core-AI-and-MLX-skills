@@ -113,6 +113,24 @@ A filename may be owned by exactly one capture record. The script refuses these 
 These are intentional stops. Do not bypass them by deleting the manifest or editing a hash to make
 the check green; investigate the provenance change first.
 
+## Recovering from an interrupted capture
+
+New artifacts are copied into the destination before the merged manifest is written. A capture
+killed in that window leaves files the manifest does not own, and every later run stops with
+`destination contains unmanaged capture artifacts` (or, if the manifest landed but a copy did not,
+`manifest-managed artifacts are missing`). Nothing is lost — a same-build recapture reproduces
+identical bytes — so recovery is mechanical:
+
+1. `git status notes/sdk-interfaces/` — the stray files are untracked (or the manifest is locally
+   modified).
+2. Delete the artifact files named in the error, or `git restore notes/sdk-interfaces/` to return
+   both files and manifest to the committed state.
+3. Re-run `./scripts/dump-sdk-interfaces.sh --check-only`, then the capture. The same selected
+   build re-produces the same artifacts and manifest entries.
+
+For a non-git destination (a `--dest` candidate directory), simply delete the directory and
+capture again.
+
 ## Reviewing and promoting a new Xcode seed
 
 Several Xcode beta, RC, and GM seeds can all report SDK `27.0`. Stable SDK-version filenames alone

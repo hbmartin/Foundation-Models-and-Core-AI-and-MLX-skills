@@ -89,6 +89,25 @@ report_drift() { # $1=label, $2=unified-diff file
   fi
 }
 
+report_help_drift() { # $1=label, $2=unified-diff file, $3=baseline filename
+  local label="$1"
+  local diff_file="$2"
+  local baseline_name="$3"
+  local added removed
+  if [ ! -s "$diff_file" ]; then
+    printf '  %-32s clean — no drift vs %s\n' "$label" "$baseline_name"
+    return 0
+  fi
+  added="$(grep -Ev '^(\+\+\+|---) ' "$diff_file" | grep -c '^\+' || true)"
+  removed="$(grep -Ev '^(\+\+\+|---) ' "$diff_file" | grep -c '^-' || true)"
+  printf '  %-32s +%s / -%s lines vs %s; first %s:\n' \
+    "$label" "$added" "$removed" "$baseline_name" "$EXAMPLES"
+  if [ "$EXAMPLES" -gt 0 ]; then
+    grep -Ev '^(\+\+\+|---) ' "$diff_file" | grep -E '^[+-]' | \
+      head -n "$EXAMPLES" | sed 's/^/      /' || true
+  fi
+}
+
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdk-interface-diff.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 
@@ -151,6 +170,30 @@ for fresh in "$FRESH_DIR"/*-"$SDK_VERSION"-macos.swiftinterface; do
 done
 
 [ "$found" -eq 1 ] || die "no matching SDK $SDK_VERSION interface captures were produced"
+
+# CLI-help drift: compare each fresh *-help-*.txt against the newest committed
+# help capture for the same tool. Filenames can differ across captures
+# (coreai-build-help-27.0-beta.txt vs coreai-build-help-27.0.txt), so match on
+# the tool prefix. Leading '#' comment headers embed capture dates, versions,
+# and toolchain identity, so only the help bodies are compared.
+if [ -z "$FRAMEWORK" ]; then
+  printf '\n=== CLI help surfaces vs %s (comment headers ignored) ===\n' "$AGAINST"
+  for fresh in "$FRESH_DIR"/*-help-*.txt; do
+    [ -f "$fresh" ] || continue
+    tool="$(basename "$fresh" | sed 's/-help-.*\.txt$//')"
+    committed="$(git -C "$REPO_ROOT" ls-tree --name-only "$AGAINST" notes/sdk-interfaces/ | \
+      grep -E "^notes/sdk-interfaces/${tool}-help-.*\.txt$" | LC_ALL=C sort -V | tail -n 1 || true)"
+    if [ -z "$committed" ]; then
+      printf '  %-32s NEW capture: %s lines\n' "$tool --help" \
+        "$(wc -l < "$fresh" | tr -d ' ')"
+      continue
+    fi
+    git -C "$REPO_ROOT" show "$AGAINST:$committed" | grep -v '^#' > "$TMP/help-baseline" || true
+    grep -v '^#' "$fresh" > "$TMP/help-fresh" || true
+    diff -u "$TMP/help-baseline" "$TMP/help-fresh" > "$TMP/diff" || true
+    report_help_drift "$tool --help" "$TMP/diff" "$(basename "$committed")"
+  done
+fi
 
 printf '\nTracked evidence was not modified. To retain this candidate, run:\n'
 printf '  ./scripts/dump-sdk-interfaces.sh --dest <empty-candidate-directory>\n'

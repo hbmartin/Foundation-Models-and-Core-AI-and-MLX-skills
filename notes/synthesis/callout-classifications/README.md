@@ -7,6 +7,10 @@ These TSV files are the committed human-judgment input for
 guide-relative-file  source-line  GitHub-anchor  callout-kind  symptom-id  index-blurb
 ```
 
+The format is strictly tab-delimited: there is no csv quoting or escaping, double quotes are
+literal characters, and no field may contain a tab or newline. Do not paste csv-quoted text
+(`"…""…"""`) into a blurb — the tooling reads it back byte-for-byte.
+
 `symptom-id` must be one of the IDs in
 [`../SYMPTOM-TAXONOMY.md`](../SYMPTOM-TAXONOMY.md). The file, line, anchor, and kind together identify
 one row emitted by `scripts/extract-callouts.py`; they are deliberately strict so a moved, added, or
