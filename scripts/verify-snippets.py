@@ -118,9 +118,9 @@ BUILTIN_CONDITION_CALL_RE = re.compile(
 # self-contained compilation unit. These receive an explicit prelude marker;
 # they are not promoted to VERIFIED and remain visible as PRELUDE-NEEDED.
 CONTEXT_DIAGNOSTICS = (
-    "cannot find ",
-    "cannot find type ",
-    "cannot find operator ",
+    "cannot find '",
+    "cannot find type '",
+    "cannot find operator '",
     "no such module ",
     "no macro named ",
     "external macro implementation type ",
@@ -133,7 +133,9 @@ CONTEXT_DIAGNOSTICS = (
 ILLUSTRATIVE_DIAGNOSTICS = (
     "expected ",
     "unexpected ",
-    "missing ",
+    # NOT bare "missing ": "missing argument for parameter" is a semantic
+    # defect in real code, not an elision signal, and must reach a human.
+    "missing return in",
     "initializers may only be declared within a type",
     "initializer requires a body",
     "declaration is only valid at file scope",
@@ -1065,6 +1067,10 @@ def triage_marker_for_row(row):
     if error.startswith("no such module "):
         return "prelude:external-module"
     if any(fragment in error for fragment in CONTEXT_DIAGNOSTICS):
+        # Swift identifier-resolution diagnostics always end " in scope";
+        # anything else that merely mentions "cannot find" stays for review.
+        if "cannot find" in error and " in scope" not in error:
+            return None
         return "prelude:guide-context"
     if any(fragment in error for fragment in ILLUSTRATIVE_DIAGNOSTICS):
         return "illustrative"

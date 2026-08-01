@@ -509,6 +509,13 @@ class WriteMarkersTests(unittest.TestCase):
             dict(base, first_error="value of type A has no member b")))
         self.assertIsNone(VS.triage_marker_for_row(
             {"flags": {"wrongness"}, "first_error": "cannot find 'user' in scope"}))
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="missing argument for parameter 'label' in call")))
+        self.assertEqual(VS.triage_marker_for_row(
+            dict(base, first_error="missing return in global function 'f'")),
+            "illustrative")
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="cannot find 'Foo' in this odd phrasing")))
 
 
 class ReportTests(unittest.TestCase):

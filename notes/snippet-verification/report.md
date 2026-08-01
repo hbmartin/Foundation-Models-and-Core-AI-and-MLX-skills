@@ -10,11 +10,11 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | sim27 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios27.0-simulator |
 | sim27-on-26 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios26.0-simulator |
 
-**Totals over 1354 Swift fences:** ILLUSTRATIVE 481 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 677 · VERIFIED 192 · XFAIL-PROVEN 2
+**Totals over 1354 Swift fences:** ILLUSTRATIVE 480 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
 
 **UNCLASSIFIED backlog (the metric): 0**
 
-**PRELUDE backlog (classified contextual excerpts): 677**
+**PRELUDE backlog (classified contextual excerpts): 678**
 
 ## Per-guide rollup
 
@@ -26,7 +26,7 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md | 64 | 9 | 0 | 1 | 27 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md | 37 | 6 | 0 | 0 | 7 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md | 22 | 4 | 0 | 0 | 3 | 0–0 | 0 |
-| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 5 | 0 | 0 | 10 | 0–0 | 0 |
+| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 5 | 0 | 0 | 9 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md | 30 | 10 | 0 | 0 | 12 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md | 11 | 6 | 0 | 0 | 2 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md | 21 | 6 | 0 | 0 | 3 | 0–0 | 0 |

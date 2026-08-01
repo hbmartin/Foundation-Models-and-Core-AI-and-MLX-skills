@@ -323,7 +323,7 @@ That is the idiomatic pattern for "N images plus surrounding text, where N is dy
 `[Prompt]`, splice. A shipping third-party app (`noema-ios`) reaches the same shape with a `for`
 loop directly inside the builder:
 
-```swift illustrative
+```swift prelude:guide-context
 // Verified in a shipping app's source, not an Apple sample:
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 private static func makeMultimodalPrompt(text: String, imagePaths: [String]) -> Prompt? {
