@@ -136,9 +136,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 """
 
 
@@ -238,7 +239,7 @@ def close_code_spans(text: str) -> str:
     return text[: text.rfind("`")].rstrip()
 
 
-def first_sentence(paragraph: str, limit: int = 240) -> str:
+def first_sentence(paragraph: str, limit: int = 400) -> str:
     """The first sentence of a wrapped Markdown paragraph, for a summary table.
 
     The lookbehind keeps version numbers intact: '27.0 and only 27.0. `import'
@@ -338,6 +339,11 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
         owns: dict[int, frozenset[int] | None] = {}
         for owned in entry.get("owns", []):
             part = owned["part"]
+            if part in owns:
+                raise SkillError(
+                    f"{path}: {name} lists part {part} twice; merge the entries, since "
+                    "only the last would survive"
+                )
             if part not in available:
                 raise SkillError(f"{path}: {name} claims part {part}, which has no README")
             references = owned.get("references")
@@ -800,7 +806,8 @@ def render_api_slice(
         if not entries:
             continue
         entries.sort(key=lambda entry: entry[0].lstrip("@.").lower())
-        out += ["", f"## {framework}  <sub>{len(entries)} symbols</sub>", ""]
+        noun = "symbol" if len(entries) == 1 else "symbols"
+        out += ["", f"## {framework}  <sub>{len(entries)} {noun}</sub>", ""]
         out.append("| Symbol | 26.5 | 27.0 | Covered in |")
         out.append("|---|:-:|:-:|---|")
         for symbol, in26, in27, pairs in entries:
@@ -954,7 +961,7 @@ def render_skill_md(
         for card in router.cards:
             if owned is not None and card.guide not in owned:
                 continue
-            summary = to_root(first_sentence(strip_footnotes(card.abstract), 170), router)
+            summary = to_root(first_sentence(strip_footnotes(card.abstract), 300), router)
             lines.append(f"- **{card.guide_id}** {card.title} — {summary}")
     lines += [
         "",

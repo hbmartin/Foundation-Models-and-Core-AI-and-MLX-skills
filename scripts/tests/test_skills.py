@@ -425,6 +425,42 @@ class RenderingHelperTests(unittest.TestCase):
         self.assertTrue(builder.owns_row('| "x" | Part 17 | why |', frozenset({2})))
 
 
+class AnchorFidelityTests(unittest.TestCase):
+    """Anchors for ⚠️ headings, pinned against GitHub's actual output.
+
+    Checked on 2026-08-01 by reading the `user-content-` ids out of GitHub's own
+    rendered HTML for
+    guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md.
+    All 79 anchors mdslug generated for that file appeared in GitHub's set, with
+    zero mismatches. GitHub drops U+26A0 as a symbol and KEEPS its U+FE0F
+    variation selector, which is a Unicode mark — so `#13--️-freshness-…` is
+    correct and `#13--freshness-…` is not. Automated reviewers repeatedly claim
+    the opposite; this test is the evidence.
+    """
+
+    CASES = {
+        # heading text (verbatim from the guide) -> GitHub's rendered anchor
+        "§13 — ⚠️ Freshness: NAX is new and still settling":
+            "13--️-freshness-nax-is-new-and-still-settling",
+        "§5.5 ⚠️ Cooperative tensors are not zero-initialised":
+            "55-️-cooperative-tensors-are-not-zero-initialised",
+        "§6.3 ⚠️ SILENT FAILURE — the identity default":
+            "63-️-silent-failure--the-identity-default",
+    }
+
+    def test_warning_heading_anchors_match_github(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "mdslug", REPO / "scripts" / "mdslug.py"
+        )
+        mdslug = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mdslug)
+        for heading, expected in self.CASES.items():
+            self.assertEqual(mdslug.slugify(heading), expected, heading)
+            self.assertIn("️", mdslug.slugify(heading))
+
+
 class FenceTrackingTests(unittest.TestCase):
     def test_an_info_string_line_does_not_close_an_open_fence(self):
         import importlib.util
@@ -594,8 +630,9 @@ class CommittedSkillsTests(unittest.TestCase):
                 )
 
     def test_committed_skills_pass_verification(self):
+        expected = len(json.loads(MANIFEST.read_text(encoding="utf-8"))["skills"])
         summary = verifier.verify(SKILLS, SKILLS / "skills-manifest.json")
-        self.assertEqual(summary["skills"], 10)
+        self.assertEqual(summary["skills"], expected)
 
     def test_every_real_part_readme_parses(self):
         # The drift alarm: a guide edit that changes a part README's structure

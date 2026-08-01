@@ -41,16 +41,17 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
 | Part | Floor |
 |---|---|
 | [2](references/part-02-foundation-models-everyday-api/README.md) | the framework itself is **26.0** on iOS, iPadOS, Mac Catalyst, macOS and visionOS — **no watchOS until 27.0**. |
-| [3](references/part-03-context-profiles-agentic/README.md) | the conceptual material starts at **26.0** (`LanguageModelSession`, `Transcript`, `Tool` — watchOS only from 27.0), and the two introspection APIs it leans on, `SystemLanguageModel.contextSize` and `tokenCount(for:)`, are **26.4** — of … |
+| [3](references/part-03-context-profiles-agentic/README.md) | the conceptual material starts at **26.0** (`LanguageModelSession`, `Transcript`, `Tool` — watchOS only from 27.0), and the two introspection APIs it leans on, `SystemLanguageModel.contextSize` and `tokenCount(for:)`, are **26.4** — of which only `contextSize` back-deploys. |
 | [4](references/part-04-beyond-the-built-in-model/README.md) | everything here is **27.0 and only 27.0** — the `LanguageModel` / `LanguageModelExecutor` pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, `LanguageModelCapabilities`, `Transcript.CustomSegment`, the generation channel. |
 | [5](references/part-05-prototyping-profiling-non-swift/README.md) | four different floors live in this part and confusing them wastes days. |
 
@@ -98,19 +99,19 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **2.1** `LanguageModelSession` end to end — The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, …
-- **2.2** Guided generation and snapshot streaming — What the `@Generable` macro synthesises, every `@Guide` form with evidence, the guide-to-type compatibility matrix, runtime schemas, `GeneratedContent`, and why …
-- **2.3** The `Tool` protocol, calling modes, and the required-mode loop — `Tool` member by member; the `@Generable` arguments struct as the contract between model and tool (and why Apple's own evaluation sample makes every argument optional); …
+- **2.1** `LanguageModelSession` end to end — The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, `prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`, `Response.usage`, and the six-case `Transcript` …
+- **2.2** Guided generation and snapshot streaming — What the `@Generable` macro synthesises, every `@Guide` form with evidence, the guide-to-type compatibility matrix, runtime schemas, `GeneratedContent`, and why streaming gives you *snapshots* rather than deltas (you assign, never append).
+- **2.3** The `Tool` protocol, calling modes, and the required-mode loop — `Tool` member by member; the `@Generable` arguments struct as the contract between model and tool (and why Apple's own evaluation sample makes every argument optional); writing descriptions that say *when* rather than *what*; the six-entry anatomy of one tool-using turn; `toolCallingMode` in both …
 - **2.4** Local RAG with `SpotlightSearchTool`, plus OCR and barcodes — Apple's answer to "RAG on device without a vector database": the model writes and executes queries against your own Core Spotlight index.
-- **2.5** Image input, and what the model cannot do with pixels — `Attachment` and every source it accepts, the `orientation:` parameter, labels and `ImageReference` for keying structured output back to specific images, the transcript …
+- **2.5** Image input, and what the model cannot do with pixels — `Attachment` and every source it accepts, the `orientation:` parameter, labels and `ImageReference` for keying structured output back to specific images, the transcript types images become, and which backends accept images at all.
 - **2.6** The complete failure taxonomy: availability, errors, guardrails and refusals — The largest guide in the part, organised as symptom → cause → fix across five failure planes.
-- **3.1** Token budgeting, transcript anatomy, and KV-cache economics — The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in …
+- **3.1** Token budgeting, transcript anatomy, and KV-cache economics — The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in both the 26.0 and 27.0 idioms, and then the KV material — token layout, the blast-radius table, the ordering rule for …
 - **3.2** Dynamic Profiles, modifiers, and session state — The flagship 2026 API, built around the projection framing above.
-- **3.3** `foundation-models-utilities`: Skills and history transforms — An audit of Apple's separately-versioned experimental package — two commits, issues disabled, no CI — and the two feature areas that change how you think about a …
-- **3.4** Baton-pass, phone-a-friend, model routing, and tool-calling control — Apple named two orchestration patterns — collaboration versus consultation — and then shipped a sample that uses neither literally, so this guide separates the verified …
-- **4.1** Private Cloud Compute: eligibility, reasoning, and quota UX — Apple's server model behind a one-line swap: 32K context, three reasoning levels, no API keys, no token cost to you, and Foundation Models on watchOS for the first time …
+- **3.3** `foundation-models-utilities`: Skills and history transforms — An audit of Apple's separately-versioned experimental package — two commits, issues disabled, no CI — and the two feature areas that change how you think about a transcript.
+- **3.4** Baton-pass, phone-a-friend, model routing, and tool-calling control — Apple named two orchestration patterns — collaboration versus consultation — and then shipped a sample that uses neither literally, so this guide separates the verified narration from the reconstructed code and says which is which at every listing.
+- **4.1** Private Cloud Compute: eligibility, reasoning, and quota UX — Apple's server model behind a one-line swap: 32K context, three reasoning levels, no API keys, no token cost to you, and Foundation Models on watchOS for the first time *because* the inference is remote.
 - **4.2** Core AI, MLX, and any OpenAI-compatible server behind `LanguageModelSession` — The consumer side of bringing your own model, with real initializers rather than demo lines.
-- **4.3** Authoring a `LanguageModel` provider package — The best-evidenced deep topic in the series, because Apple ships an **815-line agent skill** on exactly this question plus **two complete worked conformances you can …
+- **4.3** Authoring a `LanguageModel` provider package — The best-evidenced deep topic in the series, because Apple ships an **815-line agent skill** on exactly this question plus **two complete worked conformances you can read line by line**.
 - **4.4** Executor lifecycle, configuration identity, and preserving work across calls — The mechanics that decide whether a provider is fast or slow and — more often than expected — whether it is *correct*.
 - **5.1** `#Playground`, scheme simulation, and reading a Foundation Models trace — Three tools used in a fixed order.
 - **5.2** The `fm` CLI and the Foundation Models SDK for Python — Two products, two floors, and — unusually — two opposite evidence classes, which the guide flags in its own opening.

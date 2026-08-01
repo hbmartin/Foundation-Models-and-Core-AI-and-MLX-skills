@@ -101,7 +101,7 @@
 | `List` | ✓ | ✓ | [16.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `SwiftUI` |  |  | [16.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## Media/Core*  <sub>1 symbols</sub>
+## Media/Core*  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

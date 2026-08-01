@@ -41,9 +41,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
@@ -81,7 +82,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **11.1** TensorOps: `matmul2d`, tensor types, and what quantization actually looks like — The ground floor, written header-first: the two namespaces and where each physically lives, the seven positional arguments of `matmul2d_descriptor`, the complete …
+- **11.1** TensorOps: `matmul2d`, tensor types, and what quantization actually looks like — The ground floor, written header-first: the two namespaces and where each physically lives, the seven positional arguments of `matmul2d_descriptor`, the complete execution-scope vocabulary, the three tensor construction tags, cooperative tensors, and reductions.
 - **11.2** Cooperative tensors, reductions, and building a fused attention kernel — The advanced guide, and the longer of the two.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

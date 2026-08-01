@@ -41,9 +41,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
@@ -103,19 +104,19 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **7.1** `AIModel`, `InferenceFunction`, `NDArray`, and the memory model — The object-model primer every other guide assumes, built around the structural fact that makes app architecture fall out: **`AIModel` owns nothing and pins a cache …
+- **7.1** `AIModel`, `InferenceFunction`, `NDArray`, and the memory model — The object-model primer every other guide assumes, built around the structural fact that makes app architecture fall out: **`AIModel` owns nothing and pins a cache entry; `InferenceFunction` owns the weights**, so "when does this cost me a gigabyte?" is answered *at `loadFunction`, not at `init`*.
 - **7.2** Specialization, the model cache, and ahead-of-time compilation — The single largest source of first-launch stalls, wedged loads and mysterious disk growth.
 - **7.3** States as KV cache, and pipelined execution — A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable: **inference intervals that visibly widen along the timeline**.
-- **7.4** Model bundles, the LLM engines, and grammar-constrained decoding — The layer above the runtime, where a raw `.aimodel` becomes something shippable and Apple's own Swift package turns "I have a converted Qwen3" into …
+- **7.4** Model bundles, the LLM engines, and grammar-constrained decoding — The layer above the runtime, where a raw `.aimodel` becomes something shippable and Apple's own Swift package turns "I have a converted Qwen3" into `LanguageModelSession(model:)`.
 - **7.5** Non-LLM engines: bundles, function structure, warmup, specialization, and caching — The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`.
-- **8.1** `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract — The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a …
+- **8.1** `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract — The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus …
 - **8.2** When an op will not convert: coverage, composite ops, custom lowerings, externalization — The debugging guide for conversion failures — and, more usefully, for **conversions that succeed and should not have**.
 - **8.3** `TorchMetalKernel`: writing and embedding a custom Metal kernel — The seam, not the shader: how a kernel you already know how to write gets into an `.aimodel`.
 - **9.1** `coreai-opt` quantization: configs, GRAPH vs EAGER, calibration and QAT — The foundation guide, and the one everything else assumes.
 - **9.2** Palettization, pruning, joint compression, and mixed precision — The other three things `coreai-opt` does, plus the two ways of combining them.
-- **9.3** int4 to MX: which layer supports which numeric format — A reference rather than a tutorial, answering one question in as many tables as it takes: for a given format — int4, FP8 E4M3, FP4 E2M1, MXFP4, a 6-bit palette, E8M0 …
-- **10.1** Authoring for the Neural Engine and for the GPU: two opposite rulesets — Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte …
-- **10.2** The debug gauge, the Core AI Instrument, and the Core AI Debugger — Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation …
+- **9.3** int4 to MX: which layer supports which numeric format — A reference rather than a tutorial, answering one question in as many tables as it takes: for a given format — int4, FP8 E4M3, FP4 E2M1, MXFP4, a 6-bit palette, E8M0 block scales — which layer can **emit** it, which can **store** it, and which can actually **compute** on it.
+- **10.1** Authoring for the Neural Engine and for the GPU: two opposite rulesets — Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, …
+- **10.2** The debug gauge, the Core AI Instrument, and the Core AI Debugger — Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three …
 - **10.3** From a Hugging Face checkpoint to a loadable LLM bundle — The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.respond(to:)`, in ten stages, each with its gates and failure modes.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

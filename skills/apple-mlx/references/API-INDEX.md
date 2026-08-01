@@ -81,13 +81,13 @@
 | `MLXNN` |  |  | [13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MLXVLM` |  |  | [13.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md) |
 
-## Speech  <sub>1 symbols</sub>
+## Speech  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
 | `SpeechBundle` |  |  | [14.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 
-## CoreSpotlight  <sub>1 symbols</sub>
+## CoreSpotlight  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

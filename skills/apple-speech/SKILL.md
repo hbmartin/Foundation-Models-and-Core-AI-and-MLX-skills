@@ -41,9 +41,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
@@ -73,7 +74,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **16.1** SpeechAnalyzer: live transcription, assets, and custom vocabulary — The 2026 speech-to-text stack end to end: an actor owning analysis modules, fed one time-coded audio sequence, handing each module's output back as its own …
+- **16.1** SpeechAnalyzer: live transcription, assets, and custom vocabulary — The 2026 speech-to-text stack end to end: an actor owning analysis modules, fed one time-coded audio sequence, handing each module's output back as its own `AsyncSequence` — with **no accumulated transcript**, because assembling the document is your job.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
 
