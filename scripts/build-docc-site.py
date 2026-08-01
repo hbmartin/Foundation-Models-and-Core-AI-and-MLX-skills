@@ -430,6 +430,11 @@ def rewrite_inline_links(
 
 BACKTICK_RUN = re.compile(r"`+")
 
+# A page abstract is the first plain paragraph after the title; lists, quotes,
+# tables, and directives never become one.
+NON_ABSTRACT_PREFIX = re.compile(r"[-*+]\s|\d+[.)]\s|[>#|@]")
+ABSTRACT_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+
 
 def has_backtick_run(text: str, length: int) -> bool:
     return any(len(match.group()) == length for match in BACKTICK_RUN.finditer(text))
@@ -536,6 +541,8 @@ def transform_markdown(
     saw_title = False
     code_span_delimiter = 0
     block_quote_open = False
+    awaiting_abstract = False
+    in_abstract = False
 
     lines = source_text.splitlines(keepends=True)
     for line_index, line in enumerate(lines):
@@ -548,6 +555,7 @@ def transform_markdown(
                 fence_character, fence_length = marker[0], len(marker)
             elif marker[0] == fence_character and len(marker) >= fence_length:
                 fence_character, fence_length = "", 0
+            awaiting_abstract = in_abstract = False
             output.append(body + newline)
             quote = BLOCK_QUOTE_LINE.match(body)
             block_quote_open = bool(quote and quote.group("content").strip())
@@ -565,11 +573,30 @@ def transform_markdown(
             block_quote_open = False
 
         heading = HEADING_ONE.match(body)
+        is_title = False
         if heading:
             if saw_title:
                 body = f"{heading.group('prefix')}## {heading.group('title')}"
             else:
                 saw_title = True
+                is_title = True
+
+        if is_title:
+            awaiting_abstract = True
+        elif body.startswith("#") or quote:
+            awaiting_abstract = in_abstract = False
+        elif in_abstract and not body.strip():
+            in_abstract = False
+        elif (awaiting_abstract or in_abstract) and body.strip():
+            if awaiting_abstract:
+                awaiting_abstract = False
+                in_abstract = NON_ABSTRACT_PREFIX.match(body.lstrip()) is None
+            if in_abstract:
+                # DocC never displays links in a page abstract, and Swift
+                # 6.2's docc warns about them, which --warnings-as-errors
+                # turns fatal. Keep the visible text; the GitHub-rendered
+                # copies keep their links.
+                body = ABSTRACT_LINK.sub(r"\1", body)
 
         # These sequences in the source quote upstream DocC/RST syntax. In an
         # article-only catalog they are prose, not links to symbols. Code
