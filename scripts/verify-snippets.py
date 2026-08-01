@@ -8,9 +8,10 @@ requested SDK(s). Emits a strict-TSV row per fence plus a markdown report.
 Marker grammar (space-separated tokens after `swift` in the fence info string;
 canonical documentation in notes/snippet-verification/README.md):
 
-    compile:<t>[,<t>...]   must type-check on each target   t ∈ {26, 27, sim27}
+    compile:<t>[,<t>...]   must type-check on each named target
     xfail:<t>[,<t>...]     must FAIL to type-check on each target
     imports:A,B            modules the wrapper adds beyond hoisted ones
+    defines:A,B            Swift compilation conditions passed with -D
     wrap:none|body|mixed   complete file / force wrapper shape (default: auto)
     lang:5                 pin -swift-version 5 (default 6)
     isolation:mainactor    compile with Swift 6 MainActor default isolation
@@ -18,12 +19,14 @@ canonical documentation in notes/snippet-verification/README.md):
     prelude:<name>         reserved; reported PRELUDE-NEEDED, not compiled
 
 TSV columns (tab-delimited, flatten()ed fields):
-    file  line  anchor  info  status  wrap  v26  v27  vsim27  err_line  first_error
+    file  line  anchor  info  status  wrap  v26  v27  vsim27  v27on26
+    vsim27on26  err_line  first_error
 
-Row status: VERIFIED XFAIL-PROVEN FAILED ILLUSTRATIVE STUB ELIDED
+Row status: VERIFIED XFAIL-PROVEN MIGRATION-PROVEN FAILED ILLUSTRATIVE STUB ELIDED
+    COMMENT-ONLY
     PRELUDE-NEEDED UNCLASSIFIED UNCLASSIFIED-PASS UNCLASSIFIED-FAIL
     MARKER-ERROR PARSE-ERROR
-Per-target verdicts: pass fail xfail-pass XFAIL-ERR no-sdk timeout - skip
+Per-target verdicts: pass fail xfail-pass XFAIL-ERR timeout - skip
 
 Exit codes: 0 = green/backlog only · 1 = FAILED or XFAIL-ERR rows · 2 = marker
 or parse errors.
@@ -44,15 +47,32 @@ import sys
 
 WRAPPER_VERSION = 1
 
-# Target name -> (developer dir, xcrun sdk name, triple template).
-# Names, not versions: a new beta changes the resolved identity, never the marker.
+
+@dataclasses.dataclass(frozen=True)
+class TargetSpec:
+    developer_dir: str
+    sdk_name: str
+    triple_template: str
+    column: str
+    sdk_generation: str
+    deployment_version: "str | None" = None
+
+
+# Names, not resolved SDK versions: a new beta changes the recorded toolchain
+# identity without changing markers. The *-on-26 targets deliberately separate
+# the SDK used to compile from the minimum deployment version encoded in the
+# target triple.
 TARGETS = {
-    "26": ("/Applications/Xcode.app/Contents/Developer", "macosx",
-           "arm64-apple-macos{v}"),
-    "27": ("/Applications/Xcode-beta.app/Contents/Developer", "macosx",
-           "arm64-apple-macos{v}"),
-    "sim27": ("/Applications/Xcode-beta.app/Contents/Developer", "iphonesimulator",
-              "arm64-apple-ios{v}-simulator"),
+    "26": TargetSpec("/Applications/Xcode.app/Contents/Developer", "macosx",
+                     "arm64-apple-macos{v}", "v26", "26"),
+    "27": TargetSpec("/Applications/Xcode-beta.app/Contents/Developer", "macosx",
+                     "arm64-apple-macos{v}", "v27", "27"),
+    "sim27": TargetSpec("/Applications/Xcode-beta.app/Contents/Developer", "iphonesimulator",
+                        "arm64-apple-ios{v}-simulator", "vsim27", "27"),
+    "27-on-26": TargetSpec("/Applications/Xcode-beta.app/Contents/Developer", "macosx",
+                           "arm64-apple-macos{v}", "v27on26", "27", "26.0"),
+    "sim27-on-26": TargetSpec("/Applications/Xcode-beta.app/Contents/Developer", "iphonesimulator",
+                              "arm64-apple-ios{v}-simulator", "vsim27on26", "27", "26.0"),
 }
 # Frameworks that live under <platform>/Developer/Library/Frameworks (Xcode-bundled).
 XCODE_ONLY_MODULES = {"Evaluations", "Testing", "XCTest"}
@@ -89,6 +109,10 @@ FENCE_CLOSE_RE = re.compile(r"^\s*```\s*$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
 STUB_RE = re.compile(r"\{\s*get(\s+set)?\s*\}")
 WRONGNESS_RE = re.compile(r"\bWRONG\b|does not compile|❌")
+SWIFT_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+CONDITION_RE = re.compile(r"^\s*#(?:if|elseif)\s+(.+)$")
+BUILTIN_CONDITION_CALL_RE = re.compile(
+    r"\b(?:canImport|os|arch|targetEnvironment|swift|compiler|hasFeature|hasAttribute)\s*\([^)]*\)")
 
 # Diagnostics that mean the fence is a contextual excerpt rather than a
 # self-contained compilation unit. These receive an explicit prelude marker;
@@ -176,6 +200,7 @@ class Markers:
     compile_targets: tuple = ()
     xfail_targets: tuple = ()
     imports: tuple = ()
+    defines: tuple = ()
     wrap: str = "auto"  # auto | none | body | mixed
     lang: str = "6"
     isolation: str = "nonisolated"  # nonisolated | mainactor
@@ -287,7 +312,19 @@ def parse_markers(info):
         elif token.startswith("xfail:"):
             mk.xfail_targets = tuple(token[len("xfail:"):].split(","))
         elif token.startswith("imports:"):
-            mk.imports = tuple(token[len("imports:"):].split(","))
+            value = token[len("imports:"):]
+            if not value:
+                raise MarkerError("imports requires at least one module")
+            mk.imports = tuple(value.split(","))
+            if any(not SWIFT_IDENTIFIER_RE.match(part) for part in mk.imports):
+                raise MarkerError(f"invalid imports value {value!r}")
+        elif token.startswith("defines:"):
+            value = token[len("defines:"):]
+            if not value:
+                raise MarkerError("defines requires at least one compilation condition")
+            mk.defines = tuple(value.split(","))
+            if any(not SWIFT_IDENTIFIER_RE.match(part) for part in mk.defines):
+                raise MarkerError(f"invalid defines value {value!r}")
         elif token.startswith("wrap:"):
             mk.wrap = token[len("wrap:"):]
             if mk.wrap not in ("none", "body", "mixed"):
@@ -303,6 +340,8 @@ def parse_markers(info):
                     f"isolation must be nonisolated|mainactor, got {mk.isolation!r}")
         elif token.startswith("prelude:"):
             mk.prelude = token[len("prelude:"):]
+            if not mk.prelude:
+                raise MarkerError("prelude requires a non-empty name")
         else:
             raise MarkerError(f"unknown marker {token!r}")
     for t in mk.compile_targets + mk.xfail_targets:
@@ -311,21 +350,174 @@ def parse_markers(info):
     overlap = set(mk.compile_targets) & set(mk.xfail_targets)
     if overlap:
         raise MarkerError(f"target(s) in both compile and xfail: {sorted(overlap)}")
-    if mk.illustrative and (mk.compile_targets or mk.xfail_targets or mk.imports
+    if mk.wrap == "none" and mk.imports:
+        raise MarkerError("wrap:none is verbatim and cannot be combined with imports")
+    if mk.illustrative and (mk.compile_targets or mk.xfail_targets or mk.imports or mk.defines
                             or mk.wrap != "auto" or mk.isolation != "nonisolated"
                             or mk.prelude):
         raise MarkerError("illustrative excludes all other markers")
     return mk
 
 
-def validate_markers_against_body(mk, body_imports):
+def strip_swift_comments(lines):
+    """Return lines with // and /* */ comments removed for structural checks.
+
+    This is intentionally not a Swift lexer. It only decides whether a fence
+    contains semantic source; compilation remains the authority for syntax.
+    """
+    result = []
+    in_block = False
+    for original in lines:
+        line = original
+        out = []
+        i = 0
+        while i < len(line):
+            if in_block:
+                end = line.find("*/", i)
+                if end < 0:
+                    i = len(line)
+                    continue
+                in_block = False
+                i = end + 2
+                continue
+            if line.startswith("/*", i):
+                in_block = True
+                i += 2
+                continue
+            if line.startswith("//", i):
+                break
+            out.append(line[i])
+            i += 1
+        result.append("".join(out))
+    return result
+
+
+def effective_code_lines(body):
+    """Semantic lines after comments, imports, attributes-only, and #if scaffolding."""
+    result = []
+    for line in strip_swift_comments(body):
+        stripped = line.strip()
+        if not stripped or IMPORT_RE.match(stripped):
+            continue
+        if re.match(r"^#(?:if|elseif|else|endif|warning|error|sourceLocation)\b", stripped):
+            continue
+        if re.match(r"^@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?$", stripped):
+            continue
+        if re.match(r"^[{};]+$", stripped):
+            continue
+        result.append(stripped)
+    return result
+
+
+def custom_conditions(body):
+    """Return user-defined identifiers referenced by #if/#elseif conditions."""
+    found = set()
+    for line in strip_swift_comments(body):
+        match = CONDITION_RE.match(line)
+        if not match:
+            continue
+        expression = BUILTIN_CONDITION_CALL_RE.sub(" ", match.group(1))
+        for token in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", expression):
+            if token not in {"true", "false"}:
+                found.add(token)
+    return found
+
+
+def _condition_value(expression, defines):
+    """Evaluate a custom-only Swift compilation condition, or return None.
+
+    SDK/compiler predicates are deliberately unknown: swiftc remains their
+    authority. This small evaluator exists only to reject a marked fence whose
+    custom `defines:` selection statically compiles every semantic line out.
+    """
+    if BUILTIN_CONDITION_CALL_RE.search(expression):
+        return None
+    tokens = re.findall(r"&&|\|\||!|\(|\)|\b[A-Za-z_][A-Za-z0-9_]*\b", expression)
+    if "".join(tokens) != re.sub(r"\s+", "", expression):
+        return None
+    translated = []
+    for token in tokens:
+        if token == "&&":
+            translated.append(" and ")
+        elif token == "||":
+            translated.append(" or ")
+        elif token == "!":
+            translated.append(" not ")
+        elif token in ("(", ")"):
+            translated.append(token)
+        elif token == "true":
+            translated.append("True")
+        elif token == "false":
+            translated.append("False")
+        else:
+            translated.append("True" if token in defines else "False")
+    try:
+        return bool(eval("".join(translated).strip(), {"__builtins__": {}}, {}))
+    except (SyntaxError, TypeError):
+        return None
+
+
+def active_effective_code_lines(body, defines):
+    """Return semantic lines not proven inactive by custom #if conditions."""
+    active = True
+    stack = []
+    result = []
+    for line in strip_swift_comments(body):
+        stripped = line.strip()
+        match = re.match(r"^#if\s+(.+)$", stripped)
+        if match:
+            value = _condition_value(match.group(1), set(defines))
+            stack.append([active, value, value])
+            active = False if active is False or value is False else active
+            continue
+        match = re.match(r"^#elseif\s+(.+)$", stripped)
+        if match and stack:
+            parent, prior, _ = stack[-1]
+            value = _condition_value(match.group(1), set(defines))
+            if parent is False or prior is True:
+                active = False
+            elif prior is None or value is None:
+                active = None
+            else:
+                active = value
+            stack[-1][1] = True if prior is True or value is True else (
+                None if prior is None or value is None else False)
+            stack[-1][2] = value
+            continue
+        if re.match(r"^#else\b", stripped) and stack:
+            parent, prior, _ = stack[-1]
+            active = False if parent is False or prior is True else (
+                None if prior is None else parent)
+            stack[-1][1] = True
+            continue
+        if re.match(r"^#endif\b", stripped) and stack:
+            active = stack.pop()[0]
+            continue
+        if active is not False and effective_code_lines([line]):
+            result.append(stripped)
+    return result
+
+
+def validate_markers_against_body(mk, fence):
     """compile:26 / xfail:26 with a structurally-absent module is dishonest
     (trivially true xfail) — hard error."""
+    body_imports = hoist_imports(fence.body)[0]
     absent = set(body_imports) & ABSENT_ON_26 | set(mk.imports) & ABSENT_ON_26
-    if absent and "26" in mk.compile_targets + mk.xfail_targets:
+    sdk26_targets = [target for target in mk.compile_targets + mk.xfail_targets
+                     if TARGETS[target].sdk_generation == "26"]
+    if absent and sdk26_targets:
         raise MarkerError(
             f"module(s) {sorted(absent)} do not exist in the 26 SDK; "
-            "use targets 27/sim27 (verifier reports no-sdk for 26)")
+            "use an SDK-27 target")
+    if mk.compile_targets or mk.xfail_targets:
+        if not effective_code_lines(fence.body):
+            raise MarkerError("compile/xfail fence has no semantic Swift source")
+        missing_defines = custom_conditions(fence.body) - set(mk.defines)
+        if missing_defines:
+            raise MarkerError(
+                f"custom compilation condition(s) {sorted(missing_defines)} require defines:")
+        if not active_effective_code_lines(fence.body, mk.defines):
+            raise MarkerError("compile/xfail fence is entirely inactive under its defines")
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +539,10 @@ def autodetect(fence):
             break
     if any(WRONGNESS_RE.search(l) for l in fence.body):
         flags.add("wrongness")
+    if not effective_code_lines(fence.body):
+        flags.add("comment-only")
+    if custom_conditions(fence.body):
+        flags.add("custom-conditional")
     return flags
 
 
@@ -429,8 +625,11 @@ def mixed_split_index(rest):
 
 
 def synthesize(fence, extra_imports, wrap):
-    """Return (source, linemap) where linemap[gen_line_0based] = guide 1-based
-    line or None for synthesized lines."""
+    """Return (source, linemap, modules).
+
+    ``linemap[generated_line_0based]`` is the guide's 1-based line or None for
+    synthesized lines; ``modules`` is the de-duplicated imported-module list.
+    """
     modules, import_lines, rest, rest_map = hoist_imports(fence.body)
     for mod in extra_imports:
         if mod not in modules:
@@ -479,7 +678,8 @@ def synthesize(fence, extra_imports, wrap):
 
 
 def discover_toolchain(name):
-    dev_dir, sdk_name, triple_tpl = TARGETS[name]
+    spec = TARGETS[name]
+    dev_dir, sdk_name = spec.developer_dir, spec.sdk_name
     if not os.path.isdir(dev_dir):
         raise SystemExit(f"error: developer dir for target {name} missing: {dev_dir}")
     env = dict(os.environ, DEVELOPER_DIR=dev_dir)
@@ -498,15 +698,16 @@ def discover_toolchain(name):
     platform_dir = {"macosx": "MacOSX", "iphonesimulator": "iPhoneSimulator"}[sdk_name]
     fw = os.path.join(dev_dir, "Platforms", f"{platform_dir}.platform",
                       "Developer", "Library", "Frameworks")
+    deployment_version = spec.deployment_version or sdk_version
     return Toolchain(name, dev_dir, sdk_path, sdk_version, sdk_build,
-                     triple_tpl.format(v=sdk_version), xcode_version, xcode_build,
+                     spec.triple_template.format(v=deployment_version), xcode_version, xcode_build,
                      (fw,) if os.path.isdir(fw) else ())
 
 
 FIRST_ERROR_RE = re.compile(r"^<stdin>:(\d+):(\d+): error: (.*)$")
 
 
-def typecheck(source, tc, swift_version, default_isolation,
+def typecheck(source, tc, swift_version, default_isolation, defines,
               needs_xcode_frameworks, cache_root,
               linemap=None, timeout=60, stub=None):
     if stub is not None:
@@ -521,6 +722,8 @@ def typecheck(source, tc, swift_version, default_isolation,
            "-module-cache-path", os.path.join(cache_root, tc.sdk_build)]
     if default_isolation == "mainactor":
         cmd += ["-default-isolation", "MainActor"]
+    for condition in defines:
+        cmd += ["-D", condition]
     if needs_xcode_frameworks:
         for fw in tc.framework_dirs:
             cmd += ["-F", fw]
@@ -556,6 +759,7 @@ def compile_variants(fence, mk, imports, tc, opts, xfail):
     (verdict, wrap_used, CompileResult)."""
     guess_kwargs = dict(swift_version=mk.lang,
                         default_isolation=mk.isolation,
+                        defines=mk.defines,
                         cache_root=opts.cache_root,
                         timeout=opts.timeout, stub=opts.stub_compiler)
     if mk.wrap == "auto":
@@ -588,13 +792,12 @@ def compile_variants(fence, mk, imports, tc, opts, xfail):
 def verify_fence(fence, toolchains, opts):
     row = {"file": fence.rel_path, "line": str(fence.open_line),
            "anchor": fence.anchor, "info": fence.info, "status": "",
-           "wrap": "", "v26": "-", "v27": "-", "vsim27": "-",
+           "wrap": "", **{spec.column: "-" for spec in TARGETS.values()},
            "err_line": "", "first_error": "", "flags": autodetect(fence)}
-    col = {"26": "v26", "27": "v27", "sim27": "vsim27"}
+    col = {name: spec.column for name, spec in TARGETS.items()}
     try:
         mk = parse_markers(fence.info)
-        body_imports = hoist_imports(fence.body)[0]
-        validate_markers_against_body(mk, body_imports)
+        validate_markers_against_body(mk, fence)
     except MarkerError as e:
         row["status"] = "MARKER-ERROR"
         row["first_error"] = flatten(str(e))
@@ -608,13 +811,12 @@ def verify_fence(fence, toolchains, opts):
         return row
 
     if mk.compile_targets or mk.xfail_targets:
-        overall = "VERIFIED" if mk.compile_targets else "XFAIL-PROVEN"
+        if mk.compile_targets and mk.xfail_targets:
+            overall = "MIGRATION-PROVEN"
+        else:
+            overall = "VERIFIED" if mk.compile_targets else "XFAIL-PROVEN"
         for target in mk.compile_targets + mk.xfail_targets:
             xfail = target in mk.xfail_targets
-            body_imports = hoist_imports(fence.body)[0]
-            if target == "26" and set(body_imports) & ABSENT_ON_26:
-                row[col[target]] = "no-sdk"
-                continue
             tc = toolchains[target]
             verdict, wrap, result = compile_variants(
                 fence, mk, list(mk.imports), tc, opts, xfail)
@@ -633,6 +835,13 @@ def verify_fence(fence, toolchains, opts):
     # Unmarked.
     if not opts.guess:
         row["status"] = "UNCLASSIFIED"
+        return row
+    if "comment-only" in row["flags"]:
+        row["status"] = "COMMENT-ONLY"
+        return row
+    if "custom-conditional" in row["flags"]:
+        row["status"] = "UNCLASSIFIED-FAIL"
+        row["first_error"] = "custom compilation condition requires an explicit defines: marker"
         return row
     if "stub" in row["flags"]:
         row["status"] = "STUB"
@@ -678,7 +887,8 @@ def verify_fence(fence, toolchains, opts):
 
 
 TSV_COLUMNS = ["file", "line", "anchor", "info", "status", "wrap",
-               "v26", "v27", "vsim27", "err_line", "first_error"]
+               "v26", "v27", "vsim27", "v27on26", "vsim27on26",
+               "err_line", "first_error"]
 
 
 def write_tsv(rows, out):
@@ -697,7 +907,7 @@ def write_report(rows, toolchains, opts, out):
     counts = Counter(r["status"] for r in rows)
     out.write("# Snippet compile-verification report\n\n")
     out.write(f"Generated by scripts/verify-snippets.py (WRAPPER_VERSION={WRAPPER_VERSION}, "
-              f"-swift-version 6 default, jobs={opts.jobs}"
+              f"-swift-version 6 default"
               f"{', guess mode' if opts.guess else ''}). Honesty rule: every verdict is\n"
               "against the exact SDK builds below, never against \"iOS 27\" in the abstract.\n\n")
     out.write("| target | Xcode | SDK | triple |\n|---|---|---|---|\n")
@@ -715,13 +925,14 @@ def write_report(rows, toolchains, opts, out):
     for r in rows:
         per_guide[r["file"]][r["status"]] += 1
     out.write("## Per-guide rollup\n\n")
-    out.write("| guide | fences | verified/pass | xfail-proven | illus./stub/elided | unclassified pass–fail | FAILING |\n")
-    out.write("|---|---|---|---|---|---|---|\n")
+    out.write("| guide | fences | verified/pass | migration-proven | xfail-proven | illus./stub/elided/comment-only | unclassified pass–fail | FAILING |\n")
+    out.write("|---|---|---|---|---|---|---|---|\n")
     for guide in sorted(per_guide):
         c = per_guide[guide]
         total = sum(c.values())
         out.write(f"| {guide} | {total} | {c['VERIFIED'] + c['UNCLASSIFIED-PASS']} | "
-                  f"{c['XFAIL-PROVEN']} | {c['ILLUSTRATIVE'] + c['STUB'] + c['ELIDED']} | "
+                  f"{c['MIGRATION-PROVEN']} | {c['XFAIL-PROVEN']} | "
+                  f"{c['ILLUSTRATIVE'] + c['STUB'] + c['ELIDED'] + c['COMMENT-ONLY']} | "
                   f"{c['UNCLASSIFIED-PASS']}–{c['UNCLASSIFIED-FAIL']} | "
                   f"{c['FAILED'] + c['XFAIL-ERR']} |\n")
 
@@ -791,7 +1002,7 @@ def write_markers(rows, guides_root, opts):
                 new_info += " imports:" + ",".join(extra)
             if r.get("_guess_isolation") == "mainactor":
                 new_info += " isolation:mainactor"
-        elif r["status"] in ("STUB", "ELIDED"):
+        elif r["status"] in ("STUB", "ELIDED", "COMMENT-ONLY"):
             new_info = "illustrative"
         elif opts.write_triage_markers and r["status"] == "UNCLASSIFIED-FAIL":
             new_info = triage_marker_for_row(r)
@@ -825,17 +1036,22 @@ def write_markers(rows, guides_root, opts):
 
 def refine_needed_imports(rows, toolchains, opts):
     """For each UNCLASSIFIED-PASS row, find whether guess-injected imports were
-    actually needed: recompile with hoisted-only; record extras if required."""
-    for r in rows:
-        if r["status"] != "UNCLASSIFIED-PASS":
-            continue
+    actually needed: recompile with hoisted-only; record extras if required.
+
+    Rows are independent and run in parallel; each row's greedy drop sequence
+    remains ordered because later trials depend on the imports retained by the
+    previous trial.
+    """
+    candidates = [r for r in rows if r["status"] == "UNCLASSIFIED-PASS"]
+
+    def refine(r):
         tc = toolchains[r.get("_pass_target", opts.guess_target)]
         fence = r["_fence"]
         guess_markers = Markers(isolation=r.get("_guess_isolation", "nonisolated"))
         verdict, _, _ = compile_variants(fence, guess_markers, [], tc, opts, False)
         if verdict == "pass":
             r["_needed_imports"] = []
-            continue
+            return
         # Binary-search would be overkill; drop imports one at a time. Whatever
         # survives the drop test is needed — including Foundation.
         needed = list(r.get("_guess_imports", []))
@@ -845,11 +1061,68 @@ def refine_needed_imports(rows, toolchains, opts):
             if verdict == "pass":
                 needed = trial
         r["_needed_imports"] = needed
+    with concurrent.futures.ThreadPoolExecutor(max_workers=opts.jobs) as pool:
+        list(pool.map(refine, candidates))
     return rows
 
 
 # ---------------------------------------------------------------------------
 # Main
+
+
+AUTO_CHANGED_REF = "__auto_pr_base__"
+
+
+def run_git(repo_root, args, *, text=True):
+    try:
+        return subprocess.run(["git", "-C", repo_root] + list(args),
+                              capture_output=True, text=text, check=True).stdout
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.decode() if isinstance(error.stderr, bytes) else error.stderr
+        raise SystemExit(f"error: git {' '.join(args)} failed: {flatten(detail or error)}")
+
+
+def resolve_changed_base(repo_root, requested):
+    if requested != AUTO_CHANGED_REF:
+        base = requested
+    elif os.environ.get("GITHUB_BASE_REF"):
+        github_base = os.environ["GITHUB_BASE_REF"]
+        remote_candidate = f"origin/{github_base}"
+        probe = subprocess.run(["git", "-C", repo_root, "rev-parse", "--verify",
+                                f"{remote_candidate}^{{commit}}"], capture_output=True)
+        base = remote_candidate if probe.returncode == 0 else github_base
+    else:
+        symbolic = run_git(repo_root, ["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"])
+        base = symbolic.strip().removeprefix("refs/remotes/")
+    run_git(repo_root, ["rev-parse", "--verify", f"{base}^{{commit}}"])
+    return base
+
+
+def nul_paths(repo_root, args):
+    raw = run_git(repo_root, args, text=False)
+    return {part.decode("utf-8", "surrogateescape") for part in raw.split(b"\0") if part}
+
+
+def changed_guide_files(guides_root, requested_ref):
+    repo_root = run_git(os.getcwd(), ["rev-parse", "--show-toplevel"]).strip()
+    guides_abs = os.path.abspath(guides_root)
+    guides_repo_rel = os.path.relpath(guides_abs, repo_root)
+    if guides_repo_rel == os.pardir or guides_repo_rel.startswith(os.pardir + os.sep):
+        raise SystemExit("error: --changed requires --guides to be inside the Git repository")
+    base = resolve_changed_base(repo_root, requested_ref)
+    pathspec = ["--", guides_repo_rel]
+    paths = set()
+    paths |= nul_paths(repo_root, ["diff", "--name-only", "-z", f"{base}...HEAD"] + pathspec)
+    paths |= nul_paths(repo_root, ["diff", "--name-only", "-z"] + pathspec)
+    paths |= nul_paths(repo_root, ["diff", "--cached", "--name-only", "-z"] + pathspec)
+    paths |= nul_paths(repo_root, ["ls-files", "--others", "--exclude-standard", "-z"] + pathspec)
+    changed = set()
+    for repo_relative in paths:
+        absolute = os.path.normpath(os.path.join(repo_root, repo_relative))
+        relative = os.path.relpath(absolute, guides_abs)
+        if relative != os.pardir and not relative.startswith(os.pardir + os.sep):
+            changed.add(relative)
+    return changed, base
 
 
 def main(argv=None):
@@ -861,8 +1134,8 @@ def main(argv=None):
     ap.add_argument("--guess", action="store_true",
                     help="attempt unmarked fences against --guess-target")
     ap.add_argument("--guess-target", default="27", choices=sorted(TARGETS))
-    ap.add_argument("--changed", nargs="?", const="HEAD", default=None, metavar="REF",
-                    help="only fences in guide files changed vs REF (default HEAD)")
+    ap.add_argument("--changed", nargs="?", const=AUTO_CHANGED_REF, default=None, metavar="REF",
+                    help="only fences in guide files changed vs REF (default: PR/default branch)")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--timeout", type=int, default=60)
     ap.add_argument("--out", default=None,
@@ -878,17 +1151,17 @@ def main(argv=None):
                     help="test-only: replace swiftc with a fixed result")
     opts = ap.parse_args(argv)
 
+    if not os.path.isdir(opts.guides):
+        raise SystemExit(f"error: guides root does not exist or is not a directory: {opts.guides}")
     fences, parse_errors = extract_fences(opts.guides)
+    if not fences and not parse_errors:
+        raise SystemExit(f"error: guides root contains no Swift fences: {opts.guides}")
     if opts.changed:
-        changed = subprocess.run(
-            ["git", "diff", "--name-only", opts.changed, "--", opts.guides],
-            capture_output=True, text=True).stdout.splitlines()
-        changed = {os.path.relpath(p, opts.guides) for p in changed}
-        status_files = subprocess.run(
-            ["git", "status", "--porcelain", "--", opts.guides],
-            capture_output=True, text=True).stdout.splitlines()
-        changed |= {os.path.relpath(l[3:].strip(), opts.guides) for l in status_files if l}
+        changed, base = changed_guide_files(opts.guides, opts.changed)
+        if not changed:
+            print(f"# zero changed guide files versus {base}", file=sys.stderr)
         fences = [f for f in fences if f.rel_path in changed]
+        parse_errors = [error for error in parse_errors if error[0] in changed]
 
     # Which targets do we need? Marker-requested plus guess target.
     needed = set(opts.sdks or [])
@@ -920,8 +1193,9 @@ def main(argv=None):
     rows.sort(key=lambda r: (r["file"], int(r["line"])))
     for rel, line, msg in parse_errors:
         rows.append({"file": rel, "line": str(line), "anchor": "", "info": "",
-                     "status": "PARSE-ERROR", "wrap": "", "v26": "-", "v27": "-",
-                     "vsim27": "-", "err_line": "", "first_error": msg, "flags": set()})
+                     "status": "PARSE-ERROR", "wrap": "",
+                     **{spec.column: "-" for spec in TARGETS.values()},
+                     "err_line": "", "first_error": msg, "flags": set()})
 
     if opts.write_triage_markers:
         opts.write_markers = True

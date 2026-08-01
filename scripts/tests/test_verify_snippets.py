@@ -6,14 +6,27 @@ wrapper synthesis, guess mode, xfail semantics, and --write-markers testable on
 the Linux CI runner (same pattern as test_index_tooling.py).
 """
 
+import importlib.util
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(SCRIPTS_DIR, "verify-snippets.py")
+
+
+def load_verifier():
+    spec = importlib.util.spec_from_file_location("verify_snippets", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+VS = load_verifier()
 
 
 def run_script(args, cwd=None):
@@ -36,6 +49,16 @@ def tsv_rows(stdout):
 
 
 class ExtractionTests(unittest.TestCase):
+    def test_missing_and_empty_guides_roots_fail_fast(self):
+        with tempfile.TemporaryDirectory() as td:
+            missing = run_script(["--guides", os.path.join(td, "missing"),
+                                  "--stub-compiler", "pass"])
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("guides root does not exist", missing.stderr)
+            empty = run_script(["--guides", td, "--stub-compiler", "pass"])
+            self.assertNotEqual(empty.returncode, 0)
+            self.assertIn("contains no Swift fences", empty.stderr)
+
     def test_column0_and_indented_fences_extracted(self):
         with tempfile.TemporaryDirectory() as td:
             write_guide(td, "g.md", (
@@ -102,6 +125,35 @@ class MarkerTests(unittest.TestCase):
         self.assertEqual(row["status"], "VERIFIED")
         self.assertEqual(code, 0)
 
+    def test_empty_imports_and_prelude_values_are_rejected(self):
+        self.assertEqual(self._one("compile:27 imports:")[0]["status"], "MARKER-ERROR")
+        self.assertEqual(self._one("prelude:")[0]["status"], "MARKER-ERROR")
+
+    def test_wrap_none_rejects_injected_imports(self):
+        row, code = self._one("compile:27 wrap:none imports:Foundation")
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
+
+    def test_comment_only_compile_marker_is_rejected(self):
+        row, code = self._one("compile:27", body="// documentation only\n")
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
+
+    def test_custom_condition_requires_declared_define(self):
+        body = "#if FEATURE\nlet a = 1\n#endif\n"
+        row, _ = self._one("compile:27", body=body)
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        row, code = self._one("compile:27 defines:FEATURE", body=body)
+        self.assertEqual(row["status"], "VERIFIED")
+        self.assertEqual(code, 0)
+
+    def test_defined_condition_cannot_compile_the_entire_body_out(self):
+        body = "#if !FEATURE\nlet a = 1\n#endif\n"
+        row, code = self._one("compile:27 defines:FEATURE", body=body)
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertIn("entirely inactive", row["first_error"])
+        self.assertEqual(code, 2)
+
     def test_illustrative_never_invokes_compiler(self):
         # stub 'fail' would make any compile FAIL; illustrative must stay green.
         with tempfile.TemporaryDirectory() as td:
@@ -124,29 +176,20 @@ class MarkerTests(unittest.TestCase):
 
 class SynthesisTests(unittest.TestCase):
     def test_midsnippet_import_hoisted_and_deduped(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets", SCRIPT).load_module()
-        mods, imps, rest, _ = vs.hoist_imports(
+        mods, imps, rest, _ = VS.hoist_imports(
             ["let a = 1", "import FoundationModels", "import FoundationModels", "let b = 2"])
         self.assertEqual(mods, ["FoundationModels"])
         self.assertEqual(imps, ["import FoundationModels"])
         self.assertEqual(rest, ["let a = 1", "let b = 2"])
 
     def test_expression_snippet_gets_body_wrap_and_decl_snippet_stays_top(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets", SCRIPT).load_module()
-        self.assertEqual(vs.choose_wrap(["session.respond()"]), "body")
-        self.assertEqual(vs.choose_wrap(["struct S {}"]), "top")
+        self.assertEqual(VS.choose_wrap(["session.respond()"]), "body")
+        self.assertEqual(VS.choose_wrap(["struct S {}"]), "top")
 
     def test_linemap_maps_generated_lines_back_to_guide_lines(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets", SCRIPT).load_module()
-        fence = vs.Fence("g.md", 10, 0, "swift", "",
+        fence = VS.Fence("g.md", 10, 0, "swift", "",
                          ["let a = 1", "import Foo", "let b = 2"], "a")
-        source, linemap, _ = vs.synthesize(fence, [], "body")
+        source, linemap, _ = VS.synthesize(fence, [], "body")
         lines = source.splitlines()
         # import hoisted to line 0 (synthesized position), func wrapper next
         self.assertEqual(lines[0], "import Foo")
@@ -156,10 +199,7 @@ class SynthesisTests(unittest.TestCase):
         self.assertEqual(linemap[3], 13)  # 'let b = 2' was guide line 13
 
     def test_mixed_wrap_keeps_macro_type_top_level_and_wraps_usage(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets_mixed", SCRIPT).load_module()
-        fence = vs.Fence("g.md", 20, 0, "swift", "", [
+        fence = VS.Fence("g.md", 20, 0, "swift", "", [
             "import FoundationModels",
             "@Generable",
             "struct Answer {",
@@ -169,31 +209,30 @@ class SynthesisTests(unittest.TestCase):
             "let session = LanguageModelSession()",
             "let answer = try await session.respond(to: \"Hi\", generating: Answer.self)",
         ], "mixed")
-        source, linemap, _ = vs.synthesize(fence, [], "mixed")
+        source, linemap, _ = VS.synthesize(fence, [], "mixed")
         self.assertLess(source.index("struct Answer"), source.index("func __verify_snippet"))
         self.assertGreater(source.index("let session"), source.index("func __verify_snippet"))
         self.assertEqual(linemap[source.splitlines().index("let session = LanguageModelSession()")], 27)
 
     def test_mixed_wrap_does_not_add_empty_function_after_declarations_only(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets_decls_only", SCRIPT).load_module()
-        fence = vs.Fence("g.md", 1, 0, "swift", "", [
+        fence = VS.Fence("g.md", 1, 0, "swift", "", [
             "@main struct App { static func main() {} }",
         ], "main")
-        source, _, _ = vs.synthesize(fence, [], "mixed")
+        source, _, _ = VS.synthesize(fence, [], "mixed")
         self.assertNotIn("__verify_snippet", source)
 
     def test_stub_and_elided_autodetected_but_range_operator_is_not(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets", SCRIPT).load_module()
-        stub = vs.Fence("g.md", 1, 0, "swift", "", ["var x: Int { get }"], "")
-        self.assertIn("stub", vs.autodetect(stub))
-        elided = vs.Fence("g.md", 1, 0, "swift", "", ["let a = f(", "...", ")"], "")
-        self.assertIn("elided", vs.autodetect(elided))
-        ranged = vs.Fence("g.md", 1, 0, "swift", "", ["for i in 0...10 { print(i) }"], "")
-        self.assertNotIn("elided", vs.autodetect(ranged))
+        stub = VS.Fence("g.md", 1, 0, "swift", "", ["var x: Int { get }"], "")
+        self.assertIn("stub", VS.autodetect(stub))
+        elided = VS.Fence("g.md", 1, 0, "swift", "", ["let a = f(", "...", ")"], "")
+        self.assertIn("elided", VS.autodetect(elided))
+        ranged = VS.Fence("g.md", 1, 0, "swift", "", ["for i in 0...10 { print(i) }"], "")
+        self.assertNotIn("elided", VS.autodetect(ranged))
+
+    def test_deployment_targets_separate_sdk_from_minimum_os(self):
+        self.assertEqual(VS.TARGETS["27-on-26"].sdk_generation, "27")
+        self.assertEqual(VS.TARGETS["27-on-26"].deployment_version, "26.0")
+        self.assertEqual(VS.TARGETS["sim27-on-26"].column, "vsim27on26")
 
 
 class GuessAndXfailTests(unittest.TestCase):
@@ -232,6 +271,80 @@ class GuessAndXfailTests(unittest.TestCase):
             self.assertEqual(row["status"], "FAILED")
             self.assertNotIn("\t", row["first_error"])
             self.assertEqual(r.returncode, 1)
+
+    def test_mixed_compile_and_xfail_is_migration_proven(self):
+        fence = VS.Fence("g.md", 1, 0, "swift", "xfail:26 compile:27",
+                         ["let a = 1"], "")
+        toolchains = {name: object() for name in ("26", "27")}
+        opts = mock.Mock()
+        with mock.patch.object(VS, "compile_variants", side_effect=[
+                ("pass", "top", VS.CompileResult("pass")),
+                ("xfail-pass", "top", VS.CompileResult("fail")),
+        ]):
+            row = VS.verify_fence(fence, toolchains, opts)
+        self.assertEqual(row["status"], "MIGRATION-PROVEN")
+        self.assertEqual(row["v27"], "pass")
+        self.assertEqual(row["v26"], "xfail-pass")
+
+    def test_sdk_argument_is_additive_not_a_filter(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_guide(td, "g.md", "```swift compile:26\nlet a = 1\n```\n")
+            r = run_script(["--guides", td, "--stub-compiler", "pass", "--sdk", "27"])
+            row = tsv_rows(r.stdout)[0]
+            self.assertEqual(row["status"], "VERIFIED")
+            self.assertEqual(row["v26"], "pass")
+            self.assertEqual(row["v27"], "-")
+
+
+class ChangedFilesTests(unittest.TestCase):
+    def git(self, repo, *args):
+        return subprocess.run(["git", "-C", repo, *args], check=True,
+                              capture_output=True, text=True)
+
+    def make_repo(self):
+        td = tempfile.TemporaryDirectory()
+        repo = td.name
+        self.git(repo, "init", "-q")
+        self.git(repo, "config", "user.email", "tests@example.com")
+        self.git(repo, "config", "user.name", "Verifier Tests")
+        write_guide(repo, "guides/old name.md", "```swift\nlet old = 1\n```\n")
+        write_guide(repo, "guides/bad.md", "```swift\nlet broken = 1\n")
+        self.git(repo, "add", "guides")
+        self.git(repo, "commit", "-qm", "base")
+        self.git(repo, "branch", "base")
+        self.git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        self.git(repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+        os.makedirs(os.path.join(repo, "subdir"))
+        return td, repo
+
+    def test_changed_handles_rename_spaces_subdirectory_and_filters_parse_errors(self):
+        td, repo = self.make_repo()
+        with td:
+            self.git(repo, "mv", "guides/old name.md", "guides/new name.md")
+            self.git(repo, "commit", "-qam", "rename")
+            r = run_script(["--guides", "../guides", "--stub-compiler", "pass",
+                            "--changed", "base"], cwd=os.path.join(repo, "subdir"))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            rows = tsv_rows(r.stdout)
+            self.assertEqual([row["file"] for row in rows], ["new name.md"])
+            self.assertNotIn("PARSE-ERROR", r.stdout)
+
+    def test_changed_detects_untracked_file_and_bare_mode_uses_remote_head(self):
+        td, repo = self.make_repo()
+        with td:
+            write_guide(repo, "guides/new file.md", "```swift\nlet newValue = 1\n```\n")
+            r = run_script(["--guides", "guides", "--stub-compiler", "pass",
+                            "--changed"], cwd=repo)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual([row["file"] for row in tsv_rows(r.stdout)], ["new file.md"])
+
+    def test_changed_invalid_ref_fails_instead_of_reporting_zero(self):
+        td, repo = self.make_repo()
+        with td:
+            r = run_script(["--guides", "guides", "--stub-compiler", "pass",
+                            "--changed", "not-a-ref"], cwd=repo)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("rev-parse", r.stderr)
 
 
 class WriteMarkersTests(unittest.TestCase):
@@ -276,22 +389,19 @@ class WriteMarkersTests(unittest.TestCase):
             self.assertEqual(statuses, ["ILLUSTRATIVE", "VERIFIED"])
 
     def test_triage_markers_classify_context_and_syntax_but_not_type_errors(self):
-        sys.path.insert(0, SCRIPTS_DIR)
-        vs = __import__("importlib").machinery.SourceFileLoader(
-            "verify_snippets_triage", SCRIPT).load_module()
         base = {"flags": set()}
-        self.assertEqual(vs.triage_marker_for_row(
+        self.assertEqual(VS.triage_marker_for_row(
             dict(base, first_error="cannot find 'session' in scope")),
             "prelude:guide-context")
-        self.assertEqual(vs.triage_marker_for_row(
+        self.assertEqual(VS.triage_marker_for_row(
             dict(base, first_error="no such module 'MLXLMCommon'")),
             "prelude:external-module")
-        self.assertEqual(vs.triage_marker_for_row(
+        self.assertEqual(VS.triage_marker_for_row(
             dict(base, first_error="expected '{' in struct")),
             "illustrative")
-        self.assertIsNone(vs.triage_marker_for_row(
+        self.assertIsNone(VS.triage_marker_for_row(
             dict(base, first_error="cannot assign value of type A to type B")))
-        self.assertIsNone(vs.triage_marker_for_row(
+        self.assertIsNone(VS.triage_marker_for_row(
             {"flags": {"wrongness"}, "first_error": "cannot find 'user' in scope"}))
 
 
@@ -303,13 +413,31 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0)
             results_path = os.path.join(out, "results.tsv")
             self.assertTrue(os.path.exists(results_path))
-            with open(results_path) as handle:
+            with open(results_path, encoding="utf-8") as handle:
                 result_lines = handle.read().splitlines()
             self.assertTrue(all(not line.endswith((" ", "\t")) for line in result_lines))
-            with open(os.path.join(out, "report.md")) as handle:
+            self.assertIn("v27on26", result_lines[0])
+            self.assertIn("vsim27on26", result_lines[0])
+            with open(os.path.join(out, "report.md"), encoding="utf-8") as handle:
                 report = handle.read()
             self.assertIn("Per-guide rollup", report)
             self.assertIn("UNCLASSIFIED backlog", report)
+            self.assertNotIn("jobs=", report)
+
+    def test_output_is_deterministic_across_job_counts(self):
+        with tempfile.TemporaryDirectory() as td, \
+                tempfile.TemporaryDirectory() as out1, \
+                tempfile.TemporaryDirectory() as out8:
+            write_guide(td, "b.md", "```swift compile:27\nlet b = 2\n```\n")
+            write_guide(td, "a.md", "```swift compile:27\nlet a = 1\n```\n")
+            for jobs, out in (("1", out1), ("8", out8)):
+                result = run_script(["--guides", td, "--stub-compiler", "pass",
+                                     "--jobs", jobs, "--out", out])
+                self.assertEqual(result.returncode, 0, result.stderr)
+            for filename in ("results.tsv", "report.md"):
+                with open(os.path.join(out1, filename), "rb") as first, \
+                        open(os.path.join(out8, filename), "rb") as second:
+                    self.assertEqual(first.read(), second.read())
 
 
 if __name__ == "__main__":
