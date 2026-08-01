@@ -147,6 +147,12 @@ class MarkerTests(unittest.TestCase):
         self.assertEqual(row["status"], "MARKER-ERROR")
         self.assertEqual(code, 2)
 
+    def test_nested_block_comment_only_compile_marker_is_rejected(self):
+        body = "/* outer /* nested */ still outer */\n"
+        row, code = self._one("compile:27", body=body)
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
+
     def test_custom_condition_requires_declared_define(self):
         body = "#if FEATURE\nlet a = 1\n#endif\n"
         row, _ = self._one("compile:27", body=body)
@@ -230,6 +236,27 @@ class SynthesisTests(unittest.TestCase):
         source, _, _ = VS.synthesize(fence, [], "mixed")
         self.assertNotIn("__verify_snippet", source)
 
+    def test_mixed_wrap_ignores_braces_inside_strings(self):
+        fence = VS.Fence("g.md", 1, 0, "swift", "", [
+            "struct Example {",
+            "    let text = \"{\"",
+            "}",
+            "let example = Example()",
+            "print(example.text)",
+        ], "mixed")
+        source, _, _ = VS.synthesize(fence, [], "mixed")
+        self.assertLess(source.index("struct Example"), source.index("func __verify_snippet"))
+        self.assertGreater(source.index("let example"), source.index("func __verify_snippet"))
+
+    def test_wrap_none_omits_parse_as_library(self):
+        fence = VS.Fence("g.md", 1, 0, "swift", "", ["print(\"hello\")"], "")
+        opts = mock.Mock(cache_root="/tmp/cache", timeout=1, stub_compiler=None)
+        with mock.patch.object(
+                VS, "typecheck", return_value=VS.CompileResult("pass")) as checker:
+            VS.compile_variants(
+                fence, VS.Markers(wrap="none"), [], object(), opts, False)
+        self.assertFalse(checker.call_args.kwargs["parse_as_library"])
+
     def test_stub_and_elided_autodetected_but_range_operator_is_not(self):
         stub = VS.Fence("g.md", 1, 0, "swift", "", ["var x: Int { get }"], "")
         self.assertIn("stub", VS.autodetect(stub))
@@ -275,6 +302,21 @@ class GuessAndXfailTests(unittest.TestCase):
             r = run_script(["--guides", td, "--stub-compiler", "fail:boom"])
             self.assertEqual(tsv_rows(r.stdout)[0]["status"], "UNCLASSIFIED")
             self.assertEqual(r.returncode, 0)
+
+    def test_simulator_fallback_retries_mainactor_isolation(self):
+        fence = VS.Fence("g.md", 1, 0, "swift", "", ["UIKitExample()"], "")
+        toolchains = {"27": object(), "sim27": object()}
+        opts = mock.Mock(guess=True, guess_target="27")
+        with mock.patch.object(VS, "compile_variants", side_effect=[
+                ("fail", "body", VS.CompileResult("fail", first_error="no such module 'UIKit'")),
+                ("fail", "body", VS.CompileResult(
+                    "fail", first_error="call to main actor-isolated initializer")),
+                ("pass", "body", VS.CompileResult("pass")),
+        ]):
+            row = VS.verify_fence(fence, toolchains, opts)
+        self.assertEqual(row["status"], "UNCLASSIFIED-PASS")
+        self.assertEqual(row["vsim27"], "pass")
+        self.assertEqual(row["_guess_isolation"], "mainactor")
 
     def test_xfail_semantics(self):
         with tempfile.TemporaryDirectory() as td:

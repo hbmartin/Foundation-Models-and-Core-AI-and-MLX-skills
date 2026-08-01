@@ -274,7 +274,7 @@ struct OrchestratorProfile: LanguageModelSession.DynamicProfile {
     /// Returns the most recent four entries so longer on-device sessions
     /// stay within the smaller context window.
     private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
-        entries.suffix(4)
+        Array(entries.suffix(4))
     }
 }
 ```

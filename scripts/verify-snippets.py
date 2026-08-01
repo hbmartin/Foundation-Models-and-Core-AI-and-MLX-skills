@@ -372,22 +372,25 @@ def strip_swift_comments(lines):
     contains semantic source; compilation remains the authority for syntax.
     """
     result = []
-    in_block = False
+    block_depth = 0
     for original in lines:
         line = original
         out = []
         i = 0
         while i < len(line):
-            if in_block:
-                end = line.find("*/", i)
-                if end < 0:
-                    i = len(line)
+            if block_depth:
+                if line.startswith("/*", i):
+                    block_depth += 1
+                    i += 2
                     continue
-                in_block = False
-                i = end + 2
+                if line.startswith("*/", i):
+                    block_depth -= 1
+                    i += 2
+                    continue
+                i += 1
                 continue
             if line.startswith("/*", i):
-                in_block = True
+                block_depth = 1
                 i += 2
                 continue
             if line.startswith("//", i):
@@ -590,6 +593,64 @@ MIXED_TOP_LEVEL_PREFIXES = (
 )
 
 
+def swift_brace_deltas(lines):
+    """Yield structural brace deltas while ignoring comments and strings.
+
+    This remains a deliberately small lexer for wrapper routing, but it tracks
+    the Swift constructs that commonly contain literal braces in guide code.
+    Compilation, rather than this helper, remains the syntax authority.
+    """
+    block_depth = 0
+    string_delimiter = None
+    for line in lines:
+        delta = 0
+        i = 0
+        while i < len(line):
+            if block_depth:
+                if line.startswith("/*", i):
+                    block_depth += 1
+                    i += 2
+                elif line.startswith("*/", i):
+                    block_depth -= 1
+                    i += 2
+                else:
+                    i += 1
+                continue
+            if string_delimiter:
+                if string_delimiter == '"' and line[i] == "\\":
+                    i += 2
+                elif line.startswith(string_delimiter, i):
+                    i += len(string_delimiter)
+                    string_delimiter = None
+                else:
+                    i += 1
+                continue
+            if line.startswith("//", i):
+                break
+            if line.startswith("/*", i):
+                block_depth = 1
+                i += 2
+                continue
+            if line.startswith('"""', i):
+                string_delimiter = '"""'
+                i += 3
+                continue
+            if line[i] == '"':
+                string_delimiter = '"'
+                i += 1
+                continue
+            if line[i] == "{":
+                delta += 1
+            elif line[i] == "}":
+                delta -= 1
+            i += 1
+        # Ordinary strings cannot continue across a newline. Multiline string
+        # delimiters remain active until their closing triple quote.
+        if string_delimiter == '"':
+            string_delimiter = None
+        yield delta
+
+
 def mixed_split_index(rest):
     """Return the line where executable example code begins.
 
@@ -608,7 +669,7 @@ def mixed_split_index(rest):
     depth = 0
     saw_declaration = False
     pending_attributes = False
-    for i, line in enumerate(rest):
+    for i, (line, brace_delta) in enumerate(zip(rest, swift_brace_deltas(rest))):
         s = line.strip()
         if not s or s.startswith("//") or s.startswith("/*") or s.startswith("*"):
             continue
@@ -622,10 +683,7 @@ def mixed_split_index(rest):
                 pending_attributes = False
             elif saw_declaration:
                 return i
-        # Guide snippets overwhelmingly use balanced braces on their own lines;
-        # this lightweight count is sufficient for wrapper routing and a failed
-        # guess remains unclassified rather than becoming a false verification.
-        depth += line.count("{") - line.count("}")
+        depth += brace_delta
         depth = max(depth, 0)
     return len(rest)
 
@@ -724,12 +782,14 @@ FIRST_ERROR_RE = re.compile(r"^<stdin>:(\d+):(\d+): error: (.*)$")
 
 def typecheck(source, tc, swift_version, default_isolation, defines,
               needs_xcode_frameworks, cache_root,
-              linemap=None, timeout=60, stub=None):
+              linemap=None, timeout=60, stub=None, parse_as_library=True):
     if stub is not None:
         return CompileResult("pass") if stub == "pass" else \
             CompileResult("fail", first_error=stub.split(":", 1)[1] if ":" in stub else "stubbed failure")
-    cmd = ["xcrun", "swiftc", "-typecheck",
-           "-parse-as-library",
+    cmd = ["xcrun", "swiftc", "-typecheck"]
+    if parse_as_library:
+        cmd.append("-parse-as-library")
+    cmd += [
            "-swift-version", swift_version,
            "-sdk", tc.sdk_path,
            "-target", tc.triple,
@@ -789,7 +849,8 @@ def compile_variants(fence, mk, imports, tc, opts, xfail):
     for wrap in order:
         source, linemap, _modules = synthesize(fence, imports, wrap)
         result = typecheck(source, tc, linemap=linemap,
-                           needs_xcode_frameworks=needs_xcode_fw, **guess_kwargs)
+                           needs_xcode_frameworks=needs_xcode_fw,
+                           parse_as_library=wrap != "none", **guess_kwargs)
         last = (wrap, result)
         if result.verdict == "pass":
             break
@@ -871,20 +932,28 @@ def verify_fence(fence, toolchains, opts):
             imports.append(mod)
     target = opts.guess_target
     tc = toolchains[target]
-    verdict, wrap, result = compile_variants(fence, Markers(), imports, tc, opts, False)
-    if verdict == "fail" and any(fragment in result.first_error for fragment in (
-            "concurrency-safe", "non-Sendable type", "main actor-isolated")):
+    def retry_mainactor_if_needed(target_name, verdict, wrap, result):
+        if verdict != "fail" or not any(
+                fragment in result.first_error for fragment in (
+                    "concurrency-safe", "non-Sendable type", "main actor-isolated")):
+            return verdict, wrap, result
         isolated = Markers(isolation="mainactor")
-        v2, w2, r2 = compile_variants(fence, isolated, imports, tc, opts, False)
+        v2, w2, r2 = compile_variants(
+            fence, isolated, imports, toolchains[target_name], opts, False)
         if v2 == "pass":
-            verdict, wrap, result = v2, w2, r2
             row["_guess_isolation"] = "mainactor"
+            return v2, w2, r2
+        return verdict, wrap, result
+
+    verdict, wrap, result = compile_variants(fence, Markers(), imports, tc, opts, False)
+    verdict, wrap, result = retry_mainactor_if_needed(target, verdict, wrap, result)
     # iOS-only snippets (UIKit, WidgetKit, …) can never compile against the macOS
     # SDK — fall back to the simulator target before calling them failures.
     if (verdict == "fail" and "no such module" in result.first_error
             and target != "sim27" and "sim27" in toolchains):
         v2, w2, r2 = compile_variants(fence, Markers(), imports,
                                       toolchains["sim27"], opts, False)
+        v2, w2, r2 = retry_mainactor_if_needed("sim27", v2, w2, r2)
         if v2 == "pass":
             target, verdict, wrap, result = "sim27", v2, w2, r2
     row[col[target]] = verdict

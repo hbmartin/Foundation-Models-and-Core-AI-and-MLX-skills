@@ -18,6 +18,7 @@ from urllib.parse import unquote, urlparse
 
 
 UNRESOLVED_TOPIC = "org.swift.docc.unresolvedTopicReference"
+GENERATED_MARKER_SUFFIX = ".generated-by-build-docc-site"
 ANCHOR_SUMMARY = re.compile(
     r"^'(?P<old>.*)' (?:is not an anchor of|doesn't exist at) '.*'$",
     re.DOTALL,
@@ -145,6 +146,11 @@ def canonicalize(catalog: Path, diagnostics_path: Path) -> tuple[int, int]:
     catalog = catalog.resolve()
     if catalog.suffix != ".docc" or not catalog.is_dir():
         raise CanonicalizationError(f"generated DocC catalog does not exist: {catalog}")
+    marker = catalog.parent / f".{catalog.name}{GENERATED_MARKER_SUFFIX}"
+    if not marker.is_file():
+        raise CanonicalizationError(
+            f"refusing to edit catalog without generated marker: {catalog}"
+        )
     payload = json.loads(diagnostics_path.read_text(encoding="utf-8"))
     diagnostics = payload.get("diagnostics")
     if not isinstance(diagnostics, list):

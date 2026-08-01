@@ -214,7 +214,7 @@ struct SearchSuggestions {
 }
 ```
 
-✅ **VERIFIED** verbatim as Apple's published example. Note four things: `@Guide` sits on the
+✅ **VERIFIED** verbatim as Apple's published example. Note three things: `@Guide` sits on the
 property, not the type; `.count(4)` is a `GenerationGuide` passed as the *second* argument; and
 `GenerationID` is a property type, not an attribute.
 

@@ -1279,18 +1279,25 @@ func switchLocale(to newLocale: Locale, currentlyReserved: Locale?) async throws
             try await request.downloadAndInstall()
         }
     } catch {
-        // Roll back the automatic reservation for the new locale, then make a best-effort
-        // attempt to restore the old one without hiding the original installation error.
+        let installationError = error
+        // Roll back the automatic reservation for the new locale, then restore the old one.
+        // Preserve the installation error only after rollback succeeds; a distinct rollback
+        // error tells the caller that the previously working reservation was not restored.
         await AssetInventory.release(reservedLocale: matched)
         if let currentlyReserved {
-            _ = try? await AssetInventory.reserve(locale: currentlyReserved)
+            do {
+                try await AssetInventory.reserve(locale: currentlyReserved)
+            } catch {
+                throw TranscriptionSetupError.couldNotRestorePreviousLocale(currentlyReserved)
+            }
         }
-        throw error
+        throw installationError
     }
 }
 
 enum TranscriptionSetupError: Error {
     case localeNotSupported(Locale)
+    case couldNotRestorePreviousLocale(Locale)
     case couldNotCaptureMicrophone
     case micPermissionDenied
 }

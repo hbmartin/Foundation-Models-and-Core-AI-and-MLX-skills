@@ -258,6 +258,22 @@ class DocCSiteTests(unittest.TestCase):
             (guides / "part-01-start" / "references" / "01-guide.md").read_bytes(),
         )
 
+    def test_refuses_to_edit_unmarked_docc_catalog(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        catalog, _, _ = self.build_fixture(repository, guides)
+        marker = catalog.parent / (
+            f".{catalog.name}{canonicalizer.GENERATED_MARKER_SUFFIX}"
+        )
+        marker.unlink()
+        diagnostics = repository / ".build" / "docc" / "diagnostics.json"
+        diagnostics.write_text(json.dumps({"diagnostics": []}), encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            canonicalizer.CanonicalizationError, "without generated marker"
+        ):
+            canonicalizer.canonicalize(catalog, diagnostics)
+
     def test_ignores_unidentified_non_anchor_diagnostic(self):
         temporary, repository, guides = self.make_fixture()
         self.addCleanup(temporary.cleanup)
