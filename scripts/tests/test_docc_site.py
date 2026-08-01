@@ -40,7 +40,7 @@ class DocCSiteTests(unittest.TestCase):
 
         (scripts / "helper.sh").write_text("#!/bin/sh\n", encoding="utf-8")
         (guides / "README.md").write_text(
-            "# Fixture guides\n\n[Part one](part-01-start/)\n",
+            "# Fixture guides\n\n**Covers:** fixtures\n\n[Part one](part-01-start/)\n",
             encoding="utf-8",
         )
         (guides / "API-INDEX.md").write_text("# API index\n", encoding="utf-8")
@@ -48,11 +48,12 @@ class DocCSiteTests(unittest.TestCase):
             "# Silent failures\n", encoding="utf-8"
         )
         (guides / "part-01-start" / "README.md").write_text(
-            "# Part one\n\n[Guide](references/01-guide.md)\n",
+            "# Part one\n\n**Fixture part.**\n\n[Guide](references/01-guide.md)\n",
             encoding="utf-8",
         )
         (references / "01-guide.md").write_text(
             "# Guide one\n\n"
+            "**Part 1 · Reference 01** · Series: [Fixture guides](../../README.md)\n\n"
             "[Series](../../README.md#fixture-guides)\n\n"
             "[Marked](../../README.md#️-marked-heading)\n\n"
             "[Inner](../../README.md#33-️-inner-mark)\n\n"
@@ -183,6 +184,13 @@ class DocCSiteTests(unittest.TestCase):
         self.assertIn("- <doc:Part-01>", root)
         self.assertIn("[Guide](<doc:Part-01-Guide-01>)", part)
         self.assertIn("- <doc:Part-01-Guide-01>", part)
+        # The abstract (first paragraph after the title) loses its links —
+        # DocC never displays them and Swift 6.2's docc fails the build on
+        # them — while links in every later paragraph are preserved.
+        self.assertIn(
+            "**Part 1 · Reference 01** · Series: Fixture guides\n", guide
+        )
+        self.assertNotIn("Series: [Fixture guides]", guide)
         self.assertIn(
             "[Series](<doc://dev.hbmartin.apple-ai-guides/documentation/AppleAIGuides#fixture-guides>)",
             guide,
