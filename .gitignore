@@ -10,3 +10,6 @@ __pycache__/
 
 # SwiftPM build products (were accidentally committed by PR #3; untracked since)
 probes/.build/
+
+# Generated DocC catalogs and GitHub Pages output.
+/.build/

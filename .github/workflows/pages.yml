@@ -1,0 +1,119 @@
+name: documentation-pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'guides/**'
+      - 'scripts/build-docc-site.py'
+      - 'scripts/canonicalize-docc-links.py'
+      - 'scripts/verify-docc-site.py'
+      - 'scripts/tests/test_docc_site.py'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'guides/**'
+      - 'scripts/build-docc-site.py'
+      - 'scripts/canonicalize-docc-links.py'
+      - 'scripts/verify-docc-site.py'
+      - 'scripts/tests/test_docc_site.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pinned Swift toolchain
+        uses: swift-actions/setup-swift@v3
+        with:
+          swift-version: '6.3.3'
+
+      - name: Verify Swift and DocC
+        run: |
+          swift --version
+          docc --help >/dev/null
+
+      - name: Test DocC publishing tools
+        run: python3 -m unittest discover -s scripts/tests -p 'test_docc_site.py' -v
+
+      - name: Generate immutable DocC catalog
+        run: |
+          python3 scripts/build-docc-site.py \
+            --source guides \
+            --catalog .build/docc/AppleAIGuides.docc \
+            --manifest .build/docc/manifest.json \
+            --repository-root . \
+            --bundle-identifier "dev.hbmartin.apple-ai-guides"
+
+      - name: Resolve DocC section anchors
+        run: |
+          if ! docc convert .build/docc/AppleAIGuides.docc \
+              --output-path .build/docc-index \
+              --fallback-display-name "Apple on-device AI" \
+              --fallback-bundle-identifier "dev.hbmartin.apple-ai-guides" \
+              --fallback-bundle-version 1 \
+              --no-transform-for-static-hosting \
+              --diagnostics-file .build/docc/diagnostics.json \
+              >.build/docc/first-pass.log 2>&1; then
+            cat .build/docc/first-pass.log
+            exit 1
+          fi
+          python3 scripts/canonicalize-docc-links.py \
+            --catalog .build/docc/AppleAIGuides.docc \
+            --diagnostics .build/docc/diagnostics.json
+
+      - name: Compile static documentation
+        run: |
+          docc convert .build/docc/AppleAIGuides.docc \
+            --output-path .build/docc-site \
+            --hosting-base-path "${{ github.event.repository.name }}" \
+            --fallback-display-name "Apple on-device AI" \
+            --fallback-bundle-identifier "dev.hbmartin.apple-ai-guides" \
+            --fallback-bundle-version 1 \
+            --transform-for-static-hosting \
+            --warnings-as-errors
+
+      - name: Verify rendered pages and source immutability
+        run: |
+          python3 scripts/verify-docc-site.py \
+            --site .build/docc-site \
+            --manifest .build/docc/manifest.json
+          git diff --exit-code -- guides
+
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .build/docc-site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages site
+        id: deployment
+        uses: actions/deploy-pages@v4
