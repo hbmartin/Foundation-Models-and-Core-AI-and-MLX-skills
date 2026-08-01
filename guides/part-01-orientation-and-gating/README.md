@@ -54,11 +54,11 @@ Two guides, but they are long. Work down this table and jump straight to the sec
 | "My streaming UI spins forever and nothing threw" | 1.1 | [§7](references/01-apple-ai-stack-2026-map.md#7-silent-failures-you-can-hit-before-you-write-a-line-of-model-code) — a tool-only turn yields zero partials |
 | "A blog post gave me an API that doesn't compile" | 1.1 | [§8](references/01-apple-ai-stack-2026-map.md#8-known-bad-claims-material-in-circulation-that-is-fabricated) |
 | "Am I even allowed to use Private Cloud Compute?" | 1.2 | [§8.2](references/02-platform-and-version-gating.md#82-private-cloud-compute-three-conditions-and-two-of-them-are-commercial) — two of the three conditions are commercial |
-| "`cannot find 'MLXLanguageModel' in scope`" | 1.2 | [§3.3](references/02-platform-and-version-gating.md#33--the-empty-library-failure) — it's your Xcode version, not your dependency |
+| "`cannot find 'MLXLanguageModel' in scope`" | 1.2 | [§3.3](references/02-platform-and-version-gating.md#33-️-the-empty-library-failure) — it's your Xcode version, not your dependency |
 | "It fails in the Simulator with error `-1`" | 1.2 | [§10.1](references/02-platform-and-version-gating.md#101-the-simulator-punches-out-to-the-host-mac) |
 | "Apple Intelligence is on, but availability says it isn't" | 1.2 | [§7.4](references/02-platform-and-version-gating.md#74-the-siri-toggle-coupling--an-acknowledged-defect-not-a-gate) — the Siri coupling, an acknowledged bug |
-| "I'm rebuilding an iOS 26 app with Xcode 27" | 1.2 | [§3.4](references/02-platform-and-version-gating.md#34--the-xcode-26--27-rebuild-changes-which-catch-fires), then [Part 17](../part-17-migration-from-pre-ios-27/) |
-| "I'm shipping to watchOS" | 1.2 | [§2.2](references/02-platform-and-version-gating.md#22--the-watchos-contradiction-you-must-plan-around) and [§10.3](references/02-platform-and-version-gating.md#103-watchos--pcc-needs-a-paired-iphone) |
+| "I'm rebuilding an iOS 26 app with Xcode 27" | 1.2 | [§3.4](references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires), then [Part 17](../part-17-migration-from-pre-ios-27/) |
+| "I'm shipping to watchOS" | 1.2 | [§2.2](references/02-platform-and-version-gating.md#22-️-the-watchos-contradiction-you-must-plan-around) and [§10.3](references/02-platform-and-version-gating.md#103-watchos--pcc-needs-a-paired-iphone) |
 | "I want the App Store to only offer my app to capable devices" | 1.2 | [§9](references/02-platform-and-version-gating.md#9-app-store-distribution-there-is-no-capability-flag) — you can't; build a baseline |
 | "I'm bundling `.aimodel` files" | 1.2 | [§4.1](references/02-platform-and-version-gating.md#41-the-apple-intelligence-floor) and [§5.2](references/02-platform-and-version-gating.md#52-the-metal-toolchain-is-not-installed-by-default) |
 | "What hardware do I actually need to test on?" | 1.2 | [§12](references/02-platform-and-version-gating.md#12-what-to-test-on) |

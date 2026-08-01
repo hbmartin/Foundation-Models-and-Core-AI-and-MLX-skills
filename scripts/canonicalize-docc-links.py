@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import unicodedata
 from urllib.parse import unquote, urlparse
 
 
@@ -75,10 +76,34 @@ def replacement_text(diagnostic: dict[str, object]) -> str | None:
     return text
 
 
+def docc_reported_fragment(fragment: str) -> str:
+    """A fragment as DocC's resolver echoes it in diagnostics.
+
+    Before resolution DocC percent-decodes the fragment, drops underscores,
+    collapses repeated hyphens, and trims edge hyphens, so a diagnostic's
+    spelling can differ from the literal ``<doc:...#fragment>`` in the
+    generated Markdown (Swift 6.2's docc reports '#a--omit-x_y' as
+    'a-omit-xy'). Combining marks are ignored on both sides because the
+    catalog drops a GitHub-faithful anchor's leading U+FE0F while diagnostics
+    echo the mark.
+    """
+    decoded = "".join(
+        ch
+        for ch in unquote(fragment)
+        if unicodedata.category(ch) not in ("Mn", "Me")
+    )
+    return re.sub(r"-{2,}", "-", decoded.replace("_", "")).strip("-")
+
+
 def replace_fragment(
     lines: list[str], old: str, new: str | None, line_number: int | None, source: Path
 ) -> bool:
     old_token = f"#{old}"
+    if "#" in old:
+        # A fragment whose first character is a combining mark merges with
+        # the '#' separator into one grapheme, so DocC echoes the whole
+        # page#fragment as a single unresolved topic. Match on the fragment.
+        old = old.split("#", 1)[1]
 
     def replace_on_line(index: int) -> bool | None:
         if not 0 <= index < len(lines):
@@ -91,14 +116,14 @@ def replace_fragment(
         elif len(exact_matches) > 1:
             return None
         else:
-            # DocC normalizes some punctuation in diagnostics (for example,
-            # two source hyphens become one). Restrict that fallback to the
-            # actual <doc:...> fragment instead of replacing a same-line URL.
-            normalized_old = re.sub(r"-{2,}", "-", old)
+            # DocC normalizes punctuation in diagnostics. Restrict that
+            # fallback to the actual <doc:...> fragment instead of replacing
+            # a same-line URL.
+            normalized_old = docc_reported_fragment(old)
             matches = [
                 link
                 for link in links
-                if re.sub(r"-{2,}", "-", link.group("fragment"))
+                if docc_reported_fragment(link.group("fragment"))
                 == normalized_old
             ]
         if len(matches) == 1:
@@ -128,13 +153,13 @@ def replace_fragment(
         if result is not None:
             return result
 
-    normalized_old = re.sub(r"-{2,}", "-", old)
+    normalized_old = docc_reported_fragment(old)
     occurrences = [
         index
         for index, line in enumerate(lines)
         if any(
             link.group("fragment") == old
-            or re.sub(r"-{2,}", "-", link.group("fragment")) == normalized_old
+            or docc_reported_fragment(link.group("fragment")) == normalized_old
             for link in DOC_FRAGMENT.finditer(line)
         )
     ]

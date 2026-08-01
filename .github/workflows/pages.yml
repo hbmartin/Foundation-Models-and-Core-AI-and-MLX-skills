@@ -57,13 +57,15 @@ jobs:
         run: |
           swift_version="$(swift --version)"
           echo "$swift_version"
-          grep -F "Swift version 6.2.1" <<<"$swift_version"
+          grep -E 'Swift version 6\.2\.1([^.0-9]|$)' <<<"$swift_version"
           swift_bin="$(dirname "$(readlink -f "$(command -v swift)")")"
           test -x "$swift_bin/docc"
           echo "$swift_bin" >> "$GITHUB_PATH"
           "$swift_bin/docc" --help >/dev/null
           test -s "$DOCC_HTML_DIR/index.html"
           test -s "$DOCC_HTML_DIR/index-template.html"
+          # The hashed filenames belong to the renderer ref pinned above;
+          # update these three paths whenever that ref changes.
           test -s "$DOCC_HTML_DIR/js/chunk-vendors.bdb7cbba.js"
           test -s "$DOCC_HTML_DIR/js/index.6737d5f6.js"
           test -s "$DOCC_HTML_DIR/css/index.d0b63544.css"

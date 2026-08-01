@@ -95,8 +95,10 @@ class RepositoryIndexTests(unittest.TestCase):
 
             part17 = 'part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md'
             rendered = (output / 'SILENT-FAILURES.md').read_text(encoding='utf-8')
+            # The ⚠️ headings anchor at #️-… on github.com: the warning sign is
+            # dropped but its variation selector U+FE0F survives as a mark.
             for suffix in ('', '-1', '-2', '-3'):
-                self.assertIn(f'{part17}#the-silent-failure{suffix})', rendered)
+                self.assertIn(f'{part17}#️-the-silent-failure{suffix})', rendered)
 
 
 if __name__ == '__main__':

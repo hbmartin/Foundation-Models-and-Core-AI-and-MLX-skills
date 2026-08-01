@@ -467,7 +467,7 @@ is a separate type** with its own arm; and the ordering is deliberate.
 One platform consequence: `SystemLanguageModel.Error` is **not available on watchOS**
 ([§2.3](#23-what-is-hard-270-in-foundationmodels)), so the error-handling posture Apple's own samples
 rely on cannot be written on watch. That compounds the watchOS ambiguity in
-[§2.2](#22--the-watchos-contradiction-you-must-plan-around).
+[§2.2](#22-️-the-watchos-contradiction-you-must-plan-around).
 
 ### 3.5 Which symbols can and cannot be papered over
 
@@ -671,9 +671,9 @@ these are beta-era problems and several may already be fixed; re-check before yo
 
 | Breakage | Symptom | Status / evidence |
 |---|---|---|
-| **watchOS 27 Beta 2 `FoundationModels.swiftinterface`** | `…/WatchOS27.0.sdk/…/FoundationModels.swiftmodule/arm64e-apple-watchos.swiftinterface:6:15 Unable to resolve module dependency: 'CoreImage'` | ✅ **VERIFIED** — Apple Frameworks Engineer, forum thread 835987: *"This is a known bug."* No workaround given. This blocks **building for watchOS at all**, which compounds the watchOS availability ambiguity in [§2.2](#22--the-watchos-contradiction-you-must-plan-around). |
+| **watchOS 27 Beta 2 `FoundationModels.swiftinterface`** | `…/WatchOS27.0.sdk/…/FoundationModels.swiftmodule/arm64e-apple-watchos.swiftinterface:6:15 Unable to resolve module dependency: 'CoreImage'` | ✅ **VERIFIED** — Apple Frameworks Engineer, forum thread 835987: *"This is a known bug."* No workaround given. This blocks **building for watchOS at all**, which compounds the watchOS availability ambiguity in [§2.2](#22-️-the-watchos-contradiction-you-must-plan-around). |
 | **`SkillActivation` fails to build on Xcode 26** | Compilation errors when a project pulls `apple/foundation-models-utilities` | ✅ **VERIFIED** as reported — forum thread 835165; Apple asked for the specific errors and the thread was never resolved. **The mechanism is not mysterious:** the package declares 27.0 platform floors, so it cannot build against the 26 SDK. Use Xcode 27. |
-| **`MLXFoundationModels` "doesn't exist"** | Developer watches session 339, sees `import MLXFoundationModels`, cannot find it in any MLX repo or branch | ✅ **RESOLVED** — it is a **library target inside `ml-explore/mlx-swift-lm`, at `Libraries/MLXFoundationModels`**, and it requires the **27.0 SDK**. Apple's forum answer (thread 836264) pointed at `mlx-swift-lm` **PR #334**; the target is now in the package's product list. If you are on Xcode 26 it compiles to an empty library — see [§3.3](#33--the-empty-library-failure). |
+| **`MLXFoundationModels` "doesn't exist"** | Developer watches session 339, sees `import MLXFoundationModels`, cannot find it in any MLX repo or branch | ✅ **RESOLVED** — it is a **library target inside `ml-explore/mlx-swift-lm`, at `Libraries/MLXFoundationModels`**, and it requires the **27.0 SDK**. Apple's forum answer (thread 836264) pointed at `mlx-swift-lm` **PR #334**; the target is now in the package's product list. If you are on Xcode 26 it compiles to an empty library — see [§3.3](#33-️-the-empty-library-failure). |
 | **`ChatCompletionsLanguageModel` hardcodes `/v1`** | `HTTP error with status code 404` against any provider not on a `/v1` path (e.g. `/api/v3`) | ✅ **VERIFIED** — forum thread 838444, Apple accepted the fix (*"Fantastic suggestion, thanks! We're on it."*), FB23837262. Not a version gate, but it lives in the same package and gets misdiagnosed as one. |
 | **PCC in the Simulator** | `FoundationModels.LanguageModelError Code=-1` wrapping `ModelManagerServices.ModelManagerError Code=1046` | ✅ **VERIFIED** — known issue **177684296**, documented in the iOS 27 release notes. *"Workaround: Use a physical device running OS 27.0."* See [§10](#10-the-simulator-trap-and-other-runtime-surfaces). |
 | **Core AI bundles from old wheels are rejected** | `Failed to convert to versioned IR` when loading a `.aimodel` under the Xcode 27 beta 3+ SDK | ✅ **VERIFIED** — bundles must be exported with **`coreai-core >= 1.0.0b2`**; earlier wheels produce assets the newer loader rejects. FB23666783. Audit the `producer` field in your bundle's `metadata.json`. |
@@ -814,7 +814,7 @@ code does not do that.** Neither Origami nor the Core Spotlight hiking-trails sa
 `availability` or `isAvailable`, and neither carries an `#available` guard anywhere; both rely
 **entirely** on catching `SystemLanguageModel.Error` at the point of use and surfacing a message.
 ✅ **VERIFIED** — whole-archive grep of both iOS 27 samples; see
-[§3.4](#34--the-xcode-26--27-rebuild-changes-which-catch-fires) for the catch they use instead.
+[§3.4](#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) for the catch they use instead.
 
 The only proactive availability switch in *any* Apple sample archive is in the coffee game, which is
 an **iOS 26** project (`IPHONEOS_DEPLOYMENT_TARGET = 26.0`) that was never refreshed for 2026 — so
@@ -857,7 +857,7 @@ Apple's sample code and Apple's forum guidance point in opposite directions here
 the weaker guide on this one point: a reader who copies Origami's posture ships an app that lets a
 user reach the feature, tap it, and only then learn Apple Intelligence is off — with no route to fix
 it. Gate proactively for the UX, catch reactively for correctness. That split is
-[§7.6](#76--availability-is-not-a-promise).
+[§7.6](#76-️-availability-is-not-a-promise).
 
 ### 7.2 PCC has a *different* reason set
 
@@ -1260,7 +1260,7 @@ exactly like framework bugs. A DTS Engineer in thread 837226 gave the same advic
 | Shortcuts "Use Model" action | ⚠️ Works, but **errors cannot be detected** | ⚠️ | ✅ thread 813757 |
 | `WKWebView` / JavaScript | ❌ no JS interface; bridge via `WKUserContentController` | ❌ | ✅ thread 833716 |
 | Notarized (non-App-Store) macOS app | ✅ | 🔴 unknown | ✅ thread 832033 |
-| watchOS 27 | 🔴 see [§2.2](#22--the-watchos-contradiction-you-must-plan-around) | ✅ documented, and PCC on watchOS was explicitly advertised in session 319 | mixed |
+| watchOS 27 | 🔴 see [§2.2](#22-️-the-watchos-contradiction-you-must-plan-around) | ✅ documented, and PCC on watchOS was explicitly advertised in session 319 | mixed |
 
 The extension memory point is worth pulling out because it is a genuine architectural advantage:
 
@@ -1447,9 +1447,9 @@ Three things this snippet is deliberately doing, each corresponding to a trap ab
    presenting it as "your device can't do this" is a common and user-hostile mistake.
 
 > ⚠️ **SILENT FAILURE** — this preflight returns `.onDeviceOnly` or `.cloudOnly`; it does **not**
-> guarantee a request will succeed ([§7.6](#76--availability-is-not-a-promise)). Wrap every actual
+> guarantee a request will succeed ([§7.6](#76-️-availability-is-not-a-promise)). Wrap every actual
 > `respond` call in the three-arm `catch` from
-> [§3.4](#34--the-xcode-26--27-rebuild-changes-which-catch-fires).
+> [§3.4](#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires).
 
 ---
 

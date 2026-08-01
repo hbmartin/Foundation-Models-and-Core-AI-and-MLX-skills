@@ -45,6 +45,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mdslug import slugify
+
 WRAPPER_VERSION = 1
 
 
@@ -155,24 +158,6 @@ ILLUSTRATIVE_DIAGNOSTICS = (
     "function is unused ",
     "macro cannot be attached to global function",
 )
-
-
-# ---------------------------------------------------------------------------
-# Anchor slugs — copied from scripts/extract-callouts.py (do NOT import it: its
-# top level executes an extraction). Keep byte-identical so anchors agree.
-
-def slugify(h):
-    h = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', h)  # [text](url) -> text, as GitHub slugs do
-    h = re.sub(r'[`*_]', '', h).strip()
-    h = h.lower()
-    out = []
-    for ch in h:
-        if ch.isalnum():
-            out.append(ch)
-        elif ch in ' -':
-            out.append('-' if ch == ' ' else ch)
-        # everything else dropped (github slug rule approximation)
-    return ''.join(out).strip('-')
 
 
 def flatten(text, limit=400):

@@ -19,6 +19,7 @@ import re
 import shutil
 import sys
 import tempfile
+import unicodedata
 from urllib.parse import quote, unquote
 
 
@@ -222,6 +223,22 @@ def page_target(candidate: Path, raw_path: str) -> Path:
     return candidate
 
 
+def docc_addressable_fragment(fragment: str) -> str:
+    """A GitHub-faithful anchor rewritten so DocC can address it.
+
+    A ⚠️ heading's slug begins with the U+FE0F variation selector, and a
+    combining mark merges with the ``#`` separator into a single grapheme, so
+    DocC cannot split the reference and reports the whole page#fragment as one
+    unresolved topic. Leading marks are dropped and the rest percent-encoded
+    for the catalog copy only; the diagnostics pass then canonicalizes these
+    fragments to DocC's own anchor spellings. GitHub copies keep the marks.
+    """
+    index = 0
+    while index < len(fragment) and unicodedata.category(fragment[index]) in ("Mn", "Me"):
+        index += 1
+    return quote(fragment[index:], safe="!$&()*+,;=:@/?")
+
+
 def github_url(
     target: Path,
     repository_root: Path,
@@ -282,7 +299,7 @@ def rewrite_destination(
         else:
             doc_reference = target_page.identifier
         if separator:
-            doc_reference += f"#{fragment}"
+            doc_reference += f"#{docc_addressable_fragment(fragment)}"
         return f"<doc:{doc_reference}>"
 
     if is_within(candidate, source_root):
@@ -411,15 +428,39 @@ def rewrite_inline_links(
     return "".join(result)
 
 
+BACKTICK_RUN = re.compile(r"`+")
+
+
+def has_backtick_run(text: str, length: int) -> bool:
+    return any(len(match.group()) == length for match in BACKTICK_RUN.finditer(text))
+
+
+def paragraph_lookahead(lines: list[str], index: int) -> str:
+    """The current paragraph's remaining text after ``lines[index]``.
+
+    CommonMark resolves block structure before inline code spans, so a span
+    may only open when its closing run appears before the paragraph ends;
+    blank lines and fence markers terminate it.
+    """
+    collected = []
+    for line in lines[index + 1 :]:
+        body = line[:-1] if line.endswith("\n") else line
+        if not body.strip() or FENCE.match(body):
+            break
+        collected.append(body)
+    return "\n".join(collected)
+
+
 def transform_code_spans_and_doc_references(
-    line: str, code_delimiter: int
+    line: str, code_delimiter: int, lookahead: str = ""
 ) -> tuple[str, int]:
     """Escape prose ``<doc:`` references while preserving code spans.
 
     The active backtick-run length is carried across lines so every valid
-    multiline code span stays verbatim. Exact double-backtick spans are
-    rendered as HTML code elements because DocC otherwise treats them as
-    symbol links.
+    multiline code span stays verbatim; a run with no exact-length closer
+    before the paragraph ends never opens a span, as in CommonMark. Exact
+    double-backtick spans are rendered as HTML code elements because DocC
+    otherwise treats them as symbol links.
     """
     result: list[str] = []
     index = 0
@@ -431,8 +472,13 @@ def transform_code_spans_and_doc_references(
                 end += 1
             run = end - index
             if code_delimiter == 0:
-                code_delimiter = run
-                result.append("<code>" if run == 2 else line[index:end])
+                if has_backtick_run(line[end:], run) or has_backtick_run(
+                    lookahead, run
+                ):
+                    code_delimiter = run
+                    result.append("<code>" if run == 2 else line[index:end])
+                else:
+                    result.append(line[index:end])
             elif code_delimiter == run:
                 result.append("</code>" if run == 2 else line[index:end])
                 code_delimiter = 0
@@ -491,14 +537,10 @@ def transform_markdown(
     code_span_delimiter = 0
     block_quote_open = False
 
-    for line in source_text.splitlines(keepends=True):
+    lines = source_text.splitlines(keepends=True)
+    for line_index, line in enumerate(lines):
         newline = "\n" if line.endswith("\n") else ""
         body = line[:-1] if newline else line
-        # Inline code spans cannot cross a Markdown paragraph boundary. Reset
-        # unmatched ordinary delimiters there; double-backtick spans remain a
-        # hard error because their opener has already become an HTML tag.
-        if code_span_delimiter != 2 and not body.strip():
-            code_span_delimiter = 0
         fence = FENCE.match(body)
         if fence:
             marker = fence.group(1)
@@ -532,8 +574,9 @@ def transform_markdown(
         # These sequences in the source quote upstream DocC/RST syntax. In an
         # article-only catalog they are prose, not links to symbols. Code
         # spans keep their content verbatim.
+        lookahead = paragraph_lookahead(lines, line_index) if "`" in body else ""
         body, code_span_delimiter = transform_code_spans_and_doc_references(
-            body, code_span_delimiter
+            body, code_span_delimiter, lookahead
         )
         body = rewrite_inline_links(
             body,

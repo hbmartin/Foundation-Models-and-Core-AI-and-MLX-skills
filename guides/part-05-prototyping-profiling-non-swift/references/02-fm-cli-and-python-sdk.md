@@ -97,7 +97,7 @@ If you take one instruction from this guide: **run `fm --help` before you write 
 10. [Tools in Python](#10-tools-in-python)
 11. [Image attachments](#11-image-attachments)
 12. [The cross-language workflow: Swift transcripts into Python](#12-the-cross-language-workflow-swift-transcripts-into-python)
-13. [⚠️ Memory across the boundary](#13--memory-across-the-boundary)
+13. [⚠️ Memory across the boundary](#13-️-memory-across-the-boundary)
 14. [What the Python SDK cannot do](#14-what-the-python-sdk-cannot-do)
 15. [The evaluation pipeline (session 334's case study)](#15-the-evaluation-pipeline-session-334s-case-study)
 16. [Failure-mode index](#16-failure-mode-index)

@@ -20,6 +20,7 @@ class VerificationError(RuntimeError):
 
 BASE_URL = re.compile(r"\bbaseUrl\s*=\s*['\"](?P<url>[^'\"]+)['\"]")
 LINK_ASSET_RELATIONSHIPS = {
+    "apple-touch-icon",
     "icon",
     "mask-icon",
     "modulepreload",
@@ -132,11 +133,6 @@ def verify_renderer_assets(site: Path, renderer: Path) -> None:
         if source.read_bytes() != target.read_bytes():
             raise VerificationError(f"DocC renderer asset differs from source: {relative}")
 
-    links = [path for path in site.rglob("*") if path.is_symlink()]
-    if links:
-        examples = ", ".join(str(path.relative_to(site)) for path in links[:5])
-        raise VerificationError(f"site contains links that Pages cannot publish: {examples}")
-
 
 def walk_urls(value):
     if isinstance(value, dict):
@@ -197,6 +193,10 @@ def verify(
         examples = ", ".join(f"{path.name}: {value}" for path, value in broken_markdown_urls[:5])
         raise VerificationError(f"relative .md URLs survived DocC conversion: {examples}")
     asset_count = verify_html_assets(site)
+    links = [path for path in site.rglob("*") if path.is_symlink()]
+    if links:
+        examples = ", ".join(str(path.relative_to(site)) for path in links[:5])
+        raise VerificationError(f"site contains links that Pages cannot publish: {examples}")
     if renderer is not None:
         verify_renderer_assets(site, renderer)
     return len(expected), len(list(site.rglob("*.html"))), asset_count

@@ -115,7 +115,7 @@ the checkpoint instead of converting."**
 3. [The stateful LLM path](#3-the-stateful-llm-path)
 4. [The bundle layout is the interchange format](#4-the-bundle-layout-is-the-interchange-format)
 5. [The generic path, and the pipeline by module name](#5-the-generic-path-and-the-pipeline-by-module-name)
-6. [⚠️ Asset-generation coverage is not numerical parity](#6--asset-generation-coverage-is-not-numerical-parity)
+6. [⚠️ Asset-generation coverage is not numerical parity](#6-️-asset-generation-coverage-is-not-numerical-parity)
 7. [The specific numeric hazards to test for](#7-the-specific-numeric-hazards-to-test-for)
 8. [The Swift runner, and what "Python bindings are incomplete" means](#8-the-swift-runner-and-what-python-bindings-are-incomplete-means)
 9. [`swift-lm`: a real third-party Core AI integration](#9-swift-lm-a-real-third-party-core-ai-integration)

@@ -54,6 +54,8 @@ class DocCSiteTests(unittest.TestCase):
         (references / "01-guide.md").write_text(
             "# Guide one\n\n"
             "[Series](../../README.md#fixture-guides)\n\n"
+            "[Marked](../../README.md#️-marked-heading)\n\n"
+            "[Inner](../../README.md#33-️-inner-mark)\n\n"
             "[Helper](../../../scripts/helper.sh#L1)\n\n"
             "> # Quoted upstream title\n\n"
             "> Plain quotation: **bold continuation**\n\n"
@@ -67,8 +69,14 @@ class DocCSiteTests(unittest.TestCase):
             "<doc:SingleContinuation>` verbatim.\n\n"
             "Keep ```<doc:TripleAcross>\n"
             "<doc:TripleContinuation>``` verbatim.\n\n"
-            "An unmatched ` marker stays literal.\n\n"
+            "An unmatched ` marker stays literal and <doc:SameParagraph> escapes.\n\n"
+            "A dangling `` opener stays literal.\n\n"
             "Escape <doc:AfterUnmatched> after the paragraph.\n\n"
+            "A stray ` before\n"
+            "```swift\n"
+            "let fenced = true\n"
+            "```\n\n"
+            "Escape <doc:AfterFence> beyond the fence.\n\n"
             "> ```cpp\n"
             "> operator[](thread_index_type idx)\n"
             "> ```\n",
@@ -179,6 +187,18 @@ class DocCSiteTests(unittest.TestCase):
             "[Series](<doc://dev.hbmartin.apple-ai-guides/documentation/AppleAIGuides#fixture-guides>)",
             guide,
         )
+        # A leading combining mark would merge with '#' into one grapheme and
+        # defeat DocC's reference splitting; internal marks percent-encode.
+        self.assertIn(
+            "[Marked](<doc://dev.hbmartin.apple-ai-guides/documentation/AppleAIGuides"
+            "#-marked-heading>)",
+            guide,
+        )
+        self.assertIn(
+            "[Inner](<doc://dev.hbmartin.apple-ai-guides/documentation/AppleAIGuides"
+            "#33-%EF%B8%8F-inner-mark>)",
+            guide,
+        )
         self.assertIn(
             "https://github.com/example/fixture/blob/main/scripts/helper.sh#L1", guide
         )
@@ -209,8 +229,14 @@ class DocCSiteTests(unittest.TestCase):
         )
         self.assertNotIn("\\<doc:SingleContinuation>", guide)
         self.assertNotIn("\\<doc:TripleContinuation>", guide)
-        self.assertIn("An unmatched ` marker stays literal.", guide)
+        self.assertIn(
+            "An unmatched ` marker stays literal and \\<doc:SameParagraph> escapes.",
+            guide,
+        )
+        self.assertIn("A dangling `` opener stays literal.", guide)
         self.assertIn("Escape \\<doc:AfterUnmatched> after the paragraph.", guide)
+        self.assertIn("A stray ` before\n```swift\nlet fenced = true\n```", guide)
+        self.assertIn("Escape \\<doc:AfterFence> beyond the fence.", guide)
 
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         self.assertEqual(
@@ -348,6 +374,18 @@ class DocCSiteTests(unittest.TestCase):
             verifier.VerificationError, "renderer asset differs from source"
         ):
             verifier.verify(site, manifest, renderer)
+
+    def test_archive_verifier_rejects_symlinks_without_renderer(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, _ = self.make_rendered_site(repository, result)
+        (site / "js" / "alias.js").symlink_to(site / "js" / "index.js")
+
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "links that Pages cannot publish"
+        ):
+            verifier.verify(site, manifest)
 
     def test_source_snapshot_covers_page_discovery(self):
         temporary, repository, guides = self.make_fixture()
@@ -535,6 +573,57 @@ class DocCSiteTests(unittest.TestCase):
         self.assertTrue(changed)
         self.assertIn("https://example.com/#old-anchor", lines[0])
         self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
+    def test_anchor_fix_matches_docc_normalized_fragment_spelling(self):
+        # Swift 6.2's docc echoes fragments with underscores dropped and
+        # hyphen runs collapsed, so the diagnostic spelling differs from the
+        # literal GitHub-faithful fragment in the generated Markdown.
+        lines = ["<doc:SomePage#84-️-failure--omit-remove_functionalization>\n"]
+
+        changed = canonicalizer.replace_fragment(
+            lines,
+            "84-️-failure-omit-removefunctionalization",
+            "New-anchor",
+            1,
+            Path("Guide.md"),
+        )
+
+        self.assertTrue(changed)
+        self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
+    def test_anchor_fix_matches_percent_encoded_fragment(self):
+        # Generated <doc:> fragments percent-encode non-ASCII (the U+FE0F of
+        # a ⚠️ heading); DocC echoes them decoded and normalized.
+        lines = ["<doc:SomePage#33-%EF%B8%8F-silent-failure--passing-tools>\n"]
+
+        changed = canonicalizer.replace_fragment(
+            lines,
+            "33-️-silent-failure-passing-tools",
+            "New-anchor",
+            1,
+            Path("Guide.md"),
+        )
+
+        self.assertTrue(changed)
+        self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
+    def test_anchor_fix_matches_unsplit_page_and_fragment_echo(self):
+        # When a fragment's first character is a combining mark, DocC cannot
+        # split the reference at '#' (the mark merges with it into one
+        # grapheme) and echoes the whole page#fragment as a single topic. The
+        # catalog stores the fragment without its leading mark.
+        lines = ["<doc:Part-12-Guide-05#-silent-failure--passing-tools>\n"]
+
+        changed = canonicalizer.replace_fragment(
+            lines,
+            "Part-12-Guide-05#️-silent-failure-passing-tools",
+            None,
+            1,
+            Path("Guide.md"),
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(lines[0], "<doc:Part-12-Guide-05>\n")
 
     def test_anchor_fix_rejects_a_different_single_docc_fragment(self):
         lines = ["<doc:SomePage#different-anchor>\n"]
