@@ -217,7 +217,8 @@ class DocCSiteTests(unittest.TestCase):
         self.assertIn("> Note: Keep this as an intentional aside.", guide)
         self.assertIn("Use <code>SymbolName</code> as code.", guide)
         self.assertIn(
-            "Use <code>An error with\n`nested` code</code> across lines.", guide
+            "Use <code>An error with\n&#96;nested&#96; code</code> across lines.",
+            guide,
         )
         self.assertIn("operator[](thread_index_type idx)", guide)
         self.assertIn("Quoting \\<doc:Prose> in prose.", guide)
@@ -256,6 +257,50 @@ class DocCSiteTests(unittest.TestCase):
                 "Part-01",
                 "Part-01-Guide-01",
             },
+        )
+
+    def test_unmatched_backtick_does_not_cross_markdown_block_starts(self):
+        first_line = "Unmatched ` leaves <doc:Prose> as prose.\n"
+        block_starts = {
+            "heading": "## Heading with ` closer\n",
+            "list": "- List item with ` closer\n",
+            "block quote": "> Quoted ` closer\n",
+            "indented code": "    indented ` closer\n",
+        }
+
+        for name, block_start in block_starts.items():
+            with self.subTest(name=name):
+                lines = [first_line, block_start]
+                lookahead = builder.paragraph_lookahead(lines, 0)
+                transformed, delimiter = (
+                    builder.transform_code_spans_and_doc_references(
+                        first_line.rstrip("\n"), 0, lookahead
+                    )
+                )
+                self.assertIn(r"\<doc:Prose>", transformed)
+                self.assertEqual(delimiter, 0)
+
+    def test_backtick_lookahead_keeps_indented_list_continuation(self):
+        first_line = "31. Keep `<doc:Code> across\n"
+        continuation = "    the list continuation`\n"
+        lines = [first_line, continuation, "32. Next item with ` delimiter\n"]
+
+        lookahead = builder.paragraph_lookahead(lines, 0)
+        transformed, delimiter = builder.transform_code_spans_and_doc_references(
+            first_line.rstrip("\n"), 0, lookahead
+        )
+
+        self.assertNotIn(r"\<doc:Code>", transformed)
+        self.assertEqual(delimiter, 1)
+        _, delimiter = builder.transform_code_spans_and_doc_references(
+            continuation.rstrip("\n"), delimiter
+        )
+        self.assertEqual(delimiter, 0)
+
+    def test_docc_fragment_encoding_preserves_existing_escapes(self):
+        self.assertEqual(
+            builder.docc_addressable_fragment("already%20encoded"),
+            "already%20encoded",
         )
 
     def test_rebuild_replaces_only_a_marked_generated_catalog(self):
@@ -598,6 +643,24 @@ class DocCSiteTests(unittest.TestCase):
 
         self.assertTrue(changed)
         self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
+    def test_anchor_fix_rejects_normalized_collision_with_exact_spelling(self):
+        lines = ["<doc:First#foo_bar> and <doc:Second#foobar>\n"]
+
+        with self.assertRaisesRegex(
+            canonicalizer.CanonicalizationError, "could not uniquely locate"
+        ):
+            canonicalizer.replace_fragment(
+                lines,
+                "foobar",
+                "New-anchor",
+                1,
+                Path("Guide.md"),
+            )
+
+        self.assertEqual(
+            lines, ["<doc:First#foo_bar> and <doc:Second#foobar>\n"]
+        )
 
     def test_anchor_fix_matches_percent_encoded_fragment(self):
         # Generated <doc:> fragments percent-encode non-ASCII (the U+FE0F of
