@@ -24,8 +24,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: documentation-pages
-  cancel-in-progress: true
+  group: documentation-pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -95,18 +95,14 @@ jobs:
             --manifest .build/docc/manifest.json
           git diff --exit-code -- guides
 
-      - name: Configure GitHub Pages
-        if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-
       - name: Upload GitHub Pages artifact
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: .build/docc-site
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-24.04
     permissions:

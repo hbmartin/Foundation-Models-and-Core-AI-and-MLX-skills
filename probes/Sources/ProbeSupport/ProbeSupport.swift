@@ -31,6 +31,30 @@ public enum Probe {
         ProcessInfo.processInfo.environment[key]
     }
 
+    /// Numeric environment knob. A supplied value that fails to parse is
+    /// narrated before falling back, so a typo never silently reverts a run
+    /// to its default duration.
+    public static func envSeconds(_ key: String, default defaultValue: Double) -> Double {
+        guard let raw = env(key) else { return defaultValue }
+        guard let parsed = Double(raw), parsed.isFinite else {
+            print("workload-env warning name=\(key) raw=\"\(raw)\" using-default=\(defaultValue)")
+            fflush(stdout)
+            return defaultValue
+        }
+        return max(0, parsed)
+    }
+
+    /// Integer variant of `envSeconds(_:default:)` with the same narration.
+    public static func envCount(_ key: String, default defaultValue: Int) -> Int {
+        guard let raw = env(key) else { return defaultValue }
+        guard let parsed = Int(raw) else {
+            print("workload-env warning name=\(key) raw=\"\(raw)\" using-default=\(defaultValue)")
+            fflush(stdout)
+            return defaultValue
+        }
+        return max(0, parsed)
+    }
+
     /// "macOS 26.5.2 (25F84)" / "iOS 27.0 …" plus simulator marker — stamped into
     /// every result so a harvested line is self-describing.
     public static var runtimeDescription: String {

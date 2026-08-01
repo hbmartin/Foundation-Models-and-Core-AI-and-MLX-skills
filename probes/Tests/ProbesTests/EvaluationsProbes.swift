@@ -336,18 +336,21 @@ final class EvaluationsProbes: XCTestCase {
             validator: { _ in false } // every generated sample is invalid → target unreachable
         )
         let outcome: String
+        // Counted outside the timeout closure so the partial tally survives
+        // a deadline or a throw instead of dying with the abandoned closure.
+        let producedSoFar = Probe.Counter()
         do {
             let bounded = try await Probe.withTimeout(seconds: 120) { () -> Int in
-                var produced = 0
-                for try await _ in generator.run() { produced += 1 }
-                return produced
+                for try await _ in generator.run() { producedSoFar.increment() }
+                return producedSoFar.count
             }
             switch bounded {
             case .value(let produced): outcome = "finished(produced=\(produced))"
-            case .timedOut: outcome = "still-running-at-120s"
+            case .timedOut: outcome = "still-running-at-120s(produced=\(producedSoFar.count))"
             }
         } catch {
             outcome = "threw(\(type(of: error)): \(String(describing: error).prefix(160)))"
+                + " produced=\(producedSoFar.count)"
         }
         let counts = await (generator.samples.count, generator.invalidSamples.count)
         Probe.result(

@@ -983,20 +983,22 @@ final class FoundationModelsProbes: XCTestCase {
             instructions: "You are a test assistant. When asked to echo, use the echo tool."
         )
         do {
+            // Counted outside the timeout closure so a deadline still reports
+            // how many partials had streamed before the closure was abandoned.
+            let partialsSoFar = Probe.Counter()
             let partials = try await Probe.withTimeout(seconds: 180) { () -> Int in
-                var n = 0
                 let stream = session.streamResponse(
                     to: "Echo the word ping.",
                     options: GenerationOptions(samplingMode: .greedy,
                                                maximumResponseTokens: 200,
                                                toolCallingMode: .required))
-                for try await _ in stream { n += 1 }
-                return n
+                for try await _ in stream { partialsSoFar.increment() }
+                return partialsSoFar.count
             }
             let value: String
             switch partials {
             case .value(let count): value = "partials=\(count)"
-            case .timedOut: value = "timeout"
+            case .timedOut: value = "timeout(partials=\(partialsSoFar.count))"
             }
             Probe.result(
                 "fm.stream-zero-partials-tool-turn",

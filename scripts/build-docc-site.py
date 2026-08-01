@@ -411,6 +411,38 @@ def rewrite_inline_links(
     return "".join(result)
 
 
+def escape_doc_references(line: str, span_open: bool) -> str:
+    """Escape literal ``<doc:`` prose so article-only DocC keeps it as text.
+
+    Backtick code spans keep their content verbatim; a double-backtick span
+    left open by a previous line suppresses escaping until it closes.
+    """
+    result: list[str] = []
+    index = 0
+    code_delimiter = 2 if span_open else 0
+
+    while index < len(line):
+        if line[index] == "`":
+            end = index
+            while end < len(line) and line[end] == "`":
+                end += 1
+            run = end - index
+            if code_delimiter == 0:
+                code_delimiter = run
+            elif code_delimiter == run:
+                code_delimiter = 0
+            result.append(line[index:end])
+            index = end
+            continue
+        if code_delimiter == 0 and line.startswith("<doc:", index):
+            result.append("\\<doc:")
+            index += len("<doc:")
+            continue
+        result.append(line[index])
+        index += 1
+    return "".join(result)
+
+
 def replace_double_backtick_spans(line: str, span_open: bool) -> tuple[str, bool]:
     """Prevent article-only DocC from treating code spans as symbol links.
 
@@ -519,8 +551,9 @@ def transform_markdown(
                 saw_title = True
 
         # These sequences in the source quote upstream DocC/RST syntax. In an
-        # article-only catalog they are prose, not links to symbols.
-        body = body.replace("<doc:", "\\<doc:")
+        # article-only catalog they are prose, not links to symbols. Code
+        # spans keep their content verbatim.
+        body = escape_doc_references(body, double_backtick_span)
         body, double_backtick_span = replace_double_backtick_spans(
             body, double_backtick_span
         )
