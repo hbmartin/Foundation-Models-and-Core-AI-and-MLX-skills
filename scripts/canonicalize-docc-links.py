@@ -110,22 +110,17 @@ def replace_fragment(
             return None
         line = lines[index]
         links = list(DOC_FRAGMENT.finditer(line))
-        exact_matches = [link for link in links if link.group("fragment") == old]
-        if len(exact_matches) == 1:
-            matches = exact_matches
-        elif len(exact_matches) > 1:
-            return None
-        else:
-            # DocC normalizes punctuation in diagnostics. Restrict that
-            # fallback to the actual <doc:...> fragment instead of replacing
-            # a same-line URL.
-            normalized_old = docc_reported_fragment(old)
-            matches = [
-                link
-                for link in links
-                if docc_reported_fragment(link.group("fragment"))
-                == normalized_old
-            ]
+        # DocC normalizes punctuation in diagnostics. Restrict matching to
+        # <doc:...> fragments, and reject every normalized collision before
+        # preferring an exact spelling: an exact candidate can belong to a
+        # different link than the diagnostic when another fragment normalizes
+        # to the same text.
+        normalized_old = docc_reported_fragment(old)
+        matches = [
+            link
+            for link in links
+            if docc_reported_fragment(link.group("fragment")) == normalized_old
+        ]
         if len(matches) == 1:
             link = matches[0]
             start, end = link.span("fragment")

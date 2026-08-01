@@ -120,6 +120,29 @@ class ExtractionTests(unittest.TestCase):
         )
         self.assertEqual(VS.slugify("_emphasis_ and plain_snake"), "emphasis-and-plain_snake")
 
+    def test_heading_slug_preserves_unmatched_edge_underscores(self):
+        self.assertEqual(VS.slugify("<domain>_"), "domain_")
+        self.assertEqual(VS.slugify("_leading"), "_leading")
+        self.assertEqual(VS.slugify("text_`code`"), "text_code")
+        self.assertEqual(VS.slugify("`code`_bar"), "code_bar")
+
+    def test_heading_slug_protects_link_like_text_inside_code(self):
+        self.assertEqual(VS.slugify("`[label](target)`"), "labeltarget")
+        self.assertEqual(VS.slugify("[Use `a_b`](target)"), "use-a_b")
+
+    def test_heading_slug_requires_exact_code_delimiter_runs(self):
+        self.assertEqual(VS.slugify("`[label](target)``"), "label")
+        self.assertEqual(VS.slugify("``[label](target)`"), "label")
+
+    def test_heading_slug_handles_literal_nul_without_placeholder_collision(self):
+        self.assertEqual(VS.slugify("literal\x000\x00marker"), "literal0marker")
+
+    def test_heading_slug_respects_backslash_escaped_markdown(self):
+        self.assertEqual(VS.slugify(r"\_literal\_"), "_literal_")
+        self.assertEqual(VS.slugify(r"\[label](target)"), "labeltarget")
+        self.assertEqual(VS.slugify(r"\`[label](target)\`"), "label")
+        self.assertEqual(VS.slugify(r"`\_[label](target)`"), "_labeltarget")
+
 
 class MarkerTests(unittest.TestCase):
     def _one(self, info, body="let a = 1\n"):

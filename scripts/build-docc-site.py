@@ -233,10 +233,11 @@ def docc_addressable_fragment(fragment: str) -> str:
     for the catalog copy only; the diagnostics pass then canonicalizes these
     fragments to DocC's own anchor spellings. GitHub copies keep the marks.
     """
+    decoded = unquote(fragment)
     index = 0
-    while index < len(fragment) and unicodedata.category(fragment[index]) in ("Mn", "Me"):
+    while index < len(decoded) and unicodedata.category(decoded[index]) in ("Mn", "Me"):
         index += 1
-    return quote(fragment[index:], safe="!$&()*+,;=:@/?")
+    return quote(decoded[index:], safe="!$&()*+,;=:@/?")
 
 
 def github_url(
@@ -430,6 +431,51 @@ def rewrite_inline_links(
 
 BACKTICK_RUN = re.compile(r"`+")
 
+# Block starts that end the current inline-parsing context. CommonMark does
+# not treat indented code as interrupting an ordinary paragraph, but stopping
+# here is intentionally conservative: the generated DocC copy must never let
+# an unmatched source delimiter change later block markup.
+ATX_HEADING_START = re.compile(r" {0,3}#{1,6}(?:[ \t]+|$)")
+LIST_ITEM_START = re.compile(r" {0,3}(?:[-+*]|\d{1,9}[.)])(?:[ \t]+|$)")
+# Capture the indentation of a non-empty list item's paragraph so continuation
+# lines are not mistaken for top-level indented code. Wider/ tabbed padding is
+# left conservative because CommonMark assigns it different block semantics.
+LIST_ITEM_CONTEXT = re.compile(
+    r"^(?P<indent> {0,3})(?P<marker>[-+*]|\d{1,9}[.)])"
+    r"(?P<spacing> {1,4})(?=\S)"
+)
+INDENTED_CODE_START = re.compile(r"(?: {4}|\t)")
+SETEXT_HEADING_START = re.compile(r" {0,3}(?:=+|-+)[ \t]*$")
+THEMATIC_BREAK_START = re.compile(
+    r" {0,3}(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})$"
+)
+LINK_DEFINITION_START = re.compile(r" {0,3}\[[^]\n]+\]:[ \t]*(?:\S|$)")
+TABLE_DELIMITER_START = re.compile(
+    r" {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)+\|?[ \t]*$"
+)
+DOCC_DIRECTIVE_START = re.compile(r" {0,3}@\w")
+HTML_BLOCK_START = re.compile(
+    r" {0,3}(?:<!--|<\?|<![A-Z]|<!\[CDATA\[|"
+    r"</?(?:address|article|aside|base|basefont|blockquote|body|caption|center|"
+    r"col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|"
+    r"footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|"
+    r"link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|"
+    r"section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)"
+    r"(?:[ \t]|/?>|$)|<(?:script|pre|style|textarea)(?:[ \t]|>|$))",
+    re.IGNORECASE,
+)
+PARAGRAPH_BLOCK_STARTS = (
+    ATX_HEADING_START,
+    LIST_ITEM_START,
+    INDENTED_CODE_START,
+    SETEXT_HEADING_START,
+    THEMATIC_BREAK_START,
+    LINK_DEFINITION_START,
+    TABLE_DELIMITER_START,
+    DOCC_DIRECTIVE_START,
+    HTML_BLOCK_START,
+)
+
 # A page abstract is the first plain paragraph after the title; lists, quotes,
 # tables, and directives never become one.
 NON_ABSTRACT_PREFIX = re.compile(r"[-*+]\s|\d+[.)]\s|[>#|@]")
@@ -444,13 +490,37 @@ def paragraph_lookahead(lines: list[str], index: int) -> str:
     """The current paragraph's remaining text after ``lines[index]``.
 
     CommonMark resolves block structure before inline code spans, so a span
-    may only open when its closing run appears before the paragraph ends;
-    blank lines and fence markers terminate it.
+    may only open when its closing run appears before the paragraph ends.
+    Blank lines, fenced code, container changes, and paragraph-interrupting
+    block starts terminate the search.
     """
+    current = lines[index][:-1] if lines[index].endswith("\n") else lines[index]
+    current_quote = BLOCK_QUOTE_LINE.match(current)
+    current_quote_depth = (
+        current_quote.group("prefix").count(">") if current_quote else 0
+    )
+    current_content = current_quote.group("content") if current_quote else current
+    current_list = LIST_ITEM_CONTEXT.match(current_content)
+    list_content_indent = (
+        sum(len(current_list.group(name)) for name in ("indent", "marker", "spacing"))
+        if current_list
+        else 0
+    )
     collected = []
     for line in lines[index + 1 :]:
         body = line[:-1] if line.endswith("\n") else line
-        if not body.strip() or FENCE.match(body):
+        quote = BLOCK_QUOTE_LINE.match(body)
+        quote_depth = quote.group("prefix").count(">") if quote else 0
+        content = quote.group("content") if quote else body
+        if list_content_indent and content.startswith(" " * list_content_indent):
+            content = content[list_content_indent:]
+        if (
+            not body.strip()
+            or quote_depth != current_quote_depth
+            or FENCE.match(body)
+            or FENCE.match(content)
+            or any(pattern.match(content) for pattern in PARAGRAPH_BLOCK_STARTS)
+        ):
             break
         collected.append(body)
     return "\n".join(collected)
@@ -488,7 +558,10 @@ def transform_code_spans_and_doc_references(
                 result.append("</code>" if run == 2 else line[index:end])
                 code_delimiter = 0
             else:
-                result.append(line[index:end])
+                # Backtick runs nested inside an exact double-backtick span
+                # are literal code content. HTML-encode them so Swift
+                # Markdown cannot reinterpret them as symbol references.
+                result.append("&#96;" * run if code_delimiter == 2 else line[index:end])
             index = end
             continue
         if code_delimiter == 2:
