@@ -81,7 +81,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **11.1** TensorOps: `matmul2d`, tensor types, and what quantization actually looks like — The ground floor, written header-first: the two namespaces and where each physically lives, the seven positional arguments of `matmul2d_descriptor`, the complete executi…
+- **11.1** TensorOps: `matmul2d`, tensor types, and what quantization actually looks like — The ground floor, written header-first: the two namespaces and where each physically lives, the seven positional arguments of `matmul2d_descriptor`, the complete …
 - **11.2** Cooperative tensors, reductions, and building a fused attention kernel — The advanced guide, and the longer of the two.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

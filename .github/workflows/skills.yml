@@ -68,7 +68,11 @@ jobs:
           set -euo pipefail
           project="$(mktemp -d)"
           cd "$project"
-          npx -y skills@latest add "$GITHUB_WORKSPACE" --agent claude-code --all -y
+          # Pinned, because the byte-identical diff below makes this CLI's copy
+          # semantics decide pass/fail: on @latest a layout change upstream would
+          # fail CI on skills that are perfectly valid, and a green run could not
+          # be reproduced. Bump deliberately.
+          npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" --agent claude-code --all -y
           # The CLI stores one copy under .agents/skills and symlinks the
           # agent-specific directory at it, so resolve through the link.
           test -f .claude/skills/apple-mlx/SKILL.md

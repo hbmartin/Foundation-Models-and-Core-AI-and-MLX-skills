@@ -78,21 +78,14 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The keynote promised speech generation and I can't find the API" | 16.1 §1.1 | It does not exist. AVFoundation, per Apple staff on thread 834149 |
-| "I'm learning the 2026 Speech API from the downloadable sample" | 16.1 §1.2 | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
-| "Users report the last sentence gets cut off" | 16.1 §9, §6.6 | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
-| "My transcript reads *'I went to the I went to the store'*" | 16.1 §8.3 | Your preset does not emit `.audioTimeRange`, so the merge always appends |
-| "Empty transcript, clean console" | 16.1 §5.5 | Assets before format before analyzer before audio. The analyzer converts nothing |
-| "Is there a Siri schema for what my app does?" | 16.2 §5–§6 | All 23 domains enumerated — then the categories with no domain at all |
-| "My category isn't covered. What is left?" | 16.2 §8 | `.system.searchInApp`, with code. Works without domains or indexing |
-| "*'Remove the due date'* reports success and changes nothing" | 16.2 §14.1 | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
-| "Siri answers from my screen text and ignores my `AppEntity`" | 16.3 §1 | Descriptive requests take the screenshot path and never call `entities(for:)` |
+| "Dirty dataset, or a convnet that may be over-wide" | 16.5 §6.3, §6.5, §8 | `Duplicates` and PFA. Prune, retrain, *then* convert |
+| Anything transformer, MLX, Core ML or Core AI shaped | **skip 16.5** | DNIKit supports none of them. §1 says so in a table |
 
 ## The deep reference guides
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **6.1** Building blocks, Swift Testing integration, and evaluation-driven development — The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a…
+- **6.1** Building blocks, Swift Testing integration, and evaluation-driven development — The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a …
 - **6.2** Model judges, score dimensions, drift, and Cohen's kappa — The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to.
 - **6.3** `SampleGenerator`, synthetic datasets, and evaluating tool trajectories — Two subjects that share a chapter because both are about honesty.
 - **16.5** DNIKit: auditing datasets and networks before you convert — The shortest guide in the series, on purpose.

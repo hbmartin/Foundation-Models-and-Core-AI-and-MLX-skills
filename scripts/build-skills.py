@@ -29,6 +29,7 @@ is a router, never a copy of a guide.
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 from dataclasses import dataclass, replace
 import datetime
 import importlib.util
@@ -54,7 +55,7 @@ from mdlinks import (  # noqa: E402  (path set above so the sibling modules reso
     source_snapshot,
     split_destination,
 )
-from mdslug import slugify  # noqa: E402
+from mdslug import slugify, unique_slug  # noqa: E402
 
 def _load_sibling(name: str, filename: str):
     """Import a kebab-case sibling script, as scripts/tests/ already does."""
@@ -78,7 +79,9 @@ PART_TITLE = re.compile(r"^#\s+Part\s+(\d+)\s+—\s+(.+?)\s*$")
 BOLD_LABEL = re.compile(r"^\*\*([A-Z][^:*]*):\*\*")
 GUIDE_CARD = re.compile(r"^###\s+\[(\d+)\.(\d+)\s+—\s+(.+?)\]\(([^)]+)\)\s*$")
 FOOTNOTE_REF = re.compile(r"\[\^[^\]]+\]")
-ABSOLUTE_LINK = re.compile(r"\[([^\]]*)\]\(https?://[^)\s]*\)")
+GUIDE_LINK = re.compile(
+    r"\[([^\]]*)\]\(https?://[^)\s]*/guides/part-\d{2}-[^)\s]*/references/[^)\s]*\)"
+)
 SENTENCE_END = re.compile(r"(?<=[a-zA-Z*)\]`\"])\.(?:\s|$)")
 
 GENERATED_MARKER = ".generated-by-build-skills"
@@ -222,19 +225,38 @@ def guide_number(path: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def close_code_spans(text: str) -> str:
+    """Drop a trailing unbalanced code span.
+
+    An odd backtick count means a truncation landed inside `` `code` ``. GitHub
+    would then run the span to the next backtick anywhere later in the document,
+    swallowing the rest of a table cell, so cut back to before the opener rather
+    than emitting it.
+    """
+    if text.count("`") % 2 == 0:
+        return text
+    return text[: text.rfind("`")].rstrip()
+
+
 def first_sentence(paragraph: str, limit: int = 240) -> str:
     """The first sentence of a wrapped Markdown paragraph, for a summary table.
 
     The lookbehind keeps version numbers intact: '27.0 and only 27.0. `import'
-    splits, '26.0 on iOS' does not.
+    splits, '26.0 on iOS' does not. Truncation falls back to a word boundary and
+    never splits a code span, because these strings land in table cells where a
+    dangling backtick corrupts the rest of the row.
     """
     text = " ".join(paragraph.split())
     match = SENTENCE_END.search(text)
     if match:
         text = text[: match.end()].strip()
-    if len(text) > limit:
-        text = text[: limit - 1].rstrip() + "…"
-    return text
+    if len(text) <= limit:
+        return close_code_spans(text)
+    cut = text[:limit]
+    space = cut.rfind(" ")
+    if space > limit // 2:
+        cut = cut[:space]
+    return close_code_spans(cut.rstrip()) + " …"
 
 
 def first_title(text: str, source: Path) -> str:
@@ -299,15 +321,19 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
     claimed: dict[tuple[int, int | None], str] = {}
     for entry in document.get("skills", []):
         name = entry.get("name", "")
+        if any(spec.name == name for spec in specs):
+            raise SkillError(f"{path}: duplicate skill name {name!r}")
         if not SKILL_NAME.match(name):
             raise SkillError(f"{path}: skill name {name!r} must match {SKILL_NAME.pattern}")
-        budget = len(name) + len(entry.get("description", "")) + len(entry.get("when_to_use", ""))
         if not entry.get("description"):
             raise SkillError(f"{path}: {name} needs a description; it is the whole trigger")
+        budget = len(
+            render_frontmatter(name, entry["description"], entry.get("when_to_use", ""))
+        )
         if budget > MAX_FRONTMATTER_CHARS:
             raise SkillError(
-                f"{path}: {name} frontmatter is {budget} chars, over the "
-                f"{MAX_FRONTMATTER_CHARS} budget; descriptions are always resident in context"
+                f"{path}: {name} renders {budget} chars of frontmatter, over the "
+                f"{MAX_FRONTMATTER_CHARS} budget; it is always resident in context"
             )
         owns: dict[int, frozenset[int] | None] = {}
         for owned in entry.get("owns", []):
@@ -364,6 +390,47 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
             if (part, None) not in claimed and (part, number) not in claimed:
                 raise SkillError(f"{path}: part {part} reference {number} is not owned")
     return url, branch, specs
+
+
+TRIAGE_REFERENCE = re.compile(r"references/(\d{2})-")
+
+
+def owns_row(row: str, owned: frozenset[int] | None) -> bool:
+    """Does this triage row cite only guides the skill carries?
+
+    Three skills share part 16, so an unfiltered table routes a reader to a deep
+    guide that is missing from their own section map. A row citing no guide at
+    all (a plain cross-part pointer) is kept.
+    """
+    if owned is None:
+        return True
+    cited = {int(number) for number in TRIAGE_REFERENCE.findall(row)}
+    return not cited or bool(cited & owned)
+
+
+README_CARD_ANCHOR = re.compile(r"#(\d{1,2})(\d)--")
+
+
+def owns_readme_entry(line: str, guide_id: str, spec: SkillSpec) -> bool:
+    """Attribute a part-README index entry to the reference guide it describes.
+
+    Three skills share the part-16 README, so every `16.README` entry would
+    otherwise land in all three — putting speech symptoms in the evaluations
+    skill. Those entries link to a card heading whose anchor starts with the
+    card number (`#164--one-index-three-consumers…`), which is enough to tell
+    which guide the entry is really about. Entries that point somewhere else in
+    the README are part-wide and stay.
+    """
+    if not guide_id.endswith(".README"):
+        return True
+    part = int(guide_id.split(".")[0])
+    owned = spec.owns.get(part)
+    if owned is None:
+        return True
+    match = README_CARD_ANCHOR.search(line)
+    if not match or int(match.group(1)) != part:
+        return True
+    return int(match.group(2)) in owned
 
 
 def owns_page(spec: SkillSpec, page: GuidePage) -> bool:
@@ -643,6 +710,8 @@ def render_silent_slice(
             continue
         if match.group(1) not in owned_ids:
             continue
+        if not owns_readme_entry(line, match.group(1), spec):
+            continue
         if group:
             current[1].append("")
             current[1].append(group)
@@ -680,7 +749,7 @@ def render_silent_slice(
 
 
 def render_api_slice(
-    rows: list[tuple], spec: SkillSpec, owned_parts: set[int], date: str,
+    rows: list[tuple], spec: SkillSpec, owned_ids: set[str], date: str,
     series_url: str, link_for: "callable",
 ) -> str:
     """Render this skill's symbols from uncapped counts.
@@ -699,7 +768,10 @@ def render_api_slice(
         pairs = []
         for chunk in guides.split(";"):
             path, _, count = chunk.rpartition(":")
-            if path and part_num(path) in owned_parts:
+            # By owned guide, not owned part: three skills share part 16, and a
+            # slice that linked to guides the skill does not carry would send a
+            # reader to a section map that has never heard of them.
+            if path and guide_label(path) in owned_ids:
                 pairs.append((path, int(count)))
         if not pairs:
             continue
@@ -757,9 +829,10 @@ def render_section_maps(
         "# Section maps for the deep reference guides",
         "",
         "The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one "
-        "below gives its URL once, then every section it contains as an anchor. To read a "
-        "section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained "
-        "access, ask the user before cloning the corpus (see SKILL.md).",
+        "below gives its URL once, then every **top-level** (`##`) section as an anchor; a "
+        "guide's own `## Contents` lists its subsections. To read a section, `WebFetch` "
+        "`<url>#<anchor>` — never the whole file. If you need sustained access, ask the user "
+        "before cloning the corpus (see SKILL.md).",
         "",
         f"> Generated {date} from the guide headings. Regenerate with "
         "`./scripts/build-skills.sh` rather than editing by hand.",
@@ -782,35 +855,37 @@ def render_section_maps(
             # ~150 characters it would otherwise dominate a file whose whole
             # purpose is to be read cheaply.
             out += [f"**URL:** <{url}>", "", "| Section | Anchor |", "|---|---|"]
-            used: dict[str, int] = {}
+            used: set[str] = set()
+            next_suffix: dict[str, int] = defaultdict(int)
             for body, _, inside_fence in iter_lines(target.read_text(encoding="utf-8")):
                 if inside_fence or not body.startswith("## "):
                     continue
                 heading = body[3:].strip()
-                base = slugify(heading)
-                # GitHub leaves the first occurrence bare and suffixes the rest.
-                suffix = used.get(base, 0)
-                used[base] = suffix + 1
-                anchor = base if suffix == 0 else f"{base}-{suffix}"
+                # GitHub leaves the first occurrence bare and suffixes the
+                # rest, resolving each candidate against every anchor already
+                # taken on the page.
+                anchor = unique_slug(slugify(heading), used, next_suffix)
                 cell = heading.replace("|", "\\|")
                 out.append(f"| {cell} | `#{anchor}` |")
     out.append("")
     return "\n".join(out)
 
 
+def render_frontmatter(name: str, description: str, when_to_use: str) -> str:
+    """The exact YAML block emitted into SKILL.md, so its size can be budgeted."""
+    lines = ["---", f"name: {name}", f"description: {yaml_scalar(description)}"]
+    if when_to_use:
+        lines.append(f"when_to_use: {yaml_scalar(when_to_use)}")
+    lines.append("---")
+    return "\n".join(lines)
+
+
 def render_skill_md(
     spec: SkillSpec, routers: list[PartRouter], date: str, to_root: 'callable'
 ) -> str:
     parts = ", ".join(f"Part {router.part}" for router in routers)
-    lines = [
-        "---",
-        f"name: {spec.name}",
-        f"description: {yaml_scalar(spec.description)}",
-    ]
-    if spec.when_to_use:
-        lines.append(f"when_to_use: {yaml_scalar(spec.when_to_use)}")
+    lines = render_frontmatter(spec.name, spec.description, spec.when_to_use).splitlines()
     lines += [
-        "---",
         "",
         f"# {spec.title}",
         "",
@@ -857,7 +932,9 @@ def render_skill_md(
     ]
     quota = max(3, spec.max_triage_rows // max(len(routers), 1))
     for router in routers:
-        shown = router.triage_rows[:quota]
+        owned = spec.owns[router.part]
+        rows = [row for row in router.triage_rows if owns_row(row, owned)]
+        shown = rows[:quota]
         header = router.triage_header or ("If your situation is…", "Read", "Why")
         lines += [
             f"**Part {router.part} — {router.title}** "
@@ -900,7 +977,12 @@ def render_skill_md(
 
 def yaml_scalar(text: str) -> str:
     """Quote a description so a strict scalar-only YAML reader round-trips it."""
-    if re.search(r'[:#\'"\n]|^\s|\s$', text):
+    if "\n" in text:
+        raise SkillError(
+            "frontmatter values must be single-line; a newline would emit a block "
+            "scalar that verify-skills.py deliberately refuses to parse"
+        )
+    if re.search(r'[:#\'"]|^\s|\s$', text):
         return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
     return text
 
@@ -974,6 +1056,7 @@ def build_skills(
     symbol_rows = extract_symbols.symbol_rows(counts, sdk26, sdk27, cap=None)
     silent_text = (source_root / "SILENT-FAILURES.md").read_text(encoding="utf-8")
 
+    skills_root.parent.mkdir(parents=True, exist_ok=True)
     staged = Path(tempfile.mkdtemp(prefix=".skills-stage-", dir=skills_root.parent))
     files: dict[str, str] = {}
     try:
@@ -997,9 +1080,7 @@ def build_skills(
             # series rather than just the part it bundles.
             if spec.full_indexes:
                 owned_ids = {guide_label(page.relative) for page in pages} | {"root"}
-                index_parts = {page.part for page in pages if page.part}
-            else:
-                index_parts = set(spec.owns)
+            index_ids = owned_ids
 
             skill_dir = staged / spec.name
             (skill_dir / "references").mkdir(parents=True)
@@ -1037,7 +1118,7 @@ def build_skills(
                     text, f"{router.directory}/README.md", "", _owned,
                     source_root, repository_root, repository_url, branch,
                 )
-                return ABSOLUTE_LINK.sub(r"\1", rewritten)
+                return GUIDE_LINK.sub(r"\1", rewritten)
 
             def to_references(text: str, router: PartRouter, _owned=owned) -> str:
                 """Same, for text lifted into a file under references/."""
@@ -1061,7 +1142,7 @@ def build_skills(
             write(
                 skill_dir / "references" / "API-INDEX.md",
                 render_api_slice(
-                    symbol_rows, spec, index_parts, date,
+                    symbol_rows, spec, index_ids, date,
                     f"{series}/API-INDEX.md", link_for,
                 ),
             )
@@ -1073,7 +1154,8 @@ def build_skills(
                 ),
             )
 
-            body_lines = (skill_dir / "SKILL.md").read_text(encoding="utf-8").count("\n")
+            rendered = (skill_dir / "SKILL.md").read_text(encoding="utf-8").splitlines()
+            body_lines = len(rendered) - rendered.index("---", 1) - 1
             if body_lines > MAX_BODY_LINES:
                 raise SkillError(
                     f"{spec.name}: SKILL.md is {body_lines} lines, over the {MAX_BODY_LINES} "

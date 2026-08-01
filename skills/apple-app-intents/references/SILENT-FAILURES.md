@@ -1,6 +1,6 @@
 # Silent-failure index — App Intents, Siri schema domains, and Spotlight entity indexing
 
-**98 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**96 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-01. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,14 +8,13 @@
 |---|---:|
 | [Wrong output](#wrong-output) | 6 |
 | [Empty output / no-op](#empty-output--no-op) | 11 |
-| [Truncation & limits](#truncation--limits) | 1 |
 | [Ignored input](#ignored-input) | 1 |
 | [Stale state](#stale-state) | 4 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 3 |
 | [Performance cliffs](#performance-cliffs) | 5 |
 | [Misleading signals](#misleading-signals) | 3 |
 | [Version drift](#version-drift) | 1 |
-| [Docs vs reality](#docs-vs-reality) | 19 |
+| [Docs vs reality](#docs-vs-reality) | 18 |
 | [API footguns](#api-footguns) | 23 |
 | [General cautions](#general-cautions) | 21 |
 
@@ -45,12 +44,6 @@
 - [Wire the delegate correctly and on tested 27.0 betas nothing ever invoked it — no throw, no log; hallucination continues](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#94-️-the-conflict--and-it-is-a-real-one) — 16.4
 - [An unmapped entity property is simply absent — no error; the field never exists downstream](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#133-️-silent--an-unmapped-entity-property-is-simply-absent) — 16.4
 - [The hydration delegate is never called (field-reported) — bodies stay unrecoverable and nothing logs](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#134-️-silent--the-hydration-delegate-is-never-called) — 16.4
-
-## Truncation & limits
-
-**Part 16**
-
-- [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
 
 ## Ignored input
 
@@ -103,7 +96,6 @@
 
 **Part 16**
 
-- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README 🔇
 - [Session 345 says 'our 2027 releases' while sibling sessions say otherwise — Apple's own year labels conflict](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#app-schema-domains-the-complete-map-of-what-siri-can-actually-do) — 16.2
 - [Section flag: places where Apple's docs contradict the observed behavior](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#️-where-the-docs-contradict-the-observed-behaviour) — 16.2
 - [The journaling domain's page name and its symbols don't match — know it before URL-hunting](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#3-the-macro-system-and-the-build-errors-it-generates) — 16.2

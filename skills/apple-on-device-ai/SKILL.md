@@ -71,7 +71,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 | "`cannot find 'MLXLanguageModel' in scope`" | 1.2 | §3.3 — it's your Xcode version, not your dependency |
 | "It fails in the Simulator with error `-1`" | 1.2 | §10.1 |
 | "Apple Intelligence is on, but availability says it isn't" | 1.2 | §7.4 — the Siri coupling, an acknowledged bug |
-| "I'm rebuilding an iOS 26 app with Xcode 27" | 1.2 | §3.4, then Part 17 |
+| "I'm rebuilding an iOS 26 app with Xcode 27" | 1.2 | §3.4, then [Part 17](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/README.md) |
 | "I'm shipping to watchOS" | 1.2 | §2.2 and §10.3 |
 | "I want the App Store to only offer my app to capable devices" | 1.2 | §9 — you can't; build a baseline |
 | "I'm bundling `.aimodel` files" | 1.2 | §4.1 and §5.2 |
@@ -83,7 +83,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
 - **1.1** The 2026 Apple AI stack, and how to choose a model backend — The map, and the decision it replaced.
-- **1.2** Every version, hardware, entitlement and runtime-surface gate — The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring…
+- **1.2** Every version, hardware, entitlement and runtime-surface gate — The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring …
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
 

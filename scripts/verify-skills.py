@@ -33,8 +33,21 @@ from mdslug import slugify, unique_slug  # noqa: E402
 build_skills = None  # loaded lazily so --help works without importing the builder
 
 HTML_ANCHOR = re.compile(r'<a\s+(?:name|id)\s*=\s*"([^"]+)"')
+# A reference-link definition, but never a footnote definition: '[^x]:' shares
+# the shape and is not a link.
+REFERENCE_DEFINITION = re.compile(r"^ {0,3}\[(?!\^)[^\]]+\]:\s*(\S.*)$")
 FRONTMATTER_SCALAR = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
 SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
+
+# Stated here rather than imported from the generator: a verifier that asks the
+# generator what it should have produced cannot catch the generator weakening it.
+REQUIRED_MARKERS = (
+    "✅ **VERIFIED**",
+    "🟡 **RECONSTRUCTED**",
+    "🟠 **Suggestive**",
+    "🔴 **GAP**",
+    "⚠️ **SILENT FAILURE**",
+)
 
 MAX_FRONTMATTER_CHARS = 1000
 MAX_BODY_LINES = 260
@@ -115,6 +128,12 @@ def anchors_of(path: Path) -> set[str]:
 
 
 def destinations(text: str) -> list[str]:
+    """Every link destination in the document, inline and reference-style.
+
+    The corpus authors inline links exclusively today, but a reference
+    definition is just as capable of escaping the skill root, and this verifier
+    is the safety net that has to notice.
+    """
     found: list[str] = []
 
     def collect(inner: str) -> str:
@@ -124,8 +143,15 @@ def destinations(text: str) -> list[str]:
         return inner
 
     for body, _, inside_fence in iter_lines(text):
-        if not inside_fence:
-            scan_inline_links(body, collect)
+        if inside_fence:
+            continue
+        scan_inline_links(body, collect)
+        definition = REFERENCE_DEFINITION.match(body)
+        if definition:
+            destination = definition.group(1).strip()
+            if destination.startswith("<") and destination.endswith(">"):
+                destination = destination[1:-1]
+            found.append(destination.split()[0] if destination.split() else "")
     return found
 
 
@@ -154,7 +180,7 @@ def check_links(root: Path, label: str) -> int:
                 joined = posixpath.normpath(
                     posixpath.join(posixpath.dirname(relative), decoded)
                 )
-                if joined.startswith(".."):
+                if joined == ".." or joined.startswith("../"):
                     raise VerificationError(
                         f"{label}/{relative}: link {destination!r} escapes the skill root; "
                         "it would dangle once installed into .claude/skills/"
@@ -167,7 +193,8 @@ def check_links(root: Path, label: str) -> int:
             if fragment:
                 if target not in anchor_cache:
                     anchor_cache[target] = anchors_of(target)
-                if fragment not in anchor_cache[target]:
+                decoded_fragment = unquote(fragment)
+                if decoded_fragment not in anchor_cache[target]:
                     raise VerificationError(
                         f"{label}/{relative}: link {destination!r} has no matching anchor "
                         f"in {target.relative_to(root).as_posix()}"
@@ -234,11 +261,13 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
             raise VerificationError(
                 f"{name}: SKILL.md body is {body_lines} lines, over {MAX_BODY_LINES}"
             )
-        if builder.EVIDENCE_LEGEND.rstrip() not in text:
+        missing = [marker for marker in REQUIRED_MARKERS if marker not in text]
+        if missing:
             raise VerificationError(
-                f"{name}: SKILL.md does not carry the evidence-marker legend verbatim"
+                f"{name}: SKILL.md is missing evidence markers {missing}. Every class "
+                "must be present or the model will flatten a reconstruction into fact."
             )
-        legends.add(builder.EVIDENCE_LEGEND.rstrip())
+        legends.add(text[text.index(REQUIRED_MARKERS[0]) : text.index(REQUIRED_MARKERS[-1])])
 
         # In place, then again from a detached copy, which is what installation
         # produces and where a link reaching outside the skill would dangle.
