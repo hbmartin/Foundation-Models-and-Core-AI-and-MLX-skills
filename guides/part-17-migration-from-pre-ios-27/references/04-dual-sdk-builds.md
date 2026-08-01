@@ -1626,7 +1626,9 @@ to push every gate to a **boundary layer** and have the rest of your code call u
 
 ### 12.1 Stored properties: the `Any` escape hatch
 
-Swift will not let you write this:
+On a pre-27 deployment floor — the case a dual-SDK build exists for — Swift will not let you
+write this (with a 27.0 floor the annotation is no longer more restricted than the type, and the
+same snippet compiles; the fence's markers record both verdicts):
 
 ```swift xfail:sim27-on-26 compile:sim27 imports:FoundationModels
 final class Runner {                       // available everywhere

@@ -50,6 +50,8 @@ final class SpotlightProbes: XCTestCase {
             ?? "unknown-xcode"
         #if targetEnvironment(simulator)
         let destination = "simulator"
+        #elseif os(macOS)
+        let destination = "mac"
         #else
         let destination = "device"
         #endif

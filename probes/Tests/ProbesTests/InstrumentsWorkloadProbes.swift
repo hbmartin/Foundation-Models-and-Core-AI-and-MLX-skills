@@ -50,9 +50,8 @@ final class InstrumentsWorkloadProbes: XCTestCase {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         try skipUnlessModelAvailable()
 
-        let parsedTotal = Double(Probe.env("PROBE_WORKLOAD_SECONDS") ?? "300") ?? 300
-        let totalSeconds = parsedTotal.isFinite ? max(0, parsedTotal) : 300
-        let attachSeconds = max(0, Int(Probe.env("PROBE_WORKLOAD_ATTACH_SECONDS") ?? "20") ?? 20)
+        let totalSeconds = Probe.envSeconds("PROBE_WORKLOAD_SECONDS", default: 300)
+        let attachSeconds = Probe.envCount("PROBE_WORKLOAD_ATTACH_SECONDS", default: 20)
         let launchTime = Date()
 
         func narrate(_ message: String) {

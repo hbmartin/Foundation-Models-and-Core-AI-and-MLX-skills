@@ -1104,10 +1104,10 @@ evaluation (iOS/iPadOS crash)"), PR #423 (cooperative cancellation in the prefil
 
 ### 4.6 A complete streaming program with correct cancellation
 
-Everything above, assembled. This compiles as a SwiftPM executable target with the dependencies
-from §1.2. It streams to stdout, times TTFT, handles a tool call if one appears, and cancels
-cleanly on `SIGINT` — including waiting for the generation task to actually finish before exiting,
-which is the part most examples skip.
+Everything above, assembled as a complete SwiftPM executable target with the dependencies from
+§1.2 (shown as a contextual excerpt — the external MLX modules keep it outside the compile-verified
+set). It streams to stdout, times TTFT, handles a tool call if one appears, and cancels cleanly on
+`SIGINT` — including waiting for the generation task to actually finish before exiting.
 
 ```swift prelude:external-module
 // Sources/StreamDemo/main.swift

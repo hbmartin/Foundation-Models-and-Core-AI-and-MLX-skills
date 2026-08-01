@@ -10,11 +10,11 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | sim27 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios27.0-simulator |
 | sim27-on-26 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios26.0-simulator |
 
-**Totals over 1354 Swift fences:** ILLUSTRATIVE 487 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 671 · VERIFIED 192 · XFAIL-PROVEN 2
+**Totals over 1354 Swift fences:** ILLUSTRATIVE 480 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
 
 **UNCLASSIFIED backlog (the metric): 0**
 
-**PRELUDE backlog (classified contextual excerpts): 671**
+**PRELUDE backlog (classified contextual excerpts): 678**
 
 ## Per-guide rollup
 
@@ -26,15 +26,15 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md | 64 | 9 | 0 | 1 | 27 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md | 37 | 6 | 0 | 0 | 7 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md | 22 | 4 | 0 | 0 | 3 | 0–0 | 0 |
-| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 5 | 0 | 0 | 10 | 0–0 | 0 |
+| part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md | 33 | 5 | 0 | 0 | 9 | 0–0 | 0 |
 | part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md | 30 | 10 | 0 | 0 | 12 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md | 11 | 6 | 0 | 0 | 2 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md | 21 | 6 | 0 | 0 | 3 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md | 32 | 2 | 0 | 0 | 9 | 0–0 | 0 |
 | part-03-context-profiles-agentic/references/04-agentic-orchestration.md | 37 | 5 | 0 | 0 | 5 | 0–0 | 0 |
-| part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md | 11 | 3 | 1 | 0 | 3 | 0–0 | 0 |
-| part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md | 19 | 2 | 0 | 0 | 5 | 0–0 | 0 |
-| part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md | 28 | 4 | 0 | 0 | 12 | 0–0 | 0 |
+| part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md | 11 | 3 | 1 | 0 | 2 | 0–0 | 0 |
+| part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md | 19 | 2 | 0 | 0 | 4 | 0–0 | 0 |
+| part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md | 28 | 4 | 0 | 0 | 11 | 0–0 | 0 |
 | part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md | 11 | 2 | 0 | 0 | 0 | 0–0 | 0 |
 | part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md | 8 | 3 | 0 | 0 | 0 | 0–0 | 0 |
 | part-06-evaluations/references/01-foundations-and-hill-climbing.md | 16 | 1 | 0 | 0 | 6 | 0–0 | 0 |
@@ -42,12 +42,12 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md | 26 | 3 | 0 | 0 | 8 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md | 21 | 5 | 0 | 1 | 9 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md | 37 | 3 | 0 | 0 | 16 | 0–0 | 0 |
-| part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md | 21 | 3 | 0 | 0 | 14 | 0–0 | 0 |
+| part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md | 21 | 3 | 0 | 0 | 15 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md | 81 | 9 | 0 | 0 | 29 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md | 4 | 0 | 0 | 0 | 2 | 0–0 | 0 |
 | part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md | 1 | 0 | 0 | 0 | 0 | 0–0 | 0 |
 | part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md | 3 | 2 | 0 | 0 | 1 | 0–0 | 0 |
-| part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md | 5 | 1 | 0 | 0 | 2 | 0–0 | 0 |
+| part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md | 5 | 1 | 0 | 0 | 1 | 0–0 | 0 |
 | part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md | 4 | 0 | 0 | 0 | 3 | 0–0 | 0 |
 | part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md | 1 | 0 | 0 | 0 | 0 | 0–0 | 0 |
 | part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md | 1 | 0 | 0 | 0 | 0 | 0–0 | 0 |
@@ -55,12 +55,12 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md | 95 | 6 | 0 | 0 | 43 | 0–0 | 0 |
 | part-13-mlx-swift/references/02-generation-tools-and-caching.md | 79 | 3 | 0 | 0 | 35 | 0–0 | 0 |
 | part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md | 72 | 2 | 0 | 0 | 36 | 0–0 | 0 |
-| part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md | 19 | 1 | 0 | 0 | 6 | 0–0 | 0 |
+| part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md | 19 | 1 | 0 | 0 | 5 | 0–0 | 0 |
 | part-15-shipping-and-operating/references/01-model-distribution-and-updates.md | 53 | 14 | 0 | 0 | 10 | 0–0 | 0 |
 | part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md | 31 | 2 | 0 | 0 | 18 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md | 59 | 8 | 0 | 0 | 25 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/02-app-schema-domains.md | 37 | 0 | 0 | 0 | 7 | 0–0 | 0 |
-| part-16-adjacent-capabilities/references/03-onscreen-awareness.md | 36 | 0 | 0 | 0 | 7 | 0–0 | 0 |
+| part-16-adjacent-capabilities/references/03-onscreen-awareness.md | 36 | 0 | 0 | 0 | 5 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md | 25 | 0 | 0 | 0 | 3 | 0–0 | 0 |
 | part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md | 17 | 5 | 0 | 0 | 4 | 0–0 | 0 |
 | part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md | 17 | 4 | 0 | 0 | 3 | 0–0 | 0 |

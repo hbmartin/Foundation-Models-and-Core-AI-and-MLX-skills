@@ -118,9 +118,9 @@ BUILTIN_CONDITION_CALL_RE = re.compile(
 # self-contained compilation unit. These receive an explicit prelude marker;
 # they are not promoted to VERIFIED and remain visible as PRELUDE-NEEDED.
 CONTEXT_DIAGNOSTICS = (
-    "cannot find ",
-    "cannot find type ",
-    "cannot find operator ",
+    "cannot find '",
+    "cannot find type '",
+    "cannot find operator '",
     "no such module ",
     "no macro named ",
     "external macro implementation type ",
@@ -133,7 +133,9 @@ CONTEXT_DIAGNOSTICS = (
 ILLUSTRATIVE_DIAGNOSTICS = (
     "expected ",
     "unexpected ",
-    "missing ",
+    # NOT bare "missing ": "missing argument for parameter" is a semantic
+    # defect in real code, not an elision signal, and must reach a human.
+    "missing return in",
     "initializers may only be declared within a type",
     "initializer requires a body",
     "declaration is only valid at file scope",
@@ -305,7 +307,12 @@ def parse_markers(info):
     mk = Markers()
     if not info:
         return mk
+    seen = set()
     for token in info.split():
+        key = token.split(":", 1)[0]
+        if key in seen:
+            raise MarkerError(f"duplicate marker {key!r}")
+        seen.add(key)
         if token == "illustrative":
             mk.illustrative = True
         elif token.startswith("compile:"):
@@ -353,9 +360,10 @@ def parse_markers(info):
         raise MarkerError(f"target(s) in both compile and xfail: {sorted(overlap)}")
     if mk.wrap == "none" and mk.imports:
         raise MarkerError("wrap:none is verbatim and cannot be combined with imports")
-    if mk.illustrative and (mk.compile_targets or mk.xfail_targets or mk.imports or mk.defines
-                            or mk.wrap != "auto" or mk.isolation != "nonisolated"
-                            or mk.prelude):
+    if mk.prelude and (mk.compile_targets or mk.xfail_targets):
+        raise MarkerError("prelude excludes compile and xfail: the fence is deferred, "
+                          "not compiled against the named targets")
+    if mk.illustrative and len(seen) > 1:
         raise MarkerError("illustrative excludes all other markers")
     return mk
 
@@ -1059,6 +1067,10 @@ def triage_marker_for_row(row):
     if error.startswith("no such module "):
         return "prelude:external-module"
     if any(fragment in error for fragment in CONTEXT_DIAGNOSTICS):
+        # Swift identifier-resolution diagnostics always end " in scope";
+        # anything else that merely mentions "cannot find" stays for review.
+        if "cannot find" in error and " in scope" not in error:
+            return None
         return "prelude:guide-context"
     if any(fragment in error for fragment in ILLUSTRATIVE_DIAGNOSTICS):
         return "illustrative"
@@ -1068,10 +1080,15 @@ def triage_marker_for_row(row):
 def write_markers(rows, guides_root, opts):
     """Add compile:27 [imports:...] to UNCLASSIFIED-PASS fences and
     illustrative to STUB/ELIDED ones. Only opening-fence lines change."""
-    dirty = subprocess.run(["git", "status", "--porcelain", "--", guides_root],
-                           capture_output=True, text=True).stdout.strip()
-    if dirty and not opts.stub_compiler and not opts.allow_dirty_guides:
-        raise SystemExit("error: guides tree is dirty; commit or stash before --write-markers")
+    if not opts.stub_compiler and not opts.allow_dirty_guides:
+        try:
+            dirty = subprocess.run(["git", "status", "--porcelain", "--", guides_root],
+                                   capture_output=True, text=True, check=True).stdout.strip()
+        except (subprocess.CalledProcessError, OSError) as exc:
+            raise SystemExit(
+                f"error: cannot determine guides tree state for --write-markers: {exc}")
+        if dirty:
+            raise SystemExit("error: guides tree is dirty; commit or stash before --write-markers")
 
     pre_fences, _ = extract_fences(guides_root)
     pre_hashes = [hashlib.sha256("\n".join(f.body).encode()).hexdigest() for f in pre_fences]
@@ -1240,7 +1257,9 @@ def main(argv=None):
     fences, parse_errors = extract_fences(opts.guides)
     if not fences and not parse_errors:
         raise SystemExit(f"error: guides root contains no Swift fences: {opts.guides}")
-    if opts.changed:
+    if opts.changed is not None:
+        if not opts.changed:
+            raise SystemExit("error: --changed requires a non-empty ref")
         changed, base = changed_guide_files(opts.guides, opts.changed)
         if not changed:
             print(f"# zero changed guide files versus {base}", file=sys.stderr)

@@ -61,6 +61,8 @@ class DocCSiteTests(unittest.TestCase):
             "Use ``SymbolName`` as code.\n\n"
             "Use ``An error with\n"
             "`nested` code`` across lines.\n\n"
+            "Quoting <doc:Prose> in prose.\n\n"
+            "Keep `<doc:InSingle>` and ``<doc:InDouble>`` verbatim.\n\n"
             "> ```cpp\n"
             "> operator[](thread_index_type idx)\n"
             "> ```\n",
@@ -123,6 +125,13 @@ class DocCSiteTests(unittest.TestCase):
             "Use <code>An error with\n`nested` code</code> across lines.", guide
         )
         self.assertIn("operator[](thread_index_type idx)", guide)
+        self.assertIn("Quoting \\<doc:Prose> in prose.", guide)
+        self.assertIn(
+            "Keep `<doc:InSingle>` and <code>&lt;doc:InDouble&gt;</code> verbatim.",
+            guide,
+        )
+        self.assertNotIn("\\<doc:InSingle>", guide)
+        self.assertNotIn("\\&lt;doc:", guide)
 
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         self.assertEqual(

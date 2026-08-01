@@ -39,10 +39,8 @@ struct FMWorkload {
     }
 
     static func main() async {
-        let env = ProcessInfo.processInfo.environment
-        let parsedTotal = Double(env["PROBE_WORKLOAD_SECONDS"] ?? "300") ?? 300
-        let totalSeconds = parsedTotal.isFinite ? max(0, parsedTotal) : 300
-        let attachSeconds = max(0, Int(env["PROBE_WORKLOAD_ATTACH_SECONDS"] ?? "20") ?? 20)
+        let totalSeconds = Probe.envSeconds("PROBE_WORKLOAD_SECONDS", default: 300)
+        let attachSeconds = Probe.envCount("PROBE_WORKLOAD_ATTACH_SECONDS", default: 20)
 
         let info = ProcessInfo.processInfo
         narrate("attach-target process=\(info.processName) pid=\(info.processIdentifier)")

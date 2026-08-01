@@ -17,8 +17,8 @@ the separately installed `coreai-build` surface.[^capture-workflow]
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,757,
-  of which 1,399 describe a concrete silent failure), in one page, sorted by the symptom you
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,769,
+  of which 1,410 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
 - **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
   presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
@@ -207,6 +207,11 @@ Every non-obvious API claim carries one of these:
 
 > 🟡 **RECONSTRUCTED** — the concept is attested (usually from a WWDC session), but the exact
 > spelling is inferred. Treat the shape as right and the identifiers as provisional.
+
+> 🟠 **Suggestive, \<date\>** — measured, but not on the target configuration: a dated probe run
+> on the simulator or partial hardware (cited by `probes/` probe ID), or a community measurement
+> (spelled **COMMUNITY-MEASURED**). Directional evidence only; each box names the clean
+> MAC-27/DEVICE-27 pass that would promote or retire it.
 
 > 🔴 **GAP** — we could not verify this and are telling you so rather than inventing it. The
 > callout names exactly what is unknown and what it would take to resolve.

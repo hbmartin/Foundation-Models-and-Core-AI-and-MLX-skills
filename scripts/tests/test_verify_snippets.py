@@ -128,6 +128,32 @@ class MarkerTests(unittest.TestCase):
         self.assertEqual(row["status"], "MARKER-ERROR")
         self.assertEqual(code, 2)
 
+    def test_duplicate_marker_keys_are_rejected(self):
+        for info in ("compile:26 compile:27", "illustrative illustrative",
+                     "compile:27 wrap:body wrap:mixed", "xfail:26 xfail:27"):
+            row, code = self._one(info)
+            self.assertEqual(row["status"], "MARKER-ERROR", info)
+            self.assertIn("duplicate marker", row["first_error"], info)
+            self.assertEqual(code, 2, info)
+
+    def test_prelude_excludes_compile_and_xfail(self):
+        for info in ("prelude:ctx compile:27", "xfail:27 prelude:ctx"):
+            row, code = self._one(info)
+            self.assertEqual(row["status"], "MARKER-ERROR", info)
+            self.assertEqual(code, 2, info)
+
+    def test_illustrative_excludes_lang(self):
+        row, code = self._one("illustrative lang:5")
+        self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
+
+    def test_changed_with_empty_ref_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_guide(td, "g.md", "```swift compile:27\nlet a = 1\n```\n")
+            r = run_script(["--guides", td, "--stub-compiler", "pass", "--changed="])
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("--changed requires a non-empty ref", r.stderr)
+
     def test_mainactor_isolation_marker_is_accepted(self):
         row, code = self._one("compile:27 isolation:mainactor")
         self.assertEqual(row["status"], "VERIFIED")
@@ -483,6 +509,13 @@ class WriteMarkersTests(unittest.TestCase):
             dict(base, first_error="value of type A has no member b")))
         self.assertIsNone(VS.triage_marker_for_row(
             {"flags": {"wrongness"}, "first_error": "cannot find 'user' in scope"}))
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="missing argument for parameter 'label' in call")))
+        self.assertEqual(VS.triage_marker_for_row(
+            dict(base, first_error="missing return in global function 'f'")),
+            "illustrative")
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="cannot find 'Foo' in this odd phrasing")))
 
 
 class ReportTests(unittest.TestCase):
