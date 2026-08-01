@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # verify-snippets.sh — compile-verify the fenced Swift snippets in guides/.
 #
-# Usage: ./scripts/verify-snippets.sh [--sdk 26|27|sim27]... [--guess]
+# Usage: ./scripts/verify-snippets.sh [--sdk 26|27|27-on-26|sim27|sim27-on-26]... [--guess]
 #            [--changed[=REF]] [--guides PATH] [--jobs N] [--write-markers]
 #            [--out DIR]
 #
