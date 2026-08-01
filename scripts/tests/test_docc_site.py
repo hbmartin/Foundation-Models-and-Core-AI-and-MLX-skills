@@ -67,8 +67,14 @@ class DocCSiteTests(unittest.TestCase):
             "<doc:SingleContinuation>` verbatim.\n\n"
             "Keep ```<doc:TripleAcross>\n"
             "<doc:TripleContinuation>``` verbatim.\n\n"
-            "An unmatched ` marker stays literal.\n\n"
+            "An unmatched ` marker stays literal and <doc:SameParagraph> escapes.\n\n"
+            "A dangling `` opener stays literal.\n\n"
             "Escape <doc:AfterUnmatched> after the paragraph.\n\n"
+            "A stray ` before\n"
+            "```swift\n"
+            "let fenced = true\n"
+            "```\n\n"
+            "Escape <doc:AfterFence> beyond the fence.\n\n"
             "> ```cpp\n"
             "> operator[](thread_index_type idx)\n"
             "> ```\n",
@@ -209,8 +215,14 @@ class DocCSiteTests(unittest.TestCase):
         )
         self.assertNotIn("\\<doc:SingleContinuation>", guide)
         self.assertNotIn("\\<doc:TripleContinuation>", guide)
-        self.assertIn("An unmatched ` marker stays literal.", guide)
+        self.assertIn(
+            "An unmatched ` marker stays literal and \\<doc:SameParagraph> escapes.",
+            guide,
+        )
+        self.assertIn("A dangling `` opener stays literal.", guide)
         self.assertIn("Escape \\<doc:AfterUnmatched> after the paragraph.", guide)
+        self.assertIn("A stray ` before\n```swift\nlet fenced = true\n```", guide)
+        self.assertIn("Escape \\<doc:AfterFence> beyond the fence.", guide)
 
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         self.assertEqual(
@@ -348,6 +360,18 @@ class DocCSiteTests(unittest.TestCase):
             verifier.VerificationError, "renderer asset differs from source"
         ):
             verifier.verify(site, manifest, renderer)
+
+    def test_archive_verifier_rejects_symlinks_without_renderer(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, _ = self.make_rendered_site(repository, result)
+        (site / "js" / "alias.js").symlink_to(site / "js" / "index.js")
+
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "links that Pages cannot publish"
+        ):
+            verifier.verify(site, manifest)
 
     def test_source_snapshot_covers_page_discovery(self):
         temporary, repository, guides = self.make_fixture()

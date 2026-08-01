@@ -13,6 +13,9 @@ are literal characters. flatten() guarantees no field contains a tab or newline.
 import os, re, sys
 from collections import defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mdslug import slugify
+
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 
 # CommonMark-ish fence delimiter: up to 3 leading spaces, then 3+ backticks or
@@ -21,19 +24,6 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 # Blockquote-wrapped fences ('> ```') never match — every line inside them is
 # '>'-prefixed, so nothing there can match the column-anchored heading regex.
 FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
-
-def slugify(h):
-    h = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', h)  # [text](url) -> text, as GitHub slugs do
-    h = re.sub(r'[`*_]', '', h).strip()
-    h = h.lower()
-    out = []
-    for ch in h:
-        if ch.isalnum():
-            out.append(ch)
-        elif ch in ' -':
-            out.append('-' if ch == ' ' else ch)
-        # everything else dropped (github slug rule approximation)
-    return ''.join(out).strip('-')
 
 def unique_slug(base, used, next_suffix):
     """Return GitHub's first-unsuffixed, then -1, -2, ... heading anchor."""
@@ -76,9 +66,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             line = lines[i]
             fm = FENCE_RE.match(line)
             if fence_len:
-                marker = fm.group(1) if fm else ''
-                if (marker and marker[0] == fence_character
-                        and len(marker) >= fence_len and not fm.group(2).strip()):
+                if (fm and fm.group(1)[0] == fence_character
+                        and len(fm.group(1)) >= fence_len and not fm.group(2).strip()):
                     fence_character = ''
                     fence_len = 0
                     i += 1

@@ -88,6 +88,25 @@ class IndexToolingTests(unittest.TestCase):
             rows = [line.split('\t') for line in result.stdout.splitlines()]
             self.assertEqual(rows[0][2], 'gate-a--graph-parity')
 
+    def test_heading_slug_matches_github_for_emoji_and_snake_case(self):
+        # GitHub keeps the emoji's variation selector (a Unicode mark), the
+        # hyphen minted by the space after the dropped emoji, and underscores
+        # inside code spans: ⚠️-headed sections anchor at #️-… on github.com.
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# ⚠️ The chicken-and-egg\n\n'
+                '## What `strip_debug_info` actually does\n\n'
+                '⚠️ warning\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0][2], '️-the-chicken-and-egg')
+            self.assertEqual(rows[1][2], 'what-strip_debug_info-actually-does')
+
     def test_fenced_warning_lines_extract_as_inline_with_outer_anchor(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)

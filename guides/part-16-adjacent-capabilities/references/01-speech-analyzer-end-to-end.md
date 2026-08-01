@@ -142,7 +142,7 @@ write your own AVCaptureSession plumbing on macOS rather than lifting the sample
 6. [Input: `CaptureInputSequenceProvider` and friends](#6-input-captureinputsequenceprovider-and-friends)
 7. [Running the analysis](#7-running-the-analysis)
 8. [Result merging: the subtle part](#8-result-merging-the-subtle-part)
-9. [⚠️ The cancellation shield](#9--the-cancellation-shield)
+9. [⚠️ The cancellation shield](#9-️-the-cancellation-shield)
 10. [A complete worked example](#10-a-complete-worked-example)
 11. [Custom vocabulary and custom language models](#11-custom-vocabulary-and-custom-language-models)
 12. [`SpeechDetector`: gating on voice activity](#12-speechdetector-gating-on-voice-activity)

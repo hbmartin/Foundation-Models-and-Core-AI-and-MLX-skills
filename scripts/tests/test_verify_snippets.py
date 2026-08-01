@@ -105,6 +105,21 @@ class ExtractionTests(unittest.TestCase):
             "visible-text--setup",
         )
 
+    def test_heading_slug_keeps_marks_edge_hyphens_and_snake_case(self):
+        self.assertEqual(VS.slugify("⚠️ Trap"), "️-trap")
+        self.assertEqual(VS.slugify("✅ Shape verified"), "-shape-verified")
+        self.assertEqual(
+            VS.slugify("What `strip_debug_info` actually does"),
+            "what-strip_debug_info-actually-does",
+        )
+        # Code-span content is rendered verbatim: a word-edge underscore in
+        # code is not an emphasis marker, so GitHub keeps it in the anchor.
+        self.assertEqual(
+            VS.slugify("3.1 `canImport(FoundationModels, _version: 2)` — the SDK test"),
+            "31-canimportfoundationmodels-_version-2--the-sdk-test",
+        )
+        self.assertEqual(VS.slugify("_emphasis_ and plain_snake"), "emphasis-and-plain_snake")
+
 
 class MarkerTests(unittest.TestCase):
     def _one(self, info, body="let a = 1\n"):

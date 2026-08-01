@@ -5,10 +5,10 @@ part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md	480	32-p
 part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md	851	35-chatcompletionslanguagemodel--the-one-that-works-today	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md	916	36-the-protocol-itself-and-why-it-is-two-types	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-01-orientation-and-gating/references/02-platform-and-version-gating.md	110	264--the-mid-cycle-model-refresh	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-01-orientation-and-gating/references/02-platform-and-version-gating.md	286	31-canimportfoundationmodels-version-2--the-sdk-test	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-01-orientation-and-gating/references/02-platform-and-version-gating.md	286	31-canimportfoundationmodels-_version-2--the-sdk-test	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-01-orientation-and-gating/references/02-platform-and-version-gating.md	323	32-the-alternative-pattern-your-own-define	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-01-orientation-and-gating/references/02-platform-and-version-gating.md	399	34--the-xcode-26--27-rebuild-changes-which-catch-fires	compile:27	VERIFIED	body	-	pass	-	-	-	-	-
-part-01-orientation-and-gating/references/02-platform-and-version-gating.md	427	34--the-xcode-26--27-rebuild-changes-which-catch-fires	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-01-orientation-and-gating/references/02-platform-and-version-gating.md	399	34-️-the-xcode-26--27-rebuild-changes-which-catch-fires	compile:27	VERIFIED	body	-	pass	-	-	-	-	-
+part-01-orientation-and-gating/references/02-platform-and-version-gating.md	427	34-️-the-xcode-26--27-rebuild-changes-which-catch-fires	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-01-orientation-and-gating/references/02-platform-and-version-gating.md	733	71-systemlanguagemodelavailability	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-01-orientation-and-gating/references/02-platform-and-version-gating.md	746	71-systemlanguagemodelavailability	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-01-orientation-and-gating/references/02-platform-and-version-gating.md	781	71-systemlanguagemodelavailability	compile:27 imports:FoundationModels	VERIFIED	body	-	pass	-	-	-	-	-
@@ -133,8 +133,8 @@ part-02-foundation-models-everyday-api/references/02-guided-generation-and-strea
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	1943	93-responsestream-snapshot-and-response	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	1988	94-a-streaming-view-that-compiles	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2078	94-a-streaming-view-that-compiles	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2119	96--a-stream-can-finish-having-yielded-zero-snapshots	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2140	96--a-stream-can-finish-having-yielded-zero-snapshots	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2119	96-️-a-stream-can-finish-having-yielded-zero-snapshots	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2140	96-️-a-stream-can-finish-having-yielded-zero-snapshots	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2270	102-the-precondition--and-the-silent-failure-if-you-break-it	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2331	111-the-three-error-ladder	compile:27 imports:FoundationModels	VERIFIED	body	-	pass	-	-	-	-	-
 part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md	2368	111-the-three-error-ladder	compile:27 imports:FoundationModels	VERIFIED	top	-	pass	-	-	-	-	-
@@ -267,7 +267,7 @@ part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	59
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	749	43-using-it	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	850	51-the-cache-hit-rate	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	1094	64-the-pattern-developers-hand-rolled	compile:26	VERIFIED	top	pass	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	1499	76--silent-failure--the-composed-example-in-apples-readme-can-never-fire	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	1499	76-️-silent-failure--the-composed-example-in-apples-readme-can-never-fire	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	1564	77-droppingcompletedtoolcalls--the-one-that-is-straightforwardly-good	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	1752	86-the-ordering-rule-for-dynamicinstructions--the-most-actionable-item-in-this-section	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	2454	121-step-1--establish-the-ceiling-at-runtime	compile:27 imports:FoundationModels	VERIFIED	top	-	pass	-	-	-	-	-
@@ -276,7 +276,7 @@ part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	25
 part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md	2627	134-overflow-catch-ladder-270	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	462	33-one-more-model-spelling-note	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	574	42-conditionals-a-bare-if-is-legal-here	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1073	62--the-body-must-be-pure--it-runs-more-than-once-per-turn	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1073	62-️-the-body-must-be-pure--it-runs-more-than-once-per-turn	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1110	63-exactly-one-active-profile	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1304	74-restoring-a-saved-conversation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1326	75-saving-one-and-the-best-debugging-aid-in-the-corpus	compile:27 defines:DEBUG	VERIFIED	top	-	pass	-	-	-	-	-
@@ -284,7 +284,7 @@ part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-stat
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1729	102-a-modifier-you-will-actually-want	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	1761	102-a-modifier-you-will-actually-want	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2080	124-a-function-reference-is-a-legal-transform	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2362	135--the-composition-rule--and-why-apples-own-examples-never-fire	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2362	135-️-the-composition-rule--and-why-apples-own-examples-never-fire	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2442	142-the-type-is-a-struct-with-static-members-not-an-enum	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2520	145-a-safe-repair-helper	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md	2560	145-a-safe-repair-helper	compile:27 imports:FoundationModels	VERIFIED	top	-	pass	-	-	-	-	-
@@ -301,7 +301,7 @@ part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	3
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	420	32-rollingwindowentries--suffixn-and-nothing-more	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	440	33-summarizehistory--the-nuclear-option	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	572	34-the-model-you-pass-matters-more-than-it-looks	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	688	5--every-composed-example-in-the-repository-is-inert	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	688	5-️-every-composed-example-in-the-repository-is-inert	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	729	the-correct-relationship	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	748	or-dont-compose-them-at-all	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	1021	the-conflict-stated-plainly	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -330,14 +330,14 @@ part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md	2
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	214	23-what-apples-shipping-code-actually-does	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	350	24-the-tool-that-passes-the-baton	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	401	24-the-tool-that-passes-the-baton	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	585	27--silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	600	27--silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	607	27--silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	585	27-️-silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	600	27-️-silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	607	27-️-silent-failure--the-baton-tool-you-named-but-never-registered	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	654	28-passing-the-baton-to-a-different-model	compile:27 imports:FoundationModels	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	725	32-the-code	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	821	34-a-child-session-with-its-own-profile	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	865	35-the-closest-thing-apple-actually-ships	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	946	36--silent-failure--the-consultation-that-quietly-returns-nonsense	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	946	36-️-silent-failure--the-consultation-that-quietly-returns-nonsense	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1050	43-they-compose-and-the-composition-is-the-common-case	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1200	52-two-places-to-set-it-one-precedence-rule	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1337	61-exit-a--conditionalise-the-mode-on-a-variable-the-loop-moves	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -357,9 +357,9 @@ part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1825	73-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1841	73-the-ui-branch	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1867	74-yes--the-synthesized-follow-up-turn	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	1975	75-no--the-decline-is-also-a-turn	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2063	77--silent-failure--the-consent-nobody-answers	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2072	77--silent-failure--the-consent-nobody-answers	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2083	77--silent-failure--the-consent-nobody-answers	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2063	77-️-silent-failure--the-consent-nobody-answers	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2072	77-️-silent-failure--the-consent-nobody-answers	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2083	77-️-silent-failure--the-consent-nobody-answers	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2424	86-pccs-operational-gates	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2670	102-the-api-as-it-actually-compiles	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2728	102-the-api-as-it-actually-compiles	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -367,10 +367,10 @@ part-03-context-profiles-agentic/references/04-agentic-orchestration.md	2778	103
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	496	33-contextsize-and-the-version-trap-inside-it	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	628	41-the-claim	xfail:26 compile:27	MIGRATION-PROVEN	mixed	xfail-pass	pass	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	717	44-where-the-model-belongs-in-your-code	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1183	64--silent-failure--reasoning-spends-your-context-invisibly	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1183	64-️-silent-failure--reasoning-spends-your-context-invisibly	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1267	65-the-reasoning-segment-and-using-it-for-progress-ui	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1566	74-a-complete-implementation	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1790	76--you-cannot-build-a-usage-meter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1790	76-️-you-cannot-build-a-usage-meter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	1976	92-the-full-catch-ladder	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	2379	124-the-architecture-the-community-converged-on	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md	2421	131--image-input-is-supported-operating-limits-remain-open	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -381,7 +381,7 @@ part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	339	23-p
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	543	25-supportsguidedgeneration-is-a-promise-you-are-making-for-the-server	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	726	27-the-errors-you-will-actually-see	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	773	28-transport-timeouts-and-the-executor-cache-wrinkle	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	939	32--the-double-gate-and-the-empty-library	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	939	32-️-the-double-gate-and-the-empty-library	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	998	33-a-consumer-packageswift-that-works	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	1080	34-the-macro-path-huggingfacelanguagemodel	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md	1209	36-capabilities-is-routing-not-documentation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -428,8 +428,8 @@ part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	575	33-the-fix-and-what-to-do-today	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	783	53-the-pattern-in-your-own-executor	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	871	61-the-signature-is-synchronous-and-non-throwing	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	953	62--the-near-miss-signature-that-binds-the-default	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	977	62--the-near-miss-signature-that-binds-the-default	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	953	62-️-the-near-miss-signature-that-binds-the-default	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	977	62-️-the-near-miss-signature-that-binds-the-default	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	1063	65-the-load-once-helper-written-out	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	1316	83-invalidate-back-to-where-the-transcripts-diverge	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md	1806	10-a-worked-executor-skeleton	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -442,7 +442,7 @@ part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments
 part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md	1518	87-preventing-it-since-the-compiler-will-not	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md	1711	93-the-programmatic-equivalents	compile:27 imports:FoundationModels	VERIFIED	top	-	pass	-	-	-	-	-
 part-06-evaluations/references/01-foundations-and-hill-climbing.md	474	4-step-1--subjectfrom-the-code-under-measurement	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-06-evaluations/references/01-foundations-and-hill-climbing.md	1192	84-reading-values-back-out-aggregatevalue	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/01-foundations-and-hill-climbing.md	1192	84-reading-values-back-out-aggregatevalue_	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/01-foundations-and-hill-climbing.md	1250	85-info-is-what-makes-runs-diffable	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-06-evaluations/references/01-foundations-and-hill-climbing.md	1293	9-the-whole-thing-in-one-file	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-06-evaluations/references/01-foundations-and-hill-climbing.md	1346	9-the-whole-thing-in-one-file	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -476,18 +476,18 @@ part-06-evaluations/references/02-model-judges-and-alignment.md	2001	164-step-4-
 part-06-evaluations/references/02-model-judges-and-alignment.md	2150	170-the-scientific-frame	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/02-model-judges-and-alignment.md	2306	174-iteration-3--a-few-worked-examples	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-06-evaluations/references/02-model-judges-and-alignment.md	2436	181-what-to-do-instead	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2488	191--the-positional-join-which-nothing-validates	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2517	191--the-positional-join-which-nothing-validates	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2551	192---00-turns-a-missing-expert-score-into-a-rating-of-zero	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2569	192---00-turns-a-missing-expert-score-into-a-rating-of-zero	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2612	193--an-undefined-κ-reports-as-no-agreement	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/02-model-judges-and-alignment.md	2649	196--a-custom-label-typo-tests-nothing	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2488	191-️-the-positional-join-which-nothing-validates	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2517	191-️-the-positional-join-which-nothing-validates	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2551	192-️--00-turns-a-missing-expert-score-into-a-rating-of-zero	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2569	192-️--00-turns-a-missing-expert-score-into-a-rating-of-zero	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2612	193-️-an-undefined-κ-reports-as-no-agreement	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/02-model-judges-and-alignment.md	2649	196-️-a-custom-label-typo-tests-nothing	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-06-evaluations/references/02-model-judges-and-alignment.md	2777	211-the-judge-api-in-one-place	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	181	2-two-doors-into-synthetic-data	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	266	3--targetcount-counts-the-samples-you-already-have	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	266	3-️-targetcount-counts-the-samples-you-already-have	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	304	4-samplegenerator-parameter-by-parameter	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	484	5--sessionprovider-is-a-factory-and-it-may-be-called-twice	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	537	5--sessionprovider-is-a-factory-and-it-may-be-called-twice	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	484	5-️-sessionprovider-is-a-factory-and-it-may-be-called-twice	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	537	5-️-sessionprovider-is-a-factory-and-it-may-be-called-twice	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	638	62-pcc-quota-is-per-user-and-generation-is-not-free	compile:27 imports:Foundation,FoundationModels	VERIFIED	body	-	pass	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	835	82-the-validator-you-should-write	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	873	83-corpus-rules-go-in-a-post-run-audit	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -502,10 +502,10 @@ part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1553	1
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1701	142-allowsadditionaltoolcalls	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1777	151-naturallanguage--a-judge-inside-your-assertion	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1865	16-disallowed-evaluating-what-the-model-must-not-do	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1938	17--wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	1938	17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2008	171-two-metrics-because-did-it-pass-is-not-one-question	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2083	173-construct-the-model-the-way-your-feature-does	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2156	181--the-generating-model-has-never-heard-of-your-tools	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2156	181-️-the-generating-model-has-never-heard-of-your-tools	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2208	182-the-three-validators	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2262	183-converting-plans-into-samples	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md	2295	183-converting-plans-into-samples	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -518,11 +518,11 @@ part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1009	65-a-reus
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1146	72-read-only-by-default	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1156	72-read-only-by-default	xfail:27 imports:CoreAI	XFAIL-PROVEN	mixed	-	xfail-pass	-	-	-	-	-
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1699	83-a-stride-respecting-writer-you-can-actually-reuse	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1869	92--inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1884	92--inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1893	92--inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2046	103--you-must-supply-a-view-for-every-state	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2063	103--you-must-supply-a-view-for-every-state	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1869	92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1884	92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	1893	92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2046	103-️-you-must-supply-a-view-for-every-state	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2063	103-️-you-must-supply-a-view-for-every-state	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2589	121-the-type-system	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2691	123-the-cgimage--tensor-recipe-from-apples-package	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md	2902	132-the-practice-catch-asseterror-then-catch-broadly-log-richly-degrade	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
@@ -577,7 +577,7 @@ part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	100
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1052	53-zeroing-and-the-six-second-reset	compile:27 imports:Foundation,CoreAI	VERIFIED	top	-	pass	-	-	-	-	-
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1097	the-four-strategies	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1401	the-whole-loop-in-swift	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1604	81--silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1604	81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1780	the-fork-in-the-return-value	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1873	encode-is-throws-not-async-throws	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	1902	computestream	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -591,8 +591,8 @@ part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md	305
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	128	1-why-a-aimodel-is-not-a-model	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	270	22-the-common-envelope-modelbundle	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	303	22-the-common-envelope-modelbundle	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	348	23--aimodel-and-aimodelc-are-directories	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	409	25-metadataversion-must-be-exactly-02	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	348	23-️-aimodel-and-aimodelc-are-directories	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	409	25-metadata_version-must-be-exactly-02	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	434	26-the-language-block-and-a-discrepancy-worth-knowing	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	458	26-the-language-block-and-a-discrepancy-worth-knowing	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	474	26-the-language-block-and-a-discrepancy-worth-knowing	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -601,10 +601,10 @@ part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.m
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	574	27-languagebundle-the-strict-loader	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	639	28-the-diffusion-bundle-three-resolution-mechanisms-in-one-directory	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	644	28-the-diffusion-bundle-three-resolution-mechanisms-in-one-directory	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	692	29--bundlekind-has-four-cases-and-the-repo-ships-six-model-families	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	722	29--bundlekind-has-four-cases-and-the-repo-ships-six-model-families	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	692	29-️-bundlekind-has-four-cases-and-the-repo-ships-six-model-families	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	722	29-️-bundlekind-has-four-cases-and-the-repo-ships-six-model-families	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	776	210-after-aot-compilation-you-must-hand-edit-metadatajson	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	885	211--silent-failure--compression-records-the-request-not-the-result	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	885	211-️-silent-failure--compression-records-the-request-not-the-result	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	934	31-the-manifest	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	983	32-the-dependency-that-should-make-you-nervous	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	1129	34-the-six-cli-tools-and-what-each-is-actually-for	compile:27 imports:Foundation	VERIFIED	body	-	pass	-	-	-	-	-
@@ -639,19 +639,19 @@ part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.m
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2399	72-the-xgrammar-bridge	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2429	73-constrainedgenerationsession--the-type-you-would-actually-use	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2464	73-constrainedgenerationsession--the-type-you-would-actually-use	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2499	74--silent-failure--the-dead-stoptokenids-parameter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2508	74--silent-failure--the-dead-stoptokenids-parameter	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2521	74--silent-failure--the-dead-stoptokenids-parameter	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2559	74--silent-failure--the-dead-stoptokenids-parameter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2573	75--a-second-quieter-trap-the-vocabtype-default-mismatch	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2595	75--a-second-quieter-trap-the-vocabtype-default-mismatch	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2499	74-️-silent-failure--the-dead-stoptokenids-parameter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2508	74-️-silent-failure--the-dead-stoptokenids-parameter	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2521	74-️-silent-failure--the-dead-stoptokenids-parameter	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2559	74-️-silent-failure--the-dead-stoptokenids-parameter	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2573	75-️-a-second-quieter-trap-the-vocabtype-default-mismatch	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2595	75-️-a-second-quieter-trap-the-vocabtype-default-mismatch	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2612	76-constraineddecodingstrategy--the-per-step-loop	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2663	76-constraineddecodingstrategy--the-per-step-loop	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2678	76-constraineddecodingstrategy--the-per-step-loop	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2709	77-the-foundation-models-path--and-where-the-capability-check-happens	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2733	77-the-foundation-models-path--and-where-the-capability-check-happens	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2805	78--the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2828	78--the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2805	78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2828	78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2908	79-convergent-evolution-everyone-reached-for-the-same-library	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	2952	710-a-complete-self-contained-constrained-generation-loop	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md	3087	8-plugging-into-foundation-models	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -681,7 +681,7 @@ part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-r
 part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md	2988	8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md	3023	8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md	3044	8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md	3390	95--the-gap-between-the-session-and-the-shipped-runtime	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md	3390	95-️-the-gap-between-the-session-and-the-shipped-runtime	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md	2683	111-the-whole-integration	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md	2704	111-the-whole-integration	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md	2722	112-the-full-initializer	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -690,7 +690,7 @@ part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md	11
 part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md	2675	101-threads-per-threadgroup-must-match-your-execution-scope	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-12-mlx-python/references/05-serving-and-distributed.md	1445	115-foundation-models-chatcompletionslanguagemodel--the-cross-stack-move	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-12-mlx-python/references/05-serving-and-distributed.md	1455	115-foundation-models-chatcompletionslanguagemodel--the-cross-stack-move	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-12-mlx-python/references/05-serving-and-distributed.md	1477	the-v1-path-bug-you-will-hit-within-five-minutes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-12-mlx-python/references/05-serving-and-distributed.md	1477	️-the-v1-path-bug-you-will-hit-within-five-minutes	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	165	12-pin-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	269	22-what-the-internal-targets-do-and-why-one-of-them-matters-to-you	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	295	22-what-the-internal-targets-do-and-why-one-of-them-matters-to-you	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -764,9 +764,9 @@ part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2551	72-the-processor-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2565	72-the-processor-pipeline	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2581	72-the-processor-pipeline	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2618	72-the-processor-pipeline	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2660	74--exif-orientation--the-bug-apple-fixed-in-their-own-sample	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2691	74--exif-orientation--the-bug-apple-fixed-in-their-own-sample	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2717	74--exif-orientation--the-bug-apple-fixed-in-their-own-sample	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2660	74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2691	74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2717	74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2757	75-photospicker-done-correctly	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2795	75-photospicker-done-correctly	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md	2831	75-photospicker-done-correctly	compile:27 imports:SwiftUI	VERIFIED	top	-	pass	-	-	-	-	-
@@ -826,7 +826,7 @@ part-13-mlx-swift/references/02-generation-tools-and-caching.md	1674	62-how-temp
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1697	63-stop-tokens-four-sources-one-of-which-overwrites-the-others	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1716	63-stop-tokens-four-sources-one-of-which-overwrites-the-others	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1738	63-stop-tokens-four-sources-one-of-which-overwrites-the-others	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/02-generation-tools-and-caching.md	1788	64--silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/02-generation-tools-and-caching.md	1788	64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1820	65-the-render-and-eyeball-recipe	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1911	66-streaming-detokenization	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-13-mlx-swift/references/02-generation-tools-and-caching.md	1951	71-declaring-a-tool	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -882,13 +882,13 @@ part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	812	53-comple
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	877	54-containerloader-and-why-it-is-a-closure-and-not-a-protocol	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	931	62-the-adapter-refuses-to-infer-them-and-says-so-twice	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	959	63-what-reasoning-actually-switches--the-sharpest-doc-comment-in-the-repo	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	997	64--silent-failure-prevented-the-vision-gate-the-sdk-does-not-do	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	997	64-️-silent-failure-prevented-the-vision-gate-the-sdk-does-not-do	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1059	71-the-availability-enum	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1102	72-the-resolution-order-and-why-it-is-that-order	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1140	73--silent-failure-available-does-not-mean-the-weights-are-complete	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1140	73-️-silent-failure-available-does-not-mean-the-weights-are-complete	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1180	74-disk-space-pre-flight	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1240	75-preload-vs-warmup-vs-prewarm--three-different-things	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1272	76--silent-failure-the-prewarm-witness-must-match-exactly	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1272	76-️-silent-failure-the-prewarm-witness-must-match-exactly	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1316	77-the-modelcache-actor-the-reason-any-of-this-is-fast	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1351	77-the-modelcache-actor-the-reason-any-of-this-is-fast	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	1384	78-evict-and-evictall	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -911,7 +911,7 @@ part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2041	86-schem
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2056	86-schemaconverter--the-two-grammars-and-the-defs-bug-class	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2177	87-streaming-and-what-the-27-sdk-took-away	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2201	87-streaming-and-what-the-27-sdk-took-away	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2224	88--silent-failure-usage-is-never-forwarded-to-the-framework	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2224	88-️-silent-failure-usage-is-never-forwarded-to-the-framework	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2264	89-mlxdownloadprogress--the-observable	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2286	89-mlxdownloadprogress--the-observable	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2305	89-mlxdownloadprogress--the-observable	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -930,17 +930,17 @@ part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2809	97-stand
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2869	97-standalone-guided-generation-without-foundation-models	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2900	98-constraint-cloning-and-the-fork-fallback	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2911	98-constraint-cloning-and-the-fork-fallback	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2945	99--silent-failure-flushlogs-always-returns-nil	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2958	99--silent-failure-flushlogs-always-returns-nil	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2976	99--silent-failure-flushlogs-always-returns-nil	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	3002	99--silent-failure-flushlogs-always-returns-nil	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2945	99-️-silent-failure-flushlogs-always-returns-nil	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2958	99-️-silent-failure-flushlogs-always-returns-nil	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	2976	99-️-silent-failure-flushlogs-always-returns-nil	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	3002	99-️-silent-failure-flushlogs-always-returns-nil	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	3050	102-the-smoking-gun	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	3300	123-things-that-are-not-silent-but-are-surprising	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md	3376	131-samplingmodekind-was-renamed-mid-beta	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	580	35-positionids-is-the-full-position-vector	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	580	35-position_ids-is-the-full-position-vector	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	841	42-what-the-reader-enforces	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	861	42-what-the-reader-enforces	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
-part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	894	43-the-language-block-and-functionmap	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	894	43-the-language-block-and-function_map	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	966	44-the-vlm-variant	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	1457	57-dynamic-shapes-need-a-probe-and-shapelesstrue-is-not-enough	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2046	82-the-swift-counterpart-and-the-api-delta	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -951,7 +951,7 @@ part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2479	96-the-state-owning-actor	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2591	97-the-image-placeholder-contract--an-asymmetry-that-will-catch-you	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2651	97-the-image-placeholder-contract--an-asymmetry-that-will-catch-you	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2668	98--silent-failure-every-core-ai-test-in-this-repo-passes-without-running	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2668	98-️-silent-failure-every-core-ai-test-in-this-repo-passes-without-running	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2772	102-apples-own-code-sets-it-true-for-dynamic-shape-gpu-llms	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2803	103-swift-lm-rejects-it-outright	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md	2841	104-mlx2coreais-swift-runner-sets-it-false--on-a-dynamic-model	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1002,7 +1002,7 @@ part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3113	102-the-api	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3132	102-the-api	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3148	102-the-api	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3179	103--the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
+part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3179	103-️-the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3245	104-getting-the-configuration-right	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3340	112-cache-policies-what-the-system-may-take-back	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-15-shipping-and-operating/references/01-model-distribution-and-updates.md	3424	114-check-free-space-before-you-start	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
@@ -1073,8 +1073,8 @@ part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2017	7
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2104	74-stopping-a-live-capture-two-approaches-one-recommendation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2146	81-the-module-does-not-accumulate-a-transcript	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2177	82-strategy-a--range-replacement-in-one-attributed-string	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2226	83--silent-failure-strategy-a-silently-degrades-to-append-only	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2299	83--silent-failure-strategy-a-silently-degrades-to-append-only	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2226	83-️-silent-failure-strategy-a-silently-degrades-to-append-only	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2299	83-️-silent-failure-strategy-a-silently-degrades-to-append-only	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2325	84-strategy-b--two-transcripts	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2391	86-a-merge-implementation-for-strategy-a	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md	2421	87-a-merge-implementation-for-strategy-b	compile:27 imports:SwiftUI	VERIFIED	top	-	pass	-	-	-	-	-
@@ -1118,35 +1118,35 @@ part-16-adjacent-capabilities/references/02-app-schema-domains.md	2153	111-custo
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2204	112-asking-a-question-mid-perform--requestvalue	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2240	112-asking-a-question-mid-perform--requestvalue	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2264	113-displayrepresentation--the-highest-leverage-thing-you-can-customize	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	2298	114--snippetintent-is-an-ios-26-feature--not-new-this-year	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	2298	114-️-snippetintent-is-an-ios-26-feature--not-new-this-year	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2332	115-the-other-route-a-snippet-view-straight-from-a-schema-intent	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2418	121-interaction-donations--teaching-siri-what-happens-in-your-ui	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2468	122-confirmations-and-ownershipprovidingentity	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2561	131-valuerepresentation--sharing-structured-types-across-apps	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	2611	valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	2625	valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	2647	valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	2611	-valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	2625	-valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	2647	-valuerepresentation-versus-intentvaluerepresentation--resolved-they-are-one-type	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2709	132-the-three-discovery-mechanisms--and-where-relevantentities-fits	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	2794	133--entitycollection--the-parameter-resolution-performance-cliff	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	2794	133-️-entitycollection--the-parameter-resolution-performance-cliff	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2836	134-unionvalue--one-parameter-several-entity-types	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2903	135-syncableentity--cross-device-siri-conversations	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	2987	137-longrunningintent--past-the-30-second-wall	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/02-app-schema-domains.md	3088	138-executiontargets--choosing-the-process	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	3213	141--silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	3232	141--silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	3304	143--per-row-appentityidentifier-loses-selected-and-scrolled-off-entities	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/02-app-schema-domains.md	3333	143--per-row-appentityidentifier-loses-selected-and-scrolled-off-entities	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	3213	141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	3232	141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	3304	143-️-per-row-appentityidentifier-loses-selected-and-scrolled-off-entities	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/02-app-schema-domains.md	3333	143-️-per-row-appentityidentifier-loses-selected-and-scrolled-off-entities	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	346	16-the-diagnostic-find-out-which-path-you-are-on-in-one-utterance	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	425	21-the-initializer	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	439	21-the-initializer	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	546	32-shape-a-one-primary-item--nsuseractivity	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	602	33-shape-b-one-entity-among-many--appentityidentifier	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	639	34-shape-c-lists-and-collections--appentityidentifierforselectiontype	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	682	34-shape-c-lists-and-collections--appentityidentifierforselectiontype	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	602	33-shape-b-one-entity-among-many--appentityidentifier_	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	639	34-shape-c-lists-and-collections--appentityidentifierforselectiontype_	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	682	34-shape-c-lists-and-collections--appentityidentifierforselectiontype_	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	723	35-shape-d-custom-canvases--appentityuielement	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	787	36-uikit-and-appkit	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	830	37-a-complete-two-screen-adoption	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	944	42--silent-failure--the-naive-implementation-turns-awareness-into-a-stall	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	944	42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	988	43-the-fix-from-apple	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1053	44-displayrepresentationcomponents	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1073	45-the-displayrepresentationwith-overload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1160,9 +1160,9 @@ part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1416	the-entit
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1434	the-identifier	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1447	the-uikit-annotation-site	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1461	the-transfer-representation--the-change-that-actually-fixes-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1525	55--draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1541	55--draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1602	55--draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1525	55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1541	55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1602	55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1772	61-notifications	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1795	62-now-playing--and-the-ordering-rule	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/03-onscreen-awareness.md	1835	63-alarmkit	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1189,8 +1189,8 @@ part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-mo
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1386	72-the-whole-configuration-from-apples-sample	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1569	75-guidanceprofile--scoping-the-tool-to-what-your-index-actually-contains	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1614	76-the-two-channel-results-pattern-and-why-it-is-an-index-story	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1758	92--the-exact-signature--and-it-is-not-what-you-would-write	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1789	92--the-exact-signature--and-it-is-not-what-you-would-write	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1758	92-️-the-exact-signature--and-it-is-not-what-you-would-write	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1789	92-️-the-exact-signature--and-it-is-not-what-you-would-write	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1809	93-a-complete-working-implementation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	1853	93-a-complete-working-implementation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md	2087	113-path-2--intentvaluequery-structured-search	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1225,7 +1225,7 @@ part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1293	67-the-pa
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1390	69-a-token-budget-you-can-actually-check	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1498	71-the-one-line-and-what-it-hides	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1512	71-the-one-line-and-what-it-hides	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1589	72--the-constraint-that-decides-this-for-many-readers-generable-and-logits	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1589	72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	1745	79-the-migration-skeleton	prelude:external-module	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	2005	84-fuse-dont-ship-an-adapter--and-why	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md	2037	85-driving-it-from-languagemodelsession	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
@@ -1290,11 +1290,11 @@ part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	412	33-the-tr
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	442	41-the-form-as-apple-writes-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	464	41-the-form-as-apple-writes-it	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	503	42--measured-the-number-is-the-modules--user-module-version	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	598	45-nested-if-versus	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	605	45-nested-if-versus	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	635	46--silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	648	46--silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	664	46--silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	598	45-nested-if-versus-	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	605	45-nested-if-versus-	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	635	46-️-silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	648	46-️-silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	664	46-️-silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	696	47-a-gate-you-can-verify-locally-in-ten-seconds	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	724	47-a-gate-you-can-verify-locally-in-ten-seconds	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md	814	53-the-equivalent-for-a-swiftpm-package	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1334,8 +1334,8 @@ part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	509	25-compu
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	613	26-model-compilation--specialization-and-caching	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	687	28-the-row-with-no-right-hand-side-xcodes-generated-wrapper-class	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	707	28-the-row-with-no-right-hand-side-xcodes-generated-wrapper-class	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	848	31--silent-failure-the-optional-sample-loader-may-request-an-unintended-compute-unit	compile:27 imports:Foundation	VERIFIED	top	-	pass	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	945	33--silent-failure-two-options-structs-two-multi-gigabyte-cache-entries	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	848	31-️-silent-failure-the-optional-sample-loader-may-request-an-unintended-compute-unit	compile:27 imports:Foundation	VERIFIED	top	-	pass	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	945	33-️-silent-failure-two-options-structs-two-multi-gigabyte-cache-entries	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	1114	41-states-kv-caches-as-first-class-in-place-model-inputs	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	1243	42-multi-function-assets--and-the-finding-that-reframes-them	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	1464	44-ahead-of-time-compilation	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
@@ -1347,7 +1347,7 @@ part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	2156	82-step
 part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md	2320	92-the-core-ai-api-you-need-on-day-one	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	1621	making-the-invalidation-visible-before-your-user-does	prelude:guide-context	PRELUDE-NEEDED	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	1775	the-workflow-and-the-api	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
-part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	1826	the-silent-failure	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
+part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	1826	️-the-silent-failure	illustrative	ILLUSTRATIVE	-	-	-	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	1861	what-fix-it-means	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	2046	what-to-do-instead	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
 part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md	2062	what-to-do-instead	compile:27	VERIFIED	top	-	pass	-	-	-	-	-
