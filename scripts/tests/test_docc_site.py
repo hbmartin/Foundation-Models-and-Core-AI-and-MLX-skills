@@ -560,6 +560,23 @@ class DocCSiteTests(unittest.TestCase):
         self.assertIn("https://example.com/#old-anchor", lines[0])
         self.assertIn("<doc:SomePage#New-anchor>", lines[0])
 
+    def test_anchor_fix_matches_docc_normalized_fragment_spelling(self):
+        # Swift 6.2's docc echoes fragments with underscores dropped and
+        # hyphen runs collapsed, so the diagnostic spelling differs from the
+        # literal GitHub-faithful fragment in the generated Markdown.
+        lines = ["<doc:SomePage#84-️-failure--omit-remove_functionalization>\n"]
+
+        changed = canonicalizer.replace_fragment(
+            lines,
+            "84-️-failure-omit-removefunctionalization",
+            "New-anchor",
+            1,
+            Path("Guide.md"),
+        )
+
+        self.assertTrue(changed)
+        self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
     def test_anchor_fix_rejects_a_different_single_docc_fragment(self):
         lines = ["<doc:SomePage#different-anchor>\n"]
 

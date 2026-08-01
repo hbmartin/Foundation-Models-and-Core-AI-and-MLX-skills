@@ -75,6 +75,17 @@ def replacement_text(diagnostic: dict[str, object]) -> str | None:
     return text
 
 
+def docc_reported_fragment(fragment: str) -> str:
+    """A fragment as DocC's resolver echoes it in diagnostics.
+
+    Before resolution DocC drops underscores, collapses repeated hyphens, and
+    trims edge hyphens, so a diagnostic's spelling can differ from the literal
+    ``<doc:...#fragment>`` in the generated Markdown (Swift 6.2's docc reports
+    '#a--omit-x_y' as 'a-omit-xy').
+    """
+    return re.sub(r"-{2,}", "-", fragment.replace("_", "")).strip("-")
+
+
 def replace_fragment(
     lines: list[str], old: str, new: str | None, line_number: int | None, source: Path
 ) -> bool:
@@ -91,14 +102,14 @@ def replace_fragment(
         elif len(exact_matches) > 1:
             return None
         else:
-            # DocC normalizes some punctuation in diagnostics (for example,
-            # two source hyphens become one). Restrict that fallback to the
-            # actual <doc:...> fragment instead of replacing a same-line URL.
-            normalized_old = re.sub(r"-{2,}", "-", old)
+            # DocC normalizes punctuation in diagnostics. Restrict that
+            # fallback to the actual <doc:...> fragment instead of replacing
+            # a same-line URL.
+            normalized_old = docc_reported_fragment(old)
             matches = [
                 link
                 for link in links
-                if re.sub(r"-{2,}", "-", link.group("fragment"))
+                if docc_reported_fragment(link.group("fragment"))
                 == normalized_old
             ]
         if len(matches) == 1:
@@ -128,13 +139,13 @@ def replace_fragment(
         if result is not None:
             return result
 
-    normalized_old = re.sub(r"-{2,}", "-", old)
+    normalized_old = docc_reported_fragment(old)
     occurrences = [
         index
         for index, line in enumerate(lines)
         if any(
             link.group("fragment") == old
-            or re.sub(r"-{2,}", "-", link.group("fragment")) == normalized_old
+            or docc_reported_fragment(link.group("fragment")) == normalized_old
             for link in DOC_FRAGMENT.finditer(line)
         )
     ]
