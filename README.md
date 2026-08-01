@@ -6,7 +6,7 @@ iPadOS 27, macOS 27, watchOS 27, visionOS 27, tvOS 27, and Xcode 27 generation, 
 from the preceding platform generation.
 
 The Markdown under [`guides/`](guides/) is the canonical published corpus. Generated indexes and
-the DocC site are derived from it; edit the guide sources, not generated documentation output.
+the MkDocs site are derived from it; edit the guide sources, not generated documentation output.
 
 ## Maintaining the corpus
 
@@ -40,8 +40,8 @@ The repository's pure-Python checks use the standard library and run on Linux an
 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -q
 ```
 
-This exercises the index tooling, committed-index consistency, snippet-verifier logic, and DocC
-adapter. It does not compile guide snippets against Apple SDKs or execute runtime probes.
+This exercises the index tooling, committed-index consistency, snippet-verifier logic, and MkDocs
+publishing hook. It does not compile guide snippets against Apple SDKs or execute runtime probes.
 
 When guide headings, API references, or silent-failure callouts change, regenerate the committed
 indexes:
@@ -77,14 +77,23 @@ hashed provenance manifest; read the [SDK interface evidence guide](notes/sdk-in
 before capturing or promoting a new seed. Runtime destinations, environment knobs, expected skips,
 and the `PROBE-RESULT` contract are documented in [`probes/README.md`](probes/README.md).
 
-### DocC publishing
+### MkDocs publishing
 
 The [documentation Pages workflow](.github/workflows/pages.yml) is the publishing source of truth.
-It tests the adapter, builds an immutable generated DocC catalog under `.build/`, resolves section
-anchors, compiles the static site with warnings as errors, verifies routes and relative links, and
-checks that the source guides were not modified. The workflow pins its Swift toolchain; local full
-builds need a compatible `docc` executable. The generated catalog and site are disposable and are
-not committed.
+It tests the render-only Markdown hook, builds the site with warnings as errors, verifies the main
+routes and search index, and checks that the source guides were not modified. The generated site is
+disposable and is not committed.
+
+To preview the same site locally:
+
+```bash
+python3 -m venv .build/docs-venv
+.build/docs-venv/bin/python -m pip install -r requirements-docs.txt
+.build/docs-venv/bin/mkdocs serve
+```
+
+Run `.build/docs-venv/bin/mkdocs build --strict --clean` for the production check. The publishing
+stack uses Python only; it does not install Swift or fetch a separate renderer.
 
 ### Freshness and research mirrors
 
@@ -106,7 +115,7 @@ claims deliberately under the conventions above.
 | [`guides/`](guides/) | Canonical 17-part guide series, reference guides, and generated cross-cutting indexes. |
 | [`notes/`](notes/) | Research synthesis, maintenance runbooks, captured SDK interfaces, and verification results. |
 | [`probes/`](probes/) | SwiftPM runtime probes that turn documented behavioral gaps into executable evidence. |
-| [`scripts/`](scripts/) | Indexing, verification, SDK capture, DocC, freshness, and research-mirror tooling. |
+| [`scripts/`](scripts/) | Indexing, verification, SDK capture, MkDocs, freshness, and research-mirror tooling. |
 | [`docs/`](docs/) | Captured Apple documentation used as source material. |
 | [`forums/`](forums/) | Developer Forum source corpus. |
 | [`transcripts/`](transcripts/) | WWDC and technical-session transcripts used by the research corpus. |

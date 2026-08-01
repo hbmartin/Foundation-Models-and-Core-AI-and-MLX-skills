@@ -49,7 +49,7 @@ def _render_away_emphasis(text):
         text = stripped
 
 
-def slugify(heading):
+def slugify(heading, separator="-"):
     code_spans = []
     escaped_characters = []
 
@@ -83,7 +83,7 @@ def slugify(heading):
     out = []
     for ch in text:
         if ch == ' ':
-            out.append('-')
+            out.append(separator)
             continue
         category = unicodedata.category(ch)
         if ch == '-' or category[0] in 'LMN' or category == 'Pc':
