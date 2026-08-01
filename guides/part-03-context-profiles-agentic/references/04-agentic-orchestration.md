@@ -654,7 +654,7 @@ where iOS 26 reported 4096 (community, `noema-ios`, `AFMLLMClient.swift:133-135`
 ```swift compile:27 imports:FoundationModels
 // ✅ VERIFIED — Origami/Models/OrchestratorProfile.swift:289-293
 private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
-    entries.suffix(4)
+    Array(entries.suffix(4))
 }
 ```
 
@@ -2080,7 +2080,7 @@ func sendFollowUp(_ text: String) {
 }
 ```
 
-```swift compile:27
+```swift illustrative
 // 3. Never persist a pending proposal across app launches. Restore the
 //    transcript (LanguageModelSession(profile:history:)), not the pending flag.
 ```

@@ -90,7 +90,7 @@ models forfeit it entirely** because a running scan cannot be rewound.
 > turn into an O(N) turn and your tests still pass. Also here: hardcoding any context figure instead of
 > reading `contextSize` bets your window budget on a constant Apple explicitly declines to guarantee, and
 > a rebuild under Xcode 27 changes which `catch` clause fires.
-
+>
 > 🔴 **GAP** — the token cost of an image is unpublished (the "896 px" figure in circulation is a
 > developer's inference); there is no `tokenCount` for PCC or for a custom `LanguageModel` — confirmed
 > against the 27.0 beta interface on 2026-07-29: all five `tokenCount(for:)` overloads sit on

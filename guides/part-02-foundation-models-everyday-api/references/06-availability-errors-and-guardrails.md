@@ -3069,7 +3069,7 @@ struct CloudTier {
 
 And the routing rule, which is short but earns its place:
 
-```swift compile:27
+```swift illustrative
 // Pseudocode for the tier decision. Two rules do all the work:
 //
 //   1. On `.limitReached`, do NOT retry and do NOT wait. Disable the PCC affordance,

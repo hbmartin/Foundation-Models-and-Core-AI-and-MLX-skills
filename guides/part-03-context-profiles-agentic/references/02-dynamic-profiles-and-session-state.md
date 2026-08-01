@@ -1323,10 +1323,11 @@ No WWDC session mentions this, and it is the single most useful thing you can ad
 agentic feature during development. When a profile switch does not fire, or history vanishes, the diff
 between two consecutive snapshots tells you exactly which entry changed.
 
-```swift compile:27
+```swift compile:27 defines:DEBUG
 import FoundationModels
 import Foundation
 
+#if DEBUG
 /// Dump a session's transcript to disk. Debug builds only.
 func snapshot(_ transcript: Transcript, named name: String) throws {
     let encoder = JSONEncoder()
@@ -1337,6 +1338,7 @@ func snapshot(_ transcript: Transcript, named name: String) throws {
     let url = dir.appending(path: "\(name)_\(Date.now.timeIntervalSince1970).json")
     try data.write(to: url)
 }
+#endif
 ```
 
 > ⚠️ Transcripts contain everything the user typed and everything the model said. Gate the writer on a
@@ -2518,24 +2520,40 @@ Apple's documentation attaches a related warning to `isResponding` itself:
 ```swift compile:27
 import FoundationModels
 
-extension LanguageModelSession {
+/// The only owner of this session. Main-actor isolation serializes response
+/// startup, the idle check, and transcript mutation into one critical region.
+@MainActor
+final class SessionOwner {
+    private let session: LanguageModelSession
+
+    init(session: LanguageModelSession) {
+        self.session = session
+    }
+
+    /// Starts responses through the same serialized owner that performs repairs.
+    func respond(to prompt: String) async throws -> String {
+        try await session.respond(to: prompt).content
+    }
+
     /// Repairs the transcript after a preserved abort. No-op while responding.
     /// - Returns: `true` if the transcript was rewritten.
     @discardableResult
     func repairTranscriptIfIdle(
         _ repair: (Transcript) -> Transcript
     ) -> Bool {
-        guard !isResponding else { return false }
-        transcript = repair(transcript)
+        guard !session.isResponding else { return false }
+        session.transcript = repair(session.transcript)
         return true
     }
 }
 ```
 
-Two notes on that helper. It returns `false` before attempting an invalid mutation, so a repair at a
-bad moment becomes a retry rather than a failed response — you decide when to try again. And it takes the whole
-`Transcript`, because `session.transcript` is a `Transcript`, not an entry array; use
-`Transcript(entries:)` to rebuild one.
+Two notes on that owner. It returns `false` before attempting an invalid mutation, so a repair at a
+bad moment becomes a retry rather than a failed response — you decide when to try again. More
+importantly, the session is private and the response entry point lives on the same `@MainActor`
+owner; callers cannot race the check with an unowned response. It takes the whole `Transcript`,
+because `session.transcript` is a `Transcript`, not an entry array; use `Transcript(entries:)` to
+rebuild one.
 
 A minimal, honest repair — drop a trailing entry that has no business being there:
 
@@ -2819,7 +2837,7 @@ struct Compacted: LanguageModelSession.DynamicProfileModifier {
                 default: true
                 }
             }
-            return Array(withoutToolTraffic.suffix(keeping))
+            return Array(withoutToolTraffic.suffix(max(0, keeping)))
         }
     }
 }

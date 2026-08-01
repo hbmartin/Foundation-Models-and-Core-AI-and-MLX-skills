@@ -178,7 +178,7 @@ returned value, not the requested one.
 
 ---
 
-## ✅ C6 — Splitting a model into multiple functions is what routes it to the ANE
+## ✅ C6 — Split structures can trigger the `coreai-models` loader's ANE preference
 
 **Applied — and rescoped.** The claim as written above was later narrowed: the split drives the
 optional `coreai-models` **loader's** ANE preference (`ModelStructure.swift` classifier), a package
@@ -193,10 +193,11 @@ re-encode caveat is in part-07 ref 04 and part-17 ref 02 §7.6.
 WWDC26 session 325 presents splitting SAM3 into three entrypoints (`image_encode` / `text_encode` /
 `detect`) as a **latency trick** — run each at a different cadence, 76% faster second inference.
 
-Reading the shipped code (`notes/repos/coreai-models-nonllm.md`,
-`ModelStructure.swift:71-80`) shows the split is also what **routes the model to the Neural
-Engine**. That is a much stronger reason to do it, and it changes how the technique should be
-taught.
+Reading the shipped package code (`notes/repos/coreai-models-nonllm.md`,
+`ModelStructure.swift:71-80`) shows that the optional `coreai-models` loader classifies certain
+split structures and **prefers** the Neural Engine for them. That is a package loading policy, not
+a promise that the Core AI framework routes every split model to the ANE. Teach the classifier and
+its fallback behavior, not an invented framework contract.
 
 ⚠️ **But**: `CoreAISegmentationEngine` **re-runs `image_encode` on every call** and exposes no
 cache. The 76% figure requires caller-side work that Apple's own package does not do for you.
@@ -371,12 +372,13 @@ not published. Resolving needs an SDK interface dump.~~ **RESOLVED 2026-07-29** 
 `_Vision_FoundationModels` cross-import overlay answers it (`Output` is a deliberately unnameable
 opaque `some PromptRepresentable`); cited in part-02 ref 03 §10.
 
-### C10.2 — ⚠️ NEW SILENT FAILURE: image tool calls require an attachment label
+### C10.2 — ✅ APPLIED: image tool calls require an attachment label
 **Affects:** guides 2.3 and 2.5, **both already written and already corrected once.**
 
 `Attachment(image).label("flyer")` is **REQUIRED** for image tool calls, and **silently no-ops if
-omitted.** This is exactly the class of defect the series exists to document, and it is not in
-either guide yet. Needs a callout in both.
+omitted.** This is exactly the class of defect the series exists to document. The required-label
+callout is now present in both affected guides: part-02 reference 03 (tool calling) and reference
+05 (image inputs and attachments).
 
 ### C10.3 — `.system.searchInApp` is a RENAME, not a new schema
 **Affects:** the Part 16 App Intents guides (since written; see C8).
@@ -401,7 +403,7 @@ fine-tuning **180 → 600 tok/s** on Qwen 3.5 9B; and 1T-parameter Kimi 2.6 (~1 
 across four machines.
 ⚠️ **`--batch-size` is GLOBAL and must be scaled by N.** Easy to get silently wrong.
 
-### C10.5 — TensorOps: restate the version story; scale-plane non-existence is now SETTLED
+### C10.5 — TensorOps: restate the version story; no scale plane on the 26.x surface
 **Affects:** `part-11-metal-and-tensorops/` (since written). **This supersedes C3's version bullet.**
 
 Tech Talk 111432 gives an explicit per-point-release ladder:
@@ -413,10 +415,11 @@ annotate the symbol as 26.2. Both facts are true and they are about different th
 
 The int4/int8-only dtype set **matches the header finding exactly** (no int2, fp4 or fp8).
 
-**Scale planes: promote from "not found" to SETTLED NON-EXISTENCE.** This is a third independent
-source, and it does better than absence — it names what shipped *instead*: **in-kernel custom
-dequantisation into a cooperative tensor**, which is precisely the MLX pattern we already
-documented. The guide can now teach the real technique rather than merely reporting a void.
+**Scale planes on the 26.x/26.6 surface: promote from "not found" to settled non-existence.** This
+is a third independent source, and it does better than absence — it names what shipped *instead*:
+**in-kernel custom dequantisation into a cooperative tensor**, which is precisely the MLX pattern
+we already documented. This conclusion is deliberately version-scoped: the SDK-27 surface adds a
+scale-plane finding, which remains documented rather than being erased by the 26.x result.
 
 Citable bonus number (Apple-published): the SIMD-group-matrix path shows **0% neural-accelerator
 utilisation** on M5, and a 4K×4K matmul goes **2 s → 0.5 s → 0.33 s** across kernel versions v1/v2/v3.

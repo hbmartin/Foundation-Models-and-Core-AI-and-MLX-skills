@@ -471,7 +471,7 @@ the function you are calling; do not stringify a `Prompt` by hand.
 `ToolCallEvaluator`, pass it now. Because the accessor is declared by an Evaluations extension—not by
 FoundationModels—the source file must import both modules:[^eval-structured-transcript-import]
 
-```swift compile:27
+```swift illustrative
 import Evaluations
 import FoundationModels
 ```

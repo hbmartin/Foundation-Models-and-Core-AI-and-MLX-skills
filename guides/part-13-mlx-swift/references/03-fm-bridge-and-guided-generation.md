@@ -234,7 +234,7 @@ turning it off removes the adapter regardless of SDK.
 There is a repo test that pins this. `Tests/MLXFoundationModelsTests/TraitMatrixTests.swift` is
 structured so that *compiling* it under a given trait state is the assertion:
 
-```swift compile:27
+```swift illustrative
 // Copyright © 2026 Apple Inc.
 //
 // TraitMatrixTests: symbol-surface + behavioral checks across the
@@ -476,7 +476,7 @@ site, into source text that references symbols from five different modules. Thos
 in scope **where you wrote the macro**, not where the macro was declared. The macro's own doc comment
 enumerates them (`Libraries/MLXHuggingFace/FoundationModelsMacros.swift:17-25`, verbatim):
 
-```swift compile:27
+```swift illustrative
 /// The expansion references symbols the caller must have in scope:
 /// ```swift
 /// import Foundation          // URL, Progress (via #hubDownloader)
@@ -586,7 +586,7 @@ the availability line and the `#externalMacro` clause. The whole file is wrapped
 There is a subtlety in the defaults that the source calls out explicitly and that you should read
 before you rely on either default (`FoundationModelsMacros.swift:35-40`, verbatim):
 
-```swift compile:27
+```swift illustrative
     // The `capabilities` / `configurationResolver` defaults mirror
     // `MLXLanguageModel.init(configuration:capabilities:configurationResolver:weightsLocation:load:)`.
     // The expansion forwards each argument only when the caller supplies it, so
@@ -956,7 +956,7 @@ chose. To close this gap: read `Libraries/MLXLMCommon/ReasoningHeuristics.swift`
 
 ### 6.3 What `.reasoning` actually switches — the sharpest doc comment in the repo
 
-```swift compile:27
+```swift illustrative
     /// Declaring `.reasoning` matters for request routing: the framework only
     /// forwards a `reasoningLevel` to executors that declare `.reasoning`, and
     /// auto-rejects one otherwise (on the developer's behalf) before `respond`

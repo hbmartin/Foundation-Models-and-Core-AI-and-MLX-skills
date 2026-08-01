@@ -164,12 +164,18 @@ ILLUSTRATIVE_DIAGNOSTICS = (
 # Anchor slugs — copied from scripts/extract-callouts.py (do NOT import it: its
 # top level executes an extraction). Keep byte-identical so anchors agree.
 
-def slugify(text):
-    text = re.sub(r"[`*_~]", "", text)
-    text = text.strip().lower()
-    text = re.sub(r"[^\w\s一-鿿-]", "", text, flags=re.UNICODE)
-    text = re.sub(r"[\s]+", "-", text)
-    return text
+def slugify(h):
+    h = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', h)  # [text](url) -> text, as GitHub slugs do
+    h = re.sub(r'[`*_]', '', h).strip()
+    h = h.lower()
+    out = []
+    for ch in h:
+        if ch.isalnum():
+            out.append(ch)
+        elif ch in ' -':
+            out.append('-' if ch == ' ' else ch)
+        # everything else dropped (github slug rule approximation)
+    return re.sub(r'-{2,}', '-', ''.join(out)).strip('-')
 
 
 def flatten(text, limit=400):
@@ -684,15 +690,24 @@ def discover_toolchain(name):
         raise SystemExit(f"error: developer dir for target {name} missing: {dev_dir}")
     env = dict(os.environ, DEVELOPER_DIR=dev_dir)
 
+    def checked_output(command):
+        try:
+            return subprocess.run(command, env=env, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+        except subprocess.CalledProcessError as error:
+            detail = flatten(error.stderr or error.stdout or f"exit {error.returncode}")
+            raise SystemExit(
+                f"error: toolchain discovery for target {name} failed: "
+                f"{' '.join(command)}: {detail}"
+            ) from error
+
     def xcrun(*args):
-        return subprocess.run(["xcrun"] + list(args), env=env, capture_output=True,
-                              text=True, check=True).stdout.strip()
+        return checked_output(["xcrun"] + list(args))
 
     sdk_path = xcrun("--sdk", sdk_name, "--show-sdk-path")
     sdk_version = xcrun("--sdk", sdk_name, "--show-sdk-version")
     sdk_build = xcrun("--sdk", sdk_name, "--show-sdk-build-version")
-    out = subprocess.run(["xcodebuild", "-version"], env=env, capture_output=True,
-                         text=True, check=True).stdout.splitlines()
+    out = checked_output(["xcodebuild", "-version"]).splitlines()
     xcode_version = out[0].replace("Xcode", "").strip() if out else "?"
     xcode_build = out[1].replace("Build version", "").strip() if len(out) > 1 else "?"
     platform_dir = {"macosx": "MacOSX", "iphonesimulator": "iPhoneSimulator"}[sdk_name]

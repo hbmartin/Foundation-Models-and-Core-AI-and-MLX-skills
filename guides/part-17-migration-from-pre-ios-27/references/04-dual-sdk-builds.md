@@ -392,7 +392,7 @@ This is where people go wrong, and it is worth stating as bluntly as possible.
 
 📏 **MEASURED BY US** on `MacOSX26.5.sdk` (macOS 26.5.2 · Xcode 26.6 · 2026-07-28):
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModels)
 #warning("canImport(FoundationModels) == TRUE")
 #else
@@ -632,7 +632,7 @@ compiled with `xcrun --sdk macosx swiftc -typecheck` and the taken branch record
 
 **(a) A misspelled module name.** Zero diagnostics.
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModelsX)     // typo
 // ... your entire 27 feature ...
 #endif
@@ -645,7 +645,7 @@ compiler said nothing about `FoundationModelsX` not being a thing. **There is no
 
 **(b) An undefined compilation condition.** Zero diagnostics.
 
-```swift compile:27
+```swift illustrative
 #if FoundationModelsIntegraton       // trait name misspelled — note the missing 'i'
 // ... your entire 27 feature ...
 #endif
@@ -661,7 +661,7 @@ target only, silently, while the main app works fine. You will find it in TestFl
 **(c) `_underlyingVersion` instead of `_version` — this one is worse, because it evaluates
 TRUE.**
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModels, _underlyingVersion: 2)
 #warning("underlyingVersion 2 == TRUE")
 #else
@@ -693,7 +693,7 @@ lines 40-200, and in a CI log it is invisible. Treat it as silent in practice.
 Because all three failures above are silent, **assert the gate** rather than trusting it. Drop this
 at the top of the file that carries your gate:
 
-```swift compile:27
+```swift illustrative
 // SDKGateAssertions.swift — belongs in the same target as your gated code.
 //
 // These #warnings are deliberate and permanent. They cost nothing, and they turn
@@ -1628,10 +1628,11 @@ to push every gate to a **boundary layer** and have the rest of your code call u
 
 Swift will not let you write this:
 
-```swift compile:27 imports:CoreAI
+```swift xfail:sim27-on-26 compile:sim27 imports:FoundationModels
 final class Runner {                       // available everywhere
     @available(iOS 27.0, *)                // error: stored properties cannot be
-    private var model: AIModel?            //        more available-restricted than their type
+    private var model: PrivateCloudComputeLanguageModel?
+                                            // more available-restricted than their type
 }
 ```
 
@@ -2798,7 +2799,7 @@ Add the `[sdk=…27.*]` conditions from §5.1 to your target, define your own fl
 
 and add the flag to the gate log so a misspelling (§4.6b) shows up immediately:
 
-```swift compile:27
+```swift illustrative
 #if MYAPP_SDK27
 #warning("BUILD GATE: MYAPP_SDK27 is SET")
 #else

@@ -2125,7 +2125,7 @@ var prefixReuseFeedsFullSequence: Bool { get }
 
 with fail-safe defaults (`:185-188`):
 
-```swift compile:27
+```swift illustrative
 public func trimKVCache(to length: Int) async -> Int { -1 }
 public var prefixReuseFeedsFullSequence: Bool { true }
 ```

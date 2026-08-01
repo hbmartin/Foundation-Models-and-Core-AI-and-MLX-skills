@@ -1,11 +1,11 @@
 # API & symbol index
 
-**1211 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1210 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-01; regenerate rather than hand-edit.
 
 
-## FoundationModels  <sub>164 symbols</sub>
+## FoundationModels  <sub>163 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -159,7 +159,6 @@
 | `Transcript.Prompt.contextOptions` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Transcript.Reasoning` | ✓ | ✓ | [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md), [1.2](part-01-orientation-and-gating/references/02-platform-and-version-gating.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md) +2 more |
 | `Transcript.Response` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md) |
-| `Transcript.Response(segments:)` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `Transcript.Response.assetIDs` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.README](part-03-context-profiles-agentic/README.md) |
 | `Transcript.Segment` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md) +3 more |
 | `Transcript.Segment.attachment` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
@@ -887,7 +886,7 @@
 | `LSSupportsOpeningDocumentsInPlace` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `MacOSX26.5.sdk` |  |  | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `MagnitudePruner` |  |  | [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.README](part-09-coreai-compression-numerics/README.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
-| `@MainActor` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) +2 more |
+| `@MainActor` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) +3 more |
 | `Makefile` |  |  | [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) +1 more |
 | `MambaCache` |  |  | [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MediaProcessing` |  |  | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |

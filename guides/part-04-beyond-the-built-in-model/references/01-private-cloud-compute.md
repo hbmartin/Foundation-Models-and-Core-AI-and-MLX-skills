@@ -2468,8 +2468,9 @@ Circulating claims about this API that our sources contradict or fail to support
   (§7.6).
 - **"Retry with backoff on a quota error."** No. It is a daily quota, not a rate limit; Apple draws
   the distinction explicitly (§7.1).
-- **"`SystemLanguageModel` has a 4096-token context, always."** Contested. Read `contextSize`; a
-  shipping app reports 8192 on iOS 27 (§3.2).
+- **"`SystemLanguageModel` has a 4096-token context, always."** 4,096 was measured on the recorded
+  runtime and is Apple's published figure, but it remains device-variable. Read `contextSize` and
+  never hardcode the measurement (§3.2).
 - **"`Profile(model:) { … }`."** Not the spelling. `Profile { … }.model(_:)` (§4.4).
 - **"Reasoning appears in the response."** No. Separate transcript segment, absent from
   `response.content`, and it spends your context anyway (§6.4).

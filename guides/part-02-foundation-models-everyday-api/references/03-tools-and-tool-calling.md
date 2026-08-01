@@ -335,7 +335,7 @@ struct FindPointsOfInterest: Tool { let landmark: Landmark /* … */ }
 > ✅ **VERIFIED** — verbatim from Apple's *Managing the context window* article, an `@Observable final
 > class` conforming to `Tool`:
 
-```swift compile:27
+```swift illustrative
 import FoundationModels
 import Observation
 

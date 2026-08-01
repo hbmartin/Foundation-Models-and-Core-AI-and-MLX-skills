@@ -1436,7 +1436,7 @@ servers"* pitch at face value.
 `mlx_lm.server`, Ollama, vLLM and LM Studio into Foundation Models backends) has **two entirely
 different image paths**:
 
-```swift compile:27
+```swift illustrative
 // Darwin: encode the in-memory image inline as a base64 JPEG data URL.
 //   image.cgImage.jpegData().base64EncodedString()  →  "data:image/jpeg;base64,…"
 //   ChatCompletionsLanguageModel.swift:413-421, guarded by #if canImport(CoreImage)

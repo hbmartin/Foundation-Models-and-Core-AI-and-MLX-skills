@@ -1088,10 +1088,10 @@ which primitives were missing.
 > `tokenCount(for:)`, compacts at a threshold, retries once on `exceededContextWindowSize`, then
 > rebuilds a session from the compacted `Transcript`.**
 
-Reconstructed in the shape a 26-targeting app would actually write it — this compiles against the
-26.4 SDK and does not require any 27 API:
+Reconstructed in the shape a 26-targeting app would actually write it — this verifies on the
+26-generation target and does not require any 27 API:
 
-```swift compile:27
+```swift compile:26
 import FoundationModels
 
 /// The iOS 26 idiom: meter, compact, retry once, rebuild.
@@ -1121,7 +1121,7 @@ actor ContextManagedChat {
 
         do {
             return try await session.respond(to: prompt).content
-        } catch LanguageModelError.contextSizeExceeded {
+        } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             // 2. Retry exactly once. If a condensed transcript still overflows,
             //    the prompt itself is the problem and looping will not fix it.
             session = rebuiltFromCondensedTranscript()

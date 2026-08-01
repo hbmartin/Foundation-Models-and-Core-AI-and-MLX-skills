@@ -99,6 +99,12 @@ class ExtractionTests(unittest.TestCase):
             rows = tsv_rows(run_script(["--guides", td, "--stub-compiler", "pass"]).stdout)
             self.assertEqual(rows[0]["anchor"], "setup-1")
 
+    def test_heading_slug_uses_visible_link_text_and_canonical_punctuation(self):
+        self.assertEqual(
+            VS.slugify("[Visible *Text*](https://example.com) — setup?!"),
+            "visible-text-setup",
+        )
+
 
 class MarkerTests(unittest.TestCase):
     def _one(self, info, body="let a = 1\n"):
@@ -115,10 +121,12 @@ class MarkerTests(unittest.TestCase):
     def test_target_in_both_compile_and_xfail_rejected(self):
         row, code = self._one("compile:27 xfail:27")
         self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
 
     def test_illustrative_excludes_other_markers(self):
-        row, _ = self._one("illustrative compile:27")
+        row, code = self._one("illustrative compile:27")
         self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
 
     def test_mainactor_isolation_marker_is_accepted(self):
         row, code = self._one("compile:27 isolation:mainactor")
@@ -163,8 +171,9 @@ class MarkerTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0)
 
     def test_compile26_with_coreai_import_rejected(self):
-        row, _ = self._one("compile:26,27", body="import CoreAI\nlet a = 1\n")
+        row, code = self._one("compile:26,27", body="import CoreAI\nlet a = 1\n")
         self.assertEqual(row["status"], "MARKER-ERROR")
+        self.assertEqual(code, 2)
 
     def test_prelude_reported_not_compiled(self):
         with tempfile.TemporaryDirectory() as td:
@@ -233,6 +242,20 @@ class SynthesisTests(unittest.TestCase):
         self.assertEqual(VS.TARGETS["27-on-26"].sdk_generation, "27")
         self.assertEqual(VS.TARGETS["27-on-26"].deployment_version, "26.0")
         self.assertEqual(VS.TARGETS["sim27-on-26"].column, "vsim27on26")
+
+
+class ToolchainDiscoveryTests(unittest.TestCase):
+    def test_command_failure_becomes_clear_system_exit(self):
+        failure = subprocess.CalledProcessError(
+            1, ["xcrun"], stderr="requested SDK is not installed"
+        )
+        with mock.patch.object(VS.os.path, "isdir", return_value=True), \
+                mock.patch.object(VS.subprocess, "run", side_effect=failure):
+            with self.assertRaisesRegex(
+                SystemExit,
+                "toolchain discovery for target 27 failed.*requested SDK is not installed",
+            ):
+                VS.discover_toolchain("27")
 
 
 class GuessAndXfailTests(unittest.TestCase):

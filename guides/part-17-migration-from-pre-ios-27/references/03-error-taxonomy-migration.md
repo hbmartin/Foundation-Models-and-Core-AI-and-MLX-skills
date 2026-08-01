@@ -868,7 +868,7 @@ guessing. §12 uses exactly that.
 
 ### 4.6 A mechanical rewrite, side by side
 
-```swift compile:27
+```swift compile:26
 // ───────────────────────── iOS 26 ─────────────────────────
 import FoundationModels
 
@@ -1082,7 +1082,7 @@ must support a 26.x deployment target from one source tree, that is a `#if`/`@av
 rather than a taxonomy problem, and it is the subject of
 [reference 04 of this part](04-dual-sdk-builds.md). The short version, for orientation only:
 
-```swift compile:27
+```swift compile:26,27
 import FoundationModels
 
 func handleOverflow(_ error: Error) -> Bool {
@@ -1177,7 +1177,7 @@ in this order:
 
 4. **The terminal `catch { }` last, obviously — but make it *loud*.** See §6.4.
 
-### 6.3 🔴 GAP (two rows now measured) — one value, two checks: the concern is real
+### 6.3 🔴 GAP (two thrown rows plus one measured nonthrow) — one value, two checks: the concern is real
 
 **The question:** whether the framework ever throws a value whose `NSError` identity and Swift-type
 identity disagree — a value one check claims and another misses. The plausible mechanism was
@@ -1185,9 +1185,9 @@ identity disagree — a value one check claims and another misses. The plausible
 error whose domain is `FoundationModels.LanguageModelError` and whose `userInfo` carries
 `NSMultipleUnderlyingErrorsKey` containing a `ModelManagerServices.ModelManagerError`.
 
-✅ **Probe-verified, 2026-07-31 — the `type(of:)`/domain table now has its first two rows**
-(`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on the 27.0 sim
-runtime), and they land on opposite sides:
+✅ **Probe-verified, 2026-07-31 — the table now has two thrown rows plus one measured nonthrow.**
+The two throws (`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on
+the 27.0 sim runtime) land on opposite sides; the third row records a silent success:
 
 | Failure mode | Dynamic type | NSError domain / code | Casts to |
 |---|---|---|---|
@@ -1219,7 +1219,7 @@ known to receive at least one domain-tagged impostor. §14 does exactly this.
 
 The single highest-value change you can make to a 26-era ladder, before you change anything else:
 
-```swift compile:27
+```swift compile:27 defines:DEBUG
 import FoundationModels
 import OSLog
 
@@ -2549,12 +2549,12 @@ For a refusal regression like §9.3, the highest-value Feedback is: the exact pr
 instructions, the tool list, the OS build, and a `logFeedbackAttachment` blob showing the transcript
 — which is precisely the list a Frameworks Engineer asked for on thread 835777.
 
-> ⚠️ **Conflict, flagged rather than smoothed:** Apple's documentation snippet above constructs
-> `Transcript.Response(segments:)`, but Apple's **Origami sample** constructs
-> `Transcript.Response(assetIDs:segments:)` and passes `[""]` for `assetIDs` — implying the label is
-> **required** in the shipping SDK (✅ verified from the sample archive). Sample code outranks a
-> documentation snippet in this series' precedence order. **Safe default:** if
-> `Transcript.Response(segments:)` does not compile, add `assetIDs: [""]`.
+> ⚠️ **SDK-version distinction:** on the 27 SDK, Apple's documentation spelling above resolves to
+> `init(metadata:segments:)`, whose metadata argument has a default, so
+> `Transcript.Response(segments:)` compiles as written. Apple's **Origami sample** uses the older
+> `Transcript.Response(assetIDs:segments:)` spelling and passes `[""]` for `assetIDs` (✅ verified
+> from the sample archive). `assetIDs` is required only when compiling against an initializer surface
+> that does not provide `init(metadata:segments:)`; do not add it to an SDK-27-only example.
 
 ---
 
@@ -2938,7 +2938,7 @@ rate change on this OS build" into a number you can put a threshold on.
 
 ### 16.1 Framework orientation, in one block
 
-```swift compile:27
+```swift illustrative
 import Evaluations          // iOS 27.0+ Beta … watchOS 27.0+ Beta — Swift only
 ```
 

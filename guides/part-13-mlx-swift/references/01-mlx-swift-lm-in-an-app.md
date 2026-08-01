@@ -1071,7 +1071,7 @@ ticket you will not enjoy. Apple's own `MLXChatExample` splits by platform (✅ 
 research note's read of `Support/HubApi+default.swift`, though that file is now vestigial in that
 sample):
 
-```swift compile:27
+```swift illustrative
 #if os(macOS)
     // Downloads directory
 #else
@@ -2688,7 +2688,7 @@ and its body says (✅ VERIFIED, transcribed in the research note):
 
 and the in-code comment at the fix site is unambiguous (✅ VERIFIED, `ChatView.swift`, verbatim):
 
-```swift compile:27
+```swift illustrative
 // Normalize orientation so pixels match the display orientation.
 // UIImage.jpegData() only writes an EXIF tag but CIImage(contentsOf:)
 // does not apply it, so the VLM would receive a rotated image.

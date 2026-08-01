@@ -1256,24 +1256,36 @@ release the previous locale on switch, not on quit — the system removes the as
 time" anyway, so releasing early costs nothing if the user switches back quickly.
 
 ```swift compile:27 imports:Speech
-/// Switch transcription locale, releasing the previous reservation first so a multi-language
-/// app cannot walk into `maximumReservedLocales`.
+/// Switch transcription locale transactionally so a failed install does not discard the
+/// previously working reservation.
 ///
 /// 🟡 Assembled by us from ✅ VERIFIED members. Apple ships no equivalent snippet.
 func switchLocale(to newLocale: Locale, currentlyReserved: Locale?) async throws {
-    if let currentlyReserved, currentlyReserved != newLocale {
-        await AssetInventory.release(reservedLocale: currentlyReserved)
-    }
-
     guard let matched = await DictationTranscriber.supportedLocale(equivalentTo: newLocale) else {
         throw TranscriptionSetupError.localeNotSupported(newLocale)
     }
+    let newIdentifier = matched.identifier(.bcp47)
+    if currentlyReserved?.identifier(.bcp47) == newIdentifier { return }
 
     let probe = DictationTranscriber(locale: matched, preset: .progressiveLongDictation)
     // The probe module exists only to describe an asset requirement; per Apple, modules
     // "can be discarded when no longer needed."
-    if let request = try await AssetInventory.assetInstallationRequest(supporting: [probe]) {
-        try await request.downloadAndInstall()
+    if let currentlyReserved {
+        await AssetInventory.release(reservedLocale: currentlyReserved)
+    }
+
+    do {
+        if let request = try await AssetInventory.assetInstallationRequest(supporting: [probe]) {
+            try await request.downloadAndInstall()
+        }
+    } catch {
+        // Roll back the automatic reservation for the new locale, then make a best-effort
+        // attempt to restore the old one without hiding the original installation error.
+        await AssetInventory.release(reservedLocale: matched)
+        if let currentlyReserved {
+            _ = try? await AssetInventory.reserve(locale: currentlyReserved)
+        }
+        throw error
     }
 }
 
@@ -3878,9 +3890,10 @@ clearest worked example of `InferenceFunction` KV-cache state, which Part 7 uses
 Every unresolved item in this guide, in one place, with what would close it. None of these is
 guessed at anywhere in the text above; each one has a stated safe default.
 
-**2026-07-29 update:** a verification pass against the `Speech-26.5` and `Speech-27.0`
-`.swiftinterface` dumps closed **twelve** of the original twenty-four gaps outright and narrowed
-three more. The still-open items come first; the closed ones follow, kept for the audit trail
+**2026-08-01 update:** a verification pass against the `Speech-26.5` and `Speech-27.0`
+`.swiftinterface` dumps and the subsequent runtime probe closed **thirteen** of the original
+twenty-four gaps outright and narrowed three more. The still-open items come first; the closed ones
+follow, kept for the audit trail
 (several closed with *corrections*, which is exactly why they were gaps and not guesses).
 
 ### Still open
@@ -3888,7 +3901,6 @@ three more. The still-open items come first; the closed ones follow, kept for th
 | # | Gap | Why it is still open | What resolves it | Safe default |
 |---|---|---|---|---|
 | **G1** | **`progressiveLongDictation` vs `.audioTimeRange`.** Apple's article merges by time range using a preset the preset page says has no time-range attributes (§8.3). | Two Apple pages disagree; the sample that would settle it is unavailable (§1.2). A preset's option contents are runtime values — invisible in a `.swiftinterface` (checked 2026-07-29). | Print `result.text.runs` for a volatile result on an iOS 27 device; or read the SpokenWord source. | `.union([.audioTimeRange])` explicitly. Costs nothing, removes the ambiguity. |
-| **G2** | ~~`AssetInventory.Status` `Comparable` ordering.~~ **CLOSED 2026-07-31** — runtime probe on both generations (§5.2): `<` is synthesized (declaration order), and the `.downloading`/`.supported` relative order **flipped** between 26.5 and the 27.0 beta. | Measured, no longer inferred. | Re-run `speech.assetInventory-status-order` per beta (NEXT-BETA-CHECKLIST §7). | `switch` on all four cases. Never `>=`. |
 | **G5** | Value of `AssetInventory.maximumReservedLocales`. | A computed property's value is not in the interface; likely device-dependent. | One `print` on a device. | Assume 1. Release aggressively. Treat the throw as recoverable. |
 | **G6** | **Provenance of `withTaskCancellationShield`.** *Narrowed:* it is **not** a Speech-framework symbol — absent from the 27.0 interface. | Appears in Apple's article and nowhere else in the corpus; remaining candidates are the Concurrency library or a sample-local helper. | Type the name in a scratch file with the Xcode 27 toolchain. | Write your own (§9.4) — the semantics are unambiguous, and an unstructured `Task` already has them. |
 | **G13** | `SFSpeechLanguageModel.Configuration`'s initializer, and the type of `prepareCustomLanguageModel(for:)`. | **Objective-C API — a `.swiftinterface` cannot show it** (checked 2026-07-29; the type's existence is attested via `ContentHint.customizedLanguage`). Still the only unverified API in the custom-vocabulary path. | Fetch `/documentation/speech/sfspeechlanguagemodel/configuration` or read the ObjC header. | Isolate both in one small function (§11.5) and fix against autocompletion in five minutes. |
@@ -3900,10 +3912,11 @@ three more. The still-open items come first; the closed ones follow, kept for th
 | **G24** | Whether a `.bin`'s locale mismatching the transcriber's locale is ignored or errors (§11.7). | Behavioural; not documented. | Test on device. | Ship one `.bin` per locale, named with the locale as Apple's sample does. |
 | **G25** | Whether bumping `SFCustomLanguageModelData.version` invalidates the on-device prepared-model cache. | The existence of an `ignoresCache:` overload implies caching is keyed on *something*, unspecified. | Test: prepare, change data, bump version, prepare again, check recognition. | Bump `version` on every data change. If that is insufficient, the `ignoresCache:` overload exists. |
 
-### Closed 2026-07-29 against the SDK interfaces
+### Closed audit trail
 
 | # | Was | Resolution |
 |---|---|---|
+| **G2** | `AssetInventory.Status` `Comparable` ordering. | **Closed 2026-07-31 by runtime probe on both generations (§5.2):** `<` is synthesized (declaration order), and the `.downloading`/`.supported` relative order flipped between 26.5 and the 27.0 beta. Re-run `speech.assetInventory-status-order` per beta; switch on all four cases and never use `>=`. |
 | **G3** | Does `AnalyzerInputConverter(analyzerFormat:)` accept an optional? | **No.** Non-optional `AVAudioFormat`; Apple's canonical snippet is loose and does not compile as printed (§2.2, `Speech-27.0-macos.swiftinterface:520`). |
 | **G4** | Type of `captureAudioDataOutput`; is `priority:` defaulted? | A plain `AVCaptureAudioDataOutput` (visionOS-unavailable); `priority: TaskPriority? = nil` on both factories (§6.3, `:720-731`). |
 | **G7** | Element/failure types of `provider.analyzerInputs`. | `some Sendable & AsyncSequence<AnalyzerInput, any Error>` — the guide's provisional spelling was exactly right (§6.4, `:732-734`). |
@@ -3934,7 +3947,7 @@ For auditability, since a previous batch in this series was found to contain a f
 | Quotes from an Apple staff forum reply | 1 | Thread 834149, "no new API has been released specific to that model" |
 | Read from `apple/coreai-models` source | §14 entirely | Line-numbered citations throughout |
 | **Assembled by us and marked 🟡** | ~8 listings | `makeTranscriber` composition, `switchLocale`, `transcribeFile`, `makeInputSequence`, `withTaskCancellationShield`, the `datagenerator` CLI, `TranscriptStore`, the §10 controller |
-| **Declared 🔴 unknown** | 12 still open (of an original 24; 12 closed against the SDK 2026-07-29, several with corrections) | The tables above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
+| **Declared 🔴 unknown** | 11 still open (of an original 24; 13 closed by the SDK/runtime audit, several with corrections) | The tables above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
 
 Nothing in this guide is written from recollection of an API. Where a name, type or default could
 not be traced to a source read this session, it appears in the gap table rather than in a code
