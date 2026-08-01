@@ -2985,7 +2985,7 @@ public enum GraphNames {
 
 and the detection itself (✅ **VERIFIED** — `ModelStructure.swift:190-218`):
 
-```swift illustrative
+```swift prelude:guide-context
 private static func detectStructure(from graphNames: [String]) -> ModelStructure {
     let graphSet = Set(graphNames)
 

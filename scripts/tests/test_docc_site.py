@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -208,10 +209,37 @@ class DocCSiteTests(unittest.TestCase):
 
         broken = data / "part-01-guide-01.json"
         payload = json.loads(broken.read_text(encoding="utf-8"))
+        payload["references"] = {
+            "mail": {"url": "mailto:maintainer.md@example.com"},
+            "external": {"url": "https://example.com/guide.md"},
+            "protocol-relative": {"url": "//example.com/guide.md"},
+        }
+        broken.write_text(json.dumps(payload), encoding="utf-8")
+        verifier.verify(site, manifest)
+
         payload["references"] = {"bad": {"url": "../guide.md"}}
         broken.write_text(json.dumps(payload), encoding="utf-8")
         with self.assertRaisesRegex(verifier.VerificationError, "relative .md URLs"):
             verifier.verify(site, manifest)
+
+    def test_source_snapshot_covers_page_discovery(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        guide = guides / "part-01-start" / "references" / "01-guide.md"
+        discover_pages = builder.discover_pages
+
+        def mutate_during_discovery(source_root):
+            pages = discover_pages(source_root)
+            guide.write_text(
+                guide.read_text(encoding="utf-8") + "\nChanged during discovery.\n",
+                encoding="utf-8",
+            )
+            return pages
+
+        with mock.patch.object(
+            builder, "discover_pages", side_effect=mutate_during_discovery
+        ), self.assertRaisesRegex(builder.CatalogError, "changed during catalog"):
+            self.build_fixture(repository, guides)
 
     def test_applies_docc_anchor_fixits_only_to_generated_catalog(self):
         temporary, repository, guides = self.make_fixture()
@@ -366,6 +394,30 @@ class DocCSiteTests(unittest.TestCase):
         }
 
         self.assertIsNone(canonicalizer.replacement_text(diagnostic))
+
+    def test_anchor_fix_targets_only_the_matching_docc_fragment(self):
+        lines = [
+            "[web](https://example.com/#old-anchor) and "
+            "<doc:SomePage#old-anchor>\n"
+        ]
+
+        changed = canonicalizer.replace_fragment(
+            lines, "old-anchor", "New-anchor", 1, Path("Guide.md")
+        )
+
+        self.assertTrue(changed)
+        self.assertIn("https://example.com/#old-anchor", lines[0])
+        self.assertIn("<doc:SomePage#New-anchor>", lines[0])
+
+    def test_anchor_fix_rejects_a_different_single_docc_fragment(self):
+        lines = ["<doc:SomePage#different-anchor>\n"]
+
+        with self.assertRaisesRegex(
+            canonicalizer.CanonicalizationError, "could not uniquely locate"
+        ):
+            canonicalizer.replace_fragment(
+                lines, "old-anchor", "New-anchor", 1, Path("Guide.md")
+            )
 
 
 if __name__ == "__main__":

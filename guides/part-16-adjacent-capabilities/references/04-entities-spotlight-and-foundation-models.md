@@ -507,7 +507,8 @@ object it was set on.
 
 > ✅ **VERIFIED** — session-246 sample, `Indexer.swift:34-58`. The guide adds an explicit
 > `@MainActor` so the singleton remains Swift 6-safe even when the app target does not use
-> MainActor default isolation:
+> MainActor default isolation. The immutable custom key is `nonisolated(unsafe)` because it is
+> intentionally read from nonisolated donation code; the index and shared delegate stay isolated:
 
 ```swift prelude:guide-context
 import CoreSpotlight
@@ -519,7 +520,7 @@ final class SpotlightIndexer: NSObject, CSSearchableIndexDelegate {
 
     let index = CSSearchableIndex(name: "TrailSearchSample")
 
-    static let distanceAttributeKey: CSCustomAttributeKey? = CSCustomAttributeKey(
+    nonisolated(unsafe) static let distanceAttributeKey: CSCustomAttributeKey? = CSCustomAttributeKey(
         keyName: "distance",
         searchable: true,
         searchableByDefault: true,
@@ -1403,6 +1404,7 @@ because two of its members are index-facing.
         return attributes
     }()
 
+    @MainActor
     private func makeSpotlightTool() -> SpotlightSearchTool {
         SpotlightSearchTool(
             configuration: .init(

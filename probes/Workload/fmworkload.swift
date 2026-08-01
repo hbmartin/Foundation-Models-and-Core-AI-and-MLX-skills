@@ -162,11 +162,11 @@ struct FMWorkload {
                 narrate("phase=4a-guardrail round=\(round) event=threw code=\((error as NSError).code)")
             }
             if roundTimedOut { break workload }
-            guard let overflowTimeout = phaseTimeout(upTo: 120) else { break workload }
             do {
                 narrate("phase=4b-overflow round=\(round) event=start")
                 let session = LanguageModelSession()
                 let huge = "Summarize this inventory list: " + (0..<30_000).map { "item\($0)" }.joined(separator: " ")
+                guard let overflowTimeout = phaseTimeout(upTo: 120) else { break workload }
                 let result = try await Probe.withTimeout(seconds: overflowTimeout) {
                     try await session.respond(
                         to: huge,

@@ -1256,8 +1256,7 @@ release the previous locale on switch, not on quit — the system removes the as
 time" anyway, so releasing early costs nothing if the user switches back quickly.
 
 ```swift compile:27 imports:Speech
-/// Switch transcription locale transactionally so a failed install does not discard the
-/// previously working reservation.
+/// Switch transcription locale with checked rollback when installation fails.
 ///
 /// 🟡 Assembled by us from ✅ VERIFIED members. Apple ships no equivalent snippet.
 func switchLocale(to newLocale: Locale, currentlyReserved: Locale?) async throws {
@@ -1270,8 +1269,15 @@ func switchLocale(to newLocale: Locale, currentlyReserved: Locale?) async throws
     let probe = DictationTranscriber(locale: matched, preset: .progressiveLongDictation)
     // The probe module exists only to describe an asset requirement; per Apple, modules
     // "can be discarded when no longer needed."
+    let reservationsBeforeSwitch = await AssetInventory.reservedLocales
+    let matchedWasAlreadyReserved = reservationsBeforeSwitch.contains {
+        $0.identifier(.bcp47) == newIdentifier
+    }
+    let releasedPrevious: Bool
     if let currentlyReserved {
-        await AssetInventory.release(reservedLocale: currentlyReserved)
+        releasedPrevious = await AssetInventory.release(reservedLocale: currentlyReserved)
+    } else {
+        releasedPrevious = false
     }
 
     do {
@@ -1280,14 +1286,25 @@ func switchLocale(to newLocale: Locale, currentlyReserved: Locale?) async throws
         }
     } catch {
         let installationError = error
-        // Roll back the automatic reservation for the new locale, then restore the old one.
-        // Preserve the installation error only after rollback succeeds; a distinct rollback
-        // error tells the caller that the previously working reservation was not restored.
-        await AssetInventory.release(reservedLocale: matched)
-        if let currentlyReserved {
+        // Release the new locale only if this operation introduced its reservation. A failed
+        // request is not documented to prove ownership of an already-existing reservation.
+        let reservationsAfterFailure = await AssetInventory.reservedLocales
+        let matchedIsNowReserved = reservationsAfterFailure.contains {
+            $0.identifier(.bcp47) == newIdentifier
+        }
+        if !matchedWasAlreadyReserved && matchedIsNowReserved {
+            await AssetInventory.release(reservedLocale: matched)
+        }
+        if let currentlyReserved, releasedPrevious {
             do {
-                try await AssetInventory.reserve(locale: currentlyReserved)
+                _ = try await AssetInventory.reserve(locale: currentlyReserved)
             } catch {
+                throw TranscriptionSetupError.couldNotRestorePreviousLocale(currentlyReserved)
+            }
+            let restoredReservations = await AssetInventory.reservedLocales
+            guard restoredReservations.contains(where: {
+                $0.identifier(.bcp47) == currentlyReserved.identifier(.bcp47)
+            }) else {
                 throw TranscriptionSetupError.couldNotRestorePreviousLocale(currentlyReserved)
             }
         }
@@ -1302,6 +1319,10 @@ enum TranscriptionSetupError: Error {
     case micPermissionDenied
 }
 ```
+
+This rollback is checked, not fully atomic: process termination between releasing the old locale and
+restoring it can still leave no reservation. Persist the selected locale and re-establish its
+reservation during launch recovery.
 
 ### 5.5 What breaks if you skip assets entirely
 

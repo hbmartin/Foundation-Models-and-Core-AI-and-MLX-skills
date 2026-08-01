@@ -624,9 +624,9 @@ def build_catalog(
     if not re.fullmatch(r"[A-Za-z0-9.-]+", bundle_identifier):
         raise CatalogError(f"invalid DocC bundle identifier: {bundle_identifier!r}")
 
+    before = source_snapshot(source_root)
     pages = discover_pages(source_root)
     pages_by_source = {page.source: page for page in pages}
-    before = source_snapshot(source_root)
 
     catalog.parent.mkdir(parents=True, exist_ok=True)
     manifest.parent.mkdir(parents=True, exist_ok=True)

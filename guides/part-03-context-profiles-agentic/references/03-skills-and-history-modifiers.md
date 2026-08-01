@@ -1161,8 +1161,8 @@ modifiers exercise, `history` supports `lastIndex(where:)`, `prefix(upTo:)`, `su
 > `ArraySlice` is `RangeReplaceableCollection`-assignable via the setter), and *"a window into the
 > transcript"* is literally what an `ArraySlice` is. Two consequences: `history[3]` with a raw
 > `Int` really is unsafe — a slice's indices need not start at zero; keep using
-> `history.index(_:offsetBy:)` — and `Array(history.dropFirst(cut))` compiles exactly as written
-> above.
+> `history.index(_:offsetBy:)` — and `history = history.dropFirst(cut)` compiles exactly as written
+> above because an `ArraySlice`'s `SubSequence` is also `ArraySlice`.
 
 **Do the work in `.onPrompt`, not in `body`.** The `body` of a `DynamicProfile` or a
 `DynamicProfileModifier` is a pure declarative projection — it can be evaluated more than once per

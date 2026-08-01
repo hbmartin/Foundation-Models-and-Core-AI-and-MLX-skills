@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+from urllib.parse import urlparse
 
 
 class VerificationError(RuntimeError):
@@ -47,8 +48,12 @@ def verify(site: Path, manifest_path: Path) -> tuple[int, int]:
         found[leaf] = path
 
         for value in walk_urls(payload):
-            lowered = value.casefold()
-            if ".md" in lowered and "://" not in lowered and not lowered.startswith("doc:"):
+            parsed = urlparse(value)
+            if (
+                not parsed.scheme
+                and not parsed.netloc
+                and parsed.path.casefold().endswith(".md")
+            ):
                 broken_markdown_urls.append((path, value))
 
         rendered_relative = path.relative_to(site / "data").with_suffix("")

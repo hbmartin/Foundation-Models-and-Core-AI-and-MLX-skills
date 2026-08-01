@@ -79,30 +79,28 @@ def replace_fragment(
     lines: list[str], old: str, new: str | None, line_number: int | None, source: Path
 ) -> bool:
     old_token = f"#{old}"
-    new_token = f"#{new}" if new is not None else ""
 
     def replace_on_line(index: int) -> bool | None:
         if not 0 <= index < len(lines):
             return None
         line = lines[index]
-        if old_token in line:
-            lines[index] = line.replace(old_token, new_token, 1)
-            return True
-        if new_token and new_token in line:
-            return False
-
-        # DocC normalizes some punctuation in the diagnostic (for example,
-        # two source hyphens become one). Match the actual generated fragment
-        # on the reported line before falling back to a whole-file search.
         links = list(DOC_FRAGMENT.finditer(line))
-        if new is None and not links and "<doc:" in line:
-            return False
-        normalized_old = re.sub(r"-{2,}", "-", old)
-        matches = [
-            link
-            for link in links
-            if re.sub(r"-{2,}", "-", link.group("fragment")) == normalized_old
-        ]
+        exact_matches = [link for link in links if link.group("fragment") == old]
+        if len(exact_matches) == 1:
+            matches = exact_matches
+        elif len(exact_matches) > 1:
+            return None
+        else:
+            # DocC normalizes some punctuation in diagnostics (for example,
+            # two source hyphens become one). Restrict that fallback to the
+            # actual <doc:...> fragment instead of replacing a same-line URL.
+            normalized_old = re.sub(r"-{2,}", "-", old)
+            matches = [
+                link
+                for link in links
+                if re.sub(r"-{2,}", "-", link.group("fragment"))
+                == normalized_old
+            ]
         if len(matches) == 1:
             link = matches[0]
             start, end = link.span("fragment")
@@ -111,14 +109,14 @@ def replace_fragment(
                 start -= 1  # remove the fragment's leading '#', too
             lines[index] = line[:start] + replacement + line[end:]
             return True
-        if len(links) == 1:
-            link = links[0]
-            start, end = link.span("fragment")
-            replacement = new or ""
-            if new is None:
-                start -= 1
-            lines[index] = line[:start] + replacement + line[end:]
-            return True
+        if len(matches) > 1:
+            return None
+        if new is not None and any(
+            link.group("fragment") == new for link in links
+        ):
+            return False
+        if new is None and not links and "<doc:" in line:
+            return False
         return None
 
     candidate_indexes: list[int] = []
@@ -130,12 +128,24 @@ def replace_fragment(
         if result is not None:
             return result
 
-    occurrences = [index for index, line in enumerate(lines) if old_token in line]
+    normalized_old = re.sub(r"-{2,}", "-", old)
+    occurrences = [
+        index
+        for index, line in enumerate(lines)
+        if any(
+            link.group("fragment") == old
+            or re.sub(r"-{2,}", "-", link.group("fragment")) == normalized_old
+            for link in DOC_FRAGMENT.finditer(line)
+        )
+    ]
     if len(occurrences) == 1:
-        index = occurrences[0]
-        lines[index] = lines[index].replace(old_token, new_token, 1)
-        return True
-    if not occurrences and new_token and any(new_token in line for line in lines):
+        result = replace_on_line(occurrences[0])
+        if result is not None:
+            return result
+    if not occurrences and new is not None and any(
+        any(link.group("fragment") == new for link in DOC_FRAGMENT.finditer(line))
+        for line in lines
+    ):
         return False
     raise CanonicalizationError(
         f"could not uniquely locate DocC fragment {old_token!r} in {source}"

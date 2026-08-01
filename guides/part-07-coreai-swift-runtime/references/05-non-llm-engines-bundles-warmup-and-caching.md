@@ -272,6 +272,9 @@ same explicit options.
 
 Its public warmup is the clearest warmup contract in the repo:
 
+> 🟡 **RECONSTRUCTED composition** — assembled from the verified `ObjectDetector` initializer and
+> `warmup(imageCount:parameters:)` API; it is not a verbatim Apple sample.
+
 ```swift prelude:external-module
 import CoreAIObjectDetector
 
@@ -321,6 +324,9 @@ a substring match.
 `InferenceFunction`, and an `isLoaded` flag. `loadResources()` is idempotent, constructs
 `SpecializationOptions(preferredComputeUnitKind: .gpu)`, loads the model, and loads `main`.
 `unloadResources()` nils both objects.
+
+> 🟡 **RECONSTRUCTED composition** — assembled from the verified pipeline lifecycle and generation
+> APIs; it is not copied verbatim from the package.
 
 ```swift prelude:external-module
 import CoreAIDiffusionPipeline

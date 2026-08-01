@@ -284,6 +284,17 @@ class ToolchainDiscoveryTests(unittest.TestCase):
             ):
                 VS.discover_toolchain("27")
 
+    def test_missing_executable_becomes_clear_system_exit(self):
+        with mock.patch.object(VS.os.path, "isdir", return_value=True), \
+                mock.patch.object(
+                    VS.subprocess, "run", side_effect=FileNotFoundError("missing xcrun")
+                ):
+            with self.assertRaisesRegex(
+                SystemExit,
+                "toolchain discovery for target 27 failed.*missing xcrun",
+            ):
+                VS.discover_toolchain("27")
+
 
 class GuessAndXfailTests(unittest.TestCase):
     def test_guess_pass_and_fail_statuses(self):
@@ -466,6 +477,10 @@ class WriteMarkersTests(unittest.TestCase):
             "illustrative")
         self.assertIsNone(VS.triage_marker_for_row(
             dict(base, first_error="cannot assign value of type A to type B")))
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="type A does not conform to protocol B")))
+        self.assertIsNone(VS.triage_marker_for_row(
+            dict(base, first_error="value of type A has no member b")))
         self.assertIsNone(VS.triage_marker_for_row(
             {"flags": {"wrongness"}, "first_error": "cannot find 'user' in scope"}))
 

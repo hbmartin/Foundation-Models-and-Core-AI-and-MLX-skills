@@ -93,7 +93,6 @@ final class InstrumentsWorkloadProbes: XCTestCase {
         var round = 0
         workload: while deadline.timeIntervalSinceNow > 0 {
             round += 1
-            var roundTimedOut = false
             // PHASE 1 — prefill-heavy: long prompt, tiny answer.
             guard let phase1Timeout = phaseTimeout(upTo: 180) else { break workload }
             do {
@@ -108,12 +107,10 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                 case .value: narrate("phase=1-prefill round=\(round) event=end")
                 case .timedOut:
                     narrate("phase=1-prefill round=\(round) event=timeout")
-                    roundTimedOut = true
                 }
             } catch {
                 narrate("phase=1-prefill round=\(round) event=error \(errorFingerprint(error))")
             }
-            if roundTimedOut { break workload }
             // PHASE 2 — decode-heavy: short prompt, long streamed answer (fresh session,
             // SAME instructions string, so the Instructions-lane region continues).
             guard let phase2Timeout = phaseTimeout(upTo: 180) else { break workload }
@@ -133,12 +130,10 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                     narrate("phase=2-decode round=\(round) event=end partials=\(count)")
                 case .timedOut:
                     narrate("phase=2-decode round=\(round) event=timeout")
-                    roundTimedOut = true
                 }
             } catch {
                 narrate("phase=2-decode round=\(round) event=error \(errorFingerprint(error))")
             }
-            if roundTimedOut { break workload }
             // PHASE 3 — instructions switch: a session with a DIFFERENT instruction set.
             guard let phase3Timeout = phaseTimeout(upTo: 120) else { break workload }
             do {
@@ -153,12 +148,10 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                 case .value: narrate("phase=3-switch round=\(round) event=end")
                 case .timedOut:
                     narrate("phase=3-switch round=\(round) event=timeout")
-                    roundTimedOut = true
                 }
             } catch {
                 narrate("phase=3-switch round=\(round) event=error \(errorFingerprint(error))")
             }
-            if roundTimedOut { break workload }
             // PHASE 4 — error markers: guardrail trip, then context overflow.
             guard let guardrailTimeout = phaseTimeout(upTo: 120) else { break workload }
             do {
@@ -173,17 +166,15 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                 case .value: narrate("phase=4a-guardrail round=\(round) event=no-error")
                 case .timedOut:
                     narrate("phase=4a-guardrail round=\(round) event=timeout")
-                    roundTimedOut = true
                 }
             } catch {
                 narrate("phase=4a-guardrail round=\(round) event=threw code=\((error as NSError).code)")
             }
-            if roundTimedOut { break workload }
-            guard let overflowTimeout = phaseTimeout(upTo: 120) else { break workload }
             do {
                 narrate("phase=4b-overflow round=\(round) event=start")
                 let session = LanguageModelSession()
                 let huge = "Summarize this inventory list: " + (0..<30_000).map { "item\($0)" }.joined(separator: " ")
+                guard let overflowTimeout = phaseTimeout(upTo: 120) else { break workload }
                 let result = try await Probe.withTimeout(seconds: overflowTimeout) {
                     try await session.respond(
                         to: huge,
@@ -193,12 +184,10 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                 case .value: narrate("phase=4b-overflow round=\(round) event=no-error")
                 case .timedOut:
                     narrate("phase=4b-overflow round=\(round) event=timeout")
-                    roundTimedOut = true
                 }
             } catch {
                 narrate("phase=4b-overflow round=\(round) event=threw code=\((error as NSError).code)")
             }
-            if roundTimedOut { break workload }
             narrate("round=\(round) complete")
         }
         narrate("done rounds=\(round) deadlineExhausted=\(deadline.timeIntervalSinceNow <= 0)")

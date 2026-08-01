@@ -2800,7 +2800,7 @@ shape selects its ANE preference.)
 
 ### 10.3 `swift-lm` rejects it outright
 
-```swift illustrative
+```swift prelude:guide-context
 public func specialize(
     options: SpecializationOptions = .default,
     cache: AIModelCache = .default,

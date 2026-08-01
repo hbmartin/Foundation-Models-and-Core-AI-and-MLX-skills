@@ -1077,7 +1077,7 @@ what the explicit path in §3.5 costs:
 
 Putting it together, the smallest MLX file that actually compiles:
 
-```swift illustrative
+```swift prelude:external-module
 import Foundation
 #if canImport(FoundationModels, _version: 2)
 import FoundationModels

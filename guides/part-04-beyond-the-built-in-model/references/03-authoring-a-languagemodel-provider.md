@@ -789,7 +789,7 @@ a `static` — see the MLX note above.
 
 The protocol requirement throws. Apple's own conformance does not:
 
-```swift illustrative
+```swift prelude:guide-context
 public init(configuration: Configuration) {          // ChatCompletionsLanguageModel.swift:191
   self.configuration = configuration
 }

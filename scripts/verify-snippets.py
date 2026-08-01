@@ -125,11 +125,6 @@ CONTEXT_DIAGNOSTICS = (
     "no macro named ",
     "external macro implementation type ",
     "unknown attribute ",
-    "does not conform to protocol ",
-    "reference to member ",
-    "cannot infer contextual base ",
-    "requires that ",
-    "has no member ",
 )
 
 # Diagnostics produced by deliberately excerpted declarations, SDK-interface
@@ -757,6 +752,11 @@ def discover_toolchain(name):
             raise SystemExit(
                 f"error: toolchain discovery for target {name} failed: "
                 f"{' '.join(command)}: {detail}"
+            ) from error
+        except OSError as error:
+            raise SystemExit(
+                f"error: toolchain discovery for target {name} failed: "
+                f"{' '.join(command)}: {error}"
             ) from error
 
     def xcrun(*args):

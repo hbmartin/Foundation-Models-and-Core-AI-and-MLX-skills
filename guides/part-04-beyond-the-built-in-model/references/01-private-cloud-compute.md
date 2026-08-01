@@ -1973,7 +1973,7 @@ cosmetic, not semantic.** What *is* semantic:
 So the correct advice is not "put X before Y" — it is **enumerate all four types, put narrow case
 patterns above their own type pattern, and end with a bare `catch`**:
 
-```swift illustrative
+```swift prelude:guide-context
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, watchOS 27.0, visionOS 27.0, *)

@@ -343,7 +343,7 @@ mental model — "Siri sees my screen" — that is true for both paths and predi
 Do this before you change any code. It takes five minutes and it is the difference between fixing
 the problem and rewriting a subsystem that was never involved.
 
-```swift illustrative
+```swift prelude:guide-context
 // ✅ VERIFIED shape (the logging pattern is from forum thread 838329's instrumentation;
 //    EntityQuery.entities(for:) is the standard App Intents requirement)
 // Pre-2026 API: os.Logger is iOS 14+.
@@ -1143,7 +1143,7 @@ Rules that follow from the mechanism alone:
 6. **Measure it yourself, with `signpost`.** Since there is no published budget, instrument the
    method and know your own number before Siri tells you it is too big.
 
-```swift illustrative
+```swift prelude:guide-context
 // Instrumenting the hot path. os.signpost is pre-2026 API (iOS 12+).
 import os
 

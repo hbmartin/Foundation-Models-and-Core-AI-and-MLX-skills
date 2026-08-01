@@ -1899,7 +1899,7 @@ is **done**.
 
 > ✅ **VERIFIED** — Apple developer documentation, `ComputeStream`:
 
-```swift prelude:guide-context
+```swift illustrative
 final class ComputeStream {
     convenience init()                                   // "Initialize an empty compute stream."
     init(commandQueue: any MTLCommandQueue)              // ⚠️ no watchOS

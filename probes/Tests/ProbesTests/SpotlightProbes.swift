@@ -75,16 +75,22 @@ final class SpotlightProbes: XCTestCase {
         attachment.name = artifactName
         attachment.lifetime = .keepAlways
         add(attachment)
+        var artifactWrite = "not-requested"
         if let artifactDirectory = Probe.env("PROBE_ARTIFACT_DIR") {
-            let directory = URL(fileURLWithPath: artifactDirectory, isDirectory: true)
-            try FileManager.default.createDirectory(at: directory,
-                                                    withIntermediateDirectories: true)
-            try schema.write(to: directory.appendingPathComponent(artifactName),
-                             atomically: true, encoding: .utf8)
+            do {
+                let directory = URL(fileURLWithPath: artifactDirectory, isDirectory: true)
+                try FileManager.default.createDirectory(at: directory,
+                                                        withIntermediateDirectories: true)
+                try schema.write(to: directory.appendingPathComponent(artifactName),
+                                 atomically: true, encoding: .utf8)
+                artifactWrite = "ok"
+            } catch {
+                artifactWrite = "threw(\(errorFingerprint(error)))"
+            }
         }
         Probe.result(
             "fm.spotlight-tool-surface",
-            "name=\(tool.name) includesSchema=\(tool.includesSchemaInInstructions) schemaCharacters=\(schema.count) artifact=\(artifactName)",
+            "name=\(tool.name) includesSchema=\(tool.includesSchemaInInstructions) schemaCharacters=\(schema.count) artifact=\(artifactName) artifactWrite=\(artifactWrite)",
             detail: "\(ProcessInfo.processInfo.operatingSystemVersionString) \(Probe.runtimeDescription)"
         )
     }
@@ -238,6 +244,7 @@ final class SpotlightProbes: XCTestCase {
             rows.append("replyCollector=threw(\(errorFingerprint(error)))")
         }
         repliesTask.cancel()
+        _ = await repliesTask.result
         let replies = await recorder.snapshot()
         rows.append("replyCount=\(replies.count)")
         for (index, reply) in replies.enumerated() {
