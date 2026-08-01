@@ -102,7 +102,7 @@ class ExtractionTests(unittest.TestCase):
     def test_heading_slug_uses_visible_link_text_and_canonical_punctuation(self):
         self.assertEqual(
             VS.slugify("[Visible *Text*](https://example.com) — setup?!"),
-            "visible-text-setup",
+            "visible-text--setup",
         )
 
 

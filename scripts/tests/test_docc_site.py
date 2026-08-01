@@ -63,6 +63,12 @@ class DocCSiteTests(unittest.TestCase):
             "`nested` code`` across lines.\n\n"
             "Quoting <doc:Prose> in prose.\n\n"
             "Keep `<doc:InSingle>` and ``<doc:InDouble>`` verbatim.\n\n"
+            "Keep `<doc:SingleAcross>\n"
+            "<doc:SingleContinuation>` verbatim.\n\n"
+            "Keep ```<doc:TripleAcross>\n"
+            "<doc:TripleContinuation>``` verbatim.\n\n"
+            "An unmatched ` marker stays literal.\n\n"
+            "Escape <doc:AfterUnmatched> after the paragraph.\n\n"
             "> ```cpp\n"
             "> operator[](thread_index_type idx)\n"
             "> ```\n",
@@ -82,6 +88,67 @@ class DocCSiteTests(unittest.TestCase):
             "main",
         )
         return catalog, manifest, result
+
+    def make_rendered_site(self, repository, result):
+        site = repository / "site"
+        data = site / "data" / "documentation" / "fixture"
+        data.mkdir(parents=True)
+
+        assets = {
+            "favicon.ico": b"icon",
+            "favicon.svg": b"svg",
+            "css/index.css": b"body { color: black; }",
+            "js/chunk-vendors.js": b"vendor",
+            "js/index.js": b"app",
+        }
+        for relative, content in assets.items():
+            target = site / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+
+        shell = (
+            '<!doctype html><html><head>'
+            '<link rel="icon" href="/fixture/favicon.ico">'
+            '<link rel="mask-icon" href="/fixture/favicon.svg">'
+            '<link rel="stylesheet" href="/fixture/css/index.css">'
+            '<script>var baseUrl = "/fixture/"</script>'
+            '<script defer src="/fixture/js/chunk-vendors.js"></script>'
+            '<script defer src="/fixture/js/index.js"></script>'
+            '</head><body><div id="app"></div></body></html>'
+        )
+        (site / "index.html").write_text(shell, encoding="utf-8")
+
+        for page in result["pages"]:
+            identifier = page["identifier"]
+            json_path = data / f"{identifier.casefold()}.json"
+            json_path.write_text(
+                json.dumps(
+                    {
+                        "identifier": {
+                            "url": f"doc://fixture/documentation/Fixture/{identifier}"
+                        },
+                        "references": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            route = site / "documentation" / "fixture" / identifier.casefold()
+            route.mkdir(parents=True)
+            (route / "index.html").write_text(shell, encoding="utf-8")
+        return site, data, assets
+
+    def make_renderer(self, repository, assets):
+        renderer = repository / "renderer"
+        renderer.mkdir()
+        (renderer / "index.html").write_text("template", encoding="utf-8")
+        (renderer / "index-template.html").write_text(
+            "template {{BASE_PATH}}", encoding="utf-8"
+        )
+        for relative, content in assets.items():
+            target = renderer / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        return renderer
 
     def test_builds_unique_curated_pages_without_mutating_sources(self):
         temporary, repository, guides = self.make_fixture()
@@ -132,6 +199,18 @@ class DocCSiteTests(unittest.TestCase):
         )
         self.assertNotIn("\\<doc:InSingle>", guide)
         self.assertNotIn("\\&lt;doc:", guide)
+        self.assertIn(
+            "Keep `<doc:SingleAcross>\n<doc:SingleContinuation>` verbatim.",
+            guide,
+        )
+        self.assertIn(
+            "Keep ```<doc:TripleAcross>\n<doc:TripleContinuation>``` verbatim.",
+            guide,
+        )
+        self.assertNotIn("\\<doc:SingleContinuation>", guide)
+        self.assertNotIn("\\<doc:TripleContinuation>", guide)
+        self.assertIn("An unmatched ` marker stays literal.", guide)
+        self.assertIn("Escape \\<doc:AfterUnmatched> after the paragraph.", guide)
 
         manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
         self.assertEqual(
@@ -189,32 +268,12 @@ class DocCSiteTests(unittest.TestCase):
         temporary, repository, guides = self.make_fixture()
         self.addCleanup(temporary.cleanup)
         _, manifest, result = self.build_fixture(repository, guides)
-        site = repository / "site"
-        data = site / "data" / "documentation" / "fixture"
-        data.mkdir(parents=True)
-        (site / "index.html").write_text("site", encoding="utf-8")
+        site, data, _ = self.make_rendered_site(repository, result)
 
-        for page in result["pages"]:
-            identifier = page["identifier"]
-            json_path = data / f"{identifier.casefold()}.json"
-            json_path.write_text(
-                json.dumps(
-                    {
-                        "identifier": {
-                            "url": f"doc://fixture/documentation/Fixture/{identifier}"
-                        },
-                        "references": {},
-                    }
-                ),
-                encoding="utf-8",
-            )
-            route = site / "documentation" / "fixture" / identifier.casefold()
-            route.mkdir(parents=True)
-            (route / "index.html").write_text("page", encoding="utf-8")
-
-        page_count, html_count = verifier.verify(site, manifest)
+        page_count, html_count, asset_count = verifier.verify(site, manifest)
         self.assertEqual(page_count, 5)
         self.assertEqual(html_count, 6)
+        self.assertEqual(asset_count, 5)
 
         broken = data / "part-01-guide-01.json"
         payload = json.loads(broken.read_text(encoding="utf-8"))
@@ -230,6 +289,65 @@ class DocCSiteTests(unittest.TestCase):
         broken.write_text(json.dumps(payload), encoding="utf-8")
         with self.assertRaisesRegex(verifier.VerificationError, "relative .md URLs"):
             verifier.verify(site, manifest)
+
+    def test_archive_verifier_rejects_missing_javascript(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, _ = self.make_rendered_site(repository, result)
+        (site / "js" / "index.js").unlink()
+
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "missing referenced browser asset"
+        ):
+            verifier.verify(site, manifest)
+
+    def test_archive_verifier_rejects_asset_outside_hosting_base_path(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, _ = self.make_rendered_site(repository, result)
+        root = site / "index.html"
+        root.write_text(
+            root.read_text(encoding="utf-8").replace(
+                "/fixture/js/index.js", "/wrong/js/index.js"
+            ),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "outside DocC baseUrl"
+        ):
+            verifier.verify(site, manifest)
+
+    def test_archive_verifier_matches_every_pinned_renderer_asset(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, assets = self.make_rendered_site(repository, result)
+        renderer = self.make_renderer(repository, assets)
+
+        verifier.verify(site, manifest, renderer)
+
+        dynamic_chunk = renderer / "js" / "dynamic-chunk.js"
+        dynamic_chunk.write_text("chunk", encoding="utf-8")
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "missing DocC renderer asset"
+        ):
+            verifier.verify(site, manifest, renderer)
+
+    def test_archive_verifier_rejects_changed_renderer_asset(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        _, manifest, result = self.build_fixture(repository, guides)
+        site, _, assets = self.make_rendered_site(repository, result)
+        renderer = self.make_renderer(repository, assets)
+        (site / "js" / "index.js").write_text("changed", encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            verifier.VerificationError, "renderer asset differs from source"
+        ):
+            verifier.verify(site, manifest, renderer)
 
     def test_source_snapshot_covers_page_discovery(self):
         temporary, repository, guides = self.make_fixture()
