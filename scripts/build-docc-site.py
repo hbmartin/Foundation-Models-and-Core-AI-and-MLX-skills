@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict, dataclass
-import hashlib
 import html
 import json
 import os
@@ -22,19 +21,30 @@ import tempfile
 import unicodedata
 from urllib.parse import quote, unquote
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mdlinks import (  # noqa: E402  (path set above so the sibling module resolves)
+    FENCE,
+    SCHEME,
+    github_url,
+    is_within,
+    page_target,
+    scan_inline_links,
+    sha256,
+    source_snapshot,
+    split_destination,
+)
+
 
 PART_README = re.compile(r"^part-(\d{2})-[^/]+/README\.md$")
 REFERENCE = re.compile(
     r"^part-(\d{2})-[^/]+/references/(\d{2})-[^/]+\.md$"
 )
-FENCE = re.compile(r"^(?: {0,3}>[ \t]?)* {0,3}(`{3,}|~{3,})")
 BLOCK_QUOTE_LINE = re.compile(
     r"^(?P<prefix>(?: {0,3}>[ \t]?)+)(?P<content>.*)$"
 )
 HEADING_ONE = re.compile(
     r"^(?P<prefix>(?: {0,3}>[ \t]?)* {0,3})#\s+(?P<title>.+?)\s*$"
 )
-SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 GENERATED_MARKER_SUFFIX = ".generated-by-build-docc-site"
 DEFAULT_BUNDLE_IDENTIFIER = "dev.hbmartin.apple-ai-guides"
 DOCC_ASIDE_TAGS = {
@@ -90,18 +100,6 @@ class Page:
     part: int | None = None
     guide: int | None = None
     sha256: str = ""
-
-
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def source_snapshot(source_root: Path) -> dict[Path, str]:
-    return {path.resolve(): sha256(path) for path in sorted(source_root.rglob("*.md"))}
 
 
 def first_title(text: str, source: Path) -> str:
@@ -182,47 +180,6 @@ def discover_pages(source_root: Path) -> list[Page]:
     return pages
 
 
-def is_within(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-    except ValueError:
-        return False
-    return True
-
-
-def split_destination(inner: str) -> tuple[str, str, bool] | None:
-    """Return (destination, suffix, was_angle_wrapped) for a Markdown link body."""
-    leading_length = len(inner) - len(inner.lstrip())
-    leading = inner[:leading_length]
-    remainder = inner[leading_length:]
-    if not remainder:
-        return None
-    if remainder.startswith("<"):
-        end = remainder.find(">", 1)
-        if end < 0:
-            return None
-        return remainder[1:end], leading + remainder[end + 1 :], True
-
-    escaped = False
-    end = 0
-    while end < len(remainder):
-        character = remainder[end]
-        if escaped:
-            escaped = False
-        elif character == "\\":
-            escaped = True
-        elif character.isspace():
-            break
-        end += 1
-    return remainder[:end], leading + remainder[end:], False
-
-
-def page_target(candidate: Path, raw_path: str) -> Path:
-    if raw_path.endswith("/") or candidate.is_dir():
-        return candidate / "README.md"
-    return candidate
-
-
 def docc_addressable_fragment(fragment: str) -> str:
     """A GitHub-faithful anchor rewritten so DocC can address it.
 
@@ -237,19 +194,6 @@ def docc_addressable_fragment(fragment: str) -> str:
     while index < len(fragment) and unicodedata.category(fragment[index]) in ("Mn", "Me"):
         index += 1
     return quote(fragment[index:], safe="!$&()*+,;=:@/?")
-
-
-def github_url(
-    target: Path,
-    repository_root: Path,
-    repository_url: str,
-    branch: str,
-    fragment: str,
-) -> str:
-    relative = target.relative_to(repository_root).as_posix()
-    object_kind = "tree" if target.is_dir() else "blob"
-    url = f"{repository_url.rstrip('/')}/{object_kind}/{quote(branch, safe='')}/{quote(relative, safe='/')}"
-    return f"{url}#{fragment}" if fragment else url
 
 
 def rewrite_destination(
@@ -361,71 +305,19 @@ def rewrite_inline_links(
     bundle_identifier: str,
 ) -> str:
     """Rewrite inline Markdown link destinations while ignoring inline code."""
-    result: list[str] = []
-    index = 0
-    code_delimiter = 0
-
-    while index < len(line):
-        if line[index] == "`":
-            end = index
-            while end < len(line) and line[end] == "`":
-                end += 1
-            run = end - index
-            if code_delimiter == 0:
-                code_delimiter = run
-            elif code_delimiter == run:
-                code_delimiter = 0
-            result.append(line[index:end])
-            index = end
-            continue
-
-        if code_delimiter == 0 and line.startswith("](", index):
-            result.append("](")
-            body_start = index + 2
-            cursor = body_start
-            depth = 1
-            escaped = False
-            angle_wrapped = False
-            while cursor < len(line):
-                character = line[cursor]
-                if escaped:
-                    escaped = False
-                elif character == "\\":
-                    escaped = True
-                elif character == "<" and depth == 1:
-                    angle_wrapped = True
-                elif character == ">" and depth == 1:
-                    angle_wrapped = False
-                elif not angle_wrapped and character == "(":
-                    depth += 1
-                elif not angle_wrapped and character == ")":
-                    depth -= 1
-                    if depth == 0:
-                        break
-                cursor += 1
-            if depth != 0:
-                result.append(line[body_start:])
-                return "".join(result)
-            inner = line[body_start:cursor]
-            result.append(
-                rewrite_link_body(
-                    inner,
-                    source_page,
-                    pages_by_source,
-                    source_root,
-                    repository_root,
-                    repository_url,
-                    branch,
-                    bundle_identifier,
-                )
-            )
-            result.append(")")
-            index = cursor + 1
-            continue
-
-        result.append(line[index])
-        index += 1
-    return "".join(result)
+    return scan_inline_links(
+        line,
+        lambda inner: rewrite_link_body(
+            inner,
+            source_page,
+            pages_by_source,
+            source_root,
+            repository_root,
+            repository_url,
+            branch,
+            bundle_identifier,
+        ),
+    )
 
 
 BACKTICK_RUN = re.compile(r"`+")
