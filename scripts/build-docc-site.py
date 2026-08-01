@@ -27,12 +27,41 @@ REFERENCE = re.compile(
     r"^part-(\d{2})-[^/]+/references/(\d{2})-[^/]+\.md$"
 )
 FENCE = re.compile(r"^(?: {0,3}>[ \t]?)* {0,3}(`{3,}|~{3,})")
+BLOCK_QUOTE_LINE = re.compile(
+    r"^(?P<prefix>(?: {0,3}>[ \t]?)+)(?P<content>.*)$"
+)
 HEADING_ONE = re.compile(
     r"^(?P<prefix>(?: {0,3}>[ \t]?)* {0,3})#\s+(?P<title>.+?)\s*$"
 )
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 GENERATED_MARKER_SUFFIX = ".generated-by-build-docc-site"
 DEFAULT_BUNDLE_IDENTIFIER = "dev.hbmartin.apple-ai-guides"
+DOCC_ASIDE_TAGS = {
+    "attention",
+    "author",
+    "authors",
+    "bug",
+    "complexity",
+    "copyright",
+    "date",
+    "experiment",
+    "important",
+    "invariant",
+    "mutatingvariant",
+    "nonmutatingvariant",
+    "note",
+    "postcondition",
+    "precondition",
+    "remark",
+    "requires",
+    "seealso",
+    "since",
+    "throws",
+    "tip",
+    "todo",
+    "version",
+    "warning",
+}
 
 # The Part 13 guide quotes an upstream DocC page whose extensionless target is
 # meaningful only inside mlx-swift-lm's documentation bundle. Keep that source
@@ -418,6 +447,27 @@ def replace_double_backtick_spans(line: str, span_open: bool) -> tuple[str, bool
         cursor = end + 2
 
 
+def protect_plain_block_quote_from_aside_parsing(line: str) -> str:
+    """Keep a prose colon from becoming a DocC aside tag.
+
+    Swift Markdown 6.3.3 can trap while stripping a multiword tag from a
+    block quote whose first text node ends at a colon. An empty inline HTML
+    comment makes the first child non-text without changing rendered prose.
+    Real DocC aside tags remain untouched.
+    """
+    match = BLOCK_QUOTE_LINE.match(line)
+    if not match:
+        return line
+    content = match.group("content")
+    before_colon, separator, _ = content.partition(":")
+    if not separator:
+        return line
+    normalized_tag = re.sub(r"[\s-]+", "", before_colon).casefold()
+    if normalized_tag in DOCC_ASIDE_TAGS:
+        return line
+    return f'{match.group("prefix")}<!-- -->{content}'
+
+
 def transform_markdown(
     page: Page,
     pages_by_source: dict[Path, Page],
@@ -433,6 +483,7 @@ def transform_markdown(
     fence_length = 0
     saw_title = False
     double_backtick_span = False
+    block_quote_open = False
 
     for line in source_text.splitlines(keepends=True):
         newline = "\n" if line.endswith("\n") else ""
@@ -445,10 +496,20 @@ def transform_markdown(
             elif marker[0] == fence_character and len(marker) >= fence_length:
                 fence_character, fence_length = "", 0
             output.append(body + newline)
+            quote = BLOCK_QUOTE_LINE.match(body)
+            block_quote_open = bool(quote and quote.group("content").strip())
             continue
         if fence_character:
             output.append(body + newline)
             continue
+
+        quote = BLOCK_QUOTE_LINE.match(body)
+        if quote:
+            if not block_quote_open and quote.group("content").strip():
+                body = protect_plain_block_quote_from_aside_parsing(body)
+                block_quote_open = True
+        else:
+            block_quote_open = False
 
         heading = HEADING_ONE.match(body)
         if heading:

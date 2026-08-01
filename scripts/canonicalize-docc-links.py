@@ -18,7 +18,10 @@ from urllib.parse import unquote, urlparse
 
 
 UNRESOLVED_TOPIC = "org.swift.docc.unresolvedTopicReference"
-ANCHOR_SUMMARY = re.compile(r"^'(?P<old>.*)' is not an anchor of '.*'$", re.DOTALL)
+ANCHOR_SUMMARY = re.compile(
+    r"^'(?P<old>.*)' (?:is not an anchor of|doesn't exist at) '.*'$",
+    re.DOTALL,
+)
 DOC_FRAGMENT = re.compile(r"<doc:[^>]*#(?P<fragment>[^>]+)>")
 
 
@@ -152,13 +155,23 @@ def canonicalize(catalog: Path, diagnostics_path: Path) -> tuple[int, int]:
     applied = 0
 
     for diagnostic in diagnostics:
-        if not isinstance(diagnostic, dict) or diagnostic.get("id") != UNRESOLVED_TOPIC:
+        if not isinstance(diagnostic, dict):
+            continue
+        identifier = diagnostic.get("id")
+        # Apple-platform DocC emits the identifier; Swift 6.3.3's Linux JSON
+        # omits it. In the latter form, recognize the same diagnostic by its
+        # tightly constrained summary and validate its source/replacement below.
+        if identifier is not None and identifier != UNRESOLVED_TOPIC:
             continue
         summary = diagnostic.get("summary")
         if not isinstance(summary, str):
-            raise CanonicalizationError("DocC unresolved-link diagnostic has no summary")
+            if identifier == UNRESOLVED_TOPIC:
+                raise CanonicalizationError("DocC unresolved-link diagnostic has no summary")
+            continue
         match = ANCHOR_SUMMARY.fullmatch(summary)
         if not match:
+            if identifier is None:
+                continue
             # A missing page is not an anchor spelling difference and must not
             # be hidden. Fail here with a clearer error than the second pass.
             raise CanonicalizationError(f"unresolved DocC page reference: {summary}")

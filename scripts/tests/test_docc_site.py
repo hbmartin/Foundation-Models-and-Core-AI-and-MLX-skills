@@ -55,6 +55,8 @@ class DocCSiteTests(unittest.TestCase):
             "[Series](../../README.md#fixture-guides)\n\n"
             "[Helper](../../../scripts/helper.sh#L1)\n\n"
             "> # Quoted upstream title\n\n"
+            "> Plain quotation: **bold continuation**\n\n"
+            "> Note: Keep this as an intentional aside.\n\n"
             "Use ``SymbolName`` as code.\n\n"
             "Use ``An error with\n"
             "`nested` code`` across lines.\n\n"
@@ -111,6 +113,10 @@ class DocCSiteTests(unittest.TestCase):
             "https://github.com/example/fixture/blob/main/scripts/helper.sh#L1", guide
         )
         self.assertIn("> ## Quoted upstream title", guide)
+        self.assertIn(
+            "> <!-- -->Plain quotation: **bold continuation**", guide
+        )
+        self.assertIn("> Note: Keep this as an intentional aside.", guide)
         self.assertIn("Use <code>SymbolName</code> as code.", guide)
         self.assertIn(
             "Use <code>An error with\n`nested` code</code> across lines.", guide
@@ -218,10 +224,9 @@ class DocCSiteTests(unittest.TestCase):
                 {
                     "diagnostics": [
                         {
-                            "id": "org.swift.docc.unresolvedTopicReference",
                             "source": generated.as_uri(),
                             "summary": (
-                                "'fixture-guides' is not an anchor of '/AppleAIGuides'"
+                                "'fixture-guides' doesn't exist at '/AppleAIGuides'"
                             ),
                             "range": {"start": {"line": 3, "column": 1}},
                             "solutions": [
@@ -252,6 +257,28 @@ class DocCSiteTests(unittest.TestCase):
             source_before,
             (guides / "part-01-start" / "references" / "01-guide.md").read_bytes(),
         )
+
+    def test_ignores_unidentified_non_anchor_diagnostic(self):
+        temporary, repository, guides = self.make_fixture()
+        self.addCleanup(temporary.cleanup)
+        catalog, _, _ = self.build_fixture(repository, guides)
+        diagnostics = repository / ".build" / "docc" / "diagnostics.json"
+        diagnostics.write_text(
+            json.dumps(
+                {
+                    "diagnostics": [
+                        {
+                            "severity": "warning",
+                            "source": (catalog / "Part-01-Guide-01.md").as_uri(),
+                            "summary": "A Linux diagnostic without an identifier",
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        self.assertEqual(canonicalizer.canonicalize(catalog, diagnostics), (0, 0))
 
     def test_refuses_docc_fixits_outside_generated_catalog(self):
         temporary, repository, guides = self.make_fixture()
