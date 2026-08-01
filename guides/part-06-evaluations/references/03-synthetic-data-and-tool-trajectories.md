@@ -178,7 +178,7 @@ three parameters.
 > `SampleGenerator`-only. No sample project calls it, so usage remains unexercised even though the
 > signature is settled.
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 import FoundationModels
 
@@ -263,7 +263,7 @@ Thirteen seeds, `targetCount: 100`, **87 generated**. Not 100. Not 113.
 >
 > **The safe habit:** never write a literal. Write the arithmetic, so the intent is in the source.
 
-```swift
+```swift prelude:guide-context
 let seeds = Book.sampleBooks.map { book in
     ModelSample(prompt: book.review, expected: BookTags(tags: book.tags))
 }
@@ -481,7 +481,7 @@ Unpack the lifecycle, because there are three distinct facts in there:
 Here is the shape to write. The instruction text is deliberately complete and repetitive — it is the only
 thing guaranteed to survive a session swap.
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 import FoundationModels
 
@@ -534,7 +534,7 @@ forced on you rather than chosen.
 > invocations yourself.** A counter incremented inside the factory — printed, not branched on —
 > turns an invisible event into a line of output, and costs nothing.
 
-```swift
+```swift prelude:guide-context
 // Observability, not control flow. Never branch on this value.
 let invocations = OSAllocatedUnfairLock(initialState: 0)
 
@@ -832,7 +832,7 @@ This is Apple's, restated with the guards named so the intent survives review.
 > ✅ **VERIFIED** — the four guards are exactly those in `BookSampleGenerator/main.swift:74`; the naming
 > and comments are this guide's.
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 
 /// Per-sample rules only. Anything comparative belongs in §8.3.
@@ -870,7 +870,7 @@ The rules that fell out of the validator did not stop mattering. They move to a 
 dataset, where you *do* have all the samples. This is ordinary Swift; the framework has no opinion about
 it.
 
-```swift
+```swift prelude:guide-context
 import Foundation
 
 struct CorpusReport {
@@ -943,7 +943,7 @@ is an instruction-following failure with the exact text that failed attached to 
 short reviews means the model is drifting terse; forty rejects for uppercase tags means the instruction
 about lowercase is not landing and belongs somewhere more prominent.
 
-```swift
+```swift prelude:guide-context
 let rejects = await generator.invalidSamples
 print("accepted \(await generator.samples.count), rejected \(rejects.count)")
 
@@ -964,7 +964,7 @@ away — fix the instructions rather than loosening the validator.
 > `[ModelSample<BookTags>]` straight to `synthetic_book_samples.json`
 > (`BookSampleGenerator/main.swift:82-86`), which `JSONLoader(url:)` reads back.
 
-```swift
+```swift prelude:guide-context
 let output = URL.desktopDirectory.appending(path: "synthetic_book_samples.json")
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]   // reviewable diffs
@@ -984,7 +984,7 @@ generation runs.
 > and `SyntheticBookTags.swift:25` declares `var dataset: JSONLoader<ModelSample<BookTags>>` over the
 > generated hundred.
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 
 struct SyntheticBookTaggingEvaluation: Evaluation {
@@ -1180,7 +1180,7 @@ Two evaluations, same everything except the dataset, both in one suite.
 > **Report navigator** and select the **Evaluations** item beneath the test run to open the evaluation
 > report."* and *"For a side-by-side view, choose **Compare** and select a run for each side."*
 
-```swift
+```swift prelude:guide-context
 import Testing
 import Evaluations
 
@@ -1291,7 +1291,7 @@ on its own idea of diverse, which is narrow and stable.
 Write the matrix first, then run a generation pass per row. Each pass is cheap — it is the same
 generator with a different `prompt`, and you append its output to the same array.
 
-```swift
+```swift prelude:guide-context
 struct CoverageCell {
     let label: String       // goes into the run log, and eventually into `info:`
     let prompt: Prompt
@@ -1698,7 +1698,7 @@ An ordered expectation lists the calls you require. Real transcripts often conta
 > more brittle, and appropriate mainly for cost-sensitive or safety-sensitive flows — and now known
 > to actually bite.
 
-```swift
+```swift prelude:guide-context
 // "Search, then fetch details. The model may also do other things." — permissive.
 TrajectoryExpectation(
     ordered: [ToolExpectation("searchBooks"), ToolExpectation("getBookDetails")],
@@ -1935,7 +1935,7 @@ line. The whole evaluation is 39 lines, and every one of them is load-bearing.
 
 > ✅ **VERIFIED** — `SearchBooks.swift:525-563`, verbatim:
 
-```swift
+```swift illustrative
 struct SearchToolEvaluations: Evaluation {
     var dataset = samples
     
@@ -2005,7 +2005,7 @@ it is the one that tells you *how wrong* a failure was. A feature at 40% all-pas
 is missing one expectation per sample and is one prompt sentence away from working. A feature at 40% and
 45% is calling the wrong tools entirely. Aggregate both:
 
-```swift
+```swift prelude:guide-context
     func aggregateMetrics(using aggregator: inout MetricsAggregator) {
         aggregator.group("Trajectory") { group in
             group.computeMean(of: pass)       // strict pass rate
@@ -2259,7 +2259,7 @@ eventually "fix" by loosening the expectation — teaching yourself the wrong le
 The final step is mechanical, it is where you decide ordered-versus-unordered, and it is the only place
 `TrajectoryExpectation` needs to be constructed.
 
-```swift
+```swift prelude:guide-context
 func makeToolSample(from plan: PlannedSample) -> ModelSample<BookResults> {
     let ordered = plan.trajectory.orderedToolNames.map { ToolExpectation($0) }
     let disallowed = plan.trajectory.disallowedToolNames.map { ToolExpectation($0) }
@@ -2292,7 +2292,7 @@ func makeToolSample(from plan: PlannedSample) -> ModelSample<BookResults> {
 
 Run it through the same generator as everything else:
 
-```swift
+```swift prelude:guide-context
 let planGenerator = SampleGenerator<ModelSample<PlannedSample>>(
     Prompt("""
         Generate diverse requests a reader might make of a personal-library assistant,

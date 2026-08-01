@@ -716,7 +716,7 @@ default them to empty, and both are `async throws`.
 > ✅ **VERIFIED** — Apple developer documentation, `InferenceFunction.run` (doc slugs `-mqfb` and
 > `-14emi` respectively):
 
-```swift
+```swift illustrative
 // Overload A — convenience, dictionary of NDArray
 func run(inputs: [String : NDArray],
          states: consuming InferenceFunction.MutableViews = MutableViews(),
@@ -734,7 +734,7 @@ func run(inputs: borrowing InferenceFunction.Inputs,
 
 > ✅ **VERIFIED** — Apple developer documentation, `InferenceFunction.MutableViews`:
 
-```swift
+```swift illustrative
 struct MutableViews {
     init()
     mutating func insert(_ value: inout some InferenceValue.MutableViewRepresentable & ~Copyable,
@@ -759,7 +759,7 @@ The canonical shape appears in Apple's own `coreai-models` package:
 > `swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift:275-291`,
 > quoted exactly:
 
-```swift
+```swift prelude:guide-context
 // Build states (KV cache — persistent, inout)
 var states = InferenceFunction.MutableViews()
 states.insert(&keyCache, for: keyCacheName)
@@ -837,7 +837,7 @@ Here is that as compiling-shaped Swift. The API calls are verified; the app-spec
 > `apple/coreai-models`. The type names `ModelPlayer`, `SnakePlayer`, `chooseAction`, `writeFeatures`
 > come from the narration verbatim. Shapes, the `position` input and the error enum are inferred.
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import Foundation
 
@@ -939,7 +939,7 @@ survives it and hardcoded names do not.
 
 The allocation helper that follows from this is short and worth having in every project:
 
-```swift
+```swift illustrative
 /// Allocate one zero-filled NDArray per state, sized from the function descriptor.
 /// - Parameter dynamicExtent: the value to substitute for every dynamic (-1) dimension.
 func allocateStates(
@@ -1004,7 +1004,7 @@ excellent trade, because you almost never write into a state by hand — the gra
 > ✅ **VERIFIED** — `apple/coreai-models`,
 > `swift/Sources/CoreAIShared/Runtime/NDArray+Helpers.swift:12-19`, quoted exactly:
 
-```swift
+```swift prelude:guide-context
 /// Resolve strides from an NDArrayDescriptor for a given concrete shape.
 ///
 /// Uses `NDArrayDescriptor.resolvingDynamicDimensions().preferredStrides` to get
@@ -1601,7 +1601,7 @@ that is tens of megabytes of `memcpy` per decode token.
 tiny placeholder `NDArray` for the duration of the step, so the working copy you pass to `run` is the
 unique owner. In sketch form:
 
-```swift
+```swift illustrative
 // Illustrative of the technique described in the community source comment above.
 // The API calls are verified; the exact bookkeeping is yours.
 mutating func step(...) async throws {
@@ -1777,7 +1777,7 @@ Same reasoning, one order of magnitude larger, for logits.
 
 This is the part that surprises people, and it is a *good* surprise once you expect it:
 
-```swift
+```swift illustrative
 var logits = NDArray(descriptor: logitsDesc.resolvingDynamicDimensions([1, 1, vocabSize]))
 
 var outputViews = InferenceFunction.MutableViews()
@@ -1870,7 +1870,7 @@ That is the whole API insight, and it is worth its own line.
 
 > ✅ **VERIFIED** — Apple developer documentation, `InferenceFunction.encode(inputs:states:outputViews:to:)`:
 
-```swift
+```swift illustrative
 func encode(inputs: [String : InferenceFunction.AsyncValue],
             states: consuming InferenceFunction.AsyncMutableViews = AsyncMutableViews(),
             outputViews: consuming InferenceFunction.AsyncMutableViews = AsyncMutableViews(),
@@ -1899,7 +1899,7 @@ is **done**.
 
 > ✅ **VERIFIED** — Apple developer documentation, `ComputeStream`:
 
-```swift
+```swift prelude:guide-context
 final class ComputeStream {
     convenience init()                                   // "Initialize an empty compute stream."
     init(commandQueue: any MTLCommandQueue)              // ⚠️ no watchOS
@@ -2605,7 +2605,7 @@ The corresponding runtime shape is documented by a shipping app:
 Also from that app, the detection helper — because a host-cache asset is recognisable from its
 descriptor alone:
 
-```swift
+```swift illustrative
 // Community-authored (Noema). Distinguishes a host-cache graph from a stateful one
 // by looking for the cache-as-input signature, and recovers the STATIC capacity
 // baked into the export.

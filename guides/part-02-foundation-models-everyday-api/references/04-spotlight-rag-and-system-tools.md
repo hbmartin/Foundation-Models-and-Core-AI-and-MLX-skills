@@ -253,7 +253,7 @@ The mechanism behind "indexed entities for Apple Intelligence" is now concrete:
 > `@Property(indexingKey: \.textContent)` to bind to an existing Spotlight key, or
 > `customIndexingKey:` to bind to a `CSCustomAttributeKey`.
 
-```swift
+```swift prelude:guide-context
 import AppIntents
 import CoreSpotlight
 
@@ -385,7 +385,7 @@ produces a model-catalog error, and an Apple engineer confirmed it as a bug.
 `LanguageModelSession(tools:)` also takes a trailing instructions builder — this form is
 ✅ **VERIFIED** from the verbatim code in thread 837226:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [tool]) {
     """
     You are a trail journal assistant. Answer only from the user's own indexed hikes. \
@@ -564,7 +564,7 @@ have told you.
 seen — ✅ **SDK-verified**
 (`notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:49-59`):
 
-```swift
+```swift illustrative
 // _CoreSpotlight_FoundationModels overlay — activated by importing both
 // CoreSpotlight and FoundationModels. The full memberwise init, defaults included (:58):
 public init(
@@ -656,7 +656,7 @@ custom attribute reaches the model.** You donate it with
 `attributeSet.setValue(_:forCustomKey:)` (§2.1), then you name it in `fetchAttributes` by wrapping
 its `keyName` in a `SearchableItemAttribute`. No dynamic guidance required.
 
-```swift
+```swift illustrative
 // The full round trip for one custom attribute, both halves verified against Apple's sample.
 static let distanceKey = CSCustomAttributeKey(
     keyName: "distance", searchable: true, searchableByDefault: true,
@@ -786,7 +786,7 @@ Ground truth has to come from your own store, not from the model. The minimum vi
 test is: donate a small corpus containing at least one item whose body says something a language
 model would *not* guess, then assert the model reproduces that specific fact.
 
-```swift
+```swift prelude:guide-context
 import Testing
 import CoreSpotlight
 import FoundationModels
@@ -878,7 +878,7 @@ one that bites:
 > anything. Your search either hangs or silently degrades to identity attributes. Call the handler
 > with `[]` rather than not calling it.
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 
 final class TrailIndexDelegate: NSObject, CSSearchableIndexDelegate {
@@ -925,8 +925,9 @@ final class TrailIndexDelegate: NSObject, CSSearchableIndexDelegate {
 Wire it in two places — on the index itself, and on the tool's source. Apple's sample makes the
 indexer a singleton precisely so that the same object can be both:
 
-```swift
+```swift prelude:guide-context
 // Indexer.swift:34-58 — the sample's shape, condensed.
+@MainActor
 final class SpotlightIndexer: NSObject, CSSearchableIndexDelegate {
     static let shared = SpotlightIndexer()
     let index = CSSearchableIndex(name: "TrailSearchSample")
@@ -1004,7 +1005,7 @@ two-tool composition: Spotlight retrieves identifiers, your own tool fetches bod
 Three models, including Apple's own. That is the strongest empirical claim in the whole Spotlight
 corpus.
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 import FoundationModels
 
@@ -1253,7 +1254,7 @@ final class TrailSearchResults {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 struct TrailChatView: View {
     @State private var results = TrailSearchResults()
 
@@ -1435,7 +1436,7 @@ told it can filter by recipient will sometimes try to, against an index that has
 > `fetchAttributes` plus `SearchableItemAttribute(rawValue:)`, §5.2. Prefer it for *visibility*;
 > use the profile only when you need *guidance*.
 
-```swift
+```swift prelude:guide-context
 // ✅ labels and types SDK-verified; every parameter is optional with a nil default.
 let profile = GuidanceProfile(
     textMatch: true,          // literal / keyword matching over indexed text
@@ -1526,7 +1527,7 @@ Even with the type verified, the practical substitute below is still boring and 
 resolve the reference yourself before the prompt reaches the model, and put the resolved value in
 the instructions.
 
-```swift
+```swift prelude:guide-context
 // Pre-resolution in your own code — no unverified API required.
 let resolved = contactBook.resolve(reference: "my sister")   // your code, your data
 let session = LanguageModelSession(tools: [spotlight]) {
@@ -1650,7 +1651,7 @@ happiness is the relevant axis, set a threshold, and phrase the answer.
 > one. That is not proof against the API — the header above is — but combined with §12.4 it is a
 > strong signal that this is the least-exercised corner of the tool.
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 import FoundationModels
 import NaturalLanguage
@@ -1722,7 +1723,7 @@ thing to be careful with — it is model-generated text going straight into your
 to all the usual caveats about length, language and tone. Treat it as untrusted display text:
 truncate it, and have a fallback for when it is absent.
 
-```swift
+```swift prelude:guide-context
 for await reply in tool.searchResults {
     switch reply.content {                      // ✅ case names and payload types SDK-verified
     case .items(let batch):        show(items: batch.map(\.item), titled: reply.label)
@@ -1791,7 +1792,7 @@ first.
 `Session.swift:127-129`. `SearchableItemAttribute` has a public `init(rawValue:)`, so a
 `CSCustomAttributeKey`'s `keyName` goes straight into the fetch list:
 
-```swift
+```swift prelude:guide-context
 if let key = SpotlightIndexer.distanceAttributeKey {
     attributes.append(SearchableItemAttribute(rawValue: key.keyName))
 }
@@ -1807,7 +1808,7 @@ The engineer's two mechanisms, in increasing order of precision:
 turn. Good for two or three attributes. You need this anyway — `fetchAttributes` makes the value
 *visible*, the instructions make it *meaningful*.
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [spotlight]) {
     """
     Trail items carry two custom attributes beyond the standard set:
@@ -2122,7 +2123,7 @@ reasons.
 > is verified from `246:122` ("Samples can be serialized in any `Codable` format, and JSON works
 > well for that purpose").
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED — names verified, member types inferred.
 struct TrailRequest: ModelSampleProtocol, Codable {
     var input: String                       // "What hikes have I gone on?"
@@ -2149,7 +2150,7 @@ and `ModelSampleProtocol` is not among them:
 
 For this guide's purposes the practical shape of a trajectory expectation is therefore:
 
-```swift
+```swift prelude:guide-context
 // ✅ Spellings verified against Apple's Book Tracker sample.
 TrajectoryExpectation(unordered: [ToolExpectation("spotlight_search")])
 ```

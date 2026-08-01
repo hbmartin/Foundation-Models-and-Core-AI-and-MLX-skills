@@ -1496,7 +1496,7 @@ Modifier order is real and it is inverted from what reading the code suggests.
 
 So in this stack:
 
-```swift
+```swift prelude:guide-context
 Profile {
   Instructions("A conversation between a user and a helpful assistant.")
   ToggleDarkModeTool()
@@ -1561,7 +1561,7 @@ removal is a lie to the model about what happened. Use it, and read §11.
 If you want the same effect without the destructive write, this is the `historyTransform` equivalent
 — lever 2 instead of lever 3, per-profile and reversible:
 
-```swift
+```swift prelude:guide-context
 /// Non-destructive equivalent of `droppingCompletedToolCalls()`.
 /// Scoped to one profile; the real transcript keeps every entry.
 private func withoutToolTraffic(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
@@ -1749,7 +1749,7 @@ Because the body is re-evaluated before every request, a conditional inside it i
 edit on every turn. Put it at position 0 and every flip costs you the entire sequence. Put it at the
 end of the instructions block and a flip costs you only the tokens after it.
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)

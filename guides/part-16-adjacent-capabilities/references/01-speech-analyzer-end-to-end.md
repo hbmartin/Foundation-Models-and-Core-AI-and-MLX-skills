@@ -279,7 +279,7 @@ plumbing was where most of the bugs were.
 
 `SpeechAnalyzer` is an **actor**, not a class you subclass and not an object with a delegate.
 
-```swift
+```swift illustrative
 final actor SpeechAnalyzer          // iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+,
                                     // macOS 26.0+, tvOS 26.0+, visionOS 26.0+
                                     // Conforms: Actor, Sendable, SendableMetatype
@@ -394,7 +394,7 @@ what they were in iOS 26.
 Apple ships a complete canonical example on that page. It is the closest thing to a "hello world"
 this API has, and it is worth reading before the more realistic listings later in this guide:
 
-```swift
+```swift illustrative
 import Speech
 
 enum SpeechSetupError: Error {
@@ -534,7 +534,7 @@ For reference. Every name here is ✅ VERIFIED from `/documentation/speech/speec
 whole surface is now ✅ **SDK-verified** (`Speech-27.0-macos.swiftinterface:226-259` plus the
 audio-file extension at `:337-343`); declarations below carry the interface's exact shapes.
 
-```swift
+```swift illustrative
 // ── Creating ───────────────────────────────────────────────────────────────
 init(modules: [any SpeechModule], options: SpeechAnalyzer.Options? = nil)
 init(inputSequence:modules:options:analysisContext:volatileRangeChangedHandler:)
@@ -643,7 +643,7 @@ Two entries deserve emphasis because they are asymmetric in ways that look like 
 
 ### 3.2 What the two modules actually are
 
-```swift
+```swift illustrative
 final class SpeechTranscriber              // iOS 26.0+ … tvOS 26.0+, visionOS 26.0+
                                            // Conforms: LocaleDependentSpeechModule, SpeechModule, Sendable
 init(locale:preset:)
@@ -660,7 +660,7 @@ var results                                // some Sendable & AsyncSequence<Spee
 ✅ VERIFIED — `/documentation/speech/speechtranscriber`. ✅ **SDK-verified**
 (`Speech-27.0-macos.swiftinterface:344-447`).
 
-```swift
+```swift illustrative
 final class DictationTranscriber           // iOS 26.0+ … visionOS 26.0+ — NO tvOS
 init(locale:preset:)
 init(locale:contentHints:transcriptionOptions:reportingOptions:attributeOptions:)
@@ -797,7 +797,7 @@ experiment rather than a dead end.
 A preset is a plain value type bundling the three (or four) option sets a transcriber initializer
 takes. It is not magic and it is not privileged — Apple says so:
 
-```swift
+```swift illustrative
 struct SpeechTranscriber.Preset          // Equatable, Hashable, Sendable
 init(transcriptionOptions:reportingOptions:attributeOptions:)
 var attributeOptions, reportingOptions, transcriptionOptions
@@ -877,7 +877,7 @@ guide.
 
 ### 4.3 The option enums, and how to modify a preset
 
-```swift
+```swift illustrative
 enum SpeechTranscriber.TranscriptionOption      // CaseIterable, Equatable, Hashable, Sendable
 case etiquetteReplacements   // "Replaces certain words and phrases with a redacted form."
 
@@ -906,7 +906,7 @@ nothing else (`Speech-27.0-macos.swiftinterface:365-407`).
 
 Apple's own example of modifying a preset (reproduced with its bug intact, because you will hit it):
 
-```swift
+```swift illustrative
 let preset = SpeechTranscriber.Preset.timeIndexedTranscriptionWithAlternatives
 let transcriber = SpeechTranscriber(
     locale: Locale.current,
@@ -927,7 +927,7 @@ The important structural fact those snippets teach: **the option collections are
 `:72`) — so `.union(_:)` and `.subtracting(_:)` work on them. The idiom for "the preset, plus one
 thing" is:
 
-```swift
+```swift prelude:guide-context
 // The compiling version of Apple's example.
 let preset = SpeechTranscriber.Preset.timeIndexedTranscriptionWithAlternatives
 let transcriber = SpeechTranscriber(
@@ -968,7 +968,7 @@ added to demonstrate the pattern. Every identifier is ✅ VERIFIED.
 
 ### 4.4 Content hints — `DictationTranscriber` only
 
-```swift
+```swift illustrative
 struct DictationTranscriber.ContentHint          // Equatable, Hashable, Sendable
 static let shortForm       // "A processing hint indicating that the audio is only expected to be
                            //  a minute or so long."
@@ -1021,7 +1021,7 @@ Here is the pattern Apple's 2026 article uses to attach a custom language model 
 **unions** the hint into the preset's hints rather than replacing them, so the preset's own tuning
 survives:
 
-```swift
+```swift prelude:guide-context
 let preset = DictationTranscriber.Preset.progressiveLongDictation
 
 // Set customized language model if one is given.
@@ -1093,7 +1093,7 @@ Four consequences that should shape your code:
 
 ### 5.2 The API
 
-```swift
+```swift illustrative
 final class AssetInventory                 // iOS 26.0+ … tvOS 26.0+, visionOS 26.0+
 
 static func assetInstallationRequest(supporting modules: [any SpeechModule])
@@ -1120,7 +1120,7 @@ case unsupported   // "The module will not work with its configuration."
 docs harvest missed: `reserve(locale:)` and `release(reservedLocale:)` both return a
 `@discardableResult Bool`, so you *can* check whether a reservation or release actually happened.
 
-```swift
+```swift illustrative
 @objc final class AssetInstallationRequest    // inherits NSObject, conforms ProgressReporting
 func downloadAndInstall() async throws
 ```
@@ -1189,7 +1189,7 @@ Now the two return-value contracts that bite:
 
 Here is the 2026 article's version, which is as short as this gets:
 
-```swift
+```swift prelude:guide-context
 let transcriber = createDictationTranscriber(locale: locale, lmConfiguration: lmConfiguration)
 if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
     try await request.downloadAndInstall()
@@ -1201,7 +1201,7 @@ speech".
 And here is the iOS 26 sample's fuller ladder, which adds the two guards the short form skips and
 is the version worth shipping:
 
-```swift
+```swift prelude:guide-context
     public func ensureModel(transcriber: SpeechTranscriber, locale: Locale) async throws {
         guard await supported(locale: locale) else {
             throw TranscriptionError.localeNotSupported
@@ -1330,7 +1330,7 @@ In iOS 26 there was exactly one way to get microphone audio into a `SpeechAnalyz
 into the analyzer's format yourself, wrap each converted buffer in an `AnalyzerInput`, and yield it.
 Apple's iOS 26 sample does exactly that:
 
-```swift
+```swift prelude:guide-context
         self.analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
         (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
 ```
@@ -1358,7 +1358,7 @@ buffer.
 
 Two lines:
 
-```swift
+```swift prelude:guide-context
 guard let captureDevice = AVCaptureDevice.default(.microphone, for: .audio, position: .unspecified) else {
     throw TranscriptionError.couldNotCaptureMicrophone
 }
@@ -1375,7 +1375,7 @@ with correct time codes.
 
 ### 6.3 The complete `CaptureInputSequenceProvider` surface
 
-```swift
+```swift illustrative
 final class CaptureInputSequenceProvider        // iOS 27.0+ Beta, iPadOS 27.0+ Beta,
                                                 // Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta,
                                                 // tvOS 27.0+ Beta, visionOS 27.0+ Beta
@@ -1448,7 +1448,7 @@ This is a full, copyable file. Every Speech and AVFoundation call in it is ✅ V
 article or reference pages; the class scaffolding, the actor, and the error enum are ours and
 marked.
 
-```swift
+```swift prelude:guide-context
 import Speech
 import AVFoundation
 import CoreMedia
@@ -1667,7 +1667,7 @@ The explicit `else` is required in a live session: `nil` means no audio was cons
 
 The file-based sibling. Same shape, different source.
 
-```swift
+```swift illustrative
 final class AssetInputSequenceProvider          // iOS 27.0+ Beta … visionOS 27.0+ Beta
 
 static func provider(from asset: AVAsset,
@@ -1690,7 +1690,7 @@ The two static factories differ only in whether you name a track. `provider(from
 reads *the first track*, which is right for a voice memo and wrong for a movie with a music bed on
 track 1 and dialogue on track 2.
 
-```swift
+```swift prelude:guide-context
 import Speech
 import AVFoundation
 
@@ -1771,7 +1771,7 @@ The two providers cover microphone and file. Everything else — a network strea
 audio bus, a Core Audio unit, a `.wav` you are synthesizing — is yours, and `AnalyzerInputConverter`
 is the piece that makes "yours" tolerable.
 
-```swift
+```swift illustrative
 final class AnalyzerInputConverter              // iOS 27.0+ Beta … visionOS 27.0+ Beta
 static func converter(compatibleWith modules: [any SpeechModule]) async throws -> AnalyzerInputConverter
 init(analyzerFormat: AVAudioFormat, configurationHandler: ((AVAudioConverter) -> Void)? = nil)
@@ -1799,7 +1799,7 @@ Three things to get right:
    argument**, and the interface confirms why: `configurationHandler:` defaults to `nil` —
    ✅ **SDK-verified** (`Speech-27.0-macos.swiftinterface:520`).
 
-```swift
+```swift illustrative
 import Speech
 import AVFoundation
 
@@ -1853,7 +1853,7 @@ func makeInputSequence(
 
 ### 6.7 `AnalyzerInput` itself
 
-```swift
+```swift illustrative
 struct AnalyzerInput                            // iOS 26.0+, Sendable — "Time-coded audio data."
 init(buffer: AVAudioPCMBuffer)
 init(buffer: AVAudioPCMBuffer, bufferStartTime: CMTime?)
@@ -1911,7 +1911,7 @@ only way to inspect the audio — the deprecation and its replacements arrived t
 
 ### 7.1 The two-line core
 
-```swift
+```swift prelude:guide-context
 let lastAudioTime = try await analyzer.analyzeSequence(audioSequence)
 if let lastAudioTime {
     try await analyzer.finalizeAndFinish(through: lastAudioTime)
@@ -1974,7 +1974,7 @@ for the shape is stated:
 > structured concurrency mechanism to ensure that both subtasks run to completion before
 > `runSession` returns**.*
 
-```swift
+```swift prelude:guide-context
 try await withThrowingDiscardingTaskGroup() { group in
     // Subtask 1: Analyze audio from the capture session
     group.addTask {
@@ -2061,7 +2061,7 @@ subtasks complete, the group returns. Nothing depends on object lifetime.
 **Recommendation:** cancel the task. Keep the capture session in an actor (§6.4) and release it in
 a `defer` for hygiene, but do not make correctness depend on that release happening.
 
-```swift
+```swift prelude:guide-context
 /// The whole stop path.
 func stopRecording() {
     recordingTask?.cancel()
@@ -2103,7 +2103,7 @@ went to the store today" because you have concatenated three revisions of one ph
 
 Each result carries what you need to do better:
 
-```swift
+```swift illustrative
 struct SpeechTranscriber.Result   // CustomStringConvertible, Equatable, Hashable, Sendable,
                                   // SpeechModuleResult
 var text: AttributedString        // "The most likely interpretation of the audio in this range."
@@ -2134,7 +2134,7 @@ every listing in this guide actually uses.
 
 This is what Apple's 2026 sample does.
 
-```swift
+```swift prelude:guide-context
 if let rangeToReplace = transcript.rangeOfAudioTimeRangeAttributes(intersecting: resultTimeRange) {
     transcript.replaceSubrange(rangeToReplace, with: resultTranscript)
 } else {
@@ -2183,7 +2183,7 @@ Here is the trap, and it is a good one because Apple's own article walks straigh
 
 Look again at the transcriber construction from §4.4, quoted verbatim from the same article:
 
-```swift
+```swift illustrative
 return DictationTranscriber(
     locale: locale,
     contentHints: contentHints,
@@ -2256,7 +2256,7 @@ that difference is annotated in place.
 
 A defensive assertion is also cheap:
 
-```swift
+```swift prelude:guide-context
 /// 🟡 Our diagnostic. Run it once on a real device during bring-up.
 func assertTimeRangesPresent(_ result: some SpeechModuleResult, text: AttributedString) {
     #if DEBUG
@@ -2282,7 +2282,7 @@ Apple documents the alternative in the same paragraph:
 
 This is precisely what the iOS 26 sample does, and we can read that code:
 
-```swift
+```swift prelude:guide-context
                 for try await case let result in transcriber.results {
                     let text = result.text
                     if result.isFinal {
@@ -2348,7 +2348,7 @@ type with my voice", take this path.** §6.5's file-transcription function does 
 
 ### 8.6 A merge implementation for strategy A
 
-```swift
+```swift prelude:guide-context
 extension LiveTranscription {
 
     /// Strategy A. Requires `.audioTimeRange` in attributeOptions — see §8.3.
@@ -2592,7 +2592,7 @@ Two caveats on that implementation, stated plainly because they are real:
 
 Given caveat 1, the version worth shipping keeps the handle:
 
-```swift
+```swift illustrative
 /// A shape that preserves the "both finished before we return" guarantee.
 ///
 /// 🟡 Ours. Same semantics, structured differently: the display loop runs in an unstructured
@@ -2634,7 +2634,7 @@ private func runSession(...) async throws {
 
 Because a human tester cannot reliably reproduce this, automate the timing:
 
-```swift
+```swift prelude:guide-context
 /// 🟡 Ours. Run on a device (the Simulator will not capture audio — §"What you need").
 ///
 /// The bug appears when cancellation arrives while a volatile result is outstanding.
@@ -3017,7 +3017,7 @@ the provider signatures — G4, G7, G8, G9 — so the list is shorter than it wa
 
 **Lever 1 — `AnalysisContext.contextualStrings`.** Free, runtime, per-session.
 
-```swift
+```swift illustrative
 final class AnalysisContext : Sendable      // iOS 26.0+
 var contextualStrings: [AnalysisContext.ContextualStringsTag : [String]]
                                             // bias words, grouped under string-raw-value tags
@@ -3032,7 +3032,7 @@ property."* ✅ **SDK-verified** — with a correction to what the docs prose im
 not a flat `[String]` but a **dictionary keyed by tag**, with `.general` as the predefined key
 (`Speech-27.0-macos.swiftinterface:480-506`). So the call you actually write is:
 
-```swift
+```swift prelude:guide-context
 let context = AnalysisContext()
 context.contextualStrings[.general] = ["Winawer", "Tartakower", "Albin"]
 try await analyzer.setContext(context)
@@ -3131,7 +3131,7 @@ what §11.4 does.
 
 ### 11.3 The `SFCustomLanguageModelData` DSL
 
-```swift
+```swift illustrative
 class SFCustomLanguageModelData            // iOS 17.0+, macOS 14.0+, visionOS 1.1+
                                            // Codable, Equatable, Hashable
 
@@ -3178,7 +3178,7 @@ Three insertion mechanisms, three purposes.
 
 **`PhraseCount` — exact phrases with weights.**
 
-```swift
+```swift prelude:guide-context
 SFCustomLanguageModelData.PhraseCount(phrase: "Play the Albin counter gambit", count: 10)
 ```
 ✅ VERIFIED — verbatim from Apple's article.
@@ -3190,7 +3190,7 @@ transcribing *other* things as that phrase.
 
 **`PhraseCountsFromTemplates` — combinatorial expansion.**
 
-```swift
+```swift prelude:guide-context
 SFCustomLanguageModelData.PhraseCountsFromTemplates(classes: [
     "piece": ["pawn", "rook", "knight", "bishop", "queen", "king"],
     "royal": ["queen", "king"],
@@ -3223,7 +3223,7 @@ Note `count: 10_000` on a template that expands to 576 phrases.
 
 **`CustomPronunciation` — teaching the engine to say a word it has never seen.**
 
-```swift
+```swift prelude:guide-context
 SFCustomLanguageModelData.CustomPronunciation(grapheme: "Winawer", phonemes: ["w I n aU @r"])
 SFCustomLanguageModelData.CustomPronunciation(grapheme: "Tartakower", phonemes: ["t A r t @ k aU @r"])
 
@@ -3252,7 +3252,7 @@ differently.
 phoneme symbol is a data error you want to catch on your Mac, not a silently-ignored pronunciation
 you discover from a support ticket. This is a two-line check and there is no reason not to do it:
 
-```swift
+```swift prelude:guide-context
 // 🟡 Ours. `supportedPhonemes(locale:)` is ✅ SDK-verified; the validation loop is not Apple's.
 let allowed = Set(SFCustomLanguageModelData.supportedPhonemes(locale: locale))
 for pronunciation in myPronunciations {
@@ -3366,7 +3366,7 @@ print("Wrote \(outputURL.path)")
 
 ### 11.5 Stage 2: preparing the model on device
 
-```swift
+```swift illustrative
 class SFSpeechLanguageModel                // iOS 17.0+, macOS 14.0+ — NO tvOS
                                            // inherits NSObject
 
@@ -3384,7 +3384,7 @@ struct/class SFSpeechLanguageModel.Configuration
 
 The call, as Apple's 2026 article makes it:
 
-```swift
+```swift prelude:guide-context
 try await SFSpeechLanguageModel.prepareCustomLanguageModel(for: trainingData, configuration: lmConfiguration)
 ```
 ✅ VERIFIED — verbatim from *"Recognizing speech in live audio"*, §"Prepare to record and transcribe
@@ -3441,7 +3441,7 @@ a behaviour change, and it is the only deprecation in the custom-vocabulary surf
 
 Covered in §4.4, repeated here because it is the payoff:
 
-```swift
+```swift prelude:guide-context
 let contentHints = if let lmConfiguration {
     preset.contentHints.union([.customizedLanguage(modelConfiguration: lmConfiguration)])
 } else {
@@ -3492,7 +3492,7 @@ None of these throw where you would want them to.
 
 ### 12.1 What it is for
 
-```swift
+```swift illustrative
 final class SpeechDetector                 // iOS 26.0+ … tvOS 26.0+, visionOS 26.0+
 init()                                     // "Creates a speech detector with default settings."
 init(detectionOptions: SpeechDetector.DetectionOptions, reportResults: Bool)
@@ -3522,12 +3522,12 @@ single `sensitivityLevel` member, and `reportResults:` is a `Bool`, as the doc w
 It is a **module**, not a filter you wrap around the transcriber. You add it to the same analyzer,
 alongside the transcriber, and the analyzer does the gating internally.
 
-```swift
+```swift prelude:guide-context
 let transcriber = SpeechTranscriber(..)
 let speechDetector = SpeechDetector()
 let analyzer = SpeechAnalyzer(.., modules: [speechDetector, transcriber])
 ```
-```swift
+```swift prelude:guide-context
 let analyzer = SpeechAnalyzer(..)
 let transcriber = SpeechTranscriber(..)
 let speechDetector = SpeechDetector()
@@ -3648,7 +3648,7 @@ this limit exists to constrain.
 
 ### 13.2 Model retention
 
-```swift
+```swift illustrative
 struct SpeechAnalyzer.Options              // Equatable, Sendable
 init(priority: TaskPriority, modelRetention: ModelRetention)
 init(priority:modelRetention:ignoresResourceLimits:)   // ⚠️ iOS 27.0+
@@ -3743,7 +3743,7 @@ Four files, 528 lines, and the honest assessment first:
 > target (`SegmentationTests`, `ObjectDetectorTests` and `CoreAISharedTests` exist; **there is no
 > `SpeechTests`**), hardcoded tensor names, and a hardcoded fallback tensor shape.
 
-```swift
+```swift prelude:guide-context
 public actor SpeechModel {
     public init(resourcesAt url: URL,
                 decoder: any SpeechDecoder = WhisperDecoder(),

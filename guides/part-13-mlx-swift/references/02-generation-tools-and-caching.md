@@ -203,7 +203,7 @@ READMEs and the shipped `skills/` directory reference packages that do not exist
 In 2.x, mlx-swift-lm depended on `swift-transformers` and `Hub` directly. In 3.x it depends on
 **neither**. Instead it declares two protocols and expects you to supply conformers:
 
-```swift
+```swift prelude:guide-context
 public protocol Downloader: Sendable {
     func download(
         id: String,
@@ -234,7 +234,7 @@ the path Apple's samples take. Seven freestanding expression macros; the two you
 
 The canonical `Package.swift` fragment, from the root README:
 
-```swift
+```swift illustrative
 dependencies: [
     .package(url: "https://github.com/ml-explore/mlx-swift-lm", .upToNextMajor(from: "3.31.3")),
     .package(url: "https://github.com/huggingface/swift-huggingface", from: "0.9.0"),
@@ -365,7 +365,7 @@ two error models.
 
 ### 2.2 `ChatSession` — the layer you should start at
 
-```swift
+```swift prelude:guide-context
 public final class ChatSession {
     public var instructions: String?
     public var processing: UserInput.Processing
@@ -382,7 +382,7 @@ public final class ChatSession {
 Eight initializers: `{ModelContainer, ModelContext}` × `{plain, history: [Chat.Message],
 cache: [KVCache]}`, all sharing this tail of defaults:
 
-```swift
+```swift illustrative
 instructions: String? = nil,
 speculativeDecoding: SpeculativeDecodingConfig? = nil,
 generateParameters: GenerateParameters = .init(),
@@ -443,7 +443,7 @@ that is held here."*
 
 Two spellings of the same thing:
 
-```swift
+```swift illustrative
 // on the container — convenience, takes the lock for you
 public func generate(input: consuming sending LMInput,
                      parameters: GenerateParameters,
@@ -465,7 +465,7 @@ Note the asymmetry: **the container convenience does not take a `cache:` or `too
 to supply your own KV cache or pass tool schemas, you must go through the free function inside
 `perform`. Apple's `MLXChatExample` does exactly that:
 
-```swift
+```swift illustrative
 return try await modelContainer.perform { (context: ModelContext) in
     let lmInput = try await context.processor.prepare(input: userInput)
     let parameters = GenerateParameters(temperature: 0.7)
@@ -490,7 +490,7 @@ explains why this is safe:
 
 `ModelContainer`'s access methods, in full:
 
-```swift
+```swift illustrative
 public func perform<R: Sendable>(_ action: @Sendable (ModelContext) async throws -> sending R)
     async rethrows -> sending R
 public func perform<V: Sendable, R: Sendable>(values: V,
@@ -537,7 +537,7 @@ So: `break` out of `for await generation in stream` and the GPU keeps going for 
 against a KV cache you are about to reuse. For a one-shot that is harmless. For a chat loop it is a
 race. The fix is the `…Task` variants:
 
-```swift
+```swift prelude:guide-context
 let (stream, task) = generateTask(
     promptTokenCount: promptTokenCount,
     modelConfiguration: context.configuration,
@@ -629,7 +629,7 @@ different frameworks, same trap.
 
 Two mechanisms, both exposed as extra `generate` overloads:
 
-```swift
+```swift illustrative
 // draft model: a small model proposes, the big model verifies
 public func generate(input:cache:parameters:context:
                      draftModel: any LanguageModel,
@@ -648,7 +648,7 @@ public func generate(input:cache:parameters:context:
 
 Or, at the `ChatSession` layer, `SpeculativeDecodingConfig`:
 
-```swift
+```swift illustrative
 public init(draftModel: ModelContainer, numDraftTokens: Int = 5,
             memoryPolicy: SpeculativeDecodingMemoryPolicy? = nil)
 
@@ -665,7 +665,7 @@ the other and the acceptance economics change, that is why.
 
 Memory gating is explicit, which is unusual and welcome:
 
-```swift
+```swift illustrative
 public enum SpeculativeDecodingMemoryAction: Sendable, Hashable {
     case allow, fallbackToDefault, fail
 }
@@ -719,7 +719,7 @@ Swift bundles into one struct what Python splits across `generate_step` kwargs, 
 `make_logits_processors`. That is a genuine ergonomic win and one real hazard: **the Swift defaults
 are not the Python defaults**, and the most important one is temperature.
 
-```swift
+```swift illustrative
 public init(
     maxTokens: Int? = nil, maxKVSize: Int? = nil, kvBits: Int? = nil,
     kvGroupSize: Int = 64, quantizedKVStart: Int = 0, kvScheme: String? = nil,
@@ -795,7 +795,7 @@ otherwise                            →  CategoricalSampler(temperature:seed:)
 
 The protocols are two lines each:
 
-```swift
+```swift prelude:guide-context
 public protocol LogitSampler {
     func sample(logits: MLXArray) -> MLXArray
 }
@@ -915,7 +915,7 @@ no-op, which is correct for simple iterators and wrong for anything maintaining 
 
 ### 4.2 Three initializers, and the one that costs money
 
-```swift
+```swift illustrative
 @available(*, deprecated, message: "please use init(input:model:cache:parameters:)")
 public init(prompt: MLXArray, model: any LanguageModel, cache: [KVCache]? = nil,
             parameters: GenerateParameters) throws
@@ -951,7 +951,7 @@ down a layer to get one feature and lost another.
 
 ### 4.3 `state`, and the M-RoPE trap
 
-```swift
+```swift prelude:guide-context
 public internal(set) var state: LMOutput.State?
 ```
 
@@ -974,7 +974,7 @@ the M-RoPE `positionIds` / `ropeDeltas`. For MTP it is
 
 **The pattern is: seed it in, read it back out.** `ChatSession` does exactly this:
 
-```swift
+```swift prelude:guide-context
 let iterator = try TokenIterator(input: input, model: model, cache: cache,
                                  state: lmState, parameters: parameters)
 // … generate …
@@ -1062,7 +1062,7 @@ The cancellation check is deliberately **before** `next()`, not after. The sourc
 The same hazard shows up in prefill, and the fix there is a cooperative check inside the chunk
 loop:
 
-```swift
+```swift illustrative
 public func prepare(_ input: LMInput, cache: [KVCache], state: LMOutput.State?,
                     windowSize: Int?) throws -> PrepareResult {
     let prefillStepSize = windowSize ?? 512
@@ -1109,7 +1109,7 @@ from §1.2. It streams to stdout, times TTFT, handles a tool call if one appears
 cleanly on `SIGINT` — including waiting for the generation task to actually finish before exiting,
 which is the part most examples skip.
 
-```swift
+```swift prelude:external-module
 // Sources/StreamDemo/main.swift
 import Foundation
 import HuggingFace
@@ -1271,7 +1271,7 @@ FileHandle.standardError.write(Data((Memory.snapshot().description + "\n").utf8)
 
 `UserInputProcessor` is a one-method protocol and it is where all the model-specific work lives:
 
-```swift
+```swift prelude:guide-context
 public protocol UserInputProcessor: Sendable {
     func prepare(input: UserInput) async throws -> LMInput
 }
@@ -1283,7 +1283,7 @@ public protocol UserInputProcessor: Sendable {
 
 You reach the processor through the container:
 
-```swift
+```swift prelude:guide-context
 let lmInput = try await container.prepare(input: userInput)          // convenience
 // or, inside perform:
 let lmInput = try await context.processor.prepare(input: userInput)  // explicit
@@ -1291,7 +1291,7 @@ let lmInput = try await context.processor.prepare(input: userInput)  // explicit
 
 ### 5.2 `UserInput`
 
-```swift
+```swift prelude:guide-context
 public typealias Message = [String: any Sendable]
 
 public struct UserInput {
@@ -1340,7 +1340,7 @@ the `Chat.Message`, not on the `UserInput`, whenever you use the `.chat` path.**
 
 Media types:
 
-```swift
+```swift prelude:guide-context
 public enum Image {
     #if canImport(CoreImage)
     case ciImage(CIImage)
@@ -1369,7 +1369,7 @@ public struct VideoFrame { public let image: Image; public let timeStamp: CMTime
 
 Processing knobs:
 
-```swift
+```swift prelude:guide-context
 public struct Processing: Sendable {
     public var resize: CGSize?
     public var audio = AudioProcessing()
@@ -1438,7 +1438,7 @@ a bubble to stream into), the chat template *closes* the assistant turn and gene
 usually by producing a fresh user turn or an immediate EOS. `ChatSession` handles this internally.
 **The raw `UserInput` path does not.** Apple's fix, added 2026-06-16:
 
-```swift
+```swift prelude:guide-context
 // Exclude trailing empty assistant message so the chat template
 // leaves the assistant turn open for generation (matching ChatSession behavior)
 var inputMessages = messages
@@ -1453,7 +1453,7 @@ if let last = inputMessages.last, last.role == .assistant, last.content.isEmpty 
 
 ### 5.4 `LMInput` and `LMOutput`
 
-```swift
+```swift illustrative
 public struct LMInput {
     public let text: Text
     public let image: ProcessedImage?
@@ -1498,7 +1498,7 @@ degraded output with no error.
 
 ### 5.5 The `LanguageModel` protocol, and where `PrepareResult` splits
 
-```swift
+```swift prelude:guide-context
 public protocol LanguageModel: BaseLanguageModel {
     func prepare(_ input: LMInput, cache: [KVCache], state: LMOutput.State?, windowSize: Int?)
         throws -> PrepareResult
@@ -1631,7 +1631,7 @@ have to go around (§6.4).
 
 Extension defaults:
 
-```swift
+```swift prelude:guide-context
 encode(text:)      // ⇒ addSpecialTokens: true
 decode(tokenIds:)  // ⇒ skipSpecialTokens: FALSE
 ```
@@ -1694,7 +1694,7 @@ symmetric.
 1. Start with `baseConfig.effectiveEOSTokenIds` — the root `eos_token_id` from `config.json`, **or**
    `text_config.eos_token_id` if the root has none.
 2. If `generation_config.json` has an `eos_token_id`, **replace** the set entirely:
-   ```swift
+   ```swift prelude:guide-context
    eosTokenIds = Set(genEosIds)  // Override per Python mlx-lm behavior
    ```
 3. `stopStrings.formUnion(generationConfig?.stopStrings ?? [])`.
@@ -1713,7 +1713,7 @@ thing to check.
 
 ⚠️ **`stopStrings == nil` falls back to `extraEOSTokens`.** `ModelConfiguration` has:
 
-```swift
+```swift prelude:guide-context
 public var stopStrings: Set<String>?
 public var effectiveStopStrings: Set<String> { stopStrings ?? extraEOSTokens }
 ```
@@ -1785,7 +1785,7 @@ unknown variables**. So `additionalContext: ["enable_thinking": false]` on a mod
 never references `enable_thinking` does exactly nothing — no error, no warning, and reasoning stays
 on. `ReasoningPromptStrategy` encodes which models actually honour it:
 
-```swift
+```swift illustrative
 public enum ReasoningPromptStrategy: Sendable, Equatable {
     case templateFlag(key: String, defaultOn: Bool)     // e.g. Qwen3 "enable_thinking"
     case alwaysOn                                       // DeepSeek-R1
@@ -1817,7 +1817,7 @@ Because `applyChatTemplate` returns `[Int]`, you cannot print the rendered promp
 **decode it back** — and crucially you decode with `skipSpecialTokens: false`, which is the default,
 so the special tokens are visible. That round trip is the verification.
 
-```swift
+```swift prelude:external-module
 // Sources/TemplateCheck/main.swift
 import Foundation
 import HuggingFace
@@ -1982,7 +1982,7 @@ tool once; the format machinery deals with how a given family spells the invocat
 
 Parameters:
 
-```swift
+```swift illustrative
 public indirect enum ToolParameterType {
     case string, bool, int, double
     case array(elementType: ToolParameterType)
@@ -2004,7 +2004,7 @@ public static func optional(_ name: String, type: ToolParameterType, description
 `extraProperties` is the escape hatch for everything JSON Schema supports that the enum does not —
 `enum`, `default`, `minimum`, `pattern`. Apple's `LLMEval` sample uses it exactly that way:
 
-```swift
+```swift prelude:guide-context
 let currentWeatherTool = Tool<WeatherInput, WeatherOutput>(
     name: "get_current_weather",
     description: "Get the current weather in a given location",
@@ -2029,7 +2029,7 @@ let currentWeatherTool = Tool<WeatherInput, WeatherOutput>(
 
 ### 7.2 `ToolCall`, and executing one
 
-```swift
+```swift prelude:guide-context
 public struct ToolCall: Hashable, Codable, Sendable {
     public struct Function: Hashable, Codable, Sendable {
         public let name: String
@@ -2174,7 +2174,7 @@ the other.**
 
 ### 7.5 Detection: `ToolCallFormat.infer`, rule by rule
 
-```swift
+```swift illustrative
 public static func infer(from modelType: String, configData: Data? = nil) -> ToolCallFormat?
 ```
 
@@ -2198,14 +2198,14 @@ The rules, in evaluation order:
 
 **And then the load path does this:**
 
-```swift
+```swift prelude:guide-context
 toolCallFormat ← ToolCallFormat.infer(from: baseConfig.modelType, configData: configData)
                  // …only if configuration.toolCallFormat was not preset
 ```
 
 **and the generation loop does this:**
 
-```swift
+```swift prelude:guide-context
 configuration.toolCallFormat ?? .json
 ```
 
@@ -2261,7 +2261,7 @@ registry preset, you get `toolCallFormat: nil` unless `infer` happens to know yo
 
 ### 7.6 `ToolCallProcessor` — the streaming state machine
 
-```swift
+```swift prelude:guide-context
 public class ToolCallProcessor {
     public enum Output: Sendable, Equatable {
         case response(String)
@@ -2314,7 +2314,7 @@ older pair is compatibility with existing code.
 
 **Way one — `toolDispatch`, the automatic loop.** `ChatSession` runs the whole cycle:
 
-```swift
+```swift prelude:external-module
 struct EmptyInput: Codable {}
 struct TimeOutput: Codable { let time: String }
 
@@ -2354,7 +2354,7 @@ What `ChatSession` does under the hood on a tool call, and the ordering matters:
 
 **Way two — manual, when you need to see and approve calls.** No `toolDispatch`; you drive:
 
-```swift
+```swift prelude:guide-context
 let session = ChatSession(container, generateParameters: generateParameters,
                           tools: [weatherToolSchema])
 var toolCalls: [ToolCall] = []
@@ -2387,7 +2387,7 @@ turn); the shape transfers directly.
 
 **Dispatching by name across several tools**, from Apple's sample:
 
-```swift
+```swift prelude:guide-context
 func execute(_ toolCall: ToolCall) async throws -> String {
     switch toolCall.function.name {
     case currentWeatherTool.name:
@@ -2417,7 +2417,7 @@ the library does not tell you it has happened.
 
 **Step 1 — find out what you actually got.** Two lines, run once per model:
 
-```swift
+```swift prelude:guide-context
 await container.perform { context in
     print("toolCallFormat: \(String(describing: context.configuration.toolCallFormat))")
     print("model_type    : \(context.configuration.name)")
@@ -2429,7 +2429,7 @@ If it prints `nil`, the loop is going to use `.json`.
 **Step 2 — find out what the model actually emits.** Generate with tools attached and **print the
 raw text**, not the parsed calls:
 
-```swift
+```swift prelude:guide-context
 let session = ChatSession(container, generateParameters: .init(maxTokens: 256, temperature: 0),
                           tools: [myTool.schema])
 var raw = ""
@@ -2448,7 +2448,7 @@ have found your problem and you can read the format off the output.
 **(a) The format is one of the ten and detection just missed it.** Set it explicitly. This is by
 far the most common case:
 
-```swift
+```swift prelude:guide-context
 var config = LLMRegistry.shared.configuration(id: "org/SomeModel-4bit")
 config.toolCallFormat = .xmlFunction        // whichever the raw output matches
 ```
@@ -2479,7 +2479,7 @@ text. Construct a `ToolCallProcessor` with it… and here you hit a limit:
 
 **(d) Parse it yourself, outside the loop.** This always works and is not much code:
 
-```swift
+```swift prelude:guide-context
 // Generate with tools in the prompt but let the loop treat everything as text.
 // Then parse the raw output with your own logic.
 let session = ChatSession(container, generateParameters: params, tools: [myTool.schema])
@@ -2641,7 +2641,7 @@ and `getQuantizedState()` — that is the interface `attentionWithCacheUpdate` d
 
 Almost everything interesting depends on one question: **can this cache be rewound?**
 
-```swift
+```swift prelude:guide-context
 public func canTrimPromptCache(_ cache: [KVCache]) -> Bool
 @discardableResult public func trimPromptCache(_ cache: [KVCache], numTokens: Int) -> Int
 ```
@@ -2674,7 +2674,7 @@ window wraps, and the transition happens **silently, mid-conversation.** That is
 `@discardableResult` annotation makes ignoring the return value a one-character omission rather
 than a warning. **Check it. Every time.**
 
-```swift
+```swift prelude:guide-context
 let trimmed = trimPromptCache(cache, numTokens: n)
 guard trimmed == n else {
     // The rewind did NOT happen (or happened partially). You must not proceed
@@ -2726,7 +2726,7 @@ unmergeable for batching. Gemma 4 escapes it in Python only because `gemma4_text
 
 **(c) Explicit constructors:**
 
-```swift
+```swift illustrative
 public func makePromptCache(model: any LanguageModel, parameters: GenerateParameters? = nil)
     -> [KVCache]
 public func makePromptCache(model: any LanguageModel, maxKVSize: Int? = nil) -> [KVCache]  // legacy
@@ -2746,7 +2746,7 @@ instance (deserialization, mostly).
 
 Two knobs, and the second overrides the first:
 
-```swift
+```swift illustrative
 public func resolveAffineScheme(_ scheme: String?) -> (bits: Int, groupSize: Int)?
     // "affine4" -> (4, 64), "affine8" -> (8, 64)
 
@@ -2769,7 +2769,7 @@ silently ignored.** Typo `"turbo8v3"` as `"turbo8v33"` and you get **no quantiza
 message**. This is a string-typed API in a language with enums; treat every scheme string as
 something to validate at your own boundary:
 
-```swift
+```swift prelude:guide-context
 let known: Set<String> = ["affine4", "affine8", "turbo0v4", "turbo0v3", "turbo0v2",
                           "turbo8v4", "turbo8v3", "turbo8v2", "turbo4", "turbo3", "turbo2"]
 precondition(scheme.map(known.contains) ?? true, "unknown kvScheme \(scheme!)")
@@ -2874,7 +2874,7 @@ and it presents as a network timeout during prefill rather than an error (`mlx-l
 
 ### 8.6 Prompt caching to disk
 
-```swift
+```swift prelude:guide-context
 public func savePromptCache(url: URL, cache: [KVCache], metadata: [String: String] = [:]) throws
 public func loadPromptCache(url: URL) throws -> ([KVCache], [String: String])
 ```
@@ -2926,7 +2926,7 @@ has no M-RoPE deltas. §4.3.
 **Reuse across turns is the highest-leverage optimisation in this whole guide**, and in
 `ChatSession` you get it for free. Its internal state machine:
 
-```swift
+```swift prelude:guide-context
 enum Cache {
     case empty
     case kvcache([KVCache], draftKVCache: [KVCache]?, state: LMOutput.State?)
@@ -2958,7 +2958,7 @@ prefix caching entirely and must re-prefill every turn** (§8.3).
 **The footgun.** When you port or write a model, call `attentionWithCacheUpdate` and let it own the
 cache:
 
-```swift
+```swift prelude:guide-context
 let output = attentionWithCacheUpdate(
     queries: queries, keys: keys, values: values,
     cache: cache, scale: scale, mask: mask)
@@ -2997,7 +2997,7 @@ total KV bytes               = layer bytes * numAttentionLayers
 
 Weight bytes, if you need them for a budget:
 
-```swift
+```swift prelude:guide-context
 let context = try await LLMModelFactory.shared.load(configuration: config)
 let weightBytes = context.model.parameters().flattened().reduce(0) { $0 + $1.1.nbytes }
 ```
@@ -3046,7 +3046,7 @@ before you build around either.
 
 #### What happens
 
-```swift
+```swift illustrative
 public func maybeQuantizeKVCache(cache: inout [KVCache], kvBits: Int?, kvGroupSize: Int = 64,
                                  quantizedKVStart: Int = 0, kvScheme: String? = nil)
 ```
@@ -3141,7 +3141,7 @@ Three places to look for the same shape:
 **The mitigation you can apply today, without waiting for PR #358:** do not use mid-generation KV
 quantization together with a caller-held cache.
 
-```swift
+```swift prelude:guide-context
 // SAFE: quantization threshold is never crossed mid-generation, because the whole
 // cache is quantized from token 0 or never.
 let params = GenerateParameters(kvBits: 8, quantizedKVStart: 0)
@@ -3241,7 +3241,7 @@ generated token's KV lags one step. Same lesson, three frameworks.
 
 **Check the return, and treat a shortfall as a hard failure of the operation:**
 
-```swift
+```swift prelude:guide-context
 func rewind(_ cache: [KVCache], by n: Int) throws {
     guard n > 0 else { return }
     guard canTrimPromptCache(cache) else {
@@ -3279,7 +3279,7 @@ the family "Swift's type system makes a Python idiom unsound."
 
 **Issue: `mlx-swift-lm#406`. Status: OPEN as of 2026-07-29 (zero comments).**
 
-```swift
+```swift prelude:guide-context
 let previous = self.offset          // Swift Int → baked as a constant in the compiled graph
 self.offset += keys.dim(2)
 self.keys?[.ellipsis, previous ..< self.offset, 0...] = keys
@@ -3309,7 +3309,7 @@ compile-friendly cache type) are all library changes, not caller-side workaround
 
 A single diagnostic, run against your actual configuration, catches every one:
 
-```swift
+```swift illustrative
 /// Run once at startup, in DEBUG, with your real GenerateParameters.
 func auditCacheConfiguration(container: ModelContainer,
                              parameters: GenerateParameters) async {
@@ -3532,7 +3532,7 @@ occasionally); generation is sustained. Holding a 350 MB embedder resident for t
 you are generating is a poor trade on a phone. `NSCache<NSString, ModelContainer>` — the idiom in
 `MLXChatExample` — works here precisely because it lets the OS evict under pressure:
 
-```swift
+```swift prelude:guide-context
 private let modelCache = NSCache<NSString, ModelContainer>()
 ```
 

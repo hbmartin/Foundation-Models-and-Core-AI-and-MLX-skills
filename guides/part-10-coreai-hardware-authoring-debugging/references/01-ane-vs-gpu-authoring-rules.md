@@ -2985,7 +2985,7 @@ public enum GraphNames {
 
 and the detection itself (✅ **VERIFIED** — `ModelStructure.swift:190-218`):
 
-```swift
+```swift illustrative
 private static func detectStructure(from graphNames: [String]) -> ModelStructure {
     let graphSet = Set(graphNames)
 
@@ -3020,7 +3020,7 @@ private static func detectStructure(from graphNames: [String]) -> ModelStructure
 which feeds directly into the specialisation options
 (✅ **VERIFIED** — `ModelStructure.swift:66-80`):
 
-```swift
+```swift prelude:guide-context
 /// Returns `SpecializationOptions` derived from the model structure.
 ///
 /// - `chunkedStatic` → prefer `.neuralEngine`
@@ -3041,7 +3041,7 @@ public var specializationOptions: SpecializationOptions {
 and is applied *before* the model is loaded, so specialisation happens with the right preference
 (✅ **VERIFIED** — `ModelStructure.swift:150-159`):
 
-```swift
+```swift prelude:guide-context
 // Probe structure before specializing so we can pick the right compute-unit preference.
 let probedStructure = probeStructure(at: url)
 CLILogger.log("  - Probed structure: \(probedStructure.description)")

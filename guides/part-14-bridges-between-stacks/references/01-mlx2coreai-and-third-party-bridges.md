@@ -577,7 +577,7 @@ Both of the repo's benchmark backends feed `arange(total_positions)`:
 # python backend, benchmark_aimodel_sampling.py:214-239
 position_ids_name: NDArray(np.asarray(position_ids, dtype=np.int32)[None, :]),
 ```
-```swift
+```swift prelude:guide-context
 // swift backend, benchmark_aimodel_sampling_coreai.swift:227-264
 var positionIds = NDArray(descriptor: positionDesc.resolvingDynamicDimensions([1, totalPositions]))
 fillInt32(&positionIds, values: (0..<totalPositions).map { Int32($0) })
@@ -838,7 +838,7 @@ embedded JSON contract. Apple's reader ignores extra keys; `swift-lm`'s reader r
 
 `apple/coreai-models`'s `ModelBundle` (in `CoreAIShared`) is the strict side:
 
-```swift
+```swift prelude:guide-context
 public struct ModelBundle: Sendable {
     public let metadataVersion: String
     public let kind: BundleKind
@@ -891,7 +891,7 @@ And the error that tells you what to do after AOT compilation, verbatim from `.m
 
 ### 4.3 The `language` block, and `function_map`
 
-```swift
+```swift prelude:guide-context
 public struct LanguageConfig: Codable, Sendable, Equatable {
     public let tokenizer: String            // "tokenizer"
     public let vocabSize: Int               // "vocab_size"
@@ -963,7 +963,7 @@ visual tokens; `image_token_id` 151655 is the Qwen-VL `<|image_pad|>` id.
 
 Apple's own `VisionConfig` carries two fields this fixture omits, both with defaults:
 
-```swift
+```swift illustrative
 public let imageStrategy: ImageStrategy // "image_strategy", default .stretch
 public let includeImageInfo: Bool       // "include_image_info", default false
 public static let clipMean = [0.48145466, 0.4578275, 0.40821073]
@@ -1454,7 +1454,7 @@ benchmark backends exploit this by over-allocating:
 ```python
 state_capacity = context_length + (args.steps if args.grow_context else 1)     # python
 ```
-```swift
+```swift prelude:guide-context
 let stateCapacity = contextLength + (runOptions.growContext ? runOptions.steps + 1 : 1)  // swift
 ```
 
@@ -2075,7 +2075,7 @@ struct CoreAIBenchmarkBackend {
 
 and the per-step call:
 
-```swift
+```swift prelude:guide-context
 var inputIds = NDArray(descriptor: inputDesc.resolvingDynamicDimensions([1, tokens.count]))
 fillInt32(&inputIds, values: tokens)
 
@@ -2259,7 +2259,7 @@ the package a good template.
 
 The package pin is a bare revision, no semver tag:
 
-```swift
+```swift illustrative
 .package(
     url: "https://github.com/apple/coreai-models.git",
     revision: "938d0b8943b942ce66438b94ab017c5631d1aef4"
@@ -2304,7 +2304,7 @@ The design doc adds the contract's rules:
 This is the Core AI integration code, and it is the single densest inventory of Apple's
 `CoreAILanguageModels` API available outside Apple's own repo:
 
-```swift
+```swift illustrative
 import CoreAILanguageModels
 import Foundation
 
@@ -2419,7 +2419,7 @@ In your own code, qualify.
 
 Before a single asset is touched, the vision config is checked field by field:
 
-```swift
+```swift prelude:guide-context
 private func validatedVisionConfiguration() throws -> VisionConfig {
     guard let configuration = bundle.visionConfig else {
         throw SwiftLMVisionLanguageModelError.languageModelDoesNotSupportVision
@@ -2476,7 +2476,7 @@ you write a bundle producer (§4.5), write this validator on the consuming side 
 
 ### 9.6 The state-owning actor
 
-```swift
+```swift prelude:external-module
 import CoreAILanguageModels
 import Foundation
 import Tokenizers
@@ -2588,7 +2588,7 @@ Apple's VLM-engine surface exercised, verified by use:
 
 ### 9.7 The image-placeholder contract — an asymmetry that will catch you
 
-```swift
+```swift prelude:guide-context
 @available(macOS 27.0, iOS 27.0, *)
 struct SwiftLMVisionPromptTokenExpander: Sendable {
     let imageTokenID: Int32
@@ -2648,7 +2648,7 @@ If you are debugging one, read the `expected` value to know which path you are o
 
 Minimal end-to-end usage:
 
-```swift
+```swift prelude:guide-context
 let bundle = try SwiftLMFoundationModelBundle(contentsOf: bundleURL)
 let model = try await bundle.makeVisionLanguageModel()
 let output = try await model.generate(
@@ -2769,7 +2769,7 @@ measurements.
 
 ### 10.2 Apple's own code sets it `true` for dynamic-shape GPU LLMs
 
-```swift
+```swift prelude:guide-context
 public enum ModelStructure { case chunkedStatic(batchSize: Int); case dynamic; case multiFunctionSegmenter }
 
 public var specializationOptions: SpecializationOptions {
@@ -2800,7 +2800,7 @@ shape selects its ANE preference.)
 
 ### 10.3 `swift-lm` rejects it outright
 
-```swift
+```swift illustrative
 public func specialize(
     options: SpecializationOptions = .default,
     cache: AIModelCache = .default,
@@ -2838,7 +2838,7 @@ design choice that makes the flag irrelevant, not merely a workaround for a bug.
 
 ### 10.4 `mlx2coreai`'s Swift runner sets it `false` — on a dynamic model
 
-```swift
+```swift prelude:guide-context
 var options = SpecializationOptions(preferredComputeUnitKind: .gpu)
 options.expectFrequentReshapes = false
 let model = try await AIModel(contentsOf: modelURL, options: options)
@@ -2963,7 +2963,7 @@ Scale, measured by the repo's own `scripts/gen_inventory.py` on **2026-07-25**:
 The pitch line is *"the `from_pretrained` of Core AI"*, and the direct Foundation Models tie-in is
 worth noting for [Part 4](../../part-04-beyond-the-built-in-model/):
 
-```swift
+```swift prelude:guide-context
 LanguageModelSession(model: try await KitLanguageModel(model: .qwen3_0_6B))
 ```
 

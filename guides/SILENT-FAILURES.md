@@ -1,10 +1,10 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1760 of them, 1402 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1769 of them, 1410 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-07-31 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-08-01 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -16,21 +16,21 @@ Start from the symptom column that matches what you observe. Within each section
 
 | Symptom | Entries | What it means |
 |---|---:|---|
-| [Wrong output](#wrong-output) | 173 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
-| [Empty output / no-op](#empty-output--no-op) | 59 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
+| [Wrong output](#wrong-output) | 174 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
+| [Empty output / no-op](#empty-output--no-op) | 60 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
 | [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
 | [Ignored input](#ignored-input) | 117 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
-| [Stale state](#stale-state) | 38 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
+| [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
 | [Data & artifact loss](#data--artifact-loss) | 41 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
 | [Compiles but unavailable](#compiles-but-unavailable) | 90 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
-| [Performance cliffs](#performance-cliffs) | 143 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
+| [Performance cliffs](#performance-cliffs) | 147 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
 | [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
 | [Version drift](#version-drift) | 86 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 156 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [Docs vs reality](#docs-vs-reality) | 157 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 255 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 358 | Warnings and considerations that are not themselves silent failures. |
+| [General cautions](#general-cautions) | 359 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -95,6 +95,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Omit image_mean/image_std and you silently get CLIP's — Qwen3-VL-class models produce degraded captions, not an error](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#26-the-language-block-and-a-discrepancy-worth-knowing) — 7.4
 - [Inputs and states bind positionally, not by name — a graph declared in another order loads, runs, and produces garbage](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#53-coreaisequentialengine-dynamic-cpu-side-sampling-logits-available) — 7.4
 - [Fixed bug: pipelined sampling shared one execution descriptor across steps, corrupting text at temperature > 0](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#54-coreaipipelinedengine-gpu-on-device-sampling-no-logits) — 7.4 🔇
+- [Substring tensor-role discovery picks the first ambiguous match and can wire the wrong intermediate without a missing-name error](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#42-multi-function-backend) — 7.5 🔇
 
 **Part 8**
 
@@ -308,6 +309,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Outputs you pre-allocate views for are updated in place and omitted from the returned Outputs — lookups come back nil](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#94-silent-failure-outputs-you-pre-allocate-disappear-from-outputs) — 7.1
 - [An output with a provided view is updated in place and not included in returned Outputs — reading it there finds nothing](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#94-silent-failure-outputs-you-pre-allocate-disappear-from-outputs) — 7.1 🔇
 - [vocabType defaults differ (.raw vs .byteLevel) — the mismatch over-constrains the grammar and generation yields nothing](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#75-a-second-quieter-trap-the-vocabtype-default-mismatch) — 7.4
+- [Detector postprocessing returns an empty array for malformed output ranks and lengths, indistinguishable from a valid no-object scene](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) — 7.5 🔇
 
 **Part 10**
 
@@ -615,6 +617,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Noema tracks fedTokens and prefix-checks before reuse — anything else risks decoding against another conversation's KV](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#84-silent-failure-the-state-you-forgot-to-reset-between-conversations) — 7.3
 - [The ANE in-graph KV-write crash corrupts the compile cache — later loads fail ENOENT until you delete cache entries](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-symptom) — 7.3
 - [Two models built from the same URL and settings share one engine and KV cache — the second session resets the first](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#43-modelresources-lazy-loading-shared-engines-borrow-safe-unload) — 7.4
+- [Diffusion filename fallback can select a stale component when old and new exports coexist; ship an explicit schema-0.2 assets map](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#21-the-assets-map-is-operational-not-descriptive) — 7.5 🔇
 
 **Part 10**
 
@@ -909,6 +912,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Hello-world NDArray(shape:scalarType:) can mismatch the specialized layout: a silent layout copy on every inference](part-07-coreai-swift-runtime/README.md#71-aimodel-inferencefunction-ndarray-and-the-memory-model) — 7.README 🔇
 - [Holding states in a dictionary you also read leaves NDArray non-unique — COW copies the whole KV cache every decode token](part-07-coreai-swift-runtime/README.md#73-states-as-kv-cache-and-pipelined-execution) — 7.README 🔇
+- [Segmentation re-encodes unchanged images and lazy diffusion reloads components; malformed detector shapes look like a valid empty scene](part-07-coreai-swift-runtime/README.md#75-non-llm-engines-bundles-function-structure-warmup-specialization-and-caching) — 7.README
 - [Summary with includingStatistics:true is considerably slower on large models — pass false for structure probes](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#11-there-is-a-sixth-type-and-it-is-the-one-people-miss) — 7.1
 - [AOT compilation does not remove on-device specialization; specialize() controls when it runs, not how much work it does](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#21-the-one-place-aimodel-and-aimodelc-differ-at-the-call-site-nowhere) — 7.1
 - [Probing the cache with .default then loading with .gpu options misses the cache: the key includes SpecializationOptions](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#33-the-load-ladder-in-the-order-you-should-write-it) — 7.1
@@ -934,6 +938,9 @@ Start from the symptom column that matches what you observe. Within each section
 - [swift run defaults to Debug, where -Onone per-element closures make resets take seconds — build release for any benchmark](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#34-the-six-cli-tools-and-what-each-is-actually-for) — 7.4
 - [The structure probe swallows errors and defaults to .dynamic — an ANE-meant model silently gets GPU specialization](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#42-preparedmodel-the-two-phase-load-that-picks-your-compute-unit) — 7.4
 - [Prefix reuse needs byte-identical re-renders — unsorted tool-call dict keys collapse the LCP and silently re-prefill](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#66-what-it-is-worth) — 7.4
+- [A failed structure summary silently defaults to dynamic GPU specialization options before the loaded functions reveal the real structure](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) — 7.5
+- [ImageSegmenter re-runs image_encode for every prompt; same-image feature reuse requires an application-owned intermediate cache](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#43-the-advertised-reuse-is-not-implemented-by-the-high-level-api) — 7.5
+- [Lazy diffusion unloading saves residency but repeated requests reload every component and repay stage-load latency](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#63-eager-residency-versus-lazy-stage-residency) — 7.5
 
 **Part 8**
 
@@ -1535,6 +1542,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 2**
 
+- [Apple's documented nested @Generable example fails macro expansion in Xcode 27 beta 27A5228h; move the nested type to file scope until fixed.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#23-the-canonical-shape) — 2.2
 - [Python docstrings leak Swift #/…/# regex delimiters — working tests use bare patterns; do not copy the delimiters.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#35-a-note-on-pattern) — 2.2
 - [Apple's ResponseStream snippet does not compile — unbalanced braces, a stray try!, and an undefined variable.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#93-responsestream-snapshot-and-response) — 2.2
 - [LanguageModelSession.Error is in docs and a forum snippet but no shipping sample — keep the arm, distrust its cases.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#111-the-three-error-ladder) — 2.2
@@ -2186,6 +2194,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Evidence note: zero Apple sample code — this guide rests on the shipped apple/coreai-models source read line-by-line](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#model-bundles-the-llm-engines-and-grammar-constrained-decoding) — 7.4
 - [Apple's own code disagrees on VLM sub-model loading (sequential vs async let) — load sequentially until resolved](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#43-modelresources-lazy-loading-shared-engines-borrow-safe-unload) — 7.4
 - [All of §6.3-6.4 is community work: a 3-file fork commit on a pre-SAM3 snapshot, not upstream Apple code](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#63-trimkvcache-the-community-primitive-apples-protocol-lacks) — 7.4
+- [The structure-to-compute mapping is apple/coreai-models loader policy, not a Core AI framework routing contract](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#non-llm-engines-bundles-function-structure-warmup-specialization-and-caching) — 7.5
 
 **Part 8**
 

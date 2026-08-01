@@ -1618,7 +1618,7 @@ re-specialization cost — but it is a reduction, not a removal:
 So a launch-time sweep is cheap, and comparing it against what you saw last launch tells you an
 invalidation happened:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import Foundation
 import OSLog
@@ -1823,7 +1823,7 @@ What matters *here*, in a migration context, is the failure shape.
 
 Apple's own sample code for this workflow, quoted verbatim, has the shape and even labels the branch:
 
-```swift
+```swift illustrative
 if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
     do {
         if let model = try AIModel(resolvingBookmark: bookmarkData) {
@@ -2707,7 +2707,7 @@ Apple links it directly from the Foundation Models documentation:
 
 Three options, in descending order of how much we would recommend them:
 
-```swift
+```swift illustrative
 // 1. RECOMMENDED — pin the exact prerelease tag. Reproducible, and it moves only when you move it.
 .package(
     url: "https://github.com/apple/foundation-models-utilities",

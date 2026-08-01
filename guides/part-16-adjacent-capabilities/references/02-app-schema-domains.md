@@ -364,7 +364,7 @@ treat any custom-entity behaviour that happens to work as a bonus you have not b
 
 Three macros, one per kind of thing. This is the entire adoption surface.
 
-```swift
+```swift illustrative
 import AppIntents
 
 @AppEntity(schema: .photos.asset)     // content — a noun your app owns
@@ -405,7 +405,7 @@ a Siri transcript; you discover it when you press Build.
 
 The required-property set is per schema. For `.photos.asset`:
 
-```swift
+```swift prelude:guide-context
 // Required by @AppEntity(schema: .photos.asset)
 var displayRepresentation: DisplayRepresentation
 var id: Int
@@ -419,7 +419,7 @@ var isHidden: Bool
 
 And for `.photos.openAsset`:
 
-```swift
+```swift illustrative
 // Required by @AppIntent(schema: .photos.openAsset)
 var target: <EntityType>
 func perform() async throws -> some IntentResult
@@ -722,7 +722,7 @@ request category there is, and shaving the warm-up off it was worth a dedicated 
 Two `.audio` schemas appear in Apple's own code samples with their parameter lists, which is
 unusually good evidence:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 5:05)
 @AppIntent(schema: .audio.addToPlaylist)
 struct AddToPlaylistIntent {
@@ -747,7 +747,7 @@ be a union type.** That is worth internalizing before §13.4.
 
 And `.audio.song` on the entity side:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 4:26)
 // Enhanced DisplayRepresentation
 @AppEntity(schema: .audio.song)
@@ -846,7 +846,7 @@ be distinct utterances mapping to distinct calls.
 
 `.clock.createTimer`'s parameter list is verified from Apple's own code:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 3:42)
 @AppIntent(schema: .clock.createTimer)
 struct CreateTimerIntent {
@@ -1002,7 +1002,7 @@ pages. **Safe default:** where a schema names a person type, use the one the sch
 An entity-level example from Apple's own code, notable because it is where indexing and schema
 adoption meet in three lines:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 7:59)
 // Contributing message content to Apple Intelligence
 
@@ -1135,7 +1135,7 @@ concrete, visible defect. Session 344's diagnostic story:
 
 The fix is one small intent:
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED from WWDC26 344 narration — session 344 published no code block.
 // Verified from narration: the parameter is named `target`; the schema is `.system.open`.
 import AppIntents
@@ -1664,7 +1664,7 @@ deprecated `.system.search`; it is the same schema.
 
 Apple's own sample first, verbatim:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 14:49)
 // Intent that re-runs the Siri search in app
 @AppIntent(schema: .system.searchInApp)
@@ -1689,7 +1689,7 @@ thread 837249. The important dependency detail is to construct one `NavigationMo
 object as the app's state, and register that exact object with `add(dependency:)`; `@Dependency`
 then resolves the same instance instead of a separately constructed model.[^app-dependency-registration]
 
-```swift
+```swift prelude:guide-context
 import AppIntents
 import SwiftUI
 import Observation
@@ -1944,7 +1944,7 @@ If any intent parameter is a small, bounded set the user might be asked to pick 
 calendar, which account, which mailbox, which list — that entity needs `EnumerableEntityQuery`.
 Without it, Siri has an intent it can run and no way to enumerate the options.
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED from WWDC26 344 narration (no published code block).
 // The facts asserted — the two protocols, the two method names, @Dependency,
 // and the @MainActor propagation — are all stated in narration.
@@ -1970,7 +1970,7 @@ isolation propagates from your data layer into your queries; plan for it rather 
 
 ### 10.3 `EntityStringQuery` — the "I can't index" fallback
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 8:36)
 // An interface that locates entities using arbitrary string input
 
@@ -2017,7 +2017,7 @@ right shape for most media apps.
 > are that your app receives a structured search input from the system, and you can return more
 > than one entity type.**"*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 13:38)
 // Structured search of songs and playlists
 struct AudioIntentValueQuery: IntentValueQuery {
@@ -2052,7 +2052,7 @@ returning empty.
 ⚠️ **Do not assume the input is scalar.** Session 343's input is a scalar `AudioSearch`. Session
 240's is an **array**:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 19:21)
 // Working across apps - IntentValueQuery
 
@@ -2117,7 +2117,7 @@ TransientAppEntity : AppEntity { init() }`, macOS 13.0 / iOS 16.0 — old API, n
 with a default `id: UUID` and a synthesized default query, which is the "no query to write"
 promise made literal.
 
-```swift
+```swift illustrative
 // 🟡 RECONSTRUCTED — session 344 published no code block.
 @AppEntity
 struct AttendeeEntity: TransientAppEntity {
@@ -2150,7 +2150,7 @@ when the intent runs"* — Siri writes the sentence. ✅ **VERIFIED (transcript,
 
 To take it over, add `ProvidesDialog` and return an `IntentDialog` with **two** strings:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 2:42)
 @AppIntent(schema: .audio.addToPlaylist)
 struct AddToPlaylistIntent {
@@ -2201,7 +2201,7 @@ by the wrong nouns.
 The mechanism is the parameter projection. The `@AppIntent` macro exposes each parameter as
 `$name`, and `$name.requestValue(_:)` is an `async throws` call that returns the resolved value:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 3:42)
 @AppIntent(schema: .clock.createTimer)
 struct CreateTimerIntent {
@@ -2237,7 +2237,7 @@ and documentation to learn about other kinds of dialog requests"* — and left t
 which this guide previously carried as a 🔴 GAP. The 27.0 interface declares all three on
 `IntentParameter`, macOS 13.0 / iOS 16.0 (`AppIntents-27.0-macos.swiftinterface:2646-2648`):
 
-```swift
+```swift prelude:guide-context
 final public func requestValue(_ dialog: IntentDialog? = nil) async throws -> Value.ValueType
 final public func requestDisambiguation(among itemsToDisambiguate: [Value.ValueType], dialog: IntentDialog? = nil) async throws -> Value.ValueType
 final public func requestConfirmation(for itemToConfirm: Value.ValueType, dialog: IntentDialog? = nil) async throws -> Bool
@@ -2261,7 +2261,7 @@ Counting the consumers named across session 343: responses, disambiguation, ques
 Spotlight, Shortcuts — plus **intent confirmations** (§12.2) and the **on-screen-awareness fast
 path** (§14.3). That is seven surfaces fed by one property.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 4:26)
 // Enhanced DisplayRepresentation
 @AppEntity(schema: .audio.song)
@@ -2295,7 +2295,7 @@ the new Siri work. It is not.
 > **iOS 26.0+ / macOS 26.0+ / watchOS 26.0+ / visionOS 26.0+ / tvOS 26.0+**, and the App Intents
 > updates page lists it under **June 2025**.
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (docs) — the declaration as published
 protocol SnippetIntent : AppIntent where Self.PerformResult : ShowsSnippetView
 ```
@@ -2329,7 +2329,7 @@ default empty implementation).
 You do not need `SnippetIntent` to show a custom view. A schema intent can return one directly by
 composing `ShowsSnippetView` into its result type:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 5:05)
 @AppIntent(schema: .audio.addToPlaylist)
 struct AddToPlaylistIntent {
@@ -2415,7 +2415,7 @@ way in which the schema tier is the price of admission.
 Two domains. Navigation sessions and stopwatches. If you were hoping to donate "a workout is in
 progress" or "a document is open" and have Siri reason about it, that is not what this does.
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 7:44)
 @ModelActor
 actor ModelManager {
@@ -2465,7 +2465,7 @@ And the default policy, which is the part that should make you sit up:
 **The absence of the protocol is a decision, not a neutral default.** If your entities can be
 shared or made public and you do not say so, Siri may act on them without asking.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 10:03)
 // Informs system if entity is public or shared with others
 @AppEntity(schema: .calendar.event)
@@ -2558,7 +2558,7 @@ The problem is stated precisely, and it is a real hole in `Transferable`:
 > a new representation type that lets you share **structured types that the system already
 > understands**."*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 0:01)
 struct LandmarkEntity: AppEntity, Transferable {
     var id: Int
@@ -2608,7 +2608,7 @@ the closure entirely and use a key-path**. Same result, much less code."* ✅ VE
 Session 240 uses **`IntentValueRepresentation`** for what looks like the same job — exporting a
 `ContactEntity` as an `IntentPerson`:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 18:18)
 // Working across apps - Exporting content to another app
 
@@ -2622,7 +2622,7 @@ extension ContactEntity: Transferable {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 20:00)
 // Working across apps - IntentValueRepresentation
 
@@ -2644,7 +2644,7 @@ samples**, so neither is a transcription artifact.
 ✅ **SDK-verified — same type.** The SDK interface dump this guide asked for now exists, and the
 answer is (b), an alias:
 
-```swift
+```swift illustrative
 // ✅ SDK-verified (AppIntents-27.0-macos.swiftinterface:889-910)
 extension AppEntity {
     public typealias ValueRepresentation = IntentValueRepresentation
@@ -2706,7 +2706,7 @@ Session 345 argues for a third mechanism by showing what the first two cannot do
 That is the **cold-start problem**, stated exactly. Spotlight indexing pays off when a user goes
 looking. Donation pays off after a user has behaved. Neither works for content that is new.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 5:18)
 // Suggest playlists for the workout session
 let playlistEntities = [dailyRun, runningMix]
@@ -2791,7 +2791,7 @@ trips you never wrote and cannot see in your own code.
 > use `EntityCollection` as your parameter type, the system **passes just the identifiers** to the
 > intent's perform method, **without resolving the full entities**."*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 7:15)
 struct TagPhotosIntent: AppIntent {
     static let title: LocalizedStringResource = "Tag Travel Photos"
@@ -2833,7 +2833,7 @@ instant"* is the ceiling of what can honestly be claimed; do not repeat it as a 
 > ✅ **VERIFIED (transcript, WWDC26 345)** — *"With `@UnionValue` **supporting input parameters**, I
 > can use **one widget for both**."*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 11:58)
 @UnionValue
 enum TravelGalleryContent {
@@ -2900,7 +2900,7 @@ The failure mode this addresses:
 > great on the device they were created on. **But each device generates its own local IDs. So the
 > same entity can end up with a different ID on each device.**"*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 10:14)
 // If your ID is already stable across devices (server UUID, CloudKit record ID):
 struct PhotoEntity: AppEntity, SyncableEntity {
@@ -2984,7 +2984,7 @@ knowing even if you never adopt `LongRunningIntent`: **30 seconds, from any surf
 > intent **run beyond the 30-second limit** — and **manages the background task lifecycle of your
 > app**. And as your intent runs, **progress updates appear automatically as a Live Activity**."*
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 13:41)
 struct UploadPhotoIntent: LongRunningIntent, CancellableIntent {
     static let title: LocalizedStringResource = "Upload Photo"
@@ -3085,7 +3085,7 @@ The concrete failure: *"My widget shares the data model with the app — but **h
 write to the same data store can cause conflicts**. So I gave the widget **read-only** access and
 the main app handles all the writes."* ✅ VERIFIED (transcript, 345).
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 345 @ 16:54)
 // Write operation — needs the main app
 struct UpdateFavoriteIntent: AppIntent {
@@ -3210,7 +3210,7 @@ mechanism predates this release cycle; the sessions did not invent it, they fina
 
 **The wrong code — and it is the code everyone writes:**
 
-```swift
+```swift illustrative
 // ❌ WRONG. Compiles. Runs. Never errors. Silently ignores "remove the due date".
 func perform() async throws -> some IntentResult {
     var updates = ReminderUpdates()
@@ -3229,7 +3229,7 @@ problem.
 
 **The right code:**
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED shape (session 344 published no code block); the three-case
 // semantics are ✅ VERIFIED from narration, quoted above.
 func perform() async throws -> some IntentResult {
@@ -3301,7 +3301,7 @@ inside `perform()`, and treat donation as a rare event rather than telemetry.
 
 Session 240 shows the per-row form inside a `ForEach`:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 17:19) — the SIMPLE form
 List {
     ForEach(messages) { message in
@@ -3330,7 +3330,7 @@ system can no longer see — and the failure is Siri being confused, not an erro
 
 **The correct form for lists:**
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27) — the CORRECT form for lists
 struct PlaylistDetailView: View {
     var body: some View {

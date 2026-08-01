@@ -245,7 +245,7 @@ answer for a team that needs a specific frontier model and already pays an infer
 
 Pin explicitly until a stable tag ships:
 
-```swift
+```swift prelude:external-module
 // Package.swift
 // swift-tools-version: 6.2
 
@@ -336,7 +336,7 @@ id the server was started with; for Ollama it is the tag (`llama3.2:3b`).
 
 The minimal, complete program:
 
-```swift
+```swift prelude:external-module
 import Foundation
 import FoundationModels
 import FoundationModelsUtilities
@@ -540,7 +540,7 @@ your model **strictly enforces** JSON Schema"* (`SKILL.md:110`).
 
 The test to run before flipping it to `true`, once, by hand:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import FoundationModelsUtilities
 
@@ -723,7 +723,7 @@ Which error is thrown when (✅ all verified against throw sites):
 The practical consequence for your `catch` ladder: **a portable ladder written against
 `LanguageModelError` will not catch rate limiting on this backend.** You need a backend-specific arm:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import FoundationModelsUtilities
 
@@ -770,7 +770,7 @@ The package's own live integration test exercises it with 300 s / 600 s timeouts
 (`ChatCompletionsLiveTests.swift:44-54`), which tells you what Apple expects a slow local model to
 need:
 
-```swift
+```swift prelude:guide-context
 let transport = URLSessionConfiguration.ephemeral
 transport.timeoutIntervalForRequest = 300      // first token from a cold local model
 transport.timeoutIntervalForResource = 600     // whole streamed response
@@ -995,7 +995,7 @@ them. That is why the canonical quick start lists five products across three pac
 
 For the Foundation Models path, add `MLXFoundationModels`:
 
-```swift
+```swift illustrative
 .product(name: "MLXFoundationModels", package: "mlx-swift-lm"),
 ```
 
@@ -1077,7 +1077,7 @@ what the explicit path in §3.5 costs:
 
 Putting it together, the smallest MLX file that actually compiles:
 
-```swift
+```swift illustrative
 import Foundation
 #if canImport(FoundationModels, _version: 2)
 import FoundationModels
@@ -1206,7 +1206,7 @@ transcript entries that never contain anything.
 
 For a reasoning-capable checkpoint:
 
-```swift
+```swift prelude:guide-context
 let model = #huggingFaceLanguageModel(
     configuration: LLMRegistry.qwen3_4b_4bit,
     capabilities: [.reasoning])
@@ -1214,7 +1214,7 @@ let model = #huggingFaceLanguageModel(
 
 and for the common structured-output case:
 
-```swift
+```swift prelude:guide-context
 let model = #huggingFaceLanguageModel(
     configuration: LLMRegistry.gemma3_1B_qat_4bit,
     capabilities: [.guidedGeneration])
@@ -1309,7 +1309,7 @@ So: weights are shared across sessions on purpose, and freeing them is **your** 
 session's. If your app switches between two 4-bit 3B models, you are holding both in memory until you
 say otherwise:
 
-```swift
+```swift prelude:guide-context
 // Switching backends in a memory-constrained app.
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 func switchModel(to configuration: ModelConfiguration) -> MLXLanguageModel {
@@ -1766,7 +1766,7 @@ Four options, in the order you should consider them.
 **1. Use the sequential Core AI variant and pay whatever it costs.** `variant: "coreai-sequential"`
 is a one-parameter change and it restores `@Generable`:
 
-```swift
+```swift prelude:guide-context
 let model = try await CoreAILanguageModel(
     resourcesAt: bundleURL,
     variant: "coreai-sequential")     // restores logits → restores @Generable
@@ -2104,7 +2104,7 @@ final class Assistant {
 The wrong pattern is `if model is CoreAILanguageModel`. The right one is to ask what the model can do,
 because that is the question you actually have and it survives a backend swap:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 extension Assistant {
     /// Extract structured data if the backend can guarantee the shape;
@@ -2140,7 +2140,7 @@ gives you a place to put the fallback.
 §5's fourth option, written out. Prose from the fast backend, structure from the capable one, both
 behind the same session API:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 struct SplitBackendAssistant {
     /// Fast, on-device, no guided generation (e.g. a pipelined Core AI bundle).
@@ -2177,7 +2177,7 @@ the transcript**.
 > were written the other way round in earlier drafts of this series and in material still in
 > circulation.
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, *)

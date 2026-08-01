@@ -1937,7 +1937,7 @@ Rules, all verified:
 
 The Swift caller then addresses functions by name:
 
-```swift
+```swift prelude:guide-context
 let model = try await AIModel(contentsOf: modelURL)
 guard let encode = try model.loadFunction(named: "image_encode") else { return }
 ```

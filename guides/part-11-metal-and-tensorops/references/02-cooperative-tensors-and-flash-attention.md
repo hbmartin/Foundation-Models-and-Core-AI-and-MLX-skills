@@ -2672,7 +2672,7 @@ threadgroup tiling above the ops:
 
 🟡 **RECONSTRUCTED — host dispatch, in Swift:**
 
-```swift
+```swift prelude:guide-context
 let state = try device.makeComputePipelineState(function: fn)
 let simdWidth = state.threadExecutionWidth          // do NOT assume 32
 

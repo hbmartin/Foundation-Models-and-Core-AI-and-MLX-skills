@@ -234,7 +234,7 @@ so you can see that there is genuinely no seam between the two kinds:
 > ✅ **VERIFIED** — `BookTrackerEvaluations/BookTags.swift:35-123`, an Apple sample project compiled
 > against the 27.0 SDK. This is the highest-precedence evidence in the corpus.
 
-```swift
+```swift prelude:external-module
 import Evaluations
 import Foundation
 import FoundationModels
@@ -573,7 +573,7 @@ measurable consequences.
 
 All three forms, from Apple's documentation examples:
 
-```swift
+```swift prelude:guide-context
 // 1. Numeric — a dictionary of level -> anchor text.
 let quality = ScoringScale.numeric([
     4: "Every tag describes the book itself",
@@ -670,7 +670,7 @@ put safety on a 1–4 scale because you want a nice chart.
 This is the single highest-yield edit you can make to a badly-behaved judge, and it costs nothing.
 Compare:
 
-```swift
+```swift prelude:guide-context
 // Bad — a gradient restated four times. The judge has nothing to check,
 // so it falls back on overall vibe and its scores will be unstable run to run.
 .numeric([
@@ -812,7 +812,7 @@ judge picks a number in the middle and you learn nothing.
 
 ### 7.3 The fix, and why it works
 
-```swift
+```swift prelude:guide-context
 let relevance = ScoreDimension(
     "Relevance",
     description: """
@@ -949,7 +949,7 @@ judge cannot know which app it is looking at unless you tell it.
 
 > ✅ **VERIFIED** — `BookTags.swift:107-123`, verbatim:
 
-```swift
+```swift prelude:guide-context
 ModelJudgeEvaluator(
     judge: SystemLanguageModel.default,
     dimensions: [relevance, usefulness],
@@ -996,7 +996,7 @@ expected value lives. The second is discarded at both call sites in the archive.
 still gets a reference section, and it says so in words the judge can act on. The alternative —
 returning `[:]` — is also legal and Apple's documentation shows it:
 
-```swift
+```swift illustrative
 reference: { input, _ in
     guard let expected = input.expected else { return [:] }
     return ["Expected Tags": expected.tags.joined(separator: ", ")]
@@ -1021,7 +1021,7 @@ Here is that structure applied, written out at the length a real judge prompt ru
 composition of Apple's documented three-part rule with the vocabulary from the Book Tracker sample —
 the *structure* is Apple's, the specific prose is ours:
 
-```swift
+```swift prelude:guide-context
 let bookTagJudgePrompt = ModelJudgePrompt<ModelSample<BookTags>>(
     instructions: """
         ROLE
@@ -1185,7 +1185,7 @@ the old one?"
 > built-in prompt and **automatically sends the sample's `expected` value to the model as judge as the
 > baseline.**"*
 
-```swift
+```swift prelude:guide-context
 var evaluators: Evaluators {
     ModelJudgeEvaluator.pairwise(
         "ExplanationComparison",
@@ -1257,7 +1257,7 @@ canonical two-group aggregation:
 
 > ✅ **VERIFIED** — `/documentation/evaluations/designing-effective-model-judges`, verbatim:
 
-```swift
+```swift illustrative
 private let nonEmpty = Metric("NonEmpty")
 private let quality = Metric("Quality")
 
@@ -1711,7 +1711,7 @@ judge that always says 4 pass its own calibration test.
 > 🟡 **RECONSTRUCTED — our code, standard statistics, no Apple precedent.** Nothing in Apple's corpus
 > mentions weighted κ (see the GAP in §14.4). Report it *alongside* unweighted κ, never instead of it.
 
-```swift
+```swift prelude:guide-context
 extension Statistics {
 
     enum KappaWeighting {
@@ -1899,7 +1899,7 @@ the modern-looking alternative:
 > `static func loadJSONLines(from:)`, plus `var detailed: DataFrame` and
 > `func jsonRepresentableDataFrame(of:)`.
 
-```swift
+```swift prelude:guide-context
 @Test("Book Tag Evaluations", .evaluates(evaluation, info: evaluationInfo))
 func evaluateBookTagging() async throws {
     let result = EvaluationContext.current.result
@@ -1998,7 +1998,7 @@ Assembling the verified pieces into a compilable whole:
 > from Apple's file. The `JSONLoader` wiring and the `Self.samples` declaration are inferred from
 > their use sites — Apple's file loads the same fixture, but we have not read those specific lines.
 
-```swift
+```swift prelude:external-module
 import Evaluations
 import Foundation
 import FoundationModels
@@ -2147,7 +2147,7 @@ Mechanically, a comparative run is **two instances of the same `Evaluation` type
 > suite, which will run both evaluations.**"* And `335:230`, for the feature-side equivalent: *"So all
 > I have to do is **define two instances of my evaluation**. One without the tool and one with it."*
 
-```swift
+```swift prelude:guide-context
 @Suite("Judge Calibration A/B", .serialized)
 struct JudgeCalibrationComparison {
     static let control      = ModelJudgeAlignmentEvaluation(prompt: .baseline)
@@ -2433,7 +2433,7 @@ fixture into a calibration set and a held-out set at extraction time, draw examp
 calibration set, and report κ on the held-out set. Two JSON files, two `Evaluation` instances, one
 suite:
 
-```swift
+```swift prelude:guide-context
 @Suite("Judge Calibration", .serialized)
 struct JudgeCalibrationTests {
     // Examples in the judge prompt are drawn ONLY from rows in this fixture.
@@ -2485,7 +2485,7 @@ plausible-looking numbers.
 
 This is the big one.
 
-```swift
+```swift prelude:guide-context
 let expertRelevance = Self.samples.map { $0.expected?.expertRelevanceScore ?? 0.0 }
 
 group.custom(of: relevance.metric, label: "Relevance Alignment Score") { judge in
@@ -2514,7 +2514,7 @@ judge prompt that was fine.
 **Defend against it.** Nothing in the framework will, so add an assertion of your own inside the
 closure, where you have both arrays in hand:
 
-```swift
+```swift prelude:guide-context
 group.custom(of: relevance.metric, label: "Relevance Alignment Score") { judge in
     // The join is positional. If the lengths ever disagree, the number below is
     // meaningless — fail loudly rather than reporting a plausible kappa.
@@ -2548,7 +2548,7 @@ group.custom(of: relevance.metric, label: "Relevance Alignment Score") { judge i
 
 Apple's own line:
 
-```swift
+```swift prelude:guide-context
 let expertRelevance = Self.samples.map { $0.expected?.expertRelevanceScore ?? 0.0 }
 ```
 
@@ -2566,7 +2566,7 @@ judge prompt.
 **Fix it at the boundary.** Make the expert scores non-optional in your fixture type and validate on
 load:
 
-```swift
+```swift illustrative
 static func loadExtractedFixture(named name: String) -> [ModelSample<BookTagJudgmentValue>] {
     let url = Bundle.module.url(forResource: name, withExtension: "json")!
     let rows = try! JSONDecoder().decode([ModelSample<BookTagJudgmentValue>].self,
@@ -2609,7 +2609,7 @@ Collapsing the second into the first is defensible for a test gate (both should 
 misleading during diagnosis, because 0 sends you to "rewrite the judge" when the real answer is "your
 fixture has no variation in it." Distinguish them:
 
-```swift
+```swift prelude:guide-context
 group.custom(of: relevance.metric, label: "Relevance Alignment Score") { judge in
     guard let kappa = Statistics.cohensKappa(ratings1: expertRelevance, ratings2: judge) else {
         // -1 is a legal kappa value but unreachable in practice, so it reads as a sentinel

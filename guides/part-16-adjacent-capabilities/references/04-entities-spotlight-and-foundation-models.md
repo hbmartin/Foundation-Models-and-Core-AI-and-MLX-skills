@@ -505,12 +505,15 @@ is not incidental — the delegate has to be handed to `SpotlightSearchTool`'s c
 it needs an identity that outlives any one search, and the index it services has to be the same
 object it was set on.
 
-> ✅ **VERIFIED** — session-246 sample, `Indexer.swift:34-58`:
+> ✅ **VERIFIED** — session-246 sample, `Indexer.swift:34-58`. The guide adds an explicit
+> `@MainActor` so the singleton remains Swift 6-safe even when the app target does not use
+> MainActor default isolation:
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 import Foundation
 
+@MainActor
 final class SpotlightIndexer: NSObject, CSSearchableIndexDelegate {
     static let shared = SpotlightIndexer()
 
@@ -599,7 +602,7 @@ This is where the actual work is, and where the quality of all three consumers i
 > a large fraction of the names in circulation are `kMDItem…` constants from the Spotlight metadata
 > layer rather than Swift property names.
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 import UniformTypeIdentifiers
 
@@ -673,7 +676,7 @@ first run, a migration, a restore — should batch.
 > spellings throughout: `index.fetchLastClientState`, `index.beginBatch()`,
 > `try await index.indexSearchableItems(items)`, `try await index.endBatch(withClientState:)`.
 
-```swift
+```swift prelude:guide-context
 extension SpotlightIndexer {
     /// Bulk-index with a client-state token, so an interrupted run resumes
     /// rather than restarting.
@@ -709,7 +712,7 @@ donation all the way to the language model's context.
 
 **Write side** ✅ **VERIFIED** — `Indexer.swift:34-42` for the key, `Indexer.swift:180` for the set:
 
-```swift
+```swift illustrative
 static let distanceAttributeKey: CSCustomAttributeKey? = CSCustomAttributeKey(
     keyName: "distance",
     searchable: true,             // the index will match on it
@@ -725,7 +728,7 @@ attributeSet.setValue(NSNumber(value: distance), forCustomKey: key)
 **Read side** ✅ **VERIFIED** — `Session.swift:127-129`. This is the part that is genuinely
 non-obvious, and it is the answer to "how does a custom attribute become visible to the model":
 
-```swift
+```swift prelude:guide-context
 if let key = SpotlightIndexer.distanceAttributeKey {
     attributes.append(SearchableItemAttribute(rawValue: key.keyName))
 }
@@ -809,7 +812,7 @@ first-party code that backs §3.[^indexed-entity-source]
 > ✅ **VERIFIED** — Apple documentation, *"Making app entities available in Spotlight"*, verbatim:
 > *"Adding this protocol to your entity's declaration is the only requirement for support."*
 
-```swift
+```swift prelude:guide-context
 import AppIntents
 import CoreSpotlight
 
@@ -856,7 +859,7 @@ treatment of that distinction.
 
 > ✅ **VERIFIED** — Apple's published code sample for WWDC26 session 343 (timestamp 11:30), verbatim:
 
-```swift
+```swift prelude:guide-context
 // Indexing IndexedEntity with CSSearchableIndex
 struct EntityIndexingHelper {
     // Indexes playlist entities
@@ -872,7 +875,7 @@ struct EntityIndexingHelper {
 documentation gives the full signature as **`indexAppEntities(_:priority:)`**, so the priority
 parameter has a default. ✅ **SDK-verified** — the declared signature, in full:
 
-```swift
+```swift prelude:guide-context
 // AppIntents-27.0-macos.swiftinterface:350-356 — the AppIntents module extending the
 // Core Spotlight class.
 @available(macOS 15.0, iOS 18.0, visionOS 2.0, *)
@@ -888,7 +891,7 @@ the named-index convention and the method:
 
 > ✅ **VERIFIED** — Apple documentation, *"Making app entities available in Spotlight"*:
 
-```swift
+```swift prelude:guide-context
 try await CSSearchableIndex(name: "AppIntentsTravelTracking_Landmarks")
     .indexAppEntities(landmarkEntities)
 ```
@@ -932,7 +935,7 @@ assume.
 
 Apple's documentation example:
 
-```swift
+```swift prelude:guide-context
 @AppEntity(schema: .messages.message)
 struct MessageEntity: IndexedEntity {
     @Property(indexingKey: \.textContent)
@@ -950,7 +953,7 @@ Applied to the running example, with the mapping made explicit:
 > with Xcode completion — `CSSearchableItemAttributeSet`'s property spellings are Objective-C and
 > stayed outside the 2026-07-29 SDK-interface pass.
 
-```swift
+```swift prelude:guide-context
 import AppIntents
 import CoreSpotlight
 
@@ -985,7 +988,7 @@ struct TrailEntity: AppEntity, IndexedEntity {
 property wrapper argument cannot conveniently take an optional, so give the key a non-optional home
 of its own rather than reaching for `!` inline:
 
-```swift
+```swift prelude:guide-context
 enum TrailIndexKeys {
     /// Force-unwrapped exactly once, at a site where a nil key is a programmer error
     /// you want to hear about at launch rather than silently at index time.
@@ -1024,7 +1027,7 @@ And Apple's own published sample for enriching one:
 
 > ✅ **VERIFIED** — Apple code sample, session 343 @ 4:26:
 
-```swift
+```swift prelude:guide-context
 // Enhanced DisplayRepresentation
 @AppEntity(schema: .audio.song)
 struct SongEntity {
@@ -1074,7 +1077,7 @@ Spotlight can ask your app to re-supply entities — after a migration, a recove
 
 Applied:
 
-```swift
+```swift prelude:guide-context
 import AppIntents
 import CoreSpotlight
 
@@ -1379,7 +1382,7 @@ because two of its members are index-facing.
 
 > ✅ **VERIFIED** — session-246 sample, `Session.swift:116-158`:
 
-```swift
+```swift illustrative
     private static let fetchAttributes: [SearchableItemAttribute] = {
         var attributes: [SearchableItemAttribute] = [
             .title,
@@ -1561,7 +1564,7 @@ search for them. The profile is where the index side and the prompt side meet.
 > (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:199-213`). The community reading was
 > exactly right. Only the *values* below remain illustrative.
 
-```swift
+```swift prelude:guide-context
 let profile = GuidanceProfile(
     textMatch: true,
     similarityMatch: true,
@@ -1606,7 +1609,7 @@ turn, through different channels.
 
 > ✅ **VERIFIED** — session-246 sample, `Session.swift:160-181`:
 
-```swift
+```swift prelude:guide-context
     private func listenForSearchResults(from tool: SpotlightSearchTool) -> Task<Void, Never> {
         Task { @MainActor in
             var seen: Set<String> = []
@@ -1750,7 +1753,7 @@ This is the part that costs people an afternoon.
 > ✅ **VERIFIED** — session-246 sample project, `Indexer.swift:123-128`, read from Apple's compiling
 > code:
 
-```swift
+```swift prelude:guide-context
     nonisolated func searchableItems(forIdentifiers identifiers: [String], searchableItemsHandler: @escaping @Sendable ([CSSearchableItem]) -> Void) {
         Task { @MainActor in
             let items = createSearchableItems(identifiers: identifiers)
@@ -1801,7 +1804,7 @@ Extending §3.1's indexer:
 > is the `Task { @MainActor in … }` bridge and the `searchableItemsHandler(items)` call. The item
 > construction inside is §3.3's 🟡 reconstruction.
 
-```swift
+```swift prelude:guide-context
 import CoreSpotlight
 
 extension SpotlightIndexer {
@@ -1845,7 +1848,7 @@ extension SpotlightIndexer {
 
 And the wiring, which is one parameter (✅ verified, §7.2):
 
-```swift
+```swift prelude:guide-context
 SpotlightSearchTool(
     configuration: .init(
         sources: [.coreSpotlight(.init(
@@ -2079,7 +2082,7 @@ Covered in full in §4. Its properties as a retrieval path:
 
 > ✅ **VERIFIED** — Apple code sample, session 343 @ 13:38:
 
-```swift
+```swift prelude:guide-context
 // Structured search of songs and playlists
 struct AudioIntentValueQuery: IntentValueQuery {
 
@@ -2141,7 +2144,7 @@ both, you need path 1 for the model and may add path 2 for Siri's benefit on top
 > ✅ **VERIFIED** — WWDC26 session 343 plus Apple's published code sample at timestamp 14:49. It
 > works *"no matter which other domains you adopt, and **even if you don't index your entities**."*
 
-```swift
+```swift prelude:guide-context
 // Intent that re-runs the Siri search in app
 @AppIntent(schema: .system.searchInApp)
 struct SearchAudioLibraryIntent {
@@ -2218,7 +2221,7 @@ mechanism can surface something new that nobody knows about.
 
 > ✅ **VERIFIED** — Apple code sample, WWDC26 session 345 @ 5:18:
 
-```swift
+```swift prelude:guide-context
 // Suggest playlists for the workout session
 let playlistEntities = [dailyRun, runningMix]
 let workoutContext = AppEntityContext.audio(.workout(activityType: .running))
@@ -2320,7 +2323,7 @@ does not otherwise cover:
 > or Shortcuts, the system already knows about it**. But, Apple Intelligence **can't learn from
 > actions people take through your app's UI** without your help. That's where donations come in."*
 
-```swift
+```swift prelude:guide-context
 let intent = SendMessageIntent()
 intent.destination = .recipients(conversation.recipients.map(\.entity))
 try await IntentDonationManager.shared.donate(intent: intent, result: .result(value: result))

@@ -5,12 +5,11 @@ here must be reconciled before the affected guide is considered done.
 
 Status legend: 🔧 not yet applied · ✅ applied · ⚠️ partially applied
 
-**Reconciled 2026-07-31.** Every item was audited against the guides on disk; the markers below are
-now authoritative. Ten items were found fully applied; C6's last residue (the part-17/part-16
-reassertions of the retracted ANE-routing claim) was fixed during the reconciliation pass; C7
-remains ⚠️ partial — its facts landed but the owning non-LLM guide is unwritten, tracked as open
-backlog. Where a register entry was itself superseded by later evidence (C3's scale-plane deletion
-and 26.2 floor), the item now carries a superseded note; the guides follow the later finding.
+**Reconciled 2026-08-01.** Every item was audited against the guides on disk; the markers below are
+now authoritative. All twelve items are fully applied. C7's last residue closed with Part 7 reference
+05, which now owns the segmentation, object-detection, and diffusion runtime story. Where a register
+entry was itself superseded by later evidence (C3's scale-plane deletion and 26.2 floor), the item now
+carries a superseded note; the guides follow the later finding.
 
 ---
 
@@ -204,19 +203,16 @@ cache. The 76% figure requires caller-side work that Apple's own package does no
 
 ---
 
-## ⚠️ C7 — Non-LLM Core AI needs coverage that the 50-topic list lacked
+## ✅ C7 — Non-LLM Core AI needs coverage that the 50-topic list lacked
 
-**Partially applied — OPEN BACKLOG.** Every verified fact below landed, scattered: llm-benchmark-only
-+ no published non-LLM numbers (part-10 ref 03, part-09 ref 02, part-16 ref 01), zero
-`CVPixelBuffer`/EXIF handling and the two box conventions (part-17 ref 05), swallowed diffusion
-quantisation (part-09 ref 01 §17.2, part-10 ref 03), `BundleKind`/`SpeechBundle` (part-17 ref 06,
-part-07 README). **What was asked for and does not exist: an owning guide for
-`CoreAISegmentation`/`CoreAIObjectDetection`/`CoreAIDiffusion`** — part-07 ref 04 defers non-LLM
-products to Part 16, and Part 16 covers only `CoreAISpeech` (§14). Source when written:
-`notes/repos/coreai-models-nonllm.md`.
+**Applied 2026-08-01.** Part 7 reference 05 is the owning guide for
+`CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`: engine shapes, bundle/function
+structure, warmup semantics, loader specialization policy, residency, and cache boundaries. Existing
+coverage remains where it belongs: image/box migration in part-17 ref 05, diffusion quantization in
+parts 9/10, and speech in Part 16. Source: `notes/repos/coreai-models-nonllm.md`.
 
-**Affects:** new guides needed in `part-07-coreai-swift-runtime/` and
-`part-16-adjacent-capabilities/`.
+**Affects:** the owning runtime guide in `part-07-coreai-swift-runtime/`, with speech routing retained
+in `part-16-adjacent-capabilities/`.
 
 The original proposal covered Core AI **only for LLMs**. `apple/coreai-models` ships four non-LLM
 Swift products — `CoreAISegmentation`, `CoreAIObjectDetection`, `CoreAISpeech`, `CoreAIDiffusion` —

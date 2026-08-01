@@ -2680,7 +2680,7 @@ reboot, so heed it.
 
 ### 11.1 The whole integration
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import CoreAILanguageModels
 
@@ -2701,7 +2701,7 @@ print(response)
 
 Add the package:
 
-```swift
+```swift illustrative
 // Package.swift
 .package(url: "https://github.com/apple/coreai-models", branch: "main"),
 // then, per target:

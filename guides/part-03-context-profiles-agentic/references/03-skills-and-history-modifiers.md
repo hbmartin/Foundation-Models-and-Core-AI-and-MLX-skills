@@ -162,7 +162,7 @@ engineering effort and not a docs sample.)
 
 Depend on it one of these three ways instead:
 
-```swift
+```swift illustrative
 // Package.swift — pick ONE.
 
 // (a) RECOMMENDED. Pin the exact prerelease you tested against.
@@ -186,7 +186,7 @@ Depend on it one of these three ways instead:
 
 and then, in your target:
 
-```swift
+```swift prelude:guide-context
 .product(name: "FoundationModelsUtilities", package: "foundation-models-utilities")
 ```
 
@@ -360,7 +360,7 @@ stale README prose was written for. Today, `.entries(Int)` is all there is, and 
 
 ### 3.1 `droppingCompletedToolCalls()` — evict everything but the live exchange
 
-```swift
+```swift prelude:guide-context
 // DropCompletedToolCalls.swift, inside the modifier's onPrompt hook — ✅ VERIFIED, verbatim
 content.onPrompt {
     let lastOutputIndex =
@@ -417,7 +417,7 @@ This is the modifier session 242 was gesturing at:
 
 ### 3.2 `rollingWindow(entries:)` — `suffix(n)`, and nothing more
 
-```swift
+```swift prelude:guide-context
 // RollingWindow.swift — ✅ VERIFIED, verbatim
 content.onPrompt {
     switch size {
@@ -437,7 +437,7 @@ that costs you.
 This one is qualitatively different from the other two: it makes a **model call** inside your
 profile's `onPrompt` hook, and it **collapses the entire history to a single entry**.
 
-```swift
+```swift prelude:guide-context
 // SummarizeHistory.swift — ✅ VERIFIED, structure and line numbers as read
 content.onPrompt {
     guard history.count > entryThreshold else { return }        // :99   ← strictly greater
@@ -569,7 +569,7 @@ with a rigid output contract — exactly the workload the on-device model is goo
 workload you do not want to spend a Private Cloud Compute round trip or a per-user quota unit on.
 Pass `SystemLanguageModel()` unless you have measured that it is not good enough:
 
-```swift
+```swift prelude:guide-context
 .summarizeHistory(entryThreshold: 8, model: SystemLanguageModel())
 ```
 
@@ -685,7 +685,7 @@ Now apply §4's execution order to §4's example and do the arithmetic.
 runs second and guarantees `history.count <= 10`. Then `summarizeHistory(entryThreshold: 10)` runs and
 evaluates its gate:
 
-```swift
+```swift prelude:guide-context
 guard history.count > entryThreshold else { return }    // 10 > 10  →  false
 ```
 
@@ -726,7 +726,7 @@ entryThreshold  <  rollingWindow entries
 
 A working composition therefore looks like this:
 
-```swift
+```swift prelude:guide-context
 Profile {
     Instructions("A conversation between a user and a helpful assistant.")
     ToggleDarkModeTool()
@@ -745,7 +745,7 @@ somewhere between 0 and 20 entries and fires whenever that number exceeds 8. The
 There is a strong argument for using **`droppingCompletedToolCalls()` alone**, and it is the one
 composition in the package with no arithmetic trap and no known bug:
 
-```swift
+```swift prelude:guide-context
 Profile {
     Instructions("A conversation between a user and a helpful assistant.")
     ToggleDarkModeTool()
@@ -1018,7 +1018,7 @@ forever, defeating the point.
 **When it bites you.** The moment you have **more than one profile** in your `DynamicProfile`. These
 modifiers are attached to *one* `Profile` in your `body`, but their effect is on the *session*. So:
 
-```swift
+```swift prelude:guide-context
 var body: some DynamicProfile {
     switch orchestrator.mode {
     case .drafting:
@@ -1048,7 +1048,7 @@ a modifier attached to a different branch.
 For the narrow case of "keep the last N entries for this profile only," Apple's own sample already
 shows you the whole solution, and it does not need this package at all:
 
-```swift
+```swift prelude:guide-context
 // The per-profile, LOSSLESS alternative to .rollingWindow(entries: 4).
 // ✅ Pattern verbatim from Origami/Models/OrchestratorProfile.swift.
 private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
@@ -1086,7 +1086,7 @@ call.
 Here it is complete, with imports, as a modifier that does what `rollingWindow` does but refuses to
 orphan a `.response`:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Keeps at most `maxEntries` history entries, but never cuts between a prompt
@@ -1118,7 +1118,7 @@ private struct TurnAlignedWindowModifier: LanguageModelSession.DynamicProfileMod
                 cut -= 1
             }
 
-            history = Array(history.dropFirst(cut))
+            history = history.dropFirst(cut)
         }
     }
 }
@@ -1384,7 +1384,7 @@ out of what a prompt skill *is* (§12).
 
 ### 11.2 The four `Skill` initializers
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — all four, exactly as declared in Skill.swift.
 
 // 1. Prompt-based, plain string.                                 Skill.swift:120
@@ -1436,7 +1436,7 @@ contain tools as well as instructions.
 
 ### 11.3 `Skills` — a `DynamicInstructions` you put in a `Profile`
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — Skills.swift:55
 public struct Skills: DynamicInstructions {
 
@@ -1450,7 +1450,7 @@ public struct Skills: DynamicInstructions {
 
 Two public initializers, identical but for the last parameter:
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — Skills.swift:93 (result-builder form)
 public init(
     activations: SkillActivations,
@@ -1486,7 +1486,7 @@ The `body` emits three things in order (✅ `Skills.swift:145-202`):
 
 ### 11.4 `SkillsBuilder` — six methods, and one `if` you cannot write
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — Sources/FoundationModelsUtilities/Skills/SkillBuilder.swift
 // (note: filename is singular `SkillBuilder.swift`, the type is plural `SkillsBuilder`)
 @resultBuilder                                                    // :41
@@ -1840,7 +1840,7 @@ deactivation tool call that the diagram depends on.
 
 ## 14. The synthesized tool: naming, schema, descriptions, and an inverted verb
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — Skills.swift:205
 private struct ToggleSkillTool: @unchecked Sendable, Tool {
     let name: String
@@ -1971,7 +1971,7 @@ func call(arguments: GeneratedContent) async throws -> Prompt {
 activation — happens *after* the branch at `:313`/`:317` has already produced the tool output. That
 is why the instructions branch reads the way it does:
 
-```swift
+```swift prelude:guide-context
 let activated = activations.isActive(skill.name)
 let verb = activated ? "deactivated" : "activated"
 ```
@@ -1990,7 +1990,7 @@ in that same turn.
 
 **(2) The routing itself**, and the fact that prompt skills are never tracked:
 
-```swift
+```swift illustrative
 // ✅ VERIFIED — Skills.swift:185-200
 onCall: { [activations] skill in
     switch skill.storage {
@@ -2107,7 +2107,7 @@ Two smaller hazards in that block, both real:
 
 ### 15.1 The complete type
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — Sources/FoundationModelsUtilities/Skills/SkillActivations.swift, essentially in full
 public final class SkillActivations: Sendable, Observable {       // :23
     private let _registrar = ObservationRegistrar()               // :24
@@ -2288,7 +2288,7 @@ describes a capability that nothing else in the framework offers:
 So a skill can gate an entire **toolset** behind a just-in-time activation. Apple's own example, in
 the source:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — the shape at Skills.swift:40-52
 Skill(
     name: "calendaring",
@@ -2420,7 +2420,7 @@ A drafting assistant with two skills — a large one-shot house style guide (pro
 sticky, tool-carrying research mode (instructions skill) — plus history management that is actually
 live.
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import FoundationModelsUtilities
 import Observation
@@ -2778,24 +2778,24 @@ Plus `ChatCompletionsLanguageModel` — see Part 4.
 
 ### 21.3 Copy-paste starters
 
-```swift
+```swift prelude:guide-context
 // Depend on it (the README's `from: "1.0.0"` resolves to nothing).
 .package(url: "https://github.com/apple/foundation-models-utilities", exact: "1.0.0-beta3")
 ```
 
-```swift
+```swift prelude:guide-context
 // A live history chain. entryThreshold MUST be < rollingWindow entries.
 .summarizeHistory(entryThreshold: 8, model: SystemLanguageModel())   // innermost, runs LAST
 .rollingWindow(entries: 24)                                          // runs second
 .droppingCompletedToolCalls()                                        // outermost, runs FIRST
 ```
 
-```swift
+```swift prelude:guide-context
 // The safest single modifier: no threshold, no known bug, no ordering question.
 .droppingCompletedToolCalls()
 ```
 
-```swift
+```swift prelude:guide-context
 // The lossless, per-profile alternative that needs no package at all.
 private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
     entries.suffix(4)
@@ -2804,7 +2804,7 @@ private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
 .historyTransform(shortHistory(_:))
 ```
 
-```swift
+```swift prelude:guide-context
 // Iterating activations after beta 3.
 ForEach(activations.activeSkillNames, id: \.self) { name in Text(name) }
 ```

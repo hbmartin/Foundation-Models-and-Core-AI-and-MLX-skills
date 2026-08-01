@@ -211,7 +211,7 @@ received.
 This is the feature that makes `#Playground` a genuine test bench rather than a scratch pad. One block
 per scenario, all in the same file next to the code under test:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 import Playgrounds
 
@@ -256,7 +256,7 @@ type it tests. Here it is in full, because the shape is the lesson.
 > ✅ **VERIFIED** — `BookTracker/Services/BookTaggingService.swift:76-101`, verbatim from the downloaded
 > Apple sample archive:
 
-```swift
+```swift prelude:guide-context
 #Playground {
     let prideAndPrejudice = """
         okay I am OBSESSED and I need everyone to read this RIGHT NOW.
@@ -1329,7 +1329,7 @@ a feature.
 > verified by Apple's shipping Origami sample** (quoted immediately after), which uses exactly this
 > `Instructions(…)`-then-tool-instances layout. The *strings* are ours.
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import FoundationModels
 
@@ -1478,7 +1478,7 @@ The instrument catches this after the fact. Three things reduce how often you ne
 **One source of truth for tool names.** The string in your prose and the string in `Tool.name` are two
 independent pieces of text and nothing checks them:
 
-```swift
+```swift prelude:guide-context
 enum ToolNames {
     static let switchToTutorialMode = "switchToTutorialMode"
     static let generateCraftIdeas   = "generateCraftIdeas"
@@ -1515,7 +1515,7 @@ anywhere. That is the residual hole, and it is exactly the bug in §8.
 so the transcript materialises, and check that every name you interpolate into the prose appears in the
 toolset:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 

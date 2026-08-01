@@ -459,7 +459,7 @@ Origami writes `SystemLanguageModel()` — a bare initialiser — and never writ
 Origami also ships a runtime model-kind test that is worth stealing, because it lets one profile
 struct express "do the expensive thing only if we are not on-device":
 
-```swift
+```swift prelude:guide-context
 private var isOnDevice: Bool {
     type(of: serverModel) == SystemLanguageModel.self
 }
@@ -571,7 +571,7 @@ The instructions builder is more permissive than the profile builder:
 > (`TutorialInstructions.swift:36-39`), and `TermInstructions.swift:20-37` does the same. The profile
 > builder does **not** permit this — see §6.3.
 
-```swift
+```swift prelude:guide-context
 // ✅ Legal in DynamicInstructionsBuilder.
 if orchestrator.project.craftDomain == .origami {
     OrigamiInstructions()
@@ -1301,7 +1301,7 @@ Rehydration has a cost that surprises people:
 > the restored transcript.**"* The recommended mitigation is to prewarm ahead of the user:
 > *"Prewarm the model when you know usage is at least one or two seconds in the future."*
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(
     profile: OrchestratorProfile(orchestrator: orchestrator),
     history: savedTranscript
@@ -1426,7 +1426,7 @@ specify for the framework's own modifiers.
 
 ### 8.2 Call-site options still win
 
-```swift
+```swift prelude:guide-context
 // The profile says .allowed; this one call says .required.
 let response = try await session.respond(
     to: "What's a good sourdough recipe?",
@@ -1756,7 +1756,7 @@ extension LanguageModelSession.DynamicProfile {
 
 Use site:
 
-```swift
+```swift prelude:guide-context
 Profile {
     TechniqueReviewer()
 }
@@ -2075,7 +2075,7 @@ This matters more than it looks. It means your transform can be a named, testabl
 the profile struct — or a `static` function, or a free function — and the profile declaration stays
 readable. It also means the transform is trivially unit-testable without a model:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 
@@ -2357,7 +2357,7 @@ and the outermost runs *first*.
 
 So for the README's composed example:
 
-```swift
+```swift prelude:guide-context
 Profile {
   Instructions("A conversation between a user and a helpful assistant.")
   ToggleDarkModeTool()
@@ -2437,7 +2437,7 @@ Two places to set it:
 > directly on your session**."* And the session-level property is documented on `LanguageModelSession`
 > as `var transcriptErrorHandlingPolicy: TranscriptErrorHandlingPolicy` (iOS 27).
 
-```swift
+```swift prelude:guide-context
 // Profile form — VERIFIED as a documented modifier.
 Profile {
     AgentInstructions()
@@ -2595,7 +2595,7 @@ Origami's architecture. Where a shape is reconstructed, it is called out.
 
 ### 15.1 The state machine
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import Observation
 
@@ -2662,7 +2662,7 @@ pattern session 242 describes.
 
 ### 15.3 Reusable instruction components
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 /// House style. Nested into every persona, so it is stated once.
@@ -2737,7 +2737,7 @@ concatenation behaviour from §4.1 doing exactly what you want: shared policy, w
 
 ### 15.4 The profile
 
-```swift
+```swift illustrative
 import FoundationModels
 
 struct ReaderProfile: LanguageModelSession.DynamicProfile {
@@ -2840,7 +2840,7 @@ still sees the tool traffic if it wants it.
 
 ### 15.6 A tool that moves the state machine
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 struct GlossaryTool: Tool {
@@ -2869,7 +2869,7 @@ transcript rollback under the default policy (§14.1); returning a sentence lets
 
 ### 15.7 Wiring it up
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 import Observation
 import SwiftUI

@@ -714,7 +714,7 @@ Apple's sample does not, and the reason is architectural rather than stylistic.
 Here is the shape, adapted from Apple's compiling code. Note `Profile { … }.model(_:)` — a **modifier**,
 not an initializer label:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 struct OrchestratorProfile: LanguageModelSession.DynamicProfile {
@@ -1787,7 +1787,7 @@ the approaching state exists so users can *"make an informed decision for which 
 make."* So instead of a meter, give the user a **choice**: when `state == .approachingLimit`, surface
 the on-device path as an explicit, cheaper option rather than silently downgrading.
 
-```swift
+```swift prelude:guide-context
 if viewModel.state == .approachingLimit {
     Toggle("Use on-device model (doesn't count toward your daily limit)",
            isOn: $viewModel.preferOnDevice)
@@ -1973,7 +1973,7 @@ cosmetic, not semantic.** What *is* semantic:
 So the correct advice is not "put X before Y" — it is **enumerate all four types, put narrow case
 patterns above their own type pattern, and end with a bare `catch`**:
 
-```swift
+```swift illustrative
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, watchOS 27.0, visionOS 27.0, *)
@@ -2376,7 +2376,7 @@ already had you build:
 Because every backend conforms to `LanguageModel`, that abstraction is *already written* — it is the
 protocol. Your app-level seam is the one stored property from §4.4:
 
-```swift
+```swift prelude:guide-context
 // The entire model-selection surface of the app.
 var serverModel: any LanguageModel = {
     if isPCCEligibleBuild, #available(iOS 27.0, *) { PrivateCloudComputeLanguageModel() }
@@ -2418,7 +2418,7 @@ The remaining unknowns are narrower and operational:
 A capability check is still useful for defensive routing, but it is not the basis for claiming that
 PCC image input is unsupported:
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED probe. `capabilities` is a LanguageModel protocol requirement (✅),
 // `.vision` is a documented Capability member (✅ "The capability to accept image
 // inputs in prompts"), and PCC conforms to LanguageModel (✅).

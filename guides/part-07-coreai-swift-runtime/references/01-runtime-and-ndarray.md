@@ -659,7 +659,7 @@ validate an asset **before** paying for it. This matters most in the download-a-
 have just fetched 600 MB over the network and you would like to know it is the model you think it
 is before you specialize it.
 
-```swift
+```swift prelude:guide-context
 // Cheap: no resources prepared, no weights resident.
 guard let descriptor = model.functionDescriptor(for: "main") else {
     throw ModelSetupError.functionNotFound(requested: "main",
@@ -741,7 +741,7 @@ This is a real, useful guarantee and session 326 leans on it: the macOS build of
 language-learning app parallelises segmentation across a folder of photos with no extra
 synchronisation, because the *same* `InferenceFunction` is safe to hit from N tasks.
 
-```swift
+```swift prelude:guide-context
 // Safe. One function, many tasks. No lock, no actor needed.
 let results = try await withThrowingTaskGroup(of: (Int, [Float]).self) { group in
     for (index, image) in images.enumerated() {
@@ -1143,7 +1143,7 @@ So the two-line summary:
 
 ### 7.2 Read-only by default
 
-```swift
+```swift illustrative
 func view<T>(as type: T.Type = T.self) -> NDArray.View<T> where T : BitwiseCopyable
 mutating func mutableView<T>(as type: T.Type = T.self) -> NDArray.MutableView<T> where T : BitwiseCopyable
 func rawView() -> NDArray.RawView
@@ -1153,7 +1153,7 @@ mutating func mutableRawView() -> NDArray.MutableRawView
 
 The `mutating` keyword is doing real work here. It means:
 
-```swift
+```swift xfail:27 imports:CoreAI
 let a = NDArray(shape: [3, 4], scalarType: .float32)
 let r = a.view(as: Float.self)          // ✅ fine
 var w = a.mutableView(as: Float.self)   // ❌ compile error: `a` is a `let`
@@ -2043,7 +2043,7 @@ is: `descriptor.stateNames`, `descriptor.stateDescriptor(of:)`, and the `states:
 Three separate documentation pages say the same thing, which usually means the API team got tired
 of the bug report. Since there is no `stateCount`, drive it from `stateNames`:
 
-```swift
+```swift prelude:guide-context
 // Allocate one NDArray per state, sized from its own descriptor. Do this ONCE, at setup.
 var stateArrays: [String: NDArray] = [:]
 for name in function.descriptor.stateNames {
@@ -2060,7 +2060,7 @@ for name in function.descriptor.stateNames {
 
 and then, on every call:
 
-```swift
+```swift prelude:guide-context
 var states = InferenceFunction.MutableViews()
 for name in function.descriptor.stateNames {
     states.insert(&stateArrays[name]!, for: name)     // see the note below
@@ -2586,7 +2586,7 @@ value as an image at conversion time:
 > conversion time use `CVMutablePixelBuffer`.** Pass your data using the same input names defined at
 > model conversion time."*
 
-```swift
+```swift illustrative
 enum InferenceValue.Kind { case image; case ndArray }
 enum InferenceValue.Descriptor { case image(ImageDescriptor); case ndArray(NDArrayDescriptor) }
 
@@ -2688,7 +2688,7 @@ The pixel-format decisions, all ✅ VERIFIED from that file:
 - Normalisation is `(pixel * rescale − mean) / std`, folded into a single fused multiply-add per
   channel, with `/255.0` folded into `scale` — *so `rescaleFactor: 1.0` means "map [0,255] → [0,1]"*.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — apple/coreai-models, ImagePreprocessor.swift:251-265, verbatim
 let scale = Float(rescaleFactor) / 255.0
 let means: [Float] = [Float(mean.0), Float(mean.1), Float(mean.2)]
@@ -2941,7 +2941,7 @@ Now the ladder. Note the ordering rule: **the specific named type first, the bro
 Swift matches `catch` clauses in order, so a bare `catch` above a typed one makes the typed one dead
 code.
 
-```swift
+```swift illustrative
 enum FeatureState {
     case ready(InferenceFunction)
     case unavailable(reason: String)      // degrade: hide or disable the feature
@@ -3363,7 +3363,7 @@ public actor TensorRunner {
 
 ### 14.1 Using it
 
-```swift
+```swift prelude:guide-context
 let runner = try await TensorRunner(
     modelURL: Bundle.main.url(forResource: "MyModel", withExtension: "aimodel")!,
     functionName: "main"

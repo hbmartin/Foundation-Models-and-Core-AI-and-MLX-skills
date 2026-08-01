@@ -730,7 +730,7 @@ all of your version and hardware assumptions are re-litigated at runtime.
 
 ### 7.1 `SystemLanguageModel.Availability`
 
-```swift
+```swift illustrative
 @frozen enum Availability      // Equatable, Sendable, SendableMetatype
 case available                 // "The system is ready for making requests."
 case unavailable(_: UnavailableReason)
@@ -820,7 +820,7 @@ The only proactive availability switch in *any* Apple sample archive is in the c
 an **iOS 26** project (`IPHONEOS_DEPLOYMENT_TARGET = 26.0`) that was never refreshed for 2026 — so
 read it for the availability pattern, which is unchanged, and for nothing else:
 
-```swift
+```swift prelude:guide-context
 // FoundationModelsCoffeeGame/MainMenu/MainMenuView.swift:47-70 — iOS 26 sample
 switch SystemLanguageModel.default.availability {
 case .available:
@@ -1152,7 +1152,7 @@ right defensive shape given the `fatalError` below.
 Because the model is a stored property rather than a per-branch choice, the profile can ask which
 backend it actually got:
 
-```swift
+```swift prelude:guide-context
 private var isOnDevice: Bool {
     type(of: serverModel) == SystemLanguageModel.self
 }

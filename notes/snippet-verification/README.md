@@ -18,7 +18,7 @@ Space-separated tokens after the language word in the fence info string — invi
 rendered markdown. Unknown keys are a hard MARKER-ERROR.
 
 ```
-```swift [compile:<t>[,<t>…]] [xfail:<t>[,<t>…]] [imports:M1,M2] [wrap:none|body] [lang:5] [illustrative] [prelude:<name>]
+```swift [compile:<t>[,<t>…]] [xfail:<t>[,<t>…]] [imports:M1,M2] [wrap:none|body|mixed] [lang:5] [isolation:mainactor] [illustrative] [prelude:<name>]
 ```
 
 | marker | meaning |
@@ -28,7 +28,9 @@ rendered markdown. Unknown keys are a hard MARKER-ERROR.
 | `imports:A,B` | modules the wrapper adds beyond those hoisted from the snippet body. Marked fences compile with **only** hoisted + declared imports — guess-mode heuristics never apply to marked fences. |
 | `wrap:none` | complete file; compile verbatim (no import hoisting). |
 | `wrap:body` | force the `func __verify_snippet() async throws { … }` body wrap. Default (no `wrap:`) is auto: decl-shaped fences compile at file scope, statement-shaped ones get the body wrap, and the alternate is retried on failure. |
+| `wrap:mixed` | keep a declaration prefix at file scope and wrap the executable suffix. Auto mode tries this after the all-top and all-body shapes, which makes `@Generable struct …` plus its usage verifiable without moving the macro type into a local scope. |
 | `lang:5` | pin `-swift-version 5` for this fence (default is 6). |
+| `isolation:mainactor` | pass `-default-isolation MainActor`, matching Swift 6 app targets that opt into MainActor-by-default. Guess mode retries isolation diagnostics this way and records the marker only when it makes the fence compile. |
 | `illustrative` | never compiled — pseudocode, `.swiftinterface`-style stubs, elided bodies. Excludes all other markers. |
 | `prelude:<name>` | reserved (inert in v1): parser accepts it and reports PRELUDE-NEEDED without compiling — the parking place for fences that reference guide-local types, until per-part prelude files exist. |
 
@@ -43,6 +45,15 @@ it against the guess target (default 27) with a default wrapper plus a small
 keyword-triggered import table; `--write-markers` then records `compile:27`
 (+ the actually-needed `imports:`) on clean passers and `illustrative` on detected
 stubs/elided fences, editing only opening-fence lines.
+
+`--write-triage-markers` is the conservative second pass. It implies
+`--write-markers`, turns declaration/interface syntax into `illustrative`, and
+parks missing app symbols, third-party modules, or wrong-platform excerpts behind
+an explicit `prelude:` marker. It deliberately leaves ambiguity, type-conversion,
+mutability, and Swift 6 isolation diagnostics unmarked for human review. A dirty
+guide tree still stops marker writes unless the caller explicitly supplies
+`--allow-dirty-guides`; marker writes continue to hash every fence body before and
+afterward and refuse any non-info-string change.
 
 ## Rhythm
 

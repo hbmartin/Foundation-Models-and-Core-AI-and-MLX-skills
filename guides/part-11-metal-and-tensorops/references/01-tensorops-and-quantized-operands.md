@@ -1106,7 +1106,7 @@ threadgroup.** Read `threadExecutionWidth` from the pipeline state; do not assum
 
 Swift form of the same dispatch:
 
-```swift
+```swift prelude:guide-context
 // Host side. `state` is your MTLComputePipelineState.
 let simdWidth = state.threadExecutionWidth          // do NOT hardcode 32
 let simdGroupsPerTG = 4                             // must equal N in execution_simdgroups<N>

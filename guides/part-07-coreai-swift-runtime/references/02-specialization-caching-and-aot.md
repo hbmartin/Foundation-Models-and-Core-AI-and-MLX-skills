@@ -203,7 +203,7 @@ candidate models and wants to pick one — by function signature, by parameter c
 metadata — build `AIModelAsset`s and read `summary(includingStatistics:)`. Inspecting a hundred
 assets is cheap; specializing a hundred models would be ruinous.
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 
 // Cheap: reads metadata and function signatures. Never specializes.
@@ -256,7 +256,7 @@ let outputs = try await function.run(inputs: ["input": input])
 
 Signature, exactly:
 
-```swift
+```swift illustrative
 init(contentsOf modelURL: URL, options: SpecializationOptions = .default) async throws
 ```
 
@@ -361,7 +361,7 @@ load is **`Load model::main`**; a setup is **`Setup for model::main`** with a ne
 
 `AIModelCache` is a `final class`. Here is its whole surface:
 
-```swift
+```swift illustrative
 final class AIModelCache: Sendable, SendableMetatype {
 
     static let `default`: AIModelCache
@@ -388,7 +388,7 @@ Apple's overview of what an entry *is*, verbatim, because it defines the cache k
 
 ### The one method that matters most
 
-```swift
+```swift illustrative
 final func model(for modelURL: URL, options: SpecializationOptions) throws -> AIModel?
 ```
 
@@ -546,7 +546,7 @@ The cache key is the pair `(source asset, SpecializationOptions)`. Both halves a
 So this code, which looks like it loads one model twice, actually specializes twice and stores two
 separate multi-gigabyte artifacts:
 
-```swift
+```swift prelude:guide-context
 // ⚠️ Two cache entries. Two specializations. Two copies on disk.
 let a = try await AIModel(contentsOf: url)                      // options == .default
 let b = try await AIModel(contentsOf: url, options: .cpuOnly)   // a different key entirely
@@ -614,7 +614,7 @@ another multi-gigabyte artifact, and now you are holding both. §9 is how you st
 
 ## 5. `AIModel.specialize` — controlling *when*, not *how much*
 
-```swift
+```swift illustrative
 @discardableResult
 static func specialize(contentsOf modelURL: URL,
                        options: SpecializationOptions = .default,
@@ -637,7 +637,7 @@ differences that all matter:
 
 Apple's article, verbatim:
 
-```swift
+```swift prelude:guide-context
 guard let localModelURL = try await downloadModel(forFeature: feature) else {
     throw AppError.failedToDownloadModel(feature)
 }
@@ -732,7 +732,7 @@ func enableFeature(_ feature: Feature, progress: @MainActor (Double, String) -> 
 
 ## 6. Cache policy and purge conditions
 
-```swift
+```swift illustrative
 struct AIModelCache.Policy: Codable, Equatable, Hashable, Sendable, SendableMetatype {
     static let `default`: AIModelCache.Policy
     static let persistent: AIModelCache.Policy
@@ -826,7 +826,7 @@ storage management, because the system will not reclaim it for you.
 Because the invalidation is silent and unavoidable, the useful defensive move is to *notice* it
 before the user does. `model(for:options:)` is cheap enough to call on launch:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 func modelsNeedingPreparation(_ installed: [URL]) -> [URL] {
     installed.filter { url in
@@ -858,7 +858,7 @@ letting the user discover it by tapping the feature.
 
 Four deletion APIs, at three granularities plus one by-bookmark:
 
-```swift
+```swift illustrative
 final func deleteEntry(for modelURL: URL, options: SpecializationOptions) throws
 final func deleteEntries(for modelURL: URL) throws
 final func deleteAll() throws
@@ -880,7 +880,7 @@ static func deleteEntry(referencedBy bookmark: Data) throws
 rarely know for certain which options produced entries, and this one ignores options and takes them
 all. Apple's model-update example uses it:
 
-```swift
+```swift prelude:guide-context
 func downloadAndUpdateModel(from remoteURL: URL, localModelURL: URL) async throws {
     let tempURL = try await downloadLatestModel(from: remoteURL)
 
@@ -996,7 +996,7 @@ If your app and its extensions — a Share extension, a widget, a Siri intent ha
 from the same team — all use the same model, the default cache makes each of them specialize it
 separately. `AIModelCache(appGroup:)` fixes that.
 
-```swift
+```swift illustrative
 init?(appGroup groupIdentifier: String)
 ```
 
@@ -1012,7 +1012,7 @@ init?(appGroup groupIdentifier: String)
 
 Apple's two snippets, verbatim — the writer:
 
-```swift
+```swift prelude:guide-context
 // Get the app group cache.
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
     fatalError("Invalid group identifier or entitlement.")
@@ -1030,7 +1030,7 @@ try await AIModel.specialize(
 
 and the reader:
 
-```swift
+```swift prelude:guide-context
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
     return
 }
@@ -1052,7 +1052,7 @@ each has its own sandbox — you get a cache miss and a second specialization, d
 point. Put the `.aimodel` in the app-group container and resolve it the same way from both
 processes:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 enum SharedModel {
     static let groupID = "group.com.example.myapp"
@@ -1101,7 +1101,7 @@ tools. `init?(appGroup:)` returns `nil` for at least three distinct reasons — 
 inaccessible container, failed entitlement check — and at least one of them (container access) can
 be a transient condition on a locked device. Degrade to the default cache instead:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 func cacheForSharedModel() -> AIModelCache {
     guard let group = AIModelCache(appGroup: SharedModel.groupID) else {
@@ -1148,7 +1148,7 @@ static func deleteEntry(referencedBy bookmark: Data) throws   // on AIModelCache
 
 Step 1 — specialize with `.persistent`, and capture the bookmark:
 
-```swift
+```swift prelude:guide-context
 // Specialize and keep a reference to the model.
 let model = try await AIModel.specialize(
     contentsOf: llmURL,
@@ -1163,7 +1163,7 @@ UserDefaults.standard.set(bookmarkData, forKey: "llm.bookmark")
 
 Step 2 — on later launches, resolve instead of loading from the URL:
 
-```swift
+```swift illustrative
 if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
     do {
         if let model = try AIModel(resolvingBookmark: bookmarkData) {
@@ -1181,7 +1181,7 @@ if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
 
 Step 3 — reclaim the source:
 
-```swift
+```swift prelude:guide-context
 // Delete the source model to reclaim storage.
 try FileManager.default.removeItem(at: llmURL)
 ```
@@ -1218,7 +1218,7 @@ So `try? AIModel(resolvingBookmark: data)` collapses both failures into one `nil
 tempting and mostly harmless — but it also collapses "your `UserDefaults` value is garbage, you
 have a bug" into "the OS updated, this is normal." Keep them apart in your telemetry:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 enum BookmarkResolution {
     case resolved(AIModel)
@@ -1288,7 +1288,7 @@ specific cache instance and the entry within it"* (verified). That makes it the 
 retire a model whose source file you have already deleted — you no longer have a URL to pass to
 `deleteEntries(for:)`.
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 func uninstall(_ installed: InstalledModel, holder: inout AIModel?) {
     holder = nil                                   // release the pin first — §7
@@ -1383,7 +1383,7 @@ both will reach for the GPU. The classifier's dispatches now interleave with you
 and you get intermittent frame hitches that are extremely hard to attribute. Pinning the background
 model to `.cpuOnly` makes it slower in isolation and *the whole app* smoother.
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, *)
 enum ModelSpecialization {
 
@@ -1498,7 +1498,7 @@ an error. Which, per §11, is not a neutral choice.
 
 Here is the pattern written out as app code, with the probe failure made visible:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
@@ -1563,7 +1563,7 @@ static var availableKinds: Set<ComputeUnitKind> { get }   // "The compute unit k
 Not every device has every unit, and asking for one that isn't there is a silent downgrade at best.
 A shipping community app guards it (community-authored, `noema-ios` — attribute as such):
 
-```swift
+```swift prelude:guide-context
 let preferred: ComputeUnitKind = ComputeUnitKind.availableKinds.contains(.neuralEngine)
     ? .neuralEngine
     : .gpu
@@ -2380,7 +2380,7 @@ always one of five things, and they have a natural order of cheapness to check.
 
 ### The ladder
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import os
 
@@ -2485,7 +2485,7 @@ the user's battery:
 Log these five things on every model load. They are the exact fields you will be asked for when you
 file a bug, and the exact fields that let you attribute a field report without a repro:
 
-```swift
+```swift prelude:guide-context
 log.info("""
     coreai load: asset=\(assetName, privacy: .public) \
     arch=\(AIModel.deviceArchitectureName, privacy: .public) \

@@ -3,7 +3,7 @@
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
 **Series status:** **17-part published corpus, scope-audited as of 2026-07-28; SDK-verification
-pass 2026-07-29.** All 76 guides exist (17 part READMEs + 59 reference guides), and each contents
+pass 2026-07-29.** All 77 guides exist (17 part READMEs + 60 reference guides), and each contents
 list is expected to name only sections present in its file. Declared evidence gaps remain explicit
 rather than being counted as unwritten sections.[^series-scope] On 2026-07-29 the series was
 verified against the real macOS **26.5 and 27.0-beta SDK Swift interfaces** (Xcode 27.0 beta
@@ -92,7 +92,7 @@ both Core AI and MLX stand on.
 
 ## Every guide in the series
 
-All 59 reference guides, by part. Each part's `README.md` is the entry point and tells you which of
+All 60 reference guides, by part. Each part's `README.md` is the entry point and tells you which of
 its references you actually need.
 
 **[Part 1 — Orientation and gating](part-01-orientation-and-gating/README.md)**
@@ -133,6 +133,7 @@ its references you actually need.
 - [Specialization, the model cache, and ahead-of-time compilation](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md)
 - [States as KV cache, and pipelined execution](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md)
 - [Model bundles, the LLM engines, and grammar-constrained decoding](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md)
+- [Non-LLM engines: bundles, function structure, warmup, specialization, and caching](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md)
 
 **[Part 8 — Core AI: converting a model from PyTorch](part-08-coreai-pytorch-conversion/README.md)**
 - [`torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md)

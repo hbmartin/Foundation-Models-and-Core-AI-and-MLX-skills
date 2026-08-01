@@ -11,8 +11,9 @@ canonical documentation in notes/snippet-verification/README.md):
     compile:<t>[,<t>...]   must type-check on each target   t ∈ {26, 27, sim27}
     xfail:<t>[,<t>...]     must FAIL to type-check on each target
     imports:A,B            modules the wrapper adds beyond hoisted ones
-    wrap:none|body         complete file / force func-body wrap (default: auto)
+    wrap:none|body|mixed   complete file / force wrapper shape (default: auto)
     lang:5                 pin -swift-version 5 (default 6)
+    isolation:mainactor    compile with Swift 6 MainActor default isolation
     illustrative           never compiled (pseudocode, stubs, elided bodies)
     prelude:<name>         reserved; reported PRELUDE-NEEDED, not compiled
 
@@ -89,6 +90,51 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
 STUB_RE = re.compile(r"\{\s*get(\s+set)?\s*\}")
 WRONGNESS_RE = re.compile(r"\bWRONG\b|does not compile|❌")
 
+# Diagnostics that mean the fence is a contextual excerpt rather than a
+# self-contained compilation unit. These receive an explicit prelude marker;
+# they are not promoted to VERIFIED and remain visible as PRELUDE-NEEDED.
+CONTEXT_DIAGNOSTICS = (
+    "cannot find ",
+    "cannot find type ",
+    "cannot find operator ",
+    "no such module ",
+    "no macro named ",
+    "external macro implementation type ",
+    "unknown attribute ",
+    "does not conform to protocol ",
+    "reference to member ",
+    "cannot infer contextual base ",
+    "requires that ",
+    "has no member ",
+)
+
+# Diagnostics produced by deliberately excerpted declarations, SDK-interface
+# spellings, pseudocode placeholders, or elided control-flow bodies. These are
+# useful to readers but are not claims of standalone compilability.
+ILLUSTRATIVE_DIAGNOSTICS = (
+    "expected ",
+    "unexpected ",
+    "missing ",
+    "initializers may only be declared within a type",
+    "initializer requires a body",
+    "declaration is only valid at file scope",
+    "static methods may only be declared on a type",
+    "static properties may only be declared on a type",
+    "return invalid outside of a func",
+    "consecutive statements on a line must be separated",
+    "only classes and class members may be marked",
+    "attribute 'public' can only be used in a non-local scope",
+    "attribute 'private' can only be used in a non-local scope",
+    "attribute 'package' can only be used in a non-local scope",
+    "package access level used on ",
+    "extraneous ",
+    "labeled block needs ",
+    "label can only appear inside a ",
+    "case' label in a 'switch' must have at least one executable statement",
+    "function is unused ",
+    "macro cannot be attached to global function",
+)
+
 
 # ---------------------------------------------------------------------------
 # Anchor slugs — copied from scripts/extract-callouts.py (do NOT import it: its
@@ -130,8 +176,9 @@ class Markers:
     compile_targets: tuple = ()
     xfail_targets: tuple = ()
     imports: tuple = ()
-    wrap: str = "auto"  # auto | none | body
+    wrap: str = "auto"  # auto | none | body | mixed
     lang: str = "6"
+    isolation: str = "nonisolated"  # nonisolated | mainactor
     illustrative: bool = False
     prelude: "str | None" = None
 
@@ -243,12 +290,17 @@ def parse_markers(info):
             mk.imports = tuple(token[len("imports:"):].split(","))
         elif token.startswith("wrap:"):
             mk.wrap = token[len("wrap:"):]
-            if mk.wrap not in ("none", "body"):
-                raise MarkerError(f"wrap must be none|body, got {mk.wrap!r}")
+            if mk.wrap not in ("none", "body", "mixed"):
+                raise MarkerError(f"wrap must be none|body|mixed, got {mk.wrap!r}")
         elif token.startswith("lang:"):
             mk.lang = token[len("lang:"):]
             if mk.lang not in ("5", "6"):
                 raise MarkerError(f"lang must be 5|6, got {mk.lang!r}")
+        elif token.startswith("isolation:"):
+            mk.isolation = token[len("isolation:"):]
+            if mk.isolation not in ("nonisolated", "mainactor"):
+                raise MarkerError(
+                    f"isolation must be nonisolated|mainactor, got {mk.isolation!r}")
         elif token.startswith("prelude:"):
             mk.prelude = token[len("prelude:"):]
         else:
@@ -260,7 +312,8 @@ def parse_markers(info):
     if overlap:
         raise MarkerError(f"target(s) in both compile and xfail: {sorted(overlap)}")
     if mk.illustrative and (mk.compile_targets or mk.xfail_targets or mk.imports
-                            or mk.wrap != "auto" or mk.prelude):
+                            or mk.wrap != "auto" or mk.isolation != "nonisolated"
+                            or mk.prelude):
         raise MarkerError("illustrative excludes all other markers")
     return mk
 
@@ -327,6 +380,54 @@ def choose_wrap(rest):
     return "top"
 
 
+MIXED_TOP_LEVEL_PREFIXES = (
+    "@", "struct ", "class ", "enum ", "actor ", "protocol ",
+    "extension ", "func ", "typealias ", "precedencegroup ", "operator ",
+    "public ", "package ", "internal ", "private ", "fileprivate ",
+    "final ", "nonisolated ", "#if", "#available",
+)
+
+
+def mixed_split_index(rest):
+    """Return the line where executable example code begins.
+
+    Many guide fences intentionally combine file-scope declarations (especially
+    attached-macro types) with the few statements that use them. Neither the
+    old all-top nor all-body wrapper can type-check that honest, common shape:
+    top-level ``await`` is rejected, while an attached macro on a local type is
+    also rejected. ``mixed`` retains the declaration prefix at file scope and
+    wraps the executable suffix in the async test function.
+
+    This is deliberately conservative: it only splits after seeing a genuine
+    file-scope declaration and only at brace depth zero. Fences that interleave
+    declarations and statements still fail and require an explicit marker or a
+    prelude instead of being rearranged speculatively.
+    """
+    depth = 0
+    saw_declaration = False
+    pending_attributes = False
+    for i, line in enumerate(rest):
+        s = line.strip()
+        if not s or s.startswith("//") or s.startswith("/*") or s.startswith("*"):
+            continue
+        if depth == 0:
+            is_attribute = s.startswith("@")
+            is_declaration = s.startswith(MIXED_TOP_LEVEL_PREFIXES)
+            if is_attribute:
+                pending_attributes = True
+            elif is_declaration or pending_attributes:
+                saw_declaration = True
+                pending_attributes = False
+            elif saw_declaration:
+                return i
+        # Guide snippets overwhelmingly use balanced braces on their own lines;
+        # this lightweight count is sufficient for wrapper routing and a failed
+        # guess remains unclassified rather than becoming a false verification.
+        depth += line.count("{") - line.count("}")
+        depth = max(depth, 0)
+    return len(rest)
+
+
 def synthesize(fence, extra_imports, wrap):
     """Return (source, linemap) where linemap[gen_line_0based] = guide 1-based
     line or None for synthesized lines."""
@@ -353,6 +454,19 @@ def synthesize(fence, extra_imports, wrap):
                 linemap.append(body_offset + 1 + i)
             gen.append("}")
             linemap.append(None)
+        elif wrap == "mixed":
+            split = mixed_split_index(rest)
+            for i, line in zip(rest_map[:split], rest[:split]):
+                gen.append(line)
+                linemap.append(body_offset + 1 + i)
+            if any(line.strip() for line in rest[split:]):
+                gen.append("func __verify_snippet() async throws {")
+                linemap.append(None)
+                for i, line in zip(rest_map[split:], rest[split:]):
+                    gen.append(line)
+                    linemap.append(body_offset + 1 + i)
+                gen.append("}")
+                linemap.append(None)
         else:  # top
             for i, line in zip(rest_map, rest):
                 gen.append(line)
@@ -392,17 +506,21 @@ def discover_toolchain(name):
 FIRST_ERROR_RE = re.compile(r"^<stdin>:(\d+):(\d+): error: (.*)$")
 
 
-def typecheck(source, tc, swift_version, needs_xcode_frameworks, cache_root,
+def typecheck(source, tc, swift_version, default_isolation,
+              needs_xcode_frameworks, cache_root,
               linemap=None, timeout=60, stub=None):
     if stub is not None:
         return CompileResult("pass") if stub == "pass" else \
             CompileResult("fail", first_error=stub.split(":", 1)[1] if ":" in stub else "stubbed failure")
     cmd = ["xcrun", "swiftc", "-typecheck",
+           "-parse-as-library",
            "-swift-version", swift_version,
            "-sdk", tc.sdk_path,
            "-target", tc.triple,
            "-diagnostic-style", "llvm",
            "-module-cache-path", os.path.join(cache_root, tc.sdk_build)]
+    if default_isolation == "mainactor":
+        cmd += ["-default-isolation", "MainActor"]
     if needs_xcode_frameworks:
         for fw in tc.framework_dirs:
             cmd += ["-F", fw]
@@ -436,11 +554,14 @@ def typecheck(source, tc, swift_version, needs_xcode_frameworks, cache_root,
 def compile_variants(fence, mk, imports, tc, opts, xfail):
     """Try the requested wrap (auto retries the alternate). Returns
     (verdict, wrap_used, CompileResult)."""
-    guess_kwargs = dict(swift_version=mk.lang, cache_root=opts.cache_root,
+    guess_kwargs = dict(swift_version=mk.lang,
+                        default_isolation=mk.isolation,
+                        cache_root=opts.cache_root,
                         timeout=opts.timeout, stub=opts.stub_compiler)
     if mk.wrap == "auto":
         first_choice = choose_wrap(hoist_imports(fence.body)[2])
-        order = [first_choice, "body" if first_choice == "top" else "top"]
+        alternate = "body" if first_choice == "top" else "top"
+        order = [first_choice, alternate, "mixed"]
     else:
         order = [mk.wrap]
     last = None
@@ -527,6 +648,13 @@ def verify_fence(fence, toolchains, opts):
     target = opts.guess_target
     tc = toolchains[target]
     verdict, wrap, result = compile_variants(fence, Markers(), imports, tc, opts, False)
+    if verdict == "fail" and any(fragment in result.first_error for fragment in (
+            "concurrency-safe", "non-Sendable type", "main actor-isolated")):
+        isolated = Markers(isolation="mainactor")
+        v2, w2, r2 = compile_variants(fence, isolated, imports, tc, opts, False)
+        if v2 == "pass":
+            verdict, wrap, result = v2, w2, r2
+            row["_guess_isolation"] = "mainactor"
     # iOS-only snippets (UIKit, WidgetKit, …) can never compile against the macOS
     # SDK — fall back to the simulator target before calling them failures.
     if (verdict == "fail" and "no such module" in result.first_error
@@ -556,8 +684,12 @@ TSV_COLUMNS = ["file", "line", "anchor", "info", "status", "wrap",
 def write_tsv(rows, out):
     out.write("\t".join(TSV_COLUMNS) + "\n")
     for r in rows:
-        out.write("\t".join(flatten(r.get(c, "")) if c == "first_error" else
-                            flatten(r.get(c, ""), 200) for c in TSV_COLUMNS) + "\n")
+        fields = [flatten(r.get(c, "")) if c == "first_error" else
+                  flatten(r.get(c, ""), 200) for c in TSV_COLUMNS]
+        # Keep the TSV rectangular without emitting trailing tab whitespace for
+        # rows that have no diagnostic. A dash already means “not applicable”
+        # in the target columns, so use it consistently for every empty field.
+        out.write("\t".join(value or "-" for value in fields) + "\n")
 
 
 def write_report(rows, toolchains, opts, out):
@@ -576,6 +708,8 @@ def write_report(rows, toolchains, opts, out):
     out.write(" · ".join(f"{k} {v}" for k, v in sorted(counts.items())) + "\n\n")
     backlog = counts.get("UNCLASSIFIED", 0) + counts.get("UNCLASSIFIED-FAIL", 0)
     out.write(f"**UNCLASSIFIED backlog (the metric): {backlog}**\n\n")
+    out.write(f"**PRELUDE backlog (classified contextual excerpts): "
+              f"{counts.get('PRELUDE-NEEDED', 0)}**\n\n")
 
     per_guide = defaultdict(Counter)
     for r in rows:
@@ -615,12 +749,33 @@ def write_report(rows, toolchains, opts, out):
 # --write-markers
 
 
+def triage_marker_for_row(row):
+    """Return a conservative marker for a failed guess, or None for review.
+
+    The diagnostic is only a routing signal. High-signal semantic/compiler
+    findings (ambiguity, type conversion, Swift 6 isolation, mutability) stay
+    unmarked so a human must fix or deliberately classify them.
+    """
+    error = row.get("first_error", "")
+    if "wrongness" in row.get("flags", set()):
+        return None
+    if "unavailable in macOS" in error or "not available on macOS" in error:
+        return "prelude:platform-target"
+    if error.startswith("no such module "):
+        return "prelude:external-module"
+    if any(fragment in error for fragment in CONTEXT_DIAGNOSTICS):
+        return "prelude:guide-context"
+    if any(fragment in error for fragment in ILLUSTRATIVE_DIAGNOSTICS):
+        return "illustrative"
+    return None
+
+
 def write_markers(rows, guides_root, opts):
     """Add compile:27 [imports:...] to UNCLASSIFIED-PASS fences and
     illustrative to STUB/ELIDED ones. Only opening-fence lines change."""
     dirty = subprocess.run(["git", "status", "--porcelain", "--", guides_root],
                            capture_output=True, text=True).stdout.strip()
-    if dirty and not opts.stub_compiler:
+    if dirty and not opts.stub_compiler and not opts.allow_dirty_guides:
         raise SystemExit("error: guides tree is dirty; commit or stash before --write-markers")
 
     pre_fences, _ = extract_fences(guides_root)
@@ -634,8 +789,12 @@ def write_markers(rows, guides_root, opts):
             extra = r.get("_needed_imports")
             if extra:
                 new_info += " imports:" + ",".join(extra)
+            if r.get("_guess_isolation") == "mainactor":
+                new_info += " isolation:mainactor"
         elif r["status"] in ("STUB", "ELIDED"):
             new_info = "illustrative"
+        elif opts.write_triage_markers and r["status"] == "UNCLASSIFIED-FAIL":
+            new_info = triage_marker_for_row(r)
         if new_info:
             by_file.setdefault(r["file"], []).append((int(r["line"]), new_info))
 
@@ -672,7 +831,8 @@ def refine_needed_imports(rows, toolchains, opts):
             continue
         tc = toolchains[r.get("_pass_target", opts.guess_target)]
         fence = r["_fence"]
-        verdict, _, _ = compile_variants(fence, Markers(), [], tc, opts, False)
+        guess_markers = Markers(isolation=r.get("_guess_isolation", "nonisolated"))
+        verdict, _, _ = compile_variants(fence, guess_markers, [], tc, opts, False)
         if verdict == "pass":
             r["_needed_imports"] = []
             continue
@@ -681,7 +841,7 @@ def refine_needed_imports(rows, toolchains, opts):
         needed = list(r.get("_guess_imports", []))
         for mod in list(needed):
             trial = [m for m in needed if m != mod]
-            verdict, _, _ = compile_variants(fence, Markers(), trial, tc, opts, False)
+            verdict, _, _ = compile_variants(fence, guess_markers, trial, tc, opts, False)
             if verdict == "pass":
                 needed = trial
         r["_needed_imports"] = needed
@@ -708,6 +868,10 @@ def main(argv=None):
     ap.add_argument("--out", default=None,
                     help="directory for results.tsv + report.md (default: stdout TSV only)")
     ap.add_argument("--write-markers", action="store_true")
+    ap.add_argument("--write-triage-markers", action="store_true",
+                    help="also classify safe failed guesses as illustrative or prelude-needed")
+    ap.add_argument("--allow-dirty-guides", action="store_true",
+                    help="permit marker-only edits in an already-dirty guides tree")
     ap.add_argument("--cache-root",
                     default=os.path.expanduser("~/Library/Caches/snippet-verify"))
     ap.add_argument("--stub-compiler", default=None, metavar="pass|fail:<msg>",
@@ -759,6 +923,8 @@ def main(argv=None):
                      "status": "PARSE-ERROR", "wrap": "", "v26": "-", "v27": "-",
                      "vsim27": "-", "err_line": "", "first_error": msg, "flags": set()})
 
+    if opts.write_triage_markers:
+        opts.write_markers = True
     if opts.write_markers:
         if not opts.guess:
             raise SystemExit("error: --write-markers requires --guess (a fresh guess run)")

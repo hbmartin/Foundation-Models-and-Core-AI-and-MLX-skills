@@ -92,7 +92,7 @@ under an app that you have not rebuilt, on a device the user has not updated.
 > (harvested 2026-07-27). Availability line: `iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+,
 > macOS 26.0+, visionOS 26.0+` — note **no watchOS**, even in 27.
 
-```swift
+```swift illustrative
 @frozen enum Availability      // Equatable, Sendable, SendableMetatype
 case available                 // "The system is ready for making requests."
 case unavailable(_: UnavailableReason)
@@ -113,7 +113,7 @@ case unavailable(_: UnavailableReason)
 
 Apple's canonical switch, verbatim from the class page:
 
-```swift
+```swift illustrative
 struct GenerativeView: View {
     private var model = SystemLanguageModel.default
 
@@ -406,7 +406,7 @@ that `SystemLanguageModel` does not.
 > ✅ **VERIFIED** — from
 > `/documentation/foundationmodels/adding-server-side-intelligence-with-private-cloud-compute`:
 
-```swift
+```swift illustrative
 let model = PrivateCloudComputeLanguageModel()
 
 switch model.availability {
@@ -697,7 +697,7 @@ what a payload throw looks like in practice:
 
 > ✅ **VERIFIED** — `Sources/FoundationModelsUtilities/LanguageModels/ChatCompletionsLanguageModel.swift:450-456`:
 
-```swift
+```swift illustrative
 case .custom:
   throw LanguageModelError.unsupportedTranscriptContent(
     LanguageModelError.UnsupportedTranscriptContent(
@@ -753,7 +753,7 @@ So the correct response to `.rateLimited` is backoff, not a retry loop. Use `res
 
 > ✅ **VERIFIED** — `/documentation/foundationmodels/languagemodelsession/error`, iOS 27.0+ Beta.
 
-```swift
+```swift illustrative
 enum Error
 case concurrentRequests                    // "Multiple requests were made to the session concurrently."
 case transcriptMutationWhileResponding     // "The session's transcript was mutated while a request was in progress."
@@ -807,7 +807,7 @@ for you at a safe point (see
 > ✅ **VERIFIED** — `/documentation/foundationmodels/systemlanguagemodel/error`, iOS 27.0+ Beta,
 > **no watchOS**.
 
-```swift
+```swift illustrative
 enum Error
 case assetsUnavailable(_: SystemLanguageModel.Error.AssetsUnavailable)
 ```
@@ -1107,7 +1107,7 @@ your classifier (§10.3) throws away the only information you have.
 
 > ✅ **VERIFIED (Apple docs)** — the catch pattern, verbatim from the Safety article:
 
-```swift
+```swift illustrative
 do {
     let session = LanguageModelSession()
     let topic = // A potentially harmful topic.
@@ -1208,11 +1208,11 @@ Strategy 2 is the one to reach for by default, and it is a genuinely surprising 
 > against the SDK interface: the accessor returns a `Response<String>`, so the message is its
 > `.content` (Apple's printed snippet binds `message` directly):
 
-```swift
+```swift compile:27 imports:FoundationModels
 do {
     let session = LanguageModelSession()
     let topic = ""  // A sensitive topic.
-    let response = try session.respond(
+    let response = try await session.respond(
         to: "List five key points about: \(topic)",
         generating: [String].self
     )
@@ -1362,7 +1362,7 @@ Given a failure, which mechanism was it?
 > ✅ **VERIFIED** — `/documentation/foundationmodels/systemlanguagemodel/guardrails`, iOS 26.0+
 > (no watchOS):
 
-```swift
+```swift illustrative
 struct Guardrails              // Sendable, SendableMetatype — note: NOT Equatable
 static let `default`: SystemLanguageModel.Guardrails
 static let permissiveContentTransformations: SystemLanguageModel.Guardrails
@@ -1370,7 +1370,7 @@ static let permissiveContentTransformations: SystemLanguageModel.Guardrails
 
 and the initializer that takes them:
 
-```swift
+```swift illustrative
 convenience init(useCase: SystemLanguageModel.UseCase = .general,
                  guardrails: SystemLanguageModel.Guardrails = Guardrails.default)
 ```
@@ -1633,7 +1633,7 @@ let response = try await session.respond(to: prompt, generating: Breakfast.self)
 
 **Deny-list, on both sides.** Apple's pattern checks input *and* output:
 
-```swift
+```swift illustrative
 let session = LanguageModelSession()
 let userInput = // The input a person enters in the app.
 let prompt = "Generate a wholesome story about: \(userInput)"
@@ -1729,7 +1729,7 @@ your on-device model's safety behaviour at scale.
 > ✅ **VERIFIED (Apple docs)** — `/documentation/foundationmodels/managing-the-context-window`,
 > recovery pattern verbatim (note the 27-era case name):
 
-```swift
+```swift prelude:guide-context
 do {
     // Perform a request that exceeds the context window.
     let response = try await session.respond(to: prompt)
@@ -2243,7 +2243,7 @@ action leads to an **iCloud+** upgrade, not an in-app purchase.
 
 Apple's own SwiftUI usage, verbatim from the PCC article:
 
-```swift
+```swift prelude:guide-context
 let model = PrivateCloudComputeLanguageModel()
 
 // Depending on the quota state, display a label to keep a person aware
@@ -2479,7 +2479,7 @@ about a year, and almost nobody uses it.
 
 Usage, verbatim from Apple's docs:
 
-```swift
+```swift prelude:guide-context
 let feedbackData = session.logFeedbackAttachment(sentiment: .positive)
 
 let feedbackData = session.logFeedbackAttachment(
@@ -2506,7 +2506,7 @@ let entry = Transcript.Entry.response(response)
 
 For a `Generable` type:
 
-```swift
+```swift prelude:guide-context
 let customType = MyCustomType(...) // A generable type.
 let structure = Transcript.StructuredSegment(schemaName: String(describing: Foo.self), content: customType.generatedContent)
 let segment = Transcript.Segment.structure(structure)
@@ -2516,7 +2516,7 @@ let entry = Transcript.Entry.response(response)
 
 The returned `Data` is JSON and concatenates:
 
-```swift
+```swift prelude:guide-context
 let allFeedback = feedbackData + feedbackData2 + feedbackData3
 let url = URL(fileURLWithPath: "path/to/save/feedback.json")
 try allFeedback.write(to: url)
@@ -2654,7 +2654,7 @@ Apple's 2026 sample apps do not have this function; they gate nothing and rely e
 `SystemLanguageModel.Error` (§2.8). Keep both. The gate gives you the *reason*, which the error type
 does not, and it is the only thing standing between a user and a purchase they cannot use.
 
-```swift
+```swift prelude:guide-context
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 enum AvailabilityGate {
 
@@ -2728,7 +2728,7 @@ This is the piece worth reading twice — it is the full catch ladder from §3, 
 Apple's own sample code uses (§3.7), with the mechanism distinction from §4 encoded in the
 `.guardrailViolation` / `.refusal` split.
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 enum FailureClassifier {
 
@@ -2887,7 +2887,7 @@ enum FailureClassifier {
 
 ### 10.4 The generator: gate, attempt, recover, degrade
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 @MainActor
 final class ResilientGenerator {
