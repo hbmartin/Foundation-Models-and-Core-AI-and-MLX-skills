@@ -50,6 +50,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job runs repository-controlled code on pull_request; it only
+          # reads, so it has no use for a persisted token. pages.yml does the same.
+          persist-credentials: false
 
       # No setup-python or setup-node actions here. The ubuntu-24.04 image ships
       # both, this job's scripts are stdlib-only, and the install step is meant to

@@ -30,14 +30,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdlinks import SCHEME, iter_lines, scan_inline_links, sha256, split_destination  # noqa: E402
 from mdslug import slugify, unique_slug  # noqa: E402
 
-build_skills = None  # loaded lazily so --help works without importing the builder
-
 HTML_ANCHOR = re.compile(r'<a\s+(?:name|id)\s*=\s*"([^"]+)"')
 # A reference-link definition, but never a footnote definition: '[^x]:' shares
 # the shape and is not a link.
 REFERENCE_DEFINITION = re.compile(r"^ {0,3}\[(?!\^)[^\]]+\]:\s*(\S.*)$")
 # A [text][label] usage; [text][] and [label] shortcut forms are not used here.
 REFERENCE_USAGE = re.compile(r"\[[^\]]*\]\[([^\]]+)\]")
+CODE_SPAN = re.compile(r"`+[^`]*`+")
 FRONTMATTER_SCALAR = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
 SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
 
@@ -57,22 +56,6 @@ MAX_BODY_LINES = 260
 
 class VerificationError(RuntimeError):
     """A defect in the generated tree."""
-
-
-def load_builder():
-    global build_skills
-    if build_skills is None:
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(
-            "build_skills", Path(__file__).resolve().parent / "build-skills.py"
-        )
-        build_skills = importlib.util.module_from_spec(spec)
-        # Register before executing: @dataclass resolves annotations through
-        # sys.modules and fails on a module that is not there yet.
-        sys.modules["build_skills"] = build_skills
-        spec.loader.exec_module(build_skills)
-    return build_skills
 
 
 def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int]:
@@ -150,8 +133,12 @@ def destinations(text: str) -> list[str]:
         if inside_fence:
             continue
         scan_inline_links(body, collect)
+        # Strip inline code first: `matrix[i][j]` is a code span, not a
+        # reference link, and the corpus is full of them.
         used_labels += [
-            label for label in REFERENCE_USAGE.findall(body) if label.strip()
+            label
+            for label in REFERENCE_USAGE.findall(CODE_SPAN.sub("", body))
+            if label.strip()
         ]
         definition = REFERENCE_DEFINITION.match(body)
         if definition:
@@ -160,7 +147,9 @@ def destinations(text: str) -> list[str]:
             if destination.startswith("<") and destination.endswith(">"):
                 destination = destination[1:-1]
             found.append(destination.split()[0] if destination.split() else "")
-    undefined = sorted({l for l in used_labels if l.casefold() not in labels})
+    undefined = sorted(
+        {label for label in used_labels if label.casefold() not in labels}
+    )
     if undefined:
         raise VerificationError(
             f"reference-style link labels with no definition: {undefined}"
@@ -217,7 +206,6 @@ def check_links(root: Path, label: str) -> int:
 
 
 def verify(skills_root: Path, manifest_path: Path) -> dict:
-    builder = load_builder()
     if not skills_root.is_dir():
         raise VerificationError(f"{skills_root} is not a directory")
     if (skills_root / "SKILL.md").exists():
@@ -281,7 +269,12 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
                 "must be present or the model will flatten a reconstruction into fact."
             )
         start = text.index(REQUIRED_MARKERS[0])
-        end = text.index("\n## ", text.index(REQUIRED_MARKERS[-1]))
+        end = text.find("\n## ", text.index(REQUIRED_MARKERS[-1]))
+        if end < 0:
+            raise VerificationError(
+                f"{name}: the evidence legend is not followed by a '## ' section, so its "
+                "extent cannot be compared across skills"
+            )
         legends.add(text[start:end])
 
         # In place, then again from a detached copy, which is what installation
