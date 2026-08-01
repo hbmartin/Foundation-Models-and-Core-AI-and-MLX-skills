@@ -40,6 +40,9 @@ Environment knobs:
 - `PROBE_INSTRUMENTS_WORKLOAD=1` — unlocks the Instruments recording workload
   (`instruments.fm-workload`; see `INSTRUMENTS-RECORDING.md`). Companions:
   `PROBE_WORKLOAD_SECONDS` (default 300) and `PROBE_WORKLOAD_ATTACH_SECONDS` (default 20).
+- `PROBE_ARTIFACT_DIR=/absolute/output/path` — writes complete probe artifacts when a
+  destination can access that path. `fm.spotlight-tool-surface` always also attaches its
+  complete schema to the XCTest result, which is the reliable simulator export path.
 
 **Instruments lane-name capture** (the one manual GUI session): `INSTRUMENTS-RECORDING.md`
 — workload command, attach procedure, transcription checklist, write-back list. A
@@ -98,8 +101,8 @@ knob (asset/entitlement).
 | `fm.attachment-label-recording` | `.label(_:)` token cost / transcript write-through / tool no-op | 2.5 §6.4 · 2.3 | MAC-27 · DEVICE-27 (SIM-27 partial) | 🟠 sim: all three halves blocked (images −1, tools 1026) — fingerprints recorded |
 | `fm.stream-zero-partials-tool-turn` | tool-only turn yields zero partials? | 2.1 §6.4 · 2.2 §9.6 · SILENT-FAILURES | MAC-27 · DEVICE-27 | 🟠 sim blocked by tool assets (1026) |
 | `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 | 🟠 sim: **silent success** — `am_ET` unsupported per `supportsLocale`, prompt answered anyway, no error; confirm on MAC-27 |
-| `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 | ✅ `spotlight_search`, `includesSchema=true`, full FullArguments DSL schema captured |
-| `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ donation + replies WORK; all three arg shapes rejected **in-band** (code-100 JSON, never throws) — direct decode effectively needs model-generated arguments in this beta |
+| `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 | ✅ `spotlight_search`, `includesSchema=true`; complete 83,494-character schema committed under `artifacts/` |
+| `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ donation works; all three tested encodings rejected **in-band** (code-100 JSON, never throws); 3 replies observed, with no API correlation IDs |
 | `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 `PROBE_INSTRUMENTS_WORKLOAD=1`; procedure in `INSTRUMENTS-RECORDING.md` |
 
 ## Results harvested 2026-07-31 (verbatim probe output, both runs)
@@ -227,8 +230,8 @@ PROBE-RESULT name=fm.capabilities value=vision=true toolCalling=true guidedGener
 PROBE-RESULT name=fm.attachment-label-recording value=unlabeledTokens=error(FoundationModels.LanguageModelError:-1) labeledTokens=error(…:-1) unlabeledRespond=threw(-1) segments=[no-prompt-entry] labeledRespond=threw(-1) segments=[no-prompt-entry] unlabeledTool=threw(1026) toolRan=false labeledTool=threw(1026) toolRan=false
 PROBE-RESULT name=fm.stream-zero-partials-tool-turn value=iteration-threw detail=type=ModelManagerError domain=ModelManagerServices.ModelManagerError code=1026 … toolRan=false
 PROBE-RESULT name=fm.unsupportedLanguageOrLocale-error value=supportedCount=23 currentSupported=true probeLocale=am_ET respond=succeeded content=እባክህ በአማርኛ መልስ ስጠኝ…
-PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true detail=parameters={ "$defs": { "AllText"… }  (full DSL schema >8 KB)
-PROBE-RESULT name=fm.spotlight-direct-call value=recorded detail=indexingAvailable=true donate=ok naiveCall=ok(code-100 in-band error) schemaCall=ok(code-100) orderedCall=ok(code-100) searchReplies=[SearchReply(stage "search", items([])) ×2]
+PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true schemaCharacters=83494 artifact=spotlight-tool-schema-simulator-os27.0.0-24A5390f-xcode-27A5228h.txt
+PROBE-RESULT name=fm.spotlight-direct-call value=donation=ok naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3 detail=…cleanup=ok…
 ```
 
 Readings, one line each:
@@ -253,7 +256,9 @@ Readings, one line each:
   its `parameters` schema is a **full query DSL** (discriminated `search|schema|help|display`
   queries, `AllText`/`ContentType`/`Application` predicates, temporal models with
   variables, pipeline stages incl. `Compute`/`Count`/`Custom`, `x-order` annotations) —
-  published nowhere; captured verbatim in the probe output.
+  published nowhere. The complete 83,494-character value is committed as
+  [`artifacts/spotlight-tool-schema-simulator-os27.0.0-24A5390f-xcode-27A5228h.txt`](artifacts/spotlight-tool-schema-simulator-os27.0.0-24A5390f-xcode-27A5228h.txt)
+  (SHA-256 `4889148670380dc0907d86a9ac18fe1553fb3a35d55c466fee02a7b8749550d8`).
 - **2.4 §7.1** — from the SIM-27 test-runner app container: `CSSearchableItem` donation
   **works** and `tool.searchResults` emits a `SearchReply` (stage token `search`) per
   call — the old "needs a signed app container" skip reason is refuted. But direct
@@ -262,8 +267,10 @@ Readings, one line each:
   rejected **in-band** (a code-100 JSON error inside the returned Prompt — the tool
   **never throws** on malformed arguments) with "Failed to parse generated content". Note
   the self-describing error is itself the documented recovery path Apple intends for the
-  *model*; direct programmatic invocation effectively requires model-generated arguments
-  in 27A5228h/24A5390f.
+  *model*. All three tested programmatic encodings were rejected on
+  27A5228h/24A5390f; other encodings remain unproven. The collector observed three
+  replies across the three calls, but the API exposes no correlation IDs, so that count
+  does not establish a one-to-one call/reply mapping.
 - **2.5 §6.4 / 2.3 / SILENT-FAILURES zero-partials** — both attachment-label and
   tool-turn-streaming probes are blocked on the sim (images `-1`, tool assets `1026`,
   identically for labeled and unlabeled) — fingerprints recorded; the real answers land
@@ -296,7 +303,8 @@ Readings, one line each:
 
 - `Package.swift` — swift-tools 6.2, platforms `.macOS(.v26)` / `.iOS(.v26)` (the `.v26`
   platform constants require the 6.2 manifest API).
-- `Sources/ProbeSupport` — the `PROBE-RESULT` printer, env knobs, timeout racing.
+- `Sources/ProbeSupport` — the `PROBE-RESULT` printer, env knobs, and deadline-safe
+  timeout race shared by the XCTest and standalone workloads.
 - `Tests/ProbesTests/FoundationModelsProbes.swift` — 22 FM probes (also home of the
   shared helpers, internal so the other probe files reuse them; `errorFingerprint`
   decodes the concrete `LanguageModelError` case + payload on 27 runtimes).
@@ -313,5 +321,6 @@ Readings, one line each:
 - `Tests/ProbesTests/InstrumentsWorkloadProbes.swift` — the env-gated Instruments
   recording workload (never a `PROBE-RESULT`; narrates `WORKLOAD` lines).
 - `Workload/fmworkload.swift` — standalone fallback recording target, deliberately
-  OUTSIDE the package (bare `swiftc` build + `simctl spawn`; see
+  OUTSIDE the package (bare `swiftc` compiles it together with
+  `Sources/ProbeSupport/ProbeSupport.swift`, then `simctl spawn`; see
   `INSTRUMENTS-RECORDING.md`).

@@ -20,7 +20,41 @@ import FoundationModels
 import ProbeSupport
 import XCTest
 
+private actor SpotlightReplyRecorder {
+    private var replies: [String] = []
+
+    func append(_ reply: String) {
+        replies.append(reply)
+    }
+
+    func snapshot() -> [String] {
+        replies
+    }
+}
+
 final class SpotlightProbes: XCTestCase {
+
+    private func directCallStatus(_ output: String) -> String {
+        output.contains("Malformed tool arguments") ? "rejected-code-100" : "returned"
+    }
+
+    private func schemaArtifactName() -> String {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let versionString = ProcessInfo.processInfo.operatingSystemVersionString
+        let runtimeBuild = versionString.components(separatedBy: "Build ").dropFirst().first?
+            .split(separator: ")").first.map(String.init) ?? "unknown-runtime"
+        let testBundle = Bundle(for: SpotlightProbes.self)
+        let xcodeBuild = testBundle.object(forInfoDictionaryKey: "DTXcodeBuild") as? String
+            ?? Probe.env("XCODE_PRODUCT_BUILD_VERSION")
+            ?? Probe.env("DTXcodeBuild")
+            ?? "unknown-xcode"
+        #if targetEnvironment(simulator)
+        let destination = "simulator"
+        #else
+        let destination = "device"
+        #endif
+        return "spotlight-tool-schema-\(destination)-os\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)-\(runtimeBuild)-xcode-\(xcodeBuild).txt"
+    }
 
     // MARK: fm.spotlight-tool-surface  [SIM-27 · MAC-27 · DEVICE-27]
     //
@@ -35,10 +69,23 @@ final class SpotlightProbes: XCTestCase {
     func testSpotlightToolSurface() throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         let tool = SpotlightSearchTool()
+        let schema = String(describing: tool.parameters)
+        let artifactName = schemaArtifactName()
+        let attachment = XCTAttachment(string: schema)
+        attachment.name = artifactName
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let artifactDirectory = Probe.env("PROBE_ARTIFACT_DIR") {
+            let directory = URL(fileURLWithPath: artifactDirectory, isDirectory: true)
+            try FileManager.default.createDirectory(at: directory,
+                                                    withIntermediateDirectories: true)
+            try schema.write(to: directory.appendingPathComponent(artifactName),
+                             atomically: true, encoding: .utf8)
+        }
         Probe.result(
             "fm.spotlight-tool-surface",
-            "name=\(tool.name) includesSchema=\(tool.includesSchemaInInstructions)",
-            detail: "parameters=\(String(describing: tool.parameters).prefix(8000)) \(Probe.runtimeDescription)"
+            "name=\(tool.name) includesSchema=\(tool.includesSchemaInInstructions) schemaCharacters=\(schema.count) artifact=\(artifactName)",
+            detail: "\(ProcessInfo.processInfo.operatingSystemVersionString) \(Probe.runtimeDescription)"
         )
     }
 
@@ -77,26 +124,31 @@ final class SpotlightProbes: XCTestCase {
                                     domainIdentifier: domain,
                                     attributeSet: attributes)
         }
+        var donation = "threw"
         do {
             try await CSSearchableIndex.default().indexSearchableItems(items)
-            rows.append("donate=ok")
+            donation = "ok"
+            rows.append("donate=\(donation)")
         } catch {
             let ns = error as NSError
-            rows.append("donate=threw(\(ns.domain):\(ns.code):\(String(describing: error).prefix(120)))")
+            donation = "threw(\(ns.domain):\(ns.code))"
+            rows.append("donate=\(donation) detail=\(String(describing: error).prefix(120))")
         }
         // Give the index a beat to commit before querying.
         try? await Task.sleep(for: .seconds(2))
 
         let tool = SpotlightSearchTool()
-        // Reader started before the calls so an immediately-emitted reply is not missed.
-        let repliesTask = Task { () -> String in
-            var collected: [String] = []
+        // Reader starts before all three calls and records every observed reply. The API
+        // exposes no correlation ID, so this deliberately makes no call↔reply mapping claim.
+        let recorder = SpotlightReplyRecorder()
+        let repliesTask = Task {
             for await reply in tool.searchResults {
-                collected.append(String(String(describing: reply).prefix(400)))
-                if collected.count >= 2 { break }
+                await recorder.append(String(String(describing: reply).prefix(1200)))
             }
-            return collected.joined(separator: " ⫽ ")
         }
+        var naiveStatus = "not-run"
+        var schemaStatus = "not-run"
+        var orderedStatus = "not-run"
         // Call 1 — deliberately naive shape. Measured 2026-07-31 (sim): the tool does NOT
         // throw on malformed arguments; it RETURNS a structured JSON error inside the
         // Prompt output (code 100, "Malformed tool arguments — retry with the schema
@@ -105,10 +157,18 @@ final class SpotlightProbes: XCTestCase {
             let args = try GeneratedContent(json: #"{"query":"\#(nonce)"}"#)
             let output = try await Probe.withTimeout(seconds: 60) { () -> String in
                 let result = try await tool.call(arguments: args)
-                return String(String(describing: result).prefix(600))
+                return String(describing: result)
             }
-            rows.append("naiveCall=\(output.map { "ok output=\($0)" } ?? "timeout")")
+            switch output {
+            case .value(let value):
+                naiveStatus = directCallStatus(value)
+                rows.append("naiveCall=\(naiveStatus) output=\(value.prefix(600))")
+            case .timedOut:
+                naiveStatus = "timeout"
+                rows.append("naiveCall=timeout")
+            }
         } catch {
+            naiveStatus = "threw"
             rows.append("naiveCall=threw(\(errorFingerprint(error)))")
         }
         // Call 2 — the FullArguments shape the tool's own error prescribes:
@@ -118,10 +178,18 @@ final class SpotlightProbes: XCTestCase {
                 json: #"{"query":{"type":"search","value":{"root":{"type":"allText","terms":["\#(nonce)"]},"pageSize":15}}}"#)
             let output = try await Probe.withTimeout(seconds: 60) { () -> String in
                 let result = try await tool.call(arguments: args)
-                return String(String(describing: result).prefix(1200))
+                return String(describing: result)
             }
-            rows.append("schemaCall=\(output.map { "ok output=\($0)" } ?? "timeout")")
+            switch output {
+            case .value(let value):
+                schemaStatus = directCallStatus(value)
+                rows.append("schemaCall=\(schemaStatus) output=\(value.prefix(1200))")
+            case .timedOut:
+                schemaStatus = "timeout"
+                rows.append("schemaCall=timeout")
+            }
         } catch {
+            schemaStatus = "threw"
             rows.append("schemaCall=threw(\(errorFingerprint(error)))")
         }
         // Call 3 — same FullArguments shape but built with init(properties:), whose
@@ -144,23 +212,52 @@ final class SpotlightProbes: XCTestCase {
             ])
             let output = try await Probe.withTimeout(seconds: 60) { () -> String in
                 let result = try await tool.call(arguments: orderedArgs)
-                return String(String(describing: result).prefix(1200))
+                return String(describing: result)
             }
-            rows.append("orderedCall=\(output.map { "ok output=\($0)" } ?? "timeout")")
+            switch output {
+            case .value(let value):
+                orderedStatus = directCallStatus(value)
+                rows.append("orderedCall=\(orderedStatus) output=\(value.prefix(1200))")
+            case .timedOut:
+                orderedStatus = "timeout"
+                rows.append("orderedCall=timeout")
+            }
         } catch {
+            orderedStatus = "threw"
             rows.append("orderedCall=threw(\(errorFingerprint(error)))")
         }
-        let reply = (try? await Probe.withTimeout(seconds: 15) { await repliesTask.value }) ?? nil
-        if let reply {
-            rows.append("searchReplies=[\(reply)]")
-        } else {
-            repliesTask.cancel()
-            rows.append("searchReplies=timeout")
+        do {
+            let collector = try await Probe.withTimeout(seconds: 15) { await repliesTask.value }
+            switch collector {
+            case .value:
+                rows.append("replyCollector=ended")
+            case .timedOut:
+                rows.append("replyCollector=deadline")
+            }
+        } catch {
+            rows.append("replyCollector=threw(\(errorFingerprint(error)))")
         }
-        try? await CSSearchableIndex.default().deleteSearchableItems(withDomainIdentifiers: [domain])
-        Probe.result("fm.spotlight-direct-call",
-                     rows.first(where: { $0.hasPrefix("call=") })?.prefix(40).description ?? "recorded",
-                     detail: "\(rows.joined(separator: " ")) \(Probe.runtimeDescription)")
+        repliesTask.cancel()
+        let replies = await recorder.snapshot()
+        rows.append("replyCount=\(replies.count)")
+        for (index, reply) in replies.enumerated() {
+            rows.append("reply[\(index)]=\(reply)")
+        }
+
+        let cleanup: String
+        do {
+            try await CSSearchableIndex.default()
+                .deleteSearchableItems(withDomainIdentifiers: [domain])
+            cleanup = "ok"
+        } catch {
+            cleanup = "threw(\(errorFingerprint(error)))"
+        }
+        rows.append("cleanup=\(cleanup)")
+        Probe.result(
+            "fm.spotlight-direct-call",
+            "donation=\(donation) naive=\(naiveStatus) schema=\(schemaStatus) ordered=\(orderedStatus) replies=\(replies.count)",
+            detail: "\(rows.joined(separator: " ")) \(Probe.runtimeDescription)"
+        )
     }
 }
 #endif

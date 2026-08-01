@@ -342,7 +342,10 @@ final class EvaluationsProbes: XCTestCase {
                 for try await _ in generator.run() { produced += 1 }
                 return produced
             }
-            outcome = bounded == nil ? "still-running-at-120s" : "finished(produced=\(bounded!))"
+            switch bounded {
+            case .value(let produced): outcome = "finished(produced=\(produced))"
+            case .timedOut: outcome = "still-running-at-120s"
+            }
         } catch {
             outcome = "threw(\(type(of: error)): \(String(describing: error).prefix(160)))"
         }

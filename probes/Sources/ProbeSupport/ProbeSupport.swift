@@ -9,6 +9,11 @@
 import Foundation
 
 public enum Probe {
+    public enum TimeoutResult<T: Sendable>: Sendable {
+        case value(T)
+        case timedOut
+    }
+
     /// Emit a harvestable result line. `value` should be short and greppable;
     /// use `detail` for free-form context (error strings, dumps).
     @discardableResult
@@ -52,22 +57,102 @@ public enum Probe {
         public func increment() { lock.withLock { _count += 1 } }
     }
 
-    /// Race an async operation against a wall-clock bound. Returns nil on timeout.
-    /// Used so a hung model call degrades to a recorded timeout instead of a hung
-    /// test run.
+    /// Race an async operation against a wall-clock bound without waiting for a
+    /// cancelled operation that ignores cancellation. Operation errors and parent
+    /// cancellation propagate; timeout is a distinct, non-error result.
     public static func withTimeout<T: Sendable>(
         seconds: Double,
         _ op: @escaping @Sendable () async throws -> T
-    ) async throws -> T? {
-        try await withThrowingTaskGroup(of: T?.self) { group in
-            group.addTask { try await op() }
-            group.addTask {
-                try? await Task.sleep(for: .seconds(seconds))
-                return nil
+    ) async throws -> TimeoutResult<T> {
+        let race = TimeoutRace<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                race.install(continuation: continuation)
+                let operationTask = Task {
+                    do {
+                        race.finish(.success(.value(try await op())), winner: .operation)
+                    } catch {
+                        race.finish(.failure(error), winner: .operation)
+                    }
+                }
+                let timerTask = Task {
+                    do {
+                        try await Task.sleep(for: .seconds(max(0, seconds)))
+                    } catch {
+                        return
+                    }
+                    race.finish(.success(.timedOut), winner: .timer)
+                }
+                race.install(operationTask: operationTask, timerTask: timerTask)
             }
-            let first = try await group.next() ?? nil
-            group.cancelAll()
-            return first
+        } onCancel: {
+            race.cancel()
         }
+    }
+}
+
+private final class TimeoutRace<T: Sendable>: @unchecked Sendable {
+    enum Winner { case operation, timer }
+
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Probe.TimeoutResult<T>, any Error>?
+    private var terminal: Result<Probe.TimeoutResult<T>, any Error>?
+    private var operationTask: Task<Void, Never>?
+    private var timerTask: Task<Void, Never>?
+
+    func install(continuation newContinuation: CheckedContinuation<Probe.TimeoutResult<T>, any Error>) {
+        lock.lock()
+        if let terminal {
+            lock.unlock()
+            newContinuation.resume(with: terminal)
+        } else {
+            continuation = newContinuation
+            lock.unlock()
+        }
+    }
+
+    func install(operationTask newOperationTask: Task<Void, Never>,
+                 timerTask newTimerTask: Task<Void, Never>) {
+        lock.lock()
+        if terminal == nil {
+            operationTask = newOperationTask
+            timerTask = newTimerTask
+            lock.unlock()
+        } else {
+            lock.unlock()
+            newOperationTask.cancel()
+            newTimerTask.cancel()
+        }
+    }
+
+    func finish(_ result: Result<Probe.TimeoutResult<T>, any Error>, winner: Winner?) {
+        let continuationToResume: CheckedContinuation<Probe.TimeoutResult<T>, any Error>?
+        let tasksToCancel: [Task<Void, Never>]
+        lock.lock()
+        guard terminal == nil else {
+            lock.unlock()
+            return
+        }
+        terminal = result
+        continuationToResume = continuation
+        continuation = nil
+        switch winner {
+        case .operation:
+            tasksToCancel = [timerTask].compactMap { $0 }
+        case .timer:
+            tasksToCancel = [operationTask].compactMap { $0 }
+        case nil:
+            tasksToCancel = [operationTask, timerTask].compactMap { $0 }
+        }
+        operationTask = nil
+        timerTask = nil
+        lock.unlock()
+
+        for task in tasksToCancel { task.cancel() }
+        continuationToResume?.resume(with: result)
+    }
+
+    func cancel() {
+        finish(.failure(CancellationError()), winner: nil)
     }
 }

@@ -1,0 +1,3818 @@
+{
+  "$defs" : {
+    "AllText" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "terms" : {
+          "description" : "Terms to search across all default-indexed text fields (e.g., 'meeting notes', 'Q4 budget', 'project deadline'). IMPORTANT: All terms combined with AND logic (every term required). Each space-separated word is a required term. For OR logic, use Operation with logic: .any. See high_level_api help.",
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "terms"
+      ],
+      "title" : "AllText",
+      "type" : "object",
+      "x-order" : [
+        "terms"
+      ]
+    },
+    "Application" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "application" : {
+          "description" : "Application name (e.g., 'Mail', 'Safari', 'Terminal') or bundle ID (e.g., 'com.apple.mail'). Case-insensitive exact match.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "application"
+      ],
+      "title" : "Application",
+      "type" : "object",
+      "x-order" : [
+        "application"
+      ]
+    },
+    "CombinedParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "models" : {
+          "items" : {
+            "$ref" : "#/$defs/Model"
+          },
+          "minItems" : 1,
+          "type" : "array"
+        },
+        "temporal" : {
+          "$ref" : "#/$defs/TemporalModel"
+        }
+      },
+      "required" : [
+        "temporal",
+        "models"
+      ],
+      "title" : "CombinedParams",
+      "type" : "object",
+      "x-order" : [
+        "temporal",
+        "models"
+      ]
+    },
+    "Compute" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "expression" : {
+          "type" : "string"
+        },
+        "outputFields" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "expression",
+        "outputFields"
+      ],
+      "title" : "Compute",
+      "type" : "object",
+      "x-order" : [
+        "expression",
+        "outputFields"
+      ]
+    },
+    "ContentType" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "contentTypes" : {
+          "description" : "Content type identifier - friendly name OR system UTI. Examples: 'email', 'messages', 'documents', 'text', 'pdf', 'presentations', 'spreadsheets', 'photos', 'images', 'videos', 'music', 'crash-report', 'log', 'event', 'contact', 'note', 'bookmark', 'application', 'com.adobe.pdf', 'com.microsoft.word.doc'. Validated at runtime against UTType registry.",
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "contentTypes"
+      ],
+      "title" : "ContentType",
+      "type" : "object",
+      "x-order" : [
+        "contentTypes"
+      ]
+    },
+    "Context" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "rankingType" : {
+          "enum" : [
+            "temporal-adjacency",
+            "recency",
+            "alphabetical",
+            "relevance"
+          ],
+          "type" : "string"
+        },
+        "sortAttribute" : {
+          "type" : "string"
+        },
+        "sortDirection" : {
+          "description" : "Sort direction: 'ascending' or 'descending'. For temporal-adjacency: always 'ascending' (closest to NOW first)",
+          "type" : "string"
+        },
+        "wasExplicit" : {
+          "type" : "boolean"
+        }
+      },
+      "required" : [
+        "rankingType",
+        "wasExplicit"
+      ],
+      "title" : "Context",
+      "type" : "object",
+      "x-order" : [
+        "rankingType",
+        "wasExplicit",
+        "sortAttribute",
+        "sortDirection"
+      ]
+    },
+    "Count" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from"
+      ],
+      "title" : "Count",
+      "type" : "object",
+      "x-order" : [
+        "from"
+      ]
+    },
+    "Custom" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "parameters" : {
+          "items" : {
+            "$ref" : "#/$defs/Parameter"
+          },
+          "type" : "array"
+        },
+        "processingMode" : {
+          "type" : "string"
+        },
+        "stageType" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "stageType"
+      ],
+      "title" : "Custom",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "stageType",
+        "processingMode",
+        "parameters"
+      ]
+    },
+    "DateComponents" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "day" : {
+          "$ref" : "#/$defs/DayOrVar",
+          "description" : "Day (optional, 1-31). Concrete integer, variable, or null (defaults to 1 for start, last day for end). Use {\"type\": \"concrete\", \"value\": 15} for 15th."
+        },
+        "hour" : {
+          "$ref" : "#/$defs/HourOrVar",
+          "description" : "Hour (optional, 0-23). Concrete integer, variable, or null (defaults to 0 for start, 23 for end). Use {\"type\": \"concrete\", \"value\": 14} for 2pm."
+        },
+        "minute" : {
+          "$ref" : "#/$defs/MinuteOrVar",
+          "description" : "Minute (optional, 0-59). Concrete integer, variable, or null (defaults to 0 for start, 59 for end). Use {\"type\": \"concrete\", \"value\": 30} for :30."
+        },
+        "month" : {
+          "$ref" : "#/$defs/MonthOrVar",
+          "description" : "Month (optional, 1-12). Concrete integer, variable, or null (defaults to 1 for start, 12 for end). Use {\"type\": \"concrete\", \"value\": 6} for June."
+        },
+        "second" : {
+          "$ref" : "#/$defs/SecondOrVar",
+          "description" : "Second (optional, 0-59). Concrete integer, variable, or null (defaults to 0 for start, 59 for end). Use {\"type\": \"concrete\", \"value\": 0} for :00."
+        },
+        "year" : {
+          "$ref" : "#/$defs/IntOrVar",
+          "description" : "Year value (required). Concrete integer or variable. Use {\"type\": \"concrete\", \"value\": 2003}. For relative phrasing, current_year - N: \"X years ago\" = current_year - X (e.g., today=2026 → \"3 years ago\" = 2023, \"last year\" = 2025)."
+        }
+      },
+      "required" : [
+        "year"
+      ],
+      "title" : "DateComponents",
+      "type" : "object",
+      "x-order" : [
+        "year",
+        "month",
+        "day",
+        "hour",
+        "minute",
+        "second"
+      ]
+    },
+    "Day" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 31,
+          "minimum" : 1,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Day",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "DayOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedDay"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "DayOrVar"
+    },
+    "DiscriminatedAbsolute" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "absolute"
+        },
+        "value" : {
+          "$ref" : "#/$defs/DateComponents"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedAbsolute",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedAfter" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "offset" : {
+          "$ref" : "#/$defs/TimeOffset"
+        },
+        "reference" : {
+          "$ref" : "#/$defs/Reference"
+        },
+        "type" : {
+          "const" : "after"
+        }
+      },
+      "required" : [
+        "type",
+        "reference"
+      ],
+      "title" : "DiscriminatedAfter",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "reference",
+        "offset"
+      ]
+    },
+    "DiscriminatedAgent" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "agent"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedAgent",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedAllText" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "allText"
+        },
+        "value" : {
+          "$ref" : "#/$defs/AllText"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedAllText",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedAny" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "any"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedAny",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedApplication" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "application"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Application"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedApplication",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedArray" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "array"
+        },
+        "value" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedArray",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedBefore" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "offset" : {
+          "$ref" : "#/$defs/TimeOffset"
+        },
+        "reference" : {
+          "$ref" : "#/$defs/Reference"
+        },
+        "type" : {
+          "const" : "before"
+        }
+      },
+      "required" : [
+        "type",
+        "reference"
+      ],
+      "title" : "DiscriminatedBefore",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "reference",
+        "offset"
+      ]
+    },
+    "DiscriminatedBetween" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "endOffset" : {
+          "$ref" : "#/$defs/TimeOffset"
+        },
+        "endReference" : {
+          "$ref" : "#/$defs/Reference"
+        },
+        "startOffset" : {
+          "$ref" : "#/$defs/TimeOffset"
+        },
+        "startReference" : {
+          "$ref" : "#/$defs/Reference"
+        },
+        "type" : {
+          "const" : "between"
+        }
+      },
+      "required" : [
+        "type",
+        "startReference",
+        "endReference"
+      ],
+      "title" : "DiscriminatedBetween",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "startReference",
+        "startOffset",
+        "endReference",
+        "endOffset"
+      ]
+    },
+    "DiscriminatedBool" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "bool"
+        },
+        "value" : {
+          "type" : "boolean"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedBool",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedBoth" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "both"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedBoth",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedCombined" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "combined"
+        },
+        "value" : {
+          "$ref" : "#/$defs/CombinedParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedCombined",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedCompute" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "compute"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Compute"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedCompute",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedConcrete" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "concrete"
+        },
+        "value" : {
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedConcrete",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedContentType" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "contentType"
+        },
+        "value" : {
+          "$ref" : "#/$defs/ContentType"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedContentType",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedCount" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "count"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Count"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedCount",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedCustom" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "custom"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Custom"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedCustom",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedDate" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "date"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedDate",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedDay" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "day"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Day"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedDay",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedDisplay" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "display"
+        },
+        "value" : {
+          "$ref" : "#/$defs/DisplayQuery"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedDisplay",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedDocumentsFor" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "documentsFor"
+        },
+        "value" : {
+          "$ref" : "#/$defs/DocumentsFor"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedDocumentsFor",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedDouble" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "double"
+        },
+        "value" : {
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedDouble",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedExtractGroupItems" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "extractGroupItems"
+        },
+        "value" : {
+          "$ref" : "#/$defs/ExtractGroupItems"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedExtractGroupItems",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedFilter" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "filter"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Filter"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedFilter",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedFirst" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "first"
+        }
+      },
+      "required" : [
+        "type"
+      ],
+      "title" : "DiscriminatedFirst",
+      "type" : "object",
+      "x-order" : [
+        "type"
+      ]
+    },
+    "DiscriminatedForEach" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "forEach"
+        },
+        "value" : {
+          "$ref" : "#/$defs/ForEach"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedForEach",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedFractional" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "fractional"
+        },
+        "value" : {
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedFractional",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedFromMe" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "fromMe"
+        },
+        "value" : {
+          "type" : "boolean"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedFromMe",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedGroupBy" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "groupBy"
+        },
+        "value" : {
+          "$ref" : "#/$defs/GroupBy"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedGroupBy",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedHelp" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "help"
+        },
+        "value" : {
+          "$ref" : "#/$defs/HelpQuery"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedHelp",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedHost" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "host"
+        },
+        "value" : {
+          "$ref" : "#/$defs/HostParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedHost",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedHour" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "hour"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Hour"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedHour",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedHydration" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "hydration"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Hydration"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedHydration",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedIndex" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "index"
+        },
+        "value" : {
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedIndex",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedInt" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "int"
+        },
+        "value" : {
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedInt",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedInteger" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "integer"
+        },
+        "value" : {
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedInteger",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedItemSelect" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "itemSelect"
+        },
+        "value" : {
+          "$ref" : "#/$defs/ItemSelect"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedItemSelect",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedLast" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "last"
+        }
+      },
+      "required" : [
+        "type"
+      ],
+      "title" : "DiscriminatedLast",
+      "type" : "object",
+      "x-order" : [
+        "type"
+      ]
+    },
+    "DiscriminatedLimit" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "limit"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Limit"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedLimit",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedMerge" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "merge"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Merge"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedMerge",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedMinute" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "minute"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Minute"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedMinute",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedMonth" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "month"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Month"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedMonth",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedNamed" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "named"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedNamed",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedNamedPerson" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "namedPerson"
+        },
+        "value" : {
+          "$ref" : "#/$defs/PersonEntity"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedNamedPerson",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedNonTemporal" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "nonTemporal"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NonTemporalParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedNonTemporal",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedNone" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "none"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NoneParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedNone",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedOn" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "offset" : {
+          "$ref" : "#/$defs/TimeOffset"
+        },
+        "reference" : {
+          "$ref" : "#/$defs/Reference"
+        },
+        "tense" : {
+          "enum" : [
+            "past",
+            "current",
+            "future"
+          ],
+          "type" : "string"
+        },
+        "type" : {
+          "const" : "on"
+        }
+      },
+      "required" : [
+        "type",
+        "reference",
+        "tense"
+      ],
+      "title" : "DiscriminatedOn",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "reference",
+        "offset",
+        "tense"
+      ]
+    },
+    "DiscriminatedOperation" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "operation"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Operation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedOperation",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedOrganization" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "organization"
+        },
+        "value" : {
+          "$ref" : "#/$defs/OrganizationEntity"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedOrganization",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedOriginator" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "originator"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedOriginator",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedParticipant" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "participant"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedParticipant",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPerson" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "person"
+        },
+        "value" : {
+          "$ref" : "#/$defs/PersonPredicate"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPerson",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPersonMe" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "personMe"
+        },
+        "value" : {
+          "$ref" : "#/$defs/PersonMePredicate"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPersonMe",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPopularity" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "popularity"
+        },
+        "value" : {
+          "$ref" : "#/$defs/PopularityParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPopularity",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPredicate" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "predicate"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Predicate"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPredicate",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPrompted" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "prompted"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Prompted"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPrompted",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedPurelyTemporal" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "purelyTemporal"
+        },
+        "value" : {
+          "$ref" : "#/$defs/TemporalModel"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedPurelyTemporal",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedQuery" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "query"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Query"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedQuery",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedRecency" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "recency"
+        },
+        "value" : {
+          "$ref" : "#/$defs/RecencyParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedRecency",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedRecipient" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "recipient"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedRecipient",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedRecurring" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "recurring"
+        },
+        "value" : {
+          "$ref" : "#/$defs/RecurringComponents"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedRecurring",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedRelative" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "relative"
+        },
+        "value" : {
+          "enum" : [
+            "now",
+            "today",
+            "yesterday",
+            "thisWeek",
+            "thisMonth",
+            "thisYear",
+            "lastWeek",
+            "lastMonth",
+            "lastYear",
+            "nextWeek",
+            "nextMonth"
+          ],
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedRelative",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSampling" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "sampling"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Sampling"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSampling",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSchema" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "schema"
+        },
+        "value" : {
+          "$ref" : "#/$defs/SchemaQuery"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSchema",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSearch" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "search"
+        },
+        "value" : {
+          "$ref" : "#/$defs/SearchArguments"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSearch",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSecond" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "second"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Second"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSecond",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSelectMaxBy" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "field" : {
+          "type" : "string"
+        },
+        "type" : {
+          "const" : "selectMaxBy"
+        }
+      },
+      "required" : [
+        "type",
+        "field"
+      ],
+      "title" : "DiscriminatedSelectMaxBy",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "field"
+      ]
+    },
+    "DiscriminatedSelectMinBy" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "field" : {
+          "type" : "string"
+        },
+        "type" : {
+          "const" : "selectMinBy"
+        }
+      },
+      "required" : [
+        "type",
+        "field"
+      ],
+      "title" : "DiscriminatedSelectMinBy",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "field"
+      ]
+    },
+    "DiscriminatedSemantic" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "semantic"
+        },
+        "value" : {
+          "$ref" : "#/$defs/SemanticParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSemantic",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSemanticSimilar" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "semanticSimilar"
+        },
+        "value" : {
+          "$ref" : "#/$defs/SemanticSimilar"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSemanticSimilar",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSender" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "sender"
+        },
+        "value" : {
+          "$ref" : "#/$defs/SenderParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSender",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedSort" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "sort"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Sort"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedSort",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedString" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "string"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedString",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedTemporal" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "temporal"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Temporal"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedTemporal",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedTemporalAdjacency" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "temporalAdjacency"
+        },
+        "value" : {
+          "$ref" : "#/$defs/TemporalAdjacencyParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedTemporalAdjacency",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedToMe" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "toMe"
+        },
+        "value" : {
+          "type" : "boolean"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedToMe",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedTopic" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "topic"
+        },
+        "value" : {
+          "$ref" : "#/$defs/TopicParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedTopic",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedUpcoming" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "upcoming"
+        },
+        "value" : {
+          "$ref" : "#/$defs/UpcomingParams"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedUpcoming",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedUser" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "user"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedUser",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueAverage" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueAverage"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueAverage",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueCount" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueCount"
+        },
+        "value" : {
+          "$ref" : "#/$defs/ValueCount"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueCount",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueMax" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueMax"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueMax",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueMedian" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueMedian"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueMedian",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueMin" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueMin"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueMin",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueStddev" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueStddev"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueStddev",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedValueSum" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "valueSum"
+        },
+        "value" : {
+          "$ref" : "#/$defs/NumericAggregation"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedValueSum",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedVariable" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "variable"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedVariable",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedWeekOfYear" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "weekOfYear"
+        },
+        "value" : {
+          "$ref" : "#/$defs/WeekOfYear"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedWeekOfYear",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DiscriminatedWeekday" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "type" : {
+          "const" : "weekday"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Weekday"
+        }
+      },
+      "required" : [
+        "type",
+        "value"
+      ],
+      "title" : "DiscriminatedWeekday",
+      "type" : "object",
+      "x-order" : [
+        "type",
+        "value"
+      ]
+    },
+    "DisplayQuery" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "display" : {
+          "type" : "boolean"
+        }
+      },
+      "required" : [
+        "display"
+      ],
+      "title" : "DisplayQuery",
+      "type" : "object",
+      "x-order" : [
+        "display"
+      ]
+    },
+    "DocumentsFor" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "application" : {
+          "description" : "Application name (e.g., 'Keynote', 'Numbers', 'Pages', 'Word', 'Excel', 'PowerPoint'). Matches all document formats.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "application"
+      ],
+      "title" : "DocumentsFor",
+      "type" : "object",
+      "x-order" : [
+        "application"
+      ]
+    },
+    "Entity" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedUser"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedNamedPerson"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedOrganization"
+        }
+      ],
+      "title" : "Entity"
+    },
+    "ExtractGroupItems" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "extractValue" : {
+          "$ref" : "#/$defs/ValueExtraction"
+        },
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "groupKey" : {
+          "description" : "Value or $variable ref.",
+          "type" : "string"
+        },
+        "limit" : {
+          "minimum" : 1,
+          "type" : "integer"
+        },
+        "offset" : {
+          "minimum" : 0,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "from",
+        "groupKey"
+      ],
+      "title" : "ExtractGroupItems",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "extractValue",
+        "groupKey",
+        "limit",
+        "offset"
+      ]
+    },
+    "Filter" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "extractValue" : {
+          "$ref" : "#/$defs/ValueExtraction"
+        },
+        "filterPredicate" : {
+          "$ref" : "#/$defs/QueryNode"
+        },
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "filterPredicate"
+      ],
+      "title" : "Filter",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "extractValue",
+        "filterPredicate"
+      ]
+    },
+    "ForEach" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "operation" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "operation"
+      ],
+      "title" : "ForEach",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "operation"
+      ]
+    },
+    "GroupBy" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "attribute" : {
+          "type" : "string"
+        },
+        "from" : {
+          "description" : "Upstream stage id.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "attribute"
+      ],
+      "title" : "GroupBy",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "attribute"
+      ]
+    },
+    "HelpQuery" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "topic" : {
+          "description" : "empty = general help",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "topic"
+      ],
+      "title" : "HelpQuery",
+      "type" : "object",
+      "x-order" : [
+        "topic"
+      ]
+    },
+    "HostParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "entity" : {
+          "$ref" : "#/$defs/Entity"
+        },
+        "weight" : {
+          "description" : "0.1=minor, 1.0=major",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "entity",
+        "weight"
+      ],
+      "title" : "HostParams",
+      "type" : "object",
+      "x-order" : [
+        "entity",
+        "weight"
+      ]
+    },
+    "Hour" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 23,
+          "minimum" : 0,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Hour",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "HourOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedHour"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "HourOrVar"
+    },
+    "Hydration" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "allowFileSystem" : {
+          "type" : "boolean"
+        },
+        "contentTypes" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "maxFileSizeMB" : {
+          "type" : "number"
+        },
+        "timeoutSeconds" : {
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "from"
+      ],
+      "title" : "Hydration",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "contentTypes",
+        "timeoutSeconds",
+        "maxFileSizeMB",
+        "allowFileSystem"
+      ]
+    },
+    "IntOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedConcrete"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "IntOrVar"
+    },
+    "ItemSelect" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "field" : {
+          "type" : "string"
+        },
+        "from" : {
+          "description" : "Upstream stage id (typically a groupBy stage).",
+          "type" : "string"
+        },
+        "index" : {
+          "$ref" : "#/$defs/SelectIndex"
+        },
+        "order" : {
+          "enum" : [
+            "asc",
+            "desc"
+          ],
+          "type" : "string"
+        },
+        "sortBy" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "field"
+      ],
+      "title" : "ItemSelect",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "field",
+        "sortBy",
+        "order",
+        "index"
+      ]
+    },
+    "Limit" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "extractValue" : {
+          "$ref" : "#/$defs/ValueExtraction",
+          "description" : "Optional. Extract a scalar from the limited/sorted results and bind it as a variable. Use selector (e.g. first, selectMaxBy) plus extractField and bindVariable to name the result for use in downstream filter predicates or query predicates."
+        },
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "limit" : {
+          "minimum" : 1,
+          "type" : "integer"
+        },
+        "sortBy" : {
+          "type" : "string"
+        },
+        "sortOrder" : {
+          "enum" : [
+            "asc",
+            "desc"
+          ],
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "limit"
+      ],
+      "title" : "Limit",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "limit",
+        "sortBy",
+        "sortOrder",
+        "extractValue"
+      ]
+    },
+    "Merge" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "inputStageIds" : {
+          "items" : {
+            "type" : "string"
+          },
+          "minItems" : 2,
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "inputStageIds"
+      ],
+      "title" : "Merge",
+      "type" : "object",
+      "x-order" : [
+        "inputStageIds"
+      ]
+    },
+    "Minute" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 59,
+          "minimum" : 0,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Minute",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "MinuteOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedMinute"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "MinuteOrVar"
+    },
+    "Model" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedSender"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedRecipient"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedHost"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedParticipant"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedTopic"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSemantic"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPopularity"
+        }
+      ],
+      "title" : "Model"
+    },
+    "ModelComposition" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedNone"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPurelyTemporal"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedNonTemporal"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedCombined"
+        }
+      ],
+      "title" : "ModelComposition"
+    },
+    "Month" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 12,
+          "minimum" : 1,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Month",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "MonthOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedMonth"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "MonthOrVar"
+    },
+    "NonTemporalParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "models" : {
+          "items" : {
+            "$ref" : "#/$defs/Model"
+          },
+          "minItems" : 1,
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "models"
+      ],
+      "title" : "NonTemporalParams",
+      "type" : "object",
+      "x-order" : [
+        "models"
+      ]
+    },
+    "NoneParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "placeholder" : {
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "placeholder"
+      ],
+      "title" : "NoneParams",
+      "type" : "object",
+      "x-order" : [
+        "placeholder"
+      ]
+    },
+    "NumericAggregation" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "bindVariable" : {
+          "description" : "Bind max group key to variable for use in later stages.",
+          "type" : "string"
+        },
+        "field" : {
+          "type" : "string"
+        },
+        "from" : {
+          "description" : "Upstream stage id (typically a groupBy stage).",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "field"
+      ],
+      "title" : "NumericAggregation",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "field",
+        "bindVariable"
+      ]
+    },
+    "Operation" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "children" : {
+          "description" : "MUST have at least 1 child - empty operations are invalid.",
+          "items" : {
+            "$ref" : "#/$defs/QueryNode"
+          },
+          "type" : "array"
+        },
+        "logic" : {
+          "enum" : [
+            "all",
+            "any",
+            "none"
+          ],
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "logic",
+        "children"
+      ],
+      "title" : "Operation",
+      "type" : "object",
+      "x-order" : [
+        "logic",
+        "children"
+      ]
+    },
+    "OrganizationEntity" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "name"
+      ],
+      "title" : "OrganizationEntity",
+      "type" : "object",
+      "x-order" : [
+        "name"
+      ]
+    },
+    "Parameter" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "key" : {
+          "type" : "string"
+        },
+        "value" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "key",
+        "value"
+      ],
+      "title" : "Parameter",
+      "type" : "object",
+      "x-order" : [
+        "key",
+        "value"
+      ]
+    },
+    "PersonEntity" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "name"
+      ],
+      "title" : "PersonEntity",
+      "type" : "object",
+      "x-order" : [
+        "name"
+      ]
+    },
+    "PersonMePredicate" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedFromMe"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedToMe"
+        }
+      ],
+      "title" : "PersonMePredicate"
+    },
+    "PersonPredicate" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedOriginator"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedRecipient"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedParticipant"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedAny"
+        }
+      ],
+      "title" : "PersonPredicate"
+    },
+    "PopularityParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "weight" : {
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "weight"
+      ],
+      "title" : "PopularityParams",
+      "type" : "object",
+      "x-order" : [
+        "weight"
+      ]
+    },
+    "Predicate" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "attribute" : {
+          "type" : "string"
+        },
+        "caseSensitive" : {
+          "type" : "boolean"
+        },
+        "operator" : {
+          "enum" : [
+            "equals",
+            "prefix",
+            "slowInfix",
+            "containsWord",
+            "`in`",
+            "containsAny",
+            "greaterThan",
+            "lessThan",
+            "greaterThanOrEqual",
+            "lessThanOrEqual",
+            "range"
+          ],
+          "type" : "string"
+        },
+        "value" : {
+          "$ref" : "#/$defs/Value"
+        }
+      },
+      "required" : [
+        "attribute",
+        "operator",
+        "value"
+      ],
+      "title" : "Predicate",
+      "type" : "object",
+      "x-order" : [
+        "attribute",
+        "operator",
+        "value",
+        "caseSensitive"
+      ]
+    },
+    "Prompted" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "maxItems" : {
+          "description" : "Maximum input items (default 100). If upstream produces more, the stage returns an error asking you to add a Limit stage. Increase only when absolutely necessary.",
+          "type" : "integer"
+        },
+        "parameters" : {
+          "description" : "batchSize, temperature, modelSelection.",
+          "items" : {
+            "$ref" : "#/$defs/Parameter"
+          },
+          "type" : "array"
+        },
+        "processingMode" : {
+          "description" : "map (default) or reduce.",
+          "type" : "string"
+        },
+        "prompt" : {
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "prompt"
+      ],
+      "title" : "Prompted",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "prompt",
+        "processingMode",
+        "maxItems",
+        "parameters"
+      ]
+    },
+    "Query" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "extractValue" : {
+          "$ref" : "#/$defs/ValueExtraction"
+        },
+        "fetchAttributes" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "from" : {
+          "description" : "Input stage id.",
+          "type" : "string"
+        },
+        "limit" : {
+          "type" : "integer"
+        },
+        "query" : {
+          "$ref" : "#/$defs/QueryNode"
+        }
+      },
+      "required" : [
+        "query"
+      ],
+      "title" : "Query",
+      "type" : "object",
+      "x-order" : [
+        "query",
+        "fetchAttributes",
+        "limit",
+        "from",
+        "extractValue"
+      ]
+    },
+    "QueryNode" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedOperation"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPredicate"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedContentType"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedTemporal"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPerson"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPersonMe"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedAllText"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedApplication"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedDocumentsFor"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSemanticSimilar"
+        }
+      ],
+      "title" : "QueryNode"
+    },
+    "QueryType" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedSearch"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSchema"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedHelp"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedDisplay"
+        }
+      ],
+      "title" : "QueryType"
+    },
+    "RecencyParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "multiplier" : {
+          "description" : "0.5=mild, 1.0=standard, 2.0=strong",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "multiplier"
+      ],
+      "title" : "RecencyParams",
+      "type" : "object",
+      "x-order" : [
+        "multiplier"
+      ]
+    },
+    "RecurringComponents" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "day" : {
+          "$ref" : "#/$defs/IntOrVar",
+          "description" : "Day of month 1–31, or omit. Literal integer (type: concrete, value wraps integer 1–31) or variable reference (type: variable)."
+        },
+        "month" : {
+          "$ref" : "#/$defs/IntOrVar",
+          "description" : "Month 1–12, or omit. Literal integer (type: concrete, value wraps integer 1–12) or variable reference (type: variable)."
+        },
+        "weekOfYear" : {
+          "$ref" : "#/$defs/_ParameterValueWeekOfYear",
+          "description" : "Week of year 1–53, or omit. Literal integer (type: weekOfYear, value wraps integer 1–53) or variable reference (type: variable)."
+        },
+        "weekday" : {
+          "$ref" : "#/$defs/_ParameterValueWeekday",
+          "description" : "Weekday 1–7 (1=Sunday … 7=Saturday), or omit. Literal integer (type: weekday, value wraps integer 1–7) or variable reference (type: variable)."
+        }
+      },
+      "required" : [
+
+      ],
+      "title" : "RecurringComponents",
+      "type" : "object",
+      "x-order" : [
+        "month",
+        "day",
+        "weekday",
+        "weekOfYear"
+      ]
+    },
+    "Reference" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedRelative"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedAbsolute"
+        }
+      ],
+      "title" : "Reference"
+    },
+    "ResultSelector" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedFirst"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedLast"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedIndex"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSelectMaxBy"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSelectMinBy"
+        }
+      ],
+      "title" : "ResultSelector"
+    },
+    "Sampling" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "diversityAttributes" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "sampleSize" : {
+          "minimum" : 1,
+          "type" : "integer"
+        },
+        "scoreField" : {
+          "type" : "string"
+        },
+        "seed" : {
+          "type" : "integer"
+        },
+        "strategy" : {
+          "description" : "random|entropy|stratified|score_aware",
+          "type" : "string"
+        },
+        "stratifyBy" : {
+          "type" : "string"
+        },
+        "topRatio" : {
+          "description" : "0.0–1.0 fraction.",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "from",
+        "strategy",
+        "sampleSize"
+      ],
+      "title" : "Sampling",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "strategy",
+        "sampleSize",
+        "seed",
+        "diversityAttributes",
+        "stratifyBy",
+        "scoreField",
+        "topRatio"
+      ]
+    },
+    "SchemaQuery" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "attribute" : {
+          "type" : "string"
+        },
+        "contentType" : {
+          "type" : "string"
+        },
+        "queryType" : {
+          "description" : "schema, attribute, content_type",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "queryType"
+      ],
+      "title" : "SchemaQuery",
+      "type" : "object",
+      "x-order" : [
+        "queryType",
+        "attribute",
+        "contentType"
+      ]
+    },
+    "SearchArguments" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "autoDisplay" : {
+          "description" : "True: display results, return count only.",
+          "type" : "boolean"
+        },
+        "cursor" : {
+          "type" : "string"
+        },
+        "fetchAttributes" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "label" : {
+          "description" : "Short label describing these results.",
+          "type" : "string"
+        },
+        "modelComposition" : {
+          "$ref" : "#/$defs/ModelComposition",
+          "description" : "REQUIRED. Aggregation/count: none. Time-ordered: purelyTemporal. Entity/relevance: nonTemporal. Both: combined."
+        },
+        "pageSize" : {
+          "type" : "integer"
+        },
+        "pipeline" : {
+          "$ref" : "#/$defs/Specification",
+          "description" : "Omit for plain search. Use for aggregation/counting/grouping."
+        },
+        "postFilters" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "ranking" : {
+          "$ref" : "#/$defs/ModelComposition",
+          "description" : "Prefer modelComposition instead."
+        },
+        "rankingMetadata" : {
+          "$ref" : "#/$defs/Context"
+        },
+        "root" : {
+          "$ref" : "#/$defs/QueryNode",
+          "description" : "Use Operation type."
+        },
+        "scopes" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "source" : {
+          "enum" : [
+            "all",
+            "coreSpotlight",
+            "managed",
+            "files",
+            "both"
+          ],
+          "type" : "string"
+        }
+      },
+      "required" : [
+
+      ],
+      "title" : "SearchArguments",
+      "type" : "object",
+      "x-order" : [
+        "root",
+        "source",
+        "ranking",
+        "modelComposition",
+        "pipeline",
+        "rankingMetadata",
+        "scopes",
+        "fetchAttributes",
+        "pageSize",
+        "cursor",
+        "postFilters",
+        "autoDisplay",
+        "label"
+      ]
+    },
+    "Second" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 59,
+          "minimum" : 0,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Second",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "SecondOrVar" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedSecond"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "SecondOrVar"
+    },
+    "SelectIndex" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedFractional"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedInteger"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedNamed"
+        }
+      ],
+      "title" : "SelectIndex"
+    },
+    "SemanticParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "weight" : {
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "weight"
+      ],
+      "title" : "SemanticParams",
+      "type" : "object",
+      "x-order" : [
+        "weight"
+      ]
+    },
+    "SemanticSimilar" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "contentType" : {
+          "enum" : [
+            "text",
+            "media",
+            "all"
+          ],
+          "type" : "string"
+        },
+        "keywords" : {
+          "description" : "Content words for keyword fallback — items without embeddings match via these terms. Extract content-bearing words from the phrase, dropping particles and prepositions.",
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "maxCount" : {
+          "description" : "Maximum results (0 = unlimited recommended). Distance filtering preferred.",
+          "type" : "integer"
+        },
+        "maxDistance" : {
+          "description" : "Maximum distance (0.0 = exact, 2.0 = very different). Typical: 0.5-1.0",
+          "type" : "number"
+        },
+        "query" : {
+          "description" : "User's full natural language phrase for embedding-similarity search.",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "contentType",
+        "query",
+        "keywords",
+        "maxDistance",
+        "maxCount"
+      ],
+      "title" : "SemanticSimilar",
+      "type" : "object",
+      "x-order" : [
+        "contentType",
+        "query",
+        "keywords",
+        "maxDistance",
+        "maxCount"
+      ]
+    },
+    "SenderParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "entity" : {
+          "$ref" : "#/$defs/Entity"
+        },
+        "weight" : {
+          "description" : "0.1=minor, 1.0=major",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "entity",
+        "weight"
+      ],
+      "title" : "SenderParams",
+      "type" : "object",
+      "x-order" : [
+        "entity",
+        "weight"
+      ]
+    },
+    "Sort" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "from" : {
+          "description" : "Upstream stage id to consume results from.",
+          "type" : "string"
+        },
+        "sortBy" : {
+          "type" : "string"
+        },
+        "sortOrder" : {
+          "enum" : [
+            "asc",
+            "desc"
+          ],
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from",
+        "sortBy"
+      ],
+      "title" : "Sort",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "sortBy",
+        "sortOrder"
+      ]
+    },
+    "Specification" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "stages" : {
+          "description" : "Aggregation pipelines must begin with an explicit query stage.",
+          "items" : {
+            "$ref" : "#/$defs/Stage"
+          },
+          "minItems" : 1,
+          "type" : "array"
+        }
+      },
+      "required" : [
+        "stages"
+      ],
+      "title" : "Specification",
+      "type" : "object",
+      "x-order" : [
+        "stages"
+      ]
+    },
+    "Stage" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "header" : {
+          "type" : "string"
+        },
+        "id" : {
+          "description" : "Unique stage identifier.",
+          "type" : "string"
+        },
+        "kind" : {
+          "$ref" : "#/$defs/StageKind"
+        },
+        "output" : {
+          "$ref" : "#/$defs/StageOutput",
+          "description" : "Optional routing: agent | user | both — each carrying a display label string."
+        }
+      },
+      "required" : [
+        "id",
+        "kind"
+      ],
+      "title" : "Stage",
+      "type" : "object",
+      "x-order" : [
+        "id",
+        "output",
+        "header",
+        "kind"
+      ]
+    },
+    "StageKind" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedQuery"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedCompute"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedLimit"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSampling"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedHydration"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedCustom"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedPrompted"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedCount"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedGroupBy"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueCount"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueSum"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueAverage"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueMax"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueMin"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueMedian"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedValueStddev"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedItemSelect"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedSort"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedFilter"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedForEach"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedMerge"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedExtractGroupItems"
+        }
+      ],
+      "title" : "StageKind"
+    },
+    "StageOutput" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedAgent"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedUser"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedBoth"
+        }
+      ],
+      "title" : "StageOutput"
+    },
+    "Temporal" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedOn"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedAfter"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedBefore"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedBetween"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedRecurring"
+        }
+      ],
+      "title" : "Temporal"
+    },
+    "TemporalAdjacencyParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "multiplier" : {
+          "description" : "0.5=mild, 1.0=standard, 2.0=strong",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "multiplier"
+      ],
+      "title" : "TemporalAdjacencyParams",
+      "type" : "object",
+      "x-order" : [
+        "multiplier"
+      ]
+    },
+    "TemporalModel" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedRecency"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedUpcoming"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedTemporalAdjacency"
+        }
+      ],
+      "title" : "TemporalModel"
+    },
+    "TimeOffset" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "unit" : {
+          "enum" : [
+            "hours",
+            "days",
+            "weeks",
+            "months",
+            "years"
+          ],
+          "type" : "string"
+        },
+        "value" : {
+          "description" : "Offset value: negative for past (e.g., -7), positive for future (e.g., +30), zero for no offset",
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value",
+        "unit"
+      ],
+      "title" : "TimeOffset",
+      "type" : "object",
+      "x-order" : [
+        "value",
+        "unit"
+      ]
+    },
+    "TopicParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "terms" : {
+          "type" : "string"
+        },
+        "weight" : {
+          "description" : "0.1=minor, 1.0=major",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "terms",
+        "weight"
+      ],
+      "title" : "TopicParams",
+      "type" : "object",
+      "x-order" : [
+        "terms",
+        "weight"
+      ]
+    },
+    "UpcomingParams" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "multiplier" : {
+          "description" : "0.5=mild, 1.0=standard, 2.0=strong",
+          "type" : "number"
+        }
+      },
+      "required" : [
+        "multiplier"
+      ],
+      "title" : "UpcomingParams",
+      "type" : "object",
+      "x-order" : [
+        "multiplier"
+      ]
+    },
+    "Value" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedString"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedInt"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedDouble"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedBool"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedDate"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedArray"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "Value"
+    },
+    "ValueCount" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "bindVariable" : {
+          "description" : "Bind max group key to variable for use in later stages.",
+          "type" : "string"
+        },
+        "from" : {
+          "description" : "Upstream stage id (typically a groupBy stage).",
+          "type" : "string"
+        }
+      },
+      "required" : [
+        "from"
+      ],
+      "title" : "ValueCount",
+      "type" : "object",
+      "x-order" : [
+        "from",
+        "bindVariable"
+      ]
+    },
+    "ValueExtraction" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "bindVariable" : {
+          "type" : "string"
+        },
+        "extractField" : {
+          "description" : "Field to extract. GroupBy stage outputs use underscore prefix: _groupKey, _count.",
+          "type" : "string"
+        },
+        "fromStageId" : {
+          "description" : "Overrides from source.",
+          "type" : "string"
+        },
+        "selector" : {
+          "$ref" : "#/$defs/ResultSelector",
+          "description" : "first|last|index|selectMaxBy|selectMinBy"
+        }
+      },
+      "required" : [
+        "selector",
+        "extractField",
+        "bindVariable"
+      ],
+      "title" : "ValueExtraction",
+      "type" : "object",
+      "x-order" : [
+        "selector",
+        "extractField",
+        "bindVariable",
+        "fromStageId"
+      ]
+    },
+    "WeekOfYear" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 53,
+          "minimum" : 1,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "WeekOfYear",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "Weekday" : {
+      "additionalProperties" : false,
+      "properties" : {
+        "value" : {
+          "maximum" : 7,
+          "minimum" : 1,
+          "type" : "integer"
+        }
+      },
+      "required" : [
+        "value"
+      ],
+      "title" : "Weekday",
+      "type" : "object",
+      "x-order" : [
+        "value"
+      ]
+    },
+    "_ParameterValueWeekOfYear" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedWeekOfYear"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "_ParameterValueWeekOfYear"
+    },
+    "_ParameterValueWeekday" : {
+      "anyOf" : [
+        {
+          "$ref" : "#/$defs/DiscriminatedWeekday"
+        },
+        {
+          "$ref" : "#/$defs/DiscriminatedVariable"
+        }
+      ],
+      "title" : "_ParameterValueWeekday"
+    }
+  },
+  "additionalProperties" : false,
+  "properties" : {
+    "query" : {
+      "$ref" : "#/$defs/QueryType"
+    }
+  },
+  "required" : [
+    "query"
+  ],
+  "title" : "FullArguments",
+  "type" : "object",
+  "x-order" : [
+    "query"
+  ]
+}
