@@ -2,18 +2,72 @@
 
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
-**Series status:** **17-part published corpus, scope-audited as of 2026-07-28; SDK-verification
-pass 2026-07-29.** All 77 guides exist (17 part READMEs + 60 reference guides), and each contents
-list is expected to name only sections present in its file. Declared evidence gaps remain explicit
-rather than being counted as unwritten sections.[^series-scope] On 2026-07-29 the series was
-verified against the real macOS **26.5 and 27.0-beta SDK Swift interfaces** (Xcode 27.0 beta
-`27A5228h`, captured in `notes/sdk-interfaces/` — including the Core AI SubFrameworks, the
-`_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels` cross-import overlays, and
-Xcode-bundled `Evaluations`), and every GitHub-tracked defect status was re-checked live.
-The 2026-07-31 refresh workflow also binds each stable SDK-named artifact to its Xcode, SDK, and
-Metal-component identity in a hashed manifest, refuses a same-SDK/different-Xcode overwrite, and
-runs ordinary drift checks from a temporary capture. CLI evidence follows the same rule, including
-the separately installed `coreai-build` surface.[^capture-workflow]
+**Series status:** 17 parts · 77 guides · verified against the macOS 26.5 and 27.0-beta SDK
+interfaces on 2026-07-29 — [full verification details](#verification-and-series-status).
+
+Seventeen parts covering Apple's 2026 on-device AI stack end to end — from a three-line
+`LanguageModelSession` call down to a hand-written Metal matmul kernel, and back up through
+shipping, updating and evaluating a model in production.
+
+## Pick your path
+
+<div class="docc-topic-grid" markdown>
+
+<div class="docc-topic-card" markdown>
+
+**[New to the stack? Start with Part 1](part-01-orientation-and-gating/README.md)**
+
+How the four product lines fit together, how to choose a model backend, and every version,
+hardware and entitlement gate.
+
+</div>
+
+<div class="docc-topic-card" markdown>
+
+**[Build an AI feature in a Swift app](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/README.md)**
+
+`LanguageModelSession`, guided generation, tools, and failure handling — then Parts 3–4 for
+agentic sessions and custom backends.
+
+</div>
+
+<div class="docc-topic-card" markdown>
+
+**[Convert a PyTorch model for on-device use](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md)**
+
+`torch.export` to `.aimodel`, then Parts 9–10 for compression, hardware authoring, and LLM
+deployment.
+
+</div>
+
+<div class="docc-topic-card" markdown>
+
+**[Work in Python with MLX](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/README.md)**
+
+Fundamentals through fine-tuning and serving — and Part 13 when the model needs to ship inside
+a Swift app.
+
+</div>
+
+<div class="docc-topic-card" markdown>
+
+**[Debug something that fails silently](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md)**
+
+The silent-failure index, sorted by the symptom you observe: wrong output, empty output,
+performance cliff, version drift.
+
+</div>
+
+<div class="docc-topic-card" markdown>
+
+**[Migrate a pre-iOS-27 app](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/README.md)**
+
+What changed between iOS 26 and 27, the adapter sunset, error-taxonomy migration, and
+dual-SDK builds.
+
+</div>
+
+</div>
 
 **Two cross-cutting indexes:**
 
@@ -25,11 +79,7 @@ the separately installed `coreai-build` surface.[^capture-workflow]
 
 ---
 
-## What this series is
-
-Seventeen parts covering Apple's 2026 on-device AI stack end to end — from a three-line
-`LanguageModelSession` call down to a hand-written Metal matmul kernel, and back up through
-shipping, updating and evaluating a model in production.
+## How the series is organized
 
 Each part is a directory:
 
@@ -289,6 +339,25 @@ highest-leverage contribution available to this series.
 
 ---
 
+## Verification and series status
+
+**17-part published corpus, scope-audited as of 2026-07-28; SDK-verification pass 2026-07-29.**
+All 77 guides exist (17 part READMEs + 60 reference guides), and each contents list is expected
+to name only sections present in its file. Declared evidence gaps remain explicit rather than
+being counted as unwritten sections.[^series-scope]
+
+On 2026-07-29 the series was verified against the real macOS **26.5 and 27.0-beta SDK Swift
+interfaces** (Xcode 27.0 beta `27A5228h`, captured in `notes/sdk-interfaces/` — including the
+Core AI SubFrameworks, the `_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels`
+cross-import overlays, and Xcode-bundled `Evaluations`), and every GitHub-tracked defect status
+was re-checked live. The 2026-07-31 refresh workflow also binds each stable SDK-named artifact to
+its Xcode, SDK, and Metal-component identity in a hashed manifest, refuses a
+same-SDK/different-Xcode overwrite, and runs ordinary drift checks from a temporary capture. CLI
+evidence follows the same rule, including the separately installed
+`coreai-build` surface.[^capture-workflow]
+
+---
+
 ## Corpus
 
 The research behind this series lives in [`../notes/`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/tree/main/notes) — roughly 90,000 lines across
@@ -297,7 +366,8 @@ Primary sources: 16 WWDC26 / Meet-with-Apple transcripts, 6 Apple documentation 
 Developer Forums topic captures, 16 pinned repository checkouts, the MetalPerformancePrimitives
 headers shipped in the Xcode SDK, and a crawl of the MLX documentation site.[^repository-snapshots]
 
-[^series-scope]: The inventory below links every part and reference. The intentionally shorter MLX
+[^series-scope]: The inventory in [Every guide in the series](#every-guide-in-the-series) links
+    every part and reference. The intentionally shorter MLX
     references declare their terminal sections in [Part 12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/README.md#reading-order-and-what-you-can-defer).
     Apple's [TN3193](https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window)
     specifies the on-device model's 4,096-token context window.

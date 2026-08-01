@@ -84,7 +84,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
 - **1.1** The 2026 Apple AI stack, and how to choose a model backend — The map, and the decision it replaced.
-- **1.2** Every version, hardware, entitlement and runtime-surface gate — The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring for FoundationModels, Core AI, Evaluations, Speech and TensorOps, the SDK-versus-runtime distinction that `@available` cannot …
+- **1.2** Every version, hardware, entitlement and runtime-surface gate — The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring for FoundationModels, Core AI, Evaluations, Speech and TensorOps, the SDK-versus-runtime distinction that `@available` cannot paper over, the Apple Intelligence hardware floor (A17 Pro / M1 / M2) and the **two on-device model …
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
 

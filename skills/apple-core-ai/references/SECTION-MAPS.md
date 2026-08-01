@@ -149,7 +149,7 @@ The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAI
 
 ### 8.1 — `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract
 
-The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus …
+The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()` as where the passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the multi-function split; and the Python-side verification gate that catches everything above for free.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md>
 
@@ -329,7 +329,7 @@ A reference rather than a tutorial, answering one question in as many tables as 
 
 ### 10.1 — Authoring for the Neural Engine and for the GPU: two opposite rulesets
 
-Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, …
+Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, per-head attention with **no fused SDPA**, `-40000.0` instead of `-inf`, precomputed RoPE, the read-only KV cache; on the GPU, standard layout, fused QKV, native fused SDPA, `up_proj` before `gate_proj`, the stateful export wrapper, MoE via `SwitchLinear` / `GatherMM`.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md>
 
@@ -356,7 +356,7 @@ Apple's at-a-glance comparison table reproduced in full and unpacked row by row:
 
 ### 10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger
 
-Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three …
+Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three diagnoses Apple demonstrated: widening inference intervals → no KV cache → Core AI **states**; a load event with a large specialization sub-event inside an interactive flow → a first-run experience and AOT compilation; SAM3's missing occluded flower → sort sync points by similarity, notice they all belong to the **detector decoder**, cross that with "the detector is 4 % of parameters", exclude it with `None`.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md>
 

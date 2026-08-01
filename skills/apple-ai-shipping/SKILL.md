@@ -82,7 +82,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **15.1** Shipping models: Background Assets, per-architecture variants, and updates — The operational guide for how a model reaches a device and how it gets replaced later: the size problem, the feature-introduction screen (which does three jobs at once and is where you hide specialization latency), delivery, `coreai-build compile` and per-architecture `.aimodelc` variants, …
+- **15.1** Shipping models: Background Assets, per-architecture variants, and updates — The operational guide for how a model reaches a device and how it gets replaced later: the size problem, the feature-introduction screen (which does three jobs at once and is where you hide specialization latency), delivery, `coreai-build compile` and per-architecture `.aimodelc` variants, specialization and its cache, the update sequence, storage hygiene, app groups, and the App Store reality.
 - **15.2** Memory, jetsam, thermals, energy, and measuring honestly — The gap between a demo that works on your desk and an app that survives a week on someone else's phone.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

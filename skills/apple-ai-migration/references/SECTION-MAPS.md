@@ -35,7 +35,7 @@ The exhaustive diff, organised by framework, with each item marked as *additive*
 
 ### 17.2 — The adapter sunset: migrating off custom LoRA adapters
 
-What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through …
+What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through `MLXFoundationModels`.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md>
 

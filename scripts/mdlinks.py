@@ -14,6 +14,8 @@ into:
   blocks inside evidence callouts.
 * Link destinations nest. `[text](path/to(file).md)` and `[text](<a b.md>)` both
   need balanced scanning, and an inline code span may contain a bare `](`.
+  Code spans may also run across lines, so the scan carries its delimiter state
+  from one line to the next rather than restarting at every newline.
 
 FENCE, split_destination, page_target, is_within, github_url, sha256 and
 source_snapshot were extracted verbatim from scripts/build-docc-site.py, which
@@ -139,16 +141,44 @@ def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
         yield body, newline, True
 
 
+class InlineScanner:
+    """Rewrites inline link destinations across a document, ignoring inline code.
+
+    Stateful because a CommonMark code span may open on one line and close on a
+    later one — `` `a very long ``​`` name](x) ` `` is one span, not a link —
+    so a scanner that restarts at every newline would rewrite the middle of it.
+    A blank line ends the paragraph and therefore any open span, and so does
+    entering or leaving a fence; call reset() at those boundaries.
+    """
+
+    def __init__(self) -> None:
+        self.code_delimiter = 0
+
+    def reset(self) -> None:
+        self.code_delimiter = 0
+
+    def scan(self, line: str, rewrite_body: Callable[[str], str]) -> str:
+        if not line.strip():
+            self.reset()
+        return _scan_line(self, line, rewrite_body)
+
+
 def scan_inline_links(line: str, rewrite_body: Callable[[str], str]) -> str:
-    """Rewrite inline Markdown link destinations while ignoring inline code.
+    """Rewrite one standalone line's inline Markdown link destinations.
 
     rewrite_body receives the raw text between the parentheses of a `](...)` and
     returns its replacement, so callers can resolve destinations however they
-    like without reimplementing the scanner.
+    like without reimplementing the scanner. Callers walking a whole document
+    should use InlineScanner instead, so a multi-line code span is honoured.
     """
+    return _scan_line(InlineScanner(), line, rewrite_body)
+
+
+def _scan_line(
+    scanner: InlineScanner, line: str, rewrite_body: Callable[[str], str]
+) -> str:
     result: list[str] = []
     index = 0
-    code_delimiter = 0
 
     while index < len(line):
         if line[index] == "`":
@@ -156,15 +186,23 @@ def scan_inline_links(line: str, rewrite_body: Callable[[str], str]) -> str:
             while end < len(line) and line[end] == "`":
                 end += 1
             run = end - index
-            if code_delimiter == 0:
-                code_delimiter = run
-            elif code_delimiter == run:
-                code_delimiter = 0
+            if scanner.code_delimiter == 0:
+                scanner.code_delimiter = run
+            elif scanner.code_delimiter == run:
+                scanner.code_delimiter = 0
             result.append(line[index:end])
             index = end
             continue
 
-        if code_delimiter == 0 and line.startswith("](", index):
+        if scanner.code_delimiter == 0 and line[index] == "\\":
+            # A backslash escape. Copy it and whatever it escapes, so a literal
+            # `\[example\](path.md)` — brackets shown, not linked — never reaches
+            # rewrite_body, while a real `\\](x)` still does.
+            result.append(line[index : index + 2])
+            index += 2
+            continue
+
+        if scanner.code_delimiter == 0 and line.startswith("](", index):
             result.append("](")
             body_start = index + 2
             cursor = body_start

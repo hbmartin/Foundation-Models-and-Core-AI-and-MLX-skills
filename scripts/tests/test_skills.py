@@ -449,13 +449,7 @@ class AnchorFidelityTests(unittest.TestCase):
     }
 
     def test_warning_heading_anchors_match_github(self):
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(
-            "mdslug", REPO / "scripts" / "mdslug.py"
-        )
-        mdslug = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mdslug)
+        mdslug = load_script("mdslug", "mdslug.py")
         for heading, expected in self.CASES.items():
             self.assertEqual(mdslug.slugify(heading), expected, heading)
             self.assertIn("️", mdslug.slugify(heading))
@@ -463,19 +457,71 @@ class AnchorFidelityTests(unittest.TestCase):
 
 class FenceTrackingTests(unittest.TestCase):
     def test_an_info_string_line_does_not_close_an_open_fence(self):
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(
-            "mdlinks", REPO / "scripts" / "mdlinks.py"
-        )
-        mdlinks = importlib.util.module_from_spec(spec)
-        sys.modules["mdlinks"] = mdlinks
-        spec.loader.exec_module(mdlinks)
+        mdlinks = load_script("mdlinks", "mdlinks.py")
         text = "```markdown\n```swift\n[a](b.md)\n```\nafter\n"
         states = [fenced for _, _, fenced in mdlinks.iter_lines(text)]
         # Only the trailing 'after' is outside; the inner ```swift is content,
         # so the link-shaped line between them is never rewritten.
         self.assertEqual(states, [True, True, True, True, False])
+
+
+class InlineScannerTests(unittest.TestCase):
+    """The three ways a line can only look like it holds a link."""
+
+    def setUp(self):
+        self.mdlinks = load_script("mdlinks", "mdlinks.py")
+
+    def rewrite(self, inner):
+        return "REWRITTEN"
+
+    def test_an_escaped_bracket_is_not_a_link(self):
+        # A guide showing Markdown syntax literally: the brackets are displayed,
+        # not linked, so the destination must survive untouched.
+        line = r"Write it as \[example\](path.md) to show the syntax."
+        self.assertEqual(self.mdlinks.scan_inline_links(line, self.rewrite), line)
+
+    def test_an_escaped_backslash_still_leaves_a_real_link(self):
+        # `\\` is an escaped backslash, so the `](` after it opens a real body.
+        line = r"[text\\](path.md)"
+        self.assertEqual(
+            self.mdlinks.scan_inline_links(line, self.rewrite), r"[text\\](REWRITTEN)"
+        )
+
+    def test_a_code_span_open_on_a_previous_line_suppresses_rewriting(self):
+        scanner = self.mdlinks.InlineScanner()
+        first = scanner.scan("A span that opens here: `foo", self.rewrite)
+        second = scanner.scan("](bar.md)` and closes on this line.", self.rewrite)
+        self.assertEqual(first, "A span that opens here: `foo")
+        self.assertEqual(second, "](bar.md)` and closes on this line.")
+        # Closed now, so the next line is live again.
+        self.assertEqual(scanner.scan("[t](x.md)", self.rewrite), "[t](REWRITTEN)")
+
+    def test_a_blank_line_closes_an_unterminated_span(self):
+        # A code span cannot cross a paragraph break, so an unclosed backtick
+        # must not swallow the rest of the document.
+        scanner = self.mdlinks.InlineScanner()
+        scanner.scan("An unmatched ` backtick", self.rewrite)
+        scanner.scan("", self.rewrite)
+        self.assertEqual(scanner.scan("[t](x.md)", self.rewrite), "[t](REWRITTEN)")
+
+
+class TriageRowOwnershipTests(unittest.TestCase):
+    """A row citing one owned and one unowned guide stays, and stays remote."""
+
+    ROW = (
+        '| "My transcript is truncated" | [16.1 §9](references/01-speech.md) · '
+        "[16.2 §3](references/02-intents.md) | Two causes |"
+    )
+
+    def test_a_mixed_row_is_kept_by_every_skill_that_owns_part_of_it(self):
+        self.assertTrue(builder.owns_row(self.ROW, frozenset({1})))
+        self.assertTrue(builder.owns_row(self.ROW, frozenset({2, 3, 4})))
+
+    def test_a_row_citing_only_unowned_guides_is_dropped(self):
+        self.assertFalse(builder.owns_row(self.ROW, frozenset({3, 5})))
+
+    def test_a_row_citing_no_guide_is_always_kept(self):
+        self.assertTrue(builder.owns_row("| Anything | See Part 2 | Why |", frozenset({1})))
 
 
 class SkillVerifierTests(unittest.TestCase):
@@ -558,6 +604,16 @@ class SkillVerifierTests(unittest.TestCase):
     def test_rejects_frontmatter_that_is_not_flat_scalars(self):
         with self.assertRaises(verifier.VerificationError):
             verifier.parse_frontmatter("---\nname: x\nnested:\n  a: 1\n---\nbody\n", "x")
+
+    def test_the_frontmatter_budget_measures_the_rendered_block(self):
+        # A description full of quotes renders longer than its decoded text, and
+        # it is the rendered block the agent holds in context. Summing the
+        # decoded fields would let this through.
+        quoted = '"' * (verifier.MAX_FRONTMATTER_CHARS - 100)
+        text = f'---\nname: x\ndescription: "{quoted.replace(chr(34), chr(92) + chr(34))}"\n---\nbody\n'
+        fields, _, block = verifier.parse_frontmatter(text, "x")
+        self.assertEqual(len(fields["description"]), verifier.MAX_FRONTMATTER_CHARS - 100)
+        self.assertGreater(len(block), verifier.MAX_FRONTMATTER_CHARS)
 
     def test_anchor_set_covers_both_namespaces(self):
         with tempfile.TemporaryDirectory() as directory:
