@@ -49,14 +49,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.12'
-      # No actions/setup-node: the ubuntu-24.04 image ships Node and npx, and
-      # every other action here is SHA-pinned. Adding one more pin to maintain
-      # buys nothing when the runner's own Node is what a user would have.
-      - name: Report the Node in use
-        run: node --version && npm --version
+
+      # No setup-python or setup-node actions here. The ubuntu-24.04 image ships
+      # both, this job's scripts are stdlib-only, and the install step is meant to
+      # run against whatever Node a user would have. tests.yml still pins Python
+      # explicitly, so the version-pinned matrix has not moved.
+      - name: Report the toolchain in use
+        run: python3 --version && node --version && npm --version
 
       - name: Test the generator
         run: python3 -m unittest discover -s scripts/tests -p 'test_skills.py' -v
