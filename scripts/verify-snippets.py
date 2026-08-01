@@ -172,7 +172,7 @@ def slugify(h):
         elif ch in ' -':
             out.append('-' if ch == ' ' else ch)
         # everything else dropped (github slug rule approximation)
-    return re.sub(r'-{2,}', '-', ''.join(out)).strip('-')
+    return ''.join(out).strip('-')
 
 
 def flatten(text, limit=400):

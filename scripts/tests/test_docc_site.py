@@ -69,6 +69,12 @@ class DocCSiteTests(unittest.TestCase):
             "<doc:TripleContinuation>``` verbatim.\n\n"
             "An unmatched ` marker stays literal.\n\n"
             "Escape <doc:AfterUnmatched> after the paragraph.\n\n"
+            "Keep `<doc:SingleAcross>\n"
+            "<doc:SingleContinuation>` verbatim.\n\n"
+            "Keep ```<doc:TripleAcross>\n"
+            "<doc:TripleContinuation>``` verbatim.\n\n"
+            "An unmatched ` marker stays literal.\n\n"
+            "Escape <doc:AfterUnmatched> after the paragraph.\n\n"
             "> ```cpp\n"
             "> operator[](thread_index_type idx)\n"
             "> ```\n",
@@ -199,6 +205,18 @@ class DocCSiteTests(unittest.TestCase):
         )
         self.assertNotIn("\\<doc:InSingle>", guide)
         self.assertNotIn("\\&lt;doc:", guide)
+        self.assertIn(
+            "Keep `<doc:SingleAcross>\n<doc:SingleContinuation>` verbatim.",
+            guide,
+        )
+        self.assertIn(
+            "Keep ```<doc:TripleAcross>\n<doc:TripleContinuation>``` verbatim.",
+            guide,
+        )
+        self.assertNotIn("\\<doc:SingleContinuation>", guide)
+        self.assertNotIn("\\<doc:TripleContinuation>", guide)
+        self.assertIn("An unmatched ` marker stays literal.", guide)
+        self.assertIn("Escape \\<doc:AfterUnmatched> after the paragraph.", guide)
         self.assertIn(
             "Keep `<doc:SingleAcross>\n<doc:SingleContinuation>` verbatim.",
             guide,

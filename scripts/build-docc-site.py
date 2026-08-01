@@ -411,15 +411,18 @@ def rewrite_inline_links(
     return "".join(result)
 
 
-def escape_doc_references(line: str, span_open: bool) -> str:
-    """Escape literal ``<doc:`` prose so article-only DocC keeps it as text.
+def transform_code_spans_and_doc_references(
+    line: str, code_delimiter: int
+) -> tuple[str, int]:
+    """Escape prose ``<doc:`` references while preserving code spans.
 
-    Backtick code spans keep their content verbatim; a double-backtick span
-    left open by a previous line suppresses escaping until it closes.
+    The active backtick-run length is carried across lines so every valid
+    multiline code span stays verbatim. Exact double-backtick spans are
+    rendered as HTML code elements because DocC otherwise treats them as
+    symbol links.
     """
     result: list[str] = []
     index = 0
-    code_delimiter = 2 if span_open else 0
 
     while index < len(line):
         if line[index] == "`":
@@ -429,10 +432,17 @@ def escape_doc_references(line: str, span_open: bool) -> str:
             run = end - index
             if code_delimiter == 0:
                 code_delimiter = run
+                result.append("<code>" if run == 2 else line[index:end])
             elif code_delimiter == run:
+                result.append("</code>" if run == 2 else line[index:end])
                 code_delimiter = 0
-            result.append(line[index:end])
+            else:
+                result.append(line[index:end])
             index = end
+            continue
+        if code_delimiter == 2:
+            result.append(html.escape(line[index]))
+            index += 1
             continue
         if code_delimiter == 0 and line.startswith("<doc:", index):
             result.append("\\<doc:")
@@ -440,43 +450,7 @@ def escape_doc_references(line: str, span_open: bool) -> str:
             continue
         result.append(line[index])
         index += 1
-    return "".join(result)
-
-
-def replace_double_backtick_spans(line: str, span_open: bool) -> tuple[str, bool]:
-    """Prevent article-only DocC from treating code spans as symbol links.
-
-    DocC assigns a special meaning to double-backtick spans. HTML code elements
-    preserve their prose meaning even when a multiline span contains backticks.
-    """
-    output: list[str] = []
-    cursor = 0
-    while True:
-        if span_open:
-            end = line.find("``", cursor)
-            if end < 0:
-                output.append(html.escape(line[cursor:]))
-                return "".join(output), True
-            output.append(html.escape(line[cursor:end]))
-            output.append("</code>")
-            cursor = end + 2
-            span_open = False
-            continue
-
-        start = line.find("``", cursor)
-        if start < 0:
-            output.append(line[cursor:])
-            return "".join(output), False
-        end = line.find("``", start + 2)
-        if end < 0:
-            output.append(line[cursor:start])
-            output.append("<code>")
-            output.append(html.escape(line[start + 2 :]))
-            return "".join(output), True
-        output.append(line[cursor:start])
-        content = line[start + 2 : end]
-        output.append(f"<code>{html.escape(content)}</code>")
-        cursor = end + 2
+    return "".join(result), code_delimiter
 
 
 def protect_plain_block_quote_from_aside_parsing(line: str) -> str:
@@ -514,12 +488,17 @@ def transform_markdown(
     fence_character = ""
     fence_length = 0
     saw_title = False
-    double_backtick_span = False
+    code_span_delimiter = 0
     block_quote_open = False
 
     for line in source_text.splitlines(keepends=True):
         newline = "\n" if line.endswith("\n") else ""
         body = line[:-1] if newline else line
+        # Inline code spans cannot cross a Markdown paragraph boundary. Reset
+        # unmatched ordinary delimiters there; double-backtick spans remain a
+        # hard error because their opener has already become an HTML tag.
+        if code_span_delimiter != 2 and not body.strip():
+            code_span_delimiter = 0
         fence = FENCE.match(body)
         if fence:
             marker = fence.group(1)
@@ -553,9 +532,8 @@ def transform_markdown(
         # These sequences in the source quote upstream DocC/RST syntax. In an
         # article-only catalog they are prose, not links to symbols. Code
         # spans keep their content verbatim.
-        body = escape_doc_references(body, double_backtick_span)
-        body, double_backtick_span = replace_double_backtick_spans(
-            body, double_backtick_span
+        body, code_span_delimiter = transform_code_spans_and_doc_references(
+            body, code_span_delimiter
         )
         body = rewrite_inline_links(
             body,
@@ -569,7 +547,7 @@ def transform_markdown(
         )
         output.append(body + newline)
 
-    if double_backtick_span:
+    if code_span_delimiter == 2:
         raise CatalogError(f"{page.source_relative}: unclosed double-backtick code span")
 
     transformed = "".join(output)

@@ -57,6 +57,37 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0][2], 'real-heading')
 
+    def test_tilde_fences_match_character_and_length(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '~~~~markdown\n'
+                '```\n'
+                '~~~\n'
+                '# fake heading in code\n'
+                '~~~~\n\n'
+                '⚠️ after the fence\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0][2], 'real-heading')
+
+    def test_heading_slug_preserves_double_hyphen_around_punctuation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Gate A — graph parity\n\n⚠️ warning\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(rows[0][2], 'gate-a--graph-parity')
+
     def test_fenced_warning_lines_extract_as_inline_with_outer_anchor(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)

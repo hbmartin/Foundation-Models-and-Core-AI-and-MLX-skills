@@ -15,12 +15,12 @@ from collections import defaultdict
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 
-# CommonMark-ish fence delimiter: up to 3 leading spaces, 3+ backticks. An
-# opener's info string may not contain a backtick; a closer must be bare and
-# at least as long as its opener. Blockquote-wrapped fences ('> ```') never
-# match — every line inside them is '>'-prefixed, so nothing there can match
-# the column-anchored heading regex either.
-FENCE_RE = re.compile(r'^ {0,3}(`{3,})(.*)$')
+# CommonMark-ish fence delimiter: up to 3 leading spaces, then 3+ backticks or
+# tildes. A backtick opener's info string may not contain a backtick; a closer
+# must use the same character, be bare, and be at least as long as its opener.
+# Blockquote-wrapped fences ('> ```') never match — every line inside them is
+# '>'-prefixed, so nothing there can match the column-anchored heading regex.
+FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
 
 def slugify(h):
     h = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', h)  # [text](url) -> text, as GitHub slugs do
@@ -33,7 +33,7 @@ def slugify(h):
         elif ch in ' -':
             out.append('-' if ch == ' ' else ch)
         # everything else dropped (github slug rule approximation)
-    return re.sub(r'-{2,}', '-', ''.join(out)).strip('-')
+    return ''.join(out).strip('-')
 
 def unique_slug(base, used, next_suffix):
     """Return GitHub's first-unsuffixed, then -1, -2, ... heading anchor."""
@@ -67,7 +67,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
         heading_anchor = ''
         used_slugs = set()
         next_suffix = defaultdict(int)
-        fence_len = 0   # opener's backtick-run length; 0 = outside any fence
+        fence_character = ''
+        fence_len = 0
         fence_line = 0
         i = 0
         n = len(lines)
@@ -75,11 +76,15 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             line = lines[i]
             fm = FENCE_RE.match(line)
             if fence_len:
-                if fm and len(fm.group(1)) >= fence_len and not fm.group(2).strip():
+                marker = fm.group(1) if fm else ''
+                if (marker and marker[0] == fence_character
+                        and len(marker) >= fence_len and not fm.group(2).strip()):
+                    fence_character = ''
                     fence_len = 0
                     i += 1
                     continue
-            elif fm and '`' not in fm.group(2):
+            elif fm and (fm.group(1)[0] == '~' or '`' not in fm.group(2)):
+                fence_character = fm.group(1)[0]
                 fence_len = len(fm.group(1))
                 fence_line = i + 1
                 i += 1
@@ -120,7 +125,10 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             rows.append((rel, i + 1, heading_anchor, 'INLINE', title, flatten(line)))
             i += 1
         if fence_len:
-            sys.exit(f"{path}:{fence_line}: unterminated ``` fence")
+            sys.exit(
+                f"{path}:{fence_line}: unterminated "
+                f"{fence_character * fence_len} fence"
+            )
 
 for r in rows:
     print('\t'.join(str(field) for field in r))
