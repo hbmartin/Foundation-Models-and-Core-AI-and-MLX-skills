@@ -68,7 +68,16 @@ jobs:
       - name: Verify the committed tree
         run: python3 scripts/verify-skills.py --skills skills
 
+      # Skipped on pull requests from forks. Every step above runs only
+      # repository-controlled Python; this one downloads and executes a package
+      # tree from npm, and there is no reason to hand that to a PR the
+      # maintainers have not read yet. The steps that decide correctness — the
+      # generator tests and verify-skills.py — still run on fork PRs, so a fork
+      # gets real feedback; only the install proof waits for a maintainer.
       - name: Install with the real CLI and compare against the committed tree
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         timeout-minutes: 6
         run: |
           set -euo pipefail
@@ -78,6 +87,11 @@ jobs:
           # semantics decide pass/fail: on @latest a layout change upstream would
           # fail CI on skills that are perfectly valid, and a green run could not
           # be reproduced. Bump deliberately.
+          #
+          # This pins the CLI, not its dependency tree, which still resolves from
+          # the registry on every run — enough to stop an upstream release from
+          # turning CI red overnight, short of the lockfile or vendored copy true
+          # determinism would need.
           npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" --agent claude-code --all -y
           # The CLI stores one copy under .agents/skills and symlinks the
           # agent-specific directory at it, so resolve through the link.

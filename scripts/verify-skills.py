@@ -27,7 +27,13 @@ import tempfile
 from urllib.parse import unquote
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mdlinks import SCHEME, iter_lines, scan_inline_links, sha256, split_destination  # noqa: E402
+from mdlinks import (  # noqa: E402
+    SCHEME,
+    InlineScanner,
+    iter_lines,
+    sha256,
+    split_destination,
+)
 from mdslug import slugify, unique_slug  # noqa: E402
 
 HTML_ANCHOR = re.compile(r'<a\s+(?:name|id)\s*=\s*"([^"]+)"')
@@ -58,8 +64,13 @@ class VerificationError(RuntimeError):
     """A defect in the generated tree."""
 
 
-def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int]:
-    """Read a scalar-only YAML frontmatter block. Returns (fields, body line count).
+def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int, str]:
+    """Read a scalar-only YAML frontmatter block.
+
+    Returns (fields, body line count, the raw block). The raw block is what the
+    agent actually holds in context, so it — not the sum of the decoded values —
+    is what the resident-context budget is measured against: quoting and
+    escaping a description makes the rendered YAML longer than its text.
 
     Deliberately strict rather than half-complete: this repository has no
     third-party dependencies, so rather than approximate YAML, reject anything
@@ -87,7 +98,7 @@ def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int]:
         if len(raw) >= 2 and raw[0] == raw[-1] == '"':
             raw = raw[1:-1].replace('\\"', '"').replace("\\\\", "\\")
         fields[key] = raw
-    return fields, len(lines) - end - 1
+    return fields, len(lines) - end - 1, "\n".join(lines[: end + 1])
 
 
 def anchors_of(path: Path) -> set[str]:
@@ -129,10 +140,12 @@ def destinations(text: str) -> list[str]:
 
     labels: set[str] = set()
     used_labels: list[str] = []
+    scanner = InlineScanner()
     for body, _, inside_fence in iter_lines(text):
         if inside_fence:
+            scanner.reset()
             continue
-        scan_inline_links(body, collect)
+        scanner.scan(body, collect)
         # Strip inline code first: `matrix[i][j]` is a code span, not a
         # reference link, and the corpus is full of them.
         used_labels += [
@@ -241,7 +254,7 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
                 "shallower one during discovery"
             )
         text = skill_file.read_text(encoding="utf-8")
-        fields, body_lines = parse_frontmatter(text, f"{name}/SKILL.md")
+        fields, body_lines, frontmatter = parse_frontmatter(text, f"{name}/SKILL.md")
         if not SKILL_NAME.match(fields.get("name", "")):
             raise VerificationError(f"{name}: frontmatter name must match {SKILL_NAME.pattern}")
         if fields["name"] != name:
@@ -250,9 +263,10 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
             )
         if not fields.get("description"):
             raise VerificationError(f"{name}: a description is required to trigger the skill")
-        budget = (
-            len(fields["name"]) + len(fields["description"]) + len(fields.get("when_to_use", ""))
-        )
+        # The whole rendered block, matching what build-skills.py budgets. Summing
+        # the decoded field values would undercount by the quoting, the escapes and
+        # the key names, and let an oversized block through.
+        budget = len(frontmatter)
         if budget > MAX_FRONTMATTER_CHARS:
             raise VerificationError(
                 f"{name}: frontmatter is {budget} chars, over the {MAX_FRONTMATTER_CHARS} "

@@ -46,11 +46,11 @@ from urllib.parse import unquote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdlinks import (  # noqa: E402  (path set above so the sibling modules resolve)
     SCHEME,
+    InlineScanner,
     github_url,
     is_within,
     iter_lines,
     page_target,
-    scan_inline_links,
     sha256,
     source_snapshot,
     split_destination,
@@ -94,6 +94,14 @@ SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
 MAX_FRONTMATTER_CHARS = 1000
 MAX_BODY_LINES = 260
 API_LINKS_SHOWN = 4
+
+# A guide card's abstract, as carried into SECTION-MAPS.md and, shorter, into the
+# SKILL.md router. Measured against the corpus: the first sentence of all 60 cards
+# fits the first budget, and 51 fit the second. Truncating below that costs real
+# information — at 300 the third migration path in 17.2 lost the class name that
+# is the whole point of the row.
+CARD_ABSTRACT_CHARS = 900
+ROUTER_ABSTRACT_CHARS = 400
 
 FW_ORDER = [
     "FoundationModels", "CoreAI", "Evaluations", "MLX", "Speech", "AppIntents",
@@ -414,11 +422,19 @@ TRIAGE_REFERENCE = re.compile(r"references/(\d{2})-")
 
 
 def owns_row(row: str, owned: frozenset[int] | None) -> bool:
-    """Does this triage row cite only guides the skill carries?
+    """Does this triage row cite any guide the skill carries?
 
     Three skills share part 16, so an unfiltered table routes a reader to a deep
     guide that is missing from their own section map. A row citing no guide at
     all (a plain cross-part pointer) is kept.
+
+    Deliberately *any* rather than *all*. A row citing both an owned and an
+    unowned guide would, under an all-rule, be dropped from every skill and lost
+    outright; kept, it still routes correctly, because the link to the unowned
+    guide is rewritten to an absolute GitHub URL that resolves from anywhere —
+    it is only absent from this skill's own SECTION-MAPS.md. Part 16, the only
+    split part, has no such row today; the rule is here so that authoring one
+    degrades to a remote link rather than to silence.
     """
     if owned is None:
         return True
@@ -588,7 +604,7 @@ def parse_cards(page: GuidePage, body: list[str]) -> list[GuideCard]:
         match = GUIDE_CARD.match(line)
         if match:
             if pending:
-                cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), 300)))
+                cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), CARD_ABSTRACT_CHARS)))
             part, guide = int(match.group(1)), int(match.group(2))
             if part != page.part:
                 raise SkillError(f"{page.relative}: card {part}.{guide} is not in part {page.part}")
@@ -607,7 +623,7 @@ def parse_cards(page: GuidePage, body: list[str]) -> list[GuideCard]:
         if pending and line.strip() and not line.startswith((">", "|", "#")):
             abstract.append(line.strip())
     if pending:
-        cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), 300)))
+        cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), CARD_ABSTRACT_CHARS)))
     return cards
 
 
@@ -689,8 +705,15 @@ def rewrite_text(
         return f"{resolved}{suffix}"
 
     out: list[str] = []
+    scanner = InlineScanner()
     for body, newline, inside_fence in iter_lines(text):
-        out.append(body if inside_fence else scan_inline_links(body, rewrite_body))
+        if inside_fence:
+            # A fence cannot sit inside a code span, so anything left open
+            # before it was never a span to begin with.
+            scanner.reset()
+            out.append(body)
+        else:
+            out.append(scanner.scan(body, rewrite_body))
         out.append(newline)
     return "".join(out)
 
@@ -985,7 +1008,9 @@ def render_skill_md(
         for card in router.cards:
             if owned is not None and card.guide not in owned:
                 continue
-            summary = to_root(first_sentence(strip_footnotes(card.abstract), 300), router)
+            summary = to_root(
+                first_sentence(strip_footnotes(card.abstract), ROUTER_ABSTRACT_CHARS), router
+            )
             lines.append(f"- **{card.guide_id}** {card.title} — {summary}")
     lines += [
         "",

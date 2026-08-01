@@ -8,7 +8,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 ### 2.1 — `LanguageModelSession` end to end
 
-The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, `prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`, `Response.usage`, and the six-case `Transcript` …
+The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, `prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`, `Response.usage`, and the six-case `Transcript` data model.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md>
 
@@ -63,7 +63,7 @@ What the `@Generable` macro synthesises, every `@Guide` form with evidence, the 
 
 ### 2.3 — The `Tool` protocol, calling modes, and the required-mode loop
 
-`Tool` member by member; the `@Generable` arguments struct as the contract between model and tool (and why Apple's own evaluation sample makes every argument optional); writing descriptions that say *when* rather than *what*; the six-entry anatomy of one tool-using turn; `toolCallingMode` in both …
+`Tool` member by member; the `@Generable` arguments struct as the contract between model and tool (and why Apple's own evaluation sample makes every argument optional); writing descriptions that say *when* rather than *what*; the six-entry anatomy of one tool-using turn; `toolCallingMode` in both places it can be set, with the precedence rule; transcript rollback on a thrown tool error and `TranscriptErrorHandlingPolicy`.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md>
 
@@ -169,7 +169,7 @@ The largest guide in the part, organised as symptom → cause → fix across fiv
 
 ### 3.1 — Token budgeting, transcript anatomy, and KV-cache economics
 
-The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in both the 26.0 and 27.0 idioms, and then the KV material — token layout, the blast-radius table, the ordering rule for …
+The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in both the 26.0 and 27.0 idioms, and then the KV material — token layout, the blast-radius table, the ordering rule for `DynamicInstructions`, stateless shape-preserving transforms, and why you batch one big consolidation instead of trimming every turn.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md>
 
