@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import unicodedata
 from urllib.parse import unquote, urlparse
 
 
@@ -78,18 +79,31 @@ def replacement_text(diagnostic: dict[str, object]) -> str | None:
 def docc_reported_fragment(fragment: str) -> str:
     """A fragment as DocC's resolver echoes it in diagnostics.
 
-    Before resolution DocC drops underscores, collapses repeated hyphens, and
-    trims edge hyphens, so a diagnostic's spelling can differ from the literal
-    ``<doc:...#fragment>`` in the generated Markdown (Swift 6.2's docc reports
-    '#a--omit-x_y' as 'a-omit-xy').
+    Before resolution DocC percent-decodes the fragment, drops underscores,
+    collapses repeated hyphens, and trims edge hyphens, so a diagnostic's
+    spelling can differ from the literal ``<doc:...#fragment>`` in the
+    generated Markdown (Swift 6.2's docc reports '#a--omit-x_y' as
+    'a-omit-xy'). Combining marks are ignored on both sides because the
+    catalog drops a GitHub-faithful anchor's leading U+FE0F while diagnostics
+    echo the mark.
     """
-    return re.sub(r"-{2,}", "-", fragment.replace("_", "")).strip("-")
+    decoded = "".join(
+        ch
+        for ch in unquote(fragment)
+        if unicodedata.category(ch) not in ("Mn", "Me")
+    )
+    return re.sub(r"-{2,}", "-", decoded.replace("_", "")).strip("-")
 
 
 def replace_fragment(
     lines: list[str], old: str, new: str | None, line_number: int | None, source: Path
 ) -> bool:
     old_token = f"#{old}"
+    if "#" in old:
+        # A fragment whose first character is a combining mark merges with
+        # the '#' separator into one grapheme, so DocC echoes the whole
+        # page#fragment as a single unresolved topic. Match on the fragment.
+        old = old.split("#", 1)[1]
 
     def replace_on_line(index: int) -> bool | None:
         if not 0 <= index < len(lines):

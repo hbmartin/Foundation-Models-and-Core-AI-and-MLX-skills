@@ -19,6 +19,7 @@ import re
 import shutil
 import sys
 import tempfile
+import unicodedata
 from urllib.parse import quote, unquote
 
 
@@ -222,6 +223,22 @@ def page_target(candidate: Path, raw_path: str) -> Path:
     return candidate
 
 
+def docc_addressable_fragment(fragment: str) -> str:
+    """A GitHub-faithful anchor rewritten so DocC can address it.
+
+    A ⚠️ heading's slug begins with the U+FE0F variation selector, and a
+    combining mark merges with the ``#`` separator into a single grapheme, so
+    DocC cannot split the reference and reports the whole page#fragment as one
+    unresolved topic. Leading marks are dropped and the rest percent-encoded
+    for the catalog copy only; the diagnostics pass then canonicalizes these
+    fragments to DocC's own anchor spellings. GitHub copies keep the marks.
+    """
+    index = 0
+    while index < len(fragment) and unicodedata.category(fragment[index]) in ("Mn", "Me"):
+        index += 1
+    return quote(fragment[index:], safe="!$&()*+,;=:@/?")
+
+
 def github_url(
     target: Path,
     repository_root: Path,
@@ -282,7 +299,7 @@ def rewrite_destination(
         else:
             doc_reference = target_page.identifier
         if separator:
-            doc_reference += f"#{fragment}"
+            doc_reference += f"#{docc_addressable_fragment(fragment)}"
         return f"<doc:{doc_reference}>"
 
     if is_within(candidate, source_root):
