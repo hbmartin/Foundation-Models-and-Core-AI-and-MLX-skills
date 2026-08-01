@@ -38,12 +38,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Do not rely on the runner image's renderer directory: an incomplete
-      # Swift 6.3.3 template produced HTML shells without their JavaScript.
+      # template produced HTML shells without their JavaScript.
       - name: Check out pinned DocC renderer
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: swiftlang/swift-docc-render-artifact
-          ref: 943556306878b83a75dca64704c92c9f25f658be # swift-6.3.3-RELEASE
+          ref: 1d749193f0725f7e9e062673b70d103a0150e347 # swift-6.2.1-RELEASE
           path: .build/docc-render-artifact
           persist-credentials: false
           sparse-checkout: dist
@@ -51,22 +51,22 @@ jobs:
       - name: Install pinned Swift toolchain
         uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a # v2.4.0
         with:
-          swift-version: '6.3.3'
+          swift-version: '6.2.1'
 
       - name: Verify Swift, DocC, and renderer
         run: |
           swift_version="$(swift --version)"
           echo "$swift_version"
-          grep -F "Swift version 6.3.3" <<<"$swift_version"
+          grep -F "Swift version 6.2.1" <<<"$swift_version"
           swift_bin="$(dirname "$(readlink -f "$(command -v swift)")")"
           test -x "$swift_bin/docc"
           echo "$swift_bin" >> "$GITHUB_PATH"
           "$swift_bin/docc" --help >/dev/null
           test -s "$DOCC_HTML_DIR/index.html"
           test -s "$DOCC_HTML_DIR/index-template.html"
-          test -s "$DOCC_HTML_DIR/js/chunk-vendors.0b7dc663.js"
-          test -s "$DOCC_HTML_DIR/js/index.db3ea664.js"
-          test -s "$DOCC_HTML_DIR/css/index.19043b1e.css"
+          test -s "$DOCC_HTML_DIR/js/chunk-vendors.bdb7cbba.js"
+          test -s "$DOCC_HTML_DIR/js/index.6737d5f6.js"
+          test -s "$DOCC_HTML_DIR/css/index.d0b63544.css"
 
       - name: Test DocC publishing tools
         run: python3 -m unittest discover -s scripts/tests -p 'test_docc_site.py' -v
