@@ -258,7 +258,7 @@ size_t app_available_memory(void) {
 
 and consumed from Swift without a bridging header, via `@_silgen_name`:
 
-```swift
+```swift compile:27
 @_silgen_name("app_available_memory")  fileprivate func c_app_available_memory() -> UInt
 @_silgen_name("app_memory_footprint")  fileprivate func c_app_memory_footprint() -> UInt
 ```
@@ -754,7 +754,7 @@ prefers the int8 companion over the fp16 one with an explicitly memory-driven ru
 Put all of the above together and you get the check a shipping app actually runs. It has **two
 gates, and passing only the first is how apps launch and then die later.**
 
-```swift
+```swift illustrative
 // Gate 1 — incremental allocation must fit the live process budget.
 //
 // mmap-backed model buffers are NOT charged against os_proc_available_memory()
@@ -1408,7 +1408,7 @@ let stream = try MLXLMCommon.generate(
 
 ✅ **VERIFIED**. And the measurement helper, which is how you get `estimatedBytes` honestly:
 
-```swift
+```swift illustrative
 public struct WiredMemoryMeasurement: Sendable {
     public let weightBytes, kvBytes, workspaceBytes, peakActiveBytes,
                tokenCount, prefillStepSize: Int
@@ -1542,7 +1542,7 @@ Five defences, roughly in order of value:
 3. **Bound every cache you own.** The `mlx_lm.server` row above is a prompt cache with no ceiling.
    Noema caps llama.cpp's prompt cache explicitly, with the reason in the comment:
 
-   ```swift
+   ```swift compile:27
    // "llama.cpp defaults to an 8 GiB cache-ram ceiling with 32 checkpoints per slot,
    //  which is a latent out-of-memory risk on iOS."
    #if os(macOS)
@@ -1770,7 +1770,7 @@ your average.
 A shipping app treats thermals as a first-class scheduling input. Noema's `GenerationPowerPolicy`
 (✅ **VERIFIED**, community source, `notes/repos/noema-ios.md` §10.9):
 
-```swift
+```swift illustrative
 struct Environment {
     let thermalState: ProcessInfo.ThermalState
     let lowPowerMode: Bool
@@ -2238,7 +2238,7 @@ not, the cold number is the number your users get.
 Also worth knowing for cache hygiene: each distinct `SpecializationOptions` configuration leaves
 **its own multi-GB cache entry**, and a shipping app's recovery path is to clear them all:
 
-```swift
+```swift illustrative
 if let cached = try? AIModelCache.default.model(for: url, options: options) { return cached }
 do {
     return try await AIModel(contentsOf: url, options: options)

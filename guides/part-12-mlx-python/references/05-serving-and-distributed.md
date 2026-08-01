@@ -1452,7 +1452,7 @@ used as `LanguageModelSession(model: model)`.
 `LanguageModelSession`'s documented form; the exact argument values for a local server were not
 read from a compiling sample:
 
-```swift
+```swift illustrative
 import FoundationModels
 import FoundationModelsUtilities   // ChatCompletionsLanguageModel lives here
 
@@ -1474,7 +1474,7 @@ let response = try await session.respond(to: "Review this function for retain cy
 `apple/foundation-models-utilities`,
 `Sources/FoundationModelsUtilities/LanguageModels/ChatCompletionsLanguageModel.swift:634`:
 
-```swift
+```swift illustrative
 private func buildURLRequest(for request: ChatCompletionRequest) throws -> URLRequest {
     let isVersioned = baseURL.pathComponents.contains("v1")
     let endpoint = isVersioned ? "/chat/completions" : "/v1/chat/completions"

@@ -220,7 +220,7 @@ third.**
 When a developer asked on the Developer Forums how to pattern-match these errors from a response
 stream, a Frameworks Engineer replied with this, verbatim:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let session = LanguageModelSession()
 let stream = session.streamResponse(to: "Tell me about origami.")
 
@@ -511,7 +511,7 @@ enum case and the payload type share a name modulo capitalisation
 The strongest evidence class in this corpus is Apple sample code, because it compiles. Two
 independent 2026 sample archives ship a near-identical file. Here is Origami's, verbatim:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // Origami/Models/Error+DisplayMessage.swift:12-36  (iOS 27 sample, WWDC26)
 extension Error {
     /// A short message describing the error, suitable for display in the UI.
@@ -588,7 +588,7 @@ compile-time coverage; you may not do that for `LanguageModelError`. Write nine 
 
 ### 3.5 The nine-case switch, written the way you should write it
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Classifies a `LanguageModelError` into a stable string code.
@@ -652,7 +652,7 @@ Every payload exposes `metadata: [String: any Sendable]`. Nothing in our corpus 
 key that appears in it. That sounds useless, and it is the opposite of useless: it is exactly the
 place where a framework puts the diagnostic detail it has not committed to an API yet.
 
-```swift
+```swift compile:27
 import FoundationModels
 import OSLog
 
@@ -868,7 +868,7 @@ guessing. §12 uses exactly that.
 
 ### 4.6 A mechanical rewrite, side by side
 
-```swift
+```swift compile:27
 // ───────────────────────── iOS 26 ─────────────────────────
 import FoundationModels
 
@@ -892,7 +892,7 @@ func handle26(_ error: Error) -> String {
 }
 ```
 
-```swift
+```swift compile:27
 // ───────────────────────── iOS 27 ─────────────────────────
 import FoundationModels
 
@@ -1082,7 +1082,7 @@ must support a 26.x deployment target from one source tree, that is a `#if`/`@av
 rather than a taxonomy problem, and it is the subject of
 [reference 04 of this part](04-dual-sdk-builds.md). The short version, for orientation only:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 func handleOverflow(_ error: Error) -> Bool {
@@ -1193,6 +1193,15 @@ runtime), and they land on opposite sides:
 |---|---|---|---|
 | Context overflow | `LanguageModelError` | `FoundationModels.LanguageModelError` / 0 | `LanguageModelError` only — **clean, single-type** |
 | `.required` with empty toolset | `NSError` | `FoundationModels.LanguageModelError` / **-1** | **nothing** (`casts=[]`); wraps via `NSMultipleUnderlyingErrorsKey` |
+| Prompt in an unsupported locale | **nothing thrown** | — | — (⚠️ **silent success**, see below) |
+
+⚠️ A third row measured 2026-07-31 (`probes/`, `fm.unsupportedLanguageOrLocale-error`) is a
+**non-throw**: prompting in Amharic — a locale `supportsLocale(_:)` explicitly rejects on that
+runtime (`am_ET`, 23 supported languages) — threw nothing at all; the model answered anyway. So
+`.unsupportedLanguageOrLocale` is not raised merely by prompting outside the supported set, and a
+locale gate has to be **your** `supportsLocale` check, not a `catch` arm. The remaining cases
+(`.rateLimited`, `.timeout`, `.refusal`, `.unsupportedTranscriptContent`,
+`.unsupportedGenerationGuide`) have no clean, non-abusive trigger and stay unmeasured.
 
 The second row **confirms the concern for that mode**: the framework really does throw a value
 whose NSError *domain* says `LanguageModelError` but which `catch let e as LanguageModelError`
@@ -1210,7 +1219,7 @@ known to receive at least one domain-tagged impostor. §14 does exactly this.
 
 The single highest-value change you can make to a 26-era ladder, before you change anything else:
 
-```swift
+```swift compile:27
 import FoundationModels
 import OSLog
 
@@ -1677,7 +1686,7 @@ Ranked by leverage.
 
 ### 10.1 The API
 
-```swift
+```swift compile:27
 import FoundationModels
 
 let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
@@ -1773,7 +1782,7 @@ Two facts sit uneasily together, and this guide will not pretend otherwise.
 **Side A — a developer, and Apple's docs, say it does not apply to `Generable`.**
 Forum thread **835777**, verbatim from the developer's own code comment:
 
-```swift
+```swift compile:27 imports:FoundationModels
 LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations))
 // I'm aware that .permissiveContentTransformations does not apply to Generable, but I'd really really really really love it, if it did!.
 ```
@@ -1785,7 +1794,7 @@ first-hand and one authoritative, in agreement.
 **Side B — Apple's own macOS 27 sample constructs it and immediately calls
 `respond(to:generating:)`.** Book Tracker, verbatim:
 
-```swift
+```swift illustrative
 // BookTracker/Services/BookTaggingService.swift:13-45
 @Generable
 struct BookTags: Codable, Equatable {
@@ -1857,7 +1866,7 @@ identical, the argument is inert and the documentation is complete.
 
 Since the framework will not tell you, tell yourself:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// A session builder that refuses to combine permissive guardrails with guided generation,
@@ -1925,7 +1934,7 @@ not optional advice.
 
 The `Refusal` payload is the one that grew a real API, and it has a sharp edge.
 
-```swift
+```swift illustrative
 // LanguageModelError.Refusal — ✅ SDK-verified, 27.0:1541-1551 and :1637-1645
 var explanation: LanguageModelSession.Response<String> { get async throws }
 var explanationStream: LanguageModelSession.ResponseStream<String> { get }
@@ -1975,7 +1984,7 @@ do {
 
 ✅ **VERIFIED** — reproduced from Apple's safety article with the correction noted above. The 27 rewrite:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)
@@ -2053,7 +2062,7 @@ is **32K** per Apple's PCC comparison table.
 
 Read `contextSize` at runtime rather than hardcoding 4096. It exists for a reason:
 
-```swift
+```swift illustrative
 final var contextSize: Int { get }        // @backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4)
 ```
 
@@ -2133,7 +2142,7 @@ do {
 }
 ```
 
-```swift
+```swift compile:27 imports:FoundationModels
 func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
     let allEntries = originalSession.transcript
     let condensedEntries = [allEntries.first, allEntries.last].compactMap { $0 }
@@ -2290,7 +2299,7 @@ content message. Do **not** conclude your prompt was blocked.
 
 ### 13.2 `com.apple.UnifiedAssetFramework Code=5000` — the model catalog
 
-```swift
+```swift compile:27
 import CoreSpotlight
 import FoundationModels
   
@@ -2362,7 +2371,7 @@ Thread **831448** is titled, in as many words, *"How to obtain more value out of
 
 The pragmatic drill-down, which you should have in your codebase before you need it:
 
-```swift
+```swift compile:27
 import Foundation
 
 /// Recursively flattens an NSError's underlying errors into printable lines.
@@ -2529,7 +2538,7 @@ worth noticing in this guide specifically: Apple ships a purpose-built category 
 
 Building a `desiredOutput` entry (verbatim from Apple):
 
-```swift
+```swift compile:27 imports:FoundationModels
 let text = Transcript.TextSegment(content: "The capital of France is Paris.")
 let segment = Transcript.Segment.text(text)
 let response = Transcript.Response(segments: [segment])
@@ -2929,7 +2938,7 @@ rate change on this OS build" into a number you can put a threshold on.
 
 ### 16.1 Framework orientation, in one block
 
-```swift
+```swift compile:27
 import Evaluations          // iOS 27.0+ Beta … watchOS 27.0+ Beta — Swift only
 ```
 

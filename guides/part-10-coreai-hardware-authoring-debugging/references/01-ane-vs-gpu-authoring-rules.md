@@ -2970,7 +2970,7 @@ framework select the CPU/GPU/Neural Engine combination that minimizes latency.[^
 
 ✅ **VERIFIED** — `swift/Sources/CoreAIShared/Runtime/ModelStructure.swift:12-20`:
 
-```swift
+```swift compile:27
 /// Well-known graph function names used for structure detection.
 public enum GraphNames {
     public static let main = "main"
@@ -3387,7 +3387,7 @@ The 76% figure is real and it is also **not what you get for free**.
 ✅ **VERIFIED** — `swift/Sources/CoreAIImageSegmenter/ImageSegmentationEngine.swift:871-920`, the
 multi-function run loop:
 
-```swift
+```swift illustrative
 private func runMultiFunctionInference(
     state: MultiFunctionContext, imageArray: NDArray, textArray: NDArray
 ) async throws -> SegmentationOutput {

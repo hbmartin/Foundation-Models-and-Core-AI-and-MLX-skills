@@ -203,7 +203,7 @@ Five things on `SystemLanguageModel` look like availability checks. They are not
 
 > ✅ **VERIFIED** — all five from `/documentation/foundationmodels/systemlanguagemodel`.
 
-```swift
+```swift illustrative
 var isAvailable: Bool                                    // 26.0+
 var availability: SystemLanguageModel.Availability       // 26.0+
 @backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4)
@@ -770,7 +770,7 @@ is blunt:
 
 with the canonical SwiftUI shape:
 
-```swift
+```swift compile:27 imports:FoundationModels,SwiftUI
 struct ShopView: View {
     @State var session = LanguageModelSession()
     @State var joke = ""
@@ -942,7 +942,7 @@ Apple's own recommended shape, posted by a Frameworks Engineer:
 
 > ✅ **VERIFIED (Apple staff, thread 831404)** — verbatim from the reply:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let session = LanguageModelSession()
 let stream = session.streamResponse(to: "Tell me about origami.")
 
@@ -1407,7 +1407,7 @@ with a single argument compiles — and so does the bare `SystemLanguageModel()`
 
 Usage, verbatim from the Safety article:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
 ```
 
@@ -1601,7 +1601,7 @@ gives four concrete techniques.
 
 **Bound the input.** Convert free text into a closed set before it reaches the model:
 
-```swift
+```swift compile:27
 enum TopicOptions {
     case family
     case nature
@@ -1617,7 +1617,7 @@ let prompt = """
 **Bound the output.** A `@Generable enum` gives the model nowhere to put a refusal, which converts a
 would-be refusal into either a valid case or a thrown error — both better than a paragraph:
 
-```swift
+```swift compile:27 imports:FoundationModels
 @Generable
 enum Breakfast {
     case waffles
@@ -1816,7 +1816,7 @@ the last (most recent context):
 
 > ✅ **VERIFIED (Apple docs)**:
 
-```swift
+```swift compile:27 imports:FoundationModels
 func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
     let allEntries = originalSession.transcript
     let condensedEntries = [allEntries.first, allEntries.last].compactMap { $0 }
@@ -2497,7 +2497,7 @@ let feedbackData = session.logFeedbackAttachment(
 Constructing a `desiredOutput` — this is what turns "it's wrong" into "here is what right looks
 like", which is the difference between a bug report that gets triaged and one that gets closed:
 
-```swift
+```swift compile:27 imports:FoundationModels
 let text = Transcript.TextSegment(content: "The capital of France is Paris.")
 let segment = Transcript.Segment.text(text)
 let response = Transcript.Response(segments: [segment])
@@ -2583,7 +2583,7 @@ Everything above, assembled into something you can paste into a project. The des
 
 ### 10.1 The outcome type
 
-```swift
+```swift compile:27
 import Foundation
 import FoundationModels
 
@@ -3019,7 +3019,7 @@ final class ResilientGenerator {
 Layering PCC on top is a model swap plus a quota check. The two things that make it non-trivial are
 that quota is not availability (§8.1), and that a 32K transcript does not fit in a 4K window (§6.3).
 
-```swift
+```swift compile:27 imports:Foundation,FoundationModels
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 @MainActor
 struct CloudTier {
@@ -3069,7 +3069,7 @@ struct CloudTier {
 
 And the routing rule, which is short but earns its place:
 
-```swift
+```swift compile:27
 // Pseudocode for the tier decision. Two rules do all the work:
 //
 //   1. On `.limitReached`, do NOT retry and do NOT wait. Disable the PCC affordance,

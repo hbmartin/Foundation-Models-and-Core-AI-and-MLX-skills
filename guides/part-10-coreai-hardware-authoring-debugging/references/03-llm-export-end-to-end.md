@@ -2719,7 +2719,7 @@ Add the package:
 
 ### 11.2 The full initializer
 
-```swift
+```swift illustrative
 public struct CoreAILanguageModel: LanguageModel {
     public enum LoadMode: Sendable { case lazy; case eager }
     public typealias Executor = CoreAIExecutor
@@ -2789,7 +2789,7 @@ Three engines, selected by `variant:` or auto-detected from the asset's structur
 
 The KV-cache strategy is the other knob:
 
-```swift
+```swift illustrative
 public enum KVCacheStrategy: String, Codable, Sendable, CaseIterable {
     case auto      = "auto"
     case fixedSize = "fixed_size"

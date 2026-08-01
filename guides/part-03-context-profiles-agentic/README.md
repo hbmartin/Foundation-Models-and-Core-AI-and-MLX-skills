@@ -53,7 +53,7 @@ at least measure. This one you can only evaluate.
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I keep hitting `contextSizeExceeded`" | [3.1 §6–§7](references/01-context-window-and-kv-cache.md) | The four levers, Apple's documented recovery, and the 26.0-only rebuild path |
-| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md) | Apple says 4,096; a shipping app's device probe says 8192 on iOS 27. Read `contextSize` |
+| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md) | TN3193 settles the figure at 4,096 (probe-confirmed on the 27.0 simulator); an uncorroborated 8192 claim survives only for 27 hardware. Still read `contextSize` |
 | "Time-to-first-token climbs turn over turn, prompt size flat" | [3.1 §8](references/01-context-window-and-kv-cache.md) | Something is invalidating your prefix. §8.10's expensive list is the checklist |
 | "I need to know what a turn actually cost" | [3.1 §5](references/01-context-window-and-kv-cache.md) | `Usage`, `cachedTokenCount`, and the cache-hit-rate formula |
 | "I'm choosing a model for a multi-turn chat" | [3.1 §10](references/01-context-window-and-kv-cache.md) | Linear-attention hybrids **cannot prefix-cache at all**. This outranks parameter count |
@@ -87,15 +87,16 @@ models forfeit it entirely** because a running scan cannot be rewound.
 > ⚠️ **SILENT FAILURE — cache invalidation never throws.** There is no `LanguageModelError.cacheInvalidated`,
 > no log line, no Instruments alarm. A `historyTransform` that reorders entries, a conditional above your
 > static content, an instructions string interpolating the current time — each silently converts an O(1)
-> turn into an O(N) turn and your tests still pass. Also here: hardcoding 4096 on a device that reports 8192
-> costs you half your window silently, and a rebuild under Xcode 27 changes which `catch` clause fires.
+> turn into an O(N) turn and your tests still pass. Also here: hardcoding any context figure instead of
+> reading `contextSize` bets your window budget on a constant Apple explicitly declines to guarantee, and
+> a rebuild under Xcode 27 changes which `catch` clause fires.
 
 > 🔴 **GAP** — the token cost of an image is unpublished (the "896 px" figure in circulation is a
 > developer's inference); there is no `tokenCount` for PCC or for a custom `LanguageModel` — confirmed
 > against the 27.0 beta interface on 2026-07-29: all five `tokenCount(for:)` overloads sit on
 > `SystemLanguageModel` only (`FoundationModels-27.0-macos.swiftinterface:398-432`), and neither the
-> `LanguageModel` protocol nor `PrivateCloudComputeLanguageModel` declares one; and **nobody in this
-> corpus has read TN3193**, the technote that may supersede §3.3's 4096-vs-8192 conflict.
+> `LanguageModel` protocol nor `PrivateCloudComputeLanguageModel` declares one. (TN3193 has since been
+> read — 2026-07-27 — and settles the on-device figure at 4,096; see §3.3.)
 
 ### [3.2 — Dynamic Profiles, modifiers, and session state](references/02-dynamic-profiles-and-session-state.md)
 The flagship 2026 API, built around the projection framing above. Three layers and their exact spellings,

@@ -186,7 +186,7 @@ Work down this list at each call site. Stop at the first line that applies.
 
 Using `@available` where you needed `#if`:
 
-```swift
+```swift illustrative
 // WRONG on the 26 SDK. This does not compile — it does not "compile out".
 if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) {
     let model = PrivateCloudComputeLanguageModel()   // error: cannot find 'PrivateCloudComputeLanguageModel' in scope
@@ -201,7 +201,7 @@ it in their own repository.
 
 Using `#if` where you needed `@available`:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // WRONG on the 27 SDK. Compiles cleanly. Crashes on an iOS 26.4 device.
 #if canImport(FoundationModels, _version: 2)
 let model = PrivateCloudComputeLanguageModel()
@@ -219,7 +219,7 @@ and [17.3](03-error-taxonomy-migration.md) territory.
 For any 27-only Foundation Models symbol, the fully-correct gate has **three** layers, and shipping
 code really does write all three:
 
-```swift
+```swift compile:27
 #if canImport(FoundationModels)                      // 1. module exists at all (watchOS 26 fails here)
 #if canImport(FoundationModels, _version: 2)         // 2. it is the 27-era module
 if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) {   // 3. the device is on 27
@@ -392,7 +392,7 @@ This is where people go wrong, and it is worth stating as bluntly as possible.
 
 📏 **MEASURED BY US** on `MacOSX26.5.sdk` (macOS 26.5.2 · Xcode 26.6 · 2026-07-28):
 
-```swift
+```swift compile:27
 #if canImport(FoundationModels)
 #warning("canImport(FoundationModels) == TRUE")
 #else
@@ -409,7 +409,7 @@ probe.swift:2:10: warning: canImport(FoundationModels) == TRUE
 `#if canImport(FoundationModels)` tells you *nothing whatsoever* about whether the 27 API surface is
 present. A developer who writes the obvious guard:
 
-```swift
+```swift compile:27 imports:FoundationModels
 #if canImport(FoundationModels)          // ← TRUE on the 26 SDK. Useless as a 27 test.
 let model = PrivateCloudComputeLanguageModel()
 #endif
@@ -439,7 +439,7 @@ measured it.
 `Libraries/MLXFoundationModels/MLXLanguageModel+Availability.swift:1-10`, read from the local clone
 at commit `3cbf928` (HEAD, authored 2026-07-24 by Charlie Le `<charlie_le@apple.com>`):
 
-```swift
+```swift illustrative
 // Copyright © 2026 Apple Inc.
 
 #if FoundationModelsIntegration
@@ -632,7 +632,7 @@ compiled with `xcrun --sdk macosx swiftc -typecheck` and the taken branch record
 
 **(a) A misspelled module name.** Zero diagnostics.
 
-```swift
+```swift compile:27
 #if canImport(FoundationModelsX)     // typo
 // ... your entire 27 feature ...
 #endif
@@ -645,7 +645,7 @@ compiler said nothing about `FoundationModelsX` not being a thing. **There is no
 
 **(b) An undefined compilation condition.** Zero diagnostics.
 
-```swift
+```swift compile:27
 #if FoundationModelsIntegraton       // trait name misspelled — note the missing 'i'
 // ... your entire 27 feature ...
 #endif
@@ -661,7 +661,7 @@ target only, silently, while the main app works fine. You will find it in TestFl
 **(c) `_underlyingVersion` instead of `_version` — this one is worse, because it evaluates
 TRUE.**
 
-```swift
+```swift compile:27
 #if canImport(FoundationModels, _underlyingVersion: 2)
 #warning("underlyingVersion 2 == TRUE")
 #else
@@ -693,7 +693,7 @@ lines 40-200, and in a CI log it is invisible. Treat it as silent in practice.
 Because all three failures above are silent, **assert the gate** rather than trusting it. Drop this
 at the top of the file that carries your gate:
 
-```swift
+```swift compile:27
 // SDKGateAssertions.swift — belongs in the same target as your gated code.
 //
 // These #warnings are deliberate and permanent. They cost nothing, and they turn
@@ -721,7 +721,7 @@ it is the single highest-value thing in this guide relative to its cost.
 
 If a permanent warning offends you, gate the gate:
 
-```swift
+```swift illustrative
 #if VERIFY_SDK_GATES
 … the #warnings …
 #endif
@@ -1507,7 +1507,7 @@ Anything you can ask the framework about at run time belongs here:
 - MLX's own availability rollup, which is a nice model for how to expose this in your own package.
   ✅ VERIFIED — `mlx-swift-lm`, `Libraries/MLXFoundationModels/MLXLanguageModel+Availability.swift`:
 
-  ```swift
+  ```swift compile:27
   public enum Availability: Sendable, Equatable {
       case available
       case downloading
@@ -1628,7 +1628,7 @@ to push every gate to a **boundary layer** and have the rest of your code call u
 
 Swift will not let you write this:
 
-```swift
+```swift compile:27 imports:CoreAI
 final class Runner {                       // available everywhere
     @available(iOS 27.0, *)                // error: stored properties cannot be
     private var model: AIModel?            //        more available-restricted than their type
@@ -1640,7 +1640,7 @@ in shipping code is to **store `Any?` and cast at the use site**, where a runtim
 
 🧑‍💻 **COMMUNITY — `noemaai-labs/noema-ios`**, ✅ VERIFIED — `Noema/CoreAILLMClient.swift:74-99`:
 
-```swift
+```swift compile:27
 final class CoreAILLMClient: @unchecked Sendable {
     #if canImport(CoreAI)
     private var loadedModel: Any?               // AIModel (iOS 27+)
@@ -1673,7 +1673,7 @@ ideally one file — and convert back to a concrete type at the first opportunit
 **Alternative when you control the type:** put the stored property on a *separate* type that is
 itself `@available(iOS 27.0, *)`, and store *that* as `Any?`. One erasure instead of seven:
 
-```swift
+```swift compile:27 imports:CoreAI
 #if canImport(CoreAI)
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 private final class CoreAIState {          // whole type is 27-only — properties can be typed
@@ -1713,7 +1713,7 @@ type-checked island inside the gate.
 Do not let a closed gate look like a bug. Give it a named error with a message that says *build*, not
 *device*. 🧑‍💻 **COMMUNITY — Noema**, ✅ VERIFIED — `Noema/CoreAILLMClient.swift:16-30`:
 
-```swift
+```swift compile:27 imports:Foundation
 enum CoreAILLMClientError: LocalizedError {
     case unsupportedOS
     case frameworkUnavailable
@@ -1747,7 +1747,7 @@ packaging problem in five seconds. Without it, you spend an afternoon on the dev
 The best structural idea in the Noema codebase, generalised. Define, in one place, a single
 capability flag per feature, computed once, gate-free at the call site:
 
-```swift
+```swift compile:27
 // SDKCapabilities.swift — the ONLY file in the app that contains a 27 gate for Foundation Models.
 
 enum SDKCapabilities {
@@ -1795,7 +1795,7 @@ live in a boundary type. See §17 for how the two fit together.
 The scalable pattern when both SDKs must offer the feature in *some* form: declare a protocol in
 ungated code, and provide gated conformances.
 
-```swift
+```swift illustrative
 // Ungated: every build has this.
 protocol TextGenerator: Sendable {
     var displayName: String { get }
@@ -2512,7 +2512,7 @@ Two decisions worth naming:
 
 ### 17.2 `Sources/TextGen/Capabilities.swift` — the gate log
 
-```swift
+```swift compile:27
 // Capabilities.swift
 //
 // The build-gate assertions from §4.7. These #warnings are permanent and deliberate.
@@ -2570,7 +2570,7 @@ files "AI doesn't work" with a screenshot.
 
 ### 17.3 `Sources/TextGen/TextGenerator.swift` — the ungated protocol
 
-```swift
+```swift illustrative
 import Foundation
 
 /// The app's entire view of text generation. No preprocessor directives below this line.
@@ -2798,7 +2798,7 @@ Add the `[sdk=…27.*]` conditions from §5.1 to your target, define your own fl
 
 and add the flag to the gate log so a misspelling (§4.6b) shows up immediately:
 
-```swift
+```swift compile:27
 #if MYAPP_SDK27
 #warning("BUILD GATE: MYAPP_SDK27 is SET")
 #else

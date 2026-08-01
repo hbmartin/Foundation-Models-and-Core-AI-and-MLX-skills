@@ -110,7 +110,7 @@ WWDC26 session 339 states the consequence directly:
 Concretely, the same three lines of app code run against five different backends. Only the
 construction line changes:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 // 1 — On-device. Free, private, offline, no entitlement.            (iOS 26.0+)
@@ -477,7 +477,7 @@ user. **Reach:** Apple Intelligence devices with a network — **including Apple
 > `com.apple.developer.private-cloud-compute`, listed in the framework index under the "Private Cloud
 > Compute" topic group.
 
-```swift
+```swift compile:27 imports:FoundationModels
 if #available(iOS 27.0, macOS 27.0, watchOS 27.0, visionOS 27.0, *) {
     let model = PrivateCloudComputeLanguageModel()
     let session = LanguageModelSession(model: model)
@@ -913,7 +913,7 @@ and to author one.
 > the full signatures, so treat the shape as right and details like `nonisolated(nonsending)` as
 > provisional.
 
-```swift
+```swift illustrative
 protocol LanguageModel: Sendable {
     associatedtype Executor: LanguageModelExecutor where Self == Executor.Model
     var capabilities: LanguageModelCapabilities { get }

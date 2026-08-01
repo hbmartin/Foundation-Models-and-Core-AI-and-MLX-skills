@@ -447,20 +447,18 @@ Two rows deserve annotation.
 practice, a PCC-only (or custom-provider-only) knob. Setting it on a `SystemLanguageModel` session is
 not a compile error; §6.5 covers what actually happens.
 
-**"Context size: 4K"** is the number Apple prints, and it is contradicted by field reports on 27:
+**"Context size: 4K"** is the number Apple prints, and it is now settled:
 
-> ⚠️ **CONFLICT — the on-device 4K figure.** Apple's slide (`319:44`) and the docs table both say
-> **4K**. A comment in shipping third-party app code says otherwise
-> (`Noema/AFMLLMClient.swift:133-135`, community-measured):
+> ✅ **SETTLED — the on-device figure is 4,096.** Apple's slide (`319:44`), the docs table, and
+> **TN3193** ("Managing the on-device foundation model's context window", read 2026-07-27) all state
+> it plainly, and the 2026-07-31 runtime probe measured `contextSize == 4096` on the iOS 27.0
+> simulator runtime (`probes/`, `fm.contextSize`). The contrary claim — a comment in shipping
+> third-party app code (`Noema/AFMLLMClient.swift:133-135`, community-measured) that the iOS 27
+> model reports 8K — is uncorroborated by Apple and now rests entirely on iOS 27 *hardware*; treat
+> it as a footnote, not a live conflict. Apple's DTS Engineer in thread 790736 (iOS 26 era) still
+> applies: *"There is no guarantee that this will stay the same forever or across devices."*
 >
-> > "The on-device context is selected by the installed system model. **iOS 26 reports 4K while the
-> > iOS 27 model reports 8K.** `contextSize` is available in the Xcode 26.4+ SDK, so it must not be
-> > hidden behind the Xcode 27 gate."
->
-> Meanwhile Apple's DTS Engineer in thread 790736 (iOS 26 era) said the limit is *"around 4,000"* and
-> explicitly warned: *"There is no guarantee that this will stay the same forever or across devices."*
->
-> **Ruling: do not hardcode 4096.** Read `contextSize`. The PCC side of the table is better
+> **Ruling: still do not hardcode 4096.** Read `contextSize`. The PCC side of the table is better
 > corroborated — a shipping app hardcodes `static let privateCloudContextLimit = 32_768`
 > (`Noema/AppleFoundationModelRegistry.swift:7`) and the docs article states 32K in prose — but even
 > there, prefer the property. Note that forum thread 833642's 32K figure came from a **community**
@@ -495,7 +493,7 @@ class is.
 
 Defensive read, following the pattern in shipping code (`AFMLLMClient.swift:140`, community):
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Returns the model's context size in tokens, or a conservative fallback.
@@ -627,7 +625,7 @@ Two live watchOS caveats:
 The line, verbatim from the documentation article
 (`notes/web/apple-docs-fm-evals-speech.md:1697-1701`):
 
-```swift
+```swift xfail:26 compile:27
 import FoundationModels
 
 // Create a session with the server-side model.
@@ -1182,7 +1180,7 @@ in (Origami reasons deeply for tutorial generation and not at all for term looku
 So this is a two-line instrument, and if you are shipping `.deep` you should have it in your logs
 from day one:
 
-```swift
+```swift compile:27
 import FoundationModels
 import os
 
@@ -1266,7 +1264,7 @@ The transcript shape is verified:
 SwiftUI view that reads `session.transcript` re-renders as entries arrive. Here is a progress
 affordance built on that:
 
-```swift
+```swift illustrative
 import SwiftUI
 import FoundationModels
 
@@ -1565,7 +1563,7 @@ next to the *choice*, not in a settings screen.
 Here is the whole pattern in one file: a state model, the button, the label, the upgrade affordance,
 and the error path. It is the four rules made concrete.
 
-```swift
+```swift compile:27
 import SwiftUI
 import FoundationModels
 
@@ -2497,7 +2495,7 @@ Circulating claims about this API that our sources contradict or fail to support
 
 ### 14.2 API surface
 
-```swift
+```swift illustrative
 // iOS 27.0 / iPadOS 27.0 / macOS 27.0 / watchOS 27.0 / visionOS 27.0
 final class PrivateCloudComputeLanguageModel
 // Conforms: Copyable, Escapable, LanguageModel, Observable, Sendable, SendableMetatype

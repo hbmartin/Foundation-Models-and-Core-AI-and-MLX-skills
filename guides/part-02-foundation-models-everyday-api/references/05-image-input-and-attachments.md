@@ -133,7 +133,7 @@ The API really is *"a natural extension of the existing prompt builders"* — th
 phrasing from WWDC26 session 241, and it is accurate. You do not construct a request object, you do
 not pick an encoder, you do not resize anything.
 
-```swift
+```swift compile:27
 import FoundationModels
 import CoreGraphics
 
@@ -172,7 +172,7 @@ Prompt {
 And the full function form, which is the one worth memorising because it shows the orientation
 parameter *and* Apple's own comment explaining when you need it:
 
-```swift
+```swift compile:27 imports:FoundationModels,CoreGraphics
 func compareImages(imageOne: CGImage, imageTwo: CGImage) async throws -> String {
     let session = LanguageModelSession()
     let response = try await session.respond {
@@ -301,7 +301,7 @@ Three things to steal from those fifteen lines:
    builds `var imagePrompts: [Prompt] = []`, appends one per photo, and then drops the whole array
    into the builder:
 
-```swift
+```swift illustrative
 // Origami/Models/Orchestrator.swift:596-616 — Apple sample source, verbatim
 var imagePrompts: [Prompt] = []
 for photo in photos {
@@ -654,7 +654,7 @@ images, N labels, one call.
 
 **Stage 3 — declare the `ImageReference` field in the `@Generable` type.**
 
-```swift
+```swift compile:27 imports:FoundationModels
 // Origami/Brainstorm/ImageAnalysis.swift:11-27 — Apple sample source, verbatim
 @Generable
 struct ImageAnalysis {
@@ -737,7 +737,7 @@ See that same guide for how partial snapshots work generally.
 `ImageReference` conforms to `Generable`, so it is also legal as a tool argument — which is how you
 let the model hand an image *back* to your code for real processing. Apple's documented pattern:
 
-```swift
+```swift illustrative
 // /documentation/foundationmodels/imagereference — Apple's snippet, verbatim
 struct MyTool: Tool {
   @SessionProperty(\.history) var history
@@ -1016,7 +1016,7 @@ Inside `MyPromptView`, you now need a second switch over `prompt.segments` that 
 
 Apple's documented classification recipe pairs a `@Generable` enum with deterministic sampling:
 
-```swift
+```swift compile:27 imports:FoundationModels,CoreGraphics
 @Generable
 enum ImageLabel {
     case cat
@@ -1086,7 +1086,7 @@ Two `Tool` implementations provided by the Vision framework, new in 27.0:
 > WWDC26 241 adds the rationale: *"Both enhance a model's ability to reason about visual information
 > **in ways it can't natively**."*
 
-```swift
+```swift compile:27 imports:FoundationModels,Vision
 func analyzeBarcodeImage(_ image: CGImage) async {
     do {
         let session = LanguageModelSession(tools: [BarcodeReaderTool()])
@@ -1386,7 +1386,7 @@ Image support is **not** uniform across them, and the framework has a formal mec
 
 ### 10.1 The capability gate
 
-```swift
+```swift illustrative
 protocol LanguageModel: Sendable {
     associatedtype Executor: LanguageModelExecutor where Self == Executor.Model
     var capabilities: LanguageModelCapabilities { get }   // .vision / .guidedGeneration
@@ -1436,7 +1436,7 @@ servers"* pitch at face value.
 `mlx_lm.server`, Ollama, vLLM and LM Studio into Foundation Models backends) has **two entirely
 different image paths**:
 
-```swift
+```swift compile:27
 // Darwin: encode the in-memory image inline as a base64 JPEG data URL.
 //   image.cgImage.jpegData().base64EncodedString()  →  "data:image/jpeg;base64,…"
 //   ChatCompletionsLanguageModel.swift:413-421, guarded by #if canImport(CoreImage)
@@ -1509,43 +1509,44 @@ Two further caveats about that Linux claim, from a full read of the repository:
   is its own world (17 model families, a `MediaProcessing` layer, `VLMError.imageRequired` /
   `.singleImageAllowed`); see [Part 13 · MLX in Swift](../../part-13-mlx-swift/README.md).
 
-### 10.4 Private Cloud Compute — declared gap
+### 10.4 Private Cloud Compute — support settled, operating limits open
 
-> 🔴 **GAP — image input on PCC.** WWDC26 session **319** ("building with Private Cloud Compute")
-> demos an app that takes *"a markdown file, and we take the **text and images**, feed that into a
-> `LanguageModelSession`, and generate a summary"* while describing PCC's large context window. That
-> is a spoken narration of a demo, not documentation.
+> ✅ **Image input on PCC is supported** — settled by two Apple sources, matching
+> [Part 4 §13.1](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md).
+> WWDC26 session **319** ("building with Private Cloud Compute") demos an app that takes *"a
+> markdown file, and we take the **text and images**, feed that into a `LanguageModelSession`, and
+> generate a summary"* while describing PCC's large context window, and Apple's
+> [multimodal prompting article](https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting)
+> explicitly recommends `PrivateCloudComputeLanguageModel` when image analysis needs more reasoning
+> or context. Build PCC multimodal features with the same labelled `Attachment` surface this guide
+> teaches, and keep an on-device fallback for availability, quota, and network failures.
 >
-> Apple's Origami sample is **suggestive but not conclusive corroboration**. Its multi-image analysis
-> runs in the profile's `.brainstorm` branch, which is bound to `.model(serverModel)` — and
-> `serverModel` is declared with Apple's own comment: *"Brainstorm and tutorial work best on a server
-> model. The sample defaults to the on-device system model so it runs out of the box. To use Private
-> Cloud Compute, request access to the managed `com.apple.developer.private-cloud-compute`
-> entitlement … then replace the `serverModel` initialization with the line below.
+> Apple's Origami sample shows the intended **architecture**: its multi-image analysis runs in the
+> profile's `.brainstorm` branch, which is bound to `.model(serverModel)` — and `serverModel` is
+> declared with Apple's own comment: *"Brainstorm and tutorial work best on a server model. The
+> sample defaults to the on-device system model so it runs out of the box. To use Private Cloud
+> Compute, request access to the managed `com.apple.developer.private-cloud-compute` entitlement …
+> then replace the `serverModel` initialization with the line below.
 > `// var serverModel = PrivateCloudComputeLanguageModel()`"*
-> (`Origami/Models/OrchestratorProfile.swift:11-40`). So Apple built a labelled-multi-image feature
-> whose one-line configuration flip sends those attachments to PCC. But **the sample ships
-> on-device**, the PCC line is commented out, and nothing shows anyone ever ran the image path
-> against PCC. It is architecture, not a result.
+> (`Origami/Models/OrchestratorProfile.swift:11-40`). The sample ships running on-device, so it
+> corroborates the pattern rather than adding an independent PCC measurement.
 >
-> **Nothing else corroborates it and nothing addresses the economics.** The Apple documentation page for
-> PCC (`adding-server-side-intelligence-with-private-cloud-compute`) publishes a capability table
+> 🔴 **What remains open is operational, not the support question — and nothing addresses the
+> economics.** The Apple documentation page for PCC
+> (`adding-server-side-intelligence-with-private-cloud-compute`) publishes a capability table
 > covering privacy, offline operation, usage limits, reasoning and context size — and **says nothing
-> about vision**. `PrivateCloudComputeLanguageModel`'s documented surface is `init()`, `isAvailable`,
-> `availability`, `quotaUsage`, `contextSize`, `supportedLanguages`, `supportsLocale(_:)`; there is no
-> vision-related member. The per-user daily quota is expressed in *requests* counted against the
-> user's iCloud account, and the quota API exposes only coarse states (reached / below / approaching)
-> — a developer asked for actual numbers and was told they don't exist (FB23378161). One item has
-> moved since: the 27.0 interface confirms `PrivateCloudComputeLanguageModel` **publicly exposes**
-> `capabilities: LanguageModelCapabilities` via its `LanguageModel` conformance (✅ **SDK-verified**,
+> about vision**. The per-user daily quota is expressed in *requests* counted against the user's
+> iCloud account, and the quota API exposes only coarse states (reached / below / approaching) — a
+> developer asked for actual numbers and was told they don't exist (FB23378161). The 27.0 interface
+> confirms `PrivateCloudComputeLanguageModel` **publicly exposes** `capabilities:
+> LanguageModelCapabilities` via its `LanguageModel` conformance (✅ **SDK-verified**,
 > `FoundationModels-27.0-macos.swiftinterface:98-101`), and `.vision` is a declared `Capability`
-> (`:1470-1473`) — so the check is one property read. What its *value* is on a real PCC-entitled
-> device is still unknown. So:
+> (`:1470-1473`) — so the check is one property read. Specifically:
 >
 > - Whether a PCC request carrying five images costs the same quota as a text request: **unknown**.
 > - Whether PCC has different image size or count limits than the on-device model: **unknown**.
-> - Whether PCC's `capabilities` **contains** `.vision`: **unknown** — the property is SDK-verified
->   readable; nobody in this corpus has printed it.
+> - Whether PCC's `capabilities` **contains** `.vision` on a real entitled device: **unknown** —
+>   the property is SDK-verified readable; nobody in this corpus has printed it.
 >
 > **Do not assume parity with the on-device model.** Resolve by reading
 > `PrivateCloudComputeLanguageModel.capabilities` on a 27.0 device with the PCC entitlement, then
@@ -1557,7 +1558,7 @@ Two further caveats about that Linux claim, from a full read of the repository:
 `Attachment`'s availability includes `watchOS 27.0+ Beta`, and Apple's own C shim gates on
 `#available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)`. But on watchOS the framework is
 described as a **PCC-only** surface — the on-device model is never described as running on the watch
-— which folds watchOS image support into the PCC gap above.
+— which folds watchOS image support into the PCC operating-limits questions above.
 
 One concrete watchOS bug worth knowing, because it is image-related: on **watchOS 27 beta 2**,
 importing `FoundationModels` failed to build with
@@ -1802,9 +1803,10 @@ The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schem
    2026-07-29** from the captured `Vision-27.0-macos.swiftinterface` (table in §9.3). (§9.3)
 8. **Quality/latency numbers for YOLOS, SAM 3, EfficientSAM in `apple/coreai-models`** — none exist
    in the repo. (§9.4)
-9. **PCC image input** — one spoken demo in session 319, one Apple sample *architected* to flip its
-   multi-image flow onto PCC but shipping with that line commented out, zero documentation, and
-   nothing at all about separate image quota, cost or size limits. Do not assume parity. (§10.4)
+9. **PCC image *operating limits*** — support itself is ✅ settled (session 319 plus Apple's
+   multimodal prompting article; §10.4), but nothing addresses separate image quota, cost, size or
+   count limits, and nobody has printed PCC's `capabilities` on an entitled device. Do not assume
+   parity. (§10.4)
 10. **Whether anything in `foundation-models-utilities` actually works on Linux** — no CI, no
     Dockerfile, no platform matrix. (§10.2)
 11. **`fm` CLI flag spellings** — only semantic option names were ever spoken. (§11.4)
@@ -1862,7 +1864,7 @@ FB23378161) · **831404** (the simulator punch-out).
 **WWDC26 transcripts** — **241** *What's new in Foundation Models* (the source-type list, the
 any-size/any-aspect-ratio quote, the token/latency caveat, the Vision tools) · **334** *Foundation
 Models on macOS* (the `fm` CLI image option, the Python SDK) · **319** *Private Cloud Compute* (the
-text-and-images demo behind §10.4's gap) · **339** *Bring an LLM provider to the Foundation Models
+text-and-images demo behind §10.4's settled support claim) · **339** *Bring an LLM provider to the Foundation Models
 framework* (capabilities and routing).
 
 **Community** — `noemaai-labs/noema-ios` (a shipping multi-backend app: the `for`-loop prompt builder,

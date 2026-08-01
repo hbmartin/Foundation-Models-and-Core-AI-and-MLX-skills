@@ -779,7 +779,7 @@ then you have thrown away the information about which of the two it was.
 If you are keeping a 26.x branch alive, this is the one change worth making to it: split the failure
 into two distinct cases so your telemetry can tell you which is happening in the field.
 
-```swift
+```swift compile:27
 // 26.x maintenance branch. Two failures, two error cases, two dashboards.
 enum AdapterFailure: Error {
     case packUnavailable(id: String, underlying: Error)   // a DOWNLOAD problem
@@ -944,7 +944,7 @@ axes that have nothing to do with quality.
 | Can you still fine-tune? | Not with any Apple-published on-device tool. You convert an already-trained checkpoint. | **Yes.** `mlx_lm.lora` with `--fine-tune-type {lora,dora,full}` is a shipping, documented CLI. |
 | Session API preserved? | Yes — `CoreAILanguageModel` conforms to `LanguageModel`; `LanguageModelSession` unchanged | Yes — `MLXLanguageModel` likewise |
 | `@Generable` / guided generation | **Depends on the engine variant.** GPU-pipelined bundles: **no**. §7.4 | Yes, via `MLXGuidedGeneration` |
-| Neural Engine | Reachable — and splitting a model into multiple functions is what routes it there | **No.** MLX is GPU/CPU |
+| Neural Engine | Reachable — the optional `coreai-models` loader derives an ANE preference from a multi-function structure (package policy, not a framework contract)[^sample-routing-policy] | **No.** MLX is GPU/CPU |
 | Named by Apple as the adapter migration path | **Yes** — "Core ML or Core AI" | No (named elsewhere, for a different question) |
 | Distribution | You own it. Background Assets or your own transport | You own it. Plus a Hugging Face download path |
 | Version floor | 27.0, hard | 27.0, hard, plus a second SDK gate (§8.4) |
@@ -1043,7 +1043,7 @@ The most useful evidence that this path is real is that Apple's code-along, havi
 
 After that edit, the instructions in Apple's demo collapse to approximately one sentence:
 
-```swift
+```swift compile:27
 let instructions = "Your job is to create an itinerary for the user."
 ```
 
@@ -1509,7 +1509,7 @@ Two lines of difference from a `SystemLanguageModel` session. That is genuinely 
 
 The type, ✅ verified from the same file:
 
-```swift
+```swift illustrative
 public struct CoreAILanguageModel: LanguageModel {
     public enum LoadMode: Sendable { case lazy; case eager }
     public typealias Executor = CoreAIExecutor
@@ -1694,20 +1694,27 @@ What carries over as *pattern* rather than as code: the §4.3 rule. Resolve, ens
 
 If you are converting a model anyway, this changes how you convert it.
 
-> ✅ **VERIFIED** (Apple's shipping source, `apple/coreai-models`, `ModelStructure.swift:71-80`,
-> recorded in the corrections register as C6): **splitting a model into multiple entry-point
-> functions is what routes it to the Neural Engine.** WWDC26 session 325 presents the split of SAM3
-> into `image_encode` / `text_encode` / `detect` as a *latency* trick — run each at a different
-> cadence, 76% faster second inference — but reading the code shows the split is also the ANE
-> routing mechanism.
+> ✅ **VERIFIED — with a scope correction** (Apple's shipping source, `apple/coreai-models`,
+> `ModelStructure.swift:71-80`, recorded in the corrections register as C6): the optional
+> `coreai-models` loader recognizes a multi-entry-point structure and **selects a Neural Engine
+> preference for models that have one — a package loading policy, not a Core AI framework routing
+> contract.**[^sample-routing-policy] Direct `AIModel` callers choose their own
+> `SpecializationOptions`, and Core AI's documented `.default` picks the compute-unit combination
+> that minimizes latency. WWDC26 session 325 presents the split of SAM3 into `image_encode` /
+> `text_encode` / `detect` as a *latency* trick — run each at a different cadence, 76% faster
+> second inference — and reading the code shows the split is additionally what the package's
+> classifier keys its ANE preference on ([Part 7.2 §11](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md)
+> and [Part 10.1 §8](../../part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md)
+> work through the classifier).
 >
 > ⚠️ With a caveat that bites: `CoreAISegmentationEngine` **re-runs `image_encode` on every call**
 > and exposes no cache. The 76% figure requires caller-side work that Apple's own package does not
 > do for you.
 
 For a language model this matters less directly than for the vision case, but the principle — that
-model *structure* determines hardware placement, and Apple's convenience wrappers do not always
-exploit it — is the right expectation to carry into Parts 8 and 10.
+model *structure* can steer how Apple's convenience wrappers place a model, while the wrappers do
+not always exploit what the structure enables — is the right expectation to carry into Parts 8
+and 10.
 
 ### 7.7 When Core AI is the right answer
 
@@ -2027,7 +2034,7 @@ as the reason adapters ended.
 > ✅ **VERIFIED** — from the doc comment on `MLXLanguageModel`
 > (`Libraries/MLXFoundationModels/MLXLanguageModel.swift:304-337`):
 
-```swift
+```swift illustrative
 import MLXFoundationModels
 import MLXHuggingFace
 import MLXLMCommon
@@ -2596,7 +2603,7 @@ For this topic specifically, apply a harder standard than usual:
 | Session API | Unchanged | Unchanged | Unchanged |
 | Can you fine-tune? | n/a | No | **Yes** |
 | `@Generable` | Yes (the point) | ⚠️ Not on GPU-pipelined bundles | Yes, `MLXGuidedGeneration` |
-| Neural Engine | Apple's problem | Yes, via multi-function split | 🟡 No |
+| Neural Engine | Apple's problem | Yes — the `coreai-models` loader keys its preference on a multi-function split[^sample-routing-policy] | 🟡 No |
 | App size | +0 | + model | + model |
 | Named by Apple as the migration path | Yes | **Yes** | No |
 | Apple sample code | Several | **Zero** | None for the FM bridge |
@@ -2669,7 +2676,7 @@ For this topic specifically, apply a harder standard than usual:
 | 7.3 | Only temperature honoured; 512/2048 default `maxTokens` | **Apple's shipping source** | `notes/repos/apple-coreai-models.md:907-908` |
 | 7.4 | Specialization cost; "avoid… within user interactive flows"; 194 s | Apple session quote + community measurement | Part 7.2 |
 | 7.4 | System model not in your process; your model is | Apple-staff answer | Thread 833575 |
-| 7.6 | Multi-function split routes to ANE; segmentation engine re-encodes | **Apple's shipping source** | `ModelStructure.swift:71-80`, corrections register C6 |
+| 7.6 | Multi-function split drives the `coreai-models` loader's ANE preference (package policy, not a framework contract); segmentation engine re-encodes | **Apple's shipping source** | `ModelStructure.swift:71-80`, corrections register C6 |
 | 8.1 | "Models from other sources… using MLX or CoreAI" | Apple-staff answer | Thread 836810 |
 | 8.2 | `MLXFoundationModels` is in `mlx-swift-lm` PR #334; double gate; empty library on 26 | Apple-staff answer + **shipping source** | Thread 836264; `notes/repos/mlx-swift-lm.md:78-89, 2362, 2625` |
 | 8.3 | `mlx_lm.lora` / `fuse` / `convert` flags, data formats, gotchas | **Shipping source**, parser-verified over `LORA.md` | `notes/repos/mlx-lm.md:1240-1290, 1400-1440` |
@@ -2742,6 +2749,12 @@ and [7.4 bundles, engines and guided decoding](../../part-07-coreai-swift-runtim
 [17.6 — toolchain and asset compatibility](06-toolchain-and-asset-compatibility.md)
 
 ---
+
+[^sample-routing-policy]: The classifier and preferences are implemented in the optional
+    `apple/coreai-models` package’s pinned
+    [`ModelStructure.swift`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/swift/Sources/CoreAIShared/Runtime/ModelStructure.swift#L12-L218).
+    Core AI’s documented `.default` behavior is separate:
+    [Managing model specialization and caching](../../../docs/Managing%20model%20specialization%20and%20caching.md).
 
 *Part 17, reference 02. Series conventions, evidence markers and the known-bad-claims register:
 [guides/README.md](../../README.md) and [Part 1](../../part-01-orientation-and-gating/).*

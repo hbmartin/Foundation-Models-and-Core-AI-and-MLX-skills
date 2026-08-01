@@ -506,7 +506,7 @@ an *input*-side problem only.
 
 The concept survives; the mechanics and the consequences change completely.
 
-```swift
+```swift illustrative
 struct SpecializationOptions: Equatable, Hashable, Sendable, SendableMetatype {
     static let `default`: SpecializationOptions
     static let cpuOnly: SpecializationOptions
@@ -610,7 +610,7 @@ The three levers Core AI gives you, in ascending order of effort:
 The probe is the migration-relevant primitive, because it is what lets you keep a Core ML–era
 "models are cheap to load" assumption from becoming a three-minute stall:
 
-```swift
+```swift illustrative
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, tvOS 27.0, watchOS 27.0, *)
@@ -845,7 +845,7 @@ The defensive pattern is Apple's own two-phase load, and it is worth copying who
 it reads the function names from an `AIModelAsset` *without* specializing, precisely so the compute
 preference is decided before the expensive step:
 
-```swift
+```swift compile:27 imports:Foundation
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, tvOS 27.0, watchOS 27.0, *)
@@ -2038,7 +2038,7 @@ riskiest change into a reversible one.
 The unit of migration is a *capability* your app has, not a *file* in your bundle. Name the
 capability, define a protocol for it in your app's own vocabulary, and give it two conformers.
 
-```swift
+```swift illustrative
 import Foundation
 import CoreVideo
 
@@ -2315,7 +2315,7 @@ coremltools.optimize             →  coreai-optimization  (coreai_opt) — can 
 
 ### 9.2 The Core AI API you need on day one
 
-```swift
+```swift illustrative
 import CoreAI
 
 // Inspect without paying for specialization.

@@ -81,16 +81,16 @@ private struct BookTags {
     var themes: [String]
 }
 
-// MARK: - Shared helpers
+// MARK: - Shared helpers (internal: also used by SpotlightProbes and InstrumentsWorkloadProbes)
 
-private func skipUnlessModelAvailable(file: StaticString = #filePath, line: UInt = #line) throws {
+func skipUnlessModelAvailable(file: StaticString = #filePath, line: UInt = #line) throws {
     let model = SystemLanguageModel.default
     guard model.isAvailable else {
         throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")
     }
 }
 
-private func entrySummary(_ transcript: Transcript) -> String {
+func entrySummary(_ transcript: Transcript) -> String {
     transcript.map { entry -> String in
         switch entry {
         case .instructions: return "instructions"
@@ -103,16 +103,44 @@ private func entrySummary(_ transcript: Transcript) -> String {
     }.joined(separator: ",")
 }
 
-private func errorFingerprint(_ error: any Error) -> String {
+func errorFingerprint(_ error: any Error) -> String {
     let ns = error as NSError
     var casts: [String] = []
+    var fmCase = ""
     if error is LanguageModelSession.ToolCallError { casts.append("ToolCallError") }
     if #available(macOS 27.0, iOS 27.0, *) {
         if error is LanguageModelError { casts.append("LanguageModelError") }
         if error is GeneratedContent.ParsingError { casts.append("GeneratedContent.ParsingError") }
         if error is LanguageModelSession.Error { casts.append("LanguageModelSession.Error") }
+        // Decode the concrete LanguageModelError case + payload (the enum is non-frozen,
+        // hence @unknown default). Payload fields per the captured 27.0 interface
+        // (FoundationModels-27.0-macos.swiftinterface:1486-1560).
+        if let lme = error as? LanguageModelError {
+            switch lme {
+            case .contextSizeExceeded(let p):
+                fmCase = " fmcase=contextSizeExceeded(contextSize:\(p.contextSize),tokenCount:\(p.tokenCount))"
+            case .rateLimited(let p):
+                fmCase = " fmcase=rateLimited(resetDate:\(p.resetDate.map { "\($0)" } ?? "nil"))"
+            case .guardrailViolation:
+                fmCase = " fmcase=guardrailViolation"
+            case .refusal:
+                fmCase = " fmcase=refusal"
+            case .unsupportedCapability(let p):
+                fmCase = " fmcase=unsupportedCapability(\(String(describing: p.capability)))"
+            case .unsupportedTranscriptContent:
+                fmCase = " fmcase=unsupportedTranscriptContent"
+            case .unsupportedGenerationGuide:
+                fmCase = " fmcase=unsupportedGenerationGuide"
+            case .unsupportedLanguageOrLocale:
+                fmCase = " fmcase=unsupportedLanguageOrLocale"
+            case .timeout:
+                fmCase = " fmcase=timeout"
+            @unknown default:
+                fmCase = " fmcase=unknown-new-case"
+            }
+        }
     }
-    return "type=\(type(of: error)) domain=\(ns.domain) code=\(ns.code) casts=[\(casts.joined(separator: "|"))] desc=\(String(describing: error).prefix(300))"
+    return "type=\(type(of: error)) domain=\(ns.domain) code=\(ns.code) casts=[\(casts.joined(separator: "|"))]\(fmCase) desc=\(String(describing: error).prefix(300))"
 }
 
 // MARK: - Probes
@@ -753,5 +781,244 @@ final class FoundationModelsProbes: XCTestCase {
             "default=\(strict) permissive=\(permissive)",
             detail: "identical-outcomes-means-inert-or-untripped \(Probe.runtimeDescription)"
         )
+    }
+
+    // MARK: fm.capabilities  [SIM-27 · MAC-27 · DEVICE-27]
+    //
+    // GAP: part-05 …/01-playground-and-instruments.md §13.4 (what the Simulator can and
+    //      cannot run) and the standing "-1 is ambiguous" rule — tool calling and image
+    //      attachments FAIL on the 27.0 sim with bare -1 / asset errors. Does the runtime
+    //      EXPOSE that gap through `capabilities` (declared `LanguageModel` conformance,
+    //      SDK-verified `FoundationModels-27.0-macos.swiftinterface:99`), or do capabilities
+    //      claim support while the assets are missing? Either answer is a guide sentence.
+    // Candidates: (a) capabilities mirror what actually works per destination;
+    //             (b) capabilities are a static declaration, missing-asset failures invisible.
+    // Write-back: 5.1 §13.4 (the sim-capability matrix) + part-02 ref 05's front matter;
+    //      compare SIM-27 vs MAC-27/DEVICE-27 rows once those runs exist.
+    func testSystemModelCapabilities() throws {
+        guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
+        let caps = SystemLanguageModel.default.capabilities
+        Probe.result(
+            "fm.capabilities",
+            "vision=\(caps.contains(.vision)) toolCalling=\(caps.contains(.toolCalling)) guidedGeneration=\(caps.contains(.guidedGeneration)) reasoning=\(caps.contains(.reasoning))",
+            detail: "availability=\(String(describing: SystemLanguageModel.default.availability)) \(Probe.runtimeDescription)"
+        )
+    }
+
+    // MARK: fm.attachment-label-recording  [SIM-27 (partial: fingerprints) · MAC-27 · DEVICE-27]
+    //
+    // GAP: part-02 …/05-image-input-and-attachments.md §6.4 ⚠️ (an unlabelled attachment is
+    //      invisible to an image tool — silent no-op) and …/03-tools-and-tool-calling.md's
+    //      required-label callout — corpus-attested (session 241 + recovered transcripts),
+    //      never runtime-verified. Three recordable halves, in increasing dependence on
+    //      working image support:
+    //      (1) does `.label(_:)` change `tokenCount(for:)`;
+    //      (2) does `.label(_:)` write through to the recorded
+    //          `Transcript.AttachmentSegment.label` (interface :2323-2327);
+    //      (3) does a REQUIRED tool call actually run for labeled vs unlabeled attachments.
+    // Candidates: (1) same/different token cost; (2) label recorded verbatim / nil;
+    //             (3) labeled runs + unlabeled silently skips (claim CONFIRMED) / both run.
+    // Expected on SIM-27: image attachments error (LanguageModelError -1, measured
+    //      2026-07-31) — halves 2–3 then record fingerprints; the full answer lands on
+    //      MAC-27/DEVICE-27.
+    // Write-back: 2.5 §6.4 and 2.3's label callout, per destination.
+    func testAttachmentLabelRecording() async throws {
+        guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
+        try skipUnlessModelAvailable()
+
+        func solidImage(side: Int) -> CGImage? {
+            let ctx = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8,
+                                bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            ctx?.setFillColor(CGColor(red: 0.8, green: 0.4, blue: 0.1, alpha: 1))
+            ctx?.fill(CGRect(x: 0, y: 0, width: side, height: side))
+            return ctx?.makeImage()
+        }
+        guard let image = solidImage(side: 128) else {
+            Probe.result("fm.attachment-label-recording", "no-image",
+                         detail: "CGContext failed \(Probe.runtimeDescription)")
+            return
+        }
+        let model = SystemLanguageModel.default
+        var rows: [String] = []
+
+        @Sendable func lastPromptSegments(_ session: LanguageModelSession) -> String {
+            for entry in session.transcript.reversed() {
+                if case .prompt(let p) = entry {
+                    return p.segments.map { segment -> String in
+                        switch segment {
+                        case .text: return "text"
+                        case .attachment(let a): return "attachment(label:\(a.label ?? "nil"))"
+                        default: return "other"
+                        }
+                    }.joined(separator: ",")
+                }
+            }
+            return "no-prompt-entry"
+        }
+
+        // Attachment<CGImage> is NOT Sendable (interface-verified), so it must be built
+        // INSIDE each @Sendable timeout closure from the Sendable CGImage + a Bool.
+        let variants: [(String, Bool)] = [("unlabeled", false), ("labeled", true)]
+        // Half 1: token cost with vs without a label.
+        for (tag, labeled) in variants {
+            let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
+            let prompt = Prompt {
+                "Describe the attached image."
+                attachment
+            }
+            do {
+                let count = try await model.tokenCount(for: prompt)
+                rows.append("\(tag)Tokens=\(count)")
+            } catch {
+                let ns = error as NSError
+                rows.append("\(tag)Tokens=error(\(ns.domain):\(ns.code))")
+            }
+        }
+        // Half 2: transcript write-through of the label.
+        for (tag, labeled) in variants {
+            let session = LanguageModelSession()
+            do {
+                _ = try await Probe.withTimeout(seconds: 120) { [image] in
+                    let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
+                    return try await session.respond(
+                        to: Prompt {
+                            "Describe the attached image in one sentence."
+                            attachment
+                        },
+                        options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 60))
+                }
+                rows.append("\(tag)Respond=ok segments=[\(lastPromptSegments(session))]")
+            } catch {
+                rows.append("\(tag)Respond=threw(\((error as NSError).code)) segments=[\(lastPromptSegments(session))]")
+            }
+        }
+        // Half 3: does a REQUIRED tool call run for each variant (needs working tool
+        // calling — records the blocked fingerprint on SIM-27).
+        for (tag, labeled) in variants {
+            let counter = Probe.Counter()
+            let tool = EchoTool(counter: counter)
+            let session = LanguageModelSession(
+                tools: [tool],
+                instructions: "You are a test assistant. When asked about an image, use the echo tool with a one-word description of it."
+            )
+            do {
+                _ = try await Probe.withTimeout(seconds: 120) { [image] in
+                    let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
+                    return try await session.respond(
+                        to: Prompt {
+                            "Echo a one-word description of the attached image."
+                            attachment
+                        },
+                        options: GenerationOptions(samplingMode: .greedy,
+                                                   maximumResponseTokens: 200,
+                                                   toolCallingMode: .required))
+                }
+                rows.append("\(tag)Tool=ok toolRan=\(counter.count > 0)")
+            } catch {
+                rows.append("\(tag)Tool=threw(\((error as NSError).code)) toolRan=\(counter.count > 0)")
+            }
+        }
+        Probe.result("fm.attachment-label-recording", rows.joined(separator: " "),
+                     detail: Probe.runtimeDescription)
+    }
+
+    // MARK: fm.stream-zero-partials-tool-turn  [MAC-27 · DEVICE-27 (SIM-27 records blocked)]
+    //
+    // GAP: guides/SILENT-FAILURES.md zero-partials family (part-02 refs 01 §6.4 + 02 §9.6) —
+    //      "a stream can finish having yielded zero partials when the model emits only a
+    //      tool call" is corpus-attested from Apple's CoachModel.swift, never
+    //      runtime-verified. A spinner-until-first-token UI hangs forever on this path.
+    // Candidates: (a) stream completes with 0 partials (claim CONFIRMED);
+    //             (b) partials > 0 (tool-call turns do yield; claim needs rescoping).
+    // Expected on SIM-27: iteration throws the missing-tool-assets error (ModelManagerError
+    //      1026 family, measured 2026-07-31) — the fingerprint is recorded and the probe
+    //      still passes (branch probe).
+    // Write-back: 2.1 §6.4 / 2.2 §9.6 and the SILENT-FAILURES entry, with partials count
+    //      and transcript entries per destination.
+    func testStreamZeroPartialsOnToolTurn() async throws {
+        guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
+        try skipUnlessModelAvailable()
+
+        let counter = Probe.Counter()
+        let tool = EchoTool(counter: counter)
+        let session = LanguageModelSession(
+            tools: [tool],
+            instructions: "You are a test assistant. When asked to echo, use the echo tool."
+        )
+        do {
+            let partials = try await Probe.withTimeout(seconds: 180) { () -> Int in
+                var n = 0
+                let stream = session.streamResponse(
+                    to: "Echo the word ping.",
+                    options: GenerationOptions(samplingMode: .greedy,
+                                               maximumResponseTokens: 200,
+                                               toolCallingMode: .required))
+                for try await _ in stream { n += 1 }
+                return n
+            }
+            Probe.result(
+                "fm.stream-zero-partials-tool-turn",
+                partials.map { "partials=\($0)" } ?? "timeout",
+                detail: "toolRan=\(counter.count > 0) entries=[\(entrySummary(session.transcript))] \(Probe.runtimeDescription)"
+            )
+        } catch {
+            Probe.result("fm.stream-zero-partials-tool-turn", "iteration-threw",
+                         detail: "\(errorFingerprint(error)) toolRan=\(counter.count > 0) \(Probe.runtimeDescription)")
+        }
+    }
+
+    // MARK: fm.unsupportedLanguageOrLocale-error  [SIM-27 · MAC-27 · DEVICE-27]
+    //
+    // GAP: part-17 …/03-error-taxonomy-migration.md §6.3 — of the interface's nine
+    //      LanguageModelError cases only four have measured rows. This is the one unprobed
+    //      case with a clean, non-abusive trigger: prompt in a language
+    //      `supportsLocale(_:)` says is unsupported.
+    //      DELIBERATELY NOT PROBED: .rateLimited/.timeout (GenerationOptions has no trigger
+    //      knob — verified against the captured interface — and hammering the model to force
+    //      quota errors is out of bounds); .refusal (needs adversarial content);
+    //      .unsupportedTranscriptContent/.unsupportedGenerationGuide (no reliable trigger
+    //      identified). Note those as residual in 17.3 §6.3 rather than guessing.
+    // Candidates: (a) throws .unsupportedLanguageOrLocale (fmcase= in the fingerprint);
+    //             (b) throws something generic; (c) the model silently answers in English —
+    //             itself a silent-failure finding.
+    // Write-back: a new row in 17.3 §6.3's taxonomy table + 2.6's locale guidance.
+    func testUnsupportedLocaleError() async throws {
+        guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
+        try skipUnlessModelAvailable()
+
+        let model = SystemLanguageModel.default
+        var rows = ["supportedCount=\(model.supportedLanguages.count)",
+                    "currentSupported=\(model.supportsLocale())"]
+        // Written prompts per candidate locale, each asking for a reply in that language.
+        let prompts: [(id: String, text: String)] = [
+            ("am_ET", "ጤና ይስጥልኝ። እባክህ በአማርኛ መልስ ስጠኝ። ዛሬ የአየር ሁኔታው እንዴት ነው?"),
+            ("zu_ZA", "Sawubona. Ngicela ungiphendule ngesiZulu kuphela. Unjani namuhla?"),
+            ("mn_MN", "Сайн байна уу. Надад зөвхөн монгол хэлээр хариулна уу. Өнөөдөр ямар өдөр вэ?"),
+            ("hy_AM", "Բարեւ Ձեզ։ Խնդրում եմ պատասխանեք միայն հայերեն։ Ինչպե՞ս եք այսօր։"),
+        ]
+        guard let pick = prompts.first(where: { !model.supportsLocale(Locale(identifier: $0.id)) }) else {
+            Probe.result("fm.unsupportedLanguageOrLocale-error", "no-unsupported-candidate",
+                         detail: "\(rows.joined(separator: " ")) \(Probe.runtimeDescription)")
+            return
+        }
+        rows.append("probeLocale=\(pick.id)")
+        let session = LanguageModelSession()
+        do {
+            let response = try await Probe.withTimeout(seconds: 120) {
+                try await session.respond(
+                    to: pick.text,
+                    options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 80))
+            }
+            if let response {
+                rows.append("respond=succeeded content=\(String(describing: response.content).prefix(100))")
+            } else {
+                rows.append("respond=timeout")
+            }
+        } catch {
+            rows.append("respond=threw \(errorFingerprint(error))")
+        }
+        Probe.result("fm.unsupportedLanguageOrLocale-error", rows.joined(separator: " "),
+                     detail: Probe.runtimeDescription)
     }
 }

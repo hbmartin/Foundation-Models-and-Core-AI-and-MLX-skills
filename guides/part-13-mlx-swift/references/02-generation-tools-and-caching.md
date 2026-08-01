@@ -400,7 +400,7 @@ warning. Apple's `MLXChatExample` overrides it to 1024×1024 on its raw-`UserInp
 
 The public methods:
 
-```swift
+```swift illustrative
 func respond(to prompt: String, role: Chat.Message.Role = .user,
              images: consuming [UserInput.Image], videos: …, audios: …) async throws -> String
 func respond(to prompt: String, role: … = .user, image: UserInput.Image? = nil,
@@ -559,7 +559,7 @@ enclosing task is cancelled, then `await genTask.value`.
 
 ### 2.5 The stream event types
 
-```swift
+```swift illustrative
 public enum Generation: Sendable {
     case chunk(String)
     case info(GenerateCompletionInfo)
@@ -891,7 +891,7 @@ a dominant baseline token ⇒ a real accept/verify defect worth filing.
 
 ### 4.1 The protocol
 
-```swift
+```swift illustrative
 public protocol TokenIteratorProtocol: Sequence, IteratorProtocol where Element == Int {
     var maxTokens: Int? { get }
     var tokenCount: Int { get }
@@ -957,7 +957,7 @@ public internal(set) var state: LMOutput.State?
 
 `LMOutput.State` is a heterogeneous typed dictionary:
 
-```swift
+```swift illustrative
 public struct LMOutput {
     public let logits: MLXArray
     public let state: State?
@@ -1043,7 +1043,7 @@ call is the site of the bug in §9.1.** Remember where it is.
 
 The generation loop is:
 
-```swift
+```swift illustrative
 tokenLoop: while !Task.isCancelled {
     guard let token = iterator.next() else { break }
     …
@@ -1322,7 +1322,7 @@ public struct UserInput {
 
 The initializers:
 
-```swift
+```swift illustrative
 init(prompt: String, images:videos:audios:tools:additionalContext:)   // wraps into .chat([.user(...)])
 init(messages: [Message], …)
 init(chat: [Chat.Message], processing:tools:additionalContext:)
@@ -1394,7 +1394,7 @@ after issue #396, where uncapped resolution let the ViT allocate tens of gigabyt
 
 ### 5.3 `Chat.Message`
 
-```swift
+```swift illustrative
 public enum Chat {
     public struct Message {
         public var role: Role                 // .user .assistant .system .tool
@@ -1558,7 +1558,7 @@ prefill allocates transient buffers proportional to prompt length and causes OOM
 - The VLM factory reads `preprocessor_config.json` **in preference to** `processor_config.json`.
 - The declared `processor_class` is then **overridden** for two model types:
 
-```swift
+```swift compile:27
 let processorTypeOverrides: [String: String] = [
     "mistral3": "Mistral3Processor",
     "gemma4_unified": "Gemma4UnifiedProcessor",
@@ -1602,7 +1602,7 @@ fix for you:
 
 In 3.x the tokenizer is **yours**. The package declares what it needs and nothing more:
 
-```swift
+```swift illustrative
 public protocol Tokenizer: Sendable {
     func encode(text: String, addSpecialTokens: Bool) -> [Int]
     func decode(tokenIds: [Int], skipSpecialTokens: Bool) -> String
@@ -1671,7 +1671,7 @@ Note `*.jinja` in the patterns: a repo may ship `chat_template.jinja` separately
 
 **The tokenizer can come from a different repo than the weights.** `TokenizerSource` is:
 
-```swift
+```swift compile:27 imports:Foundation
 public enum TokenizerSource: Sendable, Equatable {
     case id(String, revision: String? = nil)
     case directory(URL)
@@ -1735,7 +1735,7 @@ generation.
 
 The `LLMRegistry` presets encode per-family knowledge you would otherwise have to discover:
 
-```swift
+```swift illustrative
 static public let gemma3_1B_qat_4bit = ModelConfiguration(
     id: "mlx-community/gemma-3-1b-it-qat-4bit", …, extraEOSTokens: ["<end_of_turn>"])
 
@@ -1908,7 +1908,7 @@ await container.perform { context in
 
 The last piece: turning token IDs back into text you can append to a label, incrementally.
 
-```swift
+```swift compile:27
 public protocol StreamingDetokenizer: IteratorProtocol<String> {
     mutating func append(token: Int)
 }
@@ -1948,7 +1948,7 @@ number is published for the gap; if it matters to you, measure it.
 
 ### 7.1 Declaring a tool
 
-```swift
+```swift illustrative
 public typealias ToolSpec = [String: any Sendable]
 
 public protocol ToolProtocol: Sendable {
@@ -2098,7 +2098,7 @@ escape markers).
 
 The parser protocol:
 
-```swift
+```swift illustrative
 public protocol ToolCallParser: Sendable {
     var startTag: String? { get }        // nil for inline formats
     var endTag: String? { get }
@@ -2243,7 +2243,7 @@ Gemma 4's `model_type` is `"gemma4"`, not `"gemma"`.
 
 The registry presets set the format explicitly where inference cannot:
 
-```swift
+```swift illustrative
 static public let glm4_9b_4bit = ModelConfiguration(
     id: "mlx-community/GLM-4-9B-0414-4bit", …, toolCallFormat: .glm4)
 
@@ -2545,7 +2545,7 @@ constructed and what contract it honours.**
 
 ### 8.1 The protocol
 
-```swift
+```swift illustrative
 public enum RoPEOffset { case scalar(Int); case batch(MLXArray) }
 
 public protocol KVCache: Evaluatable {
@@ -2903,7 +2903,7 @@ One typed failure on restore: a `RotatingKVCache` whose stored `maxSize` is `"No
 
 At the `ChatSession` layer:
 
-```swift
+```swift illustrative
 func saveCache(to url: URL) async throws   // throws ChatSessionError.noCacheAvailable
 // and a cache-accepting initializer:
 ChatSession(container, cache: loadedCache, generateParameters: …)
@@ -3390,7 +3390,7 @@ means most of §2 through §9 transfers.
 
 ### 10.1 The types
 
-```swift
+```swift illustrative
 public protocol EmbeddingModel: BaseLanguageModel {
     var vocabularySize: Int { get }
     var poolingStrategy: Pooling.Strategy? { get }     // default nil
@@ -3445,7 +3445,7 @@ to co-reside with a 4B LLM on a phone.
 This is the shape from Apple's `embedder-tool`, and the padding detail in it is the part people get
 wrong:
 
-```swift
+```swift illustrative
 return try await container.perform { context in
     let tokenizer = context.tokenizer
     let encoded = texts.enumerated().compactMap { index, text -> (Int, [Int])? in

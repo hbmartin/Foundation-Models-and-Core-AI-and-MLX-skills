@@ -48,6 +48,14 @@ the repo root.
   exact report (verified 2026-07-31: +4 / −17 lines) is "clean" for 27.0. Flag-surface changes
   appear as additional lines. From the next SDK version on, scripted captures compare against
   scripted captures and a no-change run reads genuinely clean.
+- [ ] Re-verify the guide snippets against the new SDK (added 2026-07-31; grammar and
+  committed baseline in `notes/snippet-verification/README.md`):
+  ```bash
+  ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification
+  ```
+  Any fence that WAS green and turns red **is the beta's snippet-level API drift**, with
+  the failing symbol named by the compiler at a mapped guide line. Fold fixes into the
+  guides, re-run, commit the refreshed `results.tsv` + `report.md`.
 - [ ] Cross-major comparisons on request, one framework at a time:
   ```bash
   ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels
@@ -76,15 +84,19 @@ the repo root.
   ./scripts/dump-sdk-interfaces.sh            # new SDK version only
   xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
   ```
-- [ ] Re-run the runtime probes **if `probes/` exists**. As of 2026-07-31 a
-  `probes/` Swift package is being assembled (in progress, untracked): probes that
-  need an OS 27 runtime `XCTSkip` on this 26.5 host, so re-run per beta AND once on
-  a real OS 27 machine:
+- [ ] Re-run the runtime probes. The `probes/` package is tracked (31 probes committed in
+  `b7a9432`, extended 2026-07-31; see `probes/README.md` for the four-destination table
+  HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the healthy-baseline counts). Probes that need an
+  OS 27 runtime `XCTSkip` on this 26.5 host, so re-run per beta on both local destinations AND
+  once on a real OS 27 machine:
   ```bash
-  [ -d probes ] && (cd probes && swift test)
+  (cd probes && swift test)
+  (cd probes && xcodebuild test -scheme Probes-Package \
+      -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
   ```
-  The two probe snippets that motivated it stay documented in
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` items 5 and 6.
+  Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
+  beta's behavioral drift. The probes that motivated the package are documented in
+  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` items 5 and 7.
 - [ ] Re-check the GitHub defect hedges (a doc refresh usually rides a beta):
   ```bash
   ./scripts/refresh-defect-statuses.sh > /tmp/defect-report.md   # full report
@@ -168,7 +180,7 @@ Docs present `resolved(in:)` as current and `resolve(in:)` as deprecated; the ca
 27.0 interface has **only** un-deprecated `resolve(in: Transcript)`
 (`FoundationModels-27.0-macos.swiftinterface:2959-2963`). Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
-§7.6 (line ~1905) and gap-table row 11 (line ~2570): resolves via "a later beta's
+§7.6 (line ~1929) and gap-table row 11 (line ~2570): resolves via "a later beta's
 interface, or a doc revision".
 
 - [ ] After each re-dump:
@@ -195,8 +207,10 @@ line ~271; related gap at line ~458).
   grep -rn 'TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET' "$MPP" | head    # new gate macros = new ladder rung
   grep -rln 'e2m1\|e4m3\|e5m2' "$MPP"                              # do the fp4/fp8 rows reach conv2d files?
   ```
-- [ ] Also still pending on THIS machine (NEEDED item 6): the `static_slice` and
-  `-std=metal` questions in guide 11.1, now that the Metal Toolchain is downloaded.
+- [ ] ~~Also still pending on THIS machine (NEEDED item 6): the `static_slice` and `-std=metal`
+  questions in guide 11.1.~~ **Resolved 2026-07-31** (NEEDED item 6: `static_slice` does not
+  exist — the real API is `slice<...>`; the tensor macros are `-std`-gated, measured per version)
+  and folded into guide 11.1. Per beta, only re-check that the compiler's answers hold.
 
 ## 6. FoundationModels error/tool surface drift
 
@@ -222,8 +236,9 @@ Three separate hedges, all answerable from the fresh dump + one runtime probe:
 - [ ] **`Tool.includesSchemaInInstructions` still non-inlinable?** The default body is
   invisible in interfaces (extension at `FoundationModels` interface `:1202`; guide
   `guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`
-  §4.4, line ~810). If a beta makes it `@inlinable`, the default value becomes
-  readable; until then only the runtime probe in NEEDED item 5 answers it:
+  §4.4, line ~815). If a beta makes it `@inlinable`, the default value becomes
+  readable in the interface; the runtime probe in `probes/` has already measured the default
+  (`true`, 2026-07-31, both the 26.5 host and the 27.0 sim runtime) — re-measure per beta:
   ```bash
   grep -n -A3 'includesSchemaInInstructions' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -B1 -A3 '@inlinable'
   ```
@@ -240,9 +255,14 @@ Gap at `guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-t
   grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-26.5-macos.swiftinterface
   grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-27.0-macos.swiftinterface
   ```
-- [ ] The definitive answer stays a runtime probe on both OS generations
-  (`print([Status.installed, .downloading, .supported, .unsupported].sorted())`) —
-  an interface cannot distinguish a synthesized `<` from a hand-written one.
+- [x] The definitive answer stays a runtime probe on both OS generations — an interface cannot
+  distinguish a synthesized `<` from a hand-written one. The probe now exists and has run
+  (2026-07-31): `speech.assetInventory-status-order` in
+  `probes/Tests/ProbesTests/SpeechProbes.swift` measured **26.5 host:
+  `unsupported<supported<downloading<installed`; 27.0 sim:
+  `unsupported<downloading<supported<installed`** — `<` is synthesized and the ordering really
+  changed (guide 16.1 §5.2 / G2 closed). Re-run per beta and compare against
+  `probes/README.md`.
 
 ## 8. AppIntents — the 26.4-annotation-vs-26.5-capture oddity
 

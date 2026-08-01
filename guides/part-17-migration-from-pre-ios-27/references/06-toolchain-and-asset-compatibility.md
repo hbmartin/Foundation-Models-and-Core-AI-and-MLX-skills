@@ -1772,7 +1772,7 @@ third — plus one of their own.
 
 ### The workflow, and the API
 
-```swift
+```swift illustrative
 var bookmarkData: Data { get }                                 // on AIModel
 init?(resolvingBookmark bookmark: Data) throws                 // on AIModel
 static func deleteEntry(referencedBy bookmark: Data) throws    // on AIModelCache
@@ -1858,7 +1858,7 @@ Three things, none of them clever:
 3. **Make the fallback a real code path with a real UI**, not a `return nil`. After an OS update, the
    fallback runs for **every** user at once.
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 import OSLog
@@ -2043,7 +2043,7 @@ Nothing in that chain fails until the last box, and the last box is somebody els
 
 The two-line diagnostic build that removes all guesswork:
 
-```swift
+```swift compile:27
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, tvOS 27.0, watchOS 27.0, *)
@@ -2059,7 +2059,7 @@ func reportDeviceArchitecture() {
 A shipping community iOS app ranks candidate compiled assets by whether their filename contains
 `AIModel.deviceArchitectureName` — the pattern generalises:
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 
@@ -3031,7 +3031,7 @@ repository. Core AI supports this directly, and the API is verified:
 
 So you can stamp provenance into the asset from a Swift build step:
 
-```swift
+```swift compile:27
 import CoreAI
 import Foundation
 

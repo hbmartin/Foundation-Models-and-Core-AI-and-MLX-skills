@@ -467,7 +467,7 @@ There are three protocols and they are all tiny. ✅ **VERIFIED**, read from sou
 
 `Libraries/MLXLMCommon/Downloader.swift:16-36`:
 
-```swift
+```swift compile:27 imports:Foundation
 public protocol Downloader: Sendable {
     func download(
         id: String,
@@ -489,7 +489,7 @@ public protocol TokenizerLoader: Sendable {
 
 `Libraries/MLXLMCommon/Tokenizer.swift:6-21`:
 
-```swift
+```swift illustrative
 public protocol Tokenizer: Sendable {
     func encode(text: String, addSpecialTokens: Bool) -> [Int]
     func decode(tokenIds: [Int], skipSpecialTokens: Bool) -> String
@@ -524,7 +524,7 @@ from `Tokenizer.swift:23-54` and `ReasoningConfig.swift`.
 `using.md` ships a complete, compiling `Downloader` conformance, which is the best possible template
 because it is exactly what the macro generates. ✅ VERIFIED, `using.md:60-98`, verbatim:
 
-```swift
+```swift illustrative
 import HuggingFace
 import MLXLMCommon
 
@@ -1071,7 +1071,7 @@ ticket you will not enjoy. Apple's own `MLXChatExample` splits by platform (✅ 
 research note's read of `Support/HubApi+default.swift`, though that file is now vestigial in that
 sample):
 
-```swift
+```swift compile:27
 #if os(macOS)
     // Downloads directory
 #else
@@ -1482,7 +1482,7 @@ cooperative-cancellation checks exist, both with comments explaining a real cras
 **In the prefill loop** (✅ VERIFIED, read this session from `Libraries/MLXLLM/LLMModel.swift`,
 verbatim):
 
-```swift
+```swift compile:27
 // Cooperative cancellation between prefill windows. On iOS, GPU work
 // submitted after the app moves to the background is rejected by the
 // system ("Insufficient Permission"), and the resulting command-buffer
@@ -1618,7 +1618,7 @@ A small API asymmetry that costs everyone one compile error. ✅ VERIFIED,
 - **`ChatSession.streamResponse(...)`** — returns `AsyncThrowingStream<String, Error>`. So:
   `for try await chunk in session.streamResponse(to: prompt)`.
 
-```swift
+```swift illustrative
 // Non-throwing iteration, throwing construction
 let stream = try generate(input: input, parameters: params, context: context)
 for await event in stream { … }
@@ -2113,7 +2113,7 @@ Task {
 `MLXLMCommon` ships a measurement helper precisely so you do not have to model this analytically.
 ✅ VERIFIED, `WiredMemoryUtils.swift`:
 
-```swift
+```swift illustrative
 public struct WiredMemoryMeasurement: Sendable {
     public let weightBytes, kvBytes, workspaceBytes, peakActiveBytes, tokenCount, prefillStepSize: Int
     public var totalBytes: Int
@@ -2245,7 +2245,7 @@ size_t app_available_memory(void) {
 
 consumed from Swift with `@_silgen_name` in four different files:
 
-```swift
+```swift compile:27
 @_silgen_name("app_available_memory") fileprivate func c_app_available_memory() -> UInt
 @_silgen_name("app_memory_footprint") fileprivate func c_app_memory_footprint() -> UInt
 ```
@@ -2390,7 +2390,7 @@ while backgrounded, which shows up to the user as "the app restarts every time I
 
 **2. Verify that unloading worked.**
 
-```swift
+```swift compile:27
 enum ModelUnloadVerifier {
     static let defaultRecoveryThresholdBytes: Int64 = 32 * 1024 * 1024
     // Status: .recovered (released ≥ 32 MiB) | .unchanged | .increased | .unavailable
@@ -2562,7 +2562,7 @@ correctly, and only the model-specific processor knows the layout.
 
 The output is `LMInput` (✅ VERIFIED, `Libraries/MLXLMCommon/LanguageModel.swift`):
 
-```swift
+```swift illustrative
 public struct LMInput {
     public let text: Text
     public let image: ProcessedImage?
@@ -2578,7 +2578,7 @@ public struct THW: Sendable { public let t, h, w: Int; … }
 surface is worth knowing because you will need pieces of it if you preprocess images yourself
 (✅ VERIFIED, `Libraries/MLXVLM/MediaProcessing.swift`, public-symbol listing):
 
-```swift
+```swift illustrative
 public struct ProcessedFrames { public let frames: [MLXArray]; timestamps: [CMTime]; totalDuration: CMTime }
 
 public enum MediaProcessing {
@@ -2615,7 +2615,7 @@ multi-attachment UI.
 **prefers `preprocessor_config.json` over `processor_config.json`**, and it overrides the declared
 processor class for two model types (✅ VERIFIED, `Libraries/MLXVLM/VLMModelFactory.swift:419-424`):
 
-```swift
+```swift compile:27
 let processorTypeOverrides: [String: String] = [
     "mistral3": "Mistral3Processor",
     "gemma4_unified": "Gemma4UnifiedProcessor",
@@ -2688,7 +2688,7 @@ and its body says (✅ VERIFIED, transcribed in the research note):
 
 and the in-code comment at the fix site is unambiguous (✅ VERIFIED, `ChatView.swift`, verbatim):
 
-```swift
+```swift compile:27
 // Normalize orientation so pixels match the display orientation.
 // UIImage.jpegData() only writes an EXIF tag but CIImage(contentsOf:)
 // does not apply it, so the VLM would receive a rotated image.
@@ -2828,7 +2828,7 @@ Note `maxSelectionCount: 1` — consistent with the `VLMError.singleImageAllowed
 **On macOS, `fileImporter` URLs are security-scoped** and must be balanced. ✅ VERIFIED verbatim from
 `ChatViewModel.swift:158-188`:
 
-```swift
+```swift compile:27 imports:SwiftUI
 @Observable
 class MediaSelection {
     var isShowing = false

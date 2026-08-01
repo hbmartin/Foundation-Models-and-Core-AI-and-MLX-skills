@@ -242,7 +242,7 @@ pattern in this guide, and §10 shows it in full.
 
 The happy path is three lines, and it hides the entire subject.
 
-```swift
+```swift illustrative
 import CoreAI
 
 let model = try await AIModel(contentsOf: modelURL)      // specializes if needed, caches the result
@@ -411,7 +411,7 @@ WWDC26 session 324 names it as the first of three levers:
 
 Apple's article ships the canonical implementation. This is Apple's code, verbatim:
 
-```swift
+```swift illustrative
 func loadModel(from modelURL: URL) async throws -> AIModel {
     // The default cache stores all specialized assets for your app bundle.
     let cache = AIModelCache.default
@@ -445,7 +445,7 @@ for an article and wrong for an app: you want the *caller* to be able to render 
 not just a toast. Here is the same logic expressed as a readiness query plus an explicit prepare
 step, which is what the first-run-experience recommendation in §2 actually needs.
 
-```swift
+```swift compile:27 imports:SwiftUI
 import CoreAI
 import Observation
 
@@ -574,7 +574,7 @@ second three-minute stall and storage that grows faster than your model files ex
 
 The single-source-of-truth shape:
 
-```swift
+```swift compile:27 imports:Foundation,CoreAI
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 enum ModelSpecialization {
 
@@ -683,7 +683,7 @@ seconds** to load the first time on an iPhone 17 Pro.
 
 The prescribed shape from §2, wired up:
 
-```swift
+```swift illustrative
 import BackgroundAssets   // Apple's recommended delivery mechanism for model assets
 import CoreAI
 
@@ -1133,7 +1133,7 @@ key.
 
 Bookmarks break that dependency.
 
-```swift
+```swift illustrative
 var bookmarkData: Data { get }                       // on AIModel
 init?(resolvingBookmark bookmark: Data) throws       // on AIModel
 static func deleteEntry(referencedBy bookmark: Data) throws   // on AIModelCache
@@ -1318,7 +1318,7 @@ Apple's `llmURL` variable name signposts.
 
 ## 10. `SpecializationOptions` in practice
 
-```swift
+```swift illustrative
 struct SpecializationOptions: Equatable, Hashable, Sendable, SendableMetatype {
 
     static let `default`: SpecializationOptions
@@ -1556,7 +1556,7 @@ func probeStructure(at url: URL) -> ProbedStructure {
 
 ### `availableKinds` — check before you prefer
 
-```swift
+```swift illustrative
 static var availableKinds: Set<ComputeUnitKind> { get }   // "The compute unit kinds available on the current device."
 ```
 
@@ -1904,7 +1904,7 @@ artifacts.
 
 ### Matching the artifact at runtime
 
-```swift
+```swift illustrative
 static var deviceArchitectureName: String { get }    // on AIModel
 ```
 
@@ -1930,7 +1930,7 @@ ways to end up doing on-device work you thought you had eliminated.
 
 The full runtime selection, wired to Background Assets:
 
-```swift
+```swift compile:27
 import BackgroundAssets
 import CoreAI
 
@@ -2506,7 +2506,7 @@ log.info("""
 
 ### The API, in one block
 
-```swift
+```swift illustrative
 import CoreAI
 
 // ── Inspect without specializing ────────────────────────────────────────────

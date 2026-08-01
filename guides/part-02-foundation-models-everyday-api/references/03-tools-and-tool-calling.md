@@ -185,7 +185,7 @@ Note the primary associated types in the angle brackets: `Tool<Arguments, Output
 
 > ✅ **VERIFIED** — verbatim sample from the `Tool` protocol page:
 
-```swift
+```swift compile:27
 import FoundationModels
 import Contacts
 
@@ -327,7 +327,7 @@ inside a `.required` loop, where an invitation to retry is exactly what you cann
 `Tool` requires `Sendable`, not value semantics. Both of these are supported and appear in Apple's
 documentation:
 
-```swift
+```swift illustrative
 // A value-type tool that captures immutable app state at construction.
 struct FindPointsOfInterest: Tool { let landmark: Landmark /* … */ }
 ```
@@ -335,7 +335,7 @@ struct FindPointsOfInterest: Tool { let landmark: Landmark /* … */ }
 > ✅ **VERIFIED** — verbatim from Apple's *Managing the context window* article, an `@Observable final
 > class` conforming to `Tool`:
 
-```swift
+```swift compile:27
 import FoundationModels
 import Observation
 
@@ -388,7 +388,7 @@ New in 27.0: a tool can read (and write) state shared with the profile that acti
 > properties from within a `LanguageModelSession.DynamicProfile`, `LanguageModelSession.Profile`,
 > `DynamicInstructions`, and `Tool`."* Verbatim sample:
 
-```swift
+```swift compile:27 imports:FoundationModels
 extension SessionPropertyValues {
     @SessionPropertyEntry
     var activatedSkills: [String: Bool] = [:]
@@ -503,7 +503,7 @@ should publish its objects out of band and let the transcript carry only the sum
 > `:327`) and `query` by the tool's own description sentence; the exact `@Guide` strings and types were
 > not captured.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 @Generable
@@ -747,7 +747,7 @@ sentence and the tool instance sit two lines apart inside one `DynamicInstructio
 
 > ✅ **VERIFIED** — `Origami/Tutorial/Intelligence/OrigamiInstructions.swift:11-31`:
 
-```swift
+```swift illustrative
 struct OrigamiInstructions: DynamicInstructions {
     var body: some DynamicInstructions {
         Instructions(
@@ -1366,7 +1366,7 @@ private struct StructuredToolOutputProfile: LanguageModelSession.DynamicProfile 
 
 with the counter declared as:
 
-```swift
+```swift compile:27 imports:FoundationModels
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 extension SessionPropertyValues {
     @SessionPropertyEntry
@@ -1407,7 +1407,7 @@ terminate exactly once".
 > 🟡 **RECONSTRUCTED** — the shape below follows directly from that sentence plus the verified `Tool`
 > and `ToolCallError` declarations. Apple showed this on a slide; no source was published.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Thrown to break out of a `.required` tool-calling loop.
@@ -1978,7 +1978,7 @@ by Vision.
 
 > ✅ **VERIFIED** — the one complete usage sample in the corpus, verbatim from that article:
 
-```swift
+```swift compile:27
 import FoundationModels
 import Vision
 

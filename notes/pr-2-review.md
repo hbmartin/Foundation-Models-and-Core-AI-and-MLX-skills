@@ -1,5 +1,12 @@
 # Review: PR #2 — "Correct guide inaccuracies and restore research evidence"
 
+> **Status (2026-07-31):** must-fix #1 (`[^stride-scope]`) and #5 (RESEARCH-INDEX) were applied in
+> commit `2e3959e`. The three leftovers were closed in the 2026-07-31 reconciliation pass:
+> #2 (the part-17 adapter-sunset ANE reassertions, plus the part-16 speech repeat), #3 (the
+> part-03 README and part-04 PCC passages still presenting the 4096 conflict as open), and
+> #4 (part-02's PCC image-input GAP box, aligned with part-04's settled ✅). The should-fix and
+> script notes were addressed in `2e3959e` and later commits.
+
 **Reviewed:** 2026-07-29, against head commit `8c0b06a` (`codex/pr-1-review-fixes` → `main`).
 **Method:** four parallel review passes (guides parts 1–6, 7–11, 12–17, plus scripted mechanical
 validation of links/anchors/footnotes/tables/SHA pins), with every high-severity finding

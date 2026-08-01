@@ -1343,7 +1343,7 @@ with a `DataRepresentation` instead. There was no `IntentValueRepresentation` to
 Here is the implementation the documentation leads you to write for an on-screen image. It is
 reasonable. It compiles. It does not work.
 
-```swift
+```swift illustrative
 // ❌ ✅ VERIFIED (community, forum thread 838329) as the implementation that FAILED on
 //      iOS 27 beta 3. Reproduced here so you can recognise it, not so you can use it.
 struct OnScreenImageEntity: AppEntity, Transferable {

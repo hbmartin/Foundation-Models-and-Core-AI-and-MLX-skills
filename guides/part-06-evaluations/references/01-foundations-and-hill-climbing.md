@@ -471,7 +471,7 @@ the function you are calling; do not stringify a `Prompt` by hand.
 `ToolCallEvaluator`, pass it now. Because the accessor is declared by an Evaluations extension—not by
 FoundationModels—the source file must import both modules:[^eval-structured-transcript-import]
 
-```swift
+```swift compile:27
 import Evaluations
 import FoundationModels
 ```
@@ -1290,7 +1290,7 @@ Swift and is mine. Where a fragment is quoted verbatim from the sample it is not
 
 The feature under test first. This is the app's real code, in the app target:
 
-```swift
+```swift compile:27
 // BookTracker/Services/BookTaggingService.swift
 import Foundation
 import FoundationModels
@@ -1922,7 +1922,7 @@ Mechanically, that means **two `Evaluation` instances in one suite**:
 Which is why §15's evaluation takes its variable as an *initialiser parameter* rather than hardcoding
 it. Parameterise the thing you are varying; instantiate it twice.
 
-```swift
+```swift illustrative
 @Suite("Tag Quality — prompt experiment")
 struct TagPromptComparison {
     static let control      = BookTaggingEvaluation(instructions: Prompts.baseline)
@@ -2095,7 +2095,7 @@ argument rather than by a git branch. Session 335's suite is two instances of on
 > same as the other evaluation. The only difference is I now pass my new lookup tool in the tools
 > array.**"*
 
-```swift
+```swift illustrative
 struct BookTaggingWithToolsEvaluation: Evaluation {
     let tools: [any Tool]                       // the ONE variable
 
@@ -2489,7 +2489,7 @@ feature that quietly got worse.
 
 ### The whole protocol, on one screen
 
-```swift
+```swift illustrative
 import Evaluations
 
 struct MyEvaluation: Evaluation {                       // Sendable

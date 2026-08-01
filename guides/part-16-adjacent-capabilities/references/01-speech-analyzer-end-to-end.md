@@ -333,7 +333,7 @@ So the mental model is a **fan-out**, not a chain:
 
 Every module conforms to `SpeechModule`:
 
-```swift
+```swift illustrative
 protocol SpeechModule : AnyObject, Sendable          // iOS 26.0+
     var availableCompatibleAudioFormats: [AVAudioFormat] { get async }
                                                      // formats this module can analyze,
@@ -695,7 +695,7 @@ plainly that it will not exist everywhere:
 
 That sentence is your fallback policy, written by Apple. Encode it:
 
-```swift
+```swift compile:27
 import Speech
 
 /// Picks the best available transcriber module for a locale, following Apple's documented
@@ -732,7 +732,7 @@ func makeTranscriber(preferring locale: Locale) async -> (any SpeechModule)? {
 own iOS 26 sample — which we *can* read, and which is the strongest evidence available for this
 particular point — compares by BCP-47 identifier, deliberately:
 
-```swift
+```swift compile:27 imports:Speech
     func supported(locale: Locale) async -> Bool {
         let supported = await SpeechTranscriber.supportedLocales
         return supported.map { $0.identifier(.bcp47) }.contains(locale.identifier(.bcp47))
@@ -1134,18 +1134,19 @@ and installation requests; you may obtain several of these instances and call `d
 several times without causing redundant downloads**."* That is a licence to be sloppy in a good
 way — if two screens both ensure assets on appear, you have not doubled the download.
 
-> 🔴 **GAP (narrowed 2026-07-29) — `AssetInventory.Status` is `Comparable` but the ordering is
-> unpublished, and the interface makes it *more* suspect, not less.** The four cases and the
-> `Comparable` conformance are ✅ SDK-verified — but the case **declaration order changed between
-> SDKs**: the 26.5 interface declares `unsupported, supported, downloading, installed`
-> (`Speech-26.5-macos.swiftinterface:23-34`) while the 27.0 beta declares
-> `unsupported, downloading, supported, installed` (`Speech-27.0-macos.swiftinterface:44-55`). If
-> the `<` is the compiler-synthesized one (which follows declaration order — an interface dump
-> cannot distinguish synthesized from hand-written), the relative order of `.downloading` and
-> `.supported` **flipped in the 27.0 beta**. A `>= .supported` guard would mean different things
-> on the two OS generations. **Safe default, now with teeth:** `switch` on the four cases
-> explicitly. It is three more lines and it cannot be wrong — and the reordering above is evidence
-> that relying on the ordering actually bites.
+> ✅ **RESOLVED 2026-07-31 (runtime-measured, both OS generations) — the `Comparable` ordering of
+> `AssetInventory.Status` really did change.** The four cases and the `Comparable` conformance are
+> ✅ SDK-verified, and the case declaration order differs between SDKs: 26.5 declares
+> `unsupported, supported, downloading, installed` (`Speech-26.5-macos.swiftinterface:23-34`),
+> the 27.0 beta declares `unsupported, downloading, supported, installed`
+> (`Speech-27.0-macos.swiftinterface:44-55`). The runtime probe
+> (`probes/`, `speech.assetInventory-status-order`) sorted the four cases on both generations:
+> **macOS 26.5.2 → `unsupported < supported < downloading < installed`; iOS 27.0 sim (24A5390f) →
+> `unsupported < downloading < supported < installed`.** So `<` is the compiler-synthesized
+> declaration-order conformance, and the relative order of `.downloading` and `.supported`
+> **flipped in the 27.0 beta** — a `>= .supported` guard means different things on the two OS
+> generations, measured, not hypothesized. **Safe default, now proven necessary:** `switch` on the
+> four cases explicitly. It is three more lines and it cannot be wrong.
 
 ### 5.3 The four-step process, and the ordering that matters
 
@@ -1254,7 +1255,7 @@ with, then retry. A multi-language app that lets the user switch transcription l
 release the previous locale on switch, not on quit — the system removes the assets "at a later
 time" anyway, so releasing early costs nothing if the user switches back quickly.
 
-```swift
+```swift compile:27 imports:Speech
 /// Switch transcription locale, releasing the previous reservation first so a multi-language
 /// app cannot walk into `maximumReservedLocales`.
 ///
@@ -2377,7 +2378,7 @@ extension LiveTranscription {
 
 ### 8.7 A merge implementation for strategy B
 
-```swift
+```swift compile:27 imports:SwiftUI
 @MainActor
 @Observable
 final class TwoTranscriptStore {
@@ -2560,7 +2561,7 @@ throw.** The API is correct, your code compiles, the types check, and the output
 > has exactly that property: a `Task { }` created inside another task does *not* inherit
 > cancellation. So:
 
-```swift
+```swift compile:27
 /// Runs `body` in a context that does not observe the calling task's cancellation.
 ///
 /// 🟡 OUR IMPLEMENTATION of the semantics Apple's article describes. If
@@ -2670,7 +2671,7 @@ to start from if you want something running today.
 Every Speech, AVFoundation and Foundation call below is ✅ VERIFIED against an Apple page or sample.
 Structure, naming and error handling are ours. Provenance is annotated inline.
 
-```swift
+```swift compile:27
 //  LiveDictation.swift
 //  Requires: iOS 27 / iPadOS 27 / macOS 27 (physical device — not the Simulator)
 
@@ -3001,9 +3002,10 @@ the provider signatures — G4, G7, G8, G9 — so the list is shorter than it wa
    whether a time-range attribute is present — gap G1, the §8.3 conflict.
 4. Record, speak, and hit stop **mid-word**. Is the last word present? — §9.5.
 5. Airplane mode on a device that has never transcribed. Does `prepare()` fail with a useful error?
-6. `print([AssetInventory.Status.installed, .downloading, .supported, .unsupported].sorted())` —
-   gap G2. The SDK check made this one *more* interesting: the case declaration order changed
-   between the 26.5 and 27.0 interfaces, so run it on both OS generations if you can.
+6. ~~`print([AssetInventory.Status.installed, .downloading, .supported, .unsupported].sorted())`~~ —
+   gap G2, **run 2026-07-31 on both OS generations** (`probes/`,
+   `speech.assetInventory-status-order`): the sorted order follows each SDK's declaration order,
+   so the `.downloading`/`.supported` relative order really did flip in 27.0. See §5.2.
 
 ---
 
@@ -3275,7 +3277,7 @@ Apple's sample calls its target `datagenerator`. Here is the shape, assembled fr
 API. This is a **macOS command-line target in your Xcode project** — add it once, run it whenever
 your vocabulary changes, commit the `.bin`.
 
-```swift
+```swift compile:27
 //  datagenerator/main.swift
 //  A macOS command-line target. Run on your Mac; commit the output.
 //
@@ -3704,7 +3706,7 @@ second or two of nothing followed by a burst of text.
 The fix is one call at the right moment — when the compose field gains focus, when the record screen
 appears, when the user starts holding the button:
 
-```swift
+```swift compile:27 imports:Speech
 // 🟡 Ours in composition; the call itself is ✅ SDK-verified. The former gap about the `in:`
 //    parameter closed 2026-07-29: the declaration is
 //    `func prepareToAnalyze(in audioFormat: AVAudioFormat?) async throws`, with an
@@ -3792,9 +3794,10 @@ The bundle layout is a **convention hardcoded in an initializer**, not a manifes
 So adopting `CoreAISpeech` means producing the two-model split yourself, from PyTorch, through the
 Core AI conversion path — which is [Part 8](../../part-08-coreai-pytorch-conversion/) territory and
 is a substantially larger project than "add a Swift package". The split itself is not incidental,
-either: per [Part 7](../../part-07-coreai-swift-runtime/), splitting a model into multiple
-entrypoints is what routes it to the Neural Engine, so the encoder/decoder division is a
-performance requirement as much as an architectural one.
+either: the `coreai-models` loader derives its Neural Engine preference from exactly this kind of
+multi-entrypoint structure — a package loading policy, not a framework routing contract, per
+[Part 10.1 §8](../../part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md) —
+so the encoder/decoder division carries a performance consequence as well as an architectural one.
 
 ### 14.3 Other sharp edges worth knowing before you commit
 
@@ -3885,7 +3888,7 @@ three more. The still-open items come first; the closed ones follow, kept for th
 | # | Gap | Why it is still open | What resolves it | Safe default |
 |---|---|---|---|---|
 | **G1** | **`progressiveLongDictation` vs `.audioTimeRange`.** Apple's article merges by time range using a preset the preset page says has no time-range attributes (§8.3). | Two Apple pages disagree; the sample that would settle it is unavailable (§1.2). A preset's option contents are runtime values — invisible in a `.swiftinterface` (checked 2026-07-29). | Print `result.text.runs` for a volatile result on an iOS 27 device; or read the SpokenWord source. | `.union([.audioTimeRange])` explicitly. Costs nothing, removes the ambiguity. |
-| **G2** | `AssetInventory.Status` `Comparable` ordering. *Narrowed:* cases SDK-verified, but the case **declaration order differs between the 26.5 and 27.0 interfaces** (§5.2), so if `<` is synthesized, the ordering changed. | An interface cannot distinguish a synthesized `<` from a hand-written one. | `print([Status.installed, .downloading, .supported, .unsupported].sorted())` on *both* OS generations. | `switch` on all four cases. Never `>=`. |
+| **G2** | ~~`AssetInventory.Status` `Comparable` ordering.~~ **CLOSED 2026-07-31** — runtime probe on both generations (§5.2): `<` is synthesized (declaration order), and the `.downloading`/`.supported` relative order **flipped** between 26.5 and the 27.0 beta. | Measured, no longer inferred. | Re-run `speech.assetInventory-status-order` per beta (NEXT-BETA-CHECKLIST §7). | `switch` on all four cases. Never `>=`. |
 | **G5** | Value of `AssetInventory.maximumReservedLocales`. | A computed property's value is not in the interface; likely device-dependent. | One `print` on a device. | Assume 1. Release aggressively. Treat the throw as recoverable. |
 | **G6** | **Provenance of `withTaskCancellationShield`.** *Narrowed:* it is **not** a Speech-framework symbol — absent from the 27.0 interface. | Appears in Apple's article and nowhere else in the corpus; remaining candidates are the Concurrency library or a sample-local helper. | Type the name in a scratch file with the Xcode 27 toolchain. | Write your own (§9.4) — the semantics are unambiguous, and an unstructured `Task` already has them. |
 | **G13** | `SFSpeechLanguageModel.Configuration`'s initializer, and the type of `prepareCustomLanguageModel(for:)`. | **Objective-C API — a `.swiftinterface` cannot show it** (checked 2026-07-29; the type's existence is attested via `ContentHint.customizedLanguage`). Still the only unverified API in the custom-vocabulary path. | Fetch `/documentation/speech/sfspeechlanguagemodel/configuration` or read the ObjC header. | Isolate both in one small function (§11.5) and fix against autocompletion in five minutes. |

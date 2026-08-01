@@ -196,7 +196,7 @@ the one that lands in your app download is the storage type.
 So: run the number before you design the feature. `AIModelAsset` will tell you without loading
 anything:
 
-```swift
+```swift compile:27 imports:Foundation
 import CoreAI
 
 /// Reports the on-disk footprint and operation mix of an `.aimodel` bundle
@@ -285,7 +285,7 @@ exactly this confusion, and the comment is the clearest statement of it anywhere
 
 Size a model directory recursively, then:
 
-```swift
+```swift compile:27
 import Foundation
 
 /// Total bytes consumed by a Core AI model bundle (`.aimodel` or `.aimodelc`),
@@ -457,7 +457,7 @@ Here is the state machine that screen drives. It is deliberately delivery-agnost
 why — and it is deliberately explicit about every terminal state, because "prepared / not prepared"
 is a two-state model that does not survive contact with a 1.8 GB download.
 
-```swift
+```swift compile:27
 import Foundation
 import CoreAI
 
@@ -637,7 +637,7 @@ This is the API that makes `refreshState()` safe to call on every appearance of 
 For comparison, Apple's documentation ships a much shorter form of the same idea, and it is worth
 reading because it shows the intended shape without the state machine:
 
-```swift
+```swift illustrative
 func loadModel(from modelURL: URL) async throws -> AIModel {
     // The default cache stores all specialized assets for your app bundle.
     let cache = AIModelCache.default
@@ -831,7 +831,7 @@ documented type is *"The URL of a `.aimodel` or `.aimodelc` file"* ✅ VERIFIED
 (`notes/web/apple-docs-coreai.md:133`). There is no Core AI download API, no Core AI asset type, no
 Core AI hosting integration. The seam is already there in the framework's design.
 
-```swift
+```swift illustrative
 import Foundation
 
 /// The only thing the rest of the app knows about model delivery.
@@ -1204,7 +1204,7 @@ and your app:
 
 The runtime half is two lines, and Apple prints them verbatim:
 
-```swift
+```swift compile:27 imports:CoreAI
 let arch = AIModel.deviceArchitectureName
 let assetName = "MyModel.\(arch).aimodelc"
 ```
@@ -1212,7 +1212,7 @@ let assetName = "MyModel.\(arch).aimodelc"
 ✅ VERIFIED verbatim — Apple's AOT article (`notes/web/apple-docs-coreai.md:1458-1461`). The
 property is documented as:
 
-```swift
+```swift illustrative
 static var deviceArchitectureName: String { get }
 ```
 
@@ -1242,7 +1242,7 @@ what happens when they diverge.
 
 Wiring it into the delivery protocol from §3.4:
 
-```swift
+```swift compile:27
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
@@ -1266,7 +1266,7 @@ enum ModelArtifact {
 
 Availability gating, because `deviceArchitectureName` is 27.0-only and your app is probably not:
 
-```swift
+```swift compile:27 imports:CoreAI
 enum DeviceArchitecture {
     /// Empty string when Core AI is unavailable — deliberately, so that a
     /// name-contains check against it simply never matches rather than crashing.
@@ -1723,7 +1723,7 @@ file"*, because *"numbers measured through a chat UI are not comparable to anyth
 the portable model; an unknown or transient failure remains an error instead of triggering
 destructive recovery or expensive surprise work.
 
-```swift
+```swift compile:27
 import CoreAI
 import OSLog
 
@@ -2065,7 +2065,7 @@ Apple's guidance is unusually direct and worth following:
 
 The full surface:
 
-```swift
+```swift illustrative
 struct SpecializationOptions     // Equatable, Hashable, Sendable
 
 static let `default`: SpecializationOptions
@@ -2318,7 +2318,7 @@ different function signature, a different tokenizer, a different input name. Thi
 
 ✅ VERIFIED (`notes/web/apple-docs-coreai.md:1210`).
 
-```swift
+```swift compile:27
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
@@ -2611,7 +2611,7 @@ Store the bookmark as **one field of a record** that also carries everything nee
 the model from scratch. The record is a few hundred bytes; the thing it protects is a
 multi-gigabyte, multi-minute recovery.
 
-```swift
+```swift compile:27
 import Foundation
 import CoreAI
 
@@ -2808,7 +2808,7 @@ however many lines of setup code you wrote.
 Here is the bug in the shape it really takes. Three call sites, written weeks apart, all "obviously"
 constructing the same options.
 
-```swift
+```swift compile:27 imports:Foundation,CoreAI
 // ❌ THE BUG. Do not do this.
 
 // Call site A — the first-run screen (§2). Written first, by whoever built the
@@ -2904,7 +2904,7 @@ AIModelCache.deleteEntry(for:options:)              // the targeted delete
 
 Four call sites, one source of truth:
 
-```swift
+```swift compile:27
 import CoreAI
 import CryptoKit
 import Foundation
@@ -3176,7 +3176,7 @@ the user, for a recoverable problem.
 
 Shipping shape:
 
-```swift
+```swift compile:27
 import CoreAI
 import OSLog
 
@@ -3242,7 +3242,7 @@ in a shared constant, in a target both bundles link.
 processes sharing a cache but resolving the model to two different container paths get two entries —
 the §9 failure, wearing a different hat. Resolve the model URL from the app group container:
 
-```swift
+```swift compile:27
 import Foundation
 
 enum SharedContainer {
@@ -3337,7 +3337,7 @@ why the table says "assume ≥ 1×" rather than giving a number.
 
 ### 11.2 Cache policies: what the system may take back
 
-```swift
+```swift illustrative
 struct AIModelCache.Policy      // Codable, Equatable, Hashable, Sendable
 static let `default`: AIModelCache.Policy
 static let persistent: AIModelCache.Policy
@@ -3421,7 +3421,7 @@ Community-measured, iPhone 17 Pro / iOS 27 beta (`notes/repos/john-rocky-models.
 **scratch** disk — specialization needs working space beyond the size of its inputs and outputs, and
 nothing documents how much.
 
-```swift
+```swift compile:27
 import Foundation
 
 enum StorageCheck {

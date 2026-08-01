@@ -542,7 +542,7 @@ Apple's own usage examples:
 
 Wiring that into a real app is about fifteen lines:
 
-```swift
+```swift compile:27
 import FoundationModels
 import SwiftUI
 
@@ -674,7 +674,7 @@ The options mirror `SystemLanguageModel.Availability`:
 > ✅ **VERIFIED** — the four-case switch, from the code-along (`205:208-228`), with Apple's own guidance
 > for each case in the comments:
 
-```swift
+```swift compile:27
 import FoundationModels
 
 let model = SystemLanguageModel.default
@@ -1708,7 +1708,7 @@ For 26.4 and later, two cheaper measurements that need no 27 API at all:
 
 A defensive read, from shipping community code:
 
-```swift
+```swift compile:27 imports:FoundationModels
 // contextSize is available in the 26.4+ SDK; treat <= 0 as "unknown".
 let reported = SystemLanguageModel.default.contextSize
 let contextSize = reported > 0 ? reported : 4096
@@ -2019,6 +2019,15 @@ device you'd like to run and profile your app on, update to the latest OS releas
 > actually populates the template's lanes remains open — that is Xcode UI behaviour no XCTest can
 > decide. Safe default unchanged: **profile on a device.** Even if the template records against a
 > Simulator, the numbers would be the host Mac's, which is not a measurement of anything you ship.
+
+> ⚠️ **Probe-verified, 2026-07-31 — `capabilities` will not warn you about the Simulator's gaps.**
+> On the 27.0 sim runtime, `SystemLanguageModel.default.capabilities` reports
+> `vision=true toolCalling=true guidedGeneration=true reasoning=false` (`probes/`,
+> `fm.capabilities`) — while image attachments and tool calling both **fail at runtime** there
+> (`LanguageModelError -1` / missing `com.apple.modelcatalog` assets). So `capabilities` is a
+> **static declaration of what the model supports, not a per-destination health check**: you cannot
+> use `caps.contains(.vision)` to detect the sim's missing pieces, and the bare `-1` stays
+> ambiguous. (`reasoning=false` is the one honestly-model-specific bit on this runtime.)
 
 ---
 
