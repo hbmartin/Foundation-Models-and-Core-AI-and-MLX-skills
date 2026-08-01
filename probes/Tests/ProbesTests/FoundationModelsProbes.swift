@@ -347,9 +347,14 @@ final class FoundationModelsProbes: XCTestCase {
                 try await session.respond(to: hugePrompt,
                                           options: GenerationOptions(maximumResponseTokens: 16))
             }
-            Probe.result("fm.error-domain-context-overflow",
-                         outcome == nil ? "timeout" : "no-error",
-                         detail: "a 30k-word prompt did not throw — \(Probe.runtimeDescription)")
+            switch outcome {
+            case .value:
+                Probe.result("fm.error-domain-context-overflow", "no-error",
+                             detail: "a 30k-word prompt did not throw — \(Probe.runtimeDescription)")
+            case .timedOut:
+                Probe.result("fm.error-domain-context-overflow", "timeout",
+                             detail: Probe.runtimeDescription)
+            }
         } catch {
             Probe.result("fm.error-domain-context-overflow", "threw",
                          detail: "\(errorFingerprint(error)) \(Probe.runtimeDescription)")
@@ -420,11 +425,14 @@ final class FoundationModelsProbes: XCTestCase {
         var followUp = "not-attempted"
         if !responding {
             do {
-                _ = try await Probe.withTimeout(seconds: 60) {
+                let result = try await Probe.withTimeout(seconds: 60) {
                     try await session.respond(to: "Say done.",
                                               options: GenerationOptions(maximumResponseTokens: 20))
                 }
-                followUp = "succeeded"
+                switch result {
+                case .value: followUp = "succeeded"
+                case .timedOut: followUp = "timeout"
+                }
             } catch {
                 followUp = "threw \(type(of: error))"
             }
@@ -536,7 +544,10 @@ final class FoundationModelsProbes: XCTestCase {
                                 to: "Reply with the word ok.",
                                 options: GenerationOptions(maximumResponseTokens: 10))
                         }
-                        return (i, r == nil ? "timeout" : "ok")
+                        switch r {
+                        case .value: return (i, "ok")
+                        case .timedOut: return (i, "timeout")
+                        }
                     } catch {
                         return (i, "threw(\(type(of: error)):\((error as NSError).code))")
                     }
@@ -581,7 +592,10 @@ final class FoundationModelsProbes: XCTestCase {
                                                maximumResponseTokens: 200,
                                                toolCallingMode: .required))
             }
-            outcome = r == nil ? "timeout" : "respond-succeeded"
+            switch r {
+            case .value: outcome = "respond-succeeded"
+            case .timedOut: outcome = "timeout"
+            }
         } catch {
             outcome = "respond-threw(\(type(of: error)))"
         }
@@ -614,8 +628,14 @@ final class FoundationModelsProbes: XCTestCase {
                                                maximumResponseTokens: 30,
                                                toolCallingMode: .required))
             }
-            Probe.result("fm.required-mode-no-tools", r == nil ? "timeout" : "no-error",
-                         detail: Probe.runtimeDescription)
+            switch r {
+            case .value:
+                Probe.result("fm.required-mode-no-tools", "no-error",
+                             detail: Probe.runtimeDescription)
+            case .timedOut:
+                Probe.result("fm.required-mode-no-tools", "timeout",
+                             detail: Probe.runtimeDescription)
+            }
         } catch {
             Probe.result("fm.required-mode-no-tools", "threw",
                          detail: "\(errorFingerprint(error)) \(Probe.runtimeDescription)")
@@ -654,7 +674,10 @@ final class FoundationModelsProbes: XCTestCase {
                                                    maximumResponseTokens: 200,
                                                    toolCallingMode: .required))
                 }
-                outcome = r == nil ? "timeout" : "no-error"
+                switch r {
+                case .value: outcome = "no-error"
+                case .timedOut: outcome = "timeout"
+                }
             } catch {
                 outcome = "threw(\(type(of: error)))"
             }
@@ -768,7 +791,10 @@ final class FoundationModelsProbes: XCTestCase {
                                               options: GenerationOptions(samplingMode: .greedy,
                                                                          maximumResponseTokens: 200))
                 }
-                return r == nil ? "timeout" : "succeeded"
+                switch r {
+                case .value: return "succeeded"
+                case .timedOut: return "timeout"
+                }
             } catch {
                 return "threw(\(type(of: error)):\((error as NSError).code))"
             }
@@ -879,7 +905,7 @@ final class FoundationModelsProbes: XCTestCase {
         for (tag, labeled) in variants {
             let session = LanguageModelSession()
             do {
-                _ = try await Probe.withTimeout(seconds: 120) { [image] in
+                let result = try await Probe.withTimeout(seconds: 120) { [image] in
                     let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
                     return try await session.respond(
                         to: Prompt {
@@ -888,7 +914,12 @@ final class FoundationModelsProbes: XCTestCase {
                         },
                         options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 60))
                 }
-                rows.append("\(tag)Respond=ok segments=[\(lastPromptSegments(session))]")
+                switch result {
+                case .value:
+                    rows.append("\(tag)Respond=ok segments=[\(lastPromptSegments(session))]")
+                case .timedOut:
+                    rows.append("\(tag)Respond=timeout segments=[\(lastPromptSegments(session))]")
+                }
             } catch {
                 rows.append("\(tag)Respond=threw(\((error as NSError).code)) segments=[\(lastPromptSegments(session))]")
             }
@@ -903,7 +934,7 @@ final class FoundationModelsProbes: XCTestCase {
                 instructions: "You are a test assistant. When asked about an image, use the echo tool with a one-word description of it."
             )
             do {
-                _ = try await Probe.withTimeout(seconds: 120) { [image] in
+                let result = try await Probe.withTimeout(seconds: 120) { [image] in
                     let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
                     return try await session.respond(
                         to: Prompt {
@@ -914,7 +945,12 @@ final class FoundationModelsProbes: XCTestCase {
                                                    maximumResponseTokens: 200,
                                                    toolCallingMode: .required))
                 }
-                rows.append("\(tag)Tool=ok toolRan=\(counter.count > 0)")
+                switch result {
+                case .value:
+                    rows.append("\(tag)Tool=ok toolRan=\(counter.count > 0)")
+                case .timedOut:
+                    rows.append("\(tag)Tool=timeout toolRan=\(counter.count > 0)")
+                }
             } catch {
                 rows.append("\(tag)Tool=threw(\((error as NSError).code)) toolRan=\(counter.count > 0)")
             }
@@ -957,9 +993,14 @@ final class FoundationModelsProbes: XCTestCase {
                 for try await _ in stream { n += 1 }
                 return n
             }
+            let value: String
+            switch partials {
+            case .value(let count): value = "partials=\(count)"
+            case .timedOut: value = "timeout"
+            }
             Probe.result(
                 "fm.stream-zero-partials-tool-turn",
-                partials.map { "partials=\($0)" } ?? "timeout",
+                value,
                 detail: "toolRan=\(counter.count > 0) entries=[\(entrySummary(session.transcript))] \(Probe.runtimeDescription)"
             )
         } catch {
@@ -1010,9 +1051,10 @@ final class FoundationModelsProbes: XCTestCase {
                     to: pick.text,
                     options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 80))
             }
-            if let response {
+            switch response {
+            case .value(let response):
                 rows.append("respond=succeeded content=\(String(describing: response.content).prefix(100))")
-            } else {
+            case .timedOut:
                 rows.append("respond=timeout")
             }
         } catch {

@@ -439,7 +439,7 @@ was the single missing call behind the most-reported adapter bug. §4.
 Everything here is 26.x. The markers are about *spelling confidence*, not about whether the feature
 worked — it demonstrably worked; people shipped with it.
 
-```swift
+```swift prelude:platform-target
 import FoundationModels
 import BackgroundAssets
 
@@ -594,7 +594,7 @@ Putting §3.2, §3.4 and §3.5 together, here is what a working 26.x adapter loa
 compiles against the 26 SDK; it is here as reference for a maintenance branch, not as a pattern to
 adopt.
 
-```swift
+```swift prelude:platform-target
 import FoundationModels
 import BackgroundAssets
 
@@ -1059,7 +1059,7 @@ vocabulary, and occasionally return four fields instead of five.
 
 **Before — 26.x, adapter plus a prompt doing structural work:**
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 // 26.x. Adapter carrying both the vocabulary and the format contract.
@@ -1087,7 +1087,7 @@ information expressed as English.
 
 **After — 27.0, no adapter, the contract in the type system:**
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// The severity vocabulary, as a type. The decoder cannot emit anything else.
@@ -1121,7 +1121,7 @@ struct IncidentReport {
 func extract(from note: String) async throws -> IncidentReport {
     // ✅ The bare initializer is 2026 house style — it appears in Apple's 2026 samples
     //    (corrections register C9n). `SystemLanguageModel.default` remains valid.
-    let session = LanguageModelSession(model: SystemLanguageModel()) {
+    let session = LanguageModelSession {
         "Extract an incident report from the field note."
     }
 
@@ -1199,7 +1199,7 @@ That is a real capability, not a metaphor: you construct an instance of your `@G
 put it in the prompt. The exemplar carries register, level of detail, and length in a way that
 "write in a concise professional tone" never will — and it costs a few dozen tokens.
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 @available(iOS 26.0, macOS 26.0, *)
@@ -1290,7 +1290,7 @@ So build the suite once and it serves three purposes: it tells you whether Path 
 becomes your regression net across OS updates, and it is the baseline you would compare §7 or §8
 against if you go there.
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 import FoundationModels
 import Testing
@@ -1382,27 +1382,27 @@ You do not have to estimate. Since **iOS 26.4** you can measure.
 > A DTS Engineer announced `tokenCount(for:)` in thread 817502: *"since iOS 26.4 (and friends), we
 > have the following API that returns the token count for the specified instructions."*
 >
-> 🟡 The individual Swift **signatures** of the overload family are not published. The *existence* of
-> multi-argument coverage is verified by TN3193's prose; the exact spelling of each overload is not.
-> Write against one overload, compile, and adjust — do not build a framework on an assumed shape.
+> ✅ **SDK-verified 2026-07-29:** `SystemLanguageModel` has five asynchronous overloads,
+> `tokenCount(for:)` for a `PromptRepresentable`, `Instructions`, `[any Tool]`,
+> `GenerationSchema`, and a collection of `Transcript.Entry`. The example below uses the
+> `Instructions` overload for the instruction prefix and the prompt overload for the two inputs.
 
-```swift
+```swift compile:27
 import FoundationModels
 
 /// Fail loudly at development time rather than quietly in production.
 /// `contextSize` and `tokenCount(for:)` are iOS/macOS 26.4+.
 @available(iOS 26.4, macOS 26.4, *)
-func auditBudget(instructions: String, glossary: String, sampleNote: String) throws {
+func auditBudget(instructions: String, glossary: String, sampleNote: String) async throws {
     let model = SystemLanguageModel()
-    let session = LanguageModelSession(model: model) { instructions }
 
     // Read the ceiling. Do NOT hardcode 4096 — Apple's own guidance is to read it
     // at runtime, and it is not guaranteed to be constant across devices or releases.
-    let ceiling = session.contextSize
+    let ceiling = model.contextSize
 
-    let instructionTokens = try session.tokenCount(for: instructions)
-    let glossaryTokens    = try session.tokenCount(for: glossary)
-    let noteTokens        = try session.tokenCount(for: sampleNote)
+    let instructionTokens = try await model.tokenCount(for: Instructions { instructions })
+    let glossaryTokens    = try await model.tokenCount(for: glossary)
+    let noteTokens        = try await model.tokenCount(for: sampleNote)
 
     // Leave room for the response. Whatever you reserve, reserve it explicitly.
     let reservedForOutput = 512
@@ -1495,7 +1495,7 @@ supply chain.
 > `apple/coreai-models`, `swift/Sources/CoreAILanguageModels/LanguageModel/CoreAILanguageModel.swift:23-31`,
 > reproduced in the README of every model in that repository:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import CoreAILanguageModels
 
@@ -1586,7 +1586,7 @@ plan anything.
 
 Defensive shape, since you cannot rely on a compiler error:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import CoreAILanguageModels
 
@@ -1742,7 +1742,7 @@ Because there is no Apple sample, here is the shape the port takes — assembled
 pieces above and marked where it is assembling rather than quoting. It exists so you can see all the
 new responsibilities in one screen, not as something to paste.
 
-```swift
+```swift prelude:external-module
 import Foundation
 import FoundationModels
 import CoreAILanguageModels
@@ -2002,7 +2002,7 @@ curious: `LoRALinear.fuse()` computes
 
 **Load at runtime.** `mlx-swift-lm` does support this — there is a real Swift adapter API:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — Libraries/MLXLMCommon/Adapters/ModelAdapter.swift and LoRA/LoRAContainer.swift
 public protocol ModelAdapter: Sendable {
     func load(into model: LanguageModel) throws
@@ -2160,7 +2160,7 @@ it targeted is the gap above, restated.
 
 Ship-fused (§8.4) makes the app side small. The shape:
 
-```swift
+```swift illustrative
 import Foundation
 import FoundationModels
 #if canImport(MLXFoundationModels)
@@ -2331,7 +2331,7 @@ build**, before any migration work starts. The goal is that a user upgrading to 
 non-adapter path deliberately, rather than getting whatever the platform does with an orphaned
 adapter.
 
-```swift
+```swift prelude:platform-target
 import Foundation
 import FoundationModels
 

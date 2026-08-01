@@ -211,7 +211,7 @@ This is the most important correction in this guide, and it cuts both ways.
 > is a pure projection of an `@Observable` state machine, and app code mutates the mode.
 > `Origami/Models/OrchestratorProfile.swift:11-75`, verbatim:
 
-```swift
+```swift prelude:guide-context
 struct OrchestratorProfile: LanguageModelSession.DynamicProfile {
     var orchestrator: Orchestrator
 
@@ -274,7 +274,7 @@ struct OrchestratorProfile: LanguageModelSession.DynamicProfile {
     /// Returns the most recent four entries so longer on-device sessions
     /// stay within the smaller context window.
     private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
-        entries.suffix(4)
+        Array(entries.suffix(4))
     }
 }
 ```
@@ -347,11 +347,12 @@ identifiers are ours.
 > argument**"*). The `Tool` conformance itself is ✅ verified API. What is reconstructed is this
 > file's contents, not the protocol.
 
-```swift
+```swift compile:27
 import FoundationModels
 import Observation
 
 // The controlling variable. One enum, one owner.
+@MainActor
 @Observable
 final class CraftOrchestrator {
     enum Mode { case brainstorm, tutorial }
@@ -397,7 +398,7 @@ struct SwitchToTutorialModeTool: Tool {
 
 and the profile that reads the variable:
 
-```swift
+```swift prelude:guide-context
 struct CraftProfile: LanguageModelSession.DynamicProfile {
     let orchestrator: CraftOrchestrator
 
@@ -581,7 +582,7 @@ makes the same decision. Every component is individually working. There is nothi
 consequence of a missing tool is not "a feature is unavailable" but "the state machine cannot
 advance." Three cheap defences, none of which require Instruments:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 
@@ -596,14 +597,14 @@ import FoundationModels
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // 2. Print what was actually advertised. Tool definitions live in entry 0.
 if case let .instructions(instructions) = session.transcript.first {
     print("tools advertised:", instructions.toolDefinitions.map(\.name))
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // 3. A stuck-handoff detector: the same tool N times with no mode change.
 Profile { BrainstormInstructions(orchestrator: orchestrator) }
     .onToolCall { call in
@@ -653,7 +654,7 @@ where iOS 26 reported 4096 (community, `noema-ios`, `AFMLLMClient.swift:133-135`
 ```swift compile:27 imports:FoundationModels
 // ✅ VERIFIED — Origami/Models/OrchestratorProfile.swift:289-293
 private func shortHistory(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
-    entries.suffix(4)
+    Array(entries.suffix(4))
 }
 ```
 
@@ -817,7 +818,7 @@ is silent and it looks like the consultant being stupid.
 Nothing stops the child from being as structured as the parent. If the consultant is a recurring role
 in your app rather than a one-liner, give it a profile:
 
-```swift
+```swift prelude:guide-context
 struct TitleSpecialistProfile: LanguageModelSession.DynamicProfile {
     var body: some DynamicProfile {
         Profile {
@@ -861,7 +862,7 @@ mechanical detail of the child half is verified here:
 
 > ✅ **VERIFIED** — `Origami/Terms/TermExtractor.swift`, in full for the session part:
 
-```swift
+```swift prelude:guide-context
 @Generable
 private struct ExtractedTerms: Codable {
     var terms: [String]
@@ -942,7 +943,7 @@ Apple's own tools take the second route on *recoverable* conditions — `FetchOr
 (✅ `CraftTools.swift:30`). That is the right shape when the fallback is honest and the model is told
 what happened. It is the wrong shape when your string reads like a real answer.
 
-```swift
+```swift prelude:guide-context
 func call(arguments: Arguments) async throws -> String {
     do {
         let child = LanguageModelSession(profile: TitleSpecialistProfile())
@@ -1046,7 +1047,7 @@ anyway — see §7.4.)
 Nothing says you pick one. The shape that shows up in real apps is baton-pass for modes and
 phone-a-friend for questions inside a mode:
 
-```swift
+```swift prelude:guide-context
 struct CraftProfile: LanguageModelSession.DynamicProfile {
     let orchestrator: CraftOrchestrator
 
@@ -1196,7 +1197,7 @@ definition block onward. Treat a mode flip as a switch point, same as a profile 
 >      toolCallingMode: GenerationOptions.ToolCallingMode?)
 > ```
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store)]) {
@@ -1333,7 +1334,7 @@ Apple's own documentation sample, verbatim:
 
 > ✅ **VERIFIED** — from the `GenerationOptions.ToolCallingMode` documentation page:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 extension SessionPropertyValues {
@@ -1357,7 +1358,7 @@ struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(profile: RecipeDynamicProfile())
 let response = try await session.respond(to: "What's a good sourdough recipe?")
 ```
@@ -1380,7 +1381,7 @@ The reference implementation in compiled code goes one step further and switches
 > ✅ **VERIFIED** — `mlx-swift-lm`, `StructuredToolOutputSessionTests.swift:47-79`, compiled against
 > the 27.0 SDK:
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 private struct StructuredToolOutputProfile: LanguageModelSession.DynamicProfile {
     let model: MLXLanguageModel
@@ -1426,7 +1427,7 @@ extension SessionPropertyValues {
 
 and asserted from outside the session afterwards:
 
-```swift
+```swift prelude:guide-context
 #expect(session.properties.structuredToolOutputCallCount == 1)
 ```
 
@@ -1497,7 +1498,7 @@ struct FinalAnswerTool: Tool {
 
 At the call site you unwrap it, because the framework wraps whatever your tool throws:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store), FinalAnswerTool()]) {
     "Answer only from tool results. When you are done, call finalAnswer."
 }
@@ -1558,7 +1559,7 @@ If you need the entries, keep them:
 > using profiles, you can now set `transcriptErrorHandlingPolicy` using a modifier. If you're not
 > using a profile, you can set it directly on your session."*
 
-```swift
+```swift prelude:guide-context
 // Non-profile form.
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store), FinalAnswerTool()])
 session.transcriptErrorHandlingPolicy = .preserveTranscript
@@ -1593,7 +1594,7 @@ Repair uses the other 27.0 change — `session.transcript` is now settable:
 must trap.[^transcript-mutation-error] Origami guards on `session.isResponding` for re-entrancy
 (✅ `Orchestrator.swift:367`); do the same before any assignment.
 
-```swift
+```swift prelude:guide-context
 // Repair after an aborted turn, under .preserveTranscript.
 guard !session.isResponding else { return }
 
@@ -1616,7 +1617,7 @@ if case .toolCalls = session.transcript.last {
 
 For anything long-running, use **both**: Exit B as the normal path, Exit A as a hard iteration cap.
 
-```swift
+```swift prelude:guide-context
 extension SessionPropertyValues {
     @SessionPropertyEntry
     var agentToolCallCount: Int = 0
@@ -1715,7 +1716,7 @@ Everything in this section is ✅ **VERIFIED** — read this session directly fr
 
 > ✅ **VERIFIED** — `Origami/Coach/MovePhotoToStepTool.swift`, in full:
 
-```swift
+```swift prelude:guide-context
 /*
 See the LICENSE.txt file for this sample's licensing information.
 
@@ -1803,7 +1804,7 @@ three and not that one. That is §2's "swap tools with the profile" made concret
 > ✅ **VERIFIED** — `Origami/Models/Orchestrator.swift:487-494`, comment included because it explains
 > the UI contract:
 
-```swift
+```swift prelude:guide-context
     /// Called by the `MovePhotoToStepTool` tool when the model decides the user is ready
     /// to advance. Stores the proposed section and step on the coach so the UI
     /// can surface a "Move to Step N?" with a Yes or No confirmation in place of the
@@ -1821,7 +1822,7 @@ not block, it does not `await` a user, it does not throw.
 
 > ✅ **VERIFIED** — `Origami/Coach/CoachView.swift:38-44`:
 
-```swift
+```swift prelude:guide-context
                         if showActions {
                             if let target = orchestrator.coach.pendingMoveTo {
                                 MoveStepConfirmRow(targetStep: target)
@@ -1837,7 +1838,7 @@ exactly one thing to do next, and it is a binary choice.
 > ✅ **VERIFIED** — `Origami/Coach/CoachView.swift:127-157`, the row itself, condensed to its
 > structure:
 
-```swift
+```swift prelude:guide-context
 struct MoveStepConfirmRow: View {
     @Environment(Orchestrator.self) private var orchestrator
     let targetStep: Int
@@ -1863,7 +1864,7 @@ This is the interesting half.
 
 > ✅ **VERIFIED** — `Origami/Models/Orchestrator.swift:496-545`, in full:
 
-```swift
+```swift prelude:guide-context
     /// User tapped "Yes" on the move confirmation. Re-attache the photo to
     /// the proposed section and step, then re-run coaching at the new step,
     /// passing along the prior coach text so the model knows it just
@@ -1971,7 +1972,7 @@ special code path — it is a normal event with extra context.
 
 > ✅ **VERIFIED** — `Origami/Models/Orchestrator.swift:547-561`, in full:
 
-```swift
+```swift prelude:guide-context
     /// User tapped "No" on the move confirmation. Clear the pending move
     /// and tell the model the user declined so it can respond.
     func cancelPendingMove(photo: Photo? = nil) {
@@ -2059,7 +2060,7 @@ crash reporting will ever show it.
 
 Three defences, in order of how much they cost you:
 
-```swift
+```swift prelude:guide-context
 // 1. Clear the proposal on any navigation that ends the consent context.
 func dismissCoach() {
     coach.pendingMoveTo = nil
@@ -2068,7 +2069,7 @@ func dismissCoach() {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // 2. Treat abandonment as an implicit decline when the user does something else.
 //    Any new user turn while a proposal is pending should resolve it first.
 func sendFollowUp(_ text: String) {
@@ -2079,7 +2080,7 @@ func sendFollowUp(_ text: String) {
 }
 ```
 
-```swift compile:27
+```swift illustrative
 // 3. Never persist a pending proposal across app launches. Restore the
 //    transcript (LanguageModelSession(profile:history:)), not the pending flag.
 ```
@@ -2420,7 +2421,7 @@ And the UI guidance, which is unusually specific:
 degrade badly at exactly the moment a user is most engaged — deep in a conversation, quota exhausted.
 Make the route a function of *capability plus eligibility*:
 
-```swift
+```swift prelude:guide-context
 @Observable
 final class Router {
     enum Route { case onDevice, server }
@@ -2724,7 +2725,7 @@ And the wiring, which has one non-obvious requirement:
 
 > ✅ **VERIFIED** — `SearchBooks.swift:525-563`:
 
-```swift
+```swift illustrative
 struct SearchToolEvaluations: Evaluation {
     var dataset = samples
 
@@ -2774,7 +2775,7 @@ struct SearchToolEvaluations: Evaluation {
 
 Now apply it to §2. A baton-pass has a trajectory, and it is short:
 
-```swift
+```swift prelude:guide-context
 import Evaluations
 import FoundationModels
 import Testing

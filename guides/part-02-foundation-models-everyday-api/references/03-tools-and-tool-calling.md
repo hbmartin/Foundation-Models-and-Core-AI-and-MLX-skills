@@ -210,7 +210,7 @@ struct FindContacts: Tool {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [FindContacts()])
 let response = try await session.respond(to: "Show me five people from my contacts.")
 ```
@@ -335,7 +335,7 @@ struct FindPointsOfInterest: Tool { let landmark: Landmark /* … */ }
 > ✅ **VERIFIED** — verbatim from Apple's *Managing the context window* article, an `@Observable final
 > class` conforming to `Tool`:
 
-```swift compile:27
+```swift illustrative
 import FoundationModels
 import Observation
 
@@ -465,7 +465,7 @@ The tool that session narrates is real and it shipped. Book Tracker's
 
 > ✅ **VERIFIED** — `SearchBooksTool`, `BookSearchTools.swift:106-120`:
 
-```swift
+```swift prelude:guide-context
 struct SearchBooksTool: Tool {
     typealias Arguments = SearchBooksArguments
     typealias Output = String
@@ -558,7 +558,7 @@ yourself, taking `GeneratedContent` as your `Arguments` type.
 > ✅ **VERIFIED** — verbatim from Developer Forums thread 812501 (developer's own code, quoted in an
 > Apple-answered thread):
 
-```swift
+```swift prelude:guide-context
 struct SectionReader: Tool {
     let article: Article
     let sections: [String]
@@ -595,7 +595,7 @@ shows the `DynamicGenerationSchema` route:
 > ✅ **VERIFIED** — `foundation-models-utilities`, `Skills.swift:269-283`, building the toggle tool's
 > schema from the currently-available skill names:
 
-```swift
+```swift prelude:guide-context
 let parameters = try! GenerationSchema(
     root: DynamicGenerationSchema(
         name: "Arguments",
@@ -692,7 +692,7 @@ The framework gives the model three things about each tool: the `name`, the `des
 
 Compare:
 
-```swift
+```swift illustrative
 // Weak: describes the implementation.
 let description = "Queries the POI database."
 
@@ -726,7 +726,7 @@ the instructions naming that tool.
 > restaurants in this landmark"* to the instructions. *"Now this instruction is telling the model that
 > it must invoke this tool in order to get the points of interest response."*
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 let landmark = ModelData.landmarks[0]
@@ -776,7 +776,7 @@ they do not.
 
 Mitigate it the boring way — one source of truth:
 
-```swift
+```swift prelude:guide-context
 enum ToolNames {
     static let findPointsOfInterest = "findPointsOfInterest"
     static let switchToTutorialMode = "switchToTutorialMode"
@@ -869,7 +869,7 @@ you can read, render, persist, and — new in 27.0 — mutate.
 
 > ✅ **VERIFIED** — declarations from the docs harvest:
 
-```swift
+```swift illustrative
 // Transcript.ToolDefinition — what the model is TOLD about your tool.
 init(name: ..., description: ..., parameters: ...)
 init(tool: ...)                 // convenience, from a Tool instance
@@ -978,7 +978,7 @@ why adding or removing a tool mid-session is expensive:
 
 ### 5.4 Rendering it
 
-```swift
+```swift prelude:guide-context
 import SwiftUI
 import FoundationModels
 
@@ -1134,7 +1134,7 @@ your mode transitions to happen at conversation boundaries, not every turn.
 >      toolCallingMode: GenerationOptions.ToolCallingMode?)
 > ```
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store)]) {
@@ -1287,7 +1287,7 @@ Apple's own documentation sample, verbatim:
 
 > ✅ **VERIFIED** — from the `GenerationOptions.ToolCallingMode` page:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 extension SessionPropertyValues {
@@ -1311,7 +1311,7 @@ struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(profile: RecipeDynamicProfile())
 let response = try await session.respond(to: "What's a good sourdough recipe?")
 ```
@@ -1330,7 +1330,7 @@ The mechanism has three moving parts and all three are load-bearing:
 > `StructuredToolOutputSessionTests.swift:47-79`, which switches all the way to `.disallowed` to force
 > an answer:
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 private struct StructuredToolOutputProfile: LanguageModelSession.DynamicProfile {
     let model: MLXLanguageModel
@@ -1376,7 +1376,7 @@ extension SessionPropertyValues {
 
 and readable from outside the session afterwards:
 
-```swift
+```swift prelude:guide-context
 #expect(session.properties.structuredToolOutputCallCount == 1)
 ```
 
@@ -1436,7 +1436,7 @@ struct FinalAnswerTool: Tool {
 
 At the call site you have to unwrap it, because the framework wraps whatever your tool throws:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store), FinalAnswerTool()]) {
     "Answer only from tool results. When you are done, call finalAnswer."
 }
@@ -1501,7 +1501,7 @@ If you need the entries, keep them:
 > `transcriptErrorHandlingPolicy` using a modifier. If you're not using a profile, you can set it
 > directly on your session."*
 
-```swift
+```swift prelude:guide-context
 // Non-profile form.
 let session = LanguageModelSession(tools: [SearchBooksTool(library: store), FinalAnswerTool()])
 session.transcriptErrorHandlingPolicy = .preserveTranscript
@@ -1535,7 +1535,7 @@ Repairing it uses the other 27.0 change — `session.transcript` is now settable
 `LanguageModelSession.Error` does carry a `.transcriptMutationWhileResponding` case, so some paths
 report rather than trap, but do not rely on finding out which.
 
-```swift
+```swift prelude:guide-context
 // Repair after an aborted turn, under .preserveTranscript.
 guard !session.isResponding else { return }
 
@@ -1601,7 +1601,7 @@ Pick again — another shortlist. No error, no log line, no exception.
 > from the narration; identifier spellings are as spoken (and the session itself renders the first tool
 > inconsistently as `GenerateCraftIdeaTool`, `GenerateCraftIdeasTool`, and `generateCraftIdea`).
 
-```swift
+```swift illustrative
 // BEFORE — buggy
 struct BrainstormDynamicInstructions: DynamicInstructions {
     var body: some DynamicInstructions {
@@ -1693,7 +1693,7 @@ profile switch takes effect on the next request, not mid-request.**
 
 **Without Instruments**, three cheap detectors:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 
@@ -1707,14 +1707,14 @@ import FoundationModels
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // 2. Count tool definitions actually sent, by reading the instructions entry.
 if case let .instructions(instructions) = session.transcript.first {
     print("tools advertised:", instructions.toolDefinitions.map(\.name))
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // 3. Detect a stuck loop: the same tool called N times with no state change.
 Profile { BrainstormDynamicInstructions() }
     .onToolCall { call in
@@ -1751,7 +1751,7 @@ detector 1 can, and it costs four lines.
 Anything your `call(arguments:)` throws arrives at your call site wrapped in this, with the originating
 tool attached. Apple's handling pattern, verbatim:
 
-```swift
+```swift prelude:guide-context
 do {
     let answer = try await session.respond(to: "Find a recipe for tomato soup.")
 } catch let error as LanguageModelSession.ToolCallError {
@@ -1797,7 +1797,7 @@ user confirmation and policy checks.
 
 > ✅ **VERIFIED** — Apple's dynamic-profiles article, verbatim sample:
 
-```swift
+```swift prelude:guide-context
 Profile {
     MyCustomFileAccessInstructions()
     MyCustomReadFileTool()
@@ -1829,7 +1829,7 @@ Profile {
 > So `onToolCall` is a kill switch, not a veto. If you want "deny this call, let the model try something
 > else", implement it by wrapping the tool and returning a refusal string from `call(arguments:)`:
 
-```swift
+```swift prelude:guide-context
 struct Gated<Wrapped: Tool>: Tool where Wrapped.Output == String {
     let wrapped: Wrapped
     let permits: @Sendable (Wrapped.Arguments) -> Bool
@@ -1880,7 +1880,7 @@ arrive as the next turn.**
 > ✅ **VERIFIED** — `Origami/Coach/MovePhotoToStepTool.swift:12-38`. The coach persona is allowed to
 > reorganise the user's photos, and the user has to agree:
 
-```swift
+```swift prelude:guide-context
 struct MovePhotoToStepTool: Tool {
     let name = "movePhotoToStep"
     let description =
@@ -2276,7 +2276,7 @@ this guide.
 > deterministic. For our app, this ensures that the model will reliably call our tool every single
 > time.**"* And (`205:836-837`): *"By default, it does random sampling."*
 
-```swift
+```swift prelude:guide-context
 let response = try await session.respond(
     to: prompt,
     generating: Itinerary.self,
@@ -2295,7 +2295,7 @@ Greedy is the only decoding setting you should build a test assertion on.
 argument validation, the corrective-string paths, error mapping, concurrency safety — should be tested
 by calling it directly, with no session anywhere in sight.
 
-```swift
+```swift prelude:external-module
 import Testing
 @testable import MyApp
 
@@ -2314,7 +2314,7 @@ misbehaving on the day you ran it.
 For the model-in-the-loop half, greedy sampling plus a transcript assertion is a reasonable
 poor-person's trajectory test on any OS where the Evaluations framework is not available to you:
 
-```swift
+```swift prelude:guide-context
 let toolCallNames = session.transcript.compactMap { entry -> [String]? in
     guard case let .toolCalls(calls) = entry else { return nil }
     return calls.map(\.toolName)

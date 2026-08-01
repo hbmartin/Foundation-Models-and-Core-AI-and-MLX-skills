@@ -156,7 +156,7 @@ Every file in `Libraries/MLXFoundationModels` opens with the same two lines and 
 matching `#endif`s. Here is the top of `MLXLanguageModel.swift`, verbatim and complete, because the
 comment between them is the best explanation of the design that exists anywhere:
 
-```swift
+```swift illustrative
 // Copyright © 2026 Apple Inc.
 
 #if FoundationModelsIntegration
@@ -198,7 +198,7 @@ their CI runner on Xcode 26 still fails to build.
 **The trait is the outer gate.** `FoundationModelsIntegration` is the package's only SwiftPM trait,
 and it is on by default. Its declaration carries the rationale (`Package.swift:76-92`, verbatim):
 
-```swift
+```swift illustrative
     traits: [
         // Gates the MLXLanguageModel adapter for Apple's FoundationModels
         // framework. Default-on. Disabling the trait compiles MLXFoundationModels
@@ -234,7 +234,7 @@ turning it off removes the adapter regardless of SDK.
 There is a repo test that pins this. `Tests/MLXFoundationModelsTests/TraitMatrixTests.swift` is
 structured so that *compiling* it under a given trait state is the assertion:
 
-```swift compile:27
+```swift illustrative
 // Copyright © 2026 Apple Inc.
 //
 // TraitMatrixTests: symbol-surface + behavioral checks across the
@@ -271,7 +271,7 @@ but `MLXGuidedGeneration` itself is an unconditional product you can depend on d
 
 ### 1.2 Turning the trait off
 
-```swift
+```swift illustrative
 // In a consumer Package.swift — iOS 17 target that wants MLX but not the FM adapter.
 dependencies: [
     .package(
@@ -372,7 +372,7 @@ Everything else — the model cache, availability, download progress — is plum
 
 ### 2.1 The one-line version, from the README
 
-```swift
+```swift prelude:external-module
 import Foundation
 import FoundationModels
 import HuggingFace
@@ -427,7 +427,7 @@ swift-transformers / swift-huggingface"*, because in 3.x the tokenizer and downl
 Here is the canonical block, ✅ VERIFIED verbatim from the repo root `README.md:63-100`, with the
 `MLXFoundationModels` product added (the root README's block is the non-FM quick start):
 
-```swift
+```swift prelude:external-module
 // swift-tools-version: 6.1
 import PackageDescription
 
@@ -476,7 +476,7 @@ site, into source text that references symbols from five different modules. Thos
 in scope **where you wrote the macro**, not where the macro was declared. The macro's own doc comment
 enumerates them (`Libraries/MLXHuggingFace/FoundationModelsMacros.swift:17-25`, verbatim):
 
-```swift compile:27
+```swift illustrative
 /// The expansion references symbols the caller must have in scope:
 /// ```swift
 /// import Foundation          // URL, Progress (via #hubDownloader)
@@ -568,7 +568,7 @@ protocol — you can single-step the whole executor against a stub.
 
 ### 4.1 The declaration
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 @freestanding(expression)
 public macro huggingFaceLanguageModel(
@@ -586,7 +586,7 @@ the availability line and the `#externalMacro` clause. The whole file is wrapped
 There is a subtlety in the defaults that the source calls out explicitly and that you should read
 before you rely on either default (`FoundationModelsMacros.swift:35-40`, verbatim):
 
-```swift compile:27
+```swift illustrative
     // The `capabilities` / `configurationResolver` defaults mirror
     // `MLXLanguageModel.init(configuration:capabilities:configurationResolver:weightsLocation:load:)`.
     // The expansion forwards each argument only when the caller supplies it, so
@@ -606,7 +606,7 @@ This is the macro implementation's return statement, read from
 `Libraries/MLXHuggingFaceMacros/HuggingFaceIntegrationMacros.swift:243-272`. The expansion is
 assembled as a string, so what follows is what your compiler actually sees:
 
-```swift
+```swift illustrative
 MLXLanguageModel(
     configuration: <your configuration>,
     // capabilities: <yours>            — only if you passed it
@@ -650,7 +650,7 @@ injected-closure design.
 
 ### 4.3 A complete, copyable program
 
-```swift
+```swift illustrative
 // GuidedRecommendation.swift
 //
 // Build: requires the iOS 27 / macOS 27 SDK. On the 26 SDK the whole file
@@ -797,7 +797,7 @@ weights."*
 
 The simplest possible `weightsLocation`, straight from the initializer's doc comment (`:551-555`):
 
-```swift
+```swift illustrative
 weightsLocation: { id in
     URL(fileURLWithPath: "/Volumes/SharedCache/models/\(id)")
 }
@@ -809,7 +809,7 @@ The most common reason to reach past the macro is that you ship weights yourself
 downloaded through Background Assets, or sitting in an app-group container — and you have no Hugging
 Face repo at all. Here is that, complete:
 
-```swift
+```swift illustrative
 import Foundation
 
 #if canImport(FoundationModels, _version: 2)
@@ -874,7 +874,7 @@ so the caller can compose a downloader and a tokenizer loader — or neither —
 The closure is called through one indirection worth knowing about
 (`MLXLanguageModel.swift:406-419`):
 
-```swift
+```swift prelude:guide-context
 private func makeContainerLoader() -> @Sendable () async throws -> ModelContainer {
     let configuration = self.configuration
     let load = self.load
@@ -928,7 +928,7 @@ own adapter uses the positional `LanguageModelCapabilities(caps)`. Both spelling
 
 ### 6.2 The adapter refuses to infer them, and says so twice
 
-```swift compile:27 imports:FoundationModels
+```swift illustrative
     /// Capabilities are declared explicitly by the caller at ``init(configuration:capabilities:configurationResolver:weightsLocation:load:)``
     /// and stored verbatim. The caller includes
     /// `.guidedGeneration`/`.toolCalling`/`.reasoning` as appropriate; the
@@ -956,7 +956,7 @@ chose. To close this gap: read `Libraries/MLXLMCommon/ReasoningHeuristics.swift`
 
 ### 6.3 What `.reasoning` actually switches — the sharpest doc comment in the repo
 
-```swift compile:27
+```swift illustrative
     /// Declaring `.reasoning` matters for request routing: the framework only
     /// forwards a `reasoningLevel` to executors that declare `.reasoning`, and
     /// auto-rejects one otherwise (on the developer's behalf) before `respond`
@@ -994,7 +994,7 @@ style model whose `ReasoningConfig.promptStrategy` is `.alwaysOn`; the second wh
 This is the single best-commented defensive check in the adapter, and it exists because the SDK's own
 guard has a hole:
 
-```swift
+```swift prelude:guide-context
             // Vision capability gate (adapter-side). Labeled image
             // attachments arrive as public `.attachment` segments that
             // the SDK's own vision guard never inspects, so the adapter
@@ -1099,7 +1099,7 @@ deliberately shaped to be swappable with the system model in a UI layer.
 
 ### 7.2 The resolution order, and why it is that order
 
-```swift
+```swift prelude:guide-context
     public var availability: Availability {
         get async {
             guard Self.isDeviceCapable else {
@@ -1137,7 +1137,7 @@ a download. **Treat the value as advisory.**"*
 
 ### 7.3 ⚠️ SILENT FAILURE: `.available` does not mean the weights are complete
 
-```swift
+```swift prelude:guide-context
     /// Whether `config.json` is present at this model's configured on-disk
     /// location.
     ///
@@ -1177,7 +1177,7 @@ about this carefully.
 
 ### 7.4 Disk-space pre-flight
 
-```swift
+```swift prelude:guide-context
     public var freeDiskSpaceBytes: Int64? {
         var probe = weightsLocation(modelID)
         while !FileManager.default.fileExists(atPath: probe.path) {
@@ -1237,7 +1237,7 @@ genuinely non-obvious Metal fact (`:590-596`):
 
 The throwaway pass is a one-token generation on the literal prompt `"warmup"`:
 
-```swift
+```swift prelude:guide-context
         try await container.perform { context in
             // Exactly one synchronize on every exit path (success or throw),
             // per the Metal teardown invariant.
@@ -1269,7 +1269,7 @@ teardown."* This is the `MLXArray`/Metal concurrency discipline from
 
 ### 7.6 ⚠️ SILENT FAILURE: the `prewarm` witness must match *exactly*
 
-```swift
+```swift prelude:guide-context
         /// This is the protocol witness for `LanguageModelExecutor`'s
         /// `prewarm(model:transcript:)`. The signature must match the
         /// requirement *exactly* — concrete `Transcript`, not a generic
@@ -1313,7 +1313,7 @@ not a catchable Swift error."*
 
 ### 7.7 The `ModelCache` actor: the reason any of this is fast
 
-```swift
+```swift illustrative
     /// Shared model cache - thread-safe via actor isolation.
     /// Without caching, model loading takes 2-30 seconds per request.
     private static let cache = ModelCache()
@@ -1348,7 +1348,7 @@ Two implementation details are worth reading even if you never touch this code.
 method lets other calls run. So between starting a load and it finishing, `evictAll()` may have
 wiped the table. The code handles it (`:122-144`, verbatim):
 
-```swift
+```swift prelude:guide-context
         do {
             let loaded = try await loadTask.task.value
             // Supersession guard: `evict()`/`evictAll()` may have removed this
@@ -1381,7 +1381,7 @@ one to copy.
 
 ### 7.8 `evict()` and `evictAll()`
 
-```swift
+```swift illustrative
     public static func evictAll() async
     public func evict() async
 ```
@@ -1436,7 +1436,7 @@ own. **A `LanguageModel` conformance is, structurally, seven translators and a c
 
 ### 8.1 `TranscriptConverter` — entries in, `Chat.Message`s out
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 struct TranscriptConverter {
     static func mlxMessages(for entries: some Collection<Transcript.Entry>) -> [Chat.Message]
@@ -1488,7 +1488,7 @@ instructions entry carrying only, say, a structured segment produces no system m
 
 **Tool arguments are decoded through `JSONValue` and default to empty on failure** (`:76-92`):
 
-```swift
+```swift prelude:guide-context
                 let calls = toolCalls.map { call -> MLXLMCommon.ToolCall in
                     let argumentsData = Data(call.arguments.jsonString.utf8)
                     let arguments: [String: JSONValue]
@@ -1527,7 +1527,7 @@ over `UserInput.Image.ciImage(imageAttachment.ciImage)` — the already-decoded 
 This file is 103 lines and it is entirely about one question: **what does `temperature: 0` mean when
 the caller also asked for nucleus sampling?**
 
-```swift
+```swift illustrative
 public enum MLXSamplingMode: Sendable, Equatable {
     case greedy
     case topK(Int)
@@ -1584,7 +1584,7 @@ three-valued `Optional` is what prevents it.
 
 `apply(to:)` is correspondingly careful (`:52-56`):
 
-```swift
+```swift prelude:guide-context
     public func apply(to parameters: inout GenerateParameters) {
         if let temperature { parameters.temperature = temperature }
         if let topP { parameters.topP = topP }
@@ -1597,7 +1597,7 @@ anything it was not asked about.
 
 **The SDK-side translation** lives back in the executor (`MLXLanguageModel.swift:812-826`):
 
-```swift
+```swift illustrative
         static func samplingConfiguration(
             from samplingMode: GenerationOptions.SamplingMode?
         ) -> MLXSamplingConfiguration? {
@@ -1620,7 +1620,7 @@ spellings; they were `.top` and `.nucleus` in an earlier 27 beta. See §13.1 —
 
 Temperature gets one more guard (`:803-806`):
 
-```swift
+```swift illustrative
         static func clampedTemperature(_ value: Double?) -> Float? {
             guard let value else { return nil }
             return Float(max(0, value))
@@ -1634,7 +1634,7 @@ to `ArgMaxSampler` (greedy) — no division-by-zero hazard."*
 
 ### 8.3 `ModelConfigurationResolver` and `ModelDescriptor` — the seam, and its trap
 
-```swift
+```swift prelude:guide-context
 public protocol ModelConfigurationResolver: Sendable {
     func resolve(
         _ configuration: ModelConfiguration,
@@ -1690,7 +1690,7 @@ log line. You will spend an afternoon on this if nobody tells you.
 
 A resolver that does the one thing resolvers can do:
 
-```swift
+```swift prelude:guide-context
 /// Forces a `<think>`/`</think>` reasoning config onto a model whose
 /// `config.json` the factory does not recognise as a reasoning model.
 struct ForceThinkResolver: ModelConfigurationResolver {
@@ -1721,7 +1721,7 @@ exact parameter order and labels were not read this session.** If it doesn't com
 
 Where it is called, and the care taken to keep it local (`MLXLanguageModel.swift:1020-1043`):
 
-```swift
+```swift prelude:guide-context
                     // Resolve the per-instance configuration. Held strictly as
                     // a local; it never lands in context.configuration or
                     // Executor.Configuration, so two instances with the same id
@@ -1820,7 +1820,7 @@ catches can race the Metal command-buffer state during teardown."*
 
 **Errors are re-mapped on the way out, but selectively** (`:845-874`):
 
-```swift
+```swift illustrative
         static func mapGrammarError(_ grammarError: GrammarError) -> Error {
             switch grammarError {
             case .invalidJSONSchema(let message):
@@ -1850,7 +1850,7 @@ read is better than a typed error that points them at the wrong file.
 
 **The default token budget is 4096** (`:776-787`):
 
-```swift
+```swift illustrative
         /// Default `maxTokens` when the caller doesn't set
         /// `GenerationOptions.maximumResponseTokens`. Applied uniformly
         /// across guided-JSON, tool-calling, and unconstrained generation
@@ -1926,7 +1926,7 @@ the adapter parses whichever it gets using the model's own tool-call format — 
 `MLXLMCommon`, ten wire formats, covered in [Part 13 guide 2](02-generation-tools-and-caching.md). The
 router:
 
-```swift
+```swift prelude:guide-context
 struct AllowedToolOutputRouter {
     enum Event: Sendable, Equatable {
         case reasoning(String)
@@ -1955,7 +1955,7 @@ returned through separate channels and the interleaving was lost.
 
 ⚠️ **SILENT FAILURE: tool calls with an unrecognised name are dropped, silently.**
 
-```swift
+```swift prelude:guide-context
     private func route(_ outputs: [ToolCallProcessor.Output]) -> [Event] {
         outputs.compactMap { output in
             switch output {
@@ -2005,7 +2005,7 @@ Phase 2 continues from phase 1's **raw token ids**, not from decoded-and-re-enco
 post-`</think>` state."* The concatenation helper is worth quoting because it handles the LLM/VLM
 tensor-rank difference that caused a process abort once already (§13.3):
 
-```swift
+```swift illustrative
         static func continuationInput(
             from input: LMInput, appending tokenIDs: [Int]
         ) -> LMInput {
@@ -2038,7 +2038,7 @@ fails, `emitRequiredToolCallEvent` records a diagnostic and returns — no tool 
 
 Three public entry points, all `static`:
 
-```swift
+```swift illustrative
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 enum SchemaConverter {
     static func encodeToJSON(_ schema: GenerationSchema) throws -> String
@@ -2053,7 +2053,7 @@ enum SchemaConverter {
 
 **`encodeToJSON` is three lines and the doc comment is why it can be** (`:18-32`):
 
-```swift
+```swift illustrative
     /// `GenerationSchema` is itself `Codable`, and its `encode(to:)` internally
     /// calls `jsonSchema()` and encodes the resulting JSON Schema structure.
     /// So `JSONEncoder().encode(schema)` produces the same JSON bytes as
@@ -2174,7 +2174,7 @@ verbatim):
 
 The mirror enum:
 
-```swift
+```swift illustrative
             enum GenerationEvent: Sendable {
                 enum Destination: Sendable { case response, reasoning }
                 case appendText(String, entryID: String?, destination: Destination)
@@ -2198,7 +2198,7 @@ framework does not stall**)."*
 
 The actual sends, for reference:
 
-```swift
+```swift prelude:guide-context
             // text
             await channel.send(.response(entryID: entryID, action: .appendText(text, tokenCount: 1)))
             await channel.send(.reasoning(entryID: entryID, action: .appendText(text, tokenCount: 1)))
@@ -2221,7 +2221,7 @@ adapter.
 
 ### 8.8 ⚠️ SILENT FAILURE: usage is never forwarded to the framework
 
-```swift
+```swift illustrative
         static func emitUsage(
             input: LanguageModelExecutorGenerationChannel.Usage.Input,
             output: LanguageModelExecutorGenerationChannel.Usage.Output,
@@ -2261,7 +2261,7 @@ observer, which is `@TaskLocal` and `internal`, so **only reachable from `@testa
 
 ### 8.9 `MLXDownloadProgress` — the observable
 
-```swift
+```swift illustrative
 @MainActor
 @Observable
 public final class MLXDownloadProgress {
@@ -2283,7 +2283,7 @@ public final class MLXDownloadProgress {
 ✅ VERIFIED `MLXDownloadProgress.swift:29-93`. A `@MainActor @Observable` singleton with the usage
 example from its own doc comment:
 
-```swift
+```swift prelude:guide-context
 struct MyView: View {
     var downloadProgress = MLXDownloadProgress.shared
 
@@ -2302,7 +2302,7 @@ at least two samples spanning >0.1 s, returning `nil` otherwise.
 
 And **`reportProgress` early-returns on an already-complete fraction** (`:97-98`):
 
-```swift
+```swift prelude:guide-context
         let fraction = progress.fractionCompleted
         // Don't show the progress UI for already-cached models (immediate 100%)
         guard fraction < 1.0 else { return }
@@ -2340,7 +2340,7 @@ From the target README's own first line (`Libraries/MLXGuidedGeneration/README.m
 ✅ VERIFIED. And here is the actual masking, all seven lines of it
 (`GuidedGenerationLoop.swift:496-528`, abridged):
 
-```swift
+```swift illustrative
         static func applyMaskAndSample(
             logits rawLogits: MLXArray,
             maskArray: MLXArray?,
@@ -2372,7 +2372,7 @@ ignored.
 
 The mask itself is built from a packed bitmask:
 
-```swift
+```swift illustrative
         static func bitmaskToMLXArray(
             _ maskPtr: UnsafePointer<UInt32>,
             maskBitCount: Int,
@@ -2489,7 +2489,7 @@ bytes when transporting through Swift `String`."*
 
 ### 9.3 `GuidedGenerationLoop.run` — the signature
 
-```swift
+```swift prelude:guide-context
 public enum GuidedGenerationLoop {
     @discardableResult
     public static func run(
@@ -2534,7 +2534,7 @@ independent numbers.
 
 The overlap in code, from the single-token branch (`:394-419`):
 
-```swift
+```swift prelude:guide-context
                 // Normal single-token forward pass (lazy)
                 let nextInput = LMInput.Text(tokens: MLXArray([Int32(token)]))
                 let result = model(
@@ -2642,7 +2642,7 @@ highest value even though the grammar has NOT accepted the output."*
 **Where the reserves come from.** The executor computes them per request
 (`MLXLanguageModel.swift:1612-1616` for the schema path, `:1320-1326` for the tool path):
 
-```swift
+```swift prelude:guide-context
             let structuralReserve = CompletionReserve.estimate(
                 schemaJSON: schemaJSON,
                 tokenizer: context.tokenizer)
@@ -2662,7 +2662,7 @@ token 3072 and hard zone from around token 4090 — the hard zone is genuinely a
 
 **The whitespace tracker is a latch, not a counter.**
 
-```swift
+```swift illustrative
 public struct WhitespaceRunTracker {
     public init(threshold: Int = 3, whitespaceTokenIDs: Set<Int>)
     public var isActive: Bool { activated || consecutiveCount >= threshold }
@@ -2681,7 +2681,7 @@ so they cannot indicate a model preference.
 
 ### 9.5 Stop tokens, and the three sources
 
-```swift
+```swift illustrative
         static func buildStopTokenIDs(
             tokenizer: any Tokenizer,
             configuration: ModelConfiguration
@@ -2742,7 +2742,7 @@ between the forced bytes and the free continuation almost never falls on a token
 
 In code (`:628-641`):
 
-```swift
+```swift prelude:guide-context
         var safeCount = 0
         for i in 1 ... encoded.count {
             let prefixDecoded = hostTokenizer.decode(tokenIds: Array(encoded[0 ..< i]))
@@ -2762,7 +2762,7 @@ FF strings are short.
 re-encoded FF token mid-loop, emission stops at that point and the already-accepted prefix stands
 (`:649-660`):
 
-```swift
+```swift prelude:guide-context
             if acceptStatus != XG_OK {
                 // Mid-FF rejection: the host tokenizer re-encoded the
                 // FF bytes into a token whose boundaries don't line up
@@ -2806,7 +2806,7 @@ batch forced tokens into one forward pass without testing on a sliding-window mo
 Because `MLXGuidedGeneration` has no FoundationModels dependency and no 27.0 floor, you can use it on
 iOS 17. The README ships a complete example (`README.md:50-99`, verbatim):
 
-```swift
+```swift prelude:external-module
 import HuggingFace
 import MLXGuidedGeneration
 import MLXHuggingFace
@@ -2866,7 +2866,7 @@ Note what this example **omits**, and what that costs you: no `closingBias`, no 
 `GuidedGenerationError.incompleteOutput`. If you are building on this directly, compute the biases the
 way the adapter does:
 
-```swift
+```swift prelude:guide-context
     let closing = ClosingTokenBias.compute(
         tokenizer: tokenizer, eosTokenId: tokenizer.eosTokenId)
     let (whitespace, whitespaceIDs) = WhitespaceTokenBias.compute(tokenizer: tokenizer)
@@ -2897,7 +2897,7 @@ per model id for exactly this reason (§7.7). If you use the standalone API in a
 
 ### 9.8 Constraint cloning, and the `Fork()` fallback
 
-```swift
+```swift prelude:guide-context
     public func clone() throws -> GrammarConstraint
 ```
 
@@ -2908,7 +2908,7 @@ parent so its `deinit` cannot run first (`XGrammarBridge.swift:489-511`).
 The adapter's cache uses it as the fast path, with a graceful degradation
 (`MLXLanguageModel.swift:213-257`):
 
-```swift
+```swift prelude:guide-context
         let cacheKey = "\(modelID):\(kind):\(source)"
         if let template = constraintTemplates[cacheKey] {
             do {
@@ -2955,7 +2955,7 @@ on the template cache. To close this gap: bind a timing harness around
 ✅ VERIFIED `XGrammarBridge.swift:667-673`, verbatim. And the caller
 (`GuidedGenerationLoop.swift:430-433`):
 
-```swift
+```swift prelude:guide-context
         // Flush any xgrammar warnings (limit exceedances, parser state)
         if diagnosticLog, let logs = constraint.flushLogs() {
             logger.warning("[GuidedGen] xgrammar logs:\n\(logs)")
@@ -2973,7 +2973,7 @@ if you are looking for xgrammar's own diagnostics, they are not there.
 
 **For real observability, use the sink instead:**
 
-```swift
+```swift illustrative
 public final class GuidedGenerationDiagnosticSink: @unchecked Sendable {
     @TaskLocal public static var current: GuidedGenerationDiagnosticSink?
 
@@ -2999,7 +2999,7 @@ capture"* and *"Off by default: production never binds `current`, so every recor
 nil-guarded no-op and there is no behavior change."* It is public API, though, so binding it from a
 debug build of your app is legitimate:
 
-```swift
+```swift prelude:guide-context
 let sink = GuidedGenerationDiagnosticSink()
 try await GuidedGenerationDiagnosticSink.$current.withValue(sink) {
     _ = try await session.respond(to: prompt, generating: MyType.self)
@@ -3047,7 +3047,7 @@ directly.
 You do not have to infer that the MLX team knew about the Core AI copy. They said so, in a build
 setting. `Package.swift:211-218`, verbatim:
 
-```swift
+```swift illustrative
                 // Rename the vendored C++ namespaces at compile time so this
                 // target's symbols cannot collide with another xgrammar in the
                 // same binary (e.g. CoreAI's prebuilt copy). Token-level
@@ -3297,7 +3297,7 @@ catch both.**
 
 **`Chat.Message.user("")` is substituted for an empty transcript.**
 
-```swift
+```swift prelude:guide-context
             var collected = TranscriptConverter.mlxMessages(for: request.transcript)
             // MLX tokenizer crashes on empty chat input; provide a fallback.
             if collected.isEmpty {
@@ -3373,7 +3373,7 @@ between Xcode 27 betas; expect local 2-line renames."*
 
 **The mitigation the adapter uses is the `@unknown default`:**
 
-```swift
+```swift prelude:guide-context
             @unknown default:
                 return nil
 ```

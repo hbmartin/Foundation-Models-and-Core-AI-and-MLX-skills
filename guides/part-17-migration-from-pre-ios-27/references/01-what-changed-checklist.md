@@ -319,7 +319,7 @@ if #available(iOS 26.4, macOS 26.4, visionOS 26.4, *) {
 …and the localisation-table variant, which is the one worth actually shipping, because it keeps the
 prompt text out of your source and lets you diff prompt versions like any other resource:
 
-```swift
+```swift illustrative
 if #available(iOS 26.4, macOS 26.4, visionOS 26.4, *) {
     return String(localized: "support-ticket-summarizer-v1.1", table: "Prompts")
 } else {
@@ -475,7 +475,7 @@ because the type does not exist there. See [guide 17.4](04-dual-sdk-builds.md).
 
 The switch is genuinely one line:
 
-```swift
+```swift illustrative
 // 26.x
 let session = LanguageModelSession()
 
@@ -638,7 +638,7 @@ wrong, here is the **compiling** version, straight out of Apple's sample:
 > ✅ **VERIFIED** — `Origami/Models/OrchestratorProfile.swift`, Apple's Origami sample, verbatim
 > (abridged):
 
-```swift
+```swift prelude:guide-context
 struct OrchestratorProfile: LanguageModelSession.DynamicProfile {
     var orchestrator: Orchestrator
     var serverModel = SystemLanguageModel()
@@ -712,7 +712,7 @@ explicitly says updates out of band.
 
 The three history modifiers, applied outside-in:
 
-```swift
+```swift prelude:guide-context
 // ✅ shape verified against the package README and Sources/…/History/*.swift
 struct MyProfile: LanguageModelSession.DynamicProfile {
     let status: Status
@@ -892,7 +892,7 @@ before and after.
 
 Apple's documented escape pattern, which doubles as the canonical `@SessionProperty` example:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED — verbatim from Apple's ToolCallingMode documentation.
 extension SessionPropertyValues {
     @SessionPropertyEntry
@@ -1019,7 +1019,7 @@ session.transcriptErrorHandlingPolicy = .preserveTranscript
 
 Call site, verbatim from Apple's PCC article:
 
-```swift
+```swift prelude:guide-context
 let response = try await session.respond(
     to: "What are the tradeoffs in this architecture?",
     contextOptions: ContextOptions(reasoningLevel: .deep)
@@ -1140,7 +1140,7 @@ about to write a custom `LanguageModel` conformance.
 > ✅ **VERIFIED** — `apple/foundation-models-utilities`, `Sources/FoundationModelsUtilities/
 > LanguageModels/ChatCompletionsLanguageModel.swift`, and the package README:
 
-```swift
+```swift prelude:guide-context
 let model = ChatCompletionsLanguageModel(
     name: "some-model-id",
     url: URL(string: "http://localhost:8000/v1")!,
@@ -1349,7 +1349,7 @@ codebases because people copy samples.
 > ✅ **VERIFIED** — `FoundationModelsCoffeeGame/MainMenu/MainMenuView.swift`, an **iOS 26** sample
 > (`IPHONEOS_DEPLOYMENT_TARGET = 26.0`), verbatim:
 
-```swift
+```swift prelude:guide-context
 switch SystemLanguageModel.default.availability {
 case .available:
     gameStartButton
@@ -1426,7 +1426,7 @@ Availability failures are a *different type* from generation failures and do **n
 
 Here is the both-belts version, written against the verified case names:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 import SwiftUI
 
@@ -1797,7 +1797,7 @@ still names the 26 spelling; compiling 27 sample code uses the 27 spelling.
 
 Practical instruction, for as long as you support both: **catch both.**
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 func summarizeWithOverflowRecovery(_ text: String) async throws -> String {

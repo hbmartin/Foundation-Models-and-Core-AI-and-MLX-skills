@@ -5,7 +5,7 @@
 #
 # Re-runs the five planning-time spikes through the real pipeline and asserts
 # the verdicts: (1) @Generable macro typechecks on 27, (2) and on 26,
-# (3) xfail:26 compile:27 proves PrivateCloudComputeLanguageModel is 27-only,
+# (3) xfail:sim27-on-26 compile:sim27 proves the 27-only deployment floor,
 # (4) Evaluations resolves via -F on 27, (5) sim27 target typechecks.
 set -euo pipefail
 
@@ -30,7 +30,7 @@ struct Recipe {
 }
 ```
 
-```swift xfail:26 compile:27
+```swift xfail:sim27-on-26 compile:sim27
 import FoundationModels
 
 let model = PrivateCloudComputeLanguageModel()
@@ -63,10 +63,10 @@ echo "$out"
 expect() {
     printf '%s\n' "$out" | grep -Eq "$1" || { echo "SMOKE FAIL: missing $1" >&2; exit 1; }
 }
-# Note: a fence carrying BOTH compile: and xfail: reports overall VERIFIED once
-# both requirements hold; the per-target column shows the xfail-pass.
+# A fence carrying both compile: and xfail: reports MIGRATION-PROVEN once both
+# requirements hold; the per-target columns show pass and xfail-pass.
 expect $'smoke.md\t3\t.*VERIFIED'                 # @Generable on both SDKs
-expect $'smoke.md\t15\t.*VERIFIED.*xfail-pass'    # PCC absent on 26, present on 27
+expect $'smoke.md\t15\t.*MIGRATION-PROVEN.*pass.*xfail-pass' # deployment boundary
 expect $'smoke.md\t21\t.*VERIFIED'                # Evaluations via -F
 expect $'smoke.md\t25\t.*VERIFIED'                # sim27 target
 expect $'smoke.md\t31\t.*VERIFIED'                # async-throws body wrap + imports: marker

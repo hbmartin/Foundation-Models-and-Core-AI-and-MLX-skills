@@ -81,8 +81,10 @@ architectural fact in Part 7:
   `CoreAILanguageModel` is the third conformance and is dissected here only where it differs.
 - **Specialization, the model cache and `xcrun coreai-build`.** Part 7 reference 02 — though §2.10
   below covers the one bundle-format consequence of AOT compilation that bites everybody.
-- **Non-LLM products** (`CoreAISegmentation`, `CoreAIObjectDetection`, `CoreAIDiffusion`,
-  `CoreAISpeech`) beyond what their bundle layouts teach about the format. Part 16.
+- **Non-LLM runtime engines** (`CoreAISegmentation`, `CoreAIObjectDetection`, `CoreAIDiffusion`)
+  beyond what their bundle layouts teach about the format. They now have an owning guide in
+  [Part 7 reference 05](05-non-llm-engines-bundles-warmup-and-caching.md). `CoreAISpeech` remains in
+  [Part 16](../../part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md).
 
 ## What you need
 
@@ -123,7 +125,7 @@ architectural fact in Part 7:
 
 Reference 01 gives you this, and it is genuinely all you need for a small classifier:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 
 let model = try await AIModel(contentsOf: modelURL)
@@ -265,7 +267,7 @@ system. Use them; nothing else will.
 
 Every kind goes through one type. ✅ VERIFIED, `swift/Sources/CoreAIShared/Bundle/ModelBundle.swift:23-35`:
 
-```swift
+```swift prelude:guide-context
 public struct ModelBundle: Sendable {
     public let metadataVersion: String
     public let kind: BundleKind
@@ -298,7 +300,7 @@ the repo emits it. It exists for you.
 
 The rest of the public surface:
 
-```swift
+```swift illustrative
 public enum ComponentKey {
     public static let main = "main"
     public static let vision = "vision"
@@ -404,7 +406,7 @@ If your build pipeline copies bundles while an export is running, that is the wi
 
 ✅ VERIFIED, `ModelBundle.swift:158-161`:
 
-```swift
+```swift prelude:guide-context
 let version = envelope.metadataVersion ?? "0.1"
 guard version == "0.2" else {
     throw BundleError.unsupportedVersion(version)
@@ -429,7 +431,7 @@ failure.
 
 The LLM-specific config. ✅ VERIFIED, `swift/Sources/CoreAILanguageModels/Bundle/LanguageConfig.swift:11-51`:
 
-```swift
+```swift prelude:guide-context
 /// `language` block of `metadata.json` schema 0.2 — LLM-specific config.
 public struct LanguageConfig: Codable, Sendable, Equatable {
     public let tokenizer: String            // "tokenizer"        — an HF model id
@@ -453,7 +455,7 @@ convention. Its doc comment states the design (`FunctionMap.swift:6-16`):
 > override for bundles whose function names don't follow conventions, or where one logical role maps
 > to multiple physical functions."*
 
-```swift
+```swift illustrative
 public struct FunctionMap: Codable, Sendable, Equatable {
     public let entries: [String: [String]]
     public func names(for role: String) -> [String]   // [] if absent
@@ -469,7 +471,7 @@ functions named `extend_<contextLen>_<queryLen>`.
 **`function_map` has exactly one verified consumer, and it only handles the `main` role.**
 ✅ VERIFIED, `LanguageModel/CoreAIRunner.swift:74`:
 
-```swift
+```swift prelude:guide-context
 let functionName = bundle.language.functionMap?.name(for: "main") ?? "main"
 ```
 
@@ -490,7 +492,7 @@ capability the type advertises is never exercised on this path.
 the strict LLM/VLM loader decodes `vision` from the **top level** of `metadata.json`
 (✅ `LanguageBundle.swift:104-111`):
 
-```swift
+```swift prelude:guide-context
 fileprivate struct LanguagePayload: Decodable {
     let assets: Assets
     let language: LanguageConfig?
@@ -535,7 +537,7 @@ an error.
 `ModelBundle` is the lossy peek. `LanguageBundle` is the committed load. ✅ VERIFIED,
 `Bundle/LanguageBundle.swift:20-98`:
 
-```swift
+```swift prelude:guide-context
 public struct LanguageBundle: Sendable {
     public let bundle: ModelBundle
     public let modelAssetPath: String
@@ -569,7 +571,7 @@ The four ways it throws, in the order it checks them (`:35-53`):
 
 **Tokenizer resolution is two-tier and quietly network-capable** (✅ `:82-98`):
 
-```swift
+```swift prelude:guide-context
 public var tokenizerPath: URL? {
     guard language.embeddedTokenizer else { return nil }
     let dir = bundlePath.appending(path: "tokenizer")
@@ -634,12 +636,12 @@ FLUX.2-klein-4B/
 
 1. **Metadata-driven.** `PipelineDescriptor.loadFromMetadata` maps the generic `assets` map onto
    diffusion-specific slots (`:155-160`), with `transformer` and `unet` as aliases:
-   ```swift
+   ```swift prelude:guide-context
    descriptor.components.unet = assets["transformer"] ?? assets["unet"]
    ```
 2. **Explicit-name probing** for the mode-dependent variants, trying `.aimodel` then `.aimodelc`
    (`Flux2Pipeline+Resources.swift:116-126`):
-   ```swift
+   ```swift illustrative
    private static func resolveAsset(at url: URL, name: String) -> String? {
        let fm = FileManager.default
        let aimodel  = "\(name).aimodel"
@@ -717,7 +719,7 @@ convention, with no `metadata.json` at all.**
 
 and throws if either asset is missing:
 
-```swift
+```swift prelude:guide-context
 throw SpeechError.missingModel(
     "bundle at \(url.lastPathComponent) must contain encoder.aimodel and decoder.aimodel")
 ```
@@ -880,7 +882,7 @@ test -f exports/flux2_klein_4b_4bit/tokenizer/tokenizer.json || exit 1
 
 and in Swift, at install time rather than first use:
 
-```swift
+```swift prelude:guide-context
 let bundle = try ModelBundle(at: bundleURL)
 try bundle.verify()                                  // every declared asset exists
 let lang = try LanguageBundle(bundle: bundle)
@@ -978,7 +980,7 @@ swift-asn1, swift-system, EventSource and yyjson, per `Package.resolved`) plus x
 
 ### 3.2 The dependency that should make you nervous
 
-```swift
+```swift illustrative
 .package(url: "https://github.com/mlc-ai/xgrammar", branch: "main"),
 ```
 
@@ -1150,7 +1152,7 @@ Three types stand between `metadata.json` and a running engine. You can use all 
 
 The entire type. ✅ VERIFIED, `LanguageModel/CoreAIRunner.swift:19-88`:
 
-```swift
+```swift prelude:guide-context
 public struct CoreAIRunner {
     public init(contentsOf url: URL,
                 variant: String? = nil,
@@ -1182,7 +1184,7 @@ factory never sees your bundle, only a config blob and a model URL.
 This is the most reusable single idea in the repo, and it lives in `CoreAIShared` where any product
 can use it. ✅ VERIFIED verbatim, `CoreAIShared/Runtime/ModelStructure.swift:145-165`:
 
-```swift
+```swift illustrative
 public static func prepare(at url: URL) async throws -> PreparedModel {
     CLILogger.log("PreparedModelAsset: Preparing \(url.lastPathComponent)")
     // Probe structure before specializing so we can pick the right compute-unit preference.
@@ -1213,7 +1215,7 @@ which is the model's *shape*, structurally — before you commit to the expensiv
 
 The names it looks for (✅ `ModelStructure.swift:12-20`):
 
-```swift
+```swift prelude:guide-context
 public enum GraphNames {
     public static let main = "main"
     public static let loadEmbeddings = "load_embeddings"
@@ -1243,7 +1245,7 @@ Detection order is load-bearing and commented (`:190-218`):
 **And here is the sample helper’s payoff — structure chooses the preference it supplies.** ✅
 VERIFIED verbatim, `ModelStructure.swift:57-80`:
 
-```swift
+```swift prelude:guide-context
 public var preferredDevice: String {
     switch self {
     case .chunkedStatic, .multiFunctionSegmenter: return "NeuralEngine"
@@ -1331,7 +1333,7 @@ the adapter path is fine; the hazard is on the direct-engine path if you call `w
 
 A worked direct-engine load, which is what you write when you do **not** want Foundation Models:
 
-```swift
+```swift prelude:external-module
 import CoreAILanguageModels
 import CoreAIShared
 import Foundation
@@ -1435,7 +1437,7 @@ building anything on top.
 
 The two supporting types (✅ `:20-53`):
 
-```swift
+```swift prelude:guide-context
 public struct InferenceOutput: Sendable {
     public let tokenId: Int32
     /// Populated when `InferenceOptions.includeLogits` is true. Shape: [vocabSize].
@@ -1493,7 +1495,7 @@ private enum Variant: String, Sendable, CaseIterable {
 
 **Auto-detection is two lines** (✅ `:141-155`):
 
-```swift
+```swift illustrative
 private static func autoDetectVariant(structure: ModelStructure) -> Variant {
     switch structure {
     case .chunkedStatic:
@@ -1571,7 +1573,7 @@ author your own model, the input declaration order in `torch.export` is a wire-f
 The execution core is the plainest possible use of the Core AI runtime, and it is worth reading if
 you want to understand what the pipelined engine is optimising away:
 
-```swift
+```swift prelude:guide-context
 var states = InferenceFunction.MutableViews()
 states.insert(&keyCache, for: keyCacheName)
 states.insert(&valueCache, for: valueCacheName)
@@ -1672,7 +1674,7 @@ The engine for iOS exports. `supportsLogits: true` (✅ `CoreAIStaticShapeEngine
 Its I/O contract is by **literal name**, and the source says so in a MARK comment
 (✅ `:17-21`):
 
-```swift
+```swift illustrative
 // MARK: I/O name contracts — models must use these exact names
 
 private static let logitsOutputName = "out_logits"
@@ -1726,7 +1728,7 @@ That is also why cold specialization on the ANE path is expensive — see §5.8'
 Conforms to `MultimodalInferenceEngine`, which adds two members to the base protocol
 (✅ `InferenceEngine.swift:301-315`):
 
-```swift
+```swift prelude:guide-context
 public protocol MultimodalInferenceEngine: InferenceEngine {
     func encodeImage(at url: URL) async throws -> EmbeddedInput
     func generate(with input: EmbeddedInput,
@@ -1892,7 +1894,7 @@ unaffected — as the actionable part.
 
 How to say it, three ways:
 
-```swift
+```swift prelude:guide-context
 // 1. Through the Foundation Models adapter:
 let model = try await CoreAILanguageModel(resourcesAt: url, variant: "coreai-sequential")
 
@@ -2014,7 +2016,7 @@ All three LLM engines carry a `TokenHistory` and use it for **implicit prefix ca
 > *If the input diverges from history (e.g., "Alpha beta" → "Alpha romeo"), the engine rewinds its KV
 > cache to the divergence point and reprocesses from there."*
 
-```swift
+```swift illustrative
 func resolve(input: [Int32]) -> (commonPrefix: Int, newTokens: ArraySlice<Int32>)
 ```
 
@@ -2023,7 +2025,7 @@ It `memcmp`s the whole overlap first and only falls back to an element-wise scan
 
 The sequential engine's use of it, ✅ VERIFIED verbatim (`CoreAISequentialEngine.swift:358-370`):
 
-```swift
+```swift prelude:guide-context
 // Implicit prefix caching: resolve input against history.
 if history.count > 0 {
     let (commonPrefix, _) = history.resolve(input: input)
@@ -2052,7 +2054,7 @@ Three things to take from that:
 
 `reset(to:)` is the exposed primitive:
 
-```swift
+```swift illustrative
 /// Reset KV cache to the state after processing `tokenIndex` tokens.
 /// - tokenIndex == 0: full reset (clear all state, equivalent to reset())
 /// - tokenIndex > 0: partial reset (keep cache for first tokenIndex positions)
@@ -2123,7 +2125,7 @@ var prefixReuseFeedsFullSequence: Bool { get }
 
 with fail-safe defaults (`:185-188`):
 
-```swift compile:27
+```swift illustrative
 public func trimKVCache(to length: Int) async -> Int { -1 }
 public var prefixReuseFeedsFullSequence: Bool { true }
 ```
@@ -2149,7 +2151,7 @@ existing engine changes behaviour.
 The sequential implementation is five lines (✅ verbatim, fork
 `CoreAISequentialEngine.swift:437-443`):
 
-```swift
+```swift prelude:guide-context
 public func trimKVCache(to length: Int) async -> Int {
     drain()
     guard length >= 0 else { return -1 }
@@ -2167,7 +2169,7 @@ never reads positions ≥ the retained offset before they're rewritten."*
 
 The pipelined implementation carries one guard, and it is the most interesting line in the patch:
 
-```swift
+```swift illustrative
 mutating func trimKVCache(to length: Int) -> Int {
     guard extraStates.isEmpty else { return -1 }
     let retained = max(0, min(length, processedTokenCount))
@@ -2214,7 +2216,7 @@ If you write a chat loop over these engines, this is the shape. Community-derive
 pseudocode against upstream, not as a compiling drop-in — `trimKVCache` does not exist upstream, so
 step 3 becomes `reset(to:)` plus your own bookkeeping.
 
-```swift
+```swift prelude:guide-context
 // `kvTokens` is the EXACT token sequence the engine's KV currently holds:
 // prompt + everything it streamed back. You track this yourself, across turns.
 var kvTokens: [Int32] = []
@@ -2364,7 +2366,7 @@ That is the whole trick, and its consequences are worth stating plainly:
 `apple/coreai-models` wraps xgrammar in three Swift types over a 14-function C bridge. ✅ VERIFIED
 verbatim, `GuidedGeneration/XGrammarWrapper.swift`:
 
-```swift
+```swift prelude:guide-context
 public final class CompiledGrammar {
     public let tokenizerInfo: TokenizerInfo
     public var memorySizeBytes: Int          // xgrammar_compiled_grammar_memory_size
@@ -2394,7 +2396,7 @@ Two details that will matter if you go near this layer.
 
 **The bitmask crosses the bridge as a DLPack tensor.** ✅ VERIFIED verbatim (`:111-129`):
 
-```swift
+```swift prelude:guide-context
 public func fillNextTokenBitmask(_ bitmask: UnsafeMutablePointer<Int32>) -> Bool {
     let bitmaskSize = (vocabularySize + 31) / 32
     var shape = Int64(bitmaskSize)
@@ -2424,7 +2426,7 @@ a malformed *schema* is an error.
 The high-level wrapper, and a rare public `~Copyable` type. ✅ VERIFIED,
 `GuidedGeneration/ConstrainedGenerationSession.swift:19-253`:
 
-```swift
+```swift prelude:guide-context
 public struct ConstrainedGenerationSession: ~Copyable {
     public let schema: String
     public let vocabularySize: Int
@@ -2459,7 +2461,7 @@ public enum ConstrainedGenerationError: Error, LocalizedError {
 
 **Termination is detected two ways** (`:27-40`, `:152-165`), and both are needed:
 
-```swift
+```swift illustrative
 public var isTerminated: Bool {
     matcher.isTerminated || allTokensBlocked
 }
@@ -2494,7 +2496,7 @@ comment explains what it is for (✅ verbatim, `:122-124`):
 
 Now trace it. `init(jsonSchema:vocabulary:vocabType:stopTokenIds:)` (`:57-69`) builds:
 
-```swift
+```swift prelude:guide-context
 let tokenizerInfo = TokenizerInfo(
     vocabulary: vocabulary,
     vocabType: vocabType
@@ -2503,7 +2505,7 @@ let tokenizerInfo = TokenizerInfo(
 
 **`stopTokenIds` is not passed.** And `TokenizerInfo`'s only initializer is
 
-```swift
+```swift illustrative
 public init(vocabulary: [String], vocabType: VocabularyType = .raw, addPrefixSpace: Bool = false)
 ```
 
@@ -2554,7 +2556,7 @@ the two compensating measures are in place and the tests
 `ConstrainedGenerationSession`, do not rely on `stopTokenIds`.** Check `isTerminated` after every
 `acceptToken`, and drop the terminal token rather than decoding it:
 
-```swift
+```swift prelude:guide-context
 let accepted = session.acceptToken(token)
 guard accepted else { break }             // grammar rejected it — stop
 if session.isTerminated { break }         // do NOT decode this token into your output
@@ -2590,7 +2592,7 @@ immediately, generation produces nothing, and no error is thrown.
 
 **Always pass `vocabType` explicitly:**
 
-```swift
+```swift prelude:guide-context
 let info = TokenizerInfo(vocabulary: vocab, vocabType: .byteLevel)   // never rely on the default
 var session = try ConstrainedGenerationSession(jsonSchema: schema, tokenizerInfo: info)
 ```
@@ -2607,7 +2609,7 @@ The class comment states the algorithm exactly (`:15-18`):
 
 and here is that loop, verbatim (`:117-146`):
 
-```swift
+```swift illustrative
 fileprivate static func generateOneToken(
     inputTokens: [Int32],
     session: inout ConstrainedGenerationSession,
@@ -2658,7 +2660,7 @@ Four things to notice:
 
 **Multi-token stop sequences are dropped, with a warning** (`:96-100`):
 
-```swift
+```swift prelude:guide-context
 if stopSequences.sequences.contains(where: { $0.count > 1 }) {
     CLILogger.log(
         "Warning: Multi-token stop sequences not supported by xgrammar, using single-token stops only",
@@ -2673,7 +2675,7 @@ stop sequences are handled by grammar termination and the EOS-token list, not by
 
 **And the vocabulary-size fallback deserves a look** (`:171-193`):
 
-```swift
+```swift illustrative
 static func deriveVocabSize(from tokenizer: any Tokenizer) -> Int? {
     var low = 0
     var high = 524_288
@@ -2728,7 +2730,7 @@ if let schema = request.schema {
 
 and `respondConstrained` is the bridge to §7.6 (`:548-576`):
 
-```swift
+```swift prelude:guide-context
 let schemaData = try JSONEncoder().encode(schema)
 guard let jsonSchema = String(data: schemaData, encoding: .utf8) else {
     preconditionFailure("GenerationSchema JSON encoding produced invalid UTF-8")
@@ -2800,7 +2802,7 @@ works out of the box.
 
 **1. Opt into the sequential engine when you need a schema.** One parameter:
 
-```swift
+```swift prelude:guide-context
 let model = try await CoreAILanguageModel(resourcesAt: url, variant: "coreai-sequential")
 let session = LanguageModelSession(model: model)
 let card = try await session.respond(to: prompt, generating: VocabCard.self)
@@ -2823,7 +2825,7 @@ bundles). **Report both numbers, labelled, if jetsam budget matters to you.**
 
 **3. Check the capability instead of assuming it.**
 
-```swift
+```swift prelude:guide-context
 if model.capabilities.contains(.guidedGeneration) {
     let card = try await session.respond(to: prompt, generating: VocabCard.self)
     apply(card.content)
@@ -2903,7 +2905,7 @@ Apple's Core AI wrapper exposes only `compileJSONSchema`. Same engine, wider ape
 `mlx-swift-lm`'s manifest renames the vendored C++ namespaces at compile time, and the comment says
 why (✅ VERIFIED verbatim, `mlx-swift-lm/Package.swift:141-146`):
 
-```swift
+```swift illustrative
 // Rename the vendored C++ namespaces at compile time so this
 // target's symbols cannot collide with another xgrammar in the
 // same binary (e.g. CoreAI's prebuilt copy). …
@@ -2947,7 +2949,7 @@ the more defensible choice of the two (§3.2).
 Everything above, assembled. This is the "I do not want Foundation Models, I want the grammar"
 version — useful when you are building a classifier, a router, or an eval harness.
 
-```swift
+```swift prelude:external-module
 import CoreAILanguageModels
 import CoreAIShared
 import Foundation
@@ -3082,7 +3084,7 @@ and session 326 builds an entire app on it (✅ VERBATIM, 326:103-118):
 The narration is accurate. Here is the code, ✅ VERIFIED against `models/qwen3/README.md` and the
 `CoreAILanguageModel.swift` doc comment:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import CoreAILanguageModels
 
@@ -3128,7 +3130,7 @@ recommendation is Apple's, the 1 GB is Apple's own stated figure for their demo 
 
 ✅ VERIFIED verbatim, `:58-65` and `:141-146`:
 
-```swift
+```swift prelude:guide-context
 public var capabilities: LanguageModelCapabilities {
     var caps: [LanguageModelCapabilities.Capability] = []
     if supportsToolCalling { caps.append(.toolCalling) }
@@ -3173,7 +3175,7 @@ This is the table to keep, because the gaps are not documented anywhere.
 
 `makeSamplingConfig` is three lines and they are the whole story (✅ verbatim, `:767-775`):
 
-```swift
+```swift illustrative
 private func makeSamplingConfig(
     from options: GenerationOptions,
     base: SamplingConfiguration
@@ -3213,7 +3215,7 @@ producing a response."
 
 ### 8.4 `prewarm` — implemented, and worth calling
 
-```swift
+```swift prelude:guide-context
 public func prewarm(model: CoreAILanguageModel, transcript: Transcript) {
     Task { try? await resources.loadResources() }
 }
@@ -3235,7 +3237,7 @@ no speculative prefill here.
 
 ### 8.5 The full session, with everything this guide has said applied
 
-```swift
+```swift prelude:external-module
 import CoreAILanguageModels
 import CoreAIShared
 import FoundationModels
@@ -3298,7 +3300,7 @@ Session 324 promises *"your own custom models **and token sampling strategies**"
 
 ✅ VERIFIED, `Samplers/SamplingConfiguration.swift:43-…`:
 
-```swift
+```swift prelude:guide-context
 public struct SamplingConfiguration: Sendable, Equatable, Hashable {
     public let temperature: Double
     public let topK: Int?
@@ -3358,7 +3360,7 @@ fine-grained instrumentation of discrete steps"* at the cost of an extra synchro
 
 **`CompositeSampler` — CPU** (✅ `Samplers/CompositeSampler.swift`):
 
-```swift
+```swift prelude:guide-context
 public struct CompositeSampler {
     public static func sample(from logits: inout [Float16], config: SamplingConfiguration) -> Int32
     public static func sample(from logits: inout [Float],   config: SamplingConfiguration) -> Int32
@@ -3409,7 +3411,7 @@ Three levels, in increasing order of what you have to write.
 **Level 1 — parameters, on the non-FM path.** topK/topP/minP are unreachable through
 `GenerationOptions` (§8.3), but they are reachable through `TextGenerator`:
 
-```swift
+```swift prelude:guide-context
 let generator = try await TextGeneratorBuilder()
     .withInferenceEngine(engine)
     .withSampling(configuration: SamplingConfiguration(
@@ -3442,7 +3444,7 @@ between two `reset()`s — the MMLU-style `P(continuation | context)` primitive 
 
 **Level 2 — a custom `DecodingStrategy`.** This is the real extension point, and it is public:
 
-```swift
+```swift prelude:guide-context
 public protocol DecodingStrategy: Sendable {
     associatedtype ResultSequence: AsyncSequence<GenerationResult, Error>
     func decode(
@@ -3464,7 +3466,7 @@ watermarking — all of it lives here.
 
 ⚠️ But note the factory (`:187-207`):
 
-```swift
+```swift illustrative
 public static func create(type: DecodingType, parameters: DecodingParameters = DecodingParameters())
     -> any DecodingStrategy
 {
@@ -3484,7 +3486,7 @@ not a strategy.** So the builder cannot construct your custom strategy — even 
 *designated initializer* takes `decodingStrategy: any DecodingStrategy` directly (`:19-28`). Bypass
 the builder:
 
-```swift
+```swift prelude:guide-context
 let generator = TextGenerator(
     inferenceEngine: engine,
     samplingConfiguration: SamplingConfiguration(temperature: 0.8, topK: 40),
@@ -3562,7 +3564,7 @@ text** before commit `aff0bb2` (2026-07-23) — plausible English, no error. §5
 
 ### 10.3 Copy-paste: validate a bundle before you ship it
 
-```swift
+```swift prelude:external-module
 import CoreAILanguageModels
 import CoreAIShared
 import Foundation

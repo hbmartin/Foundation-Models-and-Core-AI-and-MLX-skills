@@ -237,7 +237,7 @@ translator are separate files precisely so they can be unit-tested as pure funct
 The manifest, verbatim (`SKILL.md:686-708`) — note that the `platforms:` array is left as a comment
 rather than filled in, and note the last line of the section:
 
-```swift
+```swift prelude:external-module
 // swift-tools-version: 6.2
 import PackageDescription
 
@@ -789,7 +789,7 @@ a `static` — see the MLX note above.
 
 The protocol requirement throws. Apple's own conformance does not:
 
-```swift
+```swift prelude:guide-context
 public init(configuration: Configuration) {          // ChatCompletionsLanguageModel.swift:191
   self.configuration = configuration
 }
@@ -1124,7 +1124,7 @@ that matches how much you know about the weights.
 The half-and-half case is `ChatCompletionsLanguageModel`, and it is the most honest thing in the
 file:
 
-```swift
+```swift prelude:guide-context
 public var capabilities: LanguageModelCapabilities {           // :88
   if supportsGuidedGeneration {
     LanguageModelCapabilities([.vision, .toolCalling, .reasoning, .guidedGeneration])
@@ -1291,7 +1291,7 @@ Two notes on that snippet, both verified against shipping code:
 **Apple's own executor maps `.greedy` differently from Apple's own skill.** The skill sets
 `temperature = 0`; the real implementation sets `top_p = 0`:
 
-```swift
+```swift prelude:guide-context
 private func topP(_ sampling: GenerationOptions.SamplingMode) throws -> Double {   // :367
   switch sampling.kind {
   case .greedy:
@@ -1328,7 +1328,7 @@ non-frozen. Omit it and your package stops compiling on the next SDK.
 
 The same `.kind` projection exists on `toolCallingMode`, and Apple's mapping is a good default:
 
-```swift
+```swift illustrative
 mode: {                                                       // :254-261
   switch request.generationOptions.toolCallingMode?.kind {
   case .allowed, .none: .auto
@@ -1356,7 +1356,7 @@ The single biggest time-saver in the whole API, and it is one sentence:
 Apple's executor does exactly that, encoding the `GenerationSchema` inline as the `schema` member of
 its wire type:
 
-```swift
+```swift illustrative
 responseFormat: request.schema.map { schema in                // :263-270
   ChatCompletionsClient.ResponseFormat(
     jsonSchema: ChatCompletionsClient.ResponseFormat.JSONSchemaWrapper(
@@ -1369,7 +1369,7 @@ responseFormat: request.schema.map { schema in                // :263-270
 
 and tool parameters go across untranslated too (`:244-252`):
 
-```swift
+```swift illustrative
 tools: request.enabledToolDefinitions.map { tool in
   ChatCompletionsClient.Tool(
     function: ChatCompletionsClient.Tool.Function(
@@ -1553,7 +1553,7 @@ The complete entry loop, verbatim from
 `ChatCompletionsLanguageModel.swift:468-568`. This is 100 lines that answer most questions you will
 have:
 
-```swift
+```swift prelude:guide-context
 var messages: [ChatCompletionsClient.ChatMessage] = []
 // Reasoning entries are buffered and attached to the next assistant
 // message (response or toolCalls) via `reasoning_content`. If a turn
@@ -2006,7 +2006,7 @@ means you must keep the value around (or rebuild an equal one) if you might need
 Apple's skill contains a full worked `respond` covering every provider event kind. It is the most
 useful single listing in the 815 lines and it is reproduced here from `SKILL.md:151-248`, verbatim:
 
-```swift
+```swift illustrative
 public func respond(
   to request: LanguageModelExecutorGenerationRequest,
   model: MyLanguageModel,
@@ -2326,7 +2326,7 @@ executor is the only thing that knows the prompt cost, and it knows it before ge
 
 MLX follows the metadata half exactly:
 
-```swift
+```swift prelude:guide-context
 // Send metadata first                                        // MLXLanguageModel.swift:1006-1009
 await Self.emitMetadata(
     ["modelID": modelID, "requestID": request.id.uuidString],
@@ -2476,7 +2476,7 @@ deleted in commit `376ca60` because it no longer compiles.
 
 Real throw sites in the corpus, for the shapes you will actually write most:
 
-```swift
+```swift prelude:guide-context
 // Under-declared capability rejected at runtime — MLXLanguageModel.swift:960-965
 throw LanguageModelError.unsupportedCapability(
     LanguageModelError.UnsupportedCapability(
@@ -2607,7 +2607,7 @@ So: offer the flow first, the key second.
 Apple's skill shows both on one type, and the ordering of the initializers in the file is itself the
 lesson (`SKILL.md:79-101`):
 
-```swift
+```swift prelude:guide-context
 public struct MyLanguageModel: Sendable {
   public let modelID: String
   public let baseURL: URL
@@ -2737,7 +2737,7 @@ The last step is where the protocol stops being a lowest common denominator. App
 🟡 **RECONSTRUCTED** — the session's on-screen snippet was described, not read aloud. Written in the
 verified action spelling and with the verified value type, it is:
 
-```swift
+```swift prelude:guide-context
 await channel.send(
     .response(
         entryID: entryID,
@@ -2818,7 +2818,7 @@ audience, because it is.
 Apple's complete worked example (`SKILL.md:420-446`), verbatim — a web-search results segment, which
 is exactly the server-side-tool case of §13.4:
 
-```swift
+```swift prelude:guide-context
 public struct WebSearchResults: Transcript.CustomSegment {
   public let id: String
   public let content: [Result]
@@ -2891,7 +2891,7 @@ Custom segments are for *new* modalities. There is already a built-in one for im
 
 Emitting one (`SKILL.md:468-478`):
 
-```swift
+```swift prelude:guide-context
 let attachment = Transcript.AttachmentSegment(
   id: imageID,                                              // stable id you mint
   content: .image(Transcript.ImageAttachment(cgImage)),     // CGImage / CIImage / CVPixelBuffer / URL
@@ -2990,7 +2990,7 @@ No network, no async."* (`SKILL.md:716-718`.) Apple's example is also the only p
 that shows how to **construct** a `Transcript` by hand, which you will need constantly
 (`SKILL.md:720-745`):
 
-```swift
+```swift prelude:external-module
 import Testing
 import FoundationModels
 @testable import MyLanguageModel
@@ -3042,7 +3042,7 @@ URLSession-based clients, a fake gRPC stub for gRPC, etc.) and drive the executo
 translation, and how the framework assembles your events into the developer-visible response."*
 (`SKILL.md:771-773`):
 
-```swift
+```swift prelude:guide-context
 @Test func `streamed text deltas assemble into a complete response`() async throws {
   StubbedTransport.shared.respond(with: [.textDelta("Hello"), .textDelta(", world!"), .done])
 

@@ -290,7 +290,7 @@ This is legitimate and it is what Apple's own package does too. But it moves a c
 guarantee into your head, and the cost of getting it wrong is §3. So write it down as an invariant in
 a comment next to the type:
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import FoundationModels
 
@@ -478,7 +478,7 @@ two models that the framework calls equal are genuinely *not* interchangeable.
 Consider a session that routes between two models via a dynamic profile — a perfectly ordinary 27.0
 pattern (see [Part 3](../../part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md)):
 
-```swift
+```swift prelude:external-module
 import Foundation
 import FoundationModels
 import FoundationModelsUtilities
@@ -572,7 +572,7 @@ If you are *using* `ChatCompletionsLanguageModel` as it ships today, the safe pa
 models differ in something that *is* hashed. `additionalHeaders` participates in equality, so a
 single distinguishing header does the job and costs one line:
 
-```swift
+```swift prelude:guide-context
 let deep = ChatCompletionsLanguageModel(
     name: "qwen3-0.6b",
     url: URL(string: "http://localhost:8000/v1")!,
@@ -780,7 +780,7 @@ Four separate ideas there, all worth stealing:
 
 ### 5.3 The pattern in your own executor
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import FoundationModels
 
@@ -868,7 +868,7 @@ since the session's `prewarm` is an optimisation hint, is most of them.
 
 Look again at the requirement:
 
-```swift
+```swift prelude:guide-context
 func prewarm(model: Model, transcript: Transcript)   // no async, no throws
 ```
 
@@ -950,7 +950,7 @@ for any other API. Here it is wrong, and wrong silently.
 **How to detect it in ten seconds.** Add `@_implements`-style explicitness by making the witness
 impossible to get wrong:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 import os
 
@@ -974,7 +974,7 @@ saves an afternoon.
 A second, stronger check: write a test that constructs your executor directly and calls
 `prewarm(model:transcript:)` **through an existential**, because that is what the framework does:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 
@@ -1060,7 +1060,7 @@ AI bundles, pass `queryLength: 1` explicitly rather than taking the default.
 
 Putting §6 together:
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import FoundationModels
 import os
@@ -1803,7 +1803,7 @@ Everything above, assembled. Read the marker on this section before you copy it.
 > the shape. It does not exist and will not compile against anything. Substitute your own engine.
 > This is a *pattern*, not a snippet to paste.
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import FoundationModels
 import Synchronization

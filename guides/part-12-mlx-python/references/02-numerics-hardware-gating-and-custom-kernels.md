@@ -876,9 +876,14 @@ Community-measured consequences, each attributed:
 - **`mlx-lm/tests/test_models.py::test_ssm`** fails out of the box on any M5 with mlx ≥ 0.32.
 - **mlx-lm PR #1595** pins `MLX_ENABLE_TF32=0` in `tests/test_models.py` — but **not** in
   `test_generate.py`.
-- **mlx-swift-lm #357 (OPEN as of 2026-07-29)** — *"[BUG] tests fail due to TF32"*, the Swift-side
-  manifestation of the same thing. (Previously miscited here as `mlx-swift` #357, which is an
-  unrelated merged PR; the TF32 bug lives in `ml-explore/mlx-swift-lm`.)
+- **mlx-swift-lm #357 (closed as completed 2026-07-31; re-checked 2026-08-01)** — *"[BUG] tests
+  fail due to TF32"*, the Swift-side manifestation of the same thing. The closing diagnosis is
+  narrower than the original title: maintainers agreed that the failure is in the **test oracle**,
+  not the cache or chunking implementation. Float16 execution plus different-shaped matmuls moves
+  logits by roughly `2e-2`; the proposed repair is deterministic initialization and a direct
+  max-absolute-difference check while retaining the exact cache-offset assertions. Closure does
+  **not** retract the TF32 numerical warning above. (Previously miscited here as `mlx-swift` #357,
+  which is an unrelated merged PR; the TF32 issue lives in `ml-explore/mlx-swift-lm`.)
 
 And the methodological quote from mlx#3897 that deserves to be pinned above every benchmark you
 write:

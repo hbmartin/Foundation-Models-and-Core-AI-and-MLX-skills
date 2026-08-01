@@ -255,7 +255,7 @@ Both halves of the pairing are visible in the quick-start example in `ml-explore
 root `README.md`, which is worth reading closely because it uses **two different floors in one
 snippet** (✅ VERIFIED — `README.md:104-141`, read from the local clone at commit `3cbf928`):
 
-```swift
+```swift prelude:guide-context
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Generable
 struct Recommendation {
@@ -309,7 +309,7 @@ is exhaustive on the 26 SDK's case set is *not* exhaustive on the 27 SDK's, and 
 `mlx-swift-lm` does exactly this at the SamplingMode bridge (✅ VERIFIED —
 `Libraries/MLXFoundationModels/MLXLanguageModel.swift`, as it stands after commit `2a76e56`):
 
-```swift
+```swift prelude:guide-context
 switch kind {
 case .greedy:
     return .greedy
@@ -392,7 +392,7 @@ This is where people go wrong, and it is worth stating as bluntly as possible.
 
 📏 **MEASURED BY US** on `MacOSX26.5.sdk` (macOS 26.5.2 · Xcode 26.6 · 2026-07-28):
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModels)
 #warning("canImport(FoundationModels) == TRUE")
 #else
@@ -461,7 +461,7 @@ extension MLXLanguageModel {
 and, in the combined form the tests use, ✅ **VERIFIED** —
 `Libraries/MLXHuggingFace/FoundationModelsMacros.swift:3`:
 
-```swift
+```swift illustrative
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 ```
 
@@ -500,7 +500,7 @@ FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface"
 
 Now the behaviour, probed directly:
 
-```swift
+```swift illustrative
 // probe.swift — compiled with: xcrun --sdk macosx swiftc -typecheck probe.swift
 #if canImport(FoundationModels, _version: 1)     // → TRUE
 #if canImport(FoundationModels, _version: 1.4)   // → TRUE
@@ -595,14 +595,14 @@ five-second check that replaces an afternoon of guessing.
 
 Apple's repository uses both forms in the same commit. The library file nests:
 
-```swift
+```swift illustrative
 #if FoundationModelsIntegration
 #if canImport(FoundationModels, _version: 2)
 ```
 
 and the 37 test files combine (✅ VERIFIED — the diff of `3cbf928`, reproduced in §8.2):
 
-```swift
+```swift illustrative
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 ```
 
@@ -632,7 +632,7 @@ compiled with `xcrun --sdk macosx swiftc -typecheck` and the taken branch record
 
 **(a) A misspelled module name.** Zero diagnostics.
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModelsX)     // typo
 // ... your entire 27 feature ...
 #endif
@@ -645,7 +645,7 @@ compiler said nothing about `FoundationModelsX` not being a thing. **There is no
 
 **(b) An undefined compilation condition.** Zero diagnostics.
 
-```swift compile:27
+```swift illustrative
 #if FoundationModelsIntegraton       // trait name misspelled — note the missing 'i'
 // ... your entire 27 feature ...
 #endif
@@ -661,7 +661,7 @@ target only, silently, while the main app works fine. You will find it in TestFl
 **(c) `_underlyingVersion` instead of `_version` — this one is worse, because it evaluates
 TRUE.**
 
-```swift compile:27
+```swift illustrative
 #if canImport(FoundationModels, _underlyingVersion: 2)
 #warning("underlyingVersion 2 == TRUE")
 #else
@@ -693,7 +693,7 @@ lines 40-200, and in a CI log it is invisible. Treat it as silent in practice.
 Because all three failures above are silent, **assert the gate** rather than trusting it. Drop this
 at the top of the file that carries your gate:
 
-```swift compile:27
+```swift illustrative
 // SDKGateAssertions.swift — belongs in the same target as your gated code.
 //
 // These #warnings are deliberate and permanent. They cost nothing, and they turn
@@ -811,7 +811,7 @@ Packages do not have `[sdk=…]` conditions. Your options, in order of preferenc
    flip `swiftSettings` based on an environment variable you set in CI. `mlx-swift-lm` uses exactly
    this shape for an unrelated purpose (✅ VERIFIED — `Package.swift:315-321`):
 
-   ```swift
+   ```swift prelude:guide-context
    if Context.environment["MLX_SWIFT_BUILD_DOC"] == "1"
        || Context.environment["SPI_GENERATE_DOCS"] == "1"
    {
@@ -856,7 +856,7 @@ this?" but "does this consumer want this capability at all?"**
 ✅ VERIFIED — `ml-explore/mlx-swift-lm`, `Package.swift:44-59`, quoted verbatim from the clone at
 `3cbf928`, comment included because the comment is the documentation:
 
-```swift
+```swift illustrative
     traits: [
         // Gates the MLXLanguageModel adapter for Apple's FoundationModels
         // framework. Default-on. Disabling the trait compiles MLXFoundationModels
@@ -878,7 +878,7 @@ this?" but "does this consumer want this capability at all?"**
 And the target, showing that a trait can also gate a **dependency edge**, not just source
 (✅ VERIFIED — `Package.swift:243-262`):
 
-```swift
+```swift illustrative
         // Bridges Apple's FoundationModels framework to MLX-powered on-device
         // inference. Public surface is gated by @available(macOS 27 / iOS 27 /
         // visionOS 27, *) and #if canImport(FoundationModels), so the target
@@ -910,7 +910,7 @@ case that engine is a vendored C++17 xgrammar checkout. The build-time saving is
 A trait is a *consumer preference*. `canImport(_version:)` is an *environment fact*. They compose,
 and the composition is exactly the `&&`:
 
-```swift
+```swift illustrative
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 ```
 
@@ -984,7 +984,7 @@ Foundation Models. From your seat it looks like the package is broken.
 The fix is not to relax your availability annotation. The fix is that **your call site must mirror
 the library's compile-time gate**:
 
-```swift
+```swift illustrative
 import MLXLMCommon
 #if canImport(FoundationModels, _version: 2)
 import FoundationModels
@@ -1306,7 +1306,7 @@ Core AI or Evaluations, §4's gap does not apply to you at all.
 **zero** `#if canImport(FoundationModels…)` guards. ✅ VERIFIED by grep over `Sources/` in the local
 clone: no hits. Instead it declares a hard platform floor:
 
-```swift
+```swift illustrative
   platforms: [
     .macOS("27.0"),
     .iOS("27.0"),
@@ -1366,7 +1366,7 @@ Two idioms coexist in Apple's own code, and 2026 changed which one Apple prefers
 
 **Proactive gating** — ask before you act:
 
-```swift
+```swift illustrative
 switch SystemLanguageModel.default.availability {
 case .available:
     // show the feature
@@ -1377,7 +1377,7 @@ default:
 
 **Reactive catching** — act, and handle the failure:
 
-```swift
+```swift prelude:guide-context
 do {
     let response = try await session.respond(to: prompt)
 } catch let error as SystemLanguageModel.Error {
@@ -1416,7 +1416,7 @@ Private Cloud Compute has a per-user daily quota, and its state is a pure runtim
 `Noema/AppleFoundationModelAvailability.swift`, showing the full three-layer gate around a purely
 runtime probe:
 
-```swift
+```swift illustrative
     static var status: ApplePrivateCloudComputeAvailabilityStatus {
         guard isRuntimeSupported else {
             return .unavailable(message: String(localized:
@@ -1472,7 +1472,7 @@ Four things to steal from this, all of which generalise:
    these; the compile-time gate must be outermost or the symbols do not resolve.
 4. **`isRuntimeSupported` is a tiny helper** that itself does the gate:
 
-   ```swift
+   ```swift illustrative
    static var isRuntimeSupported: Bool {
        #if NOEMA_ENABLE_XCODE27_APIS
        if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) {
@@ -1555,7 +1555,7 @@ against.
 🧑‍💻 **COMMUNITY — `noemaai-labs/noema-ios`** hit this and left a comment about it. ✅ VERIFIED from
 the clone, `Noema/AFMLLMClient.swift:133-146`:
 
-```swift
+```swift illustrative
     /// The on-device context is selected by the installed system model. iOS 26
     /// reports 4K while the iOS 27 model reports 8K. `contextSize` is available
     /// in the Xcode 26.4+ SDK, so it must not be hidden behind the Xcode 27 gate.
@@ -1628,10 +1628,11 @@ to push every gate to a **boundary layer** and have the rest of your code call u
 
 Swift will not let you write this:
 
-```swift compile:27 imports:CoreAI
+```swift xfail:sim27-on-26 compile:sim27 imports:FoundationModels
 final class Runner {                       // available everywhere
     @available(iOS 27.0, *)                // error: stored properties cannot be
-    private var model: AIModel?            //        more available-restricted than their type
+    private var model: PrivateCloudComputeLanguageModel?
+                                            // more available-restricted than their type
 }
 ```
 
@@ -1880,7 +1881,7 @@ The inline comment the fix left in place spells out the reasoning, and is worth 
 because you will not find this written down anywhere else. ✅ VERIFIED —
 `Libraries/MLXFoundationModels/MLXLanguageModel.swift`, at `emitUsage`:
 
-```swift
+```swift prelude:guide-context
             generationObserver?(.updateUsage(input: input, output: output, entryID: entryID))
 
             // TODO: papering over an FM-27 SDK symbol drift -- restore
@@ -2047,7 +2048,7 @@ If you genuinely must support two 27 betas at once — which usually means "an e
 pinned" — the only mechanism is a **build-setting flag you control** (§5), because there is no
 framework-level predicate fine-grained enough:
 
-```swift
+```swift illustrative
 #if XCODE27_BETA3_OR_LATER
 case .randomTopK(let k, _):                   return .topK(k)
 case .randomProbabilityThreshold(let t, _):   return .nucleus(t)
@@ -2468,7 +2469,7 @@ exactly one file containing a gate.
 
 ### 17.1 `Package.swift`
 
-```swift
+```swift prelude:external-module
 // swift-tools-version: 6.1
 import PackageDescription
 
@@ -2602,7 +2603,7 @@ diagnoses and only one of them is the user's problem.
 
 ### 17.4 `Sources/TextGen/SystemBackend.swift` — the 26 backend, ungated
 
-```swift
+```swift illustrative
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
@@ -2647,7 +2648,7 @@ hardcode into your prompt budgeting.
 
 ### 17.5 `Sources/TextGen/PCCBackend.swift` — the 27 backend, fully gated
 
-```swift
+```swift illustrative
 #if canImport(FoundationModels, _version: 2)
 
 import FoundationModels
@@ -2700,7 +2701,7 @@ deliberately, in your own code, where you control it.
 
 ### 17.6 `Sources/TextGen/Backends.swift` — the factory, the only assembly point
 
-```swift
+```swift prelude:guide-context
 import Foundation
 
 public enum Backends {
@@ -2742,7 +2743,7 @@ distinct sentences, and a support engineer can tell them apart from a screenshot
 
 ### 17.7 `Tests/TextGenTests/GateTests.swift` — asserting the negative
 
-```swift
+```swift prelude:external-module
 import Testing
 @testable import TextGen
 
@@ -2787,7 +2788,7 @@ invert tests that assert on the gate's effect.
 Add the `[sdk=…27.*]` conditions from §5.1 to your target, define your own flag, and use it in
 `Capabilities.swift` instead of (or alongside) `canImport`:
 
-```swift
+```swift illustrative
     public static var foundationModels27: Bool {
         #if MYAPP_SDK27
         if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) { return true }
@@ -2798,7 +2799,7 @@ Add the `[sdk=…27.*]` conditions from §5.1 to your target, define your own fl
 
 and add the flag to the gate log so a misspelling (§4.6b) shows up immediately:
 
-```swift compile:27
+```swift illustrative
 #if MYAPP_SDK27
 #warning("BUILD GATE: MYAPP_SDK27 is SET")
 #else

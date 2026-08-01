@@ -72,6 +72,9 @@ The three-line version — `try await AIModel(contentsOf:)`, `loadFunction(named
 | "Turn 2 of my chat is as slow as turn 1" · "hybrid/SSM or plain?" | [7.3 §14](references/03-states-and-pipelined-execution.md) · [7.4 §6](references/04-bundles-engines-and-guided-decoding.md) | Prefix reuse: ~101× on turn-2 TTFT, one integer assignment — and linear attention forfeits it entirely |
 | "`@Generable` throws `unsupportedCapability`" · "I want topK/topP" | [7.4 §7.8, §9](references/04-bundles-engines-and-guided-decoding.md) | You are on the pipelined engine; and sampling knobs live on `TextGenerator`, not `GenerationOptions` |
 | "`unsupported metadata_version '0.1'`" · "works on my Mac, not on device" | [7.4 §2.3, §2.7](references/04-bundles-engines-and-guided-decoding.md) | You pointed at the `.aimodel`, not the bundle dir; or a missing `tokenizer/` is fetching from the Hub |
+| "Should my vision pipeline be one function or three?" · "Why is SAM3 on a different compute unit?" | [7.5 §3–§4, §9](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Inspect before specializing; distinguish the package's loader policy from a framework routing rule |
+| "What does warmup actually warm?" · "Why is my detector cold at a new shape?" | [7.5 §5, §7–§8](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Load, function load, dummy forward, specialization cache, and semantic feature cache are separate states |
+| "How should a diffusion bundle own its components?" · "Should I use lazy loading?" | [7.5 §6, §8–§9](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Multi-asset GPU components have independent residency; unload is not specialization-cache deletion |
 
 ---
 
@@ -194,17 +197,34 @@ framework itself all reach for **`mlc-ai/xgrammar`** to do it — documented now
 > (§2.9). Also open: whether a multi-name `function_map` is honoured anywhere, and whether
 > `SystemLanguageModel`'s own structured output is this same xgrammar mechanism.
 
+### [7.5 — Non-LLM engines: bundles, function structure, warmup, specialization, and caching](references/05-non-llm-engines-bundles-warmup-and-caching.md)
+The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`. It compares
+the three shapes Apple's package actually ships: a single `main`; one asset with
+`image_encode` / `text_encode` / `detect`; and a diffusion directory containing independently loaded
+component assets. The guide follows each choice through structure probing, specialization options,
+function residency, dummy-forward warmup, lazy unloading, and Core AI versus application-level caches.
+
+> ⚠️ **Two performance traps look like successful inference.** The public segmentation facade runs
+> `image_encode` again for every prompt, so it does not realize the advertised same-image reuse unless
+> the app owns and caches the intermediate feature NDArray. Diffusion's lazy mode correctly releases
+> each component after its stage, but repeated requests then reload those components; the specialization
+> cache may survive while resident model/function state does not. Also: detector postprocessing turns
+> malformed output shapes into an empty detection array, indistinguishable from a genuinely empty scene
+> unless the app validates the asset ABI.
+
 ---
 
 ## Reading order
 
 **Everyone starts at [7.1](references/01-runtime-and-ndarray.md)** — §1–§9 plus §13, the vocabulary the
-other three assume; §13's error-handling ladder is a day-one need, not a post-mortem one. Skip §11–§12.
+other four assume; §13's error-handling ladder is a day-one need, not a post-mortem one. Skip §11–§12.
 
-**Then branch by what you ship.** *A vision or audio model — one function from tensors to tensors:* go to
-[7.2](references/02-specialization-caching-and-aot.md) and stop; §1–§7 and §17, plus §13–§14 if your
-model is large enough to want AOT. You need neither states nor bundles. *A language model you drive
-yourself:* [7.3](references/03-states-and-pipelined-execution.md) next, in order — §1–§5 make it correct,
+**Then branch by what you ship.** *Segmentation, object detection, or diffusion:* read
+[7.5](references/05-non-llm-engines-bundles-warmup-and-caching.md) after 7.1, then use
+[7.2](references/02-specialization-caching-and-aot.md) for the cache and AOT mechanics its engines do
+not expose. *A one-function tensor model with no product facade:* go to 7.2 directly; §1–§7 and §17,
+plus §13–§14 if the model is large enough to want AOT. *A language model you drive yourself:*
+[7.3](references/03-states-and-pipelined-execution.md) next, in order — §1–§5 make it correct,
 §6–§9 stop it wasting memory, §10–§12 make it fast — then
 [7.2](references/02-specialization-caching-and-aot.md) when the stall shows up. *A language model behind
 `LanguageModelSession`:* go **[7.4](references/04-bundles-engines-and-guided-decoding.md) directly after
@@ -216,7 +236,8 @@ architectures cannot do prefix reuse and that should reach you before you pick a
 [7.2 §14.1](references/02-specialization-caching-and-aot.md), because AOT only produces artifacts for
 Apple-Intelligence-capable devices. **Skippable:** [7.1 §11.3](references/01-runtime-and-ndarray.md) and
 [7.3 §10–§13](references/03-states-and-pipelined-execution.md) unless you hand-write a pipelined decode
-loop, and [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) unless you ship diffusion.
+loop; [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) is superseded by 7.5 for anyone
+who actually ships diffusion.
 
 ---
 
@@ -238,8 +259,9 @@ loop, and [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) unle
 - **Background Assets delivery, first-run UX and OS-update re-specialization as operations** —
   [Part 15](../part-15-shipping-and-operating/). **Measuring whether what you shipped is any good**, for
   which Apple's repo has no vision/audio/diffusion benchmark and no published quality number:
-  [Part 6](../part-06-evaluations/). **Vision pipelines end to end**, including the orientation and box
-  conventions 7.1 §12 flags: [Part 16](../part-16-adjacent-capabilities/). **MLX**, which exposes logits
+  [Part 6](../part-06-evaluations/). **Migrating image preprocessing and box conventions from Core ML:**
+  [Part 17 reference 05](../part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md); 7.5 owns
+  the new runtime engine and lifecycle. **MLX**, which exposes logits
   trivially where Core AI's fast path does not: [Part 13](../part-13-mlx-swift/). **Coming from Core ML
   or `coreai-torch` 0.4.x:** [Part 17](../part-17-migration-from-pre-ios-27/).
 

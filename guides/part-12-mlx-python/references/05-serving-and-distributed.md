@@ -1442,7 +1442,7 @@ model you chose, quantized how you chose, on your machine.
 ✅ **VERIFIED initializer**, from a developer's working code on Apple Developer Forums thread
 838444 (the response was accepted by an Apple engineer in the same thread):
 
-```swift
+```swift prelude:guide-context
 ChatCompletionsLanguageModel(name: String, url: URL, additionalHeaders: [String: String])
 ```
 

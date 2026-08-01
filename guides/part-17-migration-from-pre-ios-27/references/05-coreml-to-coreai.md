@@ -336,7 +336,7 @@ That split has three consequences you will feel immediately:
 
 The full signature set:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 
 // The three-step load.
@@ -363,7 +363,7 @@ them with `try?` will cost you an afternoon eventually.
 `NDArray` is Core AI's tensor container. It is not `MLMultiArray` with a new name; the access model
 is different, and the difference is the point.
 
-```swift
+```swift prelude:guide-context
 // Create an NDArray that matches the expected type and shape.
 var input = NDArray(shape: [3, 4], scalarType: .float32)
 
@@ -442,7 +442,7 @@ The input side gets dramatically simpler. The output side gets a sharp edge.
 
 **Inputs.** There is no protocol to conform to. The convenience overload takes a dictionary:
 
-```swift
+```swift prelude:guide-context
 var outputs = try await function.run(inputs: ["input": input])
 ```
 
@@ -468,7 +468,7 @@ whole arrays — that is the zero-copy path, and it is covered in
 
 **Outputs.** This is where the shape differs from anything in Core ML:
 
-```swift
+```swift prelude:guide-context
 // Extract the returned output.
 guard let predictionValue = outputs.remove("prediction") else {
     throw MigrationError.missingOutput("prediction")
@@ -684,7 +684,7 @@ Practical consequences, all of which have bitten someone:
 
 If your Core ML integration looks like this 🟡 —
 
-```swift
+```swift prelude:guide-context
 // Core ML, 🟡 from general knowledge: Xcode generates a typed class from the model file.
 let model = try MyClassifier(configuration: config)
 let output = try model.prediction(image: pixelBuffer)
@@ -704,7 +704,7 @@ builds `NDArray`s with the right shapes and scalar types and pulls the outputs b
 
 What you get instead is **runtime introspection**, which is a real if unequal consolation:
 
-```swift
+```swift prelude:guide-context
 let functionDescriptor = function.descriptor
 guard let valueDescriptor = functionDescriptor.inputDescriptor(of: "input"),
       case .ndArray(let arrayDescriptor) = valueDescriptor else {
@@ -942,7 +942,7 @@ overview: *"Each cache entry contains a specialized asset formed from a specific
 `.aimodelc` **and `SpecializationOptions` combination**."* `SpecializationOptions` is `Hashable`
 because it is *designed* to be a key. Which means:
 
-```swift
+```swift prelude:guide-context
 // ⚠️ Two cache entries. Two specializations. Two copies on disk. No warning.
 let a = try await AIModel(contentsOf: url)                      // options == .default
 let b = try await AIModel(contentsOf: url, options: .cpuOnly)   // a different key entirely
@@ -1111,7 +1111,7 @@ program.save_asset("Decoder.aimodel")
 
 **How you drive them.** Swift side, states are a third argument to `run`:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, tvOS 27.0, watchOS 27.0, *)
@@ -1240,7 +1240,7 @@ program.save_asset("Segmenter.aimodel")
 
 Swift side, you simply load more than one function from the same `AIModel`:
 
-```swift
+```swift prelude:guide-context
 let model = try await AIModel(contentsOf: url, options: options)
 print(model.functionNames)   // ["image_encode", "text_encode", "detect"]
 
@@ -1461,7 +1461,7 @@ The command and the output convention:
 
 Runtime selection is two lines and no new load API:
 
-```swift
+```swift prelude:guide-context
 let arch = AIModel.deviceArchitectureName
 let assetName = "MyModel.\(arch).aimodelc"
 // … download or locate that variant, then:
@@ -1627,7 +1627,7 @@ This is the gap that costs you first, because it shows up the moment you write y
 > recovery ladder on *observable state* (does `cache.model(for:options:)` return `nil`?) rather
 > than on error identity.
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import os
 
@@ -2055,7 +2055,7 @@ protocol ImageTagger: Sendable {
 
 Two conformers. The Core ML one is what you already ship 🟡:
 
-```swift
+```swift prelude:guide-context
 import CoreML
 
 /// 🟡 Illustrative. Core ML identifiers here are from general knowledge and are
@@ -2078,7 +2078,7 @@ struct CoreMLImageTagger: ImageTagger {
 
 The Core AI one is new, and gated:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import CoreVideo
 
@@ -2153,7 +2153,7 @@ enum TaggerError: Error {
 
 ### 8.2 Step 2: choose the backend once, at a seam you control
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import Foundation
 
@@ -2161,7 +2161,9 @@ enum TaggerFactory {
 
     /// A user-facing or remote-config switch, so you can turn the new path off
     /// without shipping a build.
-    static var coreAIEnabled: Bool = RemoteConfig.bool("tagger.coreai.enabled", default: false)
+    static var coreAIEnabled: Bool {
+        RemoteConfig.bool("tagger.coreai.enabled", default: false)
+    }
 
     static func make(coreMLURL: URL, coreAIURL: URL, labels: [String]) async -> any ImageTagger {
         if #available(iOS 27.0, macOS 27.0, visionOS 27.0, tvOS 27.0, watchOS 27.0, *), coreAIEnabled {

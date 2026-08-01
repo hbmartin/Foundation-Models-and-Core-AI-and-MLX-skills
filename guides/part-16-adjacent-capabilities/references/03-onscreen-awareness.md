@@ -343,7 +343,7 @@ mental model — "Siri sees my screen" — that is true for both paths and predi
 Do this before you change any code. It takes five minutes and it is the difference between fixing
 the problem and rewriting a subsystem that was never involved.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED shape (the logging pattern is from forum thread 838329's instrumentation;
 //    EntityQuery.entities(for:) is the standard App Intents requirement)
 // Pre-2026 API: os.Logger is iOS 14+.
@@ -422,7 +422,7 @@ stop looking like four APIs and start looking like four *places to put the same 
 
 ### 2.1 The initializer
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27; and WWDC26 240 @ 17:19)
 EntityIdentifier(for: SongEntity.self, identifier: track.id)
 ```
@@ -436,7 +436,7 @@ Two arguments:
 The `identifier:` parameter is **generic over your entity's `ID` type**, and Apple's own samples
 prove it by passing different things:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27) — a String
 EntityIdentifier(for: AlbumEntity.self, identifier: session.id.uuidString)
 
@@ -543,7 +543,7 @@ genuinely small.
 Use when the screen is *about* one thing: a document, a now-playing track, a message being
 composed, an event detail view.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27) — verbatim structure
 import AppIntents
 import SwiftUI
@@ -599,7 +599,7 @@ and 🔴 GAP G6.
 Use when several meaningful entities are visible at once and one of them is *this particular
 subview*.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27) — verbatim structure
 import AppIntents
 import SwiftUI
@@ -636,7 +636,7 @@ not.
 This is the shape most apps need most often, and it is the one whose *absence* causes the subtlest
 bug in this guide.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 16:27) — verbatim structure
 import AppIntents
 import SwiftUI
@@ -679,7 +679,7 @@ The collection form is attached to the *list*, not the row, so it outlives scrol
 ⚠️ **This is the trap.** Session 240 — the overview session — publishes a code sample that does
 exactly the per-row thing:
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 17:19) — the SIMPLE form.
 // Correct for a short static list; WRONG for anything scrollable with selection.
 List {
@@ -720,7 +720,7 @@ samples — `NowPlayingView`, `AlbumView`, `PlaylistDetailView` — and **no can
 `AppEntityUIElement` initializer shape below reached our corpus through a documentation-and-session
 synthesis pass rather than through a verbatim Apple code block, so its spelling is inferred.
 
-```swift
+```swift prelude:guide-context
 // 🟡 RECONSTRUCTED — the concept is attested (session 343, "custom canvas view annotation",
 //    PianoRollView); this exact initializer spelling is NOT from an Apple code sample.
 //    Verify against Xcode completion before typing it into a real project.
@@ -784,7 +784,7 @@ Three symbols named in the session. Our documentation pass additionally records 
 The one UIKit call site anyone has published in full is **not** from Apple. It is from forum thread
 838329, and it is the collection-view entry point:
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (community, forum thread 838329 — part of the recipe reported working on
 //    device on iOS 27). Placeholders <URL> and <ENTITY> are as posted.
 public func collectionView(
@@ -827,7 +827,7 @@ So the same annotations feed context menus, which is a second payoff for the sam
 Here is the whole of §3 assembled into the minimum viable adoption Apple's code-along describes:
 collection annotation on the list screen, `NSUserActivity` on the detail screen.
 
-```swift
+```swift prelude:guide-context
 // Composition of two ✅ VERIFIED Apple code samples (WWDC26 343 @ 16:27) applied to one app.
 // The entity and query are ordinary App Intents; see guide 02 for the schema decision.
 
@@ -941,7 +941,7 @@ None of those produce a log line in your app. All of them are caused by your cod
 
 Here is the trap in its purest form. This is what a competent developer writes on the first pass:
 
-```swift
+```swift prelude:guide-context
 // ⚠️ THE NAIVE IMPLEMENTATION. Compiles. Correct. Slow enough to break the feature.
 // This is NOT Apple's sample; it is the shape the trap takes.
 extension PlaylistQuery {
@@ -985,7 +985,7 @@ nobody has published.
 
 ### 4.3 The fix, from Apple
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 17:23) — verbatim structure
 // Component-based display representation queries
 extension PlaylistQuery {
@@ -1050,7 +1050,7 @@ out.
 
 The safe pattern, stated as code:
 
-```swift
+```swift prelude:guide-context
 // The forward-compatible shape: pass the value through, never inspect it.
 result[entity.id] = await entity.displayRepresentation(with: requestedComponents)
 
@@ -1070,7 +1070,7 @@ The other half of the mechanism lives on your entity, not your query.
 That overload is where *you* decide what "text only" means for your type. A worked implementation,
 built on the verified `DisplayRepresentation(title:subtitle:image:)` initializer:
 
-```swift
+```swift prelude:guide-context
 // Composition: ✅ VERIFIED initializer (WWDC26 343 @ 4:26) +
 //              ✅ VERIFIED call site (WWDC26 343 @ 17:23).
 // The BODY is ours — Apple does not publish an implementation of this overload.
@@ -1143,7 +1143,7 @@ Rules that follow from the mechanism alone:
 6. **Measure it yourself, with `signpost`.** Since there is no published budget, instrument the
    method and know your own number before Siri tells you it is too big.
 
-```swift
+```swift prelude:guide-context
 // Instrumenting the hot path. os.signpost is pre-2026 API (iOS 12+).
 import os
 
@@ -1197,7 +1197,7 @@ representations"* **first**, ahead of indexing, ahead of annotation, ahead of ev
 
 The enriched initializer:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 4:26)
 // Enhanced DisplayRepresentation
 @AppEntity(schema: .audio.song)
@@ -1257,7 +1257,7 @@ Session 240 splits cross-app work into exactly these two halves and names them:
 
 The documented transfer mechanism is `Transferable` with an `IntentValueRepresentation`:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 18:18) — export only
 // Working across apps - Exporting content to another app
 extension ContactEntity: Transferable {
@@ -1270,7 +1270,7 @@ extension ContactEntity: Transferable {
 }
 ```
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 20:00) — export AND import
 // Working across apps - IntentValueRepresentation
 extension ContactEntity: Transferable {
@@ -1296,7 +1296,7 @@ states crisply enough to quote verbatim:
 
 The matching route:
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 240 @ 19:21)
 // Working across apps - IntentValueQuery
 struct ContactEntityQuery: IntentValueQuery {
@@ -1413,7 +1413,7 @@ Three changes from §5.3, and all three are load-bearing:
 
 #### The entity
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (community, forum thread 838329) — the schema adoption is the first of the
 //    three required changes. Schema-required properties come from the .files.file schema;
 //    Xcode's `files_file` snippet scaffolds them (see guide 02 §3.4).
@@ -1431,7 +1431,7 @@ safe default remains gating schema adoption on the 27 releases where the domain 
 
 #### The identifier
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (community, forum thread 838329)
 guard let fileIdentifier = try? FileEntityIdentifier.file(url: someFileURL) else { return nil }
 let identifier = EntityIdentifier(for: MyFileEntity.self, identifier: fileIdentifier)
@@ -1444,7 +1444,7 @@ method, as the forum code does).
 
 #### The UIKit annotation site
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (community, forum thread 838329) — placeholders as posted
 public func collectionView(
     _ collectionView: UICollectionView,
@@ -1458,7 +1458,7 @@ public func collectionView(
 
 #### The transfer representation — the change that actually fixes it
 
-```swift
+```swift illustrative
 // ✅ VERIFIED (community, forum thread 838329) — FileRepresentation, NOT DataRepresentation
 public static var transferRepresentation: some TransferRepresentation {
     FileRepresentation(
@@ -1522,7 +1522,7 @@ The current reference fills in the previously missing public surface. `FileEntit
 document that has not been materialized on disk; `isDraft` and `draftIdentifier` let entity code
 distinguish that state.[^file-identifier-api]
 
-```swift
+```swift prelude:guide-context
 let identifier = FileEntityIdentifier.draft(identifier: render.contentHash)
 precondition(identifier.isDraft)
 ```
@@ -1538,7 +1538,7 @@ below and then replace or reconstruct the identifier with `file(url:)`.
 
 So the verified transfer pattern remains: **materialize, then annotate and export.**
 
-```swift
+```swift prelude:guide-context
 // The write-out pattern. The FileEntityIdentifier / EntityIdentifier lines are
 // ✅ VERIFIED (community, forum thread 838329); the file handling around them is
 // ordinary pre-2026 Foundation (FileManager, URL, Data.write) and is ours.
@@ -1599,7 +1599,7 @@ final class RenderedImageStore {
 
 Then the annotation is the ordinary shape (b):
 
-```swift
+```swift prelude:guide-context
 struct RenderedChartView: View {
     let chart: Chart
     @Environment(RenderedImageStore.self) private var store
@@ -1769,7 +1769,7 @@ and it is cheap to adopt once the entities exist.
 The use case: a notification is announced on AirPods, and the user replies to it by voice. For Siri
 to act on *the thing the notification is about*, it needs a reference to that thing.
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 21:07) — verbatim structure
 import AppIntents
 import UserNotifications
@@ -1792,7 +1792,7 @@ in a conversation can reasonably reference both the message and the conversation
 
 ### 6.2 Now Playing — and the ordering rule
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 21:07) — verbatim structure
 import AppIntents
 import NowPlaying
@@ -1832,7 +1832,7 @@ Our documentation pass records one more detail for this surface:
 
 ### 6.3 AlarmKit
 
-```swift
+```swift prelude:external-module
 // ✅ VERIFIED (Apple code sample, WWDC26 343 @ 21:07) — verbatim structure
 import AppIntents
 import AlarmKit
@@ -2201,7 +2201,7 @@ is the *easy* case for hand-off, and is why this example can show the whole thin
 
 ### 9.1 The entity
 
-```swift
+```swift prelude:guide-context
 // Schema adoption: ✅ VERIFIED shape (community, forum thread 838329) — .files.file is the
 // schema that makes hand-off work. The property list is scaffolded by Xcode's `files_file`
 // snippet (✅ VERIFIED mechanism, WWDC26 344: "<domain>_" completion).
@@ -2261,7 +2261,7 @@ struct ScanEntity {
 
 ### 9.2 The transfer representation
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (community, forum thread 838329) — FileRepresentation, not DataRepresentation.
 // Adapted to the entity above; the structure and every API name is from the thread.
 
@@ -2297,7 +2297,7 @@ actually write. Everything else is unchanged from the reported-working recipe.
 
 ### 9.3 The query — both requirements
 
-```swift
+```swift prelude:guide-context
 // entities(for:) — the standard EntityQuery requirement.
 // displayRepresentations(for:requestedComponents:) — ✅ VERIFIED (Apple code sample, 343 @ 17:23).
 // The logger is the §1.6 diagnostic, left in deliberately.
@@ -2348,7 +2348,7 @@ part of the listing no longer rests on an assumption.[^file-identifier-api]
 
 ### 9.4 The list screen
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED shape (Apple code sample, 343 @ 16:27) — collection annotation.
 import AppIntents
 import SwiftUI
@@ -2378,7 +2378,7 @@ throwing behaviour.
 
 ### 9.5 The detail screen
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED shape (Apple code sample, 343 @ 16:27) — NSUserActivity annotation.
 // See §3.2 and §8.6 for the caveat on this route.
 struct ScanDetailView: View {
@@ -2400,7 +2400,7 @@ struct ScanDetailView: View {
 
 ### 9.6 The notification
 
-```swift
+```swift prelude:guide-context
 // ✅ VERIFIED (Apple code sample, 343 @ 21:07) — notification entity annotation.
 import AppIntents
 import UserNotifications

@@ -471,7 +471,7 @@ the function you are calling; do not stringify a `Prompt` by hand.
 `ToolCallEvaluator`, pass it now. Because the accessor is declared by an Evaluations extension—not by
 FoundationModels—the source file must import both modules:[^eval-structured-transcript-import]
 
-```swift compile:27
+```swift illustrative
 import Evaluations
 import FoundationModels
 ```
@@ -1189,7 +1189,7 @@ reconstructions of this API show — does not exist. The signature is a plain
 `aggregateValue` takes an `AggregationOperation` and returns a `Double`. Two forms are attested in
 shipping code:
 
-```swift
+```swift prelude:guide-context
 // Built-in statistic, keyed by the Metric you aggregated:
 #expect(result.aggregateValue(.mean(of: rangeMetric)) >= 0.8)          // BookTags.swift:165
 
@@ -1247,7 +1247,7 @@ That is your escape hatch for anything the report UI will not show you, and — 
 The `info` dictionary is free-form `[String: String]` and it lands on the result as
 `evaluationInfo`. What Book Tracker puts in it is the interesting part:
 
-```swift
+```swift illustrative
 "Prompt": BookTaggingService.instructions,
 ```
 
@@ -1343,7 +1343,7 @@ struct BookTaggingService {
 
 Now the evaluation, in the test bundle:
 
-```swift
+```swift prelude:external-module
 // BookTrackerEvaluations/BookTags.swift
 import Evaluations
 import Foundation
@@ -1448,7 +1448,7 @@ struct BookTaggingEvaluation: Evaluation {
 
 And the suite that runs it:
 
-```swift
+```swift prelude:external-module
 // BookTrackerEvaluations/BookTagTests.swift
 import Evaluations
 import Testing
@@ -1718,7 +1718,7 @@ how we know its shape at all:
 Note the closing comment the sample's author left, which is a genuinely useful Swift fact and not
 about evaluations at all (`DatasetExtractor/main.swift:165-167`):
 
-```swift
+```swift prelude:guide-context
 // @main cannot be used in main.swift — Swift's implicit top-level entry point and
 // @main are mutually exclusive. Calling .main() explicitly is the equivalent.
 DatasetExtractorCommand.main()
@@ -1790,7 +1790,7 @@ that, "evaluate your evaluators" stops sounding recursive and starts sounding ob
 You do not have to reproduce `DatasetExtractor` to get the round trip. `EvaluationResult` can write
 itself out from inside the test body:
 
-```swift
+```swift prelude:guide-context
 @Test("Book Tag Evaluations", .evaluates(evaluation, info: evaluationInfo))
 func evaluateBookTagging() async throws {
     let result = EvaluationContext.current.result
@@ -2054,7 +2054,7 @@ Here is the part worth stealing, and it is one line:
 > ✅ **VERIFIED** (`335:224-225`), verbatim: *"**`BookTaggingService` now takes a list of tools as
 > input. I also set the default to an empty array so my existing evaluation won't need any changes.**"*
 
-```swift
+```swift prelude:guide-context
 struct BookTaggingService {
     static func generateTags(
         for review: String,
@@ -2244,7 +2244,7 @@ dataset.
 
 **The defence is a count assertion, and it belongs in every suite that uses `JSONLoader`:**
 
-```swift
+```swift prelude:guide-context
 @Test("Synthetic Book Tags", .evaluates(evaluation, info: evaluationInfo))
 func evaluateSynthetic() async throws {
     let result = EvaluationContext.current.result
@@ -2362,7 +2362,7 @@ went into it.
 
 So make the *denominator* an assertion, not an assumption. One line at the top of every test body:
 
-```swift
+```swift prelude:guide-context
 #expect(result.detailed[metric: Self.evaluation.someAlwaysFiringMetric].count == expectedSampleCount)
 ```
 
@@ -2455,7 +2455,7 @@ Add `"OSBuild"` and `"ModelVersionBand"` keys to your `info:` today. You cannot 
 but you *can* record the OS build that produced a run, and that is a sufficient proxy for the three-band
 table above:
 
-```swift
+```swift illustrative
 static let evaluationInfo: [String: String] = [
     "Prompt": BookTaggingService.instructions,
     "ModelName": "SystemLanguageModel",
@@ -2589,7 +2589,7 @@ develop → run → check expectations → analyse → repeat
 
 ### Checks to put in every test body
 
-```swift
+```swift prelude:guide-context
 let result = EvaluationContext.current.result
 
 // 1. The denominator. Catches JSONLoader drops, ignored samples, and subject failures.

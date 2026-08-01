@@ -112,7 +112,7 @@ Every sentence of format prose you delete is budget you get back.
 
 ### 2.1 The protocol the macro conforms you to
 
-```swift
+```swift illustrative
 protocol Generable : ConvertibleFromGeneratedContent, ConvertibleToGeneratedContent
 ```
 
@@ -138,7 +138,7 @@ therefore both the erased representation *and* a legal generation target — see
 The `InstructionsRepresentable` / `PromptRepresentable` inheritance is the quietly important part.
 It is what makes this legal:
 
-```swift
+```swift prelude:guide-context
 let prompt = Prompt {
     "Generate a 3-day itinerary to Grand Canyon."
     "Here is an example of the desired format, but don't copy its content."
@@ -154,7 +154,7 @@ sentence; §10 depends on it.
 
 ### 2.2 The three macro spellings
 
-```swift
+```swift illustrative
 @Generable(description:)
 @Generable(description:representNilExplicitlyInGeneratedContent:)
 @Generable(name:description:representNilExplicitlyInGeneratedContent:)
@@ -195,7 +195,7 @@ Practical reading of each parameter:
 Apple's own example, verbatim from
 `/documentation/foundationmodels/generable`:
 
-```swift
+```swift xfail:27 imports:FoundationModels
 import FoundationModels
 
 @Generable
@@ -214,9 +214,15 @@ struct SearchSuggestions {
 }
 ```
 
-✅ **VERIFIED** verbatim. Note four things: nesting is allowed and normal; `@Guide` sits on the
+✅ **VERIFIED** verbatim as Apple's published example. Note three things: `@Guide` sits on the
 property, not the type; `.count(4)` is a `GenerationGuide` passed as the *second* argument; and
 `GenerationID` is a property type, not an attribute.
+
+> ⚠️ **BETA COMPILER CONTRADICTION — nested `@Generable` is documented but does not type-check in
+> Xcode 27 beta `27A5228h`.** The verifier proves the published fence fails: the generated macro
+> source says `SearchTerm.PartiallyGenerated` is not a member type. Until a later beta fixes the
+> expansion, move `SearchTerm` to file scope. The `xfail:27` marker makes that change visible: if a
+> later compiler accepts Apple's sample, verification fails and forces this warning to be removed.
 
 `@Generable` also works on enums, and this is the cheapest constraint in the framework:
 
@@ -290,7 +296,7 @@ it).
 
 ### 2.5 `GenerationID` and why you cannot use `name` as an identity
 
-```swift
+```swift illustrative
 struct GenerationID          // iOS 26.0+ … watchOS 27.0+
 ```
 
@@ -347,7 +353,7 @@ The round trip has three steps, and Apple's Origami sample works all three.
 **1. Attach the image with a label you control.** ✅ **VERIFIED** verbatim,
 `Origami/Models/DataModels/Photo.swift:77-91`:
 
-```swift
+```swift prelude:guide-context
 func toPrompt() async throws -> Prompt {
     #if canImport(UIKit)
     guard let image = UIImage(data: data) else { return Prompt {} }
@@ -369,7 +375,7 @@ the sample is app-generated and stable — `"Photo_\(id.uuidString.prefix(6))"`
 Prompt builders also splice **`[Prompt]` arrays inline**, which is how you attach N images
 (✅ **VERIFIED**, `Origami/Models/Orchestrator.swift:596-616`):
 
-```swift
+```swift prelude:guide-context
 var imagePrompts: [Prompt] = []
 for photo in photos { imagePrompts.append(try await photo.toPrompt()) }
 
@@ -385,7 +391,7 @@ let stream = session.streamResponse(to: prompt)
 **2. Declare an `ImageReference` property in the `@Generable` type.** ✅ **VERIFIED** verbatim,
 `Origami/Brainstorm/ImageAnalysis.swift:11-21`:
 
-```swift
+```swift prelude:guide-context
 @Generable
 struct ImageAnalysis {
     var image: ImageReference
@@ -399,7 +405,7 @@ struct ImageAnalysis {
 **3. Resolve it back to your object through `.attachmentLabel`.** ✅ **VERIFIED** verbatim,
 `Origami/Brainstorm/BrainstormModel.swift:142-144`:
 
-```swift
+```swift prelude:guide-context
 let photo = project.photos.first { photo in
     photo.idString == image.attachmentLabel
 }
@@ -411,7 +417,7 @@ model. Nothing about the image's *pixels* comes back; the reference is an identi
 And it streams. `Origami/Brainstorm/BrainstormModel.swift:168-171` reads the label out of a
 *partial* snapshot to start rendering before the analysis text arrives (✅ **VERIFIED** verbatim):
 
-```swift
+```swift illustrative
 for item in partialResponse.content.images ?? [] {
     // Need at least an ID to start streaming.
     if let id = item.image?.attachmentLabel {
@@ -441,7 +447,7 @@ unsupported combinations are kept out of the catalogue.[^guide-macro-source]
 
 Two `@Guide` signatures are listed on the framework index page:
 
-```swift
+```swift illustrative
 @Guide(description:)
 @Guide(description:_:)      // second parameter is one or more GenerationGuide values
 ```
@@ -482,7 +488,7 @@ So **three arities are attested in shipping Apple code**, and you can use any of
 
 ### 3.2 Every guide, with Apple's own one-liners
 
-```swift
+```swift illustrative
 struct GenerationGuide<Value>          // iOS 26.0+ … watchOS 27.0+
 ```
 
@@ -633,7 +639,7 @@ series' hierarchy (Apple-staff answer) — above WWDC transcripts, below headers
 
 The reproduction, verbatim from the thread:
 
-```swift
+```swift prelude:guide-context
 @Generable
 struct Arguments {
     @Guide(description: "The city to get information about.", .anyOf(["London", "New York", "Paris"]))
@@ -662,7 +668,7 @@ sentence in this guide.
 
 The same failure was reported through the runtime-schema path (thread 811620), with this code:
 
-```swift
+```swift prelude:guide-context
 let citiesDefinedAtRuntime = ["London", "New York", "Paris"]
 
 let citySchema = DynamicGenerationSchema(
@@ -684,7 +690,7 @@ let tools = [CityInfo(parameters: generationSchema)]
 
 ✅ **VERIFIED** verbatim from the thread. And through the `GenerationSchema.Property(guides:)` path:
 
-```swift
+```swift prelude:guide-context
 struct SectionReader: Tool {
     let article: Article
     let sections: [String]
@@ -739,7 +745,7 @@ Two workarounds, both from Apple staff in thread 812501:
 
 **1. Validate inside the tool and return a corrective string.**
 
-```swift
+```swift prelude:guide-context
 func call(arguments: Arguments) async throws -> String {
     switch arguments.city {
     case "London", "New York", "Paris":
@@ -856,7 +862,7 @@ advisory and validate.
 This is circumstantial but instructive. The `apple/foundation-models-utilities` package's `Skills`
 API builds a tool whose single argument is constrained by `.anyOf`:
 
-```swift
+```swift prelude:guide-context
 let parameters = try! GenerationSchema(                           // Skills.swift:269
   root: DynamicGenerationSchema(
     name: "Arguments",
@@ -876,7 +882,7 @@ let parameters = try! GenerationSchema(                           // Skills.swif
 
 ✅ **VERIFIED** verbatim from the package source. And then, in the tool's `call`:
 
-```swift
+```swift prelude:guide-context
 func call(arguments: GeneratedContent) async throws -> Prompt {
   let name = try arguments.value(String.self, forProperty: "skill")   // :294
 
@@ -1008,7 +1014,7 @@ It also explains three otherwise-puzzling behaviours:
 
 **Apple's `coreai-models`** — the package behind `CoreAILanguageModel` — declares:
 
-```swift
+```swift illustrative
 .package(url: "https://github.com/mlc-ai/xgrammar", branch: "main"),
 ```
 
@@ -1055,7 +1061,7 @@ binary on macOS 27.
 Apple's `coreai-models` exposes the mechanism as ordinary Swift. This is the clearest description of
 what "guided generation" does that exists anywhere:
 
-```swift
+```swift illustrative
 // swift/Sources/CoreAILanguageModels/GuidedGeneration/XGrammarWrapper.swift
 public final class CompiledGrammar { public var memorySizeBytes: Int }
 
@@ -1082,7 +1088,7 @@ string**, which is exactly what `GenerationSchema` encodes to (§7.5).
 
 The per-step session type:
 
-```swift
+```swift prelude:guide-context
 public struct ConstrainedGenerationSession: ~Copyable {
     public let schema: String
     public let vocabularySize: Int
@@ -1235,7 +1241,7 @@ Now combine that with three other verified facts from the same repo:
 🟡 **RECONSTRUCTED (inference chain, each link verified).** For the most ordinary call in the
 package —
 
-```swift
+```swift prelude:guide-context
 let model = try await CoreAILanguageModel(resourcesAt: modelURL)   // .lazy, variant: nil
 let session = LanguageModelSession(model: model)
 ```
@@ -1269,7 +1275,7 @@ from the same source facts; verify against your own build.
 
 **MLX (`ml-explore/mlx-swift-lm`).** Guided generation is **opt-in at model construction**:
 
-```swift
+```swift prelude:guide-context
 if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) {
     let model = #huggingFaceLanguageModel(
         configuration: LLMRegistry.gemma3_1B_qat_4bit,
@@ -1296,7 +1302,7 @@ consumers targeting pre-27 OSes are explicitly told to do — compiles the whole
 **OpenAI-compatible servers (`ChatCompletionsLanguageModel`).** The flag is right in the
 initializer:
 
-```swift
+```swift illustrative
 public init(
   name: String,
   url: URL,
@@ -1309,7 +1315,7 @@ public init(
 ✅ **VERIFIED** verbatim, `ChatCompletionsLanguageModel.swift:73`. It gates one capability and only
 one:
 
-```swift
+```swift prelude:guide-context
 public var capabilities: LanguageModelCapabilities {
   if supportsGuidedGeneration {
     LanguageModelCapabilities([.vision, .toolCalling, .reasoning, .guidedGeneration])
@@ -1386,7 +1392,7 @@ cover (line 1003). This section is that topic.
 
 ### 7.1 `GenerationSchema` — the finished, immutable article
 
-```swift
+```swift illustrative
 struct GenerationSchema
 // Copyable, CustomDebugStringConvertible, Decodable, Encodable, Escapable, Sendable
 ```
@@ -1395,7 +1401,7 @@ struct GenerationSchema
 
 Initializers, ✅ **VERIFIED** from the same page:
 
-```swift
+```swift illustrative
 init(root:dependencies:)                                            // from DynamicGenerationSchema
 init(type:description:anyOf:)                                       // "Creates a schema for a string enumeration."
 init(type:description:properties:)
@@ -1424,7 +1430,7 @@ which traps rather than throws. Do not copy that.
 
 ### 7.2 `DynamicGenerationSchema` — the builder
 
-```swift
+```swift illustrative
 struct DynamicGenerationSchema        // Sendable, SendableMetatype
 ```
 
@@ -1435,7 +1441,7 @@ struct DynamicGenerationSchema        // Sendable, SendableMetatype
 
 The full initializer set, ✅ **VERIFIED** from the same page:
 
-```swift
+```swift illustrative
 init(arrayOf:minimumElements:maximumElements:)
 init(name:description:anyOf:)
 init(name:description:properties:)
@@ -1481,7 +1487,7 @@ let menuSchema = DynamicGenerationSchema(
 )
 ```
 
-```swift
+```swift prelude:guide-context
 // Create the schema.
 let schema = try GenerationSchema(root: menuSchema, dependencies: [])
 
@@ -1515,7 +1521,7 @@ a `GeneratedContent`).
 
 Putting it together for a real case — a survey whose questions arrive from a server:
 
-```swift
+```swift illustrative
 import FoundationModels
 
 struct SurveyQuestion {
@@ -1626,7 +1632,7 @@ in, and therefore the order they appear in your streaming snapshots (§9).
 Exporting a schema from Swift, ✅ **VERIFIED** from
 `docs/source/guided_generation.rst:246-248` of the Python SDK:
 
-```swift
+```swift prelude:guide-context
 let schema = ProductReview.generationSchema
 let jsonData = try JSONEncoder().encode(schema)
 try jsonData.write(to: URL(fileURLWithPath: "schema.json"))
@@ -1657,7 +1663,7 @@ it:** the doc page for `generationschema/name`, or a one-line print in a `#Playg
 
 ## 8. `GeneratedContent`: the untyped door
 
-```swift
+```swift illustrative
 struct GeneratedContent        // conforms to Generable itself
 ```
 
@@ -1673,7 +1679,7 @@ the payload of a `ParsingError`.
 
 ✅ **VERIFIED** from the doc page.
 
-```swift
+```swift illustrative
 // Initializers
 init(_:)
 init(_:id:)
@@ -1694,7 +1700,7 @@ var debugDescription: String
 var id: GenerationID
 ```
 
-```swift
+```swift illustrative
 enum GeneratedContent.Kind {
     case array(_:)
     case bool(_:)
@@ -1719,7 +1725,7 @@ partial result, log a failure, or hand a model's output to a non-Swift consumer.
 
 ### 8.2 Reading values
 
-```swift
+```swift prelude:guide-context
 let name = try arguments.value(String.self, forProperty: "section")
 ```
 
@@ -1733,7 +1739,7 @@ surfaces the model's omission, Python silently gives you a null.
 
 ### 8.3 `GeneratedContent.ParsingError` as a first-class signal
 
-```swift
+```swift illustrative
 struct GeneratedContent.ParsingError
 init(rawContent:underlyingError:debugDescription:)
 var rawContent
@@ -1749,7 +1755,7 @@ from Apple's Origami sample, whose error-to-UI mapping tests for it as its own t
 `SystemLanguageModel.Error` and after `LanguageModelError`
 (`Origami/Models/Error+DisplayMessage.swift:12-36`):
 
-```swift
+```swift prelude:guide-context
 if self is GeneratedContent.ParsingError {
     return "Origami had trouble understanding the response. Please try again."
 }
@@ -1790,7 +1796,7 @@ throwing the old case until rebuilt.
 The two declarations, ✅ **VERIFIED** verbatim from
 `/documentation/foundationmodels/languagemodelsession`:
 
-```swift
+```swift illustrative
 @discardableResult nonisolated(nonsending)
 final func respond<Content>(to prompt: Prompt,
                             generating type: Content.Type = Content.self,
@@ -1854,7 +1860,7 @@ It applies **through the whole type graph**: `Itinerary.PartiallyGenerated` has
 `days: [DayPlan.PartiallyGenerated]?`, whose elements have
 `activities: [Activity.PartiallyGenerated]?`, and so on (code-along 643–644).
 
-```swift
+```swift prelude:guide-context
 // ViewModels/ItineraryGenerator.swift
 var itinerary: Itinerary.PartiallyGenerated?
 ```
@@ -1888,7 +1894,7 @@ few tokens instead of after the whole object.
 
 ### 9.3 `ResponseStream`, `Snapshot`, and `Response`
 
-```swift
+```swift illustrative
 struct Response<Content> where Content : Generable        // iOS 26
 struct ResponseStream<Content> where Content : Generable  // iOS 26, conforms to AsyncSequence
 struct LanguageModelSession.ResponseStream.Snapshot
@@ -1910,7 +1916,7 @@ Two useful moves fall out:
 **`.collect()` gives you streaming's UX and non-streaming's ergonomics.** Drive the UI from the loop,
 then take the final settled value:
 
-```swift
+```swift prelude:guide-context
 let stream = session.streamResponse(to: prompt, generating: Itinerary.self)
 for try await snapshot in stream {
     self.partial = snapshot.content        // drive the UI
@@ -1934,7 +1940,7 @@ how you implement a spend cap without waiting for the response to finish.
 Apple's own SwiftUI streaming sample, ✅ **VERIFIED verbatim** — *including the syntax errors Apple
 shipped in it*, reproduced here unaltered so you recognise it if you find it:
 
-```swift
+```swift illustrative
 @Generable struct Person: Equatable {
     var id: GenerationID
     var name: String
@@ -1979,7 +1985,7 @@ is on Apple's documentation site in that state. **Do not copy it.** Use the corr
 
 ### 9.4 A streaming view that compiles
 
-```swift
+```swift prelude:guide-context
 import SwiftUI
 import FoundationModels
 
@@ -2069,7 +2075,7 @@ Points of technique:
   in-progress element hidden so its text does not visibly grow, and only reveals an item once the
   model has moved on to the next one (✅ **VERIFIED** verbatim,
   `Origami/Brainstorm/BrainstormModel.swift:120-123`):
-  ```swift
+  ```swift prelude:guide-context
   // When the model starts a new idea, all earlier ones are
   // finalized — reveal those, but keep the in-progress one hidden
   // so its text doesn't grow visibly midstream.
@@ -2110,7 +2116,7 @@ use `respond` for anything that can run without a visible UI.
 This is not a hypothesis. Apple handles it explicitly, with a comment naming the cause —
 ✅ **VERIFIED** verbatim, `Origami/Coach/CoachModel.swift:58-73`:
 
-```swift
+```swift prelude:guide-context
 func processStream(_ stream: LanguageModelSession.ResponseStream<String>) async throws {
     state = .loading
     var accumulated = ""
@@ -2131,7 +2137,7 @@ func processStream(_ stream: LanguageModelSession.ResponseStream<String>) async 
 
 The `didReceivePartial` flag is the whole pattern, and it generalises past the free-text case:
 
-```swift
+```swift prelude:guide-context
 func load() async {
     state = .loading
     var latest: Itinerary.PartiallyGenerated?
@@ -2261,7 +2267,7 @@ does it include all the guidance, but also the schema that's part of this prompt
 
 The safe pattern, ✅ **VERIFIED** as to shape from code-along lines 542–556 and 2020–2028:
 
-```swift
+```swift prelude:guide-context
 let prompt = Prompt {
     "Generate a 3-day itinerary to Grand Canyon."
     if kidFriendly {
@@ -2453,7 +2459,7 @@ Note what is verified: that a developer *believes* this. Apple did not confirm i
 its entire evaluation suite is built around — constructs a permissive-guardrail model and immediately
 makes a guided-generation request against it:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(
     model: SystemLanguageModel(guardrails: .permissiveContentTransformations),
     instructions: instructions
@@ -2488,7 +2494,7 @@ Full guardrail treatment in
 > "**Greedy sampling tells the model to stop being creative and to always pick the most obvious next
 > token. This makes the model's output deterministic.**" — ✅ **VERIFIED**, code-along lines 696–702.
 
-```swift
+```swift illustrative
 options: GenerationOptions(sampling: .greedy)
 ```
 

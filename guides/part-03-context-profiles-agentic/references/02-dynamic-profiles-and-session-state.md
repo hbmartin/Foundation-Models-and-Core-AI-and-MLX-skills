@@ -459,7 +459,7 @@ Origami writes `SystemLanguageModel()` — a bare initialiser — and never writ
 Origami also ships a runtime model-kind test that is worth stealing, because it lets one profile
 struct express "do the expensive thing only if we are not on-device":
 
-```swift
+```swift prelude:guide-context
 private var isOnDevice: Bool {
     type(of: serverModel) == SystemLanguageModel.self
 }
@@ -571,7 +571,7 @@ The instructions builder is more permissive than the profile builder:
 > (`TutorialInstructions.swift:36-39`), and `TermInstructions.swift:20-37` does the same. The profile
 > builder does **not** permit this — see §6.3.
 
-```swift
+```swift prelude:guide-context
 // ✅ Legal in DynamicInstructionsBuilder.
 if orchestrator.project.craftDomain == .origami {
     OrigamiInstructions()
@@ -1301,7 +1301,7 @@ Rehydration has a cost that surprises people:
 > the restored transcript.**"* The recommended mitigation is to prewarm ahead of the user:
 > *"Prewarm the model when you know usage is at least one or two seconds in the future."*
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(
     profile: OrchestratorProfile(orchestrator: orchestrator),
     history: savedTranscript
@@ -1323,10 +1323,11 @@ No WWDC session mentions this, and it is the single most useful thing you can ad
 agentic feature during development. When a profile switch does not fire, or history vanishes, the diff
 between two consecutive snapshots tells you exactly which entry changed.
 
-```swift compile:27
+```swift compile:27 defines:DEBUG
 import FoundationModels
 import Foundation
 
+#if DEBUG
 /// Dump a session's transcript to disk. Debug builds only.
 func snapshot(_ transcript: Transcript, named name: String) throws {
     let encoder = JSONEncoder()
@@ -1337,6 +1338,7 @@ func snapshot(_ transcript: Transcript, named name: String) throws {
     let url = dir.appending(path: "\(name)_\(Date.now.timeIntervalSince1970).json")
     try data.write(to: url)
 }
+#endif
 ```
 
 > ⚠️ Transcripts contain everything the user typed and everything the model said. Gate the writer on a
@@ -1426,7 +1428,7 @@ specify for the framework's own modifiers.
 
 ### 8.2 Call-site options still win
 
-```swift
+```swift prelude:guide-context
 // The profile says .allowed; this one call says .required.
 let response = try await session.respond(
     to: "What's a good sourdough recipe?",
@@ -1756,7 +1758,7 @@ extension LanguageModelSession.DynamicProfile {
 
 Use site:
 
-```swift
+```swift prelude:guide-context
 Profile {
     TechniqueReviewer()
 }
@@ -2075,7 +2077,7 @@ This matters more than it looks. It means your transform can be a named, testabl
 the profile struct — or a `static` function, or a free function — and the profile declaration stays
 readable. It also means the transform is trivially unit-testable without a model:
 
-```swift
+```swift prelude:guide-context
 import Testing
 import FoundationModels
 
@@ -2357,7 +2359,7 @@ and the outermost runs *first*.
 
 So for the README's composed example:
 
-```swift
+```swift prelude:guide-context
 Profile {
   Instructions("A conversation between a user and a helpful assistant.")
   ToggleDarkModeTool()
@@ -2437,7 +2439,7 @@ Two places to set it:
 > directly on your session**."* And the session-level property is documented on `LanguageModelSession`
 > as `var transcriptErrorHandlingPolicy: TranscriptErrorHandlingPolicy` (iOS 27).
 
-```swift
+```swift prelude:guide-context
 // Profile form — VERIFIED as a documented modifier.
 Profile {
     AgentInstructions()
@@ -2518,24 +2520,40 @@ Apple's documentation attaches a related warning to `isResponding` itself:
 ```swift compile:27
 import FoundationModels
 
-extension LanguageModelSession {
+/// The only owner of this session. Main-actor isolation serializes response
+/// startup, the idle check, and transcript mutation into one critical region.
+@MainActor
+final class SessionOwner {
+    private let session: LanguageModelSession
+
+    init(session: LanguageModelSession) {
+        self.session = session
+    }
+
+    /// Starts responses through the same serialized owner that performs repairs.
+    func respond(to prompt: String) async throws -> String {
+        try await session.respond(to: prompt).content
+    }
+
     /// Repairs the transcript after a preserved abort. No-op while responding.
     /// - Returns: `true` if the transcript was rewritten.
     @discardableResult
     func repairTranscriptIfIdle(
         _ repair: (Transcript) -> Transcript
     ) -> Bool {
-        guard !isResponding else { return false }
-        transcript = repair(transcript)
+        guard !session.isResponding else { return false }
+        session.transcript = repair(session.transcript)
         return true
     }
 }
 ```
 
-Two notes on that helper. It returns `false` before attempting an invalid mutation, so a repair at a
-bad moment becomes a retry rather than a failed response — you decide when to try again. And it takes the whole
-`Transcript`, because `session.transcript` is a `Transcript`, not an entry array; use
-`Transcript(entries:)` to rebuild one.
+Two notes on that owner. It returns `false` before attempting an invalid mutation, so a repair at a
+bad moment becomes a retry rather than a failed response — you decide when to try again. More
+importantly, the session is private and the response entry point lives on the same `@MainActor`
+owner; callers cannot race the check with an unowned response. It takes the whole `Transcript`,
+because `session.transcript` is a `Transcript`, not an entry array; use `Transcript(entries:)` to
+rebuild one.
 
 A minimal, honest repair — drop a trailing entry that has no business being there:
 
@@ -2595,7 +2613,7 @@ Origami's architecture. Where a shape is reconstructed, it is called out.
 
 ### 15.1 The state machine
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import Observation
 
@@ -2662,7 +2680,7 @@ pattern session 242 describes.
 
 ### 15.3 Reusable instruction components
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 /// House style. Nested into every persona, so it is stated once.
@@ -2737,7 +2755,7 @@ concatenation behaviour from §4.1 doing exactly what you want: shared policy, w
 
 ### 15.4 The profile
 
-```swift
+```swift illustrative
 import FoundationModels
 
 struct ReaderProfile: LanguageModelSession.DynamicProfile {
@@ -2819,7 +2837,7 @@ struct Compacted: LanguageModelSession.DynamicProfileModifier {
                 default: true
                 }
             }
-            return Array(withoutToolTraffic.suffix(keeping))
+            return Array(withoutToolTraffic.suffix(max(0, keeping)))
         }
     }
 }
@@ -2840,7 +2858,7 @@ still sees the tool traffic if it wants it.
 
 ### 15.6 A tool that moves the state machine
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 struct GlossaryTool: Tool {
@@ -2869,7 +2887,7 @@ transcript rollback under the default policy (§14.1); returning a sentence lets
 
 ### 15.7 Wiring it up
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 import Observation
 import SwiftUI

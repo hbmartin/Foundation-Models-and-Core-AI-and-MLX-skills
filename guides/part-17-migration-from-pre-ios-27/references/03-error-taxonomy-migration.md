@@ -168,7 +168,7 @@ change. Unpacked:
 Here is a handler that is extremely common in 26.x code, and which is exactly as broken as it is
 invisible:
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 // iOS 26 code. Compiles unchanged against the Xcode 27 SDK.
@@ -277,7 +277,7 @@ genuinely different things rather than a taxonomy for its own sake.
 (`notes/web/apple-docs-fm-evals-speech.md` §5.1–§5.6 and §1), and now ✅ **SDK-verified** in the
 27.0 beta interface (captured 2026-07-29). The declarations, with their interface locations:
 
-```swift
+```swift illustrative
 enum LanguageModelError                 // iOS 27.0+ Beta … watchOS 27.0+ Beta   — 27.0:1486-1496
 enum LanguageModelSession.Error         // iOS 27.0+ Beta (incl. watchOS)        — 27.0:1986-1994
 enum SystemLanguageModel.Error          // iOS 27.0+ Beta — NO watchOS           — 27.0:564-577
@@ -330,7 +330,7 @@ single-enum design made awkward.
 
 New in 27 and easy to miss because it is not an error type at all:
 
-```swift
+```swift illustrative
 struct TranscriptErrorHandlingPolicy      // Sendable, SendableMetatype — iOS 27.0+ Beta
 static let preserveTranscript             // "Keep the current transcript as is."
 static let revertTranscript               // "Revert the transcript back to the state it was in
@@ -383,7 +383,7 @@ static let revertTranscript               // "Revert the transcript back to the 
 
 `LanguageModelSession.ToolCallError` is an iOS 26 type that survives untouched into 27:
 
-```swift
+```swift illustrative
 struct ToolCallError                      // Error, LocalizedError, Sendable — iOS 26.0+, no watchOS
 init(tool: any Tool, underlyingError: any Error)
 var tool: any Tool
@@ -489,7 +489,7 @@ is spelled exactly `languageCode: Locale.LanguageCode` (`:1598`).
 
 And here is the exact construction pattern, from compiling shipped source in the same repo:
 
-```swift
+```swift illustrative
 // apple/foundation-models-utilities
 // Sources/FoundationModelsUtilities/LanguageModels/ChatCompletionsLanguageModel.swift:450-456
 case .custom:
@@ -794,7 +794,7 @@ That last bullet is why every Apple sample checks `SystemLanguageModel.Error` **
 
 ### 4.3 The `guardrailViolation` trap, specifically
 
-```swift
+```swift illustrative
 // iOS 26 source                       // iOS 27 source
 catch GenerationError.guardrailViolation   →   catch LanguageModelError.guardrailViolation
 ```
@@ -822,7 +822,7 @@ gap used to rest on (the payload shape, Origami's ladder position, the
 The 27.0 interface also settles the type's real shape, and it corrects one detail this guide
 previously quoted from the initializer label alone (`:1350-1362`):
 
-```swift
+```swift illustrative
 public struct ParsingError : LocalizedError, Sendable {      // iOS 27.0+ — NOT a 26.0 type
     public var rawContent: String                            // a String, not a GeneratedContent
     public var underlyingError: (any Error)?
@@ -868,7 +868,7 @@ guessing. §12 uses exactly that.
 
 ### 4.6 A mechanical rewrite, side by side
 
-```swift compile:27
+```swift compile:26
 // ───────────────────────── iOS 26 ─────────────────────────
 import FoundationModels
 
@@ -974,7 +974,7 @@ window"**, which is Apple's dedicated technical note on exactly this problem. It
 
 Then you open Apple's 2026 sample code and find:
 
-```swift
+```swift illustrative
 case .contextSizeExceeded:
     return "There's too much in this conversation. Try regenerating to start fresh."
 ```
@@ -985,7 +985,7 @@ case .contextSizeExceeded:
 And then you open the `managing-the-context-window` article on developer.apple.com and find a third
 presentation, using the *new* spelling:
 
-```swift
+```swift prelude:guide-context
 do {
     // Perform a request that exceeds the context window.
     let response = try await session.respond(to: prompt)
@@ -1037,13 +1037,13 @@ TN3193 is not the only place. Watch for these when you are reading:
 - **The safety article** (`improving-the-safety-of-generative-model-output`) catches the *new*
   spelling for guardrails —
 
-  ```swift
+  ```swift illustrative
   } catch LanguageModelError.guardrailViolation(let violation) {
   ```
 
   — and, three code blocks later, catches the **deprecated** spelling for refusals:
 
-  ```swift
+  ```swift illustrative
   } catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
       // Generate an explanation for the refusal.
       if let response = try? await refusal.explanation {
@@ -1082,7 +1082,7 @@ must support a 26.x deployment target from one source tree, that is a `#if`/`@av
 rather than a taxonomy problem, and it is the subject of
 [reference 04 of this part](04-dual-sdk-builds.md). The short version, for orientation only:
 
-```swift compile:27
+```swift compile:26,27
 import FoundationModels
 
 func handleOverflow(_ error: Error) -> Bool {
@@ -1144,7 +1144,7 @@ in this order:
    condition and must not surface as one. Apple's Origami sample treats it as a first-class
    non-error outcome at eight separate call sites:
 
-   ```swift
+   ```swift illustrative
    // Origami/Orchestrator.swift:353, 374, 396, 415, 439, 453, 624, 652
    } catch is CancellationError {
        brainstorm.state = .idle
@@ -1177,7 +1177,7 @@ in this order:
 
 4. **The terminal `catch { }` last, obviously — but make it *loud*.** See §6.4.
 
-### 6.3 🔴 GAP (two rows now measured) — one value, two checks: the concern is real
+### 6.3 🔴 GAP (two thrown rows plus one measured nonthrow) — one value, two checks: the concern is real
 
 **The question:** whether the framework ever throws a value whose `NSError` identity and Swift-type
 identity disagree — a value one check claims and another misses. The plausible mechanism was
@@ -1185,9 +1185,9 @@ identity disagree — a value one check claims and another misses. The plausible
 error whose domain is `FoundationModels.LanguageModelError` and whose `userInfo` carries
 `NSMultipleUnderlyingErrorsKey` containing a `ModelManagerServices.ModelManagerError`.
 
-✅ **Probe-verified, 2026-07-31 — the `type(of:)`/domain table now has its first two rows**
-(`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on the 27.0 sim
-runtime), and they land on opposite sides:
+✅ **Probe-verified, 2026-07-31 — the table now has two thrown rows plus one measured nonthrow.**
+The two throws (`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on
+the 27.0 sim runtime) land on opposite sides; the third row records a silent success:
 
 | Failure mode | Dynamic type | NSError domain / code | Casts to |
 |---|---|---|---|
@@ -1219,7 +1219,7 @@ known to receive at least one domain-tagged impostor. §14 does exactly this.
 
 The single highest-value change you can make to a 26-era ladder, before you change anything else:
 
-```swift compile:27
+```swift compile:27 defines:DEBUG
 import FoundationModels
 import OSLog
 
@@ -1256,7 +1256,7 @@ checklist, derived from your own users rather than from this table.
 
 Short section, disproportionate importance.
 
-```swift
+```swift illustrative
 // ✅ SDK-verified — FoundationModels-27.0-macos.swiftinterface:1350-1362. iOS 27.0+.
 struct GeneratedContent.ParsingError : LocalizedError, Sendable
 var rawContent: String                     // stored, readable — the model's actual output
@@ -1276,7 +1276,7 @@ guide previously recorded it as a 26.0 type, which the interface corrects.
 **It is a separate type.** Not a case of `LanguageModelError`. Not nested under
 `LanguageModelSession`. Which means:
 
-```swift
+```swift prelude:guide-context
 do {
     let plan = try await session.respond(to: prompt, generating: TripPlan.self)
 } catch let error as LanguageModelError {
@@ -1333,7 +1333,7 @@ contract.
 Apple's own `ChatCompletionsLanguageModel` — the one that turns `mlx_lm.server`, Ollama, vLLM and
 LM Studio into Foundation Models backends — defines and throws two error types of its own:
 
-```swift
+```swift illustrative
 // apple/foundation-models-utilities
 // Sources/FoundationModelsUtilities/LanguageModels/ChatCompletionsLanguageModel.swift
 public struct APIError: LocalizedError {                          // :109
@@ -1522,7 +1522,7 @@ implies **two different error types**, one per mechanism.
 
 But look at Apple's shipping sample code:
 
-```swift
+```swift illustrative
 case .guardrailViolation, .refusal:
     return "Origami can't work with that. Try a different photo or prompt."
 ```
@@ -1696,7 +1696,7 @@ let session = LanguageModelSession(model: model)
 ✅ **VERIFIED**, five independent ways — now including the compiler-emitted SDK interface, the
 strongest of them:
 
-```swift
+```swift illustrative
 final class SystemLanguageModel                      // iOS 26.0+, NO watchOS
 convenience init(useCase: SystemLanguageModel.UseCase = .general,
                  guardrails: SystemLanguageModel.Guardrails = Guardrails.default)   // :581
@@ -1965,11 +1965,11 @@ was already an inference-backed accessor, not a field. Reading it is a second in
 Apple's usage example, reproduced (written against the **deprecated** two-value spelling — §5.3 —
 with the `explanation` handling corrected to read `.content` from the `Response<String>`):
 
-```swift
+```swift compile:27 imports:FoundationModels
 do {
     let session = LanguageModelSession()
     let topic = ""  // A sensitive topic.
-    let response = try session.respond(
+    let response = try await session.respond(
         to: "List five key points about: \(topic)",
         generating: [String].self
     )
@@ -2111,7 +2111,7 @@ So there are **three** eras of this pattern, and knowing which one you are in te
 specified instructions: `tokenCount(for:)`."* TN3193 adds that it covers **instructions, prompts,
 tools, schemas and transcript entries**, which corroborates a multi-overload design.
 
-```swift
+```swift illustrative
 // All FIVE overloads, on LanguageModelSession, each `async throws -> Int`. Shipped in 26.4.
 nonisolated(nonsending) final func tokenCount(for prompt: some PromptRepresentable) async throws -> Int
 nonisolated(nonsending) final func tokenCount(for instructions: Instructions) async throws -> Int
@@ -2131,7 +2131,7 @@ interface does not say otherwise: all five overloads appear unchanged in the 27.
 
 ### 12.3 Apple's documented recovery, verbatim
 
-```swift
+```swift prelude:guide-context
 do {
     // Perform a request that exceeds the context window.
     let response = try await session.respond(to: prompt)
@@ -2169,7 +2169,7 @@ it before the user's next prompt arrives.
 The recovery above throws away everything between the first and last entry, which is blunt. In 27 the
 payload tells you **how much** you are over, so you can be proportionate:
 
-```swift
+```swift illustrative
 import Foundation
 import FoundationModels
 import OSLog
@@ -2262,7 +2262,7 @@ report with a thread number.
 
 ### 13.1 `com.apple.SensitiveContentAnalysisML error 15` — from a completely innocuous prompt
 
-```swift
+```swift prelude:guide-context
 #Playground {
 
     let session = LanguageModelSession()
@@ -2408,7 +2408,7 @@ Error during session.respond. description="The operation couldn't be completed. 
 
 From:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [tool]) {
     spotlightSearchInstructions
 }
@@ -2500,14 +2500,14 @@ the response in the canvas, follow the prompts, **"Share with Apple"**.
 
 The API:
 
-```swift
+```swift illustrative
 @discardableResult final func logFeedbackAttachment(
     sentiment: LanguageModelFeedback.Sentiment?,
     issues: [LanguageModelFeedback.Issue] = [],
     desiredOutput: Transcript.Entry? = nil) -> Data
 ```
 
-```swift
+```swift prelude:guide-context
 let feedbackData = session.logFeedbackAttachment(
     sentiment: .negative,
     issues: [
@@ -2549,12 +2549,12 @@ For a refusal regression like §9.3, the highest-value Feedback is: the exact pr
 instructions, the tool list, the OS build, and a `logFeedbackAttachment` blob showing the transcript
 — which is precisely the list a Frameworks Engineer asked for on thread 835777.
 
-> ⚠️ **Conflict, flagged rather than smoothed:** Apple's documentation snippet above constructs
-> `Transcript.Response(segments:)`, but Apple's **Origami sample** constructs
-> `Transcript.Response(assetIDs:segments:)` and passes `[""]` for `assetIDs` — implying the label is
-> **required** in the shipping SDK (✅ verified from the sample archive). Sample code outranks a
-> documentation snippet in this series' precedence order. **Safe default:** if
-> `Transcript.Response(segments:)` does not compile, add `assetIDs: [""]`.
+> ⚠️ **SDK-version distinction:** on the 27 SDK, Apple's documentation spelling above resolves to
+> `init(metadata:segments:)`, whose metadata argument has a default, so
+> `Transcript.Response(segments:)` compiles as written. Apple's **Origami sample** uses the older
+> `Transcript.Response(assetIDs:segments:)` spelling and passes `[""]` for `assetIDs` (✅ verified
+> from the sample archive). `assetIDs` is required only when compiling against an initializer surface
+> that does not provide `init(metadata:segments:)`; do not add it to an SDK-27-only example.
 
 ---
 
@@ -2564,7 +2564,7 @@ Everything above, in one file you can paste into a project. It handles all seven
 `ToolCallError`, treats cancellation as a non-error, keeps the deprecated arm for a dual-SDK build,
 and makes the terminal arm loud.
 
-```swift
+```swift prelude:guide-context
 //  FoundationModelsErrorHandling.swift
 //
 //  A complete iOS 27 error ladder for the Foundation Models framework.
@@ -2938,7 +2938,7 @@ rate change on this OS build" into a number you can put a threshold on.
 
 ### 16.1 Framework orientation, in one block
 
-```swift compile:27
+```swift illustrative
 import Evaluations          // iOS 27.0+ Beta … watchOS 27.0+ Beta — Swift only
 ```
 
@@ -2961,7 +2961,7 @@ other language."*
 
 `Evaluation.subject(from:)` is declared `async throws`:
 
-```swift
+```swift illustrative
 func subject(from sample: Self.Sample) async throws -> Self.Subject
 ```
 
@@ -2980,7 +2980,7 @@ func subject(from sample: Self.Sample) async throws -> Self.Subject
 
 ### 16.3 The suite
 
-```swift
+```swift illustrative
 //  RefusalRegressionEvaluation.swift
 //
 //  Detects a change in WHICH failures your prompts produce, across OS builds.
@@ -3088,7 +3088,7 @@ func looksLikeRefusal(_ text: String) -> Bool {
 
 ### 16.4 Running it, and stamping the OS build
 
-```swift
+```swift prelude:guide-context
 //  RefusalRegressionTests.swift
 
 import Testing

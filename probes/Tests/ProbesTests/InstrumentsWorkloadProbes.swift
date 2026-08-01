@@ -50,20 +50,30 @@ final class InstrumentsWorkloadProbes: XCTestCase {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         try skipUnlessModelAvailable()
 
-        let totalSeconds = Double(Probe.env("PROBE_WORKLOAD_SECONDS") ?? "300") ?? 300
-        let attachSeconds = Int(Probe.env("PROBE_WORKLOAD_ATTACH_SECONDS") ?? "20") ?? 20
-        let start = Date()
+        let parsedTotal = Double(Probe.env("PROBE_WORKLOAD_SECONDS") ?? "300") ?? 300
+        let totalSeconds = parsedTotal.isFinite ? max(0, parsedTotal) : 300
+        let attachSeconds = max(0, Int(Probe.env("PROBE_WORKLOAD_ATTACH_SECONDS") ?? "20") ?? 20)
+        let launchTime = Date()
 
         func narrate(_ message: String) {
-            print("WORKLOAD t+\(String(format: "%.1f", Date().timeIntervalSince(start)))s \(message)")
+            print("WORKLOAD t+\(String(format: "%.1f", Date().timeIntervalSince(launchTime)))s \(message)")
             fflush(stdout)
         }
 
         let info = ProcessInfo.processInfo
         narrate("attach-target process=\(info.processName) pid=\(info.processIdentifier) \(Probe.runtimeDescription)")
-        for t in stride(from: attachSeconds, through: 1, by: -1) {
-            narrate("attach-window t-\(t)s — pick this process in Instruments and press Record")
-            try? await Task.sleep(for: .seconds(1))
+        if attachSeconds > 0 {
+            for t in stride(from: attachSeconds, through: 1, by: -1) {
+                narrate("attach-window t-\(t)s — pick this process in Instruments and press Record")
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        let deadline = Date().addingTimeInterval(totalSeconds)
+        narrate("workload-window event=start seconds=\(totalSeconds)")
+
+        func phaseTimeout(upTo ceiling: Double) -> Double? {
+            let remaining = deadline.timeIntervalSinceNow
+            return remaining > 0 ? min(ceiling, remaining) : nil
         }
 
         let instructionsA = "You are a terse inventory summarizer. Answer in one word."
@@ -81,27 +91,33 @@ final class InstrumentsWorkloadProbes: XCTestCase {
         """
 
         var round = 0
-        while Date().timeIntervalSince(start) < totalSeconds {
+        workload: while deadline.timeIntervalSinceNow > 0 {
             round += 1
             // PHASE 1 — prefill-heavy: long prompt, tiny answer.
+            guard let phase1Timeout = phaseTimeout(upTo: 180) else { break workload }
             do {
                 narrate("phase=1-prefill round=\(round) event=start")
                 let session = LanguageModelSession(instructions: instructionsA)
-                _ = try await Probe.withTimeout(seconds: 180) {
+                let result = try await Probe.withTimeout(seconds: phase1Timeout) {
                     try await session.respond(
                         to: "Summarize this inventory in one word: \(filler)",
                         options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 8))
                 }
-                narrate("phase=1-prefill round=\(round) event=end")
+                switch result {
+                case .value: narrate("phase=1-prefill round=\(round) event=end")
+                case .timedOut:
+                    narrate("phase=1-prefill round=\(round) event=timeout")
+                }
             } catch {
                 narrate("phase=1-prefill round=\(round) event=error \(errorFingerprint(error))")
             }
             // PHASE 2 — decode-heavy: short prompt, long streamed answer (fresh session,
             // SAME instructions string, so the Instructions-lane region continues).
+            guard let phase2Timeout = phaseTimeout(upTo: 180) else { break workload }
             do {
                 narrate("phase=2-decode round=\(round) event=start")
                 let session = LanguageModelSession(instructions: instructionsA)
-                let partials = try await Probe.withTimeout(seconds: 180) { () -> Int in
+                let partials = try await Probe.withTimeout(seconds: phase2Timeout) { () -> Int in
                     var n = 0
                     let stream = session.streamResponse(
                         to: "Write twelve short sentences about tide pools.",
@@ -109,33 +125,48 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                     for try await _ in stream { n += 1 }
                     return n
                 }
-                narrate("phase=2-decode round=\(round) event=end partials=\(partials.map(String.init) ?? "timeout")")
+                switch partials {
+                case .value(let count):
+                    narrate("phase=2-decode round=\(round) event=end partials=\(count)")
+                case .timedOut:
+                    narrate("phase=2-decode round=\(round) event=timeout")
+                }
             } catch {
                 narrate("phase=2-decode round=\(round) event=error \(errorFingerprint(error))")
             }
             // PHASE 3 — instructions switch: a session with a DIFFERENT instruction set.
+            guard let phase3Timeout = phaseTimeout(upTo: 120) else { break workload }
             do {
                 narrate("phase=3-switch round=\(round) event=start (second Instructions-lane region)")
                 let session = LanguageModelSession(instructions: instructionsB)
-                _ = try await Probe.withTimeout(seconds: 120) {
+                let result = try await Probe.withTimeout(seconds: phase3Timeout) {
                     try await session.respond(
                         to: "Describe the sea.",
                         options: GenerationOptions(maximumResponseTokens: 80))
                 }
-                narrate("phase=3-switch round=\(round) event=end")
+                switch result {
+                case .value: narrate("phase=3-switch round=\(round) event=end")
+                case .timedOut:
+                    narrate("phase=3-switch round=\(round) event=timeout")
+                }
             } catch {
                 narrate("phase=3-switch round=\(round) event=error \(errorFingerprint(error))")
             }
             // PHASE 4 — error markers: guardrail trip, then context overflow.
+            guard let guardrailTimeout = phaseTimeout(upTo: 120) else { break workload }
             do {
                 narrate("phase=4a-guardrail round=\(round) event=start")
                 let session = LanguageModelSession()
-                _ = try await Probe.withTimeout(seconds: 120) {
+                let result = try await Probe.withTimeout(seconds: guardrailTimeout) {
                     try await session.respond(
                         to: guardrailPrompt,
                         options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 60))
                 }
-                narrate("phase=4a-guardrail round=\(round) event=no-error")
+                switch result {
+                case .value: narrate("phase=4a-guardrail round=\(round) event=no-error")
+                case .timedOut:
+                    narrate("phase=4a-guardrail round=\(round) event=timeout")
+                }
             } catch {
                 narrate("phase=4a-guardrail round=\(round) event=threw code=\((error as NSError).code)")
             }
@@ -143,17 +174,22 @@ final class InstrumentsWorkloadProbes: XCTestCase {
                 narrate("phase=4b-overflow round=\(round) event=start")
                 let session = LanguageModelSession()
                 let huge = "Summarize this inventory list: " + (0..<30_000).map { "item\($0)" }.joined(separator: " ")
-                _ = try await Probe.withTimeout(seconds: 120) {
+                guard let overflowTimeout = phaseTimeout(upTo: 120) else { break workload }
+                let result = try await Probe.withTimeout(seconds: overflowTimeout) {
                     try await session.respond(
                         to: huge,
                         options: GenerationOptions(maximumResponseTokens: 16))
                 }
-                narrate("phase=4b-overflow round=\(round) event=no-error")
+                switch result {
+                case .value: narrate("phase=4b-overflow round=\(round) event=no-error")
+                case .timedOut:
+                    narrate("phase=4b-overflow round=\(round) event=timeout")
+                }
             } catch {
                 narrate("phase=4b-overflow round=\(round) event=threw code=\((error as NSError).code)")
             }
             narrate("round=\(round) complete")
         }
-        narrate("done rounds=\(round)")
+        narrate("done rounds=\(round) deadlineExhausted=\(deadline.timeIntervalSinceNow <= 0)")
     }
 }

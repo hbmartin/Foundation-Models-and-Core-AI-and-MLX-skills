@@ -413,7 +413,7 @@ Availability is the single largest source of "it doesn't work on my device" repo
 > `.unavailable(UnavailableReason)`; `UnavailableReason` has `.appleIntelligenceNotEnabled`,
 > `.deviceNotEligible`, `.modelNotReady`.
 
-```swift
+```swift illustrative
 switch SystemLanguageModel.default.availability {
 case .available:
     // Show your intelligence UI.
@@ -848,7 +848,7 @@ releases with "emerging and experimental building blocks".
 
 Usage is three lines:
 
-```swift
+```swift prelude:external-module
 import FoundationModels
 import FoundationModelsUtilities
 

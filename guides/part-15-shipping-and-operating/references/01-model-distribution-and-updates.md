@@ -514,7 +514,7 @@ The driver uses separate error scopes for delivery and specialization. A transpo
 must not be relabeled as a Core AI compiler failure, and a specialization error must not be presented
 as a network retry.[^phase-specific-failures]
 
-```swift
+```swift prelude:guide-context
 import Observation
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
@@ -602,7 +602,7 @@ final class ModelFeatureCoordinator {
 API grounding for the Core AI calls above, all ✅ **VERIFIED** from Apple's reference pages
 (`notes/web/apple-docs-coreai.md:111-128, 1005-1017, 1264-1300`):
 
-```swift
+```swift illustrative
 // AIModelCache
 final func model(for modelURL: URL, options: SpecializationOptions) throws -> AIModel?
 
@@ -785,7 +785,7 @@ context, not an Apple statement):
 
 with an extension of type `StoreDownloaderExtension`, and a status stream reported as:
 
-```swift
+```swift prelude:guide-context
 // Community-reported shape, iOS 26 adapter pipeline. NOT verified for Core AI in 27.
 for await status in AssetPackManager.shared.statusUpdates(forAssetPackWithID: packID) {
     // reported to fire .began / .downloading(progress) / .finished
@@ -868,7 +868,7 @@ protocol ModelDelivery: Sendable {
 
 A `URLSession`-backed implementation you can ship today, with no unverified API in it:
 
-```swift
+```swift prelude:guide-context
 import Foundation
 
 /// A delivery implementation with zero Background Assets dependency.
@@ -1651,7 +1651,7 @@ specialization if the model performs frequent reshapes based on usage"* — with
 section, no documented default, and no initializer that sets it** ✅ VERIFIED
 (`notes/web/apple-docs-coreai.md:1082`). It is set by mutation:
 
-```swift
+```swift prelude:guide-context
 var options = SpecializationOptions(preferredComputeUnitKind: .gpu)
 options.expectFrequentReshapes = true
 ```
@@ -1672,7 +1672,7 @@ Three layers, cheapest first.
 **Layer 1 — a device diagnostic that prints the truth.** One screen, shipped in an internal build,
 run once per device family. It replaces the entire guessing game in §4.4.
 
-```swift
+```swift prelude:guide-context
 import SwiftUI
 import CoreAI
 
@@ -1782,7 +1782,7 @@ enum ModelLoader {
 Cache deletion still belongs in a **separate, bounded repair path** after evidence points at a stale
 specialization. A shipping community app uses this recovery step (`notes/repos/noema-ios.md:389-411`):
 
-```swift
+```swift prelude:guide-context
 // Clear every cached variant of this model: each SpecializationOptions change
 // leaves its own multi-GB entry behind, and stale/evicted entries are the
 // documented way loads get wedged under storage pressure.
@@ -1875,7 +1875,7 @@ cache as ordinary I/O with a static capacity baked into the shape, prewarming **
 cache** and is a net loss. Its guard, verbatim (`notes/repos/noema-ios.md:436-439`,
 community source):
 
-```swift
+```swift prelude:guide-context
 guard CoreAIDecoder.hostCacheCapacity(in: descriptor) == nil else {
     print("[CoreAI] Skipping prewarm for host-cache graph; it would allocate the static KV cache.")
     return
@@ -1886,7 +1886,7 @@ guard CoreAIDecoder.hostCacheCapacity(in: descriptor) == nil else {
 
 Apple's documented pre-specialization pattern, verbatim:
 
-```swift
+```swift prelude:guide-context
 guard let localModelURL = try await downloadModel(forFeature: feature) else {
     throw AppError.failedToDownloadModel(feature)
 }
@@ -1907,7 +1907,7 @@ That idempotence is what makes `specialize` safe to call from a retry button.
 Composed with everything above — the delivery seam from §3.4, the compiled/portable choice from
 §4.3, the fallback from §5.5, and the single options factory from §9:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import OSLog
 
@@ -2122,7 +2122,7 @@ route on filename, split on path components and compare exactly.
 Apple ships the canonical update flow as four lines, and the ordering of those four lines is the
 whole lesson:
 
-```swift
+```swift prelude:guide-context
 func downloadAndUpdateModel(from remoteURL: URL, localModelURL: URL) async throws {
     let tempURL = try await downloadLatestModel(from: remoteURL)
 
@@ -2166,7 +2166,7 @@ The three deletion APIs, with Apple's own one-line summaries (✅ VERIFIED,
 
 Plus a fourth that only appears on the reference page:
 
-```swift
+```swift illustrative
 static func deleteEntry(referencedBy bookmark: Data) throws
 ```
 
@@ -2193,7 +2193,7 @@ looks identical to "never prepared" except that the user has already waited once
 Version the path instead. The `URLSessionDelivery` in §3.4 already does this — its container is
 `Application Support/Models/<version>/` — and the payoff appears here:
 
-```swift
+```swift prelude:guide-context
 import Foundation
 import CoreAI
 
@@ -2415,7 +2415,7 @@ can guarantee no model is loaded. On launch before any feature is reachable is t
 The versioned layout makes rollback nearly free, and you want it, because a bad model ships exactly
 as easily as a good one and unlike a bad binary you can fix it without review.
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 extension VersionedModelStore {
 
@@ -2472,7 +2472,7 @@ cannot name. The bookmark is the alternate key.
 
 Apple's three-step workflow, verbatim:
 
-```swift
+```swift prelude:guide-context
 // Specialize and keep a reference to the model.
 let model = try await AIModel.specialize(
     contentsOf: llmURL,
@@ -2485,7 +2485,7 @@ let bookmarkData = model.bookmarkData
 UserDefaults.standard.set(bookmarkData, forKey: "llm.bookmark")
 ```
 
-```swift
+```swift illustrative
 if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
     do {
         if let model = try AIModel(resolvingBookmark: bookmarkData) {
@@ -2501,7 +2501,7 @@ if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
 // Download and specialize the model again.
 ```
 
-```swift
+```swift prelude:guide-context
 // Delete the source model to reclaim storage.
 try FileManager.default.removeItem(at: llmURL)
 ```
@@ -2578,7 +2578,7 @@ callout rather than a footnote.
 Look again at Apple's sample. It is not badly written; it is *deliberately schematic*, and that is
 the trap:
 
-```swift
+```swift prelude:guide-context
         if let model = try AIModel(resolvingBookmark: bookmarkData) {
             // Use the model.
             return model
@@ -2589,7 +2589,7 @@ the trap:
 That trailing comment is the entire handling of the guaranteed-to-happen case. Copy this into a
 real app and the natural completion is:
 
-```swift
+```swift prelude:guide-context
 // The obvious, wrong completion:
 if let model = try AIModel(resolvingBookmark: bookmarkData) {
     return model
@@ -2659,7 +2659,7 @@ struct PreparedModelRecord: Codable, Sendable, Equatable {
 The loader that uses it. Note that there are **three** outcomes, not two, and each is handled
 separately:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 enum RecordedModelLoader {
 
@@ -2754,7 +2754,7 @@ this guide's default remains `.persistent` **plus** keeping the source.
 When you retire a model version and its source file is already gone, `deleteEntries(for:)` cannot
 help — you have no URL. Use the static, bookmark-keyed delete:
 
-```swift
+```swift prelude:guide-context
 // Reclaim a specialized asset whose source .aimodel no longer exists.
 // Static: "Because bookmark data encodes both the specific cache instance and
 // the entry within it, this method is static and requires no cache instance."
@@ -2864,7 +2864,7 @@ Not a theoretical concern. A shipping community iOS app carries a recovery ladde
 it, and its comment is the clearest field statement of the failure
 (`notes/repos/noema-ios.md:389-411`, community source, quoted verbatim):
 
-```swift
+```swift prelude:guide-context
 // Clear every cached variant of this model: each SpecializationOptions change
 // leaves its own multi-GB entry behind, and stale/evicted entries are the
 // documented way loads get wedged under storage pressure.
@@ -2890,7 +2890,7 @@ The lesson is: **there must be exactly one place in your app that constructs a
 
 The three APIs that take options — and therefore the three that must agree — are:
 
-```swift
+```swift illustrative
 AIModelCache.model(for:options:)                    // the probe
 AIModel.init(contentsOf:options:)                   // the load
 AIModel.specialize(contentsOf:options:cache:cachePolicy:)   // the warm
@@ -2898,7 +2898,7 @@ AIModel.specialize(contentsOf:options:cache:cachePolicy:)   // the warm
 
 All ✅ VERIFIED (`notes/web/apple-docs-coreai.md:111, 121-124, 1011`). Plus, for deletion:
 
-```swift
+```swift prelude:guide-context
 AIModelCache.deleteEntry(for:options:)              // the targeted delete
 ```
 
@@ -2998,7 +2998,7 @@ exact path-component matching (`notes/repos/noema-ios.md:365-387`).
 
 Now every call site is a one-liner that cannot diverge:
 
-```swift
+```swift prelude:guide-context
 // ✅ THE FIX. Every options-taking API is fed from the same factory.
 
 func isModelReady(url: URL) -> Bool {
@@ -3047,7 +3047,7 @@ fi
 **2. An assertion at every options-taking call site.** Since the type is `Equatable`, you can check
 cheaply in debug builds:
 
-```swift
+```swift prelude:guide-context
 @inline(__always)
 func assertCanonical(_ options: SpecializationOptions, for url: URL) {
     assert(options == ModelOptions.shared.options(for: url),
@@ -3066,7 +3066,7 @@ complaints.
 components, which works for a bundle layout you control. A more robust source is the asset's own
 metadata, which Core AI supports natively:
 
-```swift
+```swift prelude:guide-context
 var asset = try AIModelAsset(contentsOf: modelURL)
 // Read a creator-defined key stamped at export time.
 let profile = asset.metadata["specializationProfile"] // String?
@@ -3078,7 +3078,7 @@ dictionaries, plus `description`, `author`, `license`, `creationDate` and
 (`notes/web/apple-docs-coreai.md:230-284`). And it is writable from a build script via
 `updateMetadata(_:)`, whose documented example is exactly this pattern:
 
-```swift
+```swift prelude:guide-context
 var asset = try AIModelAsset(contentsOf: input)
 try asset.updateMetadata { metadata in
   metadata.author = "Alice"
@@ -3110,7 +3110,7 @@ separately. For a multi-gigabyte specialization that is not a rounding error.
 
 ### 10.2 The API
 
-```swift
+```swift illustrative
 init?(appGroup groupIdentifier: String)
 ```
 
@@ -3129,7 +3129,7 @@ init?(appGroup groupIdentifier: String)
 
 Apple's usage examples, verbatim:
 
-```swift
+```swift prelude:guide-context
 // Get the app group cache.
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
     fatalError("Invalid group identifier or entitlement.")
@@ -3145,7 +3145,7 @@ try await AIModel.specialize(
 )
 ```
 
-```swift
+```swift prelude:guide-context
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
     return
 }
@@ -3468,7 +3468,7 @@ than *"Not enough space."*
 If the user opted in, the user must be able to opt out and get the storage back. The full teardown,
 in the order that works:
 
-```swift
+```swift prelude:guide-context
 import CoreAI
 import Foundation
 
@@ -3523,7 +3523,7 @@ debug/settings action and the wrong call for uninstalling one model out of sever
 Users find gigabytes in Settings and want to know what they are. Give them the answer inside your
 app, before they go looking.
 
-```swift
+```swift prelude:guide-context
 import Foundation
 
 struct ModelStorageReport: Sendable {
@@ -3620,7 +3620,7 @@ Two smaller patterns from the same codebase worth stealing:
 One pattern, community-measured, that costs nothing and reads well in reviews: gate *unattended*
 model downloads on charging, Wi-Fi and time of day.
 
-```swift
+```swift prelude:guide-context
 // Community pattern from noema-ios (DownloadSchedulePolicy.swift).
 struct DownloadSchedulePolicy {
     static let overnightStartHour = 22

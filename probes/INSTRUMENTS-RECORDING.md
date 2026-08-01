@@ -32,11 +32,14 @@ Inference*); the session below reads the other four off the timeline.
 ## Session 1 — Foundation Models template
 
 3. Start the workload (10-minute budget; the countdown gives you ~20 s to attach):
+   In Xcode, edit the `Probes-Package` scheme's **Test ▸ Arguments ▸ Environment Variables** and
+   enable `PROBE_INSTRUMENTS_WORKLOAD=1`, `PROBE_WORKLOAD_SECONDS=600`, and
+   `PROBE_WORKLOAD_ATTACH_SECONDS=20`. Then start the runner from the command line if desired:
+
    ```bash
    cd probes
    export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
-   PROBE_INSTRUMENTS_WORKLOAD=1 PROBE_WORKLOAD_SECONDS=600 \
-     xcodebuild test -scheme Probes-Package \
+   xcodebuild test -scheme Probes-Package \
      -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro' \
      -only-testing:ProbesTests/InstrumentsWorkloadProbes/testInstrumentsRecordingWorkload
    ```
@@ -44,9 +47,8 @@ Inference*); the session below reads the other four off the timeline.
    `WORKLOAD … attach-target process=<name> pid=<pid> …` followed by a countdown.
    **The printed pid is the authoritative selector** — the runner may appear under a
    generic name in the target list.
-   (If the env knobs do not reach the runner on a future beta, pass them with
-   `-test-runner-env PROBE_INSTRUMENTS_WORKLOAD=1` instead. Verified 2026-07-31: plain
-   env-prefixing works on 27A5228h.)
+   For a command-line-only run without scheme environment settings, use the standalone workload
+   below with `SIMCTL_CHILD_` variables; that path was exercised against 27A5228h.
 4. In Instruments: **File ▸ New… ▸ Foundation Models** template → in the target chooser
    pick the **iPhone 17 Pro (27.0) simulator device**, then the running process from
    step 3's banner → **Record**. Click through the privacy consent (guide 5.1 §5.2 —
@@ -89,16 +91,17 @@ If attaching to the XCTest runner misbehaves, use the self-contained workload bi
 cd probes/Workload
 export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 xcrun -sdk iphonesimulator swiftc -target arm64-apple-ios27.0-simulator \
-    -parse-as-library -O fmworkload.swift -o fmworkload
-xcrun simctl spawn booted ./fmworkload
+    -parse-as-library -O ../Sources/ProbeSupport/ProbeSupport.swift \
+    fmworkload.swift -o fmworkload
+SIMCTL_CHILD_PROBE_WORKLOAD_SECONDS=600 \
+SIMCTL_CHILD_PROBE_WORKLOAD_ATTACH_SECONDS=20 \
+  xcrun simctl spawn booted ./fmworkload
 ```
 
-Attach Instruments to the `fmworkload` process; same transcription list. ⚠️ Whether
-Foundation Models resolves model assets in a bare spawned process (no app container) is
-itself unmeasured — the binary prints its availability finding immediately after the
-banner. If it reports `availability=unavailable`, paste that line into
-`probes/README.md`'s framework-findings list (it answers the bare-process question) and
-use the Session 1 procedure.
+Attach Instruments to the `fmworkload` process; same transcription list. The 2026-08-01 smoke run
+on the iOS 27 simulator resolved the model as available and confirmed that the workload window
+starts only after the attach countdown, then stops without starting another phase after its
+deadline. Recheck the printed availability line on later runtimes.
 
 ## Where the transcription gets written back
 

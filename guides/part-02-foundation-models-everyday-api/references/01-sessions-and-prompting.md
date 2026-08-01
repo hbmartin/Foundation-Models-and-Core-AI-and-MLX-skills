@@ -103,7 +103,7 @@ for *a* LLM," and which one is a constructor argument.
 
 The class declaration:
 
-```swift
+```swift illustrative
 final class LanguageModelSession
 // Conforms to: Copyable, Escapable, Observable, Sendable, SendableMetatype
 ```
@@ -147,7 +147,7 @@ like `+1-(408)-555-0123` might use over ten tokens."*
 
 Since **26.4** you can stop estimating:
 
-```swift
+```swift prelude:guide-context
 // 26.4+
 let model = SystemLanguageModel.default
 let budget = model.contextSize                       // Int, tokens
@@ -186,7 +186,7 @@ let used   = try await model.tokenCount(for: instructions)
 
 ### 2.1 The initializer declarations we have verbatim
 
-```swift
+```swift illustrative
 // 26.0+ (no watchOS) — a bare String of instructions (a direct @_disfavoredOverload).
 @_disfavoredOverload
 convenience init(model: SystemLanguageModel = .default,
@@ -227,7 +227,7 @@ noted. The two 27.0 forms are ✅ **VERIFIED** on the Apple docs pages
 is additionally ✅ **VERIFIED at the call site** in compiling Apple sample code — Origami,
 `Origami/Models/Orchestrator.swift:41-47`:
 
-```swift
+```swift illustrative
     @ObservationIgnored
     private lazy var session = LanguageModelSession(
         profile: OrchestratorProfile(orchestrator: self),
@@ -279,7 +279,7 @@ the next box documents.
 These six spellings all appear in Apple's own shipping code and tests, so they compile — and their
 *declarations* are now confirmed by the 26.5 SDK interface (§2.1), not only their call sites.
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 // (a) Bare session, default model, no instructions.
@@ -410,7 +410,7 @@ Dynamic profiles are the flagship 2026 feature and get their own guide in
 [Part 3 · Context, profiles, agentic sessions](../../part-03-context-profiles-agentic/). The single
 fact you need here is what the initializer takes and what it guarantees:
 
-```swift
+```swift prelude:guide-context
 // 27.0+
 struct PresentationProfile: LanguageModelSession.DynamicProfile {
     var pccModel = PrivateCloudComputeLanguageModel()
@@ -453,7 +453,7 @@ safer than interpolating it into instructions (which would cold-start the KV cac
 [§3](#3-instructions-vs-prompts-is-a-security-boundary)). Origami does exactly this,
 `Origami/Models/Orchestrator.swift:103-139`:
 
-```swift
+```swift prelude:guide-context
     var startHistory: [Transcript.Entry] {
         var desc: [Transcript.Entry] = []
 
@@ -554,7 +554,7 @@ model its capabilities. Whoever writes the prefix sets the rules.
 
 ### 3.3 The concrete failure
 
-```swift
+```swift illustrative
 // ❌ WRONG. This is prompt injection with extra steps.
 let session = LanguageModelSession {
     "You are a support assistant for Acme."
@@ -569,7 +569,7 @@ now sitting in the *trusted* half of the prompt, at the very top of the token se
 tool definitions, with the model's instruction-following prior working **for** the attacker instead
 of against them.
 
-```swift
+```swift prelude:guide-context
 // ✅ RIGHT. Trusted rules in Instructions; untrusted data in the Prompt, clearly framed as data.
 let session = LanguageModelSession {
     "You are a support assistant for Acme."
@@ -655,7 +655,7 @@ Two conformances make the builders far more useful than "a fancy way to concaten
 
 ### 4.2 `@PromptBuilder`: conditionals in a prompt
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 let kidFriendly = true
@@ -724,7 +724,7 @@ your context-exhaustion error rate.
 
 The highest-leverage trick in the builder:
 
-```swift
+```swift prelude:guide-context
 let prompt = Prompt {
     "Generate a 3-day itinerary to Grand Canyon."
     if kidFriendly {
@@ -746,7 +746,7 @@ honest hedge Apple also gives: *"the difference in output may not always be dram
 
 This is also the **precondition** for turning off schema injection:
 
-```swift
+```swift prelude:guide-context
 let stream = session.streamResponse(
     to: prompt,
     generating: Itinerary.self,
@@ -771,7 +771,7 @@ let stream = session.streamResponse(
 
 Same shape, different position in the token sequence:
 
-```swift
+```swift prelude:guide-context
 let session = LanguageModelSession(tools: [pointOfInterestTool]) {
     "Your job is to create an itinerary for the user."
     "Always use the findPointsOfInterest tool to find hotels and restaurants in \(landmark.name)."
@@ -838,7 +838,7 @@ the 27.0 `metadata:` family adds the rest. The axes are:
 :500-508` — 18 declarations; stable into 27 unless noted) and on the method list at
 `/languagemodelsession`. Representative declarations:
 
-```swift
+```swift illustrative
 // 26.0+ — plain text, prompt as a value
 @discardableResult nonisolated(nonsending)
 final func respond(to prompt: Prompt,
@@ -928,7 +928,7 @@ print(response.content)     // String
 
 ### 5.3 Guided generation
 
-```swift
+```swift prelude:guide-context
 @Generable
 struct ContentTaggingResult {
     @Guide(description: "Most important topics in the input text.", .maximumCount(2))
@@ -963,7 +963,7 @@ Two behaviours that belong here rather than there because they change how you wr
 
 ### 5.4 What comes back
 
-```swift
+```swift illustrative
 struct Response<Content> where Content : Generable       // 26.0
 ```
 
@@ -977,7 +977,7 @@ entries this call appended, without diffing the whole transcript. `usage` gets [
 
 ### 6.1 The declaration and the three surprises
 
-```swift
+```swift illustrative
 // 26.0+
 final func streamResponse<Content>(to prompt: Prompt,
                                    generating type: Content.Type = Content.self,
@@ -1015,7 +1015,7 @@ and why appending `partial.content` to a buffer is wrong. You **assign**, never 
 
 ### 6.2 The stream types
 
-```swift
+```swift illustrative
 struct ResponseStream<Content> where Content : Generable    // 26.0, conforms to AsyncSequence
 struct Snapshot                                             // ResponseStream.Snapshot
 ```
@@ -1031,7 +1031,7 @@ rather than only learning about it after the fact.
 
 ### 6.3 The canonical loop
 
-```swift
+```swift prelude:guide-context
 func generateItinerary(dayCount: Int = 3) async throws {
     let prompt = Prompt {
         "Generate a \(dayCount)-day itinerary to \(landmark.name)."
@@ -1068,7 +1068,7 @@ plain, **already-accumulated** `String` — assign it, do not append it.
 
 One polish pattern worth stealing while you are here, from `BrainstormModel.swift:120-123`:
 
-```swift
+```swift prelude:guide-context
                 // When the model starts a new idea, all earlier ones are
                 // finalized — reveal those, but keep the in-progress one hidden
                 // so its text doesn't grow visibly midstream.
@@ -1090,7 +1090,7 @@ mentions it.
 Apple handles this explicitly, and only here. ✅ **VERIFIED, verbatim** — Origami,
 `Origami/Coach/CoachModel.swift:58-73`:
 
-```swift
+```swift prelude:guide-context
     func processStream(_ stream: LanguageModelSession.ResponseStream<String>) async throws {
         state = .loading
         var accumulated = ""
@@ -1112,7 +1112,7 @@ Apple handles this explicitly, and only here. ✅ **VERIFIED, verbatim** — Ori
 The defensive shape generalises: **never let "loading" be a state you can only leave from inside the
 loop.** Set the terminal state after the loop, unconditionally, from a flag the loop sets:
 
-```swift
+```swift prelude:guide-context
 var received = false
 for try await partial in stream {
     received = true
@@ -1135,7 +1135,7 @@ call appended (`response.transcriptEntries`, or the tail of `session.transcript`
 
 ## 7. `prewarm(promptPrefix:)`
 
-```swift
+```swift illustrative
 // 26.0+
 final func prewarm(promptPrefix: Prompt? = nil)
 ```
@@ -1177,7 +1177,7 @@ Two things, and the second is the one people miss.
 
 The idiomatic SwiftUI placement is a `.task` on the screen *before* the one that generates:
 
-```swift
+```swift prelude:guide-context
 .task {
     let generator = ItineraryGenerator(landmark: landmark)
     self.itineraryGenerator = generator
@@ -1212,7 +1212,7 @@ win, not as a benchmark** — no hardware, no build configuration, no repetition
 
 ### 7.4 Prewarm on a rehydrated session
 
-```swift
+```swift illustrative
 let transcript = // Load a transcript you saved from a previous conversation.
 let session = LanguageModelSession(transcript: transcript)
 // Begin rebuilding the cache before the person's next prompt arrives — at
@@ -1289,7 +1289,7 @@ code.
 
 If you ignore it, you get a **thrown** error, not a queue:
 
-```swift
+```swift illustrative
 // 27.0+
 enum LanguageModelSession.Error {
     case concurrentRequests                    // "Multiple requests were made to the session concurrently."
@@ -1376,7 +1376,7 @@ accidentally destroy your trusted prefix, which is exactly the property you want
 
 ### 9.2 The rule: only when `isResponding == false`
 
-```swift
+```swift prelude:guide-context
 // 27.0+
 guard !session.isResponding else { return }
 session.transcript.history = compacted(session.transcript.history)
@@ -1458,7 +1458,7 @@ prompt and its response.
 
 ## 10. `GenerationOptions` in full
 
-```swift
+```swift illustrative
 struct GenerationOptions      // 26.0 (watchOS 27.0) — Equatable, Sendable, SendableMetatype
 ```
 
@@ -1476,7 +1476,7 @@ footguns below are documented rather than demonstrated.
 
 ### 10.1 Initializers, and a real footgun
 
-```swift
+```swift illustrative
 // 26.0 — ✅ VERIFIED, verbatim, in the 26.5 SDK interface (the label is `sampling:`, not `samplingMode:`)
 init(sampling: GenerationOptions.SamplingMode? = nil,
      temperature: Double? = nil,
@@ -1542,7 +1542,7 @@ deterministic by construction.
 
 ### 10.3 `samplingMode`
 
-```swift
+```swift illustrative
 struct SamplingMode           // 26.0 — Equatable, Sendable, SendableMetatype
 
 static var greedy: GenerationOptions.SamplingMode
@@ -1641,7 +1641,7 @@ prompt-level instructions and `@Guide(.maximumCount(_:))` on array fields.
 
 ### 10.5 `toolCallingMode` (27.0)
 
-```swift
+```swift illustrative
 struct ToolCallingMode        // 27.0 — Equatable, Sendable, SendableMetatype
 static var allowed            // "The model may or may not call tools."
 static var disallowed         // "The model may not call any tool."
@@ -1651,7 +1651,7 @@ var kind: GenerationOptions.ToolCallingMode.Kind    // cases: allowed, disallowe
 
 ✅ **VERIFIED** — `/generationoptions/toolcallingmode-swift.struct`.
 
-```swift
+```swift prelude:guide-context
 let response = try await session.respond(
     to: "What's a good sourdough recipe?",
     options: GenerationOptions(toolCallingMode: .required)
@@ -1766,7 +1766,7 @@ encode them in metadata."* ✅ **VERIFIED**, Apple docs.
 
 ### 11.2 Where you read it
 
-```swift
+```swift prelude:guide-context
 // Per request:
 let response = try await session.respond(to: prompt)
 let u = response.usage
@@ -1847,7 +1847,7 @@ Everything the model has ever seen in this session, in order, as typed Swift val
 
 ### 12.1 Six entry types
 
-```swift
+```swift illustrative
 enum Transcript.Entry {
     case instructions(Transcript.Instructions)   // "Instructions, typically provided by you, the developer."
     case prompt(Transcript.Prompt)               // "A prompt, typically sourced from an end user."
@@ -1879,7 +1879,7 @@ single `(id, toolName, segments)` triple. ✅ **VERIFIED** — `/transcript` pay
 
 ### 12.2 Entry payloads
 
-```swift
+```swift illustrative
 // Transcript.Instructions
 init(id:segments:toolDefinitions:)
 var segments, toolDefinitions
@@ -1945,7 +1945,7 @@ enum Transcript.Segment {
 
 ✅ **VERIFIED** — `/transcript/segment`.
 
-```swift
+```swift illustrative
 // Transcript.TextSegment
 init(id:content:)
 var content
@@ -1989,7 +1989,7 @@ anything back that may not be fully defined in the framework currently."*
 
 Attachments, per the same SKILL.md:
 
-```swift
+```swift prelude:guide-context
 public struct AttachmentSegment: Sendable, Identifiable, Equatable {
   public var id: String
   public var content: Attachment
@@ -2016,7 +2016,7 @@ commit `376ca60`; 🟡 the framework-side declaration itself was not read.
 
 Apple's canonical SwiftUI switch, verbatim:
 
-```swift
+```swift prelude:guide-context
 struct HistoryView: View {
     let session: LanguageModelSession
 
@@ -2071,7 +2071,7 @@ the join uses a **space** separator (their tests define a private `joined()` hel
 ✅ **VERIFIED, selected verbatim lines** — Book Tracker, `SearchBooks.swift`; the file imports both
 modules before the call site at `:525-563`:
 
-```swift
+```swift illustrative
 import Evaluations
 import FoundationModels
 
@@ -2383,7 +2383,7 @@ is 27.0; that is not a reason to ship an app that fails only after the user has 
 
 ### 13.2 Cancellation, honestly
 
-```swift
+```swift prelude:guide-context
 generationTask?.cancel()
 ```
 

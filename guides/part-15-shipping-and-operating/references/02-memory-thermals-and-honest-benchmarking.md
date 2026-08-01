@@ -275,7 +275,7 @@ not its literal spelling. The two exported function names and the two signal cal
 
 Neither signal is the limit. **Together they are:**
 
-```swift
+```swift illustrative
 /// The process allocation limit, reconstructed live.
 /// Community pattern, from ModelRAMAdvisor (notes/repos/noema-ios.md §10.3).
 static func liveProcessMemoryLimitBytes(liveAvailable: Int64?,
@@ -300,7 +300,7 @@ Noema wraps this in a snapshot type that records which of the two paths produced
 is exactly the right shape — you want to know at the call site whether you are looking at a
 measurement or a guess:
 
-```swift
+```swift illustrative
 struct MemoryBudgetSnapshot {
     let bytes: Int64?
     let isLiveProcessLimit: Bool   // false ⇒ this came from the static device table
@@ -447,7 +447,7 @@ resident ≈ weights
 Noema models exactly this, and the shape of its estimator is more instructive than any prose
 (✅ **VERIFIED**, community source, `notes/repos/noema-ios.md` §10.3):
 
-```swift
+```swift illustrative
 struct EstimateBreakdown {
     let weights, kvCache, recurrentState, computeBuffers,
         visionProjector, auxiliaryModels, fixedOverhead, safetyMargin: Int64
@@ -464,7 +464,7 @@ get. Note also that the fixed overhead and the transient reserve together are **
 before a single weight byte**, and that the transient reserve is *calibrated from observed
 launches* rather than fixed:
 
-```swift
+```swift illustrative
 static func calibratedTransientReserveBytes(defaults: UserDefaults = .standard) -> Int64
 static func recordSuccessfulGGUFLaunch(estimatedIncrementalBytes:
                                        baselineFootprintBytes:
@@ -619,7 +619,7 @@ Core AI's engine layer exposes the choice explicitly. `EngineOptions` carries a 
 (✅ **VERIFIED**, `apple/coreai-models` source as vendored, `@available(iOS 27.0, macOS 27.0,
 tvOS 27.0, watchOS 27.0, visionOS 27.0, *)`; `notes/repos/noema-ios.md` §5.2):
 
-```swift
+```swift illustrative
 public struct EngineOptions: Sendable {
     public let variant: String?                  // nil = auto
     public let kvCacheStrategy: KVCacheStrategy  // default .auto
@@ -720,7 +720,7 @@ accordingly, and see §9.4 on why prefill is the metric that matters for agentic
 
 **Compute buffers.** Noema's GGUF-path model is worth reproducing because it names the terms:
 
-```swift
+```swift illustrative
 tokens        = min(contextLength, evaluationBatchSize, physicalBatchSize)
 activationScalarsPerToken = 6*hidden + 2*feedForward
 liveBufferFactor = (recurrentLayerCount ?? 0) > 0 ? 5.0 : 3.0   // hybrid graphs keep more live state
@@ -873,7 +873,7 @@ Metal Toolchain `v27.1.5194.15` / `metal 32023.917`, macOS 27.0 `26A5353q`;
 
 The practical protocol that falls out of this:
 
-```swift
+```swift prelude:guide-context
 // Minimum viable fit test. Anything less is not a fit test.
 let before  = availableMemoryBytes()          // os_proc_available_memory()
 try await model.load()
@@ -892,7 +892,7 @@ the bundle.
 
 Noema encodes a related discipline in its Core AI prewarm path, and the comment is the lesson:
 
-```swift
+```swift prelude:guide-context
 guard CoreAIDecoder.hostCacheCapacity(in: descriptor) == nil else {
     print("[CoreAI] Skipping prewarm for host-cache graph; it would allocate the static KV cache.")
     return
@@ -964,7 +964,7 @@ multi-backend iOS/macOS/visionOS app shipping on the App Store.
 
 ### 4.1 A live pressure snapshot with thermals folded in
 
-```swift
+```swift prelude:guide-context
 struct LiveMemoryPressureSnapshot: Equatable {
     let footprintBytes: Int64
     let availableBytes: Int64?
@@ -1020,7 +1020,7 @@ Three design decisions in that snippet are worth copying verbatim:
 Threshold-triggered pressure handling oscillates: you free memory, the level improves, you reload,
 the level degrades, and you have built a metronome. The fix is hysteresis.
 
-```swift
+```swift illustrative
 actor OverfitMemoryGovernor {
     static let warnThreshold      = 0.12
     static let pressureThreshold  = 0.08
@@ -1056,7 +1056,7 @@ allocation left.
 
 The wiring shows what "responding" means at each level:
 
-```swift
+```swift illustrative
 onCritical: {
     LlamaServerBridge.pagedApplyPressure(3)   // cancel queued reads; generation CONTINUES
     NotificationCenter.default.post(name: .noemaOverfitMemoryCritical, object: nil)
@@ -1082,7 +1082,7 @@ cannot test is a pressure governor you will not trust enough to make aggressive.
 Backgrounding is when jetsam is most likely to reach you, because a suspended app with a
 multi-gigabyte footprint is exactly what the kernel is looking for.
 
-```swift
+```swift prelude:guide-context
 enum BackgroundModelUnloadPolicy {
     static let enabledKey = "backgroundUnloadLargeModelsEnabled"
     static let inactiveDelaySecondsKey = "backgroundUnloadInactiveDelaySeconds"
@@ -1125,7 +1125,7 @@ Two subtleties:
 This is the piece almost nobody builds, and it is the one that turns "we call `unload()`" into
 "we know `unload()` works".
 
-```swift
+```swift prelude:guide-context
 enum ModelUnloadVerifier {
     static let defaultRecoveryThresholdBytes: Int64 = 32 * 1024 * 1024   // 32 MiB
 
@@ -1154,7 +1154,7 @@ and if you do not have a name for it you will report it as `.unchanged` and neve
 
 ### 4.5 The race you will hit
 
-```swift
+```swift illustrative
 func unloadIfIdle(reason: String)
 // Performs the idle check AND the client detachment in ONE MainActor.run transaction,
 // guarded by an `idleUnloadGeneration: UUID?`.
@@ -1258,7 +1258,7 @@ From `mlx-swift-examples`, every symbol below with a cited call site
 
 The canonical app idiom is the entire `LLMBasicApp.swift` file:
 
-```swift
+```swift prelude:external-module
 // Copyright © 2025 Apple Inc.
 
 import MLX
@@ -1301,7 +1301,7 @@ Observed limits across the sample apps (✅ **VERIFIED**, same source):
 
 #### The "detect a small device" pattern
 
-```swift
+```swift illustrative
 // Applications/StableDiffusionExample/ContentView.swift:133-151
 public nonisolated let conserveMemory: Bool
 
@@ -1338,7 +1338,7 @@ knobs will lose to memory policy that is allowed to pick a different artifact.
 This is the sharpest practical gotcha in the section, and it comes from the shipping app rather
 than the samples (✅ **VERIFIED**, `notes/repos/noema-ios.md` §8.1):
 
-```swift
+```swift illustrative
 /// Max bytes MLX keeps in its Metal buffer-reuse cache. The old flat 20 MB starved large
 /// models on Mac — every op had to re-allocate/free big Metal buffers instead of reusing
 /// them, throttling throughput badly. Scale with available RAM: generous on Mac (ample
@@ -1396,7 +1396,7 @@ Three things here:
 `clamp` falls back to **`GPU.maxRecommendedWorkingSetBytes()`** when no cap is set and Metal is
 available. Usage, from `Documentation.docc/using-model.md:135-145`:
 
-```swift
+```swift prelude:guide-context
 let policy = WiredSumPolicy()
 let ticket = policy.ticket(size: estimatedBytes)
 let stream = try MLXLMCommon.generate(
@@ -1425,7 +1425,7 @@ Note the breakdown fields: `weightBytes`, `kvBytes`, `workspaceBytes`, `peakActi
 
 Measuring weight bytes directly is three lines (`wired-memory.md:21-28`):
 
-```swift
+```swift prelude:guide-context
 let context = try await LLMModelFactory.shared.load(configuration: config)
 let weightBytes = context.model.parameters()
     .flattened()
@@ -1445,7 +1445,7 @@ weights are the *easy* term and every other term in §2.1 is where the surprises
 
 Finally, for CPU or unsupported-Metal contexts:
 
-```swift
+```swift prelude:guide-context
 await WiredMemoryManager.shared.updateConfiguration { configuration in
     configuration.policyOnlyWhenUnsupported = true
 }
@@ -1458,7 +1458,7 @@ await WiredMemoryManager.shared.updateConfiguration { configuration in
 The MLX parameter surface for KV quantization, as mapped by a shipping app
 (✅ **VERIFIED**, `notes/repos/noema-ios.md` §8.5):
 
-```swift
+```swift prelude:guide-context
 parameters.maxKVSize            = settings.resolvedMLXKVCacheLimit
 parameters.kvBits               = settings.mlxKVCacheQuantization.bits   // nil for .fullPrecision
 parameters.kvGroupSize          = settings.resolvedMLXKVCacheGroupSize
@@ -1635,7 +1635,7 @@ Instrument both, and use the decode number as your thermal canary.
 The corollary of §7.1 is that a benchmark harness needs a defined warm-up, and "run it twice" is
 not one. The protocol below is assembled from what the sources actually did.
 
-```swift
+```swift prelude:guide-context
 /// Warm-up protocol for on-device throughput measurement.
 ///
 /// Rationale, all community-measured on A19-class hardware:
@@ -1797,7 +1797,7 @@ CPU/GPU-heavy backends:
 
 And a separate gate for the storage-heavy paged path:
 
-```swift
+```swift illustrative
 static func pagedLaunchGate(environment: Environment) -> OverfitPagedLaunchGate
 // .critical thermal            -> .blocked(.criticalThermal)
 // .serious thermal OR lowPower -> .allowedReduced(reasons:)   // shrink IO fan-out and context
@@ -1809,7 +1809,7 @@ thermals gate it harder than a resident launch."*
 
 Two further constants from the same file that belong in any inference app:
 
-```swift
+```swift illustrative
 /// Leaves headroom for the system.
 static var recommendedInferenceThreadCount: Int { max(1, activeProcessorCount - 2) }
 
@@ -2443,7 +2443,7 @@ Two artefacts to paste into a harness: an environment capture, and a checklist.
 This struct records everything §9.1 asks for, plus the memory signals from §1.3, and emits a blob
 no human typed. Adapt the field names to your schema; do not drop fields.
 
-```swift
+```swift illustrative
 //  BenchmarkEnvironment.swift
 //
 //  Records the environment a measurement was taken in. Every field here exists

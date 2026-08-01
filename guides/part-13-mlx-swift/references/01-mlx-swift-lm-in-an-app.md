@@ -162,7 +162,7 @@ this and tells you to do the same for the `using` article:
 
 ### 1.2 Pin it
 
-```swift
+```swift illustrative
 // Package.swift
 .package(url: "https://github.com/ml-explore/mlx-swift-lm", .upToNextMajor(from: "3.31.3")),
 ```
@@ -266,7 +266,7 @@ will tell you the product does not exist. You get `MLXCXGrammar` transitively by
 Its `cxxSettings` contain a detail that is a genuinely useful piece of intelligence about the wider
 2026 stack (✅ VERIFIED, `Package.swift:203-228`):
 
-```swift
+```swift illustrative
 cxxSettings: [
     .headerSearchPath("xgrammar/include"),
     // ...
@@ -292,7 +292,7 @@ to do in 2026 — this is why it links. Cross-reference
 the committed `Package.resolved`) and why `-skipMacroValidation` is needed. `mlx-swift-lm`'s own
 manifest constrains it deliberately (✅ VERIFIED, `Package.swift:100-104`):
 
-```swift
+```swift illustrative
 // 602.0.0 floor: swift.org publishes signed prebuilt swift-syntax artifacts only for
 // >= 602 tags on current toolchains; a 600.x/601.x resolution falls back to the full
 // source compile of swift-syntax.
@@ -313,7 +313,7 @@ path.
 `Package.swift` declares one SwiftPM **trait**, and the comment on it is the clearest statement of
 the package's 26-vs-27 strategy anywhere in the repo. ✅ VERIFIED, `Package.swift:44-59`, verbatim:
 
-```swift
+```swift illustrative
 traits: [
     // Gates the MLXLanguageModel adapter for Apple's FoundationModels
     // framework. Default-on. Disabling the trait compiles MLXFoundationModels
@@ -481,7 +481,7 @@ public protocol Downloader: Sendable {
 
 `Libraries/MLXLMCommon/TokenizerLoader.swift` — the whole file:
 
-```swift
+```swift prelude:guide-context
 public protocol TokenizerLoader: Sendable {
     func load(from directory: URL) async throws -> any Tokenizer
 }
@@ -586,7 +586,7 @@ Your own `Downloader` gets one more thing for free: the `matching patterns:` arr
 passes two different pattern sets depending on what it is fetching (✅ VERIFIED,
 `Libraries/MLXLMCommon/ModelFactory.swift:5-7`):
 
-```swift
+```swift illustrative
 package let tokenizerDownloadPatterns = ["*.json", "*.jinja"]
 package let modelDownloadPatterns = ["*.safetensors"] + tokenizerDownloadPatterns
 ```
@@ -621,7 +621,7 @@ verbatim:
 🔴 **GAP.** `using.md` names `huggingface/swift-transformers` as an integration package and shows a
 call shape in `upgrade.md:95-108` that omits the `using:` parameter entirely:
 
-```swift
+```swift prelude:external-module
 import IntegrationPackage
 
 let model = try await loadModelContainer(
@@ -644,7 +644,7 @@ release notes and public interface.
 Seven freestanding expression macros, ✅ **VERIFIED** by reading their declarations in
 `Libraries/MLXHuggingFace/Macros.swift` this session:
 
-```swift
+```swift illustrative
 @freestanding(expression)
 public macro hubDownloader(_ hub: Any) -> MLXLMCommon.Downloader
 
@@ -678,7 +678,7 @@ public macro huggingFaceLoadModel(
 
 Plus, in `Libraries/MLXHuggingFace/FoundationModelsMacros.swift` and gated on the 27 SDK:
 
-```swift
+```swift illustrative
 #huggingFaceLanguageModel(configuration:capabilities:configurationResolver:)  // -> MLXLanguageModel
 ```
 
@@ -696,7 +696,7 @@ default argument.
 
 The dependency set and the imports (✅ VERIFIED, `using.md:132-137` and `README.md:63-100`):
 
-```swift
+```swift illustrative
 // Package.swift
 dependencies: [
     .package(url: "https://github.com/ml-explore/mlx-swift-lm", .upToNextMajor(from: "3.31.3")),
@@ -718,7 +718,7 @@ targets: [
 
 The complete quick start, ✅ VERIFIED verbatim from `README.md:86-100`:
 
-```swift
+```swift prelude:external-module
 import MLXLLM
 import MLXLMCommon
 import MLXHuggingFace
@@ -745,7 +745,7 @@ redundancy — it is required.** Copy the import block verbatim.
 
 The explicit form, if you want to see what the macro is doing (✅ VERIFIED, `using.md:173-177`):
 
-```swift
+```swift prelude:guide-context
 let model = try await LLMModelFactory.shared.loadContainer(
     from: #hubDownloader(),
     using: #huggingFaceTokenizerLoader(),
@@ -757,7 +757,7 @@ And with a custom cache directory, which is the form you want on iOS so the weig
 you control (✅ VERIFIED from `mlx-swift-examples`' `Tools/llm-tool/LLMTool.swift:34-43`, transcribed
 in the research note — community-adjacent but it is Apple's own sample repo):
 
-```swift
+```swift prelude:guide-context
 var downloader: any Downloader {
     let client =
         if let download {
@@ -791,7 +791,7 @@ var downloader: any Downloader {
 `ModelContext` is a plain struct holding the four things you need to run a model. ✅ VERIFIED,
 `Libraries/MLXLMCommon/ModelFactory.swift:75-90`:
 
-```swift
+```swift prelude:guide-context
 public struct ModelContext {
     public var configuration: ModelConfiguration
     public var model: any LanguageModel
@@ -803,7 +803,7 @@ public struct ModelContext {
 `ModelContainer` is the thread-safe wrapper around one. ✅ VERIFIED, read from
 `Libraries/MLXLMCommon/ModelContainer.swift:31-55` this session:
 
-```swift
+```swift illustrative
 public final class ModelContainer: Sendable {
     private let context: SerialAccessContainer<ModelContext>
 
@@ -822,7 +822,7 @@ models used by e.g. the UI in a ModelContainer."*
 Access is through `perform`, which has three shapes plus an `update` (✅ VERIFIED, transcribed from
 `ModelContainer.swift`):
 
-```swift
+```swift illustrative
 public func perform<R: Sendable>(
     _ action: @Sendable (ModelContext) async throws -> sending R
 ) async rethrows -> sending R
@@ -841,7 +841,7 @@ public func update(_ action: @Sendable (inout ModelContext) -> Void) async
 And four convenience methods that let you avoid `perform` entirely for the common path
 (✅ VERIFIED, `ModelContainer.swift:145-229`):
 
-```swift
+```swift illustrative
 public func prepare(input: consuming sending UserInput) async throws -> sending LMInput
 public func generate(input: consuming sending LMInput, parameters: GenerateParameters,
                      wiredMemoryTicket: WiredMemoryTicket? = nil) async throws -> AsyncStream<Generation>
@@ -872,7 +872,7 @@ The free functions (`loadModel`, `loadModelContainer`) do not know about `MLXLLM
 dispatch through `ModelFactoryRegistry.shared`, which finds factories by **`NSClassFromString`**
 (✅ VERIFIED, `ModelFactory.swift:484-497`):
 
-```swift
+```swift prelude:guide-context
 self.trampolines = [
     { (NSClassFromString("MLXVLM.TrampolineModelFactory") as? any ModelFactoryTrampoline.Type)?.modelFactory() },
     { (NSClassFromString("MLXLLM.TrampolineModelFactory") as? any ModelFactoryTrampoline.Type)?.modelFactory() },
@@ -881,7 +881,7 @@ self.trampolines = [
 
 and tries them **in order, keeping only the last error** (✅ VERIFIED, `ModelFactory.swift:413-431`):
 
-```swift
+```swift prelude:guide-context
 private func load<R>(loader: (any ModelFactory) async throws -> sending R) async throws -> sending R {
     let factories = ModelFactoryRegistry.shared.modelFactories()
     var lastError: Error?
@@ -930,7 +930,7 @@ style, and it solves the double-download problem correctly. ✅ VERIFIED — thi
 `Applications/LLMBasic/ChatModel.swift` from `mlx-swift-examples` at HEAD `378f244`, transcribed in
 the research note:
 
-```swift
+```swift prelude:external-module
 import HuggingFace
 import MLXHuggingFace
 import MLXLLM
@@ -1002,7 +1002,7 @@ For a richer UI, `Progress` also gives you `localizedDescription` and
 For the explicit (non-macro) form, the factory method is the same shape (✅ VERIFIED,
 `ModelFactory.swift:148-210`):
 
-```swift
+```swift illustrative
 func loadContainer(
     from downloader: any Downloader,
     using tokenizerLoader: any TokenizerLoader,
@@ -1029,7 +1029,7 @@ guess and this guide does not print guesses. **What would resolve it:** the doc 
 For the Hugging Face path, the answer is the standard HF cache layout. ✅ VERIFIED from the shipped
 agent skill, `skills/mlx-swift-lm/references/model-container.md:245-258`:
 
-```swift
+```swift prelude:guide-context
 let resolved = try await resolve(
     configuration: configuration,
     from: HubClient.default,
@@ -1050,7 +1050,7 @@ The `resolve` step is the single place downloads happen, and it does four things
 
 The result is a `ResolvedModelConfiguration` (✅ VERIFIED, `Downloader.swift:69-101`):
 
-```swift
+```swift prelude:guide-context
 public struct ResolvedModelConfiguration: Sendable {
     public var modelDirectory: URL
     public var tokenizerDirectory: URL
@@ -1071,7 +1071,7 @@ ticket you will not enjoy. Apple's own `MLXChatExample` splits by platform (✅ 
 research note's read of `Support/HubApi+default.swift`, though that file is now vestigial in that
 sample):
 
-```swift compile:27
+```swift illustrative
 #if os(macOS)
     // Downloads directory
 #else
@@ -1082,7 +1082,7 @@ sample):
 A shipping third-party iOS app makes the opposite, and better, choice — **community-measured,
 from a deep read of `noemaai-labs/noema-ios` (Noema 3.5), which stores models under `Documents`**:
 
-```swift
+```swift illustrative
 static func baseDir(for format: ModelFormat, modelID: String) -> URL {
     var dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("LocalLLMModels", isDirectory: true)
@@ -1113,7 +1113,7 @@ Two hard-won details from the same source, both worth stealing:
 If your weights are already on disk you do not need a `Downloader` at all. There are directory-based
 overloads at every level. ✅ VERIFIED, `ModelFactory.swift:148-210` and `:279-411`:
 
-```swift
+```swift illustrative
 func load(from directory: URL, using tokenizerLoader: any TokenizerLoader) async throws -> sending ContextType
 func loadContainer(from directory: URL, using tokenizerLoader: any TokenizerLoader) async throws -> ContainerType
 
@@ -1125,7 +1125,7 @@ loadModelContainer(from directory: URL, using tokenizerLoader: any TokenizerLoad
 and `ModelConfiguration` has a directory initialiser (✅ VERIFIED,
 `Libraries/MLXLMCommon/ModelConfiguration.swift:16-184`):
 
-```swift
+```swift illustrative
 public init(directory: URL, tokenizerSource: TokenizerSource? = nil,
             defaultPrompt: String = "", extraEOSTokens: Set<String> = [],
             stopStrings: Set<String>? = nil, eosTokenIds: Set<Int> = [],
@@ -1135,7 +1135,7 @@ public init(directory: URL, tokenizerSource: TokenizerSource? = nil,
 Here is a complete bundle-loading path. **The tokenizer loader is still yours to supply** — that is
 the one thing a directory does not free you from:
 
-```swift
+```swift prelude:external-module
 import Foundation
 import MLXLLM
 import MLXLMCommon
@@ -1258,7 +1258,7 @@ of `ln -s`. *"If your tool caches skills, restart it after installing."*
 ⚠️ **The skill's *loading* code is stale relative to the 3.x API in the same repo.** ✅ VERIFIED by
 direct read: `skills/mlx-swift-lm/references/concurrency.md:131-135` contains
 
-```swift
+```swift prelude:guide-context
 let container = try await loadModelContainer(
     from: HubClient.default,
     using: TokenizersLoader(),  // TokenizersLoader() from MLXLMTokenizers (swift-tokenizers-mlx)
@@ -1322,7 +1322,7 @@ in at any of those suspension points and start its own prefill on the same weigh
 KV cache. `SerialAccessContainer` is an async mutex — a `private actor AsyncMutex` holding
 `isLocked` plus an array of `CheckedContinuation<Void, Never>` waiters — wrapped around the value:
 
-```swift
+```swift illustrative
 package final class SerialAccessContainer<T>: @unchecked Sendable {
     public init(_ value: consuming T)
     public func read<R>(_ body: @Sendable (T) async throws -> sending R) async rethrows -> sending R
@@ -1353,7 +1353,7 @@ Three strategies, from the skill (✅ VERIFIED, `concurrency.md:274-305`):
 
 **1. Eval before returning, and return a primitive.**
 
-```swift
+```swift prelude:guide-context
 await container.perform { context in
     let result = context.model(input)
     eval(result)                    // Evaluate before crossing boundary
@@ -1363,7 +1363,7 @@ await container.perform { context in
 
 **2. Transfer with a box.**
 
-```swift
+```swift prelude:guide-context
 let box = SendableBox(array)
 Task {
     let array = box.consume()
@@ -1373,7 +1373,7 @@ Task {
 
 **3. Keep arrays inside one isolation region.**
 
-```swift
+```swift prelude:guide-context
 await container.perform { context in
     let a = model(input1)
     let b = model(input2)
@@ -1404,7 +1404,7 @@ silent second `consume` returning garbage would be far worse than a crash.
 ✅ VERIFIED from the source doc comment on `ChatSession` — *"Each session should be used from a single
 task/thread at a time"* — and restated in the skill (`concurrency.md:150-170`):
 
-```swift
+```swift illustrative
 // WRONG: Multiple tasks using same session
 let session = ChatSession(container)
 Task { await session.respond(to: "A") }  // Race condition!
@@ -1437,7 +1437,7 @@ only its own KV cache, **multiple sessions can generate in parallel against the 
 ✅ VERIFIED from `ChatSession.swift:574-836`'s `streamMap` implementation and its comment, quoted in
 the research note: *"the KVCache cannot be shared and that is the lock that is held here."*
 
-```swift
+```swift prelude:external-module
 import MLXLMCommon
 
 /// Two independent conversations sharing one set of weights.
@@ -1496,7 +1496,7 @@ try Task.checkCancellation()
 **In the generation loop** (✅ VERIFIED, read this session from
 `Libraries/MLXLMCommon/Evaluate.swift:1899-1906`, verbatim):
 
-```swift
+```swift illustrative
 // pipeline the next GPU evaluation, so checking after it (the previous
 // `while let token = iterator.next()` form) allowed one extra asyncEval to be
 // submitted post-cancellation, which faults if the app has backgrounded
@@ -1522,7 +1522,7 @@ What this means for your app, concretely:
    suspended.
 3. Do not start generation from a background-launched context.
 
-```swift
+```swift prelude:guide-context
 import SwiftUI
 
 struct ChatScreen: View {
@@ -1573,7 +1573,7 @@ Related, and much less dramatic, but it will corrupt a conversation. ✅ VERIFIE
 The `…Task` variants return `(AsyncStream<Generation>, Task<Void, Never>)` so you can await the
 second element (✅ VERIFIED, `Evaluate.swift`):
 
-```swift
+```swift illustrative
 public func generateTask<TOKEN: TokenIteratorProtocol>(
     promptTokenCount: Int, modelConfiguration: ModelConfiguration, tokenizer: Tokenizer,
     iterator: consuming TOKEN, wiredMemoryTicket: WiredMemoryTicket? = nil,
@@ -1585,7 +1585,7 @@ public func generateTokensTask(input:cache:parameters:context:includeStopToken:w
 
 The skill's phrasing of the pattern (✅ VERIFIED, `concurrency.md:208-228`):
 
-```swift
+```swift prelude:guide-context
 let (stream, task) = generateTask(
     promptTokenCount: count,
     modelConfiguration: config,
@@ -1630,7 +1630,7 @@ for try await chunk in session.streamResponse(to: prompt) { … }
 The event type from the low-level API is a three-case enum (✅ VERIFIED, `Evaluate.swift:1112-1118`
 and corroborated by Apple's `MLXChatExample`):
 
-```swift
+```swift prelude:guide-context
 public enum Generation: Sendable {
     case chunk(String)
     case info(GenerateCompletionInfo)
@@ -1784,7 +1784,7 @@ that compiles against 2026 toolchains. **What would resolve it:** `Source/MLX/GP
 
 The canonical app idiom, ✅ VERIFIED — the whole of `Applications/LLMBasic/LLMBasicApp.swift`:
 
-```swift
+```swift prelude:external-module
 // Copyright © 2025 Apple Inc.
 
 import MLX
@@ -1825,7 +1825,7 @@ And `mlx-swift-lm`'s own FoundationModels adapter sets **256 MB**, once per proc
 justification worth reading in full (✅ VERIFIED, read this session from
 `Libraries/MLXFoundationModels/MLXLanguageModel.swift:396-404`, verbatim):
 
-```swift
+```swift illustrative
 /// Sets the process-global MLX buffer-reuse pool limit a single time. A
 /// `static let` initializer runs lazily and exactly once (thread-safe), so
 /// repeated model loads don't re-stomp a consumer's own `Memory.cacheLimit`.
@@ -1853,7 +1853,7 @@ right for every case. Two pieces of evidence complicate it:
 2. A shipping app abandoned the flat 20 MB deliberately. Community-measured, from `noema-ios`'s
    `MLXBridge.swift`, verbatim comment plus code:
 
-```swift
+```swift illustrative
 /// Max bytes MLX keeps in its Metal buffer-reuse cache. The old flat 20 MB starved large
 /// models on Mac — every op had to re-allocate/free big Metal buffers instead of reusing
 /// them, throttling throughput badly. Scale with available RAM, generous on Mac (ample
@@ -1883,7 +1883,7 @@ snippet to `Memory.cacheLimit` for current `mlx-swift`.
 The adaptive-device pattern from Apple's own sample (✅ VERIFIED,
 `Applications/StableDiffusionExample/ContentView.swift:133-151`):
 
-```swift
+```swift illustrative
 public nonisolated let conserveMemory: Bool
 
 init() {
@@ -1911,7 +1911,7 @@ macOS and visionOS without a `utsname` table.
 Apple's `DeviceStat` is the whole HUD in 30 lines (✅ VERIFIED,
 `Applications/LLMEval/ViewModels/DeviceStat.swift`, whole file):
 
-```swift
+```swift prelude:external-module
 // Copyright © 2025 Apple Inc.
 
 import Foundation
@@ -2002,7 +2002,7 @@ So: **`WiredMemoryManager`, `WiredMemoryTicket` and the `WiredMemoryPolicy` prot
 
 `WiredSumPolicy`'s implementation, read verbatim this session, shows exactly what `clamp` does:
 
-```swift
+```swift prelude:guide-context
 public struct WiredSumPolicy: WiredMemoryPolicy, Hashable, Sendable {
     public let cap: Int?
     public init(cap: Int? = nil) { self.cap = cap }
@@ -2027,7 +2027,7 @@ public struct WiredSumPolicy: WiredMemoryPolicy, Hashable, Sendable {
 
 with
 
-```swift
+```swift prelude:guide-context
 private func recommendedWorkingSetBytes() -> Int? {
     #if canImport(Metal)
     GPU.maxRecommendedWorkingSetBytes()
@@ -2046,7 +2046,7 @@ number — i.e. when the projection exceeds the cap.
 > - `.reservation`: tracks long-lived budgets (for example model weights) without keeping limit
 >   elevated when no active inference exists.
 
-```swift
+```swift prelude:guide-context
 let reservation = policy.ticket(size: weightBytes, kind: .reservation)
 let inference = policy.ticket(size: kvAndWorkspaceBytes, kind: .active)
 ```
@@ -2069,7 +2069,7 @@ you want visible at the call site.
 **Wiring a ticket into generation.** The `wiredMemoryTicket:` parameter appears on every generation
 entry point (✅ VERIFIED, `Evaluate.swift` and `ModelContainer.swift:184-208`):
 
-```swift
+```swift prelude:guide-context
 let policy = WiredSumPolicy(cap: 12 * 1024 * 1024 * 1024)
 let ticket = policy.ticket(size: estimatedBytes, kind: .active)
 
@@ -2088,7 +2088,7 @@ supplied (✅ VERIFIED, `Evaluate.swift:1867-2001`).
 **On CPU or unsupported backends**, keep the policy math without attempting to change a wired limit
 that does not exist (✅ VERIFIED, `Documentation.docc/wired-memory.md:101-105`):
 
-```swift
+```swift prelude:guide-context
 await WiredMemoryManager.shared.updateConfiguration { configuration in
     configuration.policyOnlyWhenUnsupported = true
 }
@@ -2100,7 +2100,7 @@ usually belt-and-braces rather than required.
 **Debug event stream** (✅ VERIFIED, `skills/.../wired-memory.md:103-113`) — in DEBUG builds only;
 release is a no-op:
 
-```swift
+```swift prelude:guide-context
 Task {
     for await event in WiredMemoryManager.shared.events() {
         print(event)
@@ -2125,7 +2125,7 @@ public enum WiredMemoryUtils {
 
 The end-to-end recipe, ✅ VERIFIED verbatim from `skills/mlx-swift-lm/references/wired-memory.md:66-79`:
 
-```swift
+```swift prelude:guide-context
 let context = try await LLMModelFactory.shared.load(configuration: config)
 let parameters = GenerateParameters(maxTokens: 128, prefillStepSize: 512)
 
@@ -2143,7 +2143,7 @@ let ticket = policy.ticket(size: measurement.kvBytes, kind: .active)
 and for a VLM, use the overload that takes real media so image and video tensors are counted
 (✅ VERIFIED, same file, `:85-91`):
 
-```swift
+```swift prelude:guide-context
 let measurement = try await WiredMemoryUtils.tune(
     userInput: userInput,
     context: context,
@@ -2154,7 +2154,7 @@ let measurement = try await WiredMemoryUtils.tune(
 If you cannot afford to load the model to measure it, the two analytic fallbacks are published.
 **Weights**, ✅ VERIFIED, `Documentation.docc/wired-memory.md:21-27`:
 
-```swift
+```swift prelude:guide-context
 let context = try await LLMModelFactory.shared.load(configuration: config)
 let weightBytes = context.model
     .parameters()
@@ -2252,7 +2252,7 @@ consumed from Swift with `@_silgen_name` in four different files:
 
 The reconstruction that makes this actionable, also community-measured:
 
-```swift
+```swift illustrative
 static func liveProcessMemoryLimitBytes(liveAvailable: Int64?, currentFootprint: Int64?) -> Int64?
     // = liveAvailable + currentFootprint  (reconstructs the process allocation limit)
 ```
@@ -2296,7 +2296,7 @@ all three (§6.6), and it must be re-checked when the user increases context len
 Still community-measured, from the same app: a hysteretic governor that samples headroom and fires
 graded responses. The design is more valuable than the specific numbers.
 
-```swift
+```swift illustrative
 actor OverfitMemoryGovernor {
     static let warnThreshold      = 0.12
     static let pressureThreshold  = 0.08
@@ -2335,7 +2335,7 @@ Four things to steal:
    *"Crash prevention beats grace."*
 4. **Surface it.** A live pressure meter sampled at 1 Hz, with a four-level enum:
 
-```swift
+```swift illustrative
 enum MemoryPressureLevel { case comfortable, elevated, high, critical }
 
 var pressure: MemoryPressureLevel {
@@ -2369,7 +2369,7 @@ community-measured from `noema-ios` unless marked.
 
 **1. Unload big models when backgrounded.** The policy, verbatim in shape:
 
-```swift
+```swift illustrative
 static let defaultInactiveDelaySeconds: TimeInterval = 120
 static let largeWorkingSetThresholdBytes: Int64 = 2 * 1024 * 1024 * 1024   // 2 GiB
 // threshold = max(2 GiB, memoryBudgetBytes / 3)
@@ -2472,7 +2472,7 @@ shipping-and-operating view of all three.
 Everything a VLM eats goes through `UserInput`. ✅ VERIFIED, read this session from
 `Libraries/MLXLMCommon/UserInput.swift`:
 
-```swift
+```swift prelude:guide-context
 public struct UserInput {
     public enum Prompt: CustomStringConvertible {
         case text(String)
@@ -2491,7 +2491,7 @@ public struct UserInput {
 
 The media enums (✅ VERIFIED, `UserInput.swift:79-173`):
 
-```swift
+```swift prelude:guide-context
 public enum Image {
     #if canImport(CoreImage)
     case ciImage(CIImage)
@@ -2520,7 +2520,7 @@ cases exist.
 
 And the per-request processing knobs (✅ VERIFIED, `UserInput.swift:189-207`):
 
-```swift
+```swift prelude:guide-context
 public struct Processing: Sendable {
     public var resize: CGSize?
     public var audio = AudioProcessing()
@@ -2548,7 +2548,7 @@ they are not merged into the chat. Prefer the initialisers.
 
 `UserInputProcessor` is a one-method protocol (✅ VERIFIED, `UserInput.swift:450-452`):
 
-```swift
+```swift prelude:guide-context
 public protocol UserInputProcessor: Sendable {
     func prepare(input: UserInput) async throws -> LMInput
 }
@@ -2657,7 +2657,7 @@ rotated image.
 **The mechanism, verified from source.** `UserInput.Image.url(url)` resolves like this — ✅ VERIFIED,
 read this session from `Libraries/MLXLMCommon/UserInput.swift:116-125`:
 
-```swift
+```swift illustrative
 public func asCIImage() throws -> CIImage {
     switch self {
     case .ciImage(let image):
@@ -2688,7 +2688,7 @@ and its body says (✅ VERIFIED, transcribed in the research note):
 
 and the in-code comment at the fix site is unambiguous (✅ VERIFIED, `ChatView.swift`, verbatim):
 
-```swift compile:27
+```swift illustrative
 // Normalize orientation so pixels match the display orientation.
 // UIImage.jpegData() only writes an EXIF tag but CIImage(contentsOf:)
 // does not apply it, so the VLM would receive a rotated image.
@@ -2714,7 +2714,7 @@ reaches MLX.** Re-rendering an already-upright image is a no-op in correctness t
 draw. Here is Apple's fix, ✅ VERIFIED verbatim from `Applications/MLXChatExample/ChatView.swift`
 (the surrounding `.onChange(of: photosPickerItems)` block):
 
-```swift
+```swift prelude:guide-context
 if let picked = try? await item.loadTransferable(type: PickedImage.self),
     let uiImage = UIImage(data: picked.data)
 {
@@ -2754,7 +2754,7 @@ The same commit fixed a second, independent bug: `loadTransferable(type: Data.se
 against PhotosPicker. The fix is explicit `Transferable` wrappers. ✅ VERIFIED verbatim from
 `Applications/MLXChatExample/ChatView.swift`:
 
-```swift
+```swift illustrative
 #if canImport(UIKit)
     import UIKit
 
@@ -2792,7 +2792,7 @@ at generation time, far from the cause.
 
 And the full picker wiring, ✅ VERIFIED verbatim from the same file:
 
-```swift
+```swift illustrative
 #if os(iOS)
     .photosPicker(
         isPresented: $vm.mediaSelection.isShowing,
@@ -2852,7 +2852,7 @@ difference, so you cannot leak a scope by forgetting a `stop`.
 Not media, but it ships in the same fix and it bites the raw `UserInput` path. ✅ VERIFIED verbatim
 from `Applications/MLXChatExample/Services/MLXService.swift`:
 
-```swift
+```swift prelude:guide-context
 // Exclude trailing empty assistant message so the chat template
 // leaves the assistant turn open for generation (matching ChatSession behavior)
 var inputMessages = messages
@@ -2919,7 +2919,7 @@ let the ViT allocate tens of GB).
 Apple's `LLMBasic` is the reference. ✅ VERIFIED verbatim from
 `Applications/LLMBasic/ChatModel.swift`:
 
-```swift
+```swift prelude:guide-context
 /// View model for the ChatSession
 @MainActor @Observable public class ChatModel {
 
@@ -2980,7 +2980,7 @@ Three things this gets right that a hand-rolled version usually gets wrong:
 
 And the view, ✅ VERIFIED verbatim from `Applications/LLMBasic/ContentView.swift`:
 
-```swift
+```swift prelude:guide-context
 struct ContentView: View {
     let loader: ModelLoader
     @State var session: ChatModel?
@@ -3055,7 +3055,7 @@ mitigations, in increasing order of effort.
 **1. `LazyVStack` plus the right scroll anchor.** ✅ VERIFIED verbatim from
 `Applications/MLXChatExample/Views/ConversationView.swift`:
 
-```swift
+```swift prelude:guide-context
 ScrollView {
     LazyVStack(spacing: 12) {
         ForEach(messages) { message in
@@ -3074,7 +3074,7 @@ streaming without a `ScrollViewReader` and without a `scrollTo` per token.
 this (✅ VERIFIED, `Evaluate.swift:1117` and `:1124`, with the doc comment *"Reducer that can be used
 with `throttle()` to gather elements into a batch"*):
 
-```swift
+```swift illustrative
 @Sendable public static func collect(_ batch: [Generation]?, _ element: Generation) -> [Generation]
 ```
 
@@ -3082,7 +3082,7 @@ That doc comment names `throttle()`, i.e. `swift-async-algorithms`. Apple did no
 to `mlx-swift-lm` — this is an affordance for *you*. If you already depend on
 `swift-async-algorithms`, the shape is:
 
-```swift
+```swift prelude:external-module
 import AsyncAlgorithms
 
 for await batch in stream.throttle(for: .milliseconds(50), reducing: Generation.collect) {
@@ -3103,7 +3103,7 @@ on a timer or every N chunks — Apple's own `LoRAEvaluator` does exactly that w
 **3. Isolate the streaming text from the rest of the view model.** Community-measured, from
 `noema-ios`:
 
-```swift
+```swift illustrative
 @MainActor final class StreamingMessageStore: ObservableObject {
     /// Isolates high-frequency token updates from `ChatVM.objectWillChange`.
     @Published private(set) var activeID: UUID?
@@ -3119,7 +3119,7 @@ so only the one bubble that is streaming invalidates.
 That app also ships a `StreamChunkMerger` for a problem you will meet the moment you support more
 than one backend — some emit **delta** chunks and some emit **cumulative** text:
 
-```swift
+```swift illustrative
 enum StreamChunkMergeMode { case unknown, delta, cumulative }
 mutating func deltaToAppend(for newChunk: String, existing: String) -> String
 // .unknown: if newChunk.hasPrefix(existing) && longer -> switch to .cumulative
@@ -3134,7 +3134,7 @@ need this for MLX alone. You need it the day you add a second backend.
 `MLXChatExample` shows the fuller pattern, including marking the message as cancelled.
 ✅ VERIFIED verbatim from `Applications/MLXChatExample/ViewModels/ChatViewModel.swift:61-136`:
 
-```swift
+```swift prelude:guide-context
     /// Generates response for the current prompt and media attachments
     func generate() async {
         // Cancel any existing generation task
@@ -3193,7 +3193,7 @@ runs synchronously on the cancelling thread, hence the `Task { @MainActor in …
 
 The run/stop button that pairs with it (✅ VERIFIED, `PromptField.swift`):
 
-```swift
+```swift prelude:guide-context
 Button {
     if isRunning { task?.cancel(); removeTask() }
     else { task = Task { await sendButtonAction(); removeTask() } }
@@ -3210,7 +3210,7 @@ private var isRunning: Bool { task != nil && !(task!.isCancelled) }
 If your app lets the user switch models, cache containers. ✅ VERIFIED verbatim from
 `Applications/MLXChatExample/Services/MLXService.swift`:
 
-```swift
+```swift prelude:guide-context
 /// Cache to store loaded model containers to avoid reloading.
 private let modelCache = NSCache<NSString, ModelContainer>()
 
@@ -3272,7 +3272,7 @@ end, which reads as a hang. Two options:
 
 **Option A — a two-phase enum**, which is what you should do:
 
-```swift
+```swift prelude:guide-context
 @MainActor @Observable
 final class ModelLoadState {
     enum Phase: Equatable {
@@ -3348,7 +3348,7 @@ One expression decides whether `MLXFoundationModels` exists in your binary. ✅ 
 in **68 files** across `Libraries/`, `IntegrationTesting/` and `Tests/`, counted by grep this
 session:
 
-```swift
+```swift illustrative
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 ```
 
@@ -3378,7 +3378,7 @@ the `#if canImport(FoundationModels, _version: 2)` guard at their own call sites
 
 The correct shape:
 
-```swift
+```swift illustrative
 #if canImport(FoundationModels, _version: 2)
 import FoundationModels
 import MLXFoundationModels
@@ -3519,7 +3519,7 @@ Xcode 27 beta**; also **macOS 27.0 build 26A5353q**. Community-sourced.
 The README's Foundation Models quick start puts both floors in eight lines, and this is the shape to
 copy. ✅ VERIFIED verbatim, `README.md:104-141`:
 
-```swift
+```swift prelude:guide-context
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Generable
 struct Recommendation {
@@ -3571,7 +3571,7 @@ That last clause is the discipline again: **compile-time gate *and* runtime `@av
 app uses `#if canImport(CoreAI)` for Core AI, i.e. the `canImport` style where the framework itself
 is new, and a clean user-facing error when it is absent:
 
-```swift
+```swift illustrative
 case .frameworkUnavailable:
     return String(localized: "The Core AI framework is unavailable in this build (requires Xcode 27+).")
 ```

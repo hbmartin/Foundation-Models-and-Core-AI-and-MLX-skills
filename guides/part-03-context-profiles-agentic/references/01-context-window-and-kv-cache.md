@@ -1088,10 +1088,10 @@ which primitives were missing.
 > `tokenCount(for:)`, compacts at a threshold, retries once on `exceededContextWindowSize`, then
 > rebuilds a session from the compacted `Transcript`.**
 
-Reconstructed in the shape a 26-targeting app would actually write it — this compiles against the
-26.4 SDK and does not require any 27 API:
+Reconstructed in the shape a 26-targeting app would actually write it — this verifies on the
+26-generation target and does not require any 27 API:
 
-```swift compile:27
+```swift compile:26
 import FoundationModels
 
 /// The iOS 26 idiom: meter, compact, retry once, rebuild.
@@ -1121,7 +1121,7 @@ actor ContextManagedChat {
 
         do {
             return try await session.respond(to: prompt).content
-        } catch LanguageModelError.contextSizeExceeded {
+        } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             // 2. Retry exactly once. If a condensed transcript still overflows,
             //    the prompt itself is the problem and looping will not fix it.
             session = rebuiltFromCondensedTranscript()
@@ -1496,7 +1496,7 @@ Modifier order is real and it is inverted from what reading the code suggests.
 
 So in this stack:
 
-```swift
+```swift prelude:guide-context
 Profile {
   Instructions("A conversation between a user and a helpful assistant.")
   ToggleDarkModeTool()
@@ -1561,7 +1561,7 @@ removal is a lie to the model about what happened. Use it, and read §11.
 If you want the same effect without the destructive write, this is the `historyTransform` equivalent
 — lever 2 instead of lever 3, per-profile and reversible:
 
-```swift
+```swift prelude:guide-context
 /// Non-destructive equivalent of `droppingCompletedToolCalls()`.
 /// Scoped to one profile; the real transcript keeps every entry.
 private func withoutToolTraffic(_ entries: [Transcript.Entry]) -> [Transcript.Entry] {
@@ -1749,7 +1749,7 @@ Because the body is re-evaluated before every request, a conditional inside it i
 edit on every turn. Put it at position 0 and every flip costs you the entire sequence. Put it at the
 end of the instructions block and a flip costs you only the tokens after it.
 
-```swift
+```swift prelude:guide-context
 import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)

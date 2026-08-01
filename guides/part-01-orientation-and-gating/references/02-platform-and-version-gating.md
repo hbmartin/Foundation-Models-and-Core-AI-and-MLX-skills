@@ -283,7 +283,7 @@ this section exists.
 
 The only SDK-version test attested anywhere in this corpus is the one `mlx-swift-lm` uses:
 
-```swift compile:27
+```swift illustrative
 #if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 // … the entire MLXFoundationModels adapter …
 #endif
@@ -320,7 +320,7 @@ for `3cbf928`:
 `apple/python-apple-fm-sdk` solves the same problem with a plain custom compilation condition rather
 than `canImport`:
 
-```swift compile:27
+```swift illustrative
 // FoundationModelsCBindings.swift:33-47
 #if FM_HAS_MACOS_27_SDK
 if #available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *) {
@@ -730,7 +730,7 @@ all of your version and hardware assumptions are re-litigated at runtime.
 
 ### 7.1 `SystemLanguageModel.Availability`
 
-```swift
+```swift illustrative
 @frozen enum Availability      // Equatable, Sendable, SendableMetatype
 case available                 // "The system is ready for making requests."
 case unavailable(_: UnavailableReason)
@@ -820,7 +820,7 @@ The only proactive availability switch in *any* Apple sample archive is in the c
 an **iOS 26** project (`IPHONEOS_DEPLOYMENT_TARGET = 26.0`) that was never refreshed for 2026 — so
 read it for the availability pattern, which is unchanged, and for nothing else:
 
-```swift
+```swift prelude:guide-context
 // FoundationModelsCoffeeGame/MainMenu/MainMenuView.swift:47-70 — iOS 26 sample
 switch SystemLanguageModel.default.availability {
 case .available:
@@ -1152,7 +1152,7 @@ right defensive shape given the `fatalError` below.
 Because the model is a stored property rather than a per-branch choice, the profile can ask which
 backend it actually got:
 
-```swift
+```swift prelude:guide-context
 private var isOnDevice: Bool {
     type(of: serverModel) == SystemLanguageModel.self
 }
@@ -1305,9 +1305,11 @@ deliberately structured to separate the four questions this guide has been about
 exist in my SDK*, *does it exist on this OS*, *is the feature available on this device right now*,
 and *did the call actually work*.
 
-```swift compile:27
+```swift compile:26,27 defines:PCC_ENABLED
 // AIPreflight.swift
 // Requires: Xcode 27 (27.0 SDK). Compiles — with reduced functionality — on the 26 SDK.
+// Define PCC_ENABLED only in targets whose signed product carries the managed
+// com.apple.developer.private-cloud-compute entitlement.
 
 import Foundation
 #if canImport(FoundationModels)
@@ -1328,7 +1330,11 @@ public enum AIPreflight {
     public static func evaluate(locale: Locale = .current) -> AICapability {
         #if canImport(FoundationModels)
         let onDevice = onDeviceState(locale: locale)
+        #if PCC_ENABLED && canImport(FoundationModels, _version: 2)
         let cloud    = cloudState()
+        #else
+        let cloud: State = .blocked("PCC is not enabled for this build and SDK.")
+        #endif
 
         switch (onDevice, cloud) {
         case (.ready, .ready):
@@ -1383,18 +1389,18 @@ public enum AIPreflight {
         }
         return .ready
     }
+    #endif
 
+    #if PCC_ENABLED && canImport(FoundationModels, _version: 2)
     private static func cloudState() -> State {
-        // Hard 27.0 SDK symbols. On the 26 SDK this whole function body would not
-        // compile, which is why the file also carries the canImport guard above —
-        // and why, if you must ship one binary from both SDKs, you need
-        // `#if canImport(FoundationModels, _version: 2)` here instead (see §3.1).
+        // Hard 27.0 SDK symbols. The surrounding versioned canImport condition
+        // removes this entire function from SDK-26 builds (see §3.1).
         guard #available(iOS 27.0, macOS 27.0, watchOS 27.0, visionOS 27.0, *) else {
             return .blocked("Private Cloud Compute requires OS 27.")
         }
 
         // Constructing this type without the granted entitlement is fatal at
-        // runtime (§8.3) — keep it behind your own build-configuration flag too.
+        // runtime (§8.3); the surrounding PCC_ENABLED gate is the safety boundary.
         let model = PrivateCloudComputeLanguageModel()
 
         switch model.availability {
@@ -1426,10 +1432,11 @@ public enum AIPreflight {
 
 Three things this snippet is deliberately doing, each corresponding to a trap above:
 
-1. **`#if canImport(FoundationModels)` wraps the import, not just the call sites.** If you are
-   building one binary from both the 26 and 27 SDKs, upgrade the inner guard to
-   `#if canImport(FoundationModels, _version: 2)` — `canImport(FoundationModels)` alone is true on
-   the 26 SDK and will not save you from missing 27 symbols ([§3.1](#31-canimportfoundationmodels-_version-2--the-sdk-test)).
+1. **`#if canImport(FoundationModels)` wraps the import, not just the call sites.** The PCC path has
+   two additional compile-time gates: `PCC_ENABLED` proves this signed target carries the managed
+   entitlement, and `canImport(FoundationModels, _version: 2)` excludes the 27-only PCC surface from
+   SDK-26 builds. The fence is verified against both SDK generations
+   ([§3.1](#31-canimportfoundationmodels-_version-2--the-sdk-test)).
 2. **`@unknown default` on the PCC switch, but not the on-device one.**
    `SystemLanguageModel.Availability` is documented `@frozen`, so `case .unavailable(let other)`
    is already the exhaustive catch-all and an `@unknown default` would be dead code.

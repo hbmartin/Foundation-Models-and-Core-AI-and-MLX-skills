@@ -98,7 +98,7 @@ ImageAttachment`. Today the only `Content` anyone has documented is image conten
 (`ImageAttachmentContent`), and Apple's own framing in the utilities package is unambiguous —
 the transcript-side enum is
 
-```swift
+```swift prelude:guide-context
 public enum Attachment: Sendable, Equatable {
   case image(ImageAttachment)
 }
@@ -159,7 +159,7 @@ func describe(_ image: CGImage) async throws -> String {
 
 Two images, each labelled, compared in one call — also Apple's, verbatim:
 
-```swift
+```swift prelude:guide-context
 Prompt {
     "Compare these two images:"
     Attachment(firstImage)
@@ -215,7 +215,7 @@ matters (`SystemLanguageModel.Error` is tested *before* `LanguageModelError`) ar
 
 ### 3.1 The two initializers
 
-```swift
+```swift illustrative
 struct Attachment<Content>                  // iOS 27.0+ Beta
 // Conforms: Copyable, Escapable, InstructionsRepresentable, PromptRepresentable
 
@@ -262,7 +262,7 @@ WWDC26 session 241 read out a longer list — the same four, plus `UIImage` and 
 And the `UIImage` / `NSImage` claim is not just narration — Apple's Origami sample passes them
 directly:
 
-```swift
+```swift prelude:guide-context
 // Origami/Models/DataModels/Photo.swift:77-91 — Apple sample source, verbatim
 func toPrompt() async throws -> Prompt {
     #if canImport(UIKit)
@@ -323,7 +323,7 @@ That is the idiomatic pattern for "N images plus surrounding text, where N is dy
 `[Prompt]`, splice. A shipping third-party app (`noema-ios`) reaches the same shape with a `for`
 loop directly inside the builder:
 
-```swift
+```swift illustrative
 // Verified in a shipping app's source, not an Apple sample:
 @available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
 private static func makeMultimodalPrompt(text: String, imagePaths: [String]) -> Prompt? {
@@ -348,14 +348,14 @@ optional `note`), string interpolation, and the `Prompt("…")` value initialize
 
 ### 3.3 The file-URL path
 
-```swift
+```swift prelude:guide-context
 Attachment(imageURL: url)              // + optional orientation:
 ```
 
 The URL initializer is the one Apple's own C bindings for the Python SDK use, so its spelling is
 doubly attested:
 
-```swift
+```swift prelude:guide-context
 // python-apple-fm-sdk → foundation-models-c/…/FoundationModelsCBindings.swift:31-48, verbatim
 public func add(attachmentFromPath imagePath: String, label: String?) throws {
     // `Attachment` only exists in the macOS 27+ SDK
@@ -511,7 +511,7 @@ code produces confidently wrong answers with no error anywhere.
 
 Both initializers take an `orientation:`. Apple's own comment tells you when:
 
-```swift
+```swift prelude:guide-context
 // When the image doesn't have a rotation applied, like when you get a
 // image from the `AVFoundation` framework, use orientation to perform
 // a transform before sending it to the model.
@@ -586,7 +586,7 @@ Two defensible policies:
   `orientation:`. Simplest to reason about; costs a redraw.
 - **Carry it.** Keep the raw `CGImage` plus its `CGImagePropertyOrientation` together in one value
   and always pass both. This is what the forum poster in thread 838613 did:
-  ```swift
+  ```swift prelude:guide-context
   Attachment(modelImage.cgImage, orientation: modelImage.orientation)
   ```
 
@@ -617,7 +617,7 @@ round-trip: app object → labelled attachment → structured output → back to
 
 **Stage 1 — mint a stable label on your app's own model object.**
 
-```swift
+```swift prelude:guide-context
 // Origami/Models/DataModels/Photo.swift:65-67 — Apple sample source
 var idString: String {
     "Photo_\(id.uuidString.prefix(6))"
@@ -630,7 +630,7 @@ which is what makes step 4 work after a relaunch.
 
 **Stage 2 — attach, labelled, and return a `Prompt` per image.**
 
-```swift
+```swift prelude:guide-context
 // Origami/Models/DataModels/Photo.swift:77-91 — Apple sample source, verbatim
 func toPrompt() async throws -> Prompt {
     #if canImport(UIKit)
@@ -682,7 +682,7 @@ raw value** is the prompt-facing description of the case, so the enum needs no `
 
 **Stage 4 — resolve the label back to your object.**
 
-```swift
+```swift prelude:guide-context
 // Origami/Brainstorm/BrainstormModel.swift:142-144 — Apple sample source, verbatim
 let photo = project.photos.first { photo in
     photo.idString == image.attachmentLabel
@@ -698,7 +698,7 @@ wants the `Photo` object with its SwiftData relationships. `resolved(in:)` is fo
 **And it works while streaming.** The sample reads the reference out of a partial snapshot before the
 analysis prose has finished generating:
 
-```swift
+```swift illustrative
 // Origami/Brainstorm/BrainstormModel.swift:168-171 — verbatim
 for item in partialResponse.content.images ?? [] {
     // Need at least an ID to start streaming.
@@ -763,7 +763,7 @@ struct MyTool: Tool {
 The older, **deprecated** form takes a `Transcript` rather than the history slice, and Apple's own
 article still shows it:
 
-```swift
+```swift prelude:guide-context
 // Deprecated form, from the same article — kept here because you will meet it in older code
 func call(arguments: Arguments) async throws -> String {
     // Get the image attachment from the session history.
@@ -795,7 +795,7 @@ Two caveats on the recommended form, both worth knowing before you build on it:
   but it is a reason to expect the first compile to be educational.
 - **You often don't need `ImageReference` in a tool at all.** Origami's photo tool — the one that
   moves a user-supplied photo to a tutorial step — takes *indices*, not an image:
-  ```swift
+  ```swift prelude:guide-context
   // Origami/Coach/MovePhotoToStepTool.swift:12-38 — Apple sample source
   struct MovePhotoToStepTool: Tool {
       let name = "movePhotoToStep"
@@ -878,7 +878,7 @@ custom `LanguageModel` provider — something you have to serialize.
 
 ### 7.1 The types
 
-```swift
+```swift illustrative
 // Transcript.AttachmentSegment                       iOS 27.0+ Beta
 init(id:content:label:)
 var content
@@ -978,7 +978,7 @@ standard compaction tool has a sharp edge:
 Here is Apple's canonical transcript-rendering switch, from the `Transcript` documentation page —
 note that it covers `Entry`, so it does *not* itself show the `.attachment` **segment** case:
 
-```swift
+```swift prelude:guide-context
 struct HistoryView: View {
     let session: LanguageModelSession
 
@@ -1157,7 +1157,7 @@ They tried four coordinate conventions, and reported on each:
 
 They even primed the model with the exact frame of reference, which is the right thing to try:
 
-```swift
+```swift prelude:guide-context
 // Forum thread 838613 — the prompt that still didn't produce reliable boxes
 let prompt = Prompt {
     "Describe this \(imageWidth)×\(imageHeight) image. Bounding box coordinates are in pixels: (0,0) is top-left, (\(imageWidth),\(imageHeight)) is bottom-right."
@@ -1262,7 +1262,7 @@ Note the module/product name mismatch in both rows — you write `import CoreAIO
 `CoreAIObjectDetection` is the smallest complete "run a vision model on Apple silicon" example that
 exists — three files, 633 lines, no third-party dependencies:
 
-```swift
+```swift prelude:external-module
 // ✅ VERIFIED public API — ObjectDetector.swift:14-333, DetectionOutputs.swift:33-134
 import CoreAIObjectDetector   // module name; product is CoreAIObjectDetection
 import CoreGraphics
@@ -1290,7 +1290,7 @@ let batched: [[DetectedObject]] = try await detector.detect(images: images,
 // Requires the model's batch dim to be -1 (dynamic) or exactly images.count.
 ```
 
-```swift
+```swift illustrative
 public struct DetectedObject: Sendable {
     public let boundingBox: CGRect      // pixel coords, TOP-LEFT origin on every platform
     public let labelIndex: Int
@@ -1344,7 +1344,7 @@ recipes are in [Part 8](../../part-08-coreai-pytorch-conversion/README.md).
 
 The shape of the composite pattern, with the parts that are verified marked as such:
 
-```swift
+```swift illustrative
 import FoundationModels
 import CoreGraphics
 
@@ -1411,7 +1411,7 @@ carries `capability: LanguageModelCapabilities.Capability` — so a provider tha
 `.vision` gives you a *typed, catchable* error naming the missing capability, rather than a bad
 answer. That is the one place in this whole guide where the failure is loud. Handle it:
 
-```swift
+```swift prelude:guide-context
 do {
     let response = try await session.respond { "Describe this:"; Attachment(image) }
 } catch let error as LanguageModelError {
@@ -1436,13 +1436,13 @@ servers"* pitch at face value.
 `mlx_lm.server`, Ollama, vLLM and LM Studio into Foundation Models backends) has **two entirely
 different image paths**:
 
-```swift compile:27
+```swift illustrative
 // Darwin: encode the in-memory image inline as a base64 JPEG data URL.
 //   image.cgImage.jpegData().base64EncodedString()  →  "data:image/jpeg;base64,…"
 //   ChatCompletionsLanguageModel.swift:413-421, guarded by #if canImport(CoreImage)
 ```
 
-```swift
+```swift prelude:guide-context
 // Non-Darwin (Linux/Windows): there is no CoreImage, so there is no encoder.
 // ChatCompletionsLanguageModel.swift:422-441 — verbatim
 guard let url = image.url else {                                  // :423
@@ -1495,7 +1495,7 @@ Two further caveats about that Linux claim, from a full read of the repository:
 - **`CoreAIVisionLanguageModel`** — added in `apple/coreai-models` PR #97 (merged), a
   `LanguageModel` + `CoreAIVLMExecutor` pair that **declares the `.vision` capability**. Usage, from
   the PR:
-  ```swift
+  ```swift prelude:guide-context
   let model = try await CoreAIVisionLanguageModel(resourcesAt: bundleURL)
   let session = LanguageModelSession(model: model)
   let response = try await session.respond(
