@@ -125,9 +125,16 @@ def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
                 continue
             yield body, newline, False
             continue
-        # Inside a fence: only a run of the same character, at least as long as
-        # the opener, closes it.
-        if match and match.group(1)[0] == fence[0] and len(match.group(1)) >= len(fence):
+        # Inside a fence: a closer uses the same character, is at least as long
+        # as the opener, and — per CommonMark — carries no info string. Without
+        # that last condition a line like ```` ```swift ```` inside a block would
+        # end it, and the link rewriter would start editing source code.
+        if (
+            match
+            and match.group(1)[0] == fence[0]
+            and len(match.group(1)) >= len(fence)
+            and not body[match.end(1) :].strip()
+        ):
             fence = None
         yield body, newline, True
 

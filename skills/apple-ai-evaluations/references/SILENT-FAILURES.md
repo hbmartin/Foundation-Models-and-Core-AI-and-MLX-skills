@@ -1,19 +1,19 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**77 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**73 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-01. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 7 |
-| [Empty output / no-op](#empty-output--no-op) | 5 |
-| [Truncation & limits](#truncation--limits) | 10 |
+| [Wrong output](#wrong-output) | 6 |
+| [Empty output / no-op](#empty-output--no-op) | 4 |
+| [Truncation & limits](#truncation--limits) | 9 |
 | [Ignored input](#ignored-input) | 1 |
 | [Stale state](#stale-state) | 3 |
 | [Misleading signals](#misleading-signals) | 11 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
-| [API footguns](#api-footguns) | 9 |
+| [API footguns](#api-footguns) | 8 |
 | [General cautions](#general-cautions) | 20 |
 
 ## Wrong output
@@ -26,7 +26,6 @@
 
 **Part 16**
 
-- [Some Spotlight metadata is searchable but unreadable — SpotlightSearchTool sees titles and invents the bodies](part-16-adjacent-capabilities/README.md#164--one-index-three-consumers-entities-spotlight-and-foundation-models) — 16.README 🔇
 - [Auto-rename binds fields to inputs on shape alone — a mask or pre-normalised batch is analysed cleanly and wrongly](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#52-input-binding--the-auto-rename-and-when-it-stops) — 16.5 🔇
 - [A zero-L2 constant column turns normalisation into NaN/inf with no guard — the duplicates index is silently poisoned](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#63-duplicates--the-one-you-should-run-first) — 16.5
 - [Consolidated: field-to-input auto-rename fires on shape agreement alone](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#10-consolidated-footguns) — 16.5
@@ -39,7 +38,6 @@
 
 **Part 16**
 
-- [Entity plumbing the screenshot path never consults costs weeks and changes nothing; per-row ids also lose rows](part-16-adjacent-capabilities/README.md#163--on-screen-awareness-making-siri-understand-this) — 16.README 🔇
 - [Keras 3 before 2f39056 yields generic tensor names and an empty layer list — a successful run that analyses nothing](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#55-loading-a-tensorflow-model-and-the-keras-3-story) — 16.5 🔇
 - [Without umap-learn the report builds successfully with no projection columns — Symphony shows an empty scatter](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#66-datasetreport--four-introspectors-one-dataframe) — 16.5
 - [Consolidated: Keras 3 without 2f39056 classifies every layer UNKNOWN — empty analysis, no error](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#10-consolidated-footguns) — 16.5
@@ -58,7 +56,6 @@
 
 **Part 16**
 
-- [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
 - [PFA skips layers with fewer samples than features, emitting only a warning — the layer is absent from the recipe](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#65-pfa--principal-filter-analysis) — 16.5 🔇
 - [Consolidated: PFA drops unanalysable layers with only a warning](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#10-consolidated-footguns) — 16.5
 
@@ -121,7 +118,6 @@
 
 **Part 16**
 
-- [In update intents nil means both 'clear' and 'untouched' — if-let code silently drops every 'remove the due date'](part-16-adjacent-capabilities/README.md#162--app-schema-domains-the-complete-map-of-what-siri-can-actually-do) — 16.README 🔇
 - [An infinite Producer hangs forever — introspectors consume all batches and the program stops responding, no error](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#32-producer) — 16.5 🔇
 - [MetaKey generic payloads are type-checker-only — a MetaKey[int] happily carries strings at runtime](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#43-metadata-keys) — 16.5
 - [requested_responses=None requests every layer (~90 on MobileNet, full spatial activations) — always pass a list](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#51-dnikitbasemodel) — 16.5

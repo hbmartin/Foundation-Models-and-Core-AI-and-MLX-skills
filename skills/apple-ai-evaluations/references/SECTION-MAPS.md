@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every section it contains as an anchor. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
 
 > Generated 2026-08-01 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,7 +8,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 ### 6.1 — Building blocks, Swift Testing integration, and evaluation-driven development
 
-The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed fr…
+The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md>
 

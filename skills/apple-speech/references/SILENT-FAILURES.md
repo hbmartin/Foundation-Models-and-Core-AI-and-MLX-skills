@@ -1,32 +1,24 @@
 # Silent-failure index — SpeechAnalyzer: live and file-based transcription
 
-**45 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**41 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-01. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 1 |
-| [Empty output / no-op](#empty-output--no-op) | 5 |
+| [Empty output / no-op](#empty-output--no-op) | 4 |
 | [Truncation & limits](#truncation--limits) | 6 |
 | [Ignored input](#ignored-input) | 2 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 5 |
 | [Version drift](#version-drift) | 2 |
-| [Docs vs reality](#docs-vs-reality) | 5 |
-| [API footguns](#api-footguns) | 7 |
+| [Docs vs reality](#docs-vs-reality) | 4 |
+| [API footguns](#api-footguns) | 6 |
 | [General cautions](#general-cautions) | 12 |
-
-## Wrong output
-
-**Part 16**
-
-- [Some Spotlight metadata is searchable but unreadable — SpotlightSearchTool sees titles and invents the bodies](part-16-adjacent-capabilities/README.md#164--one-index-three-consumers-entities-spotlight-and-foundation-models) — 16.README 🔇
 
 ## Empty output / no-op
 
 **Part 16**
 
-- [Entity plumbing the screenshot path never consults costs weeks and changes nothing; per-row ids also lose rows](part-16-adjacent-capabilities/README.md#163--on-screen-awareness-making-siri-understand-this) — 16.README 🔇
 - [The sample forwards preset.attributeOptions unchanged and progressiveLongDictation omits .audioTimeRange — no merge data](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#44-content-hints--dictationtranscriber-only) — 16.1
 - [Query bestAvailableAudioFormat before assets install and it silently returns nil — ?? default hides the ordering bug](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) — 16.1 🔇
 - [Code comment: AnalyzerInputConverter returns nil unless assets are already installed (§5.5)](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#66-when-you-still-need-analyzerinputconverter) — 16.1
@@ -71,7 +63,6 @@
 
 **Part 16**
 
-- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README 🔇
 - [The downloadable SpeechAnalyzer sample is the WWDC25 leftover — stale for the 2026 APIs](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) — 16.1
 - [Don't verify the 2026 API from the downloadable sample — it compiles and runs but teaches only iOS 26 patterns](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) — 16.1
 - [Apple's option-enum snippet is missing commas and does not compile as printed](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#43-the-option-enums-and-how-to-modify-a-preset) — 16.1
@@ -81,7 +72,6 @@
 
 **Part 16**
 
-- [In update intents nil means both 'clear' and 'untouched' — if-let code silently drops every 'remove the due date'](part-16-adjacent-capabilities/README.md#162--app-schema-domains-the-complete-map-of-what-siri-can-actually-do) — 16.README 🔇
 - [finish() alone never terminates the result streams — 'for try await result' waits forever and the stop button hangs](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#23-what-finished-means) — 16.1 🔇
 - [assetInstallationRequest is nil on already-provisioned devices — force-unwrap and you crash exactly where all is fine](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#53-the-four-step-process-and-the-ordering-that-matters) — 16.1 🔇
 - [Code comment: the installation request is nil when assets are already installed — never force-unwrap](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#10-a-complete-worked-example) — 16.1

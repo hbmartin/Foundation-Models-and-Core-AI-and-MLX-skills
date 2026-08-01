@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every section it contains as an anchor. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
 
 > Generated 2026-08-01 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -35,7 +35,7 @@ The exhaustive diff, organised by framework, with each item marked as *additive*
 
 ### 17.2 — The adapter sunset: migrating off custom LoRA adapters
 
-What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through `MLXFoundation…
+What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md>
 

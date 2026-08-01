@@ -49,7 +49,7 @@ whole file.
 
 | Part | Floor |
 |---|---|
-| [15](references/part-15-shipping-and-operating/README.md) | **iOS · iPadOS · macOS · tvOS · visionOS · watchOS 27.0 — all Beta** — plus **Xcode 27** and the **Metal Toolchain**, a separate download (`xcodebuild -downloadComponent MetalToolchain`) whose absence fails any build containing a `.aimodel… |
+| [15](references/part-15-shipping-and-operating/README.md) | **iOS · iPadOS · macOS · tvOS · visionOS · watchOS 27.0 — all Beta** — plus **Xcode 27** and the **Metal Toolchain**, a separate download (`xcodebuild -downloadComponent MetalToolchain`) whose absence fails any build containing a … |
 
 ## Read these before you trust a signature
 
@@ -81,7 +81,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **15.1** Shipping models: Background Assets, per-architecture variants, and updates — The operational guide for how a model reaches a device and how it gets replaced later: the size problem, the feature-introduction screen (which does three jobs at once a…
+- **15.1** Shipping models: Background Assets, per-architecture variants, and updates — The operational guide for how a model reaches a device and how it gets replaced later: the size problem, the feature-introduction screen (which does three jobs at once …
 - **15.2** Memory, jetsam, thermals, energy, and measuring honestly — The gap between a demo that works on your desk and an app that survives a week on someone else's phone.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

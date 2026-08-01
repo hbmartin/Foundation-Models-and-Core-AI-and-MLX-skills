@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every section it contains as an anchor. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
 
 > Generated 2026-08-01 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,7 +8,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 ### 12.1 — MLX fundamentals: unified memory, lazy evaluation, transforms, and `compile`
 
-The conceptual primer the other five assume, built on five ideas: unified memory (you never move arrays, you choose per-op *which device runs it*), lazy evaluation, the composable function transforms (`grad`, `vjp`, `jvp`, `vmap`, `checkpoint`, `custom_function`, `compile` — each returns something…
+The conceptual primer the other five assume, built on five ideas: unified memory (you never move arrays, you choose per-op *which device runs it*), lazy evaluation, the composable function transforms (`grad`, `vjp`, `jvp`, `vmap`, `checkpoint`, `custom_function`, `compile` — each returns something …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md>
 
@@ -60,7 +60,7 @@ Where MLX stops being a portable array library and becomes a program on one spec
 
 ### 12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs
 
-Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather t…
+Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md>
 
@@ -88,7 +88,7 @@ Quantization in MLX is four things wearing one name: a numeric format (affine at
 
 ### 12.4 — mlx-lm: the CLI surface, the generation API, and KV caching
 
-The layer where MLX becomes an LLM runtime: **18 command-line entry points** enumerated from `setup.py`; the Python generation API (`load`, `generate`, `stream_generate`, and the `generate_step` generator underneath, with how samplers and logits processors compose and where their defaults disagree)…
+The layer where MLX becomes an LLM runtime: **18 command-line entry points** enumerated from `setup.py`; the Python generation API (`load`, `generate`, `stream_generate`, and the `generate_step` generator underneath, with how samplers and logits processors compose and where their defaults …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md>
 
@@ -182,7 +182,7 @@ Opens with the frame (§0): **custom Foundation Models adapters are discontinued
 
 ### 13.1 — `mlx-swift-lm` in an app: setup, concurrency, memory, and media input
 
-The "make it survive contact with an iPhone" guide, in the order things hurt: the 3.x break and the nine products; the **three integration styles** for tokenizers and downloaders (implement the protocols, use an integration package, or use the `MLXHuggingFace` macros) with a decision in §3.5; `Mode…
+The "make it survive contact with an iPhone" guide, in the order things hurt: the 3.x break and the nine products; the **three integration styles** for tokenizers and downloaders (implement the protocols, use an integration package, or use the `MLXHuggingFace` macros) with a decision in §3.5; …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md>
 
@@ -207,7 +207,7 @@ The "make it survive contact with an iPhone" guide, in the order things hurt: th
 
 ### 13.2 — Generation, tool calling, and KV cache management in Swift
 
-Deliberately structured to mirror [Part 12 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) so you can move between the languages, naming the Python spelling wherever one corresponds — and calling out every place it doesn't, because each of those divergences has p…
+Deliberately structured to mirror [Part 12 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) so you can move between the languages, naming the Python spelling wherever one corresponds — and calling out every place it doesn't, because each of those divergences has …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md>
 

@@ -63,11 +63,6 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The keynote promised speech generation and I can't find the API" | 16.1 §1.1 | It does not exist. AVFoundation, per Apple staff on thread 834149 |
-| "I'm learning the 2026 Speech API from the downloadable sample" | 16.1 §1.2 | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
-| "Users report the last sentence gets cut off" | 16.1 §9, §6.6 | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
-| "My transcript reads *'I went to the I went to the store'*" | 16.1 §8.3 | Your preset does not emit `.audioTimeRange`, so the merge always appends |
-| "Empty transcript, clean console" | 16.1 §5.5 | Assets before format before analyzer before audio. The analyzer converts nothing |
 | "Is there a Siri schema for what my app does?" | 16.2 §5–§6 | All 23 domains enumerated — then the categories with no domain at all |
 | "My category isn't covered. What is left?" | 16.2 §8 | `.system.searchInApp`, with code. Works without domains or indexing |
 | "*'Remove the due date'* reports success and changes nothing" | 16.2 §14.1 | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
@@ -76,16 +71,14 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 | "Siri asks to clarify, or acts on the wrong item" | 16.3 §4, §8.2 | A slow `displayRepresentations`; or per-row annotation on a scrolling list |
 | "My own model invents details for content I indexed" | 16.4 §7.3, §9 | The index is searchable, not readable. The hydration hook is the fix |
 | "What are *'indexed entities for Apple Intelligence'*?" | 16.4 §1 | `IndexedEntity` + `indexAppEntities(_:)`. Same index, different door |
-| "Dirty dataset, or a convnet that may be over-wide" | 16.5 §6.3, §6.5, §8 | `Duplicates` and PFA. Prune, retrain, *then* convert |
-| Anything transformer, MLX, Core ML or Core AI shaped | **skip 16.5** | DNIKit supports none of them. §1 says so in a table |
 
 ## The deep reference guides
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **16.2** App Schema Domains: the complete map of what Siri can actually do — The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK interf…
-- **16.3** On-screen awareness: making Siri understand "this" — This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity` executes but which Siri answers from screen text, and an image app whos…
-- **16.4** One index, three consumers: entities, Spotlight, and Foundation Models — Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**"* — left a second on-ramp nobody could…
+- **16.2** App Schema Domains: the complete map of what Siri can actually do — The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK …
+- **16.3** On-screen awareness: making Siri understand "this" — This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity` executes but which Siri answers from screen text, and an image app …
+- **16.4** One index, three consumers: entities, Spotlight, and Foundation Models — Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**"* — left a second on-ramp nobody could …
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
 

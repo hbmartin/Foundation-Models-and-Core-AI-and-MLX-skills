@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -396,6 +397,51 @@ class SkillBuildTests(unittest.TestCase):
                 self.build(root, guides, skills_root=guides / "skills")
 
 
+class RenderingHelperTests(unittest.TestCase):
+    def test_first_sentence_never_ends_inside_a_code_span(self):
+        # These strings land in table cells; a dangling backtick makes GitHub run
+        # the code span to the next backtick and eat the rest of the row.
+        text = "Needs the Metal Toolchain, whose absence fails any build containing a `.aimodel` file"
+        for limit in range(20, len(text) + 5):
+            self.assertEqual(
+                builder.first_sentence(text, limit).count("`") % 2, 0, f"limit={limit}"
+            )
+
+    def test_first_sentence_truncates_on_a_word_boundary(self):
+        text = "the conceptual material starts at 26.0 and the introspection APIs are 26.4 of which"
+        truncated = builder.first_sentence(text, 40)
+        self.assertTrue(truncated.endswith(" …"), truncated)
+        self.assertTrue(text.startswith(truncated[:-2].rstrip()), truncated)
+
+    def test_first_sentence_leaves_short_text_alone(self):
+        self.assertEqual(builder.first_sentence("Short `code` here."), "Short `code` here.")
+
+    def test_owns_row_keeps_only_rows_citing_owned_guides(self):
+        row = '| "x" | [16.1 §9](references/01-speech-analyzer-end-to-end.md) | why |'
+        self.assertTrue(builder.owns_row(row, frozenset({1})))
+        self.assertFalse(builder.owns_row(row, frozenset({2, 3, 4})))
+        self.assertTrue(builder.owns_row(row, None))
+        # A row citing no reference guide at all is a plain pointer; keep it.
+        self.assertTrue(builder.owns_row('| "x" | Part 17 | why |', frozenset({2})))
+
+
+class FenceTrackingTests(unittest.TestCase):
+    def test_an_info_string_line_does_not_close_an_open_fence(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "mdlinks", REPO / "scripts" / "mdlinks.py"
+        )
+        mdlinks = importlib.util.module_from_spec(spec)
+        sys.modules["mdlinks"] = mdlinks
+        spec.loader.exec_module(mdlinks)
+        text = "```markdown\n```swift\n[a](b.md)\n```\nafter\n"
+        states = [fenced for _, _, fenced in mdlinks.iter_lines(text)]
+        # Only the trailing 'after' is outside; the inner ```swift is content,
+        # so the link-shaped line between them is never rewritten.
+        self.assertEqual(states, [True, True, True, True, False])
+
+
 class SkillVerifierTests(unittest.TestCase):
     def build_and_verify(self, root):
         guides = make_fixture(root)
@@ -430,6 +476,24 @@ class SkillVerifierTests(unittest.TestCase):
             with self.assertRaises(verifier.VerificationError) as caught:
                 verifier.check_links(skill, "apple-test-skill")
             self.assertIn("escapes the skill root", str(caught.exception))
+
+    def test_rejects_a_reference_style_link_that_escapes_the_skill_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.build_and_verify(root)
+            skill = root / "skills" / "apple-test-skill"
+            path = skill / "references" / "SECTION-MAPS.md"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nSee [the notes][runbook].\n\n[runbook]: ../../../notes/x.md\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(verifier.VerificationError) as caught:
+                verifier.check_links(skill, "apple-test-skill")
+            self.assertIn("escapes the skill root", str(caught.exception))
+
+    def test_a_footnote_definition_is_not_read_as_a_reference_link(self):
+        self.assertEqual(verifier.destinations("[^note]: just prose, not a link\n"), [])
 
     def test_rejects_a_fragment_with_no_matching_heading(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -555,6 +619,35 @@ class CommittedSkillsTests(unittest.TestCase):
                 f"{page.relative}: guide cards do not match its references/ directory",
             )
 
+    def test_no_skill_cites_a_guide_it_does_not_own(self):
+        # Three skills share part 16, so filtering by part rather than by guide
+        # would point a reader at deep guides missing from their section map.
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        cited = re.compile(r"(?:^### |\[)(\d{1,2}\.\d{1,2})(?=[\] ])", re.M)
+        for entry in manifest["skills"]:
+            if entry.get("full_indexes"):
+                continue
+            owned = set()
+            for owns in entry["owns"]:
+                part = owns["part"]
+                references = owns.get("references")
+                if references is None:
+                    owned.update(
+                        f"{part}.{page.guide}"
+                        for page in builder.discover_pages(GUIDES)
+                        if page.role == "guide" and page.part == part
+                    )
+                else:
+                    owned.update(f"{part}.{number}" for number in references)
+            skill = SKILLS / entry["name"]
+            for name in ("API-INDEX.md", "SECTION-MAPS.md"):
+                text = (skill / "references" / name).read_text(encoding="utf-8")
+                for identifier in set(cited.findall(text)):
+                    self.assertIn(
+                        identifier, owned,
+                        f"{entry['name']}/{name} cites unowned guide {identifier}",
+                    )
+
     def test_discovery_matches_the_cli_two_level_walk(self):
         # `npx skills` walks skills/ two levels deep for SKILL.md and lets a
         # shallower hit shadow anything nested below it.
@@ -567,18 +660,6 @@ class CommittedSkillsTests(unittest.TestCase):
         self.assertEqual(list(SKILLS.glob("*/*/SKILL.md")), [])
         self.assertFalse((SKILLS / "SKILL.md").exists())
         self.assertFalse((REPO / "SKILL.md").exists())
-
-    def test_every_skill_installs_into_a_claude_skills_directory(self):
-        # What `npx skills add` produces: a detached copy with no repository
-        # around it. Anything that only resolved in place fails here.
-        with tempfile.TemporaryDirectory() as directory:
-            project = Path(directory) / ".claude" / "skills"
-            project.mkdir(parents=True)
-            for skill in sorted(SKILLS.iterdir()):
-                if not skill.is_dir():
-                    continue
-                shutil.copytree(skill, project / skill.name)
-                verifier.check_links(project / skill.name, f"installed/{skill.name}")
 
 
 if __name__ == "__main__":

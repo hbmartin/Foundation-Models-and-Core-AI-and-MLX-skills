@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every section it contains as an anchor. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
 
 > Generated 2026-08-01 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -149,7 +149,7 @@ The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAI
 
 ### 8.1 — `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract
 
-The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()…
+The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md>
 
@@ -329,7 +329,7 @@ A reference rather than a tutorial, answering one question in as many tables as 
 
 ### 10.1 — Authoring for the Neural Engine and for the GPU: two opposite rulesets
 
-Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, per-hea…
+Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md>
 
@@ -356,7 +356,7 @@ Apple's at-a-glance comparison table reproduced in full and unpacked row by row:
 
 ### 10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger
 
-Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three diagnose…
+Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three …
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md>
 
