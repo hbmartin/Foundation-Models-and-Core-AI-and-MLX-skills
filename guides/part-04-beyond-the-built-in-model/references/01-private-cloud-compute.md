@@ -2664,10 +2664,10 @@ a *community* reply — the docs are what make 32K an Apple number).
 - **246 — "LLM search using Core Spotlight"** (Jennifer, 138 lines). Cited only for
   `SpotlightSearchTool`'s platform list and its model-agnosticism.
 
-⚠️ Where a transcript and a doc page disagree — the Xcode menu strings (§8), the on-device context
-size (§3.2) — this guide follows the doc, and says so at the point of disagreement. Where a sample
-project and a doc page disagree — the session initializer's typing (§4.2), `Profile(model:)` vs
-`.model(_:)` (§4.4) — this guide follows the sample.
+⚠️ Where a transcript and a doc page disagree — the Xcode menu strings (§8) — this guide follows
+the doc, and says so at the point of disagreement (the on-device context size, once such a case,
+is ✅ settled at 4,096 in §3.2). Where a sample project and a doc page disagree — the session
+initializer's typing (§4.2), `Profile(model:)` vs `.model(_:)` (§4.4) — this guide follows the sample.
 
 ### 15.5 Community and third-party code
 

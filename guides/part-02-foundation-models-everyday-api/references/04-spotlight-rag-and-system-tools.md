@@ -1293,11 +1293,12 @@ struct TrailChatView: View {
 > (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:341-379`). **Apple's sample still uses
 > none of them** — it reads only `reply.content` and de-duplicates by identifier.
 
-> 🟠 **PARTIALLY MEASURED** — the overlay interface answers the *type* half:
-> `searchResults` is
+> 🟠 **Suggestive, 2026-08-01 — needs a clean MAC-27/DEVICE-27 pass.** The overlay interface
+> answers the *type* half: `searchResults` is
 > `some AsyncSequence<SearchReply, Never>` (`:381-383`) — it can never throw, but an opaque
-> `AsyncSequence` alone says nothing about whether it ever *finishes*. The 2026-08-01 simulator
-> probe kept one listener alive across three direct calls and observed three replies before its
+> `AsyncSequence` alone says nothing about whether it ever *finishes*. The simulator probe
+> (`probes/` `fm.spotlight-direct-call`) kept one listener alive across three direct calls and
+> observed three replies before its
 > deadline; the sequence therefore did not terminate after the first or second call. It still did
 > not terminate after the final call before the collector deadline. Because replies carry no call
 > correlation ID, the observation cannot establish a one-to-one mapping, and per-reply

@@ -40,6 +40,122 @@ class IndexToolingTests(unittest.TestCase):
             rows = [line.split('\t') for line in result.stdout.splitlines()]
             self.assertEqual([row[2] for row in rows], ['repeated', 'repeated-1', 'repeated-2'])
 
+    def test_fenced_hash_lines_are_not_headings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '```python\n'
+                '# fake heading in code\n'
+                '```\n\n'
+                '⚠️ after the fence\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0][2], 'real-heading')
+
+    def test_fenced_warning_lines_extract_as_inline_with_outer_anchor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '```swift\n'
+                'var x: Int? // ⚠️ CONSUMING read\n'
+                '# ⚠️ fake heading warning\n'
+                '```\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual([(row[2], row[3]) for row in rows],
+                             [('real-heading', 'INLINE'), ('real-heading', 'INLINE')])
+
+    def test_blockquote_wrapped_fences_do_not_toggle_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Top\n\n'
+                '> ```swift\n'
+                '> let a = 1\n'
+                '> ```\n\n'
+                '# After quote\n\n'
+                '⚠️ anchored to the second heading\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual([row[2] for row in rows], ['after-quote'])
+
+    def test_list_indented_fences_are_tracked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '- item:\n'
+                '  ```bash\n'
+                '  # fake heading\n'
+                '  ```\n\n'
+                '⚠️ after the list fence\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual([row[2] for row in rows], ['real-heading'])
+
+    def test_longer_fence_swallows_bare_backtick_fence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '````markdown\n'
+                '```\n'
+                '# fake heading\n'
+                '```\n'
+                '````\n\n'
+                '⚠️ after the outer fence\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual([row[2] for row in rows], ['real-heading'])
+
+    def test_unterminated_fence_is_a_hard_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Real heading\n\n'
+                '```swift\n'
+                'let a = 1\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('unterminated', result.stderr)
+            self.assertIn('guide.md:3', result.stderr)
+
+    def test_fenced_fake_heading_does_not_consume_slug_suffixes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Repeated\n\n⚠️ first\n\n'
+                '```python\n'
+                '# Repeated\n'
+                '```\n\n'
+                '# Repeated\n\n⚠️ second\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual([row[2] for row in rows], ['repeated', 'repeated-1'])
+
     def test_symbol_extractor_excludes_generated_indexes_and_groups_literals(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

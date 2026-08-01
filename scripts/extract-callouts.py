@@ -15,6 +15,13 @@ from collections import defaultdict
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 
+# CommonMark-ish fence delimiter: up to 3 leading spaces, 3+ backticks. An
+# opener's info string may not contain a backtick; a closer must be bare and
+# at least as long as its opener. Blockquote-wrapped fences ('> ```') never
+# match — every line inside them is '>'-prefixed, so nothing there can match
+# the column-anchored heading regex either.
+FENCE_RE = re.compile(r'^ {0,3}(`{3,})(.*)$')
+
 def slugify(h):
     h = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', h)  # [text](url) -> text, as GitHub slugs do
     h = re.sub(r'[`*_]', '', h).strip()
@@ -60,11 +67,27 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
         heading_anchor = ''
         used_slugs = set()
         next_suffix = defaultdict(int)
+        fence_len = 0   # opener's backtick-run length; 0 = outside any fence
+        fence_line = 0
         i = 0
         n = len(lines)
         while i < n:
             line = lines[i]
-            m = re.match(r'^(#{1,6})\s+(.*)', line)
+            fm = FENCE_RE.match(line)
+            if fence_len:
+                if fm and len(fm.group(1)) >= fence_len and not fm.group(2).strip():
+                    fence_len = 0
+                    i += 1
+                    continue
+            elif fm and '`' not in fm.group(2):
+                fence_len = len(fm.group(1))
+                fence_line = i + 1
+                i += 1
+                continue
+            # Inside a fence a '#' line is code, not a heading, and never mints
+            # an anchor; in-fence ⚠️ lines still extract below as INLINE,
+            # anchored to the nearest real heading.
+            m = None if fence_len else re.match(r'^(#{1,6})\s+(.*)', line)
             if m:
                 heading = m.group(2).strip()
                 heading_anchor = unique_slug(slugify(heading), used_slugs, next_suffix)
@@ -76,7 +99,7 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             if '⚠️' not in line:
                 i += 1
                 continue
-            if line.lstrip().startswith('>'):
+            if not fence_len and line.lstrip().startswith('>'):
                 # blockquote callout: swallow the whole contiguous blockquote
                 start = i
                 block = []
@@ -96,6 +119,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             title = flatten(tm.group(1), 160) if tm else ''
             rows.append((rel, i + 1, heading_anchor, 'INLINE', title, flatten(line)))
             i += 1
+        if fence_len:
+            sys.exit(f"{path}:{fence_line}: unterminated ``` fence")
 
 for r in rows:
     print('\t'.join(str(field) for field in r))
