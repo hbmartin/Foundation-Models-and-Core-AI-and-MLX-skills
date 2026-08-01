@@ -54,7 +54,7 @@
 | `MLX` |  |  | [15.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md) |
 | `MLXLMCommon` |  |  | [15.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md) |
 
-## Metal/MPP  <sub>1 symbols</sub>
+## Metal/MPP  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

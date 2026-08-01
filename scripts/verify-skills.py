@@ -36,6 +36,8 @@ HTML_ANCHOR = re.compile(r'<a\s+(?:name|id)\s*=\s*"([^"]+)"')
 # A reference-link definition, but never a footnote definition: '[^x]:' shares
 # the shape and is not a link.
 REFERENCE_DEFINITION = re.compile(r"^ {0,3}\[(?!\^)[^\]]+\]:\s*(\S.*)$")
+# A [text][label] usage; [text][] and [label] shortcut forms are not used here.
+REFERENCE_USAGE = re.compile(r"\[[^\]]*\]\[([^\]]+)\]")
 FRONTMATTER_SCALAR = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
 SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
 
@@ -142,16 +144,27 @@ def destinations(text: str) -> list[str]:
             found.append(parsed[0])
         return inner
 
+    labels: set[str] = set()
+    used_labels: list[str] = []
     for body, _, inside_fence in iter_lines(text):
         if inside_fence:
             continue
         scan_inline_links(body, collect)
+        used_labels += [
+            label for label in REFERENCE_USAGE.findall(body) if label.strip()
+        ]
         definition = REFERENCE_DEFINITION.match(body)
         if definition:
+            labels.add(definition.group(0).split("]:")[0].lstrip(" [").casefold())
             destination = definition.group(1).strip()
             if destination.startswith("<") and destination.endswith(">"):
                 destination = destination[1:-1]
             found.append(destination.split()[0] if destination.split() else "")
+    undefined = sorted({l for l in used_labels if l.casefold() not in labels})
+    if undefined:
+        raise VerificationError(
+            f"reference-style link labels with no definition: {undefined}"
+        )
     return found
 
 
@@ -267,7 +280,9 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
                 f"{name}: SKILL.md is missing evidence markers {missing}. Every class "
                 "must be present or the model will flatten a reconstruction into fact."
             )
-        legends.add(text[text.index(REQUIRED_MARKERS[0]) : text.index(REQUIRED_MARKERS[-1])])
+        start = text.index(REQUIRED_MARKERS[0])
+        end = text.index("\n## ", text.index(REQUIRED_MARKERS[-1]))
+        legends.add(text[start:end])
 
         # In place, then again from a detached copy, which is what installation
         # produces and where a link reaching outside the skill would dangle.

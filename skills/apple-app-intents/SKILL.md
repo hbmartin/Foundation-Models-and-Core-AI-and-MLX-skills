@@ -41,9 +41,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
@@ -76,9 +77,9 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
-- **16.2** App Schema Domains: the complete map of what Siri can actually do — The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK …
-- **16.3** On-screen awareness: making Siri understand "this" — This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity` executes but which Siri answers from screen text, and an image app …
-- **16.4** One index, three consumers: entities, Spotlight, and Foundation Models — Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**"* — left a second on-ramp nobody could …
+- **16.2** App Schema Domains: the complete map of what Siri can actually do — The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK interface on 2026-07-29** — in one place for the first time, with per-domain commentary on what each one's shape tells you.
+- **16.3** On-screen awareness: making Siri understand "this" — This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity` executes but which Siri answers from screen text, and an image app whose `entities(for:)` **never fires**.
+- **16.4** One index, three consumers: entities, Spotlight, and Foundation Models — Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**"* — left a second on-ramp nobody could identify.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
 

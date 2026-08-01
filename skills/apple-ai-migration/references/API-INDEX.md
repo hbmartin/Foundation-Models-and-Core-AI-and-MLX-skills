@@ -205,7 +205,7 @@
 | `AppIntents` | ✓ | ✓ | [17.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `IndexedEntity` | ✓ | ✓ | [17.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 
-## CoreSpotlight  <sub>1 symbols</sub>
+## CoreSpotlight  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

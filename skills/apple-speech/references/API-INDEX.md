@@ -78,7 +78,7 @@
 | `CSSearchableItem` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `SpotlightSearchTool` |  | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 
-## SwiftUI  <sub>1 symbols</sub>
+## SwiftUI  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

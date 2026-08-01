@@ -41,9 +41,10 @@ route to the section you need:
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled. `references/SECTION-MAPS.md` lists
-every section of every one with its anchor; fetch a single section rather than a
-whole file.
+The deep reference guides are not bundled, so reaching one needs network access
+to the public repository. `references/SECTION-MAPS.md` lists every top-level
+section with its anchor; fetch a single section rather than a whole file. Offline,
+everything above still works — the part READMEs and both indexes are local.
 
 ## Version floors
 
@@ -74,10 +75,10 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
 - **17.1** What changed between iOS 26 and iOS 27: the complete checklist — The exhaustive diff, organised by framework, with each item marked as *additive*, *behavioural*, *renamed* or *withdrawn*.
-- **17.2** The adapter sunset: migrating off custom LoRA adapters — What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move …
-- **17.3** Error taxonomy migration: `GenerationError` → `LanguageModelError` — The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and 27.0 beta `FoundationModels.swiftinterface` dumps), with every …
+- **17.2** The adapter sunset: migrating off custom LoRA adapters — What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through …
+- **17.3** Error taxonomy migration: `GenerationError` → `LanguageModelError` — The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and 27.0 beta `FoundationModels.swiftinterface` dumps), with every destination confirmed by the per-case deprecation messages Apple attached to the old enum in the 27 SDK.
 - **17.4** Building for two SDKs: conditional compilation across 26 and 27 — `#if canImport` versus `@available` versus SDK-version checks, and when each is the right tool.
-- **17.5** Core ML to Core AI: what moves, what stays, and how — Core AI is the successor path for **neural networks**; Core ML remains correct for decision trees, tabular feature engineering, and the rest of its non-neural surface — …
+- **17.5** Core ML to Core AI: what moves, what stays, and how — Core AI is the successor path for **neural networks**; Core ML remains correct for decision trees, tabular feature engineering, and the rest of its non-neural surface — so this is a partial migration by design.
 - **17.6** Toolchain and asset compatibility — The migration nobody warns you about: your *build artifacts* have compatibility constraints independent of your source.
 
 To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:

@@ -138,7 +138,7 @@
 | `MTLTensorDescriptor.auxiliaryPlanes` |  |  | [9.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md), [9.README](part-09-coreai-compression-numerics/README.md) +2 more |
 | `MTLTensorUsageMachineLearning` |  |  | [9.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 
-## SwiftUI  <sub>1 symbols</sub>
+## SwiftUI  <sub>1 symbol</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|

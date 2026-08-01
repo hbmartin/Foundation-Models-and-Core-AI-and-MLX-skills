@@ -3,7 +3,3 @@
 # edit's real diff readable instead of burying it under the derived copy.
 skills/** linguist-generated=true
 skills/** -diff
-
-# The two cross-cutting indexes are generated the same way, by scripts/build-indexes.sh.
-guides/API-INDEX.md linguist-generated=true
-guides/SILENT-FAILURES.md linguist-generated=true
