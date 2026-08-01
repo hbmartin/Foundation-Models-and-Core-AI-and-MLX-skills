@@ -8,6 +8,33 @@ from the preceding platform generation.
 The Markdown under [`guides/`](guides/) is the canonical published corpus. Generated indexes and
 the MkDocs site are derived from it; edit the guide sources, not generated documentation output.
 
+## Using the guides with a coding agent
+
+The corpus ships as ten installable [Agent Skills](https://agentskills.io), generated from
+`guides/` into [`skills/`](skills/). They give Claude Code — or any agent that reads `SKILL.md` —
+the series' routing power inside a project, without pulling 11 MB into a context window.
+
+```bash
+npx skills add hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills --all
+```
+
+Install one instead of all ten with `--skill apple-mlx`, and add `-g` to install for every project
+rather than the current one. The available skills are `apple-on-device-ai` (start here: which stack
+to use, and platform gating), `apple-foundation-models`, `apple-core-ai`, `apple-mlx`,
+`apple-ai-evaluations`, `apple-metal-tensorops`, `apple-ai-shipping`, `apple-speech`,
+`apple-app-intents`, and `apple-ai-migration`. See [`skills/README.md`](skills/README.md) for what
+each one covers.
+
+Each skill's `SKILL.md` is a router, not a copy of a guide: it carries the evidence-marker
+conventions, the version floors, a triage table, and a lookup protocol. The material sits in
+`references/`, which costs nothing until read — the part READMEs, a symbol index and a
+silent-failure index both sliced to that skill, and section maps addressing the deep reference
+guides that stay in this repository.
+
+`skills/` is generated and committed; edit the guides and run `./scripts/build-skills.sh`. A
+[test](scripts/tests/test_skills.py) byte-compares the committed tree against a clean regeneration,
+so skills cannot drift from the corpus.
+
 ## Maintaining the corpus
 
 Start with the [freshness runbook](notes/FRESHNESS-RUNBOOK.md). It separates the small daily sweep
@@ -54,6 +81,17 @@ New silent-failure callouts require classification before regeneration; see the
 [symptom taxonomy](notes/synthesis/SYMPTOM-TAXONOMY.md). Review changes to
 [`guides/API-INDEX.md`](guides/API-INDEX.md) and
 [`guides/SILENT-FAILURES.md`](guides/SILENT-FAILURES.md) rather than editing either index by hand.
+
+Then refresh the installable skills, which derive from the same guides:
+
+```bash
+./scripts/build-skills.sh
+```
+
+This refuses to run if a part README grew a heading the router generator does not recognize, so a
+structural guide edit fails here rather than quietly dropping a section from a published skill.
+Ownership of parts and the hand-tuned skill descriptions live in
+[`notes/synthesis/skill-manifest.json`](notes/synthesis/skill-manifest.json).
 
 ### macOS and Xcode checks
 
@@ -113,6 +151,7 @@ claims deliberately under the conventions above.
 | Path | Purpose |
 |---|---|
 | [`guides/`](guides/) | Canonical 17-part guide series, reference guides, and generated cross-cutting indexes. |
+| [`skills/`](skills/) | Generated, installable agent skills derived from `guides/`. Edit the guides, not these. |
 | [`notes/`](notes/) | Research synthesis, maintenance runbooks, captured SDK interfaces, and verification results. |
 | [`probes/`](probes/) | SwiftPM runtime probes that turn documented behavioral gaps into executable evidence. |
 | [`scripts/`](scripts/) | Indexing, verification, SDK capture, MkDocs, freshness, and research-mirror tooling. |

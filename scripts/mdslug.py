@@ -51,6 +51,22 @@ def _render_away_emphasis(text):
         text = stripped
 
 
+def unique_slug(base, used, next_suffix):
+    """Return GitHub's first-unsuffixed, then -1, -2, ... heading anchor."""
+    candidate = base
+    if candidate in used:
+        suffix = next_suffix[base] or 1
+        candidate = f"{base}-{suffix}"
+        while candidate in used:
+            suffix += 1
+            candidate = f"{base}-{suffix}"
+        next_suffix[base] = suffix + 1
+    else:
+        next_suffix[base] = 1
+    used.add(candidate)
+    return candidate
+
+
 def slugify(heading, separator="-"):
     """Slugify a heading, replacing spaces but preserving literal hyphens."""
     code_spans = []

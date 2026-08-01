@@ -123,6 +123,14 @@ the repo root.
   ```bash
   ./scripts/build-indexes.sh
   ```
+- [ ] Rebuild the installable skills, which are derived from the same guides and the
+  indexes you just regenerated:
+  ```bash
+  ./scripts/build-skills.sh
+  ```
+  It refuses to run if a part README grew a heading it does not recognize, so a
+  structural guide edit surfaces here rather than silently dropping a section from a
+  released skill. `scripts/tests/test_skills.py` fails CI if `skills/` is stale.
 
 ---
 

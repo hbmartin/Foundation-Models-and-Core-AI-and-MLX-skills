@@ -1,0 +1,85 @@
+# Verifies the committed skills/ tree and proves it actually installs.
+#
+# The staleness and structural checks live in scripts/tests/test_skills.py and so
+# already run in tests.yml on every push. This workflow adds the one thing a unit
+# test cannot cover: a real `npx skills add` against the real CLI, which is what
+# decides whether these skills reach anyone. It needs Node and the npm registry,
+# so it is kept separate and path-filtered rather than blocking every push.
+name: skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'guides/**'
+      - 'skills/**'
+      - 'notes/synthesis/skill-manifest.json'
+      - 'scripts/build-skills.py'
+      - 'scripts/build-skills.sh'
+      - 'scripts/verify-skills.py'
+      - 'scripts/mdlinks.py'
+      - 'scripts/mdslug.py'
+      - 'scripts/extract-symbols.py'
+      - 'scripts/tests/test_skills.py'
+      - '.github/workflows/skills.yml'
+  pull_request:
+    paths:
+      - 'guides/**'
+      - 'skills/**'
+      - 'notes/synthesis/skill-manifest.json'
+      - 'scripts/build-skills.py'
+      - 'scripts/build-skills.sh'
+      - 'scripts/verify-skills.py'
+      - 'scripts/mdlinks.py'
+      - 'scripts/mdslug.py'
+      - 'scripts/extract-symbols.py'
+      - 'scripts/tests/test_skills.py'
+      - '.github/workflows/skills.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skills-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-and-install:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      # No actions/setup-node: the ubuntu-24.04 image ships Node and npx, and
+      # every other action here is SHA-pinned. Adding one more pin to maintain
+      # buys nothing when the runner's own Node is what a user would have.
+      - name: Report the Node in use
+        run: node --version && npm --version
+
+      - name: Test the generator
+        run: python3 -m unittest discover -s scripts/tests -p 'test_skills.py' -v
+
+      - name: Verify the committed tree
+        run: python3 scripts/verify-skills.py --skills skills
+
+      - name: Install with the real CLI and compare against the committed tree
+        run: |
+          set -euo pipefail
+          project="$(mktemp -d)"
+          cd "$project"
+          npx -y skills@latest add "$GITHUB_WORKSPACE" --agent claude-code --all -y
+          # The CLI stores one copy under .agents/skills and symlinks the
+          # agent-specific directory at it, so resolve through the link.
+          test -f .claude/skills/apple-mlx/SKILL.md
+          test -f .claude/skills/apple-mlx/references/SILENT-FAILURES.md
+          test -d .claude/skills/apple-core-ai/references/part-07-coreai-swift-runtime
+          for skill in "$GITHUB_WORKSPACE"/skills/*/; do
+            name="$(basename "$skill")"
+            diff -r "$skill" ".claude/skills/$name"
+          done
+          echo "Installed $(ls .claude/skills | wc -l) skills, byte-identical to the repository"
+
+      - name: Verify the guides were not modified
+        run: git diff --exit-code -- guides

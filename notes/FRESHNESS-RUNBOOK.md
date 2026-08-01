@@ -121,7 +121,10 @@ in `notes/sdk-interfaces/README.md`.
 Then: fold interface drift into guides (the diff names the symbols), re-check every checklist
 watch-item, and **only then** rebuild the indexes if guides changed structurally
 (`./scripts/build-indexes.sh` uses the committed classifications — new ⚠️ callouts need
-judgment-classification first; see `notes/synthesis/SYMPTOM-TAXONOMY.md`).
+judgment-classification first; see `notes/synthesis/SYMPTOM-TAXONOMY.md`), then
+`./scripts/build-skills.sh` to refresh the installable skills from the same sources.
+Both are byte-compared against a clean regeneration by `scripts/tests/`, so a forgotten
+rebuild fails CI rather than shipping stale material into someone's project.
 
 Special case — **the day this machine gets macOS 27**: run the whole upgrade-day list in
 `probes/README.md` (`swift test` natively closes the MAC-27 probes), capture `fm --help`

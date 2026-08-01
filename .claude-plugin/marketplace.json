@@ -1,0 +1,36 @@
+{
+  "name": "apple-on-device-ai",
+  "owner": {
+    "name": "hbmartin",
+    "url": "https://github.com/hbmartin"
+  },
+  "metadata": {
+    "description": "Evidence-backed skills for Apple's 2026 on-device AI stack: Foundation Models, Core AI, MLX, Metal, Evaluations, Speech and App Intents, for the iOS/macOS 27 generation.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "apple-on-device-ai",
+      "source": "./",
+      "description": "Ten skills generated from an independent 17-part guide series on Apple's on-device AI stack. Each carries the evidence-marker conventions, version floors, a triage table, and indexes of 1,769 documented silent failures and 1,210 symbols checked against captured 26.5 / 27.0 SDK interfaces.",
+      "version": "1.0.0",
+      "author": {
+        "name": "hbmartin",
+        "url": "https://github.com/hbmartin"
+      },
+      "homepage": "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills",
+      "license": "See repository",
+      "keywords": [
+        "apple",
+        "foundation-models",
+        "core-ai",
+        "mlx",
+        "metal",
+        "swift",
+        "on-device-ai",
+        "ios-27",
+        "macos-27"
+      ]
+    }
+  ]
+}
