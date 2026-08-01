@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Regression tests for the guide index extraction and validation tooling."""
 
-import csv
 import os
 from pathlib import Path
 import subprocess
@@ -38,7 +37,7 @@ class IndexToolingTests(unittest.TestCase):
             )
             result = self.run_python(EXTRACT_CALLOUTS, guides)
             self.assertEqual(result.returncode, 0, result.stderr)
-            rows = list(csv.reader(result.stdout.splitlines(), delimiter='\t'))
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
             self.assertEqual([row[2] for row in rows], ['repeated', 'repeated-1', 'repeated-2'])
 
     def test_symbol_extractor_excludes_generated_indexes_and_groups_literals(self):
@@ -58,7 +57,8 @@ class IndexToolingTests(unittest.TestCase):
             (guides / 'SILENT-FAILURES.md').write_text('`OtherPoison` ' * 20, encoding='utf-8')
             result = self.run_python(EXTRACT_SYMBOLS, guides, interfaces)
             self.assertEqual(result.returncode, 0, result.stderr)
-            groups = {row[0]: row[1] for row in csv.reader(result.stdout.splitlines(), delimiter='\t')}
+            groups = {row[0]: row[1] for row in
+                      (line.split('\t') for line in result.stdout.splitlines())}
             self.assertEqual(groups['FoundationModels'], 'FoundationModels')
             self.assertEqual(groups['CoreAI'], 'CoreAI')
             self.assertEqual(groups['CoreAILanguageModel'], 'FoundationModels')
@@ -78,7 +78,7 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             rows = {
                 row[0]: row
-                for row in csv.reader(result.stdout.splitlines(), delimiter='\t')
+                for row in (line.split('\t') for line in result.stdout.splitlines())
             }
             self.assertEqual(
                 rows['TieSymbol'][6],
@@ -99,8 +99,10 @@ class IndexToolingTests(unittest.TestCase):
         callouts.write_text(extracted.stdout, encoding='utf-8')
         symbols = root / 'symbols.tsv'
         symbols.write_text('FoundationModels\tFoundationModels\t2\t1\tY\tY\tguide.md:2\n', encoding='utf-8')
-        with (classified / 'root.tsv').open('w', encoding='utf-8', newline='') as stream:
-            csv.writer(stream, delimiter='\t', lineterminator='\n').writerows(classification_rows)
+        (classified / 'root.tsv').write_text(
+            ''.join('\t'.join(str(field) for field in row) + '\n' for row in classification_rows),
+            encoding='utf-8',
+        )
         return temporary, guides, classified, callouts, symbols, output
 
     def run_builder(self, classification_rows, env=None):
@@ -137,6 +139,16 @@ class IndexToolingTests(unittest.TestCase):
                 (honolulu[-1] / filename).read_bytes(),
                 (kiritimati[-1] / filename).read_bytes(),
             )
+
+    def test_quotes_in_blurbs_stay_literal(self):
+        blurb = 'The README\'s .package(from:"1.0.0") can never resolve'
+        fixture, result = self.run_builder(
+            [['guide.md', '3', 'section', 'CALLOUT', 'docs-vs-reality', blurb]]
+        )
+        self.addCleanup(fixture[0].cleanup)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rendered = (fixture[-1] / 'SILENT-FAILURES.md').read_text(encoding='utf-8')
+        self.assertIn(f'[{blurb}]', rendered)
 
     def test_unknown_symptom_fails(self):
         fixture, result = self.run_builder(

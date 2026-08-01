@@ -6,8 +6,11 @@ kind: SILENT-FAILURE (explicit marker), CALLOUT (blockquote ⚠️), INLINE (⚠
       HEADING (⚠️ in a section heading)
 anchor: GitHub-style slug of the nearest preceding heading.
 excerpt: the callout's own text, up to ~400 chars, newlines flattened.
+
+The TSV is strictly tab-delimited: no csv quoting or escaping, double quotes
+are literal characters. flatten() guarantees no field contains a tab or newline.
 """
-import os, re, sys, csv
+import os, re, sys
 from collections import defaultdict
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
@@ -94,9 +97,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             rows.append((rel, i + 1, heading_anchor, 'INLINE', title, flatten(line)))
             i += 1
 
-w = csv.writer(sys.stdout, delimiter='\t', lineterminator='\n')
 for r in rows:
-    w.writerow(r)
+    print('\t'.join(str(field) for field in r))
 print(f"# total rows: {len(rows)}", file=sys.stderr)
 kinds = {}
 for r in rows:

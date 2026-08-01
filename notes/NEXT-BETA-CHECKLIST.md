@@ -39,7 +39,15 @@ the repo root.
   every framework (that is the verified 2026-07-31 baseline output). Anything else IS
   the beta's API drift — start the guide pass from those lines. Slice selection is deterministic:
   OS SDK frameworks prefer arm64e, while Xcode-bundled developer frameworks such as Evaluations
-  prefer their ordinary arm64 host slice.
+  prefer their ordinary arm64 host slice. The same run also diffs each fresh CLI help capture
+  (`coreai-build`, and `fm` if present) body-for-body against the newest committed help capture
+  for that tool, so `--help` surface drift shows up here too — no separate manual step. Known
+  SDK-27.0 baseline: the committed `coreai-build-help-27.0-beta.txt` is a manual legacy capture,
+  so this comparison reports its section-marker spelling (`===== coreai-build compile =====` vs
+  the scripted `… compile --help =====`) and its extra validation-oracle lines as drift — that
+  exact report (verified 2026-07-31: +4 / −17 lines) is "clean" for 27.0. Flag-surface changes
+  appear as additional lines. From the next SDK version on, scripted captures compare against
+  scripted captures and a no-change run reads genuinely clean.
 - [ ] Cross-major comparisons on request, one framework at a time:
   ```bash
   ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels
@@ -56,13 +64,16 @@ the repo root.
   `notes/sdk-interfaces/README.md`, then finish with
   `./scripts/dump-sdk-interfaces.sh --check-only`. There is deliberately no blind auto-promotion
   mode.
-- [ ] Confirm the CLI surfaces in the same managed capture. `dump-sdk-interfaces.sh` resolves tools
-  through `xcrun`, captures top-level and all four `coreai-build` subcommand help pages, and writes
-  the canonical `notes/sdk-interfaces/coreai-build-help-<macOS-SDK-version>.txt`. The manifest
-  records hashes and the Xcode/SDK/Metal identities; the legacy `-27.0-beta.txt` evidence remains
-  separately managed and is not overwritten:
+- [ ] Confirm the CLI surfaces. `dump-sdk-interfaces.sh` resolves tools through `xcrun`, captures
+  top-level and all four `coreai-build` subcommand help pages, and writes the canonical
+  `coreai-build-help-<macOS-SDK-version>.txt`; the drift step above already compared its body
+  against the committed capture. On a **new SDK version**, a plain managed capture adds the new
+  help file alongside the interfaces. On a **same-SDK/new-Xcode beta**, the managed capture
+  correctly refuses (cross-build protection on the stable interface filenames) — use the
+  candidate-directory flow from the previous step; the legacy `-27.0-beta.txt` evidence remains
+  separately managed and is never overwritten either way:
   ```bash
-  ./scripts/dump-sdk-interfaces.sh
+  ./scripts/dump-sdk-interfaces.sh            # new SDK version only
   xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
   ```
 - [ ] Re-run the runtime probes **if `probes/` exists**. As of 2026-07-31 a

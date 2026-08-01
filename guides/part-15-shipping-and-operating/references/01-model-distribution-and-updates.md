@@ -1762,8 +1762,7 @@ enum ModelLoader {
                 log.error("""
                     Compiled variant failed: \(compiledURL.lastPathComponent, privacy: .public) \
                     arch=\(AIModel.deviceArchitectureName, privacy: .public) \
-                    domain=\(nsError.domain, privacy: .public) code=\(nsError.code) \
-                    desc=\(String(describing: error), privacy: .public)
+                    domain=\(nsError.domain, privacy: .public) code=\(nsError.code)
                     """)
                 // Preserve the specialization cache. This failure may be transient;
                 // an untyped throw is not evidence that the entry is poisoned.
@@ -1773,6 +1772,7 @@ enum ModelLoader {
             }
         }
 
+        try Task.checkCancellation()
         log.notice("Falling back to portable asset \(portableURL.lastPathComponent, privacy: .public)")
         return try await AIModel(contentsOf: portableURL, options: options)
     }

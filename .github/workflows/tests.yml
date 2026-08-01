@@ -1,0 +1,24 @@
+# Runs the pure-Python test suites: index-tooling unit tests and the
+# committed-indexes-match-clean-regeneration integration test. Neither needs
+# Xcode, so a Linux runner suffices.
+#
+# scripts/tests/test-sdk-interface-capture.sh is deliberately NOT run here: it
+# exercises the real capture preflight and requires a selected Xcode 27 with
+# the Metal Toolchain component installed. Run it locally per
+# notes/FRESHNESS-RUNBOOK.md.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run index tooling and repository index tests
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v

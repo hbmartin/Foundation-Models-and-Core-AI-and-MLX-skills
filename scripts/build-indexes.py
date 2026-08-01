@@ -4,7 +4,7 @@
 Usage: build_indexes.py <classified_dir> <callouts_tsv> <symbols_tsv> <guides_dir> <out_dir>
 Writes <out_dir>/SILENT-FAILURES.md and <out_dir>/API-INDEX.md
 """
-import csv, datetime, os, re, sys, tempfile
+import datetime, os, re, sys, tempfile
 from collections import defaultdict
 
 if len(sys.argv) != 6:
@@ -17,7 +17,7 @@ def generation_date():
     if epoch is not None:
         try:
             instant = datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc)
-        except (ValueError, OverflowError) as exc:
+        except (ValueError, OverflowError, OSError) as exc:
             sys.exit(f"invalid SOURCE_DATE_EPOCH {epoch!r}: {exc}")
         return instant.date().isoformat()
     return datetime.datetime.now(datetime.timezone.utc).date().isoformat()
@@ -70,12 +70,21 @@ def validate_guide_path(path, source, row_number):
     if not os.path.isfile(full_path):
         sys.exit(f"{source}:{row_number}: guide does not exist: {full_path}")
 
+def tsv_rows(f):
+    """Strict tab-splitting: no csv quoting or escaping, quotes are literal.
+
+    Yields (row_number, fields) for every non-blank, non-comment line.
+    """
+    for row_number, line in enumerate(f, 1):
+        line = line.rstrip('\n')
+        if not line or line.startswith('#'):
+            continue
+        yield row_number, line.split('\t')
+
 def load_extracted_callouts():
     expected = {}
-    with open(callouts_tsv, encoding='utf-8', newline='') as f:
-        for row_number, parts in enumerate(csv.reader(f, delimiter='\t'), 1):
-            if not parts or (parts[0].startswith('#') and len(parts) == 1):
-                continue
+    with open(callouts_tsv, encoding='utf-8') as f:
+        for row_number, parts in tsv_rows(f):
             if len(parts) != 6:
                 sys.exit(f"{callouts_tsv}:{row_number}: expected 6 TSV columns, got {len(parts)}")
             file, lineno_text, anchor, kind, _title, _excerpt = parts
@@ -98,10 +107,8 @@ def load_rows():
         if not fn.endswith('.tsv'):
             continue
         source = os.path.join(classified_dir, fn)
-        with open(source, encoding='utf-8', newline='') as f:
-            for row_number, parts in enumerate(csv.reader(f, delimiter='\t'), 1):
-                if not parts or (parts[0].startswith('#') and len(parts) == 1):
-                    continue
+        with open(source, encoding='utf-8') as f:
+            for row_number, parts in tsv_rows(f):
                 if len(parts) != 6:
                     sys.exit(f"{source}:{row_number}: expected 6 TSV columns, got {len(parts)}")
                 file, lineno_text, anchor, kind, symptom, blurb = parts

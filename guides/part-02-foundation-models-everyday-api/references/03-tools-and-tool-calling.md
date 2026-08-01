@@ -2070,12 +2070,12 @@ because getting it wrong costs you nothing at compile time and everything at run
 > is `@available(… watchOS 27.0 …)` while `OCRTool` carries `@available(watchOS, unavailable)`
 > (✅ **SDK-verified**, `_Vision_FoundationModels-27.0-macos.swiftinterface:12-13` vs `:46-48`; both
 > are tvOS-unavailable). The *reason* is still unstated, but the split is real. In a shared source
-> file, the OCR code must be in the **non-watchOS** branch; `#if os(watchOS)` selects the watch build,
-> where the symbol is unavailable:[^ocr-tool-watchos]
+> file, the OCR code must be in the **non-watchOS/non-tvOS** branch; the condition below selects either
+> build where the symbol is unavailable:[^ocr-tool-watchos]
 >
 > ```swift
-> #if os(watchOS)
-> // Use a watchOS-specific fallback; OCRTool is unavailable here.
+> #if os(watchOS) || os(tvOS)
+> // Use a platform-specific fallback; OCRTool is unavailable here.
 > #else
 > let ocrTool = OCRTool()
 > #endif
@@ -2506,4 +2506,4 @@ mandatory, the shape of `SearchBooksTool` — **the sample wins and this guide s
 
 [^excessive-tool-calls]: Apple, [iOS & iPadOS 27 beta 4 release notes](https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-27-release-notes?changes=latest_maj_2_9_8__1_5_10__4), Foundation Models known issue for excessive tool calls when tool calling and guided generation are combined, including Apple's prompt/instruction/attachment-label workaround.
 
-[^ocr-tool-watchos]: Apple, [`OCRTool`](https://developer.apple.com/documentation/vision/ocrtool), lists iOS, iPadOS, macOS, and visionOS availability but not watchOS. The captured Xcode 27 overlay supplies the compiler-level spelling: `@available(watchOS, unavailable)` in `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:46-49`. Swift's [`os()` compilation condition](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/statements/#Conditional-Compilation-Block) includes `#if os(watchOS)` only when compiling for watchOS, so unavailable OCR code belongs in `#else` or under `#if !os(watchOS)`.
+[^ocr-tool-watchos]: Apple, [`OCRTool`](https://developer.apple.com/documentation/vision/ocrtool), lists iOS, iPadOS, macOS, and visionOS availability but not watchOS or tvOS. The captured Xcode 27 overlay supplies the compiler-level spelling: `@available(tvOS, unavailable)` and `@available(watchOS, unavailable)` in `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:46-49`. Swift's [`os()` compilation condition](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/statements/#Conditional-Compilation-Block) selects the corresponding platform build, so unavailable OCR code belongs in the fallback branch or under `#if !os(watchOS) && !os(tvOS)`.
