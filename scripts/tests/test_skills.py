@@ -661,6 +661,7 @@ class CommittedSkillsTests(unittest.TestCase):
         # would point a reader at deep guides missing from their section map.
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
         cited = re.compile(r"(?:^### |\[)(\d{1,2}\.\d{1,2})(?=[\] ])", re.M)
+        pages = builder.discover_pages(GUIDES)
         for entry in manifest["skills"]:
             if entry.get("full_indexes"):
                 continue
@@ -671,7 +672,7 @@ class CommittedSkillsTests(unittest.TestCase):
                 if references is None:
                     owned.update(
                         f"{part}.{page.guide}"
-                        for page in builder.discover_pages(GUIDES)
+                        for page in pages
                         if page.role == "guide" and page.part == part
                     )
                 else:

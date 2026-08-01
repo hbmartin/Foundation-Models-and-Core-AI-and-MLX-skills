@@ -82,6 +82,7 @@ FOOTNOTE_REF = re.compile(r"\[\^[^\]]+\]")
 GUIDE_LINK = re.compile(
     r"\[([^\]]*)\]\(https?://[^)\s]*/guides/part-\d{2}-[^)\s]*/references/[^)\s]*\)"
 )
+HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SENTENCE_END = re.compile(r"(?<=[a-zA-Z*)\]`\"])\.(?:\s|$)")
 
 GENERATED_MARKER = ".generated-by-build-skills"
@@ -338,6 +339,10 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
             )
         owns: dict[int, frozenset[int] | None] = {}
         for owned in entry.get("owns", []):
+            if not isinstance(owned, dict) or not isinstance(owned.get("part"), int):
+                raise SkillError(
+                    f"{path}: {name} has an 'owns' entry without an integer 'part'"
+                )
             part = owned["part"]
             if part in owns:
                 raise SkillError(
@@ -347,6 +352,13 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
             if part not in available:
                 raise SkillError(f"{path}: {name} claims part {part}, which has no README")
             references = owned.get("references")
+            if references is not None and (
+                not isinstance(references, list)
+                or not all(isinstance(number, int) for number in references)
+            ):
+                raise SkillError(
+                    f"{path}: {name} part {part} 'references' must be a list of integers"
+                )
             if references is None:
                 owns[part] = None
                 keys = [(part, None)] + [(part, n) for n in sorted(available[part])]
@@ -785,6 +797,12 @@ def render_api_slice(
             (symbol, in26, in27, sorted(pairs, key=lambda pair: (-pair[1], pair[0])))
         )
 
+    unplaced = sorted(set(by_framework) - set(FW_ORDER))
+    if unplaced:
+        raise SkillError(
+            f"{spec.name}: FW_ORDER has no place for {unplaced}; those symbols would "
+            "vanish from the index rather than fail"
+        )
     kept = sum(len(entries) for entries in by_framework.values())
     out = [
         "# API & symbol index — " + spec.title,
@@ -865,13 +883,19 @@ def render_section_maps(
             used: set[str] = set()
             next_suffix: dict[str, int] = defaultdict(int)
             for body, _, inside_fence in iter_lines(target.read_text(encoding="utf-8")):
-                if inside_fence or not body.startswith("## "):
+                if inside_fence:
                     continue
-                heading = body[3:].strip()
-                # GitHub leaves the first occurrence bare and suffixes the
-                # rest, resolving each candidate against every anchor already
-                # taken on the page.
+                found = HEADING.match(body)
+                if not found:
+                    continue
+                # Every heading level shares one anchor namespace on GitHub, so
+                # all of them must be allocated even though only top-level
+                # sections are listed; otherwise a '##' that collides with an
+                # earlier '###' is recorded without the suffix GitHub gives it.
+                heading = found.group(2)
                 anchor = unique_slug(slugify(heading), used, next_suffix)
+                if len(found.group(1)) != 2:
+                    continue
                 cell = heading.replace("|", "\\|")
                 out.append(f"| {cell} | `#{anchor}` |")
     out.append("")
@@ -989,7 +1013,10 @@ def yaml_scalar(text: str) -> str:
             "frontmatter values must be single-line; a newline would emit a block "
             "scalar that verify-skills.py deliberately refuses to parse"
         )
-    if re.search(r'[:#\'"]|^\s|\s$', text):
+    # These leading characters start a YAML collection or block scalar, which
+    # verify-skills.py's scalar-only reader rejects: producer and consumer have
+    # to agree on the same value.
+    if re.search(r'[:#\'"]|^\s|\s$', text) or text[:1] in "|>&*[{":
         return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
     return text
 

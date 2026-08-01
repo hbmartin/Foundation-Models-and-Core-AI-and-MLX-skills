@@ -1,6 +1,6 @@
 ---
 name: apple-core-ai
-description: "Core AI, the new-in-27 runtime that supersedes Core ML: import CoreAI, AIModel, NDArray, model bundles and engines, guided decoding, specialization, caching and ahead-of-time compilation - plus the Python side, converting a torch.nn.Module to an .aimodel with coreai-torch, op coverage and composites, custom Metal kernels, quantization, palettization and pruning, numeric formats, ANE-versus-GPU authoring rules, debugging, profiling and end-to-end LLM export."
+description: "Core AI, the new-in-27 runtime and the successor path for neural networks, while Core ML remains right for tree and non-neural models: import CoreAI, AIModel, NDArray, model bundles and engines, guided decoding, specialization, caching and ahead-of-time compilation - plus the Python side, converting a torch.nn.Module to an .aimodel with coreai-torch, op coverage and composites, custom Metal kernels, quantization, palettization and pruning, numeric formats, ANE-versus-GPU authoring rules, debugging, profiling and end-to-end LLM export."
 when_to_use: "Use for any .aimodel or import CoreAI work: a target that fails to build with a missing Metal compiler error, an unsupported-op conversion failure, a model that silently falls back off the Neural Engine, a compiled model that loads but runs far slower than expected, or compression that quietly costs accuracy."
 ---
 

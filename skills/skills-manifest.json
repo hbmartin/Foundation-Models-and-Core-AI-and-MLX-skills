@@ -9,7 +9,7 @@
   "file_count": 62,
   "files": {
     ".generated-by-build-skills": "5c0ade55f143712122d30f0eb3a8f37fa593fc0bb161bd68c87e72ab4616ff4c",
-    "README.md": "19af8a632c3b6c80202cb4b5b064567293ead6cfd7285086f9cc20af18c87978",
+    "README.md": "26c00cda3a4b88699ef5e8eebac16c1e74d1cb055ad1d308d0665a10067104d2",
     "apple-ai-evaluations/SKILL.md": "d1540143aa708e293a7955812cfa28d6e701b9d5a03cf05660528c0ad6b7e246",
     "apple-ai-evaluations/references/API-INDEX.md": "9848aab9cd1fcdc30f536365e01e5f9f4d57142072178046ee290d4146787a64",
     "apple-ai-evaluations/references/SECTION-MAPS.md": "47a1e332a73e73c3b6d95af421318f2115d02add8d614d5b5ab748f03f74d737",
@@ -31,7 +31,7 @@
     "apple-app-intents/references/SECTION-MAPS.md": "e47f1578dd090e88178d952bfd214cd6b63fe8721af6498f9d6ac53eedcf1b24",
     "apple-app-intents/references/SILENT-FAILURES.md": "8d6800c60e229be7a58915f76cc11801335b3719e3a4d515b0d8aca66ccad5cc",
     "apple-app-intents/references/part-16-adjacent-capabilities/README.md": "964d4c2802b46b2dc61e6b4521034175bd5f2fed03e41531b20b6fdd5c3cebd5",
-    "apple-core-ai/SKILL.md": "cc3e442e6fe00f6a24cc919e908a0d3a11244ac60dd9e142d9babe344da88984",
+    "apple-core-ai/SKILL.md": "ee900df524e052d5e66be028d3a096738ea9a2f61cfe13497f004c84a9e69c21",
     "apple-core-ai/references/API-INDEX.md": "7bae8c6dc7bbc21d227323d006b9410a9eba339df45ab920a0f687f1eb00fccf",
     "apple-core-ai/references/SECTION-MAPS.md": "749467846355177447ad0eb761bd262d5d756a013890882cad76caa6421e4d9b",
     "apple-core-ai/references/SILENT-FAILURES.md": "a094d854274926aa77a0e2a8af5b76a7e1d73e031c7c5e3a653e974f2d3ec5b1",
