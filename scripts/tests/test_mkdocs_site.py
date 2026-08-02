@@ -202,11 +202,15 @@ class MkDocsHookTests(unittest.TestCase):
         result = mkdocs_hooks.on_config(config)
         self.assertIs(result, config)
         self.assertEqual(mkdocs_hooks.slugify, config.mdx_configs["toc"]["slugify"])
-        self.assertEqual(80, len(flatten_nav_paths(config["nav"])))
+        self.assertEqual(
+            mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides"),
+            config["nav"],
+        )
 
     def test_slugger_accepts_markdown_separator_callback(self):
         self.assertEqual("the-tool-protocol", mdslug.slugify("The `Tool` protocol", "-"))
         self.assertEqual("️-trap", mdslug.slugify("⚠️ Trap", "-"))
+        self.assertEqual("foo_-_bar", mdslug.slugify("Foo - Bar", "_"))
 
 
 if __name__ == "__main__":
