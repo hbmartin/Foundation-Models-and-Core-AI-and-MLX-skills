@@ -1,5 +1,9 @@
 # Proposed guide series — organized by developer task and journey
 
+> **Status 2026-08-01:** historical input to the merged proposal. Its 2026-07-27 counts and open
+> questions are intentionally frozen; use the current `guides/` tree and operational notes for
+> completion state.
+
 **Synthesized:** 2026-07-27
 **Lens:** organize by *what the reader is trying to do*, not by which Apple framework owns the API.
 The target reader has a job (get a model on a phone; make a chat feature; stop the crashes) and does

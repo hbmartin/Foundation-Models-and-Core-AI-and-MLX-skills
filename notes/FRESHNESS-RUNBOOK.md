@@ -9,6 +9,11 @@ Everything here uses tools that already exist in the repo. Nothing below edits a
 automatically — scripts report, humans (or a supervised agent session) fold results in under the
 house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
+> **Current trigger, checked 2026-08-01:** Apple has released macOS 26.6 build `25G72`; this host
+> remains on 26.5.2 build `25F84`. Run the §3 event ritual after the host update. Xcode 27 beta 4
+> (`27A5228h`) and the iOS 27 beta 4 runtime (`24A5390f`) already match the current local baseline;
+> `xcrun --no-cache --find fm` still exits 72.
+
 ---
 
 ## 1. The daily sweep (~5–10 min quiet-day, run in the morning)
@@ -19,25 +24,33 @@ house evidence conventions (✅/🟡/🔴, dated claims, "not present in the …
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
-This queries all ~420 distinct issue/PR refs the guides cite (a few minutes of `gh` calls) and
-prints only the rows whose live state disagrees with the guide's claim. Triage each row:
+This currently extracts 957 sightings of 322 distinct mapped issue/PR refs from the guides. After
+a few minutes of `gh` calls it prints only rows whose live state appears to disagree with the
+guide's claim. Triage each row:
 
 | Verdict | What to do |
 |---|---|
-| **STATE-CHANGED** | Edit the guide's hedge the same day: state + date ("merged 2026-07-30, checked 2026-07-31"), keep the incident narrative, close/narrow any 🔴 GAP that hinged on it, update the in-file gap ledger. This is the one daily action that matters. |
+| **STATE-CHANGED** | **Human-review the cited sentence first.** If that specific reference really claims the old state, edit the hedge the same day: state + date, keep the incident narrative, close/narrow any 🔴 GAP that hinged on it, and update the in-file gap ledger. Do not edit from the verdict alone: nearby state words can leak between references. |
 | **STALE-DATE-ONLY** | Do **not** churn dates daily — refresh "as of" dates only when you touch the file for another reason, or in the weekly batch (§2). A correct claim with an old date is still correct. |
 | **AMBIGUOUS** | The ref couldn't be mapped to a repo. When you're in that file anyway, tighten the citation to the full `owner/repo#N` form so the script can track it forever after. |
 | **UNREACHABLE** | Usually a miscitation (wrong repo for the number) — the 2026-07-31 run caught three this way. Verify by hand, fix the citation. |
 
 Precedent for pace: the very first scripted run caught `mlx-swift-lm#448` merging **the day
-before**. One merge/day across ~420 watched refs is the observed baseline; most days the changed
-list will be empty or one line.
+before**. Most quiet-day changed lists should be empty or short.
+
+**Known parser limitation, 2026-08-01.** `--changed-only` produced five false `STATE-CHANGED`
+rows where the cited guide text already matched live state: `apple/coreai-models#62`, `#74`, and
+`#89` (merged); `apple/coreai-torch#7` (closed unmerged); and `ml-explore/mlx#3893` (merged).
+The failure mode is state-language leakage from another reference in the same paragraph or nearby
+OPEN wording. Until claim-context parsing and mixed-state tests are tightened, treat every
+`STATE-CHANGED` row as a review lead, not an edit instruction.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 
 ```bash
 # New Xcode beta / new simulator runtime? (If either changed → §3, not today's sweep)
-xcodebuild -version && xcrun simctl list runtimes | grep iOS
+DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -version
+DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcrun simctl list runtimes | grep iOS
 # Did the missing tool appear where we predicted? (fm ships with macOS 27, so: only after an OS update)
 xcrun --no-cache --find fm 2>/dev/null && echo "FM CLI APPEARED — NEEDED item 1 is closable"
 ```
@@ -66,9 +79,12 @@ indexes unchanged), or re-date untouched hedges.
 2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
    framework updated underneath you):
    ```bash
-   cd probes && swift test   # host: 31 tests, 27 skipped is the healthy baseline
-   xcodebuild test -scheme Probes-Package -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'
+   cd probes && swift test   # host: 43 tests, 34 skipped is the 2026-08-01 baseline
+   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+     xcodebuild test -scheme Probes-Package \
+       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'
    ```
+   The simulator baseline is 36 tests, 2 intentional skips, 0 failures.
    Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is a
    *behavioral drift discovery* — fold it into the owning guide with both values and dates.
 3. **Refresh the research mirrors** (`./scripts/clone-research-repos.sh`) so corpus greps against

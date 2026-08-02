@@ -1,9 +1,10 @@
-# Corrections pending — apply to already-written guides
+# Corrections register — all twelve applied
 
-Findings that arrived AFTER a guide was drafted, or that supersede what a note said. Every item
-here must be reconciled before the affected guide is considered done.
+Historical register of findings that arrived after a guide was drafted or superseded earlier
+notes. All items have been reconciled; this filename is retained because guides and research notes
+link to it.
 
-Status legend: 🔧 not yet applied · ✅ applied · ⚠️ partially applied
+Status legend retained for history: 🔧 not yet applied · ✅ applied · ⚠️ partially applied
 
 **Reconciled 2026-08-01.** Every item was audited against the guides on disk; the markers below are
 now authoritative. All twelve items are fully applied. C7's last residue closed with Part 7 reference

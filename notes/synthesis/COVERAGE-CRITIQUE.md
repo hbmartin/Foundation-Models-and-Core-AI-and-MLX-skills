@@ -1,5 +1,9 @@
 # Coverage critique — `PROPOSED-GUIDE-TOPICS.md`
 
+> **Status 2026-08-01:** historical review of the initial proposal. Its accepted findings were
+> incorporated into the 17-part guide corpus, including the dedicated non-LLM Core AI guide. Keep
+> the dated counts below as review evidence; do not use them as the current coverage ledger.
+
 Adversarial completeness review of the 50-guide proposal against the raw material actually
 sitting on disk (16 transcripts, 6 doc articles, 4 forum captures, 16 cloned repos).
 Date: 2026-07-27. Method: read the proposal + `RESEARCH-INDEX.md` end to end, then grep the

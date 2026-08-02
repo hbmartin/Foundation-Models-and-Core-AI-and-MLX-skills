@@ -1,5 +1,9 @@
 # Proposed guide series — organized BY FRAMEWORK / TECHNOLOGY
 
+> **Status 2026-08-01:** historical input to the merged proposal. Its 2026-07-27 counts and open
+> questions are intentionally frozen; use the current `guides/` tree and operational notes for
+> completion state.
+
 **Lens:** a reader already knows *which* framework they need (Foundation Models, Core AI Swift
 runtime, Core AI Python toolchain, MLX Python, MLX Swift, Evaluations, Speech, or a bridge between
 them) and wants total depth on it.
