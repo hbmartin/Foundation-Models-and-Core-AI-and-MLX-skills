@@ -1121,10 +1121,10 @@ The diff is 37 identical one-line edits. ✅ VERIFIED — `git show 3cbf928 -- �
 +++ b/IntegrationTesting/IntegrationTestingTests/MLXFoundationModelsIntegration/TextGeneration/PlainChatGenerationTests.swift
 @@ -1,6 +1,6 @@
  // Copyright © 2026 Apple Inc.
- 
+
 -#if FoundationModelsIntegration
 +#if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
- 
+
  import Testing
  import Foundation
 ```
@@ -1146,9 +1146,9 @@ One file in the diff is instructive because its gate is in an unusual place. ✅
 
 ```diff
  import Testing
- 
+
  @testable import MLXFoundationModels
- 
+
 -#if FoundationModelsIntegration
 +#if FoundationModelsIntegration && canImport(FoundationModels, _version: 2)
 ```

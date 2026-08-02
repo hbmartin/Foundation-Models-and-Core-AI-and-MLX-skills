@@ -229,13 +229,13 @@ do {
 
     }
 } catch let error as LanguageModelError {
-   
+
 } catch let error as LanguageModelSession.Error {
 
 } catch let error as LanguageModelSession.GenerationError {
    // Deprecated in 27.0
 } catch {
-    
+
 }
 ```
 
@@ -2266,11 +2266,11 @@ report with a thread number.
 #Playground {
 
     let session = LanguageModelSession()
-    
+
     let response = try await session.respond(to: "List all states of USA.")
-    
+
     print(response.content)
-    
+
 
 }
 ```
@@ -2302,7 +2302,7 @@ content message. Do **not** conclude your prompt was blocked.
 ```swift compile:27
 import CoreSpotlight
 import FoundationModels
-  
+
 let tool = SpotlightSearchTool()
 
 let session = LanguageModelSession(tools: [tool])

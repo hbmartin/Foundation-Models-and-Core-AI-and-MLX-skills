@@ -5,11 +5,11 @@ Companion to scripts/build-skills.py in the same way scripts/verify-docc-site.py
 is to the DocC adapter: it re-derives what it can from the committed output
 rather than trusting the builder's own bookkeeping.
 
-The check that matters most is relocation. `npx skills add` copies a single
-skill directory into .claude/skills/<name>/, detached from this repository, so a
-link that resolves here but reaches outside the skill root resolves to nothing
-once installed. Every containment and anchor check therefore runs against a
-temporary detached copy as well as against the tree in place.
+The check that matters most is relocation. `npx skills add` installs a single
+skill directory into an agent-specific project path, detached from this
+repository, so a link that resolves here but reaches outside the skill root
+resolves to nothing once installed. Every containment and anchor check therefore
+runs against temporary Codex and Claude Code copies as well as the tree in place.
 """
 
 from __future__ import annotations
@@ -44,7 +44,8 @@ REFERENCE_DEFINITION = re.compile(r"^ {0,3}\[(?!\^)[^\]]+\]:\s*(\S.*)$")
 REFERENCE_USAGE = re.compile(r"\[[^\]]*\]\[([^\]]+)\]")
 CODE_SPAN = re.compile(r"`+[^`]*`+")
 FRONTMATTER_SCALAR = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
-SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
+SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+ALLOWED_FRONTMATTER_FIELDS = {"name", "description"}
 
 # Stated here rather than imported from the generator: a verifier that asks the
 # generator what it should have produced cannot catch the generator weakening it.
@@ -57,7 +58,10 @@ REQUIRED_MARKERS = (
 )
 
 MAX_FRONTMATTER_CHARS = 1000
+MAX_DESCRIPTION_CHARS = 1024
+MAX_SKILL_NAME_CHARS = 64
 MAX_BODY_LINES = 260
+MIN_TRIGGER_EVALS_PER_CLASS = 4
 
 
 class VerificationError(RuntimeError):
@@ -93,12 +97,100 @@ def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int, str]:
                 f"{label}:{number}: frontmatter must be flat 'key: value' scalars, got {line!r}"
             )
         key, raw = match.group(1), match.group(2).strip()
+        if key in fields:
+            raise VerificationError(f"{label}:{number}: duplicate frontmatter key {key!r}")
         if raw[:1] in ("|", ">", "&", "*", "[", "{"):
             raise VerificationError(f"{label}:{number}: unsupported YAML construct in {key!r}")
-        if len(raw) >= 2 and raw[0] == raw[-1] == '"':
-            raw = raw[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+        if raw.startswith('"'):
+            try:
+                decoded = json.loads(raw)
+            except json.JSONDecodeError as error:
+                raise VerificationError(
+                    f"{label}:{number}: invalid double-quoted scalar in {key!r}: {error}"
+                )
+            if not isinstance(decoded, str):
+                raise VerificationError(
+                    f"{label}:{number}: frontmatter value for {key!r} must be a string"
+                )
+            raw = decoded
         fields[key] = raw
     return fields, len(lines) - end - 1, "\n".join(lines[: end + 1])
+
+
+def verify_openai_metadata(skill_dir: Path, name: str) -> None:
+    """Check the generated OpenAI UI metadata without adding a YAML dependency."""
+    path = skill_dir / "agents" / "openai.yaml"
+    if not path.is_file():
+        raise VerificationError(f"{name}: no agents/openai.yaml")
+    text = path.read_text(encoding="utf-8")
+
+    def quoted(field: str) -> str:
+        match = re.search(rf"^  {re.escape(field)}:\s*(.+)$", text, re.M)
+        if not match:
+            raise VerificationError(f"{name}: agents/openai.yaml lacks {field}")
+        try:
+            value = json.loads(match.group(1))
+        except json.JSONDecodeError as error:
+            raise VerificationError(
+                f"{name}: agents/openai.yaml {field} must be a quoted string: {error}"
+            )
+        if not isinstance(value, str) or not value:
+            raise VerificationError(f"{name}: agents/openai.yaml {field} must be non-empty")
+        return value
+
+    quoted("display_name")
+    short = quoted("short_description")
+    if not 25 <= len(short) <= 64:
+        raise VerificationError(
+            f"{name}: agents/openai.yaml short_description must be 25-64 characters"
+        )
+    prompt = quoted("default_prompt")
+    if f"${name}" not in prompt:
+        raise VerificationError(
+            f"{name}: agents/openai.yaml default_prompt must mention ${name}"
+        )
+    if "\npolicy:\n  allow_implicit_invocation: true\n" not in text:
+        raise VerificationError(
+            f"{name}: agents/openai.yaml must allow implicit invocation"
+        )
+
+
+def verify_trigger_evals(skill_dir: Path, name: str) -> int:
+    """Validate portable positive and near-miss negative trigger fixtures."""
+    path = skill_dir / "evals" / "eval_queries.json"
+    if not path.is_file():
+        raise VerificationError(f"{name}: no evals/eval_queries.json")
+    try:
+        queries = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise VerificationError(f"{name}: invalid eval_queries.json: {error}")
+    if not isinstance(queries, list):
+        raise VerificationError(f"{name}: eval_queries.json must contain a list")
+    seen: set[str] = set()
+    counts = {True: 0, False: 0}
+    for number, item in enumerate(queries, 1):
+        if not isinstance(item, dict) or set(item) != {"query", "should_trigger"}:
+            raise VerificationError(
+                f"{name}: eval query {number} must contain only query and should_trigger"
+            )
+        query, should_trigger = item["query"], item["should_trigger"]
+        if not isinstance(query, str) or not query.strip():
+            raise VerificationError(f"{name}: eval query {number} has no query text")
+        if query in seen:
+            raise VerificationError(f"{name}: duplicate eval query {query!r}")
+        seen.add(query)
+        if not isinstance(should_trigger, bool):
+            raise VerificationError(
+                f"{name}: eval query {number} should_trigger must be boolean"
+            )
+        counts[should_trigger] += 1
+    for expected, count in counts.items():
+        if count < MIN_TRIGGER_EVALS_PER_CLASS:
+            raise VerificationError(
+                f"{name}: needs at least {MIN_TRIGGER_EVALS_PER_CLASS} eval queries with "
+                f"should_trigger={str(expected).lower()}"
+            )
+    return len(queries)
 
 
 def anchors_of(path: Path) -> set[str]:
@@ -151,7 +243,7 @@ def destinations(text: str) -> list[str]:
         used_labels += [
             label
             for label in REFERENCE_USAGE.findall(CODE_SPAN.sub("", body))
-            if label.strip()
+            if label.strip() and not label.startswith("^")
         ]
         definition = REFERENCE_DEFINITION.match(body)
         if definition:
@@ -198,7 +290,7 @@ def check_links(root: Path, label: str) -> int:
                 if joined == ".." or joined.startswith("../"):
                     raise VerificationError(
                         f"{label}/{relative}: link {destination!r} escapes the skill root; "
-                        "it would dangle once installed into .claude/skills/"
+                        "it would dangle once installed into an agent skills directory"
                     )
                 target = root / joined
                 if not target.is_file():
@@ -240,6 +332,7 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
 
     legends: set[str] = set()
     total_links = 0
+    total_evals = 0
     for name in names:
         skill_dir = skills_root / name
         skill_file = skill_dir / "SKILL.md"
@@ -255,7 +348,15 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
             )
         text = skill_file.read_text(encoding="utf-8")
         fields, body_lines, frontmatter = parse_frontmatter(text, f"{name}/SKILL.md")
-        if not SKILL_NAME.match(fields.get("name", "")):
+        unexpected = set(fields) - ALLOWED_FRONTMATTER_FIELDS
+        if unexpected:
+            raise VerificationError(
+                f"{name}: non-portable frontmatter fields {sorted(unexpected)}; "
+                "put host metadata under agents/"
+            )
+        if len(fields.get("name", "")) > MAX_SKILL_NAME_CHARS or not SKILL_NAME.fullmatch(
+            fields.get("name", "")
+        ):
             raise VerificationError(f"{name}: frontmatter name must match {SKILL_NAME.pattern}")
         if fields["name"] != name:
             raise VerificationError(
@@ -263,6 +364,10 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
             )
         if not fields.get("description"):
             raise VerificationError(f"{name}: a description is required to trigger the skill")
+        if len(fields["description"]) > MAX_DESCRIPTION_CHARS:
+            raise VerificationError(
+                f"{name}: description exceeds {MAX_DESCRIPTION_CHARS} characters"
+            )
         # The whole rendered block, matching what build-skills.py budgets. Summing
         # the decoded field values would undercount by the quoting, the escapes and
         # the key names, and let an oversized block through.
@@ -290,15 +395,26 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
                 "extent cannot be compared across skills"
             )
         legends.add(text[start:end])
+        for markdown in sorted(skill_dir.rglob("*.md")):
+            markdown_text = markdown.read_text(encoding="utf-8")
+            for token in ("`Grep`", "`WebFetch`"):
+                if token in markdown_text:
+                    relative = markdown.relative_to(skill_dir)
+                    raise VerificationError(
+                        f"{name}: {relative} uses host-specific tool name {token}"
+                    )
+        verify_openai_metadata(skill_dir, name)
+        total_evals += verify_trigger_evals(skill_dir, name)
 
         # In place, then again from a detached copy, which is what installation
         # produces and where a link reaching outside the skill would dangle.
         total_links += check_links(skill_dir, name)
         with tempfile.TemporaryDirectory() as directory:
-            relocated = Path(directory) / ".claude" / "skills" / name
-            relocated.parent.mkdir(parents=True)
-            shutil.copytree(skill_dir, relocated)
-            check_links(relocated, f"{name} (installed)")
+            for agent_dir in (".agents", ".claude"):
+                relocated = Path(directory) / agent_dir / "skills" / name
+                relocated.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(skill_dir, relocated)
+                check_links(relocated, f"{name} (installed under {agent_dir})")
 
     if len(legends) != 1:
         raise VerificationError("skills disagree about the evidence-marker legend")
@@ -320,7 +436,12 @@ def verify(skills_root: Path, manifest_path: Path) -> dict:
         if on_disk[relative] != digest:
             raise VerificationError(f"{relative}: sha256 does not match the manifest")
 
-    return {"skills": len(names), "files": len(on_disk), "links": total_links}
+    return {
+        "skills": len(names),
+        "files": len(on_disk),
+        "links": total_links,
+        "trigger_evals": total_evals,
+    }
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -340,7 +461,7 @@ def main() -> int:
         return 1
     print(
         f"Verified {summary['skills']} skills, {summary['files']} files, "
-        f"{summary['links']} links"
+        f"{summary['links']} links, {summary['trigger_evals']} trigger evals"
     )
     return 0
 

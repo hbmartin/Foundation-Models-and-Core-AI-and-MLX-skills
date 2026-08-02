@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The object-model primer every other guide assumes, built around the structural fact that makes app architecture fall out: **`AIModel` owns nothing and pins a cache entry; `InferenceFunction` owns the weights**, so "when does this cost me a gigabyte?" is answered *at `loadFunction`, not at `init`*.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md>
+**Local reference:** [part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md)
 
 | Section | Anchor |
 |---|---|
@@ -41,7 +41,7 @@ The object-model primer every other guide assumes, built around the structural f
 
 The single largest source of first-launch stalls, wedged loads and mysterious disk growth.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md>
+**Local reference:** [part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md)
 
 | Section | Anchor |
 |---|---|
@@ -73,7 +73,7 @@ The single largest source of first-launch stalls, wedged loads and mysterious di
 
 A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable: **inference intervals that visibly widen along the timeline**.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md>
+**Local reference:** [part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md)
 
 | Section | Anchor |
 |---|---|
@@ -103,7 +103,7 @@ A decode loop written the naive way gets slower every step, and in Instruments i
 
 The layer above the runtime, where a raw `.aimodel` becomes something shippable and Apple's own Swift package turns "I have a converted Qwen3" into `LanguageModelSession(model:)`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md>
+**Local reference:** [part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md)
 
 | Section | Anchor |
 |---|---|
@@ -127,7 +127,7 @@ The layer above the runtime, where a raw `.aimodel` becomes something shippable 
 
 The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md>
+**Local reference:** [part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md)
 
 | Section | Anchor |
 |---|---|
@@ -151,7 +151,7 @@ The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAI
 
 The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()` as where the passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the multi-function split; and the Python-side verification gate that catches everything above for free.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md>
+**Local reference:** [part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md)
 
 | Section | Anchor |
 |---|---|
@@ -178,7 +178,7 @@ The pipeline end to end as a series of contracts rather than a recipe: the decom
 
 The debugging guide for conversion failures — and, more usefully, for **conversions that succeed and should not have**.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md>
+**Local reference:** [part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md)
 
 | Section | Anchor |
 |---|---|
@@ -203,7 +203,7 @@ The debugging guide for conversion failures — and, more usefully, for **conver
 
 The seam, not the shader: how a kernel you already know how to write gets into an `.aimodel`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md>
+**Local reference:** [part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md)
 
 | Section | Anchor |
 |---|---|
@@ -235,7 +235,7 @@ The seam, not the shader: how a kernel you already know how to write gets into a
 
 The foundation guide, and the one everything else assumes.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/01-quantization.md>
+**Local reference:** [part-09-coreai-compression-numerics/references/01-quantization.md](part-09-coreai-compression-numerics/references/01-quantization.md)
 
 | Section | Anchor |
 |---|---|
@@ -268,7 +268,7 @@ The foundation guide, and the one everything else assumes.
 
 The other three things `coreai-opt` does, plus the two ways of combining them.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md>
+**Local reference:** [part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md)
 
 | Section | Anchor |
 |---|---|
@@ -303,7 +303,7 @@ The other three things `coreai-opt` does, plus the two ways of combining them.
 
 A reference rather than a tutorial, answering one question in as many tables as it takes: for a given format — int4, FP8 E4M3, FP4 E2M1, MXFP4, a 6-bit palette, E8M0 block scales — which layer can **emit** it, which can **store** it, and which can actually **compute** on it.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md>
+**Local reference:** [part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md)
 
 | Section | Anchor |
 |---|---|
@@ -331,7 +331,7 @@ A reference rather than a tutorial, answering one question in as many tables as 
 
 Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5, fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout, `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection, per-head attention with **no fused SDPA**, `-40000.0` instead of `-inf`, precomputed RoPE, the read-only KV cache; on the GPU, standard layout, fused QKV, native fused SDPA, `up_proj` before `gate_proj`, the stateful export wrapper, MoE via `SwitchLinear` / `GatherMM`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md>
+**Local reference:** [part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md)
 
 | Section | Anchor |
 |---|---|
@@ -358,7 +358,7 @@ Apple's at-a-glance comparison table reproduced in full and unpacked row by row:
 
 Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which Python line wrote it* (Debugger, a download plus a specialization) — built around the three diagnoses Apple demonstrated: widening inference intervals → no KV cache → Core AI **states**; a load event with a large specialization sub-event inside an interactive flow → a first-run experience and AOT compilation; SAM3's missing occluded flower → sort sync points by similarity, notice they all belong to the **detector decoder**, cross that with "the detector is 4 % of parameters", exclude it with `None`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md>
+**Local reference:** [part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md)
 
 | Section | Anchor |
 |---|---|
@@ -388,7 +388,7 @@ Three tools at three levels — *is anything happening* (gauge, free), *where is
 
 The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.respond(to:)`, in ten stages, each with its gates and failure modes.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md>
+**Local reference:** [part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md)
 
 | Section | Anchor |
 |---|---|

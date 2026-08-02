@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for generating installable Claude Code skills from the guides."""
+"""Tests for generating portable Agent Skills from the guides."""
 
 import importlib.util
 import json
@@ -148,9 +148,19 @@ SKILL_MANIFEST = {
         {
             "name": "apple-test-skill",
             "title": "Test skill",
+            "short_description": "Choose an Apple on-device AI stack",
             "owns": [{"part": 1}],
-            "description": "Covers the orientation part of the series.",
-            "when_to_use": "Use when choosing a stack.",
+            "description": "Covers the orientation part of the series. Use when choosing an Apple on-device AI stack or checking platform gates.",
+            "trigger_evals": [
+                {"query": "Which Apple AI stack should I use?", "should_trigger": True},
+                {"query": "Map the platform gates for this AI feature.", "should_trigger": True},
+                {"query": "Is this API 26.x or 27-only?", "should_trigger": True},
+                {"query": "Route this unfamiliar Apple AI symbol.", "should_trigger": True},
+                {"query": "Debug a Foundation Models tool loop.", "should_trigger": False},
+                {"query": "Convert a PyTorch model to Core AI.", "should_trigger": False},
+                {"query": "Fix an MLX recompilation storm.", "should_trigger": False},
+                {"query": "Merge SpeechAnalyzer results.", "should_trigger": False},
+            ],
             "related": [],
         }
     ],
@@ -203,15 +213,21 @@ class SkillBuildTests(unittest.TestCase):
             }
             self.assertEqual(before, after)
 
-    def test_bundles_part_readmes_but_not_deep_references(self):
+    def test_bundles_part_readmes_and_deep_references(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             guides = make_fixture(root)
             self.build(root, guides)
             skill = root / "skills" / "apple-test-skill"
             self.assertTrue((skill / "references" / "part-01-orientation" / "README.md").is_file())
-            self.assertFalse(
-                (skill / "references" / "part-01-orientation" / "references").exists()
+            self.assertTrue(
+                (
+                    skill
+                    / "references"
+                    / "part-01-orientation"
+                    / "references"
+                    / "01-map.md"
+                ).is_file()
             )
             for name in ("API-INDEX.md", "SILENT-FAILURES.md", "SECTION-MAPS.md"):
                 self.assertTrue((skill / "references" / name).is_file(), name)
@@ -225,9 +241,9 @@ class SkillBuildTests(unittest.TestCase):
                 root / "skills" / "apple-test-skill" / "references"
                 / "part-01-orientation" / "README.md"
             ).read_text(encoding="utf-8")
-            # Deep references leave the skill, so they become absolute...
-            self.assertIn("https://github.com/owner/repo/blob/main/guides/", copied)
-            # ...while the reproduced callouts and headings are untouched.
+            # Owned deep references stay local after installation.
+            self.assertIn("](references/01-map.md)", copied)
+            # Reproduced callouts and headings are untouched.
             self.assertIn("⚠️ **SILENT FAILURE**", copied)
             self.assertIn("**Version floor:**", copied)
 
@@ -236,14 +252,62 @@ class SkillBuildTests(unittest.TestCase):
             root = Path(directory)
             guides = make_fixture(root)
             self.build(root, guides)
-            maps = (
-                root / "skills" / "apple-test-skill" / "references" / "SECTION-MAPS.md"
+            copied = (
+                root
+                / "skills"
+                / "apple-test-skill"
+                / "references"
+                / "part-01-orientation"
+                / "references"
+                / "01-map.md"
             ).read_text(encoding="utf-8")
             self.assertIn(
-                "https://github.com/owner/repo/blob/main/guides/part-01-orientation"
-                "/references/01-map.md",
+                "https://github.com/owner/repo/blob/main/notes/FRESHNESS-RUNBOOK.md",
+                copied,
+            )
+
+    def test_generated_routing_uses_agent_neutral_file_operations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            self.build(root, guides)
+            skill = root / "skills" / "apple-test-skill"
+            maps = (skill / "references" / "SECTION-MAPS.md").read_text(encoding="utf-8")
+            router = (skill / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn(
+                "[part-01-orientation/references/01-map.md]"
+                "(part-01-orientation/references/01-map.md)",
                 maps,
             )
+            self.assertIn("Open the narrowest relevant section first.", maps)
+            self.assertIn("Search the local guide first", router)
+            for host_specific_name in ("Grep", "WebFetch"):
+                self.assertNotIn(host_specific_name, maps)
+                self.assertNotIn(host_specific_name, router)
+
+    def test_generates_openai_metadata_and_trigger_evals(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            self.build(root, guides)
+            skill = root / "skills" / "apple-test-skill"
+            metadata = (skill / "agents" / "openai.yaml").read_text(encoding="utf-8")
+            self.assertIn('display_name: "Test skill"', metadata)
+            self.assertIn("$apple-test-skill", metadata)
+            self.assertIn("allow_implicit_invocation: true", metadata)
+            evals = json.loads((skill / "evals" / "eval_queries.json").read_text())
+            self.assertEqual(sum(item["should_trigger"] for item in evals), 4)
+            self.assertEqual(sum(not item["should_trigger"] for item in evals), 4)
+
+    def test_emits_only_portable_trigger_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            self.build(root, guides)
+            text = (root / "skills" / "apple-test-skill" / "SKILL.md").read_text()
+            fields, _, _ = verifier.parse_frontmatter(text, "test")
+            self.assertEqual(set(fields), {"name", "description"})
+            self.assertIn("Use when choosing", fields["description"])
 
     def test_section_maps_use_github_faithful_anchors(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -353,7 +417,7 @@ class SkillBuildTests(unittest.TestCase):
             )
             with self.assertRaises(builder.SkillError) as caught:
                 self.build(root, guides)
-            self.assertIn("budget", str(caught.exception))
+            self.assertIn("1024", str(caught.exception))
 
     def test_refuses_an_unrecognized_part_heading(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -398,6 +462,52 @@ class SkillBuildTests(unittest.TestCase):
 
 
 class RenderingHelperTests(unittest.TestCase):
+    def test_yaml_scalar_round_trips_yaml_reserved_and_implicitly_typed_text(self):
+        values = (
+            "",
+            " leading space",
+            "trailing space ",
+            "- list item",
+            "? mapping key",
+            ": mapping value",
+            "!tagged",
+            "&anchor",
+            "*alias",
+            "%directive",
+            "@reserved",
+            "`reserved",
+            "# comment",
+            ", flow entry",
+            "[flow sequence]",
+            "] flow end",
+            "{flow mapping}",
+            "} flow end",
+            "| block scalar",
+            "> folded scalar",
+            "null",
+            "true",
+            "false",
+            "~",
+            "123",
+            "1.2",
+            'a "quote" and a \\backslash',
+            "a tab\tinside",
+        )
+        for value in values:
+            with self.subTest(value=value):
+                frontmatter = builder.render_frontmatter("test-skill", value)
+                encoded = frontmatter.splitlines()[2].removeprefix("description: ")
+                self.assertTrue(encoded.startswith('"'), encoded)
+                self.assertEqual(json.loads(encoded), value)
+                fields, _, _ = verifier.parse_frontmatter(frontmatter + "\nbody\n", "test")
+                self.assertEqual(fields["description"], value)
+
+    def test_yaml_scalar_rejects_physical_line_breaks(self):
+        for value in ("first\nsecond", "first\rsecond", "first\r\nsecond"):
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(builder.SkillError):
+                    builder.yaml_scalar(value)
+
     def test_first_sentence_never_ends_inside_a_code_span(self):
         # These strings land in table cells; a dangling backtick makes GitHub run
         # the code span to the next backtick and eat the rest of the row.
@@ -544,6 +654,7 @@ class SkillVerifierTests(unittest.TestCase):
             summary = self.build_and_verify(Path(directory))
             self.assertEqual(summary["skills"], 1)
             self.assertGreater(summary["links"], 0)
+            self.assertEqual(summary["trigger_evals"], 8)
 
     def test_rejects_a_link_that_escapes_the_skill_root(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -577,6 +688,9 @@ class SkillVerifierTests(unittest.TestCase):
     def test_a_footnote_definition_is_not_read_as_a_reference_link(self):
         self.assertEqual(verifier.destinations("[^note]: just prose, not a link\n"), [])
 
+    def test_a_footnote_usage_is_not_read_as_a_reference_link(self):
+        self.assertEqual(verifier.destinations("A sourced claim.[^note]\n"), [])
+
     def test_rejects_a_fragment_with_no_matching_heading(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -604,6 +718,49 @@ class SkillVerifierTests(unittest.TestCase):
     def test_rejects_frontmatter_that_is_not_flat_scalars(self):
         with self.assertRaises(verifier.VerificationError):
             verifier.parse_frontmatter("---\nname: x\nnested:\n  a: 1\n---\nbody\n", "x")
+
+    def test_rejects_an_invalid_double_quoted_frontmatter_scalar(self):
+        with self.assertRaises(verifier.VerificationError) as caught:
+            verifier.parse_frontmatter(
+                '---\nname: x\ndescription: "bad\\q escape"\n---\nbody\n', "x"
+            )
+        self.assertIn("invalid double-quoted scalar", str(caught.exception))
+
+    def test_rejects_a_non_portable_frontmatter_extension(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.build_and_verify(root)
+            path = root / "skills" / "apple-test-skill" / "SKILL.md"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "description:", "when_to_use: Claude only\ndescription:", 1
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(verifier.VerificationError) as caught:
+                verifier.verify(root / "skills", root / "skills" / "skills-manifest.json")
+            self.assertIn("non-portable frontmatter", str(caught.exception))
+
+    def test_rejects_host_specific_tools_in_bundled_references(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.build_and_verify(root)
+            path = (
+                root
+                / "skills"
+                / "apple-test-skill"
+                / "references"
+                / "part-01-orientation"
+                / "references"
+                / "01-map.md"
+            )
+            path.write_text(
+                path.read_text(encoding="utf-8") + "\nUse `WebFetch` for this page.\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(verifier.VerificationError) as caught:
+                verifier.verify(root / "skills", root / "skills" / "skills-manifest.json")
+            self.assertIn("host-specific tool name", str(caught.exception))
 
     def test_the_frontmatter_budget_measures_the_rendered_block(self):
         # A description full of quotes renders longer than its decoded text, and
@@ -689,6 +846,18 @@ class CommittedSkillsTests(unittest.TestCase):
         expected = len(json.loads(MANIFEST.read_text(encoding="utf-8"))["skills"])
         summary = verifier.verify(SKILLS, SKILLS / "skills-manifest.json")
         self.assertEqual(summary["skills"], expected)
+        self.assertEqual(summary["trigger_evals"], expected * 8)
+
+    def test_portable_docs_and_routers_avoid_host_specific_tool_names(self):
+        paths = [REPO / "README.md", SKILLS / "README.md"]
+        paths += sorted(SKILLS.glob("*/SKILL.md"))
+        paths += sorted(SKILLS.glob("*/references/SECTION-MAPS.md"))
+        host_specific = re.compile(r"\b(?:Grep|WebFetch)\b")
+        for path in paths:
+            self.assertIsNone(
+                host_specific.search(path.read_text(encoding="utf-8")),
+                f"{path.relative_to(REPO)} should use agent-neutral search/open wording",
+            )
 
     def test_every_real_part_readme_parses(self):
         # The drift alarm: a guide edit that changes a part README's structure

@@ -68,25 +68,25 @@ Three separate problems converge after the model works and before Submit for Rev
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "My models add over a gigabyte to the app download" | [15.1 §1–§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#1-the-size-problem) | Host remotely, download one variant; the first-run screen is where the wait belongs |
-| "How do I actually deliver the bytes?" | [15.1 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#3-background-assets) | 🔴 no verified 2026 Background Assets surface for Core AI — own the delivery protocol, `URLSession` first |
-| "Works on my Mac, `invalidCompiledModel` on device" | [15.1 §4.4, §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#44-️-architecture-codes-track-the-device-identifier-not-the-marketing-name) | iPhone 17 Pro is `iPhone18,1` → **`h18p`**, not `h17p`. Never hardcode an arch code |
-| "Users report 'Download failed' on a perfectly good connection" | [15.1 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#52-why-this-is-worse-than-an-ordinary-build-failure) | A wrong `--architecture` becomes a **404 from your asset host**, which your retry logic hides forever |
-| "First launch stalls for tens of seconds, or minutes" | [15.1 §2, §6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#2-the-feature-introduction-screen) | Specialization. 19.2 s JIT vs 4.9 s AOT on one measured model; ≥ 1 GB means AOT |
-| "The stall came back after I fixed it" · "storage grew by a multiple of my model" | [15.1 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) | `SpecializationOptions` is part of the cache key and has a mutable property |
-| "I deleted the source `.aimodel` and now nothing loads" | [15.1 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) | Bookmarks do not pin the cache entry, and resolution fails by returning `nil` |
-| "I need to push a model update to shipped users" | [15.1 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#7-updating-a-model) | Delete cache entries **before** replacing the file; `deleteEntries(for:)`, not the single-entry form |
-| "Can I stop this installing on devices where it won't work?" | [15.1 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#12-the-app-store-reality-you-cannot-gate-installation) | No. Four strategies for the world where you can't |
-| "It loaded, then the app just vanished" · `signal 9` · `std::bad_alloc` | [15.2 §1–§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#1-the-jetsam-model) | Jetsam. Load success is not a fit test; the first step is the test |
-| "My tok/s moves 40% between runs on the same device" | [15.2 §7.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#71-the-dvfs-finding) | DVFS clock ramp, with thermals eliminated as the cause. 66 → 102 tok/s, one afternoon |
-| "Which backend should I ship?" | [15.2 §7.3, §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#73-sustained-throughput-the-gpuane-inversion) | Burst and sustained give different rankings; so do tok/s and battery |
-| "I'm about to publish a comparison" | [15.2 §9–§10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#9-honest-benchmarking) | Read §9.9 first. A harness once manufactured an 80%-vs-20% gap that was entirely its own bugs |
+| "My models add over a gigabyte to the app download" | [15.1 §1–§3](references/01-model-distribution-and-updates.md#1-the-size-problem) | Host remotely, download one variant; the first-run screen is where the wait belongs |
+| "How do I actually deliver the bytes?" | [15.1 §3](references/01-model-distribution-and-updates.md#3-background-assets) | 🔴 no verified 2026 Background Assets surface for Core AI — own the delivery protocol, `URLSession` first |
+| "Works on my Mac, `invalidCompiledModel` on device" | [15.1 §4.4, §5](references/01-model-distribution-and-updates.md#44-️-architecture-codes-track-the-device-identifier-not-the-marketing-name) | iPhone 17 Pro is `iPhone18,1` → **`h18p`**, not `h17p`. Never hardcode an arch code |
+| "Users report 'Download failed' on a perfectly good connection" | [15.1 §5.2](references/01-model-distribution-and-updates.md#52-why-this-is-worse-than-an-ordinary-build-failure) | A wrong `--architecture` becomes a **404 from your asset host**, which your retry logic hides forever |
+| "First launch stalls for tens of seconds, or minutes" | [15.1 §2, §6](references/01-model-distribution-and-updates.md#2-the-feature-introduction-screen) | Specialization. 19.2 s JIT vs 4.9 s AOT on one measured model; ≥ 1 GB means AOT |
+| "The stall came back after I fixed it" · "storage grew by a multiple of my model" | [15.1 §9](references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) | `SpecializationOptions` is part of the cache key and has a mutable property |
+| "I deleted the source `.aimodel` and now nothing loads" | [15.1 §8](references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) | Bookmarks do not pin the cache entry, and resolution fails by returning `nil` |
+| "I need to push a model update to shipped users" | [15.1 §7](references/01-model-distribution-and-updates.md#7-updating-a-model) | Delete cache entries **before** replacing the file; `deleteEntries(for:)`, not the single-entry form |
+| "Can I stop this installing on devices where it won't work?" | [15.1 §12](references/01-model-distribution-and-updates.md#12-the-app-store-reality-you-cannot-gate-installation) | No. Four strategies for the world where you can't |
+| "It loaded, then the app just vanished" · `signal 9` · `std::bad_alloc` | [15.2 §1–§3](references/02-memory-thermals-and-honest-benchmarking.md#1-the-jetsam-model) | Jetsam. Load success is not a fit test; the first step is the test |
+| "My tok/s moves 40% between runs on the same device" | [15.2 §7.1](references/02-memory-thermals-and-honest-benchmarking.md#71-the-dvfs-finding) | DVFS clock ramp, with thermals eliminated as the cause. 66 → 102 tok/s, one afternoon |
+| "Which backend should I ship?" | [15.2 §7.3, §8](references/02-memory-thermals-and-honest-benchmarking.md#73-sustained-throughput-the-gpuane-inversion) | Burst and sustained give different rankings; so do tok/s and battery |
+| "I'm about to publish a comparison" | [15.2 §9–§10](references/02-memory-thermals-and-honest-benchmarking.md#9-honest-benchmarking) | Read §9.9 first. A harness once manufactured an 80%-vs-20% gap that was entirely its own bugs |
 
 ---
 
 ## The guides in this part
 
-### [15.1 — Shipping models: Background Assets, per-architecture variants, and updates](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md)
+### [15.1 — Shipping models: Background Assets, per-architecture variants, and updates](references/01-model-distribution-and-updates.md)
 
 The operational guide for how a model reaches a device and how it gets replaced later: the size
 problem, the feature-introduction screen (which does three jobs at once and is where you hide
@@ -130,7 +130,7 @@ and a safe default. Two numbers worth carrying in from §4.5: omitting
 > `--architecture` codes, though the code→*device* mapping (the M4 Max disagreement above) remains
 > community-only (§4.2).
 
-### [15.2 — Memory, jetsam, thermals, energy, and measuring honestly](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md)
+### [15.2 — Memory, jetsam, thermals, energy, and measuring honestly](references/02-memory-thermals-and-honest-benchmarking.md)
 
 The gap between a demo that works on your desk and an app that survives a week on someone else's
 phone. It has the highest crash-avoidance value in the series and almost none of it is about writing
@@ -178,26 +178,26 @@ is what resolved `apple/coreai-models` issue #112.
 
 ## Reading order
 
-**If you have not yet run your model on a physical device, start with [15.2 §1–§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#1-the-jetsam-model).**
+**If you have not yet run your model on a physical device, start with [15.2 §1–§3](references/02-memory-thermals-and-honest-benchmarking.md#1-the-jetsam-model).**
 It is short, it is the highest-value hour in this part, and it may tell you your model does not fit —
 which is cheaper to learn now than after you have built a delivery pipeline for it. Run §3.2's
 minimum viable fit test (measure available memory before load, after load, **and after one generated
 token**) before reading anything else.
 
-**Then work [15.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) front to back through §9.** §1–§3
+**Then work [15.1](references/01-model-distribution-and-updates.md) front to back through §9.** §1–§3
 decide your delivery architecture, §4–§5 decide whether you ship AOT variants at all and stop you
 shipping a green build the device rejects, §6–§7 are first run and updates, and §8–§9 are the two
 silent failures you cannot retrofit cheaply — both are structural, and both are far easier to design
-around than to debug. Return to [15.2 §4–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#4-responding-to-pressure)
+around than to debug. Return to [15.2 §4–§6](references/02-memory-thermals-and-honest-benchmarking.md#4-responding-to-pressure)
 when you wire up pressure handling.
 
-**Deferrable.** [15.1 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#10-app-groups-sharing-one-specialization-across-targets) (app groups) until you
+**Deferrable.** [15.1 §10](references/01-model-distribution-and-updates.md#10-app-groups-sharing-one-specialization-across-targets) (app groups) until you
 actually have an extension or widget sharing the model — but read §10.5 before you assume one can,
-because Core AI models count against the extension's limit. [15.1 §11–§12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#11-storage-hygiene)
-belong to the fortnight before submission, not to week one. [15.2 §7–§8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#7-thermals-and-dvfs)
+because Core AI models count against the extension's limit. [15.1 §11–§12](references/01-model-distribution-and-updates.md#11-storage-hygiene)
+belong to the fortnight before submission, not to week one. [15.2 §7–§8](references/02-memory-thermals-and-honest-benchmarking.md#7-thermals-and-dvfs)
 are deferrable *only* if your feature is one-shot; if it runs for minutes — transcription, an agent
 loop, anything always-on — §7.3's sprint-versus-marathon inversion may reorder your backend choice
-and belongs before you commit. [15.2 §9–§10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#9-honest-benchmarking)
+and belongs before you commit. [15.2 §9–§10](references/02-memory-thermals-and-honest-benchmarking.md#9-honest-benchmarking)
 are deferrable until you quote a number to anyone, internally or externally — at which point they stop
 being optional.
 

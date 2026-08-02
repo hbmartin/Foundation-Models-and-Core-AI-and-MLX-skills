@@ -11,16 +11,25 @@ the MkDocs site are derived from it; edit the guide sources, not generated docum
 ## Using the guides with a coding agent
 
 The corpus ships as ten installable [Agent Skills](https://agentskills.io), generated from
-`guides/` into [`skills/`](skills/). They give Claude Code — or any agent that reads `SKILL.md` —
-the series' routing power inside a project, without pulling 11 MB into a context window.
+`guides/` into [`skills/`](skills/). The same portable packages work with Codex, ChatGPT,
+Claude Code, and other Agent Skills hosts without pulling the whole corpus into a context window.
+
+Install all ten for Codex into the current project:
 
 ```bash
-npx skills add hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills --all
+npx skills add hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills --skill '*' --agent codex
 ```
 
-Install one instead of all ten with `--skill apple-mlx`, and add `-g` to install for every project
-rather than the current one. The available skills are `apple-on-device-ai` (start here: which stack
-to use, and platform gating), `apple-foundation-models`, `apple-core-ai`, `apple-mlx`,
+For Claude Code, use the same source with its agent identifier:
+
+```bash
+npx skills add hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills --skill '*' --agent claude-code
+```
+
+Replace `'*'` with `apple-mlx` or another name to install one skill. Project-scoped installation is
+the documented default and keeps the target directory explicit: `.agents/skills/` for Codex and
+`.claude/skills/` for Claude Code. The available skills are `apple-on-device-ai` (start here: which
+stack to use, and platform gating), `apple-foundation-models`, `apple-core-ai`, `apple-mlx`,
 `apple-ai-evaluations`, `apple-metal-tensorops`, `apple-ai-shipping`, `apple-speech`,
 `apple-app-intents`, and `apple-ai-migration`. See [`skills/README.md`](skills/README.md) for what
 each one covers.
@@ -29,11 +38,13 @@ Each skill's `SKILL.md` is a router, not a copy of a guide: it carries the evide
 conventions, the version floors, a triage table, and a lookup protocol. The material sits in
 `references/`, which costs nothing until read — the part READMEs, a symbol index and a
 silent-failure index both sliced to that skill, and section maps addressing the deep reference
-guides that stay in this repository.
+guides bundled into that skill for offline use. Each package also includes `agents/openai.yaml`
+for Codex and ChatGPT presentation and `evals/eval_queries.json` for portable activation testing.
 
 `skills/` is generated and committed; edit the guides and run `./scripts/build-skills.sh`. A
 [test](scripts/tests/test_skills.py) byte-compares the committed tree against a clean regeneration,
-so skills cannot drift from the corpus.
+so skills cannot drift from the corpus. CI validates the open specification and performs
+byte-identical `npx skills` installations for both Codex and Claude Code.
 
 ## Maintaining the corpus
 

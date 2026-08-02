@@ -70,11 +70,11 @@ index content — into a shape Apple Intelligence can use, which is where integr
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The keynote promised speech generation and I can't find the API" | [16.1 §1.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#11-there-is-no-new-text-to-speech-api) | It does not exist. AVFoundation, per Apple staff on thread 834149 |
-| "I'm learning the 2026 Speech API from the downloadable sample" | [16.1 §1.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
-| "Users report the last sentence gets cut off" | [16.1 §9, §6.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
-| "My transcript reads *'I went to the I went to the store'*" | [16.1 §8.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#83-️-silent-failure-strategy-a-silently-degrades-to-append-only) | Your preset does not emit `.audioTimeRange`, so the merge always appends |
-| "Empty transcript, clean console" | [16.1 §5.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) | Assets before format before analyzer before audio. The analyzer converts nothing |
+| "The keynote promised speech generation and I can't find the API" | [16.1 §1.1](references/01-speech-analyzer-end-to-end.md#11-there-is-no-new-text-to-speech-api) | It does not exist. AVFoundation, per Apple staff on thread 834149 |
+| "I'm learning the 2026 Speech API from the downloadable sample" | [16.1 §1.2](references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
+| "Users report the last sentence gets cut off" | [16.1 §9, §6.6](references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
+| "My transcript reads *'I went to the I went to the store'*" | [16.1 §8.3](references/01-speech-analyzer-end-to-end.md#83-️-silent-failure-strategy-a-silently-degrades-to-append-only) | Your preset does not emit `.audioTimeRange`, so the merge always appends |
+| "Empty transcript, clean console" | [16.1 §5.5](references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) | Assets before format before analyzer before audio. The analyzer converts nothing |
 | "Is there a Siri schema for what my app does?" | [16.2 §5–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 domains enumerated — then the categories with no domain at all |
 | "My category isn't covered. What is left?" | [16.2 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | `.system.searchInApp`, with code. Works without domains or indexing |
 | "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
@@ -90,7 +90,7 @@ index content — into a shape Apple Intelligence can use, which is where integr
 
 ## The guides in this part
 
-### [16.1 — SpeechAnalyzer: live transcription, assets, and custom vocabulary](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md)
+### [16.1 — SpeechAnalyzer: live transcription, assets, and custom vocabulary](references/01-speech-analyzer-end-to-end.md)
 
 The 2026 speech-to-text stack end to end: an actor owning analysis modules, fed one time-coded audio
 sequence, handing each module's output back as its own `AsyncSequence` — with **no accumulated
@@ -223,7 +223,7 @@ surface and most of 16.3 becomes optional. **Then 16.4 before 16.3** for discove
 **16.3 before 16.4** for *"do this to the thing on screen"* — and in that case read
 [16.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#1-the-two-paths) before writing a line, because it decides whether the
 work is worth doing at all. **Speech is standalone:**
-[16.1 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#1-two-warnings-before-you-write-any-code) is mandatory and takes two minutes, and §9 and
+[16.1 §1](references/01-speech-analyzer-end-to-end.md#1-two-warnings-before-you-write-any-code) is mandatory and takes two minutes, and §9 and
 §16 decide whether your feature ships correctly.
 
 **Deferrable:** 16.1 §11 (custom vocabulary) until real transcripts show which terms fail, and §14 until

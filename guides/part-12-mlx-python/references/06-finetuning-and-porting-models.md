@@ -1404,7 +1404,7 @@ every linear:
 ```
 attention: (H·r + r·H) × 4     for q, k, v, o          = 8·H·r
 MLP:       (H·r + r·I)         gate                     ┐
-         + (I·r + r·H)         down                     ├ = 2r(2H + I)... 
+         + (I·r + r·H)         down                     ├ = 2r(2H + I)...
          + (H·r + r·I)         up                       ┘
 ```
 

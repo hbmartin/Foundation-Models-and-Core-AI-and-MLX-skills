@@ -66,24 +66,24 @@ the throughput numbers came from.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I am about to re-author a model and don't know which compute unit to target" | [10.1 §1–§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#1-two-rulesets-not-two-styles) | The two rulesets side by side, plus Apple's own decision tables and memory budgets |
-| "My ANE model runs correctly but the phone is hot" | [10.1 §4.16](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#416-residency-is-the-rule-the-other-rules-serve) | Residency. One fp32 literal in a norm is 56 accelerator transitions per forward pass |
-| "Fine at token 1, degraded by token 64" | [10.1 §4.13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#413-the-read-only-kv-cache) | You cached the pre-RoPE key. Apple marks this **CRITICAL**, and nowhere else |
-| "I re-authored for the ANE and it still runs on the GPU" | [10.1 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference) · [§4.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#41-max-tensor-rank-is-5) | Entrypoint names, or `enable_per_channel_scale=True` and its rank-6 LUTs |
-| "Each inference is slower than the last" | [10.2 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#4-worked-trace-1--inference-intervals-that-grow) | The canonical before/after trace: no KV cache, fixed with Core AI states |
-| "It runs, and the answer is wrong" | [10.2 §9–§11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#9-save_intermediates-and-the-reference-run) | `save_intermediates`, sync points, and the SAM3 missing-flower diagnosis end to end |
-| "It got worse after I compressed it" | [10.2 §11.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#115-the-diagnosis) · [§12.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#121-modelinspector--what-will-actually-be-compressed) | Sort by similarity, find a *module* pattern — then prove your exclusion regex matches anything |
-| "It won't load at all, with an MLIR error" | [10.2 §15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#15-️-provenance-the-coreai-torch-040-ir-location-incident) | Not numerics, not timing — asset **provenance**. Audit by the `producer` field |
-| "I just want Qwen3 running today" | [10.3 §2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#2-the-easy-road-the-catalog-and-the-export-cli) | The catalog, the ten presets, and one `uv run coreai.llm.export` command |
-| "Fluent locally, incoherent globally, drifts after ~10 tokens" | [10.3 §8.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#84-️-silent-failure--omit-remove_functionalization-and-your-kv-writes-disappear) | The single most dangerous omission in the pipeline |
-| "`@Generable` throws on my own Core AI model" | [10.3 §11.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#114-️-the-gpu-pipelined-engine-cannot-do-guided-generation) | The pipelined engine has no logits. Not workaroundable at the call site |
-| "`Expected 2 states, got 4`" | [10.3 §13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#13-the-hybrid--ssm-wall) | The hybrid/SSM wall — and why those models forfeit prefix caching permanently |
+| "I am about to re-author a model and don't know which compute unit to target" | [10.1 §1–§3](references/01-ane-vs-gpu-authoring-rules.md#1-two-rulesets-not-two-styles) | The two rulesets side by side, plus Apple's own decision tables and memory budgets |
+| "My ANE model runs correctly but the phone is hot" | [10.1 §4.16](references/01-ane-vs-gpu-authoring-rules.md#416-residency-is-the-rule-the-other-rules-serve) | Residency. One fp32 literal in a norm is 56 accelerator transitions per forward pass |
+| "Fine at token 1, degraded by token 64" | [10.1 §4.13](references/01-ane-vs-gpu-authoring-rules.md#413-the-read-only-kv-cache) | You cached the pre-RoPE key. Apple marks this **CRITICAL**, and nowhere else |
+| "I re-authored for the ANE and it still runs on the GPU" | [10.1 §8](references/01-ane-vs-gpu-authoring-rules.md#8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference) · [§4.1](references/01-ane-vs-gpu-authoring-rules.md#41-max-tensor-rank-is-5) | Entrypoint names, or `enable_per_channel_scale=True` and its rank-6 LUTs |
+| "Each inference is slower than the last" | [10.2 §4](references/02-debugging-and-profiling.md#4-worked-trace-1--inference-intervals-that-grow) | The canonical before/after trace: no KV cache, fixed with Core AI states |
+| "It runs, and the answer is wrong" | [10.2 §9–§11](references/02-debugging-and-profiling.md#9-save_intermediates-and-the-reference-run) | `save_intermediates`, sync points, and the SAM3 missing-flower diagnosis end to end |
+| "It got worse after I compressed it" | [10.2 §11.5](references/02-debugging-and-profiling.md#115-the-diagnosis) · [§12.1](references/02-debugging-and-profiling.md#121-modelinspector--what-will-actually-be-compressed) | Sort by similarity, find a *module* pattern — then prove your exclusion regex matches anything |
+| "It won't load at all, with an MLIR error" | [10.2 §15](references/02-debugging-and-profiling.md#15-️-provenance-the-coreai-torch-040-ir-location-incident) | Not numerics, not timing — asset **provenance**. Audit by the `producer` field |
+| "I just want Qwen3 running today" | [10.3 §2](references/03-llm-export-end-to-end.md#2-the-easy-road-the-catalog-and-the-export-cli) | The catalog, the ten presets, and one `uv run coreai.llm.export` command |
+| "Fluent locally, incoherent globally, drifts after ~10 tokens" | [10.3 §8.4](references/03-llm-export-end-to-end.md#84-️-silent-failure--omit-remove_functionalization-and-your-kv-writes-disappear) | The single most dangerous omission in the pipeline |
+| "`@Generable` throws on my own Core AI model" | [10.3 §11.4](references/03-llm-export-end-to-end.md#114-️-the-gpu-pipelined-engine-cannot-do-guided-generation) | The pipelined engine has no logits. Not workaroundable at the call site |
+| "`Expected 2 states, got 4`" | [10.3 §13](references/03-llm-export-end-to-end.md#13-the-hybrid--ssm-wall) | The hybrid/SSM wall — and why those models forfeit prefix caching permanently |
 
 ---
 
 ## The guides in this part
 
-### [10.1 — Authoring for the Neural Engine and for the GPU: two opposite rulesets](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md)
+### [10.1 — Authoring for the Neural Engine and for the GPU: two opposite rulesets](references/01-ane-vs-gpu-authoring-rules.md)
 
 Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5,
 fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout,
@@ -123,7 +123,7 @@ uncompressed).
 > open: `HardwareConstraints` / `AllocationType`, and `LegalizeToCoreOptions(mutable_arg_action:)`
 > — prescribed by a skill file, present in **zero** other files across three Apple repos.
 
-### [10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md)
+### [10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger](references/02-debugging-and-profiling.md)
 
 Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on
 which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which
@@ -161,7 +161,7 @@ Also `coreai-opt`'s pre-conversion surface (`ModelInspector`, per-tensor activat
 > stopped loading on beta 2+, wheel-pinning could not help because the gate was OS-side, and
 > `coreai-build inspect` read the broken assets perfectly, *which made it look recoverable. It wasn't.*
 
-### [10.3 — From a Hugging Face checkpoint to a loadable LLM bundle](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md)
+### [10.3 — From a Hugging Face checkpoint to a loadable LLM bundle](references/03-llm-export-end-to-end.md)
 
 The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.respond(to:)`, in ten
 stages, each with its gates and failure modes. It opens with the **easy road** — a 22-family catalog, a
@@ -206,18 +206,18 @@ edit everyone forgets, the three Swift engines, the hybrid/SSM wall, and the `ml
 
 ## Reading order
 
-**Authoring anything starts at [10.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md), §3 and §8 before
+**Authoring anything starts at [10.1](references/01-ane-vs-gpu-authoring-rules.md), §3 and §8 before
 you write code** — §3 because the compute unit is an architectural decision, §8 because the mechanism
 that delivers it is the function names in your asset, which is not where anyone looks. §4 and §5 are
 per-primitive references; §7 (the gate ladder) and §11.2–§11.3 (the checklists) are what you return
 to.
 
-**Exporting an LLM: go to [10.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) and read §2 first** — for ten
+**Exporting an LLM: go to [10.3](references/03-llm-export-end-to-end.md) and read §2 first** — for ten
 popular checkpoints the whole hard road is one command. Otherwise read §3 (the two contracts) and §6
 (the oracle and the gates) *before* stage 1, because a port without gates is a guess with extra steps;
 then §8.4 before your first export and §10 before your first device build.
 
-**[10.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) is the one to read *ahead of need*, not when you
+**[10.2](references/02-debugging-and-profiling.md) is the one to read *ahead of need*, not when you
 are stuck.** Three of its silent failures are things you must have done *before* the bug appears: link
 `CoreAI.framework` directly, convert a DEBUG asset alongside the RELEASE one, and export
 `USE_LOCAL_COREAI=1` / `ENABLE_DEBUG_INFO=1` in the shell you convert from. Its §14 playbook ("it is

@@ -37,21 +37,21 @@ Work down this table. If any row applies to you, jump to the guide named in the 
 
 | If your project… | Then… | Guide |
 |---|---|---|
-| ships a custom `.fmadapter` | **Stop.** Your feature has no forward path as built. | [17.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
-| has `catch GenerationError` anywhere | Your error handling is probably now dead code | [17.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| relies on guardrail behaviour tuned against 26.x | Re-test every prompt; expect new refusals | [17.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| must run on both 26 and 27 | You need conditional compilation, not just availability checks | [17.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
-| uses Core ML for neural networks | Evaluate Core AI; some model types should *stay* on Core ML | [17.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
-| has `.aimodel` assets built with `coreai-torch` 0.4.0 | They may be unloadable on current tooling | [17.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
-| re-exports models on a machine you upgraded to macOS 27 | Benchmark before and after; do not assume parity | [17.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
-| depends on `mlx-swift-lm` | `main` is 3.x with breaking changes | [17.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
-| calls Foundation Models from Python | The Python SDK trails the Swift framework by a release | [17.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| ships a custom `.fmadapter` | **Stop.** Your feature has no forward path as built. | [17.2](references/02-adapter-sunset.md) |
+| has `catch GenerationError` anywhere | Your error handling is probably now dead code | [17.3](references/03-error-taxonomy-migration.md) |
+| relies on guardrail behaviour tuned against 26.x | Re-test every prompt; expect new refusals | [17.3](references/03-error-taxonomy-migration.md) |
+| must run on both 26 and 27 | You need conditional compilation, not just availability checks | [17.4](references/04-dual-sdk-builds.md) |
+| uses Core ML for neural networks | Evaluate Core AI; some model types should *stay* on Core ML | [17.5](references/05-coreml-to-coreai.md) |
+| has `.aimodel` assets built with `coreai-torch` 0.4.0 | They may be unloadable on current tooling | [17.6](references/06-toolchain-and-asset-compatibility.md) |
+| re-exports models on a machine you upgraded to macOS 27 | Benchmark before and after; do not assume parity | [17.6](references/06-toolchain-and-asset-compatibility.md) |
+| depends on `mlx-swift-lm` | `main` is 3.x with breaking changes | [17.6](references/06-toolchain-and-asset-compatibility.md) |
+| calls Foundation Models from Python | The Python SDK trails the Swift framework by a release | [17.1](references/01-what-changed-checklist.md) |
 
 ---
 
 ## The guides in this part
 
-### [17.1 — What changed between iOS 26 and iOS 27: the complete checklist](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md)
+### [17.1 — What changed between iOS 26 and iOS 27: the complete checklist](references/01-what-changed-checklist.md)
 
 The exhaustive diff, organised by framework, with each item marked as *additive*, *behavioural*,
 *renamed* or *withdrawn*. Includes the version-floor table (26.0 / 26.4 / 27.0, plus the separate
@@ -60,7 +60,7 @@ availability-gating change that now ties `SystemLanguageModel.default.availabili
 user has Siri enabled, and the Python-SDK generation lag. **Start here if more than two rows of the
 triage table apply to you.**
 
-### [17.2 — The adapter sunset: migrating off custom LoRA adapters](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md)
+### [17.2 — The adapter sunset: migrating off custom LoRA adapters](references/02-adapter-sunset.md)
 
 What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic
 forward paths: re-frame the task as prompting plus guided generation; move the specialised model to
@@ -76,7 +76,7 @@ failure that developers hit shipping adapters through TestFlight, for readers st
 > 🔴 **GAP** — Apple named the migration path (Core ML / Core AI plus Background Assets) but has
 > documented it end to end nowhere. This guide constructs it from parts and says so explicitly.
 
-### [17.3 — Error taxonomy migration: `GenerationError` → `LanguageModelError`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md)
+### [17.3 — Error taxonomy migration: `GenerationError` → `LanguageModelError`](references/03-error-taxonomy-migration.md)
 
 The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and
 27.0 beta `FoundationModels.swiftinterface` dumps), with every destination confirmed by the per-case
@@ -89,7 +89,7 @@ contain sensitive content") is a different mechanism from a **guardrail violatio
 limitation that it does not apply to `Generable`, and a regression-test recipe using the
 Evaluations framework so you find out before your users do.
 
-### [17.4 — Building for two SDKs: conditional compilation across 26 and 27](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md)
+### [17.4 — Building for two SDKs: conditional compilation across 26 and 27](references/04-dual-sdk-builds.md)
 
 `#if canImport` versus `@available` versus SDK-version checks, and when each is the right tool.
 How to keep one codebase compiling against both the macOS 26 and 27 SDKs — the pattern
@@ -98,7 +98,7 @@ How to keep one codebase compiling against both the macOS 26 and 27 SDKs — the
 runtime check. Includes the watchOS 27 beta `CoreImage` module-resolution failure and how to work
 around it.
 
-### [17.5 — Core ML to Core AI: what moves, what stays, and how](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md)
+### [17.5 — Core ML to Core AI: what moves, what stays, and how](references/05-coreml-to-coreai.md)
 
 Core AI is the successor path for **neural networks**; Core ML remains correct for decision trees,
 tabular feature engineering, and the rest of its non-neural surface — so this is a partial
@@ -108,7 +108,7 @@ caching), what genuinely improves (states, multi-function assets, the debugger, 
 compilation), and what you give up (a decade of samples and Stack Overflow answers; Core AI ships
 with **zero** Apple sample-code projects). Includes a decision table for *don't migrate yet*.
 
-### [17.6 — Toolchain and asset compatibility](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md)
+### [17.6 — Toolchain and asset compatibility](references/06-toolchain-and-asset-compatibility.md)
 
 The migration nobody warns you about: your *build artifacts* have compatibility constraints
 independent of your source.

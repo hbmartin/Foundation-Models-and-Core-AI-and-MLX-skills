@@ -63,24 +63,24 @@ The three-line version — `try await AIModel(contentsOf:)`, `loadFunction(named
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have a `.aimodel` and want it running today" | [7.1 §0–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#0-orientation-the-pipeline-the-file-the-toolchain) | The whole object model; §14 is a runner you can paste |
-| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#13--the-error-type-answer-and-how-to-write-a-catch-block) | ✅ SDK-verified: untyped throws, `AssetError` only; preferred strides or interleave; `Span` is not a `Sequence` |
-| "My first launch stalls for minutes" | [7.2 §1–§5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#1-what-specialization-actually-is) | Specialization. Gate on `model(for:options:)`, pre-specialize behind explanatory UI |
-| "The stall came back after I was sure I'd paid it" | [7.2 §4, §6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#4-the-cache-key-and-how-to-double-your-disk-usage-by-accident) | The key is `(asset, options)` — or an OS update, which purges everything regardless of policy |
-| "Inference intervals grow along the Instruments timeline" | [7.3 §1–§5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#1-the-symptom-intervals-that-grow) | No states. The one bug here that announces itself visually |
-| "Output is right, throughput is a flat multiple too low" · "SIGTRAP at the first execute" | [7.3 §8.1, §13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) | Copy-on-write on the state, invisible in the Core AI instrument; or the MPSGraph in-graph KV-write bug |
-| "Turn 2 of my chat is as slow as turn 1" · "hybrid/SSM or plain?" | [7.3 §14](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101) · [7.4 §6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#6-kv-cache-strategy-and-prefix-reuse) | Prefix reuse: ~101× on turn-2 TTFT, one integer assignment — and linear attention forfeits it entirely |
-| "`@Generable` throws `unsupportedCapability`" · "I want topK/topP" | [7.4 §7.8, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive) | You are on the pipelined engine; and sampling knobs live on `TextGenerator`, not `GenerationOptions` |
-| "`unsupported metadata_version '0.1'`" · "works on my Mac, not on device" | [7.4 §2.3, §2.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#23-️-aimodel-and-aimodelc-are-directories) | You pointed at the `.aimodel`, not the bundle dir; or a missing `tokenizer/` is fetching from the Hub |
-| "Should my vision pipeline be one function or three?" · "Why is SAM3 on a different compute unit?" | [7.5 §3–§4, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) | Inspect before specializing; distinguish the package's loader policy from a framework routing rule |
-| "What does warmup actually warm?" · "Why is my detector cold at a new shape?" | [7.5 §5, §7–§8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) | Load, function load, dummy forward, specialization cache, and semantic feature cache are separate states |
-| "How should a diffusion bundle own its components?" · "Should I use lazy loading?" | [7.5 §6, §8–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#6-diffusion-a-bundle-of-independently-owned-models) | Multi-asset GPU components have independent residency; unload is not specialization-cache deletion |
+| "I have a `.aimodel` and want it running today" | [7.1 §0–§9](references/01-runtime-and-ndarray.md#0-orientation-the-pipeline-the-file-the-toolchain) | The whole object model; §14 is a runner you can paste |
+| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](references/01-runtime-and-ndarray.md#13--the-error-type-answer-and-how-to-write-a-catch-block) | ✅ SDK-verified: untyped throws, `AssetError` only; preferred strides or interleave; `Span` is not a `Sequence` |
+| "My first launch stalls for minutes" | [7.2 §1–§5](references/02-specialization-caching-and-aot.md#1-what-specialization-actually-is) | Specialization. Gate on `model(for:options:)`, pre-specialize behind explanatory UI |
+| "The stall came back after I was sure I'd paid it" | [7.2 §4, §6](references/02-specialization-caching-and-aot.md#4-the-cache-key-and-how-to-double-your-disk-usage-by-accident) | The key is `(asset, options)` — or an OS update, which purges everything regardless of policy |
+| "Inference intervals grow along the Instruments timeline" | [7.3 §1–§5](references/03-states-and-pipelined-execution.md#1-the-symptom-intervals-that-grow) | No states. The one bug here that announces itself visually |
+| "Output is right, throughput is a flat multiple too low" · "SIGTRAP at the first execute" | [7.3 §8.1, §13](references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) | Copy-on-write on the state, invisible in the Core AI instrument; or the MPSGraph in-graph KV-write bug |
+| "Turn 2 of my chat is as slow as turn 1" · "hybrid/SSM or plain?" | [7.3 §14](references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101) · [7.4 §6](references/04-bundles-engines-and-guided-decoding.md#6-kv-cache-strategy-and-prefix-reuse) | Prefix reuse: ~101× on turn-2 TTFT, one integer assignment — and linear attention forfeits it entirely |
+| "`@Generable` throws `unsupportedCapability`" · "I want topK/topP" | [7.4 §7.8, §9](references/04-bundles-engines-and-guided-decoding.md#78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive) | You are on the pipelined engine; and sampling knobs live on `TextGenerator`, not `GenerationOptions` |
+| "`unsupported metadata_version '0.1'`" · "works on my Mac, not on device" | [7.4 §2.3, §2.7](references/04-bundles-engines-and-guided-decoding.md#23-️-aimodel-and-aimodelc-are-directories) | You pointed at the `.aimodel`, not the bundle dir; or a missing `tokenizer/` is fetching from the Hub |
+| "Should my vision pipeline be one function or three?" · "Why is SAM3 on a different compute unit?" | [7.5 §3–§4, §9](references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) | Inspect before specializing; distinguish the package's loader policy from a framework routing rule |
+| "What does warmup actually warm?" · "Why is my detector cold at a new shape?" | [7.5 §5, §7–§8](references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) | Load, function load, dummy forward, specialization cache, and semantic feature cache are separate states |
+| "How should a diffusion bundle own its components?" · "Should I use lazy loading?" | [7.5 §6, §8–§9](references/05-non-llm-engines-bundles-warmup-and-caching.md#6-diffusion-a-bundle-of-independently-owned-models) | Multi-asset GPU components have independent residency; unload is not specialization-cache deletion |
 
 ---
 
 ## The guides in this part
 
-### [7.1 — `AIModel`, `InferenceFunction`, `NDArray`, and the memory model](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md)
+### [7.1 — `AIModel`, `InferenceFunction`, `NDArray`, and the memory model](references/01-runtime-and-ndarray.md)
 
 The object-model primer every other guide assumes, built around the structural fact that makes app
 architecture fall out: **`AIModel` owns nothing and pins a cache entry; `InferenceFunction` owns the
@@ -110,7 +110,7 @@ survives a model re-export, the three low-level performance APIs session 324 nam
 > community-sighted `AIModelError` is internal to `CoreAIDelegates`. §13.2's catch-`AssetError`-then-
 > catch-broadly, degrade-don't-retry ladder is therefore not a workaround but the correct shape.
 
-### [7.2 — Specialization, the model cache, and ahead-of-time compilation](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md)
+### [7.2 — Specialization, the model cache, and ahead-of-time compilation](references/02-specialization-caching-and-aot.md)
 
 The single largest source of first-launch stalls, wedged loads and mysterious disk growth. Specialization
 is two phases — compilation (*"the one which incurs most of the latency"*) then per-device artifact
@@ -139,7 +139,7 @@ five-rung recovery ladder for wedged loads.
 > `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt` (§13). Still open: cancellation semantics
 > for `specialize`.
 
-### [7.3 — States as KV cache, and pipelined execution](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md)
+### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
 
 A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable:
 **inference intervals that visibly widen along the timeline**. The fix is *states* — arguments the model
@@ -167,7 +167,7 @@ step *n+1* while the GPU computes step *n*, with the framework inserting the dep
 > **3.5× pipelining figure measures against a naive hand-rolled `fn.run()` loop, not against the
 > sequential engine**, and no controlled comparison of the two exists (§12).
 
-### [7.4 — Model bundles, the LLM engines, and grammar-constrained decoding](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md)
+### [7.4 — Model bundles, the LLM engines, and grammar-constrained decoding](references/04-bundles-engines-and-guided-decoding.md)
 
 The layer above the runtime, where a raw `.aimodel` becomes something shippable and Apple's own Swift
 package turns "I have a converted Qwen3" into `LanguageModelSession(model:)`. **The bundle format** —
@@ -201,7 +201,7 @@ framework itself all reach for **`mlc-ai/xgrammar`** to do it — documented now
 > (§2.9). Also open: whether a multi-name `function_map` is honoured anywhere, and whether
 > `SystemLanguageModel`'s own structured output is this same xgrammar mechanism.
 
-### [7.5 — Non-LLM engines: bundles, function structure, warmup, specialization, and caching](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md)
+### [7.5 — Non-LLM engines: bundles, function structure, warmup, specialization, and caching](references/05-non-llm-engines-bundles-warmup-and-caching.md)
 
 The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`. It compares
 the three shapes Apple's package actually ships: a single `main`; one asset with
@@ -221,27 +221,27 @@ function residency, dummy-forward warmup, lazy unloading, and Core AI versus app
 
 ## Reading order
 
-**Everyone starts at [7.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md)** — §1–§9 plus §13, the vocabulary the
+**Everyone starts at [7.1](references/01-runtime-and-ndarray.md)** — §1–§9 plus §13, the vocabulary the
 other four assume; §13's error-handling ladder is a day-one need, not a post-mortem one. Skip §11–§12.
 
 **Then branch by what you ship.** *Segmentation, object detection, or diffusion:* read
-[7.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) after 7.1, then use
-[7.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) for the cache and AOT mechanics its engines do
+[7.5](references/05-non-llm-engines-bundles-warmup-and-caching.md) after 7.1, then use
+[7.2](references/02-specialization-caching-and-aot.md) for the cache and AOT mechanics its engines do
 not expose. *A one-function tensor model with no product facade:* go to 7.2 directly; §1–§7 and §17,
 plus §13–§14 if the model is large enough to want AOT. *A language model you drive yourself:*
-[7.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) next, in order — §1–§5 make it correct,
+[7.3](references/03-states-and-pipelined-execution.md) next, in order — §1–§5 make it correct,
 §6–§9 stop it wasting memory, §10–§12 make it fast — then
-[7.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) when the stall shows up. *A language model behind
-`LanguageModelSession`:* go **[7.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) directly after
+[7.2](references/02-specialization-caching-and-aot.md) when the stall shows up. *A language model behind
+`LanguageModelSession`:* go **[7.4](references/04-bundles-engines-and-guided-decoding.md) directly after
 7.1**, because `apple/coreai-models` implements most of 7.3 for you and the thing you must actually
 decide — which engine, and therefore whether `@Generable` works — is §5.8 and §7.8.
 
-**Read two out of order** — [7.3 §14](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101), because hybrid
+**Read two out of order** — [7.3 §14](references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101), because hybrid
 architectures cannot do prefix reuse and that should reach you before you pick a checkpoint, and
-[7.2 §14.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#141-️-aot-only-compiles-for-apple-intelligence-capable-devices), because AOT only produces artifacts for
-Apple-Intelligence-capable devices. **Skippable:** [7.1 §11.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#113-asynchronous-values-and-computestream) and
-[7.3 §10–§13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#10-pipelined-execution-encode-computestream-async-values) unless you hand-write a pipelined decode
-loop; [7.4 §2.8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#28-the-diffusion-bundle-three-resolution-mechanisms-in-one-directory) is superseded by 7.5 for anyone
+[7.2 §14.1](references/02-specialization-caching-and-aot.md#141-️-aot-only-compiles-for-apple-intelligence-capable-devices), because AOT only produces artifacts for
+Apple-Intelligence-capable devices. **Skippable:** [7.1 §11.3](references/01-runtime-and-ndarray.md#113-asynchronous-values-and-computestream) and
+[7.3 §10–§13](references/03-states-and-pipelined-execution.md#10-pipelined-execution-encode-computestream-async-values) unless you hand-write a pipelined decode
+loop; [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md#28-the-diffusion-bundle-three-resolution-mechanisms-in-one-directory) is superseded by 7.5 for anyone
 who actually ships diffusion.
 
 ---

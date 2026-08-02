@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The exhaustive diff, organised by framework, with each item marked as *additive*, *behavioural*, *renamed* or *withdrawn*.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md)
 
 | Section | Anchor |
 |---|---|
@@ -37,7 +37,7 @@ The exhaustive diff, organised by framework, with each item marked as *additive*
 
 What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic forward paths: re-frame the task as prompting plus guided generation; move the specialised model to Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through `MLXFoundationModels`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md)
 
 | Section | Anchor |
 |---|---|
@@ -64,7 +64,7 @@ What was withdrawn, what the evidence for the withdrawal actually is, and the th
 
 The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and 27.0 beta `FoundationModels.swiftinterface` dumps), with every destination confirmed by the per-case deprecation messages Apple attached to the old enum in the 27 SDK.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md)
 
 | Section | Anchor |
 |---|---|
@@ -95,7 +95,7 @@ The mapping table, old case to new case — now SDK-interface-verified on **both
 
 `#if canImport` versus `@available` versus SDK-version checks, and when each is the right tool.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md)
 
 | Section | Anchor |
 |---|---|
@@ -129,7 +129,7 @@ The mapping table, old case to new case — now SDK-interface-verified on **both
 
 Core AI is the successor path for **neural networks**; Core ML remains correct for decision trees, tabular feature engineering, and the rest of its non-neural surface — so this is a partial migration by design.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md)
 
 | Section | Anchor |
 |---|---|
@@ -153,7 +153,7 @@ Core AI is the successor path for **neural networks**; Core ML remains correct f
 
 The migration nobody warns you about: your *build artifacts* have compatibility constraints independent of your source.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md>
+**Local reference:** [part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md)
 
 | Section | Anchor |
 |---|---|

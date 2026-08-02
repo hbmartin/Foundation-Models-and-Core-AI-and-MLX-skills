@@ -2688,12 +2688,12 @@ unanswered**. The one genuinely useful technical answer in the cluster came from
 
 ### How to re-verify anything in this guide
 
-1. **Session code samples:** `WebFetch` on `https://developer.apple.com/videos/play/wwdc2026/343/`
-   returns the transcript *and* the code-sample block with timestamps. No mirror needed. The same
-   works for 240, 344 and 345.
-2. **Documentation:** `sosumi.ai/documentation/<path>` — `WebFetch` on
-   `developer.apple.com/documentation/...` does **not** work (client-rendered; you get only the
-   `<title>`).
+1. **Session code samples:** fetch `https://developer.apple.com/videos/play/wwdc2026/343/` directly;
+   the response includes the transcript *and* the code-sample block with timestamps. No mirror is
+   needed. The same works for 240, 344 and 345.
+2. **Documentation:** use `sosumi.ai/documentation/<path>`. A plain fetch of
+   `developer.apple.com/documentation/...` does **not** work because the page is client-rendered;
+   the response contains only the `<title>`.
 3. **Forum threads:** fetch `developer.apple.com/forums/thread/<id>` **directly**. The RSS captures
    in the corpus have truncated bodies and **no replies** — and the replies are where both the
    Apple answers and the community recipe live. This is a general lesson: the RSS captures

@@ -20,10 +20,10 @@
     "on, while the hub names only the few skills worth surfacing to everyone. Making it symmetric",
     "would give the broad skills a related list long enough to stop being a recommendation.",
     "",
-    "'description' and 'when_to_use' are the entire triggering surface: they sit in Claude's context",
-    "permanently for every installed skill, and nothing else about the skill is visible until it is",
-    "invoked. Name concrete symbols, error strings and observed symptoms rather than topics. The",
-    "build enforces len(name) + len(description) + len(when_to_use) <= 1000."
+    "'description' is the portable triggering surface shared by Codex, Claude Code and the open",
+    "Agent Skills standard. Put both scope and when-to-use conditions there; name concrete symbols,",
+    "error strings and observed symptoms rather than topics. 'short_description' is OpenAI UI text,",
+    "and 'trigger_evals' contains portable positive and near-miss negative activation fixtures."
   ],
   "schema_version": 1,
   "repository": {
@@ -37,82 +37,182 @@
     {
       "name": "apple-on-device-ai",
       "title": "Apple on-device AI: choosing a stack and getting the gates right",
+      "short_description": "Choose the right Apple on-device AI framework",
       "owns": [{ "part": 1 }],
       "full_indexes": true,
-      "description": "Decide which Apple on-device AI stack a project should use - Foundation Models, Core AI, MLX or Metal - and get the platform, OS-version and hardware gates right across iOS, iPadOS, macOS, visionOS, tvOS and watchOS 26 and 27. Also the corpus-wide entry point: carries the full symbol index and silent-failure index for all 17 guide parts.",
-      "when_to_use": "Use when picking a framework for on-device inference, when writing @available or SystemLanguageModel.availability checks, when a 26.0 / 26.2 / 26.4 / 27.0 version floor is in question, when a feature compiles but is unavailable at runtime, or when you know the symptom or the symbol but not which Apple framework owns it.",
+      "description": "Choose among Apple Foundation Models, Core AI, MLX, Metal, or Core ML for on-device inference, and apply OS, SDK, hardware, and availability gates across Apple platforms. Use when selecting a stack; writing @available or SystemLanguageModel.availability checks; resolving 26.0, 26.2, 26.4, or 27.0 floors; diagnosing code that compiles but is unavailable at runtime; or routing an unfamiliar symbol, error, or silent failure to the owning framework.",
+      "trigger_evals": [
+        { "query": "I need private on-device AI in a new iPhone app. Should I start with Foundation Models, Core AI, MLX, or Metal?", "should_trigger": true },
+        { "query": "This API compiles under Xcode 27 but availability is false on one of our supported devices. Help me build the right gating matrix.", "should_trigger": true },
+        { "query": "We support iOS, macOS, and visionOS and I cannot tell whether this feature starts at 26.2, 26.4, or 27.0.", "should_trigger": true },
+        { "query": "I found AIModel, LanguageModelSession, and mx.compile in three prototypes. Map each symbol to the correct Apple stack.", "should_trigger": true },
+        { "query": "LanguageModelSession.respond(to:) never returns after my tool call completes.", "should_trigger": false },
+        { "query": "coreai-torch says one of my PyTorch ops is unsupported while exporting an .aimodel.", "should_trigger": false },
+        { "query": "My MLX array is staying lazy and unified-memory use keeps climbing.", "should_trigger": false },
+        { "query": "SpeechAnalyzer produces duplicated phrases when I combine volatile and final results.", "should_trigger": false }
+      ],
       "related": ["apple-foundation-models", "apple-core-ai", "apple-mlx", "apple-ai-migration"]
     },
     {
       "name": "apple-foundation-models",
       "title": "Foundation Models: the on-device LLM API",
+      "short_description": "Build and debug Apple Foundation Models apps",
       "owns": [{ "part": 2 }, { "part": 3 }, { "part": 4 }, { "part": 5 }],
-      "description": "Apple's built-in on-device language model: LanguageModelSession, @Generable and @Guide guided generation, snapshot streaming, the Tool protocol and tool-calling loops, the Instructions-vs-Prompt trust boundary, context window and KV cache, DynamicProfile and session state, agentic orchestration, custom LanguageModel backends including Private Cloud Compute and ChatCompletionsLanguageModel, and prototyping with #Playground, Instruments and the fm CLI.",
-      "when_to_use": "Use for any import FoundationModels work: writing or streaming a session, a @Guide(.anyOf) that is not constraining output, a respond(to:) that never returns, guardrail refusals, LanguageModelError handling, exceededContextWindowSize, prompt injection through interpolated Instructions, or wiring up a non-Apple model behind the same API.",
+      "description": "Build and debug apps using Apple's Foundation Models framework: LanguageModelSession, @Generable, @Guide, streaming, tools, the Instructions-versus-Prompt trust boundary, context and KV cache, DynamicProfile, custom LanguageModel backends, Playground, Instruments, and fm CLI. Use for import FoundationModels; unconstrained guided output; hung respond(to:); guardrail refusals; LanguageModelError or exceededContextWindowSize; prompt injection; tool loops; or non-Apple backends behind the same API.",
+      "trigger_evals": [
+        { "query": "Show me the correct way to stream snapshots from LanguageModelSession into SwiftUI.", "should_trigger": true },
+        { "query": "My @Guide(.anyOf) annotation compiles but the generated property ignores the allowed values.", "should_trigger": true },
+        { "query": "respond(to:) hangs after a Foundation Models tool returns, and there is no useful console error.", "should_trigger": true },
+        { "query": "How do I implement a custom LanguageModel backend while keeping the Foundation Models session API?", "should_trigger": true },
+        { "query": "Which Apple inference framework should I choose for a new image model?", "should_trigger": false },
+        { "query": "An .aimodel loads but silently falls back from the Neural Engine to the GPU.", "should_trigger": false },
+        { "query": "mx.compile keeps recompiling because one of my arguments changes shape.", "should_trigger": false },
+        { "query": "Siri runs my AppIntent but the entity mutation never persists.", "should_trigger": false }
+      ],
       "related": ["apple-on-device-ai", "apple-ai-evaluations", "apple-app-intents", "apple-ai-migration"]
     },
     {
       "name": "apple-ai-evaluations",
       "title": "Evaluations: measuring on-device model output",
+      "short_description": "Evaluate Apple on-device model quality",
       "owns": [{ "part": 6 }, { "part": 16, "references": [5] }],
-      "description": "Apple's Evaluations framework, new in the 27 cycle with no back-deployment: building an eval harness for on-device model output, hill-climbing a prompt against it, model-as-judge graders and judge alignment, synthetic data generation, and tool-trajectory evaluation. Also DNIKit, for auditing a dataset or a network before you spend time converting it.",
-      "when_to_use": "Use when measuring or regression-testing LLM output quality on Apple platforms, writing or calibrating graders, scoring generations, building an adversarial or synthetic eval set, evaluating whether an agent called the right tools in the right order, or checking a training dataset for duplicates and a convnet for excess width.",
+      "description": "Measure and regression-test on-device model output with Apple's Evaluations framework: eval harnesses, prompt hill-climbing, model-as-judge graders and alignment, synthetic or adversarial data, and tool-trajectory scoring; also use DNIKit to audit datasets and networks before conversion. Use when scoring generations, calibrating graders, checking agent tool order, constructing eval sets, finding duplicate training data, or inspecting excess network width.",
+      "trigger_evals": [
+        { "query": "Build a regression harness that scores our Foundation Models answers on every prompt change.", "should_trigger": true },
+        { "query": "Our model-as-judge grader disagrees with human reviewers. How should I calibrate and align it?", "should_trigger": true },
+        { "query": "I need synthetic adversarial conversations and a score for whether the agent called tools in the right order.", "should_trigger": true },
+        { "query": "Before converting this network, check the training set for duplicates and whether the convnet is wider than necessary.", "should_trigger": true },
+        { "query": "Profile an .aimodel to find why it runs on the GPU instead of the Neural Engine.", "should_trigger": false },
+        { "query": "Measure cold-start latency, peak memory, and thermal throttling for a model we are about to ship.", "should_trigger": false },
+        { "query": "Write ordinary XCTest coverage for this URLSession wrapper.", "should_trigger": false },
+        { "query": "Convert my torch.nn.Module to Core AI and replace an unsupported operator.", "should_trigger": false }
+      ],
       "related": ["apple-foundation-models", "apple-core-ai", "apple-ai-shipping"]
     },
     {
       "name": "apple-core-ai",
       "title": "Core AI: the 27-cycle inference runtime and its conversion pipeline",
+      "short_description": "Build, convert, and optimize Core AI models",
       "owns": [{ "part": 7 }, { "part": 8 }, { "part": 9 }, { "part": 10 }],
-      "description": "Core AI, the new-in-27 runtime and the successor path for neural networks, while Core ML remains right for tree and non-neural models: import CoreAI, AIModel, NDArray, model bundles and engines, guided decoding, specialization, caching and ahead-of-time compilation - plus the Python side, converting a torch.nn.Module to an .aimodel with coreai-torch, op coverage and composites, custom Metal kernels, quantization, palettization and pruning, numeric formats, ANE-versus-GPU authoring rules, debugging, profiling and end-to-end LLM export.",
-      "when_to_use": "Use for any .aimodel or import CoreAI work: a target that fails to build with a missing Metal compiler error, an unsupported-op conversion failure, a model that silently falls back off the Neural Engine, a compiled model that loads but runs far slower than expected, or compression that quietly costs accuracy.",
+      "description": "Build, convert, optimize, and debug Core AI 27 neural models using AIModel, NDArray, bundles, engines, guided decoding, specialization, caching, AOT compilation, coreai-torch conversion, custom Metal ops, quantization, palettization, pruning, and ANE/GPU profiling. Use for import CoreAI or .aimodel work; missing Metal compiler errors; unsupported conversion ops; Neural Engine fallback; slow compiled models; numeric drift; compression accuracy loss; or deciding what should remain in Core ML.",
+      "trigger_evals": [
+        { "query": "Convert this torch.nn.Module into an .aimodel and diagnose the unsupported operator report from coreai-torch.", "should_trigger": true },
+        { "query": "The target contains an .aimodel and Xcode says the Metal compiler component is missing.", "should_trigger": true },
+        { "query": "AIModel loads successfully but profiling shows GPU execution and much worse latency than expected.", "should_trigger": true },
+        { "query": "Compare quantization, palettization, and pruning for this Core AI model without silently losing accuracy.", "should_trigger": true },
+        { "query": "LanguageModelSession throws exceededContextWindowSize during a long conversation.", "should_trigger": false },
+        { "query": "mx.compile creates a new graph for every generation step in my MLX model.", "should_trigger": false },
+        { "query": "Implement flash attention directly with Metal cooperative tensors.", "should_trigger": false },
+        { "query": "Plan background delivery and disk budgeting for model updates after App Store release.", "should_trigger": false }
+      ],
       "related": ["apple-on-device-ai", "apple-metal-tensorops", "apple-ai-migration", "apple-ai-shipping"]
     },
     {
       "name": "apple-metal-tensorops",
       "title": "Metal TensorOps and Performance Primitives for ML kernels",
+      "short_description": "Build and debug Metal and TensorOps ML kernels",
       "owns": [{ "part": 11 }],
-      "description": "Metal TensorOps and Metal Performance Primitives for hand-written on-device ML kernels on Apple silicon: quantized operands, multiplane quantized tensors, cooperative tensors, and implementing flash attention in Metal.",
-      "when_to_use": "Use when writing or debugging a Metal compute kernel for machine learning, working with MPP or MTLTensor APIs, hand-rolling an attention kernel, chasing a threadgroup or memory-layout performance cliff, or working out whether a TensorOps surface is 26.x or 27-only.",
+      "description": "Write and debug hand-built on-device ML kernels with Metal TensorOps and Metal Performance Primitives: MPP and MTLTensor APIs, quantized or multiplane operands, cooperative tensors, threadgroup and memory layout, and flash attention. Use when implementing an attention or tensor kernel, diagnosing a Metal performance cliff or numerical error, or determining whether a TensorOps surface is available in 26.x or only in 27.",
+      "trigger_evals": [
+        { "query": "Implement flash attention using Metal cooperative tensors and explain the threadgroup layout.", "should_trigger": true },
+        { "query": "My MTLTensor kernel is correct for one shape but hits a severe memory-layout performance cliff for another.", "should_trigger": true },
+        { "query": "How should I represent multiplane quantized operands with the new TensorOps APIs?", "should_trigger": true },
+        { "query": "Is this Metal Performance Primitives tensor surface available on 26.x or only with the 27 SDK?", "should_trigger": true },
+        { "query": "coreai-torch cannot convert a PyTorch operator into an .aimodel.", "should_trigger": false },
+        { "query": "Write an MLX custom kernel and integrate it with mx.compile.", "should_trigger": false },
+        { "query": "My Core ML decision-tree pipeline should migrate to Core AI, right?", "should_trigger": false },
+        { "query": "Optimize a Metal fragment shader for a game renderer.", "should_trigger": false }
+      ],
       "related": ["apple-core-ai", "apple-mlx"]
     },
     {
       "name": "apple-mlx",
       "title": "MLX in Python and Swift, and bridges to Core AI",
+      "short_description": "Build and debug MLX Python and Swift systems",
       "owns": [{ "part": 12 }, { "part": 13 }, { "part": 14 }],
-      "description": "MLX on Apple silicon in both languages: mx.array, unified memory, lazy evaluation, mx.compile, function transforms, custom Metal kernels, quantization, numerics and hardware gating, the mlx-lm CLI with generation and prompt caching, serving and distributed inference, fine-tuning and porting models; MLX Swift with mlx-swift-lm in an app, generation, tools and caching, and the Foundation Models bridge; plus converting between MLX and Core AI.",
-      "when_to_use": "Use for any import mlx, mlx_lm or MLX Swift work: an array that never evaluates, a recompilation storm from mx.compile, unified-memory growth, a quantization accuracy drop, a Hugging Face checkpoint that will not port, or moving a model between MLX and Core AI.",
+      "description": "Build and debug MLX in Python or Swift: mx.array and lazy evaluation, unified memory, mx.compile and transforms, custom kernels, quantization, mlx-lm generation and prompt caching, serving, distributed inference, fine-tuning, model ports, mlx-swift-lm apps, tools, and bridges to Foundation Models or Core AI. Use for import mlx or mlx_lm; unevaluated arrays; recompilation storms; memory growth; quantization drift; checkpoint port failures; or MLX/Core AI conversion.",
+      "trigger_evals": [
+        { "query": "My mx.array computation never evaluates and unified-memory use keeps growing across requests.", "should_trigger": true },
+        { "query": "mx.compile recompiles on every token because a Python argument changes. How do I stabilize the graph?", "should_trigger": true },
+        { "query": "Port this Hugging Face checkpoint to mlx-lm, quantize it, and verify the accuracy change.", "should_trigger": true },
+        { "query": "Integrate mlx-swift-lm into an iOS app and bridge its generated output to Foundation Models types.", "should_trigger": true },
+        { "query": "Export a torch.nn.Module to .aimodel with coreai-torch.", "should_trigger": false },
+        { "query": "LanguageModelSession tool calls stop after a guardrail refusal.", "should_trigger": false },
+        { "query": "Hand-write flash attention with MTLTensor and cooperative tensors, without MLX.", "should_trigger": false },
+        { "query": "Size an over-the-air model download and plan thermal benchmarks for a released app.", "should_trigger": false }
+      ],
       "related": ["apple-on-device-ai", "apple-core-ai", "apple-metal-tensorops", "apple-foundation-models"]
     },
     {
       "name": "apple-ai-shipping",
       "title": "Shipping and operating on-device AI in a released app",
+      "short_description": "Ship and benchmark on-device AI models",
       "owns": [{ "part": 15 }],
-      "description": "Getting an on-device model out of development and into a shipping app: model distribution, background asset packs and model updates, memory budgets and jetsam, thermal throttling, and honest benchmarking of on-device inference.",
-      "when_to_use": "Use when a model must ship or update outside the app binary, when an app is terminated under memory pressure or throttled mid-inference, when sizing a download or an on-disk model budget, or when writing or interpreting an on-device performance benchmark.",
+      "description": "Ship and operate on-device AI models in released Apple apps: distribution outside the app binary, background asset packs and updates, download and disk budgets, memory pressure and jetsam, thermal throttling, and honest inference benchmarks. Use when choosing an update channel, diagnosing termination or throttling mid-inference, sizing deployed assets, or designing and interpreting cold-start, steady-state, memory, power, and thermal measurements.",
+      "trigger_evals": [
+        { "query": "Our model is too large for the app binary. Design a background asset-pack and update strategy.", "should_trigger": true },
+        { "query": "The app gets jetsammed halfway through inference on older phones even though the model loads.", "should_trigger": true },
+        { "query": "Create an honest benchmark plan covering cold start, peak memory, sustained thermals, and throttling.", "should_trigger": true },
+        { "query": "How much download and on-disk budget should we reserve for two model versions during an update?", "should_trigger": true },
+        { "query": "Calibrate a model-as-judge grader against human preferences.", "should_trigger": false },
+        { "query": "Replace an unsupported operator while converting PyTorch to Core AI.", "should_trigger": false },
+        { "query": "LanguageModelSession streams duplicate snapshots into my SwiftUI view.", "should_trigger": false },
+        { "query": "Implement a quantized MTLTensor attention kernel.", "should_trigger": false }
+      ],
       "related": ["apple-core-ai", "apple-foundation-models", "apple-ai-evaluations"]
     },
     {
       "name": "apple-speech",
       "title": "SpeechAnalyzer: live and file-based transcription",
+      "short_description": "Build and debug Apple speech recognition",
       "owns": [{ "part": 16, "references": [1] }],
-      "description": "Apple's 2026 Speech framework: SpeechAnalyzer, SpeechTranscriber and DictationTranscriber, asset installation through AssetInventory, custom vocabulary, live and file-based transcription, AnalyzerInputConverter, and volatile-versus-finalized results.",
-      "when_to_use": "Use for any speech-to-text or live transcription work on Apple platforms: an empty transcript with a clean console, a final sentence that gets cut off, duplicated phrases in a merged transcript, custom vocabulary that is ignored, or looking for a speech generation API on this framework.",
+      "description": "Build and debug speech-to-text with Apple's Speech framework: SpeechAnalyzer, SpeechTranscriber, DictationTranscriber, AssetInventory installation, custom vocabulary, live or file transcription, AnalyzerInputConverter, and volatile versus finalized results. Use for empty transcripts with a clean console, truncated final sentences, duplicated merged phrases, ignored vocabulary, asset or audio-format problems, or determining whether this framework provides speech generation.",
+      "trigger_evals": [
+        { "query": "Build a live SpeechAnalyzer pipeline from microphone buffers and install the required transcription assets.", "should_trigger": true },
+        { "query": "The transcript is empty with a clean console even though audio buffers are arriving.", "should_trigger": true },
+        { "query": "My merged volatile and finalized SpeechTranscriber results repeat whole phrases.", "should_trigger": true },
+        { "query": "The final sentence gets cut off and our custom vocabulary is ignored during file transcription.", "should_trigger": true },
+        { "query": "Expose a send-message action to Siri with an AppIntent and AppEntity.", "should_trigger": false },
+        { "query": "Generate spoken audio from text with AVSpeechSynthesizer.", "should_trigger": false },
+        { "query": "Use Foundation Models to summarize an existing transcript.", "should_trigger": false },
+        { "query": "Index document entities in Core Spotlight for on-screen awareness.", "should_trigger": false }
+      ],
       "related": ["apple-app-intents", "apple-foundation-models", "apple-on-device-ai"]
     },
     {
       "name": "apple-app-intents",
       "title": "App Intents, Siri schema domains, and Spotlight entity indexing",
+      "short_description": "Build App Intents for Siri and Apple Intelligence",
       "owns": [{ "part": 16, "references": [2, 3, 4] }],
-      "description": "Making an app's content and actions available to Siri and Apple Intelligence: the assistant schema domains and the categories that have none, IntentParameter.valueState, AppEntity, IndexedEntity and indexAppEntities, on-screen awareness, FileEntityIdentifier and FileRepresentation, displayRepresentations, and .system.searchInApp as the fallback when no domain fits.",
-      "when_to_use": "Use when exposing app content to Siri or Apple Intelligence: an intent that reports success but changes nothing, Siri answering from on-screen text instead of your AppEntity, a clarification prompt or the wrong item being acted on, an attachment Siri refuses to send, or your own model inventing details for content you indexed.",
+      "description": "Expose app content and actions to Siri and Apple Intelligence with App Intents, assistant schema domains, IntentParameter.valueState, AppEntity, IndexedEntity and Spotlight indexing, on-screen awareness, FileEntityIdentifier and FileRepresentation, display representations, and .system.searchInApp fallbacks. Use when an intent reports success but changes nothing, Siri uses screen text instead of an entity, clarification selects the wrong item, attachments are refused, or indexed content is invented.",
+      "trigger_evals": [
+        { "query": "Create an AppIntent and AppEntity so Siri can select and mutate one of the user's saved records.", "should_trigger": true },
+        { "query": "The intent reports success but the entity change never persists in the app.", "should_trigger": true },
+        { "query": "Siri answers from text visible on screen instead of resolving the IndexedEntity I put in Spotlight.", "should_trigger": true },
+        { "query": "A send intent refuses my attachment. Check FileEntityIdentifier, FileRepresentation, and the assistant schema domain.", "should_trigger": true },
+        { "query": "SpeechAnalyzer returns an empty transcript for microphone input.", "should_trigger": false },
+        { "query": "LanguageModelSession guided generation invents a property outside @Guide(.anyOf).", "should_trigger": false },
+        { "query": "Convert an MLX model to Core AI for Neural Engine execution.", "should_trigger": false },
+        { "query": "Add an ordinary in-app search screen that does not integrate with Siri, Spotlight, or App Intents.", "should_trigger": false }
+      ],
       "related": ["apple-foundation-models", "apple-speech", "apple-on-device-ai"]
     },
     {
       "name": "apple-ai-migration",
       "title": "Migrating an Apple AI integration from 26 to 27",
+      "short_description": "Migrate Apple AI apps and models to SDK 27",
       "owns": [{ "part": 17 }],
-      "description": "Moving a shipping app or pipeline from the iOS/macOS 26 generation to 27: the what-changed checklist, the Foundation Models adapter sunset, the error-taxonomy migration, dual-SDK builds, Core ML to Core AI conversion, and toolchain and asset compatibility.",
-      "when_to_use": "Use when an existing Apple AI integration must move to the 27 SDK, when a trained Adapter stops loading, when LanguageModelError cases have moved or renamed, when one codebase has to build against both Xcode 26 and 27, or when a Core ML model has to become an .aimodel.",
+      "description": "Migrate a shipping Apple AI app or model pipeline from the 26 SDK generation to 27: changed APIs, the Foundation Models Adapter sunset, LanguageModelError taxonomy changes, dual-SDK builds, Core ML-to-Core AI decisions, Metal toolchain requirements, and asset compatibility. Use when old code stops compiling or loading under Xcode 27, an Adapter is rejected, error cases moved, one codebase must support both SDKs, or a neural Core ML model should become .aimodel.",
+      "trigger_evals": [
+        { "query": "Upgrade our shipping Foundation Models integration from Xcode 26 to 27 and map every renamed LanguageModelError case.", "should_trigger": true },
+        { "query": "A trained Adapter that loaded on the 26 SDK is rejected after moving the project to 27.", "should_trigger": true },
+        { "query": "Keep one source tree building against both Xcode 26 and 27 while the AI APIs move.", "should_trigger": true },
+        { "query": "Decide which neural Core ML models should become .aimodel and which non-neural pipelines must stay put.", "should_trigger": true },
+        { "query": "Start a greenfield Core AI app that only targets the 27 SDK.", "should_trigger": false },
+        { "query": "LanguageModelSession.respond(to:) hangs in a current Foundation Models project with no SDK migration.", "should_trigger": false },
+        { "query": "Port a Hugging Face checkpoint to MLX without changing Apple SDK generations.", "should_trigger": false },
+        { "query": "Plan background model downloads and thermal benchmarks for the next app release.", "should_trigger": false }
+      ],
       "related": ["apple-on-device-ai", "apple-foundation-models", "apple-core-ai"]
     }
   ]

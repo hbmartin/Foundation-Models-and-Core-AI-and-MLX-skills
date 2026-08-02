@@ -2458,8 +2458,8 @@ on-device AI models*, *Managing model specialization and caching*, *Compiling Co
 time*, *Analyzing model runtime performance with Instruments*, *Monitoring model performance with the
 debug gauge*.
 
-⚠️ **Methodology note worth reusing.** `curl` against `sosumi.ai` preserves verbatim signatures where
-`WebFetch` summarises them away — but **sosumi silently drops DocC `termList` and `table` blocks**.
+⚠️ **Methodology note worth reusing.** Fetching `sosumi.ai` directly preserves verbatim signatures
+that page-summarization tools may omit — but **sosumi silently drops DocC `termList` and `table` blocks**.
 When a page ends a sentence with "…are:" followed by nothing, refetch
 `https://developer.apple.com/tutorials/data/documentation/<path>.json` and parse it directly. Two of
 the most valuable passages in §8 — the four Instruments instruments and the four event categories —

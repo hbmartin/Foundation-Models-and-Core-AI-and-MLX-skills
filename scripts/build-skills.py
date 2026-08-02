@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Generate installable Claude Code skills from guides/.
+"""Generate portable Agent Skills from guides/.
 
 The Markdown under guides/ is canonical; this adapter only reads it and writes
 transformed copies into skills/, which is committed so `npx skills add
 <owner>/<repo>` can resolve it. Layout, per skill:
 
     skills/<name>/SKILL.md                      generated router
-    skills/<name>/references/<guides-relative>  copied part READMEs
+    skills/<name>/agents/openai.yaml             OpenAI UI metadata
+    skills/<name>/evals/eval_queries.json        trigger evaluation prompts
+    skills/<name>/references/<guides-relative>  copied owned guides
     skills/<name>/references/API-INDEX.md       symbol slice
     skills/<name>/references/SILENT-FAILURES.md symptom slice
     skills/<name>/references/SECTION-MAPS.md    heading maps for the deep guides
@@ -16,14 +18,14 @@ intra-document anchor and every link between two owned part READMEs valid
 without rewriting, so the rewrite surface is only the links that genuinely leave
 the skill.
 
-The deep reference guides (94-232 KB each) are not copied. They are addressed by
-GitHub URL with a resolved anchor, and SECTION-MAPS.md gives the anchor for every
-section so a fetch can be aimed rather than dragged.
+The deep reference guides (94-232 KB each) are copied into the skill that owns
+them. Ownership is disjoint, so the collection stays compact while every skill
+remains useful offline after `npx skills add` installs it by itself.
 
-Context economics drive the SKILL.md shape: a skill's description sits in
-Claude's context permanently, and its body persists for a whole session once
-invoked, while everything under references/ costs nothing until read. So the body
-is a router, never a copy of a guide.
+Context economics drive the SKILL.md shape: compatible agents initially expose
+only a skill's name and description, then load its body when invoked, while
+everything under references/ is read only when needed. So the body is a router,
+never a copy of a guide.
 """
 
 from __future__ import annotations
@@ -86,13 +88,16 @@ HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SENTENCE_END = re.compile(r"(?<=[a-zA-Z*)\]`\"])\.(?:\s|$)")
 
 GENERATED_MARKER = ".generated-by-build-skills"
-SKILL_NAME = re.compile(r"^[a-z][a-z0-9-]*$")
+SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 # Both caps are enforced here rather than left to review, because both are
-# recurring context costs rather than one-off ones: the frontmatter triple is
-# always resident, and the body persists for the rest of a session once invoked.
+# recurring context costs rather than one-off ones: the standard name and
+# description are always resident, and the body persists once invoked.
 MAX_FRONTMATTER_CHARS = 1000
+MAX_DESCRIPTION_CHARS = 1024
+MAX_SKILL_NAME_CHARS = 64
 MAX_BODY_LINES = 260
+MIN_TRIGGER_EVALS_PER_CLASS = 4
 API_LINKS_SHOWN = 4
 
 # A guide card's abstract, as carried into SECTION-MAPS.md and, shorter, into the
@@ -131,24 +136,22 @@ with the claim into anything you say, write, or put in a code comment.
 """
 
 READ_PROTOCOL = """\
-`references/` holds far more than fits in context. Never read a file whole —
-route to the section you need:
+`references/` holds far more than fits in context. Route to the section you need:
 
 1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — `Grep` `references/SILENT-FAILURES.md` for words from what
+   something ignored) — search `references/SILENT-FAILURES.md` for words from what
    you actually observed. Entries are grouped by symptom and each links to the
    guide section that explains it.
 2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   `Grep` `references/API-INDEX.md`. The row shows whether the symbol appears in
+   search `references/API-INDEX.md`. The row shows whether the symbol appears in
    the captured 26.5 and 27.0 SDK interfaces; **blank in both columns means the
    spelling is not SDK-confirmed**, so treat it as provisional.
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled, so reaching one needs network access
-to the public repository. `references/SECTION-MAPS.md` lists every top-level
-section with its anchor; fetch a single section rather than a whole file. Offline,
-everything above still works — the part READMEs and both indexes are local.
+The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
+guide and lists each top-level section anchor. Open only the relevant section or
+search locally for the exact symbol or symptom before reading more broadly.
 """
 
 
@@ -170,8 +173,9 @@ class GuidePage:
 class SkillSpec:
     name: str
     title: str
+    short_description: str
     description: str
-    when_to_use: str
+    trigger_evals: tuple[tuple[str, bool], ...]
     related: tuple[str, ...]
     owns: dict[int, frozenset[int] | None]  # part -> reference numbers, None = all
     max_triage_rows: int
@@ -333,13 +337,49 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
         name = entry.get("name", "")
         if any(spec.name == name for spec in specs):
             raise SkillError(f"{path}: duplicate skill name {name!r}")
-        if not SKILL_NAME.match(name):
+        if len(name) > MAX_SKILL_NAME_CHARS or not SKILL_NAME.fullmatch(name):
             raise SkillError(f"{path}: skill name {name!r} must match {SKILL_NAME.pattern}")
-        if not entry.get("description"):
+        description = entry.get("description", "")
+        if not description:
             raise SkillError(f"{path}: {name} needs a description; it is the whole trigger")
-        budget = len(
-            render_frontmatter(name, entry["description"], entry.get("when_to_use", ""))
-        )
+        if len(description) > MAX_DESCRIPTION_CHARS:
+            raise SkillError(
+                f"{path}: {name} description is {len(description)} chars, over the "
+                f"Agent Skills limit of {MAX_DESCRIPTION_CHARS}"
+            )
+        short_description = entry.get("short_description", "")
+        if not 25 <= len(short_description) <= 64:
+            raise SkillError(
+                f"{path}: {name} short_description must be 25-64 characters"
+            )
+        raw_evals = entry.get("trigger_evals", [])
+        if not isinstance(raw_evals, list):
+            raise SkillError(f"{path}: {name} trigger_evals must be a list")
+        trigger_evals: list[tuple[str, bool]] = []
+        for number, item in enumerate(raw_evals, 1):
+            if not isinstance(item, dict) or set(item) != {"query", "should_trigger"}:
+                raise SkillError(
+                    f"{path}: {name} trigger_evals[{number}] must contain only "
+                    "query and should_trigger"
+                )
+            query, should_trigger = item["query"], item["should_trigger"]
+            if not isinstance(query, str) or not query.strip():
+                raise SkillError(f"{path}: {name} trigger_evals[{number}] needs a query")
+            if not isinstance(should_trigger, bool):
+                raise SkillError(
+                    f"{path}: {name} trigger_evals[{number}] should_trigger must be boolean"
+                )
+            trigger_evals.append((query, should_trigger))
+        if len({query for query, _ in trigger_evals}) != len(trigger_evals):
+            raise SkillError(f"{path}: {name} trigger_evals contains duplicate queries")
+        for expected in (True, False):
+            count = sum(value is expected for _, value in trigger_evals)
+            if count < MIN_TRIGGER_EVALS_PER_CLASS:
+                raise SkillError(
+                    f"{path}: {name} needs at least {MIN_TRIGGER_EVALS_PER_CLASS} "
+                    f"trigger evals with should_trigger={str(expected).lower()}"
+                )
+        budget = len(render_frontmatter(name, description))
         if budget > MAX_FRONTMATTER_CHARS:
             raise SkillError(
                 f"{path}: {name} renders {budget} chars of frontmatter, over the "
@@ -390,8 +430,9 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
             SkillSpec(
                 name=name,
                 title=entry.get("title", name),
-                description=entry["description"],
-                when_to_use=entry.get("when_to_use", ""),
+                short_description=short_description,
+                description=description,
+                trigger_evals=tuple(trigger_evals),
                 related=tuple(entry.get("related", ())),
                 owns=owns,
                 max_triage_rows=entry.get("max_triage_rows", default_rows),
@@ -868,7 +909,7 @@ def render_section_maps(
     repository_root: Path, repository_url: str, branch: str, date: str,
     to_references: "callable",
 ) -> str:
-    """A heading map plus URL for every deep guide this skill covers.
+    """A heading map plus local path for every deep guide this skill covers.
 
     Derived from the real '## ' headings rather than each file's hand-written
     '## Contents', which one reference lacks entirely and which can drift.
@@ -876,11 +917,9 @@ def render_section_maps(
     out = [
         "# Section maps for the deep reference guides",
         "",
-        "The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one "
-        "below gives its URL once, then every **top-level** (`##`) section as an anchor; a "
-        "guide's own `## Contents` lists its subsections. To read a section, `WebFetch` "
-        "`<url>#<anchor>` — never the whole file. If you need sustained access, ask the user "
-        "before cloning the corpus (see SKILL.md).",
+        "The deep guides are bundled with this skill. Each entry links the local file, then "
+        "lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` "
+        "lists its subsections. Open the narrowest relevant section first.",
         "",
         f"> Generated {date} from the guide headings. Regenerate with "
         "`./scripts/build-skills.sh` rather than editing by hand.",
@@ -895,14 +934,16 @@ def render_section_maps(
             target = (source_root / router.directory / card.destination).resolve()
             if not target.exists():
                 raise SkillError(f"part {router.part}: card {card.guide_id} has no file")
-            url = github_url(target, repository_root, repository_url, branch, "")
             out += ["", f"### {card.guide_id} — {card.title}", ""]
             if card.abstract:
                 out += [to_references(card.abstract, router), ""]
-            # The URL appears once per guide rather than once per section: at
-            # ~150 characters it would otherwise dominate a file whose whole
-            # purpose is to be read cheaply.
-            out += [f"**URL:** <{url}>", "", "| Section | Anchor |", "|---|---|"]
+            local = f"{router.directory}/{card.destination}"
+            out += [
+                f"**Local reference:** [{local}]({local})",
+                "",
+                "| Section | Anchor |",
+                "|---|---|",
+            ]
             used: set[str] = set()
             next_suffix: dict[str, int] = defaultdict(int)
             for body, _, inside_fence in iter_lines(target.read_text(encoding="utf-8")):
@@ -925,20 +966,46 @@ def render_section_maps(
     return "\n".join(out)
 
 
-def render_frontmatter(name: str, description: str, when_to_use: str) -> str:
+def render_frontmatter(name: str, description: str) -> str:
     """The exact YAML block emitted into SKILL.md, so its size can be budgeted."""
-    lines = ["---", f"name: {name}", f"description: {yaml_scalar(description)}"]
-    if when_to_use:
-        lines.append(f"when_to_use: {yaml_scalar(when_to_use)}")
-    lines.append("---")
-    return "\n".join(lines)
+    return "\n".join(
+        ["---", f"name: {name}", f"description: {yaml_scalar(description)}", "---"]
+    )
+
+
+def render_openai_yaml(spec: SkillSpec) -> str:
+    """Optional OpenAI UI and invocation metadata, kept outside portable frontmatter."""
+    prompt = (
+        f"Use ${spec.name} to answer this Apple on-device AI request with the bundled "
+        "evidence-backed guides."
+    )
+    return "\n".join(
+        [
+            "interface:",
+            f"  display_name: {json.dumps(spec.title, ensure_ascii=False)}",
+            f"  short_description: {json.dumps(spec.short_description, ensure_ascii=False)}",
+            f"  default_prompt: {json.dumps(prompt, ensure_ascii=False)}",
+            "policy:",
+            "  allow_implicit_invocation: true",
+            "",
+        ]
+    )
+
+
+def render_trigger_evals(spec: SkillSpec) -> str:
+    """Portable activation queries following the Agent Skills eval_queries schema."""
+    payload = [
+        {"query": query, "should_trigger": should_trigger}
+        for query, should_trigger in spec.trigger_evals
+    ]
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
 
 
 def render_skill_md(
     spec: SkillSpec, routers: list[PartRouter], date: str, to_root: 'callable'
 ) -> str:
     parts = ", ".join(f"Part {router.part}" for router in routers)
-    lines = render_frontmatter(spec.name, spec.description, spec.when_to_use).splitlines()
+    lines = render_frontmatter(spec.name, spec.description).splitlines()
     lines += [
         "",
         f"# {spec.title}",
@@ -982,7 +1049,7 @@ def render_skill_md(
     lines += [
         "", "## Triage", "",
         "A `N.M` label is a deep reference guide; look it up in "
-        "`references/SECTION-MAPS.md` for its sections and URL.", "",
+        "`references/SECTION-MAPS.md` for its local file and section anchors.", "",
     ]
     quota = max(3, spec.max_triage_rows // max(len(routers), 1))
     for router in routers:
@@ -1001,8 +1068,12 @@ def render_skill_md(
         lines += [to_root(strip_footnotes(row), router) for row in shown]
         lines.append("")
 
-    lines += ["## The deep reference guides", "",
-              "Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.", ""]
+    lines += [
+        "## The deep reference guides",
+        "",
+        "Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.",
+        "",
+    ]
     for router in routers:
         owned = spec.owns[router.part]
         for card in router.cards:
@@ -1011,17 +1082,14 @@ def render_skill_md(
             summary = to_root(
                 first_sentence(strip_footnotes(card.abstract), ROUTER_ABSTRACT_CHARS), router
             )
-            lines.append(f"- **{card.guide_id}** {card.title} — {summary}")
+            target = f"references/{router.directory}/{card.destination}"
+            lines.append(
+                f"- **[{card.guide_id} {card.title}]({target})** — {summary}"
+            )
     lines += [
         "",
-        "To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming "
-        "the section. For sustained work, ask the user before cloning the corpus locally:",
-        "",
-        "```bash",
-        "git clone --depth 1 --filter=blob:none --sparse \\",
-        "  https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills.git",
-        "cd Foundation-Models-and-Core-AI-and-MLX-skills && git sparse-checkout set guides",
-        "```",
+        "Search the local guide first, then open only the section needed for the answer. "
+        "Preserve its evidence marker and citation when carrying a claim into code or prose.",
     ]
     if spec.related:
         lines += ["", "## Related skills", "",
@@ -1032,18 +1100,18 @@ def render_skill_md(
 
 
 def yaml_scalar(text: str) -> str:
-    """Quote a description so a strict scalar-only YAML reader round-trips it."""
-    if "\n" in text:
+    """Render a single-line string as a YAML-safe double-quoted scalar.
+
+    JSON strings are valid YAML 1.2 double-quoted scalars. Always quoting avoids
+    YAML's reserved leading characters and implicit types (`-`, `?`, `!`, `%`,
+    `null`, numbers, and so on) without maintaining a partial YAML grammar here.
+    """
+    if "\n" in text or "\r" in text:
         raise SkillError(
-            "frontmatter values must be single-line; a newline would emit a block "
+            "frontmatter values must be single-line; a line break would emit a block "
             "scalar that verify-skills.py deliberately refuses to parse"
         )
-    # These leading characters start a YAML collection or block scalar, which
-    # verify-skills.py's scalar-only reader rejects: producer and consumer have
-    # to agree on the same value.
-    if re.search(r'[:#\'"]|^\s|\s$', text) or text[:1] in "|>&*[{":
-        return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
-    return text
+    return json.dumps(text, ensure_ascii=False)
 
 
 def strip_footnotes(text: str) -> str:
@@ -1121,11 +1189,10 @@ def build_skills(
     try:
         for spec in specs:
             owned_pages = [page for page in pages if owns_page(spec, page)]
-            # Ownership and bundling are different things: a skill owns its deep
-            # reference guides for indexing and section maps, but only the part
-            # READMEs and the hub's series README are copied in. `bundled` is
-            # what link resolution may leave as a relative path.
-            bundled_pages = [page for page in owned_pages if page.role in ("part", "root")]
+            # Every owned page is bundled so an installed skill remains complete
+            # without a network connection. Reference ownership is disjoint; the
+            # shared part READMEs and hub README are the only intentional overlap.
+            bundled_pages = owned_pages
             owned = {page.relative for page in bundled_pages}
             owned_ids: set[str] = set()
             for part, references in spec.owns.items():
@@ -1188,6 +1255,11 @@ def build_skills(
 
             series = f"{repository_url}/blob/{branch}/guides"
             write(skill_dir / "SKILL.md", render_skill_md(spec, spec_routers, date, to_root))
+            write(skill_dir / "agents" / "openai.yaml", render_openai_yaml(spec))
+            write(
+                skill_dir / "evals" / "eval_queries.json",
+                render_trigger_evals(spec),
+            )
             write(
                 skill_dir / "references" / "SILENT-FAILURES.md",
                 rewrite_text(
@@ -1263,21 +1335,28 @@ def write(path: Path, text: str) -> None:
 def render_roster(specs: list[SkillSpec], repository_url: str, date: str) -> str:
     slug = repository_url.rstrip("/").split("github.com/")[-1]
     lines = [
-        "# Claude Code skills for Apple's on-device AI stack",
+        "# Agent Skills for Apple's on-device AI stack",
         "",
         "Generated from [`guides/`](../guides/) — the canonical corpus. Edit the guides and "
         "run `./scripts/build-skills.sh`; never edit anything in this directory by hand.",
         "",
-        "Install every skill into the current project:",
+        "Install every skill for Codex into the current project:",
         "",
         "```bash",
-        f"npx skills add {slug} --all",
+        f"npx skills add {slug} --skill '*' --agent codex",
         "```",
         "",
-        "Or just the one you need, globally:",
+        "Install every skill for Claude Code into the current project:",
         "",
         "```bash",
-        f"npx skills add {slug} --skill apple-foundation-models -g",
+        f"npx skills add {slug} --skill '*' --agent claude-code",
+        "```",
+        "",
+        "Or install just one skill by replacing `'*'` with its name. Project-scoped installs "
+        "are recommended because their target directory is explicit and can be checked into git.",
+        "",
+        "```bash",
+        f"npx skills add {slug} --skill apple-foundation-models --agent codex",
         "```",
         "",
         "| Skill | Covers | What it is for |",
@@ -1300,7 +1379,8 @@ def render_roster(specs: list[SkillSpec], repository_url: str, date: str) -> str
         "version floors, a triage table, and a lookup protocol. The bulk of the material sits "
         "in `references/`, which costs nothing until read — the part READMEs, a symbol index "
         "sliced to that skill, a silent-failure index sliced to that skill, and section maps "
-        "addressing the deep reference guides that stay in this repository.",
+        "addressing the bundled deep reference guides. Each skill also includes OpenAI UI metadata "
+        "and portable trigger-evaluation fixtures.",
         "",
         f"Generated {date}.",
         "",

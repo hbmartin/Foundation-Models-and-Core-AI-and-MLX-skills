@@ -83,8 +83,8 @@ index content — into a shape Apple Intelligence can use, which is where integr
 | "Siri asks to clarify, or acts on the wrong item" | [16.3 §4, §8.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#4-fast-resolution) | A slow `displayRepresentations`; or per-row annotation on a scrolling list |
 | "My own model invents details for content I indexed" | [16.4 §7.3, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#73-️-silent-failure--the-index-is-searchable-but-not-readable) | The index is searchable, not readable. The hydration hook is the fix |
 | "What are *'indexed entities for Apple Intelligence'*?" | [16.4 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#1-the-question-and-its-answer) | `IndexedEntity` + `indexAppEntities(_:)`. Same index, different door |
-| "Dirty dataset, or a convnet that may be over-wide" | [16.5 §6.3, §6.5, §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#63-duplicates--the-one-you-should-run-first) | `Duplicates` and PFA. Prune, retrain, *then* convert |
-| Anything transformer, MLX, Core ML or Core AI shaped | **skip [16.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)** | DNIKit supports none of them. §1 says so in a table |
+| "Dirty dataset, or a convnet that may be over-wide" | [16.5 §6.3, §6.5, §8](references/05-dnikit-dataset-and-model-introspection.md#63-duplicates--the-one-you-should-run-first) | `Duplicates` and PFA. Prune, retrain, *then* convert |
+| Anything transformer, MLX, Core ML or Core AI shaped | **skip [16.5](references/05-dnikit-dataset-and-model-introspection.md)** | DNIKit supports none of them. §1 says so in a table |
 
 ---
 
@@ -191,7 +191,7 @@ one gap starves all three at once. Both on-ramps are given complete, §5 says wh
 > is silent. §10 covers nothing else; the safe default is blunt — if you need model-readable bodies,
 > donate `CSSearchableItem`s too.
 
-### [16.5 — DNIKit: auditing datasets and networks before you convert](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)
+### [16.5 — DNIKit: auditing datasets and networks before you convert](references/05-dnikit-dataset-and-model-introspection.md)
 
 The shortest guide in the series, on purpose. Every other part assumes your model is good and asks how
 to deploy it; this one asks whether your *data* is good and whether your network is the size it needs to
@@ -229,7 +229,7 @@ work is worth doing at all. **Speech is standalone:**
 **Deferrable:** 16.1 §11 (custom vocabulary) until real transcripts show which terms fail, and §14 until
 you have your own ASR model; 16.2 §13's execution model until you hit the 30-second wall; 16.3 §6 until
 basic annotation ships; 16.4 §9–§10 until `SpotlightSearchTool` returns plausible-but-wrong answers.
-**Skippable outright:** [16.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) unless you have
+**Skippable outright:** [16.5](references/05-dnikit-dataset-and-model-introspection.md) unless you have
 a TF2/Keras vision model and a data-quality question — its §1 table settles that in thirty seconds.
 
 ---

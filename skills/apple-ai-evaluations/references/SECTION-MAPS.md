@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed from spoken narration.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md>
+**Local reference:** [part-06-evaluations/references/01-foundations-and-hill-climbing.md](part-06-evaluations/references/01-foundations-and-hill-climbing.md)
 
 | Section | Anchor |
 |---|---|
@@ -42,7 +42,7 @@ The foundation everything else hangs on: the `Evaluation` protocol's five steps 
 
 The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to be trusted.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md>
+**Local reference:** [part-06-evaluations/references/02-model-judges-and-alignment.md](part-06-evaluations/references/02-model-judges-and-alignment.md)
 
 | Section | Anchor |
 |---|---|
@@ -76,7 +76,7 @@ The half of evaluation that cannot be written as an `if`, and then the harder ha
 
 Two subjects that share a chapter because both are about honesty.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md>
+**Local reference:** [part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md)
 
 | Section | Anchor |
 |---|---|
@@ -111,7 +111,7 @@ Two subjects that share a chapter because both are about honesty.
 
 The shortest guide in the series, on purpose.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md>
+**Local reference:** [part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)
 
 | Section | Anchor |
 |---|---|
