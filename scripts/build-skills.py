@@ -89,6 +89,11 @@ SENTENCE_END = re.compile(r"(?<=[a-zA-Z*)\]`\"])\.(?:\s|$)")
 
 GENERATED_MARKER = ".generated-by-build-skills"
 SKILL_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Exactly the characters str.splitlines() breaks on: the verifier reads
+# frontmatter with splitlines(), so this is what "single physical line" means
+# to the consumer. json.dumps escapes the ASCII ones but leaves NEL, LS and PS
+# literal under ensure_ascii=False, where they would split the emitted line.
+LINE_BREAK = re.compile("[\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029]")
 
 # Both caps are enforced here rather than left to review, because both are
 # recurring context costs rather than one-off ones: the standard name and
@@ -99,6 +104,14 @@ MAX_SKILL_NAME_CHARS = 64
 MAX_BODY_LINES = 260
 MIN_TRIGGER_EVALS_PER_CLASS = 4
 API_LINKS_SHOWN = 4
+
+# The complete manifest-entry schema. Anything else is rejected rather than
+# silently dropped, so a typo'd key or a field the schema has since removed
+# (when_to_use) fails the build instead of quietly changing the output.
+ALLOWED_MANIFEST_ENTRY_KEYS = frozenset({
+    "name", "title", "short_description", "description",
+    "trigger_evals", "related", "owns", "max_triage_rows", "full_indexes",
+})
 
 # A guide card's abstract, as carried into SECTION-MAPS.md and, shorter, into the
 # SKILL.md router. Measured against the corpus: the first sentence of all 60 cards
@@ -339,6 +352,9 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
             raise SkillError(f"{path}: duplicate skill name {name!r}")
         if len(name) > MAX_SKILL_NAME_CHARS or not SKILL_NAME.fullmatch(name):
             raise SkillError(f"{path}: skill name {name!r} must match {SKILL_NAME.pattern}")
+        unknown = set(entry) - ALLOWED_MANIFEST_ENTRY_KEYS
+        if unknown:
+            raise SkillError(f"{path}: {name} has unrecognized keys {sorted(unknown)}")
         description = entry.get("description", "")
         if not description:
             raise SkillError(f"{path}: {name} needs a description; it is the whole trigger")
@@ -1106,10 +1122,11 @@ def yaml_scalar(text: str) -> str:
     YAML's reserved leading characters and implicit types (`-`, `?`, `!`, `%`,
     `null`, numbers, and so on) without maintaining a partial YAML grammar here.
     """
-    if "\n" in text or "\r" in text:
+    if LINE_BREAK.search(text):
         raise SkillError(
-            "frontmatter values must be single-line; a line break would emit a block "
-            "scalar that verify-skills.py deliberately refuses to parse"
+            "frontmatter values must be a single physical line as splitlines() "
+            "defines one; json.dumps escapes ASCII control characters but leaves "
+            "NEL, LS and PS literal, where they would split the emitted line"
         )
     return json.dumps(text, ensure_ascii=False)
 
@@ -1234,11 +1251,13 @@ def build_skills(
             def to_root(text: str, router: PartRouter, _owned=owned) -> str:
                 """Re-point links in text lifted from a part README into SKILL.md.
 
-                Links to bundled files stay clickable. Links to a deep guide
-                would become a ~150-character GitHub URL, which is a poor trade
-                inside a body that persists for a whole session — the `N.M §K`
-                label already identifies the section, and SECTION-MAPS.md turns
-                it back into a URL. So those are flattened to their text.
+                Links to bundled files, including owned deep guides, stay
+                clickable relative paths. A link to a deep guide another skill
+                owns would become a ~150-character GitHub URL, which is a poor
+                trade inside a body that persists for a whole session — the
+                `N.M §K` label already identifies the section, and
+                SECTION-MAPS.md locates the file. So those are flattened to
+                their text.
                 """
                 rewritten = rewrite_text(
                     text, f"{router.directory}/README.md", "", _owned,
