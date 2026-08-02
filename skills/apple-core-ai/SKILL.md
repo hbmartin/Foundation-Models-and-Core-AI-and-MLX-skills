@@ -1,6 +1,6 @@
 ---
 name: apple-core-ai
-description: Build, convert, optimize, and debug Core AI 27 neural models using AIModel, NDArray, bundles, engines, guided decoding, specialization, caching, AOT compilation, coreai-torch conversion, custom Metal ops, quantization, palettization, pruning, and ANE/GPU profiling. Use for import CoreAI or .aimodel work; missing Metal compiler errors; unsupported conversion ops; Neural Engine fallback; slow compiled models; numeric drift; compression accuracy loss; or deciding what should remain in Core ML.
+description: "Build, convert, optimize, and debug Core AI 27 neural models using AIModel, NDArray, bundles, engines, guided decoding, specialization, caching, AOT compilation, coreai-torch conversion, custom Metal ops, quantization, palettization, pruning, and ANE/GPU profiling. Use for import CoreAI or .aimodel work; missing Metal compiler errors; unsupported conversion ops; Neural Engine fallback; slow compiled models; numeric drift; compression accuracy loss; or deciding what should remain in Core ML."
 ---
 
 # Core AI: the 27-cycle inference runtime and its conversion pipeline
@@ -59,7 +59,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its sections and URL.
+A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
 
 **Part 7 — Core AI: the Swift runtime** ([all 12 rows](references/part-07-coreai-swift-runtime/README.md#read-this-first-the-triage-table))
 

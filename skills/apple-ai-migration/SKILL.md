@@ -51,7 +51,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its sections and URL.
+A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
 
 **Part 17 — Migration from pre-iOS 27** ([all 9 rows](references/part-17-migration-from-pre-ios-27/README.md#read-this-first-the-five-minute-triage))
 

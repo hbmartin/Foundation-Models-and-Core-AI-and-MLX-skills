@@ -909,7 +909,7 @@ def render_section_maps(
     repository_root: Path, repository_url: str, branch: str, date: str,
     to_references: "callable",
 ) -> str:
-    """A heading map plus URL for every deep guide this skill covers.
+    """A heading map plus local path for every deep guide this skill covers.
 
     Derived from the real '## ' headings rather than each file's hand-written
     '## Contents', which one reference lacks entirely and which can drift.
@@ -1049,7 +1049,7 @@ def render_skill_md(
     lines += [
         "", "## Triage", "",
         "A `N.M` label is a deep reference guide; look it up in "
-        "`references/SECTION-MAPS.md` for its sections and URL.", "",
+        "`references/SECTION-MAPS.md` for its local file and section anchors.", "",
     ]
     quota = max(3, spec.max_triage_rows // max(len(routers), 1))
     for router in routers:
@@ -1100,18 +1100,18 @@ def render_skill_md(
 
 
 def yaml_scalar(text: str) -> str:
-    """Quote a description so a strict scalar-only YAML reader round-trips it."""
-    if "\n" in text:
+    """Render a single-line string as a YAML-safe double-quoted scalar.
+
+    JSON strings are valid YAML 1.2 double-quoted scalars. Always quoting avoids
+    YAML's reserved leading characters and implicit types (`-`, `?`, `!`, `%`,
+    `null`, numbers, and so on) without maintaining a partial YAML grammar here.
+    """
+    if "\n" in text or "\r" in text:
         raise SkillError(
-            "frontmatter values must be single-line; a newline would emit a block "
+            "frontmatter values must be single-line; a line break would emit a block "
             "scalar that verify-skills.py deliberately refuses to parse"
         )
-    # These leading characters start a YAML collection or block scalar, which
-    # verify-skills.py's scalar-only reader rejects: producer and consumer have
-    # to agree on the same value.
-    if re.search(r'[:#\'"]|^\s|\s$', text) or text[:1] in "|>&*[{":
-        return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
-    return text
+    return json.dumps(text, ensure_ascii=False)
 
 
 def strip_footnotes(text: str) -> str:

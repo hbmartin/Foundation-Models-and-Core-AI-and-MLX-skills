@@ -54,7 +54,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its sections and URL.
+A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
 
 **Part 2 — Foundation Models: the everyday API** ([all 17 rows](references/part-02-foundation-models-everyday-api/README.md#read-this-first-the-triage-table))
 

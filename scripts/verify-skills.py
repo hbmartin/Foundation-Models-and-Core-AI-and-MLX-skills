@@ -101,8 +101,18 @@ def parse_frontmatter(text: str, label: str) -> tuple[dict[str, str], int, str]:
             raise VerificationError(f"{label}:{number}: duplicate frontmatter key {key!r}")
         if raw[:1] in ("|", ">", "&", "*", "[", "{"):
             raise VerificationError(f"{label}:{number}: unsupported YAML construct in {key!r}")
-        if len(raw) >= 2 and raw[0] == raw[-1] == '"':
-            raw = raw[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+        if raw.startswith('"'):
+            try:
+                decoded = json.loads(raw)
+            except json.JSONDecodeError as error:
+                raise VerificationError(
+                    f"{label}:{number}: invalid double-quoted scalar in {key!r}: {error}"
+                )
+            if not isinstance(decoded, str):
+                raise VerificationError(
+                    f"{label}:{number}: frontmatter value for {key!r} must be a string"
+                )
+            raw = decoded
         fields[key] = raw
     return fields, len(lines) - end - 1, "\n".join(lines[: end + 1])
 

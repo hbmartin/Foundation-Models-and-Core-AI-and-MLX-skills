@@ -1,6 +1,6 @@
 # API & symbol index
 
-**1205 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1204 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-02; regenerate rather than hand-edit.
 
@@ -479,7 +479,7 @@
 | `URLSessionConfiguration.default` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `UUID` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## other  <sub>791 symbols</sub>
+## other  <sub>790 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -1264,7 +1264,6 @@
 | `Void` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `WARNING` |  |  | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [9.README](part-09-coreai-compression-numerics/README.md) +1 more |
 | `WeakBox` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
-| `WebFetch` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 | `WiredMemoryManager` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `Xcode.app` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md), [11.README](part-11-metal-and-tensorops/README.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `XCTAssertEqual` |  |  | [5.README](part-05-prototyping-profiling-non-swift/README.md), [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) |

@@ -266,20 +266,24 @@ class SkillBuildTests(unittest.TestCase):
                 copied,
             )
 
-    def test_section_maps_link_to_bundled_guides(self):
+    def test_generated_routing_uses_agent_neutral_file_operations(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             guides = make_fixture(root)
             self.build(root, guides)
-            maps = (
-                root / "skills" / "apple-test-skill" / "references" / "SECTION-MAPS.md"
-            ).read_text(encoding="utf-8")
+            skill = root / "skills" / "apple-test-skill"
+            maps = (skill / "references" / "SECTION-MAPS.md").read_text(encoding="utf-8")
+            router = (skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn(
                 "[part-01-orientation/references/01-map.md]"
                 "(part-01-orientation/references/01-map.md)",
                 maps,
             )
-            self.assertNotIn("WebFetch", maps)
+            self.assertIn("Open the narrowest relevant section first.", maps)
+            self.assertIn("Search the local guide first", router)
+            for host_specific_name in ("Grep", "WebFetch"):
+                self.assertNotIn(host_specific_name, maps)
+                self.assertNotIn(host_specific_name, router)
 
     def test_generates_openai_metadata_and_trigger_evals(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -458,6 +462,52 @@ class SkillBuildTests(unittest.TestCase):
 
 
 class RenderingHelperTests(unittest.TestCase):
+    def test_yaml_scalar_round_trips_yaml_reserved_and_implicitly_typed_text(self):
+        values = (
+            "",
+            " leading space",
+            "trailing space ",
+            "- list item",
+            "? mapping key",
+            ": mapping value",
+            "!tagged",
+            "&anchor",
+            "*alias",
+            "%directive",
+            "@reserved",
+            "`reserved",
+            "# comment",
+            ", flow entry",
+            "[flow sequence]",
+            "] flow end",
+            "{flow mapping}",
+            "} flow end",
+            "| block scalar",
+            "> folded scalar",
+            "null",
+            "true",
+            "false",
+            "~",
+            "123",
+            "1.2",
+            'a "quote" and a \\backslash',
+            "a tab\tinside",
+        )
+        for value in values:
+            with self.subTest(value=value):
+                frontmatter = builder.render_frontmatter("test-skill", value)
+                encoded = frontmatter.splitlines()[2].removeprefix("description: ")
+                self.assertTrue(encoded.startswith('"'), encoded)
+                self.assertEqual(json.loads(encoded), value)
+                fields, _, _ = verifier.parse_frontmatter(frontmatter + "\nbody\n", "test")
+                self.assertEqual(fields["description"], value)
+
+    def test_yaml_scalar_rejects_physical_line_breaks(self):
+        for value in ("first\nsecond", "first\rsecond", "first\r\nsecond"):
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(builder.SkillError):
+                    builder.yaml_scalar(value)
+
     def test_first_sentence_never_ends_inside_a_code_span(self):
         # These strings land in table cells; a dangling backtick makes GitHub run
         # the code span to the next backtick and eat the rest of the row.
@@ -669,6 +719,13 @@ class SkillVerifierTests(unittest.TestCase):
         with self.assertRaises(verifier.VerificationError):
             verifier.parse_frontmatter("---\nname: x\nnested:\n  a: 1\n---\nbody\n", "x")
 
+    def test_rejects_an_invalid_double_quoted_frontmatter_scalar(self):
+        with self.assertRaises(verifier.VerificationError) as caught:
+            verifier.parse_frontmatter(
+                '---\nname: x\ndescription: "bad\\q escape"\n---\nbody\n', "x"
+            )
+        self.assertIn("invalid double-quoted scalar", str(caught.exception))
+
     def test_rejects_a_non_portable_frontmatter_extension(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -790,6 +847,17 @@ class CommittedSkillsTests(unittest.TestCase):
         summary = verifier.verify(SKILLS, SKILLS / "skills-manifest.json")
         self.assertEqual(summary["skills"], expected)
         self.assertEqual(summary["trigger_evals"], expected * 8)
+
+    def test_portable_docs_and_routers_avoid_host_specific_tool_names(self):
+        paths = [REPO / "README.md", SKILLS / "README.md"]
+        paths += sorted(SKILLS.glob("*/SKILL.md"))
+        paths += sorted(SKILLS.glob("*/references/SECTION-MAPS.md"))
+        host_specific = re.compile(r"\b(?:Grep|WebFetch)\b")
+        for path in paths:
+            self.assertIsNone(
+                host_specific.search(path.read_text(encoding="utf-8")),
+                f"{path.relative_to(REPO)} should use agent-neutral search/open wording",
+            )
 
     def test_every_real_part_readme_parses(self):
         # The drift alarm: a guide edit that changes a part README's structure

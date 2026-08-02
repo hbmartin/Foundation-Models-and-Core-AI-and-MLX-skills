@@ -1,6 +1,6 @@
 ---
 name: apple-app-intents
-description: Expose app content and actions to Siri and Apple Intelligence with App Intents, assistant schema domains, IntentParameter.valueState, AppEntity, IndexedEntity and Spotlight indexing, on-screen awareness, FileEntityIdentifier and FileRepresentation, display representations, and .system.searchInApp fallbacks. Use when an intent reports success but changes nothing, Siri uses screen text instead of an entity, clarification selects the wrong item, attachments are refused, or indexed content is invented.
+description: "Expose app content and actions to Siri and Apple Intelligence with App Intents, assistant schema domains, IntentParameter.valueState, AppEntity, IndexedEntity and Spotlight indexing, on-screen awareness, FileEntityIdentifier and FileRepresentation, display representations, and .system.searchInApp fallbacks. Use when an intent reports success but changes nothing, Siri uses screen text instead of an entity, clarification selects the wrong item, attachments are refused, or indexed content is invented."
 ---
 
 # App Intents, Siri schema domains, and Spotlight entity indexing
@@ -55,7 +55,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its sections and URL.
+A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
 
 **Part 16 — Adjacent capabilities** ([all 15 rows](references/part-16-adjacent-capabilities/README.md#read-this-first-the-triage-table))
 

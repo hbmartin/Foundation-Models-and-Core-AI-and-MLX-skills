@@ -1,6 +1,6 @@
 ---
 name: apple-on-device-ai
-description: Choose among Apple Foundation Models, Core AI, MLX, Metal, or Core ML for on-device inference, and apply OS, SDK, hardware, and availability gates across Apple platforms. Use when selecting a stack; writing @available or SystemLanguageModel.availability checks; resolving 26.0, 26.2, 26.4, or 27.0 floors; diagnosing code that compiles but is unavailable at runtime; or routing an unfamiliar symbol, error, or silent failure to the owning framework.
+description: "Choose among Apple Foundation Models, Core AI, MLX, Metal, or Core ML for on-device inference, and apply OS, SDK, hardware, and availability gates across Apple platforms. Use when selecting a stack; writing @available or SystemLanguageModel.availability checks; resolving 26.0, 26.2, 26.4, or 27.0 floors; diagnosing code that compiles but is unavailable at runtime; or routing an unfamiliar symbol, error, or silent failure to the owning framework."
 ---
 
 # Apple on-device AI: choosing a stack and getting the gates right
@@ -51,7 +51,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its sections and URL.
+A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
 
 **Part 1 — Orientation and gating** ([all 18 rows](references/part-01-orientation-and-gating/README.md#read-this-first-the-triage-table))
 
