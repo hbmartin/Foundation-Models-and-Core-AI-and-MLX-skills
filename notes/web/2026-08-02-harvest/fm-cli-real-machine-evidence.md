@@ -5,11 +5,12 @@
 (23 🔴 GAPs, the joint-highest in the repo) both rest on the same hole: **nobody on this project
 has run `fm --help` on a macOS 27 machine.** This session found third parties who have.
 
-> ⚠️ **Evidence tier.** Everything here is **third-party attestation**, not first-party capture.
-> It is *stronger* than the WWDC-narration reconstruction the guide currently carries (a
-> pasted `--help` block from a named build is a primary artifact), but it is *weaker* than
-> running the binary ourselves. Proposed marker for the guides: **🟠 Suggestive** →
-> promote to ✅ only when we run it on a 27 host. Do not upgrade a 🔴 to ✅ from this file.
+> ⚠️ **Evidence tier.** The machine output here is **third-party attestation**, not a capture by
+> this project. It is *stronger* than a narration-only reconstruction (a pasted `--help` block from
+> a named build is a primary artifact), but it is *weaker* than running the binary ourselves, so
+> those claims remain **🟠 Suggestive**. The exception is `fm serve`'s existence and Chat
+> Completions purpose, which an Apple member states in writing in `apple/python-apple-fm-sdk` issue
+> #13; S1's help paste independently corroborates that spelling. Behavioral details stay 🔴.
 
 ---
 
@@ -32,8 +33,9 @@ months, two languages) and their command grammars agree wherever they overlap.
 
 ## 1. Installed path — closes the "installed path" GAP (guide §, line ~189)
 
-Both S1 and S4 state the binary is a **system binary at `/usr/bin/fm`**, preinstalled with
-macOS 27 (no download, no Xcode component). S1 is the one with a build number attached.
+S1 reports the binary as a **system binary at `/usr/bin/fm`**, preinstalled with macOS 27 (no
+download, no Xcode component), and attaches a build number. S4 repeats the path but is explicitly
+WWDC-transcript-derived, so it is secondary corroboration rather than a second machine run.
 
 The guide currently asks "`/usr/bin/fm`? `/usr/local/bin`? inside Xcode?" — S1/S4 answer
 `/usr/bin/fm`, i.e. the *first* of the guide's three guesses, and consistent with the repo's
@@ -43,7 +45,7 @@ own negative finding that an exhaustive `find` of Xcode-beta.app returns nothing
 
 S1 pasted the top-level help. Reproduced as a short quotation for identification:
 
-```
+```text
 % fm --help
 
 USAGE
@@ -59,15 +61,16 @@ COMMANDS
     token-count   Count tokens in a…          ← S1's page truncates here
 ```
 
-**Seven subcommands.** The guide reconstructed only `respond`, `chat`, `schema` (from session
-334 narration) plus a speculative `serve`. **Four are new to this corpus:**
+**Seven subcommands.** The guide already had `respond`, `chat`, and `schema` from session 334 plus
+an Apple member's written statement that `serve` exists as a Chat Completions endpoint. S1's help
+paste independently corroborates `serve`; **three subcommands are new to this corpus:**
 
 | Subcommand | One-line help (per S1) | Corpus status before today |
 |---|---|---|
 | `available` | Check model availability | **never mentioned** — maps to `SystemLanguageModel.Availability` |
 | `quota-usage` | Check model quota usage | **never mentioned** — maps to `QuotaUsage` / PCC quota (Part 4) |
 | `token-count` | Count tokens in a… *(truncated)* | **never mentioned** — maps to the five `tokenCount(for:)` overloads |
-| `serve` | Start a Chat Completions API server | guide had it as narration-only, no attested spelling |
+| `serve` | Start a Chat Completions API server | already verified by an Apple member's written statement; S1 corroborates the spelling |
 
 Note how cleanly the four undocumented ones mirror the Swift API surface the guides already
 document. That is corroborating structure, not proof.
@@ -112,14 +115,15 @@ Resolving the guide's option table (lines 257–261) — **all five were 🔴 UN
 | "the **image** option" | `--image` | a file path; S2 says repeatable is *not* shown for `fm` (that is `fmx`) | S2, S3 |
 | "the **schema** option" | `--schema` | a path to a JSON file produced by `fm schema object` | S2, S3 |
 | "the **help** option" | `--help` | — | S1 |
-| "(instructions)" | `--instructions` | S2 lists it as existing but **does not demonstrate it** → keep 🟡 | S2 |
+| "(instructions)" | `--instructions` | S2 lists it as existing but does not establish its grammar or value form → keep 🔴 **UNKNOWN** | S2 |
 
 **`fm schema object` grammar** (the guide's self-declared "biggest hole"): the observed form is
 a flag-per-property builder, not a DSL —
-`fm schema object --name <TypeName> --<type> <propertyName> [--array]`, with `--array`
-modifying the immediately preceding property. Two independent examples agree on the shape.
-Only `--string` is attested; `--int/--float/--bool` are *presumed* by symmetry and are **not**
-attested — mark 🟡.
+`fm schema object --name <TypeName> --<type> <propertyName> [--array]`. Two independent one-property
+examples place `--array` after the property; that **suggests**, but does not prove, that it modifies
+the immediately preceding property because neither source shows multiple properties. Only
+`--string` is attested; `--int/--float/--bool` are *presumed* by symmetry and are **not** attested —
+mark both inferences 🟡.
 
 ## 4. ⚠️ Direct source conflict — does `fm serve` exist?
 
@@ -134,11 +138,10 @@ is exactly the reasoning the house style forbids ("absence from a beta SDK = not
 … interface, never does not exist"). S1 offers a positive artifact from a build number. S5 is
 also self-admittedly a corrected post, i.e. it has already been wrong once on this exact point.
 
-**Recommended guide treatment:** state that `serve` **appears in the shipped `--help` on
-macOS 27.0 `26A5378n` per a third-party paste**, and that at least one commentator disputes its
-existence — then keep the guide's existing 🔴 box for *port, bind address, auth, endpoint set*,
-since **no source attests any of those**. Do not present `fm serve` as verified, and do not
-delete the gap.
+**Recommended guide treatment:** treat `serve` and its Chat Completions endpoint as **verified** by
+the Apple member's written statement, with S1's shipped-help paste on macOS 27.0 `26A5378n` as
+independent spelling corroboration. Keep the guide's existing 🔴 box for *port, bind address,
+authentication, supported fields, streaming, and quota behavior*, since no source attests those.
 
 ## 5. ⚠️ `fmx` is a look-alike, not evidence
 

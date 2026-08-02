@@ -383,7 +383,7 @@ public struct LanguageBundle: Sendable {
 > The layout *inside* the directory is unchanged. Anything globbing `*.llmasset` breaks against a
 > current clone. Left below as read at `5ed9981`.
 
-Directory `<name>.llmasset/` with `kind=vlm`:
+Historical layout at `5ed9981`: directory `<name>.llmasset/` with `kind=vlm`:
 | Asset role | File | Role |
 |---|---|---|
 | `main` | `<name>.aimodel` | Text decoder (`inputs_embeds`, stateful KV) |

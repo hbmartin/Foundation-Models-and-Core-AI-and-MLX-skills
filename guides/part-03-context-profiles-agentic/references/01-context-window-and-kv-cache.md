@@ -539,8 +539,9 @@ two WWDC sessions publish it. 32K is Apple-published.
 
 ### 3.3 ✅ The on-device figure is 4096 — settled by TN3193
 
-Earlier drafts of this guide presented 4096-vs-8192 as an open conflict. **It is not one.** Apple's
-technote states the number plainly, and it is now the fourth independent Apple channel to publish it.
+Earlier drafts of this guide presented 4096-vs-8192 as an equal-weight conflict. **It is not one.**
+Apple's technote states the documented platform value plainly; 8192 remains a single unverified
+device-specific report.
 
 > ✅ **VERIFIED** — Apple Technical Note **TN3193**, *Managing the on-device foundation model's
 > context window*
@@ -553,19 +554,18 @@ technote states the number plainly, and it is now the fourth independent Apple c
 > PCC comparison table (4K), WWDC26 session 319's spoken table (4K), and Apple's own DTS engineer on
 > forum thread 790736 — *"You are correct that currently the token limit for Foundation Models
 > framework is **around 4,000**."*
-
-> ✅ **Fifth Apple channel, and the one that names iOS 27 explicitly (2026-08-02).** Asked at a
-> WWDC26 group lab *"What is the on-device Foundation Models context window **in iOS 27**, and is
-> input plus output counted against one shared token budget?"*, Apple's ML frameworks panel
-> answered: **the on-device context is 4096 tokens and is a shared budget** — *"if you feed in
-> 4000 tokens, the response can use the remaining ~96"* — with **PCC at 32K, also shared**.
-> Group Lab **8121**, ch. `0:08:11`.[^ctx-grouplab-8121]
+>
+> ✅ **Fifth Apple channel, and the one that names iOS 27 explicitly (2026-08-02).** Apple's
+> published Q&A summary for WWDC26 Group Lab **8121** records a question about the on-device
+> context window in iOS 27 and whether input plus output share one budget. The written summary
+> gives **4096 tokens as the on-device shared budget**, illustrates that a 4,000-token input leaves
+> roughly 96 tokens for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab-8121]
 >
 > Two things this adds that TN3193 does not. First, **it is scoped to iOS 27 by the question
-> itself**, which is what the noema comment claims changed — so the demotion in the footnote below
-> is now a contradiction by Apple, not merely an absence of corroboration. Second, it states the
-> **shared input+output budget** as an arithmetic rule with a worked example, which is the framing
-> §4 depends on.
+> itself**, which is what the noema comment claims changed. That makes 4096 Apple's documented
+> iOS 27 platform value while leaving the alleged device-specific 8192 observation uncorroborated.
+> Second, it states the **shared input+output budget** as an arithmetic rule with a worked example,
+> which is the framing §4 depends on.
 
 [^ctx-grouplab-8121]: WWDC26 Group Lab **8121**, *"Coding Intelligence, Machine Learning & AI Group
     Lab"*, `https://developer.apple.com/videos/play/wwdc2026/8121/`. ⚠️ Apple publishes **no
@@ -2552,8 +2552,9 @@ correct-looking, and quietly makes the model do the wrong thing.
 ### 12.7 The five sentences worth memorising
 
 1. **The transcript is the context window.** There is nothing else.
-2. **`contextSize` is a runtime property, not a constant** — and the sources disagree about its value,
-   which is exactly why you read it.
+2. **`contextSize` is a runtime property, not a constant** — Apple documents 4096 for iOS 27, while
+   an alleged device-specific 8192 result remains uncorroborated; read the property instead of
+   hardcoding either figure.
 3. **Appending is free; editing costs everything after the edit point.**
 4. **Static content at the top, conditional content at the bottom, always.**
 5. **Trimming is a lie to the model** — the model cannot tell absent from removed, and it will reason
@@ -2746,7 +2747,7 @@ rebuild — see the silent-failure box in §6.1.
 
 | # | Conflict | Ruling |
 |---|---|---|
-| 1 | **On-device context: 4,096 vs 8192 (shipping-app source comment, iOS 27)** | **RESOLVED for 4,096 — TN3193, read 2026-07-27.** Apple states 4096 tokens per `LanguageModelSession` outright, making four Apple channels against one uncorroborated third-party comment with no device/build/date. The 8192 claim is **demoted to a footnote**, not an equal-weight alternative. Unchanged: **read `contextSize` at runtime** — PCC reports 32K through the same property and profile switching moves one transcript between both. §3.3. |
+| 1 | **On-device context: documented 4,096 vs alleged device-specific 8192 (shipping-app source comment, iOS 27)** | **Apple-documented value: 4,096.** TN3193 states 4096 tokens per `LanguageModelSession`, and Apple's Group Lab 8121 written Q&A summary explicitly applies that platform value to iOS 27. The third-party 8192 comment has no device/build/date and remains **uncorroborated, not disproved**. Unchanged: **read `contextSize` at runtime** — PCC reports 32K through the same property and profile switching moves one transcript between both. §3.3. |
 | 2 | **PCC 32K: previously flagged in our corpus as "community-claimed, not Apple-confirmed"** | **Retired the caveat.** The PCC documentation table, session 241 (`241:L31`) and session 319 all publish it. 32K is Apple-published. §3.2. |
 | 3 | **`Profile(model:) { … }` (WWDC 242 reconstruction) vs `Profile { … }.model(x)` (Apple sample)** | **Sample wins.** Compiling first-party code outranks a reconstruction from spoken narration. Guide uses `.model(_:)`. Whether an `init(model:)` also exists is unverified and unused here. §7.2. |
 | 4 | **`some LanguageModelSession.DynamicProfile` (our earlier working conclusion) vs `some DynamicProfile` (Apple sample)** | **Sample wins.** Conformance uses the nested name; the `body` type uses the short one, SwiftUI-style. §7.2. |

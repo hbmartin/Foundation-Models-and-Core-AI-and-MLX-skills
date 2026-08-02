@@ -992,10 +992,10 @@ need to run.
 
 ✅ **VERIFIED — source read 2026-08-02.** `apple/coreai-models` commit `aa3bbf6`, *"Add
 `--clear-coreai-cache` flag to clear Core AI specialization cache before model load (#127)"*,
-2026-07-29. The flag was added to **four** of the repo's runner tools at once — `benchmark`,
-`speech-runner`, `diffusion-runner`, `image-segmenter` — which is itself the signal: Apple's
-sample tooling treats "clear the specialization cache before loading" as a standard operating mode,
-not a debugging afterthought.
+2026-07-29. The flag was added to **six** of the repo's runner tools at once — `benchmark`,
+`speech-runner`, `diffusion-runner`, `image-segmenter`, `llm-runner`, and `object-detector` — which
+is itself the signal: Apple's sample tooling treats "clear the specialization cache before loading"
+as a standard operating mode, not a debugging afterthought.
 
 The benchmark tool's sequence is the part worth copying
 (`swift/Sources/Tools/benchmark/BenchmarkMain.swift:70-78`):
@@ -1014,17 +1014,19 @@ let cacheHit = PreparedModel.isCached(at: modelURL)
 
 Three things to take from it:
 
-1. **`clearCache(at:)` returns the components it cleared**, and the tool prints the count. A model
-   bundle is multi-component (§4), so "did the clear do anything?" is a real question with a
-   numeric answer — do not assume a clear that returns an empty collection failed, and do not
-   assume it succeeded either. Check.
+1. **`clearCache(at:)` returns the asset URLs it discovered and processed**, and the tool prints
+   that count. The implementation computes `modelAssetURLs(at:)`, calls
+   `AIModelCache.deleteEntries(for:)` for each resolved URL, and returns the original URL array.
+   The count therefore does **not** prove that those cache entries existed or that that many entries
+   were removed. Probe cache state separately if the distinction matters.
 2. **`isCached(at:)` is a pure query.** The comment says so explicitly: *"This only inspects the
    cache; it never triggers specialization."* That is the gating primitive §3 is about, in its
    read-only form, and it is the honest way to label a timing number as cold or warm.
-3. ⭐ **The pattern is `clear → probe → load → attribute`**, and it is the correct shape for any
-   honest first-load measurement. Without the explicit clear you cannot reproduce a cold start;
-   without the `isCached` probe you cannot prove the run you just timed *was* cold. Part 15's
-   benchmarking guide argues for exactly this discipline; here is Apple's own tooling doing it.
+3. ⭐ **The tool's pattern is `clear → post-clear probe → load → attribute`**, and it is useful
+   for establishing that the timed load begins uncached. If you also need to measure whether a clear
+   changed anything, use `pre-clear probe → clear → post-clear probe → load`; the returned URL count
+   cannot substitute for the pre-clear observation. Part 15's benchmarking guide argues for this
+   explicit state attribution rather than inferring coldness from a helper's return value.
 
 > ⚠️ **`PreparedModel.clearCache(at:)` is `coreai-models` API, not `CoreAI` framework API.** It is a
 > helper in Apple's open-source sample package, keyed on a **bundle path**, and it is not one of
@@ -1032,7 +1034,7 @@ Three things to take from it:
 > expecting a framework guarantee — use `AIModelCache.deleteEntries(for:)`. The value of the flag
 > is as evidence of *how Apple measures*, and as a ready-made escape hatch if you are already
 > building on `coreai-models`.
-
+>
 > 🔴 **GAP — this does not settle the deletion contradiction below.** The tools clear the cache
 > *before* any `AIModel` exists, so they never exercise the disputed case: deleting an entry that a
 > live `AIModel` is pinning. `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7 stands.

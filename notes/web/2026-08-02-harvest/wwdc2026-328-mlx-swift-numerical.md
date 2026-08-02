@@ -12,7 +12,7 @@ Speaker: **David Koski, MLX Swift.**
 > (`notes/transcripts/missing-sessions.md`) closed seven gaps and reported "Sessions NOT obtained:
 > None" — that was true of its seven *targets*, but 328 was never on the target list. This is a
 > genuine miss, not a re-fetch.
-
+>
 > ⚠️ **Partial mitigation already in the repo.** The *code* from this session is already on disk:
 > `repos/ml-explore__mlx-swift-examples/Numerical/` contains `Mandelbrot`, `HeatTransfer` and
 > `CurveFit` (added upstream in commit `70eaaac`, 2026-06-09, message literally

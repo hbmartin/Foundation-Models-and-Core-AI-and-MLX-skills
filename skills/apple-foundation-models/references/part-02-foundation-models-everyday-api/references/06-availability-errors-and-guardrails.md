@@ -247,8 +247,9 @@ A user whose *Siri* language is unsupported cannot, no matter what their system 
 > carries this comment: *"The on-device context is selected by the installed system model. **iOS 26
 > reports 4K while the iOS 27 model reports 8K.** `contextSize` is available in the Xcode 26.4+ SDK,
 > so it must not be hidden behind the Xcode 27 gate."* That is a **community measurement**, not an
-> Apple figure, and it directly contradicts the docs table. The app hardcodes `4096` only as a
-> fallback when `contextSize` returns `<= 0`.
+> Apple figure. Apple's written Group Lab 8121 summary now documents **4096** as the iOS 27 platform
+> value, so the alleged device-specific 8192 result remains uncorroborated rather than an equal
+> platform figure. The app hardcodes `4096` only as a fallback when `contextSize` returns `<= 0`.
 
 If you hardcode 4096 and the device reports 8192, you will chop your own transcripts in half and
 never see an error. If you hardcode 4096 and a future device reports less, you will get

@@ -2142,13 +2142,14 @@ half is easy to reason about and the cost half is where people get surprised.
 > ✅ **VERIFIED** — the on-device/PCC comparison rows are stated identically by WWDC26 session 319
 > (`319:38-45`, spoken as a table) and by Apple's *Using Private Cloud Compute* article
 > (five rows, same values, `Reasoning: Not supported / Multiple levels`, `Context size: 4K / 32K`).
-
-> ⚠️ **The 4K number is contested and you should not hardcode it.** A shipping third-party app's own
-> source comment reports probing the API: *"The on-device context is selected by the installed system
+>
+> ⚠️ **Apple documents 4K, but you still should not hardcode it.** A shipping third-party app's own
+> source comment claims a different device probe: *"The on-device context is selected by the installed system
 > model. **iOS 26 reports 4K while the iOS 27 model reports 8K.** `contextSize` is available in the
 > Xcode 26.4+ SDK."* (community, `noema-ios`, `AFMLLMClient.swift:133-135`; the app hardcodes 4096
-> only as a fallback when `contextSize` returns `<= 0`.) **Read `contextSize` at runtime.** Apple's
-> slide and docs both say 4K; a device says otherwise; the guide's advice is to ask the device.
+> only as a fallback when `contextSize` returns `<= 0`.) Apple's written Group Lab 8121 summary
+> documents 4096 for iOS 27; the device-specific 8192 claim remains uncorroborated. **Read
+> `contextSize` at runtime** because the OS 27 implementation is dynamic.
 
 The PCC entitlement is worth flagging because it is a *process* dependency, not a code one:
 

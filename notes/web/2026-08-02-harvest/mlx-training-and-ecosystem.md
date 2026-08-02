@@ -47,7 +47,7 @@ corpus covers post-training quantization thoroughly and QAT thinly.
 
 ### 1.2 CLI surface (as documented by the project)
 
-```
+```bash
 mlx_lm_lora.train --model <model_path> --data <data_path> --train
 ```
 
@@ -75,7 +75,8 @@ from mlx_lm_lora.reward_functions import register_reward_function
 def my_reward(prompt, completion, reference_answer, **kwargs):
     return score  # float 0-1
 ```
-```
+
+```bash
 --reward-functions-file ./my_rewards.py --reward-functions "my_reward"
 ```
 

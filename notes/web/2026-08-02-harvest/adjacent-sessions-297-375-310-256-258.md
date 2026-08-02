@@ -49,19 +49,19 @@ struct AlbumEntity: AppEntity {
     @Property var name: String
     @Property var artistName: String
     var coverArtData: Data
-    
+
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation( 
+        DisplayRepresentation(
             title: "\(name)",
             subtitle: "\(artistName)",
             image: .init(data: coverArtData)
-        )   
-    }   
-    
+        )
+    }
+
     static let defaultQuery = AlbumEntityQuery()
-    
+
     static var typeDisplayRepresentation: TypeDisplayRepresentation { "Album" }
-}   
+}
 
 struct AlbumEntityQuery: EntityQuery {
     @Dependency var catalog: AlbumCatalog
@@ -81,14 +81,14 @@ import VisualIntelligence
 struct SearchHandler: IntentValueQuery {
     @Dependency var catalog: AlbumCatalog
     @Dependency var concertFinder: ConcertFinder
-    
+
     func values(for input: SemanticContentDescriptor) async throws -> [VisualSearchResult] {
         guard let pixelBuffer = input.pixelBuffer else {
             return []
-        }   
-        
+        }
+
         let albums = try await catalog.search(matching: pixelBuffer)
-        
+
         return albums.map { VisualSearchResult.album($0) }
     }
 }
@@ -103,14 +103,14 @@ import Vision
 @Observable
 class AlbumCatalog {
     static let shared = AlbumCatalog()
-    
+
     struct CatalogEntry: Sendable {
         let album: AlbumEntity
         let featurePrint: FeaturePrintObservation
-    }   
-    
+    }
+
     private(set) var entries: [CatalogEntry] = []
-    
+
     private func generateFeaturePrint(
         for image: CGImage
     ) async throws -> FeaturePrintObservation {
@@ -128,14 +128,14 @@ func search(matching pixelBuffer: CVReadOnlyPixelBuffer, limit: Int = 10, maxDis
     var cgImage: CGImage?
     _ = pixelBuffer.withUnsafeBuffer { VTCreateCGImageFromCVPixelBuffer($0, options: nil, imageOut: &cgImage) }
     guard let cgImage else { return [] }
-    
+
     let queryPrint = try await generateFeaturePrint(for: cgImage)
-    
+
     return try entries.compactMap { entry -> (album: AlbumEntity, distance: Double)? in
         let distance = try queryPrint.distance(to: entry.featurePrint)
         guard distance <= maxDistance else { return nil }
         return (entry.album, distance)
-    }   
+    }
     .sorted { $0.distance < $1.distance }
     .prefix(limit)
     .map { $0.album }
@@ -154,12 +154,12 @@ import AppIntents
 
 struct OpenAlbumIntent: OpenIntent {
     static let title: LocalizedStringResource = "Open Album"
-    
+
     @Parameter(title: "Album")
     var target: AlbumEntity
-    
+
     @Dependency var appState: AppState
-    
+
     func perform() async throws -> some IntentResult {
         await appState.openAlbum(id: target.id)
         return .result()
@@ -178,16 +178,16 @@ struct OpenAlbumIntent: OpenIntent {
 enum VisualSearchResult {
     case album(AlbumEntity)
     case concert(ConcertEntity)
-}   
+}
 
 struct OpenConcertIntent: OpenIntent {
     static let title: LocalizedStringResource = "Open Concert"
-    
+
     @Parameter(title: "Concert")
     var target: ConcertEntity
-    
+
     @Dependency var appState: AppState
-    
+
     func perform() async throws -> some IntentResult {
         await appState.openConcert(id: target.id)
         return .result()
@@ -200,16 +200,16 @@ struct OpenConcertIntent: OpenIntent {
 struct SearchHandler: IntentValueQuery {
     @Dependency var catalog: AlbumCatalog
     @Dependency var concertFinder: ConcertFinder
-    
+
     func values(for input: SemanticContentDescriptor) async throws -> [VisualSearchResult] {
         guard let pixelBuffer = input.pixelBuffer else {
             return []
-        }   
-        
+        }
+
         let albums = try await catalog.search(matching: pixelBuffer)
-        
+
         let artists = albums.map { $0.artistName }
-        
+
         let concerts = await concertFinder.findNearby(byArtists: artists)
 
         return albums.map { VisualSearchResult.album($0) }
@@ -226,12 +226,12 @@ struct SearchHandler: IntentValueQuery {
 struct SemanticContentSearchIntent: AppIntent {
     static let title: LocalizedStringResource = "Search in app"
     static let openAppWhenRun: Bool = true
-    
+
     var semanticContent: SemanticContentDescriptor
     @Dependency var catalog: AlbumCatalog
     @Dependency var concertFinder: ConcertFinder
     @Dependency var appState: AppState
-    
+
     func perform() async throws -> some IntentResult {
         guard let pixelBuffer = semanticContent.pixelBuffer else { return .result() }
         let albums = try await catalog.search(matching: pixelBuffer)
@@ -239,7 +239,7 @@ struct SemanticContentSearchIntent: AppIntent {
         let concerts = await concertFinder.findNearby(byArtists: artists)
         await appState.openSearch(albums: albums, concerts: concerts)
         return .result()
-    }   
+    }
 }
 ```
 
@@ -259,13 +259,13 @@ class UpcomingConcertManager {
     private let eventStore = EKEventStore()
     var upcomingConcerts: [EKEvent] = []
     var authorizationStatus: EKAuthorizationStatus = .notDetermined
-    
+
     func requestAccessAndFetch() async throws {
         let granted = try await eventStore.requestFullAccessToEvents()
         guard granted else {
             authorizationStatus = .denied
             return
-        }   
+        }
         authorizationStatus = .fullAccess
         await fetchUpcomingConcerts()
 
@@ -536,17 +536,17 @@ struct SoupEntity: AppEntity, Identifiable {
         numericFormat: "\(placeholder: .int) soups"
     )
     static var defaultQuery = SoupEntityQuery()
-    
+
     var id: Soup.ID  // Stable identifier from database
-    
+
     @Property var name: String
-    
+
     @Property(title: "Available Today")
     var isAvailableToday: Bool
-    
+
     @Property(title: "Ingredients")
     var ingredients: String
-    
+
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(name)", subtitle: SoupStore.description(for: id))
     }

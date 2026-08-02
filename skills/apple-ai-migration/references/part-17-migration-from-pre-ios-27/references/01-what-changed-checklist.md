@@ -176,14 +176,13 @@ func contextBudget() -> Int {
 > `tokenCount(for:)` covers *instructions, prompts, tools, schemas and transcript entries*.
 > (Note the doc slug: `…tn3193-managing-the-on-device-foundation-model-s-context-window` — `model-s`,
 > not `models`; the other spelling 404s.)
-
-> ✅ **VERIFIED 2026-08-02 — Apple states 4096 for iOS 27, and the budget is shared.** Asked
-> directly *"What is the on-device Foundation Models context window in iOS 27, and is input plus
-> output counted against one shared token budget?"*, Apple's ML frameworks panel answered: **the
-> on-device context is 4096 tokens and is a shared budget** — *"if you feed in 4000 tokens, the
-> response can use the remaining ~96"* — while **Private Cloud Compute offers 32K, also shared**.
-> WWDC26 **Group Lab 8121**, *"Coding Intelligence, Machine Learning & AI Group Lab"*,
-> ch. `0:08:11`.[^ctx-grouplab]
+>
+> ✅ **VERIFIED 2026-08-02 — Apple's written summary gives 4096 for iOS 27, and the budget is
+> shared.** The published Q&A summary for WWDC26 **Group Lab 8121**, *"Coding Intelligence,
+> Machine Learning & AI Group Lab"*, records a question about the on-device Foundation Models
+> context window in iOS 27 and whether input plus output share one budget. It gives **4096 tokens
+> as the on-device shared budget**, illustrates that a 4,000-token input leaves roughly 96 tokens
+> for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab]
 >
 > This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
 > we can find" and left the question open. Apple has now corroborated **4096**, for iOS 27
@@ -192,10 +191,10 @@ func contextBudget() -> Int {
 > simulator runtime, `probes/`), and the 27.0 `swiftinterface`, which returns a dynamic
 > `_contextSize` on OS 27+ with a **4096 fallback** below it.
 >
-> **The community 8192 report is now contradicted, not merely uncorroborated.** It is a single
-> comment describing device probing; Apple's statement is a platform statement. If both are honest,
-> the reconciliation would have to be a device-specific runtime value that Apple's answer does not
-> describe — which is exactly why the standing advice below does not change.
+> **The community 8192 report remains uncorroborated.** It is a single comment describing device
+> probing; Apple's written summary establishes 4096 as the documented iOS 27 platform value but
+> does not rule out a device-specific runtime value. That unresolved distinction is exactly why
+> the standing advice below does not change.
 >
 > ⚠️ **Read `contextSize` at runtime rather than hardcoding either number.** Apple's answer is a
 > statement about the platform, not a per-device guarantee, and the 27.0 interface plainly returns
@@ -2599,7 +2598,7 @@ discount if you want only first-party evidence.
 
 | Claim | Attribution |
 |---|---|
-| ~~`contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096~~ **CONTRADICTED 2026-08-02** | Community source comment in a shipping third-party app. Apple's ML frameworks panel has since stated **4096, shared input+output**, for iOS 27 on the record (Group Lab 8121, ch. `0:08:11`), joining session 319, the PCC article, the repo's simulator measurement and the 27.0 interface fallback. Do not repeat the 8192 figure. §1.1 |
+| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 — **UNCORROBORATED 2026-08-02** | Community source comment in a shipping third-party app. Apple's written Group Lab 8121 summary documents **4096, shared input+output**, as the iOS 27 platform value, joining session 319, the PCC article, the repo's simulator measurement and the 27.0 interface fallback. The device-specific report remains unverified; read `contextSize` at runtime. §1.1 |
 | Core AI first-load of a 3 GB model at **194 seconds** on iPhone | Community-measured. §6.10 |
 | Foundation Models may downsample images to **896 px** on the longest dimension | Developer inference in thread 838613. **Never Apple-confirmed.** §4.1 |
 | Grammar-constrained decoding (`@Generable`) is unavailable on GPU-pipelined Core AI bundles because logits are not exposed | Community-measured. §4.3 |

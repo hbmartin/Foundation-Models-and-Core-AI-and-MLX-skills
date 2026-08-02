@@ -3,16 +3,16 @@
 **Harvested 2026-08-02** from `https://developer.apple.com/videos/play/wwdc2026/253/`
 (direct WebFetch; Apple's published transcript + code-sample block, both complete).
 
-> 🚨 **This framework has ZERO coverage in the repo.** Greps for `Music Understanding`,
-> `MusicUnderstanding`, `MusicUnderstandingSession` return **0 hits** across `guides/`,
-> `notes/`, `notes/sdk-interfaces/`, `transcripts/` and `docs/`. It is a **new on-device
-> ML framework in the 2026 release** and Part 1's "Apple AI stack 2026 map" does not know it
-> exists. See §5 for where it belongs.
-
+> 🚨 **Before this harvest, the framework had no guide or captured-SDK coverage.** Greps for
+> `Music Understanding`, `MusicUnderstanding`, and `MusicUnderstandingSession` returned **0 hits**
+> across `guides/` and `notes/sdk-interfaces/`. This harvest adds the transcript and research note,
+> but the **new on-device ML framework in the 2026 release** is still absent from Part 1's
+> "Apple AI stack 2026 map." See §5 for where it belongs.
+>
 > ⚠️ **Provenance.** Code blocks below are copied from Apple's published "Code Samples" block on
 > the session page (each carries Apple's own timestamp + chapter label). Prose is Apple's
-> transcript. Nothing here is model-reconstructed. Two transcription artifacts in Apple's own
-> sample block are preserved verbatim and flagged inline.
+> transcript. Nothing here is model-reconstructed. Several transcription or integration defects in
+> Apple's own sample block are preserved verbatim and flagged inline.
 
 Speaker: **Conner, Computational Music Team.**
 
@@ -57,10 +57,48 @@ import MusicUnderstanding
 .fileImporter(isPresented: $isPresented, allowedContentTypes: [.audio]) { result in
     switch result {
     case .success(let url):
-        let asset = AVURLAsset(url: url, 
+        let asset = AVURLAsset(url: url,
                                options: [AVURLAssetPreferPreciseDurationAndTimingKey : true])
         let session = try await MusicUnderstandingSession(asset: asset)
         let results = try await session.analyze()
+    }
+}
+```
+
+> ⚠️ **Integration erratum — the verbatim block above does not compile as written.** SwiftUI's
+> single-file `fileImporter` completion is synchronous and delivers `Result<URL, Error>`, so the
+> asynchronous session creation and analysis must run in a `Task`; the switch must also handle
+> `.failure`. Because the selected URL may be outside the sandbox, balance
+> `startAccessingSecurityScopedResource()` across the asynchronous work.
+
+Corrected **derived** integration shape (not Apple's published block):
+
+```swift illustrative
+.fileImporter(isPresented: $isPresented, allowedContentTypes: [.audio]) { result in
+    switch result {
+    case .success(let url):
+        Task {
+            let isSecurityScoped = url.startAccessingSecurityScopedResource()
+            defer {
+                if isSecurityScoped {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            do {
+                let asset = AVURLAsset(
+                    url: url,
+                    options: [AVURLAssetPreferPreciseDurationAndTimingKey: true]
+                )
+                let session = try await MusicUnderstandingSession(asset: asset)
+                let results = try await session.analyze()
+                consume(results)
+            } catch {
+                handleImportError(error)
+            }
+        }
+    case .failure(let error):
+        handleImportError(error)
     }
 }
 ```
@@ -180,6 +218,10 @@ public struct PaceResult: Codable, Sendable {
 Pace is "an event per minute rate" (see the §14:47 sample — `60 / paceValue` gives seconds
 per clip).
 
+> ⚠️ **Dimensional erratum for the archived transcript:** its narration says the pace can be
+> "divided by 60 seconds," which could be read as `paceValue / 60`. The published code sample has
+> the unit-correct formula: **`secondsPerClip = 60 / paceValue`**.
+
 ### 10:13 — Instrument activity
 
 ```swift
@@ -235,12 +277,13 @@ await withThrowingTaskGroup(of: Void.self) { taskGroup in
 }
 ```
 
-> ⚠️ **Second verbatim artifact in Apple's sample:** the closure binds `taskGroup` but the body
-> calls `group.addTask`. Also `result.momentary` is declared as an **array** in `LoudnessResult`
-> (11:45) yet is used here as a scalar (`.momentary.value`) — the streaming element type is
-> evidently *not* the same `LoudnessResult` shape as the batch one, or `momentary` is scalar in
-> the streaming case. **Unresolved contradiction inside one Apple session.** 🔴 — resolve against
-> the real SDK interface before writing a guide snippet.
+> ⚠️ **Further verbatim artifacts in Apple's sample:** the throwing group call needs `try await`,
+> the closure binds `taskGroup` but the body calls `group.addTask`, and `result.momentary` is
+> declared as an **array** in `LoudnessResult` (11:45) yet is used here as a scalar
+> (`.momentary.value`). The streaming element type is evidently *not* the same `LoudnessResult`
+> shape as the batch one, or `momentary` is scalar in the streaming case. **Unresolved
+> contradiction inside one Apple session.** 🔴 — preserve the archival block and resolve the
+> result shape against the real SDK interface before writing a corrected guide snippet.
 
 Note the two-task structure: **the consumer must be started before/alongside `analyze`**, because
 values are delivered per 100 ms *during* analysis.

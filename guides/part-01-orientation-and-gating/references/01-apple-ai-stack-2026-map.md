@@ -400,13 +400,13 @@ runtime property you must handle.
 > **4K / 32K**, reasoning not-supported / multiple-levels.
 
 > ⚠️ **Do not hardcode 4096.** Apple's slide, Apple's docs, and TN3193 all put the on-device
-> context at 4,096 tokens per session — settled in §10 — and as of 2026-08-02 Apple's ML
-> frameworks panel has said so for **iOS 27 specifically**, adding that the budget is **shared
-> across input and output**: *"if you feed in 4000 tokens, the response can use the remaining
-> ~96"* (WWDC26 Group Lab 8121, ch. `0:08:11`). (A shipping third-party app's source carries a
-> comment that "the iOS 27 model reports 8K"; that is now **contradicted** rather than merely
-> uncorroborated, and that app hardcodes 4096 only as a fallback for when `contextSize`
-> returns `<= 0`.)
+> context at 4,096 tokens per session — settled in §10 — and as of 2026-08-02 Apple's **written
+> Q&A summary** for WWDC26 Group Lab 8121 documents the same platform value for **iOS 27
+> specifically**, adding that the budget is **shared across input and output**. Its worked example
+> says a 4,000-token input leaves roughly 96 tokens for the response (ch. `0:08:11`). (A shipping
+> third-party app's source carries a comment that "the iOS 27 model reports 8K"; that unverified
+> device-specific report conflicts with Apple's documented platform value but is not disproved,
+> and that app hardcodes 4096 only as a fallback for when `contextSize` returns `<= 0`.)
 > Read `SystemLanguageModel.default.contextSize` — it is `@backDeployed`
 > to 26.4, so it is safe to call without an availability fence on any 26.4+ deployment. Treat `<= 0`
 > as unknown.
@@ -1004,14 +1004,13 @@ that is not one.** In practice that means:
 Two independent readings arrived at the same conclusion, which is why we state it with confidence
 despite neither being a formal Apple policy statement:
 
-> **A WWDC 2026 lab paraphrase.** "Apple is asking everyone working with neural networks to move to
-> Core AI going forward, with Core ML staying in place but focused on traditional machine learning
-> such as decision trees, and everything new heading to Core AI." — paraphrased from a locally
-> transcribed recording of WWDC26 **lab 8121**, "Coding Intelligence, Machine Learning & AI Group
-> Lab", relayed by Blake Crosley, who is careful about it: "Apple published no captions for the labs,
-> so the wording here is a paraphrase, not a quotation… Read it as a **direction-of-travel signal**
-> from the people building the framework rather than a documented policy."
-
+> **Apple's written WWDC 2026 Group Lab summary.** For lab **8121**, "Coding Intelligence,
+> Machine Learning & AI Group Lab," Apple's published Q&A summary describes Core ML as focused on
+> traditional machine learning such as decision trees, directs new neural-network work toward Core
+> AI, and positions MLX for on-device training and distributed workloads. Apple publishes no caption
+> track for the lab, so this is evidence from its written summary, not a quotation of panel speech.
+> Treat it as a **direction-of-travel signal**, not a formal platform-support policy.
+>
 > **An independent reader of the updated docs.** "Core ML narrows to classic, non-neural ML (its own
 > docs now point you there for 'decision trees or tabular feature engineering'); Core AI takes neural
 > nets and transformers (the new .aimodel format, the new profiler); MLX stays the separate

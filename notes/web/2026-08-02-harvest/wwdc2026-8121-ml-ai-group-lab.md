@@ -22,7 +22,7 @@ that hid Tech Talk 111432.
 
 ---
 
-## ⭐ 1. The context-window question — this settles an open corpus dispute
+## ⭐ 1. The context-window question — this settles the documented value, not every device result
 
 **Ch. 0:08:11 — "What is the on-device Foundation Models context window in iOS 27, and is input
 plus output counted against one shared token budget?"**
@@ -39,8 +39,8 @@ Apple's published answer:
 | Location | Current text | Effect of this finding |
 |---|---|---|
 | `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7 | "The third-party 8192 claim now rests entirely on 27 *hardware*" | **The claim now also has to survive an explicit Apple statement that it is 4096 on iOS 27.** |
-| `part-17/01-what-changed-checklist.md:180-183` | 🟡 "a community source reports device probing returning 8192 … Apple has not corroborated 8192 anywhere we can find" | **Apple has now corroborated 4096, on the record, for iOS 27.** The 🟡 should become an explicit refutation. |
-| `part-17/01-what-changed-checklist.md:2571` | "Community source comment in a shipping third-party app. **Not corroborated by Apple**" | Same. |
+| `part-17/01-what-changed-checklist.md:180-183` | 🟡 "a community source reports device probing returning 8192 … Apple has not corroborated 8192 anywhere we can find" | **Apple has now documented 4096 for iOS 27.** Keep 8192 as an uncorroborated device-specific report rather than an equal platform value. |
+| `part-17/01-what-changed-checklist.md:2571` | "Community source comment in a shipping third-party app. **Not corroborated by Apple**" | Retain that classification and add Apple's documented platform value. |
 
 This also independently confirms the repo's own simulator measurement (4096 on the iOS 27.0
 simulator runtime, `probes/`) and the 27.0 `swiftinterface`'s dynamic-`_contextSize`-with-4096-
