@@ -15,6 +15,13 @@
             <a href="{{ link.url | url }}">{{ link.title }}</a>
           {% endfor %}
         </nav>
+        <label class="docc-search-launch" for="__search">
+          <span class="docc-search-launch__icon md-icon" aria-hidden="true">
+            {% include ".icons/material/magnify.svg" %}
+          </span>
+          <span>Search</span>
+          <kbd>/</kbd>
+        </label>
         <div class="docc-masthead__controls">
           {% if config.theme.palette and not config.theme.palette is mapping %}
             {% include "partials/palette.html" %}
@@ -76,9 +83,6 @@
           <p class="docc-hero__eyebrow">Developer guide series</p>
           <p class="docc-hero__title" id="docc-hero-title">Apple on-device AI</p>
           <p>Foundation Models, Core AI, MLX, Evaluations, Speech, and Metal—from first API call to shipping on device.</p>
-        </div>
-        <div class="docc-hero__mark" aria-hidden="true">
-          <span></span><span></span><span></span>
         </div>
       </div>
     </section>
