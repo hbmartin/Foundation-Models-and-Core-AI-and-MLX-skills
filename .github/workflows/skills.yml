@@ -1,0 +1,108 @@
+# Verifies the committed skills/ tree and proves it actually installs.
+#
+# The staleness and structural checks live in scripts/tests/test_skills.py and so
+# already run in tests.yml on every push. This workflow adds the one thing a unit
+# test cannot cover: a real `npx skills add` against the real CLI, which is what
+# decides whether these skills reach anyone. It needs Node and the npm registry,
+# so it is kept separate and path-filtered rather than blocking every push.
+name: skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'guides/**'
+      - 'skills/**'
+      - 'notes/synthesis/skill-manifest.json'
+      - 'scripts/build-skills.py'
+      - 'scripts/build-skills.sh'
+      - 'scripts/verify-skills.py'
+      - 'scripts/mdlinks.py'
+      - 'scripts/mdslug.py'
+      - 'scripts/extract-symbols.py'
+      - 'scripts/tests/test_skills.py'
+      - '.github/workflows/skills.yml'
+  pull_request:
+    paths:
+      - 'guides/**'
+      - 'skills/**'
+      - 'notes/synthesis/skill-manifest.json'
+      - 'scripts/build-skills.py'
+      - 'scripts/build-skills.sh'
+      - 'scripts/verify-skills.py'
+      - 'scripts/mdlinks.py'
+      - 'scripts/mdslug.py'
+      - 'scripts/extract-symbols.py'
+      - 'scripts/tests/test_skills.py'
+      - '.github/workflows/skills.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skills-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-and-install:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job runs repository-controlled code on pull_request; it only
+          # reads, so it has no use for a persisted token. pages.yml does the same.
+          persist-credentials: false
+
+      # No setup-python or setup-node actions here. The ubuntu-24.04 image ships
+      # both, this job's scripts are stdlib-only, and the install step is meant to
+      # run against whatever Node a user would have. tests.yml still pins Python
+      # explicitly, so the version-pinned matrix has not moved.
+      - name: Report the toolchain in use
+        run: python3 --version && node --version && npm --version
+
+      - name: Test the generator
+        run: python3 -m unittest discover -s scripts/tests -p 'test_skills.py' -v
+
+      - name: Verify the committed tree
+        run: python3 scripts/verify-skills.py --skills skills
+
+      # Skipped on pull requests from forks. Every step above runs only
+      # repository-controlled Python; this one downloads and executes a package
+      # tree from npm, and there is no reason to hand that to a PR the
+      # maintainers have not read yet. The steps that decide correctness — the
+      # generator tests and verify-skills.py — still run on fork PRs, so a fork
+      # gets real feedback; only the install proof waits for a maintainer.
+      - name: Install with the real CLI and compare against the committed tree
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          project="$(mktemp -d)"
+          cd "$project"
+          # Pinned, because the byte-identical diff below makes this CLI's copy
+          # semantics decide pass/fail: on @latest a layout change upstream would
+          # fail CI on skills that are perfectly valid, and a green run could not
+          # be reproduced. Bump deliberately.
+          #
+          # This pins the CLI, not its dependency tree, which still resolves from
+          # the registry on every run — enough to stop an upstream release from
+          # turning CI red overnight, short of the lockfile or vendored copy true
+          # determinism would need.
+          npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" --agent claude-code --all -y
+          # The CLI stores one copy under .agents/skills and symlinks the
+          # agent-specific directory at it, so resolve through the link.
+          test -f .claude/skills/apple-mlx/SKILL.md
+          test -f .claude/skills/apple-mlx/references/SILENT-FAILURES.md
+          test -d .claude/skills/apple-core-ai/references/part-07-coreai-swift-runtime
+          for skill in "$GITHUB_WORKSPACE"/skills/*/; do
+            name="$(basename "$skill")"
+            diff -r "$skill" ".claude/skills/$name"
+          done
+          echo "Installed $(ls .claude/skills | wc -l) skills, byte-identical to the repository"
+
+      - name: Verify the guides were not modified
+        run: git diff --exit-code -- guides

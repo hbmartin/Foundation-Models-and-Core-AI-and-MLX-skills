@@ -27,7 +27,7 @@ So these guides rest on a different evidence ladder, stated at every claim: **sh
 on disk**, cited `path:line`; **Apple's own agent skills** inside those repos — 952 lines of empirical,
 unhedged rules written by Apple engineers *for coding agents* (`neural_engine_rules.md` 479 lines,
 `gpu_rules.md` 297, `common_issues.md` 176); **Apple documentation articles**; and **WWDC26 transcripts
-324, 325, 326** — spoken narration, **contradicted by the shipped code in at least four places**. The
+324, 325, 326** — spoken narration, **contradicted by the shipped code in eight recorded places**. The
 consequence: signatures here are **🟡 RECONSTRUCTED more often than in Parts 1–6**, and where they are,
 the box says what is unknown, what would resolve it, and what to do meanwhile. Nothing is guessed
 inside a 🔴 GAP.
@@ -66,24 +66,25 @@ the throughput numbers came from.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I am about to re-author a model and don't know which compute unit to target" | [10.1 §1–§3](references/01-ane-vs-gpu-authoring-rules.md) | The two rulesets side by side, plus Apple's own decision tables and memory budgets |
-| "My ANE model runs correctly but the phone is hot" | [10.1 §4.16](references/01-ane-vs-gpu-authoring-rules.md) | Residency. One fp32 literal in a norm is 56 accelerator transitions per forward pass |
-| "Fine at token 1, degraded by token 64" | [10.1 §4.13](references/01-ane-vs-gpu-authoring-rules.md) | You cached the pre-RoPE key. Apple marks this **CRITICAL**, and nowhere else |
-| "I re-authored for the ANE and it still runs on the GPU" | [10.1 §8](references/01-ane-vs-gpu-authoring-rules.md) · [§4.1](references/01-ane-vs-gpu-authoring-rules.md) | Entrypoint names, or `enable_per_channel_scale=True` and its rank-6 LUTs |
-| "Each inference is slower than the last" | [10.2 §4](references/02-debugging-and-profiling.md) | The canonical before/after trace: no KV cache, fixed with Core AI states |
-| "It runs, and the answer is wrong" | [10.2 §9–§11](references/02-debugging-and-profiling.md) | `save_intermediates`, sync points, and the SAM3 missing-flower diagnosis end to end |
-| "It got worse after I compressed it" | [10.2 §11.5](references/02-debugging-and-profiling.md) · [§12.1](references/02-debugging-and-profiling.md) | Sort by similarity, find a *module* pattern — then prove your exclusion regex matches anything |
-| "It won't load at all, with an MLIR error" | [10.2 §15](references/02-debugging-and-profiling.md) | Not numerics, not timing — asset **provenance**. Audit by the `producer` field |
-| "I just want Qwen3 running today" | [10.3 §2](references/03-llm-export-end-to-end.md) | The catalog, the ten presets, and one `uv run coreai.llm.export` command |
-| "Fluent locally, incoherent globally, drifts after ~10 tokens" | [10.3 §8.4](references/03-llm-export-end-to-end.md) | The single most dangerous omission in the pipeline |
-| "`@Generable` throws on my own Core AI model" | [10.3 §11.4](references/03-llm-export-end-to-end.md) | The pipelined engine has no logits. Not workaroundable at the call site |
-| "`Expected 2 states, got 4`" | [10.3 §13](references/03-llm-export-end-to-end.md) | The hybrid/SSM wall — and why those models forfeit prefix caching permanently |
+| "I am about to re-author a model and don't know which compute unit to target" | [10.1 §1–§3](references/01-ane-vs-gpu-authoring-rules.md#1-two-rulesets-not-two-styles) | The two rulesets side by side, plus Apple's own decision tables and memory budgets |
+| "My ANE model runs correctly but the phone is hot" | [10.1 §4.16](references/01-ane-vs-gpu-authoring-rules.md#416-residency-is-the-rule-the-other-rules-serve) | Residency. One fp32 literal in a norm is 56 accelerator transitions per forward pass |
+| "Fine at token 1, degraded by token 64" | [10.1 §4.13](references/01-ane-vs-gpu-authoring-rules.md#413-the-read-only-kv-cache) | You cached the pre-RoPE key. Apple marks this **CRITICAL**, and nowhere else |
+| "I re-authored for the ANE and it still runs on the GPU" | [10.1 §8](references/01-ane-vs-gpu-authoring-rules.md#8-how-the-optional-coreai-models-helper-chooses-a-compute-unit-preference) · [§4.1](references/01-ane-vs-gpu-authoring-rules.md#41-max-tensor-rank-is-5) | Entrypoint names, or `enable_per_channel_scale=True` and its rank-6 LUTs |
+| "Each inference is slower than the last" | [10.2 §4](references/02-debugging-and-profiling.md#4-worked-trace-1--inference-intervals-that-grow) | The canonical before/after trace: no KV cache, fixed with Core AI states |
+| "It runs, and the answer is wrong" | [10.2 §9–§11](references/02-debugging-and-profiling.md#9-save_intermediates-and-the-reference-run) | `save_intermediates`, sync points, and the SAM3 missing-flower diagnosis end to end |
+| "It got worse after I compressed it" | [10.2 §11.5](references/02-debugging-and-profiling.md#115-the-diagnosis) · [§12.1](references/02-debugging-and-profiling.md#121-modelinspector--what-will-actually-be-compressed) | Sort by similarity, find a *module* pattern — then prove your exclusion regex matches anything |
+| "It won't load at all, with an MLIR error" | [10.2 §15](references/02-debugging-and-profiling.md#15-️-provenance-the-coreai-torch-040-ir-location-incident) | Not numerics, not timing — asset **provenance**. Audit by the `producer` field |
+| "I just want Qwen3 running today" | [10.3 §2](references/03-llm-export-end-to-end.md#2-the-easy-road-the-catalog-and-the-export-cli) | The catalog, the ten presets, and one `uv run coreai.llm.export` command |
+| "Fluent locally, incoherent globally, drifts after ~10 tokens" | [10.3 §8.4](references/03-llm-export-end-to-end.md#84-️-silent-failure--omit-remove_functionalization-and-your-kv-writes-disappear) | The single most dangerous omission in the pipeline |
+| "`@Generable` throws on my own Core AI model" | [10.3 §11.4](references/03-llm-export-end-to-end.md#114-️-the-gpu-pipelined-engine-cannot-do-guided-generation) | The pipelined engine has no logits. Not workaroundable at the call site |
+| "`Expected 2 states, got 4`" | [10.3 §13](references/03-llm-export-end-to-end.md#13-the-hybrid--ssm-wall) | The hybrid/SSM wall — and why those models forfeit prefix caching permanently |
 
 ---
 
 ## The guides in this part
 
 ### [10.1 — Authoring for the Neural Engine and for the GPU: two opposite rulesets](references/01-ane-vs-gpu-authoring-rules.md)
+
 Apple's at-a-glance comparison table reproduced in full and unpacked row by row: on the ANE, rank ≤ 5,
 fp16 with **no Python float literals anywhere**, the 64-byte alignment rule, BC1S layout,
 `nn.Conv2d(kernel_size=1)` instead of `nn.Linear`, the transpose pair bracketing every projection,
@@ -101,7 +102,7 @@ uncompressed).
 > `encode_text` / `predict` and that helper classifies it `.dynamic` and requests the **GPU**. Direct
 > `AIModel` callers are not subject to this naming policy and may use `.default` or explicit
 > options.[^sample-routing-policy]
-
+>
 > ⚠️ **SILENT FAILURE (three more).** `enable_per_channel_scale=True` lowers to `mps.dequantize_lut`
 > with **rank-6 LUTs the ANE rejects**, so the model falls back to the GPU at GPU power draw with
 > correct numbers — Apple's SAM3 recipe disables it on purpose and WWDC 325 says the opposite. Caching
@@ -110,7 +111,7 @@ uncompressed).
 > wrapper can produce wrong logits because that bridge reads the backing memory as contiguous. This
 > is not a universal Core AI rule: Swift `NDArray` exposes explicit strides and preferred layouts.
 > §10 catalogues eighteen failures with detection recipes.[^stride-scope]
-
+>
 > 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.** Apple's skill says "compile
 > and check residency" and no source shows what that output looks like — not the format, not whether
 > it is per-op. It **can** now be checked: `coreai-build` turned out to ship in the optional **Metal
@@ -123,6 +124,7 @@ uncompressed).
 > — prescribed by a skill file, present in **zero** other files across three Apple repos.
 
 ### [10.2 — The debug gauge, the Core AI Instrument, and the Core AI Debugger](references/02-debugging-and-profiling.md)
+
 Three tools at three levels — *is anything happening* (gauge, free), *where is the time going and on
 which compute unit* (Instruments, one run), *which operation produces the wrong numbers and which
 Python line wrote it* (Debugger, a download plus a specialization) — built around the three diagnoses
@@ -138,20 +140,20 @@ Also `coreai-opt`'s pre-conversion surface (`ModelInspector`, per-tensor activat
 > Debug navigator simply has no row, nothing is logged, and the absence reads identically to "my model
 > never ran". Equally invisible: the **More** menu's hand-off items are *not retroactive* — open the
 > report page as step one of a session, before you reproduce anything.
-
+>
 > ⚠️ **SILENT FAILURE — colour intuition does not transfer between the two tools.** The gauge has
 > three event types; the Instruments template has four (it adds **Setup**) — and two of the shared
 > three have **swapped colours**: Load is green in the gauge and **cyan** in Instruments;
 > Specialization is orange in the gauge and **green** in Instruments. Both mappings are quoted verbatim
 > from Apple's own articles. Read the category name in the event label, never the colour.
-
+>
 > ⚠️ **SILENT FAILURE (three more).** An all-green sync-point board can coexist with a model that
 > generates **different text** (§10.6) — sync points are one forward pass, a decoder is a loop, and an
 > error inside the "≥ 40 dB" bar can flip one `argmax` at step 12; add a greedy token-exact gate. A
 > `RELEASE`-mode conversion silently loses the **Source Viewer** while three of four panes keep
 > working. And `ModelInspector` op names differ between graph and eager mode, so an exclusion regex
 > tuned in the wrong mode matches zero ops.
-
+>
 > 🔴 **GAP — nobody in this corpus has run Xcode 27's Instruments or the Debugger by hand.** What
 > exists (four instruments, four event categories, a three-level track hierarchy, five similarity
 > metrics with PSNR the default) is documented and verified; what the strings look like on screen is
@@ -160,6 +162,7 @@ Also `coreai-opt`'s pre-conversion surface (`ModelInspector`, per-tensor activat
 > `coreai-build inspect` read the broken assets perfectly, *which made it look recoverable. It wasn't.*
 
 ### [10.3 — From a Hugging Face checkpoint to a loadable LLM bundle](references/03-llm-export-end-to-end.md)
+
 The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.respond(to:)`, in ten
 stages, each with its gates and failure modes. It opens with the **easy road** — a 22-family catalog, a
 discovery CLI, ten LLM presets, one `uv run coreai.llm.export` command that skips stages 2–8 — then
@@ -174,7 +177,7 @@ edit everyone forgets, the three Swift engines, the hybrid/SSM wall, and the `ml
 > you take one warning from this part, take this one. The model converts, the asset loads, inference
 > runs at full speed and the cache never updates — generation is locally fluent, globally incoherent,
 > and looks *exactly* like a bad quantisation recipe. Only per-step token exactness catches it.
-
+>
 > ⚠️ **SILENT FAILURE (four more).** `CoreAISequentialEngine` reads inputs, states and outputs
 > **positionally** and the converter "cannot detect silent reordering", so a swapped `state_names`
 > tuple gives you fluent nonsense. Per-block and per-grouped-channel compression **silently skip**
@@ -182,11 +185,11 @@ edit everyone forgets, the three Swift engines, the hybrid/SSM wall, and the `ml
 > direction of error nobody checks. A bundle missing `chat_template.jinja` makes the runner **fall back
 > to raw completion with no warning**. And `kvCacheStrategy: .chunked` is accepted, falls back to
 > `StaticKVCache`, and gives you `.fixedSize` under a different name.
-
+>
 > ⚠️ **The GPU-pipelined engine cannot do guided generation (§11.4).** It throws on `includeLogits` and
 > `forcedContinuation`, so `@Generable` *and* MMLU-style evaluation are unavailable on the fastest local
 > path. Pick `variant: "coreai-sequential"` (or a chunked-static ANE bundle) and pay the throughput.
-
+>
 > 🔴 **GAP — nine declared, each with a safe default.** The set of valid `--architecture` codes is
 > now **enumerated** — 24 codes, `h11p…h18p`, probed 2026-07-31 against the shipped `coreai-build`
 > 3600.79.1 (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`; the code→device mapping, e.g.

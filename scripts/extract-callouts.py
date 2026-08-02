@@ -14,7 +14,7 @@ import os, re, sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mdslug import slugify
+from mdslug import slugify, unique_slug
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 
@@ -24,21 +24,6 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 # Blockquote-wrapped fences ('> ```') never match — every line inside them is
 # '>'-prefixed, so nothing there can match the column-anchored heading regex.
 FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
-
-def unique_slug(base, used, next_suffix):
-    """Return GitHub's first-unsuffixed, then -1, -2, ... heading anchor."""
-    candidate = base
-    if candidate in used:
-        suffix = next_suffix[base] or 1
-        candidate = f"{base}-{suffix}"
-        while candidate in used:
-            suffix += 1
-            candidate = f"{base}-{suffix}"
-        next_suffix[base] = suffix + 1
-    else:
-        next_suffix[base] = 1
-    used.add(candidate)
-    return candidate
 
 def flatten(text, limit=400):
     t = re.sub(r'\s+', ' ', text).strip()

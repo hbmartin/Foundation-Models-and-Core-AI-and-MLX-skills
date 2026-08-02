@@ -1,9 +1,10 @@
 # Part 8 — Core AI: converting a model from PyTorch
 
-**Version floor:** `coreai-torch` **0.4.1** (2026-07-06), which pins `coreai-core==**1.0.0b2**` *exactly*,
+**Version floor:** `coreai-torch` **0.4.1** (2026-07-06), which pins `coreai-core==1.0.0b2` *exactly*,
 requires **Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to **2.13.0**; above that, a `UserWarning` and
-you are on your own). `coreai-core` publishes **macOS wheels only** — cp311/cp312, cp313 added in `1.0.0b2`,
-**no linux/arm64** — so Linux containers run `--platform linux/amd64` and get conversion without execution.
+you are on your own). `coreai-core==1.0.0b2` publishes cp311/cp312/cp313 wheels for **macOS arm64** and
+**Linux x86_64** (`manylinux_2_34_x86_64`), but **not Linux arm64**; arm64 hosts therefore use a
+`--platform linux/amd64` container when they need the Linux wheel.
 The `.aimodel` you produce runs on **iOS / iPadOS / macOS / tvOS / visionOS / watchOS 27.0+ only**, built
 with **Xcode 27**; nothing back-deploys to 26.x, because the Core AI framework does not exist there. One hard
 gate before anything else: **assets converted with `coreai-torch` v0.4.0 fail to load or specialize on device
@@ -62,26 +63,27 @@ shape-sensitive, so a parity test on toy tensors passes while production is brok
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/01-conversion-and-the-io-contract.md) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
-| "My assets stopped loading on a newer beta" | [8.1 §2.3](references/01-conversion-and-the-io-contract.md) | The 0.4.0 gate, plus the `strip_debug_info` recovery that does *not* need a reconvert |
-| "My transformer converted fine and is slower than I expected" | [8.1 §4.4](references/01-conversion-and-the-io-contract.md) | You probably passed PyTorch's default decomposition table; SDPA decomposed into six supported ops and the fast path vanished |
-| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md) → [§11.4](references/01-conversion-and-the-io-contract.md) | The `optimize()` miscompile, then the A/B gate that catches it and its whole family |
-| "My model has a KV cache" | [8.1 §9](references/01-conversion-and-the-io-contract.md) | Mutable buffers become states, with **no opt-out**, in an order that is an observed-behaviour assumption |
-| "Which names should my inputs and outputs have?" | [8.1 §7.5](references/01-conversion-and-the-io-contract.md) | Apple's own engines duck-type on substrings, and the LLM path reads states **positionally** |
-| "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md) | Split when stages run at different cadences; preserve Apple’s names if you also adopt `coreai-models`’ sample routing policy |
-| "`unsupported ATen ops` — but the docs list that op", or the error appears only with `dynamic_shapes=` | [8.2 §2](references/02-op-coverage-composites-and-externalization.md) → [§4](references/02-op-coverage-composites-and-externalization.md) | The overload rule, and a two-minute diagnosis that queries the registry instead of the docs |
-| "I need an op Core AI has never heard of" | [8.2 §7](references/02-op-coverage-composites-and-externalization.md) | `register_torch_lowering`, `allow_override`, the six-way dispatch ladder, Apple's own shipping call site |
-| "I want attention / RoPE / RMSNorm to hit a fast kernel" | [8.2 §5](references/02-op-coverage-composites-and-externalization.md), [§8](references/02-op-coverage-composites-and-externalization.md) | Composite ops and `ExternalizeSpec` — including Apple's verbatim shipping spec list |
-| "I'm converting a MoE or a Qwen3-Next-class hybrid" | [8.2 §6](references/02-op-coverage-composites-and-externalization.md) | Both have first-class composites. **MoE is a shipped path; SSM is IR-complete and runtime-incomplete** |
-| "Integer division, `mask.sum()`, `cat` on quantized weights, or partial-rotary RoPE is wrong" | [8.2 §9](references/02-op-coverage-composites-and-externalization.md), [§5.7](references/02-op-coverage-composites-and-externalization.md) | Live miscompiles on 0.4.1, each with a one-line workaround |
-| "Profiling says one op dominates and no built-in fits" | [8.3 §2](references/03-custom-metal-kernels.md) | The escalation ladder, and whether the kernel can reach the Neural Engine at all (it cannot) |
-| "My kernel dies at `load_function`", or "CPU reference passes and device output is NaN" | [8.3 §12.4](references/03-custom-metal-kernels.md), [§5.2](references/03-custom-metal-kernels.md) | Every MSL mistake gives the same one-line message with no diagnostic; and the axis reversal, which the reference cannot catch |
+| "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/01-conversion-and-the-io-contract.md#1-the-five-lines-and-what-each-one-is-for) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
+| "My assets stopped loading on a newer beta" | [8.1 §2.3](references/01-conversion-and-the-io-contract.md#23-️-the-version-gate-that-invalidates-already-published-assets) | The 0.4.0 gate, plus the `strip_debug_info` recovery that does *not* need a reconvert |
+| "My transformer converted fine and is slower than I expected" | [8.1 §4.4](references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) | You probably passed PyTorch's default decomposition table; SDPA decomposed into six supported ops and the fast path vanished |
+| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) → [§11.4](references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) | The `optimize()` miscompile, then the A/B gate that catches it and its whole family |
+| "My model has a KV cache" | [8.1 §9](references/01-conversion-and-the-io-contract.md#9-state-mutable-buffers-become-core-ai-states) | Mutable buffers become states, with **no opt-out**, in an order that is an observed-behaviour assumption |
+| "Which names should my inputs and outputs have?" | [8.1 §7.5](references/01-conversion-and-the-io-contract.md#75-name-your-outputs-the-way-your-consumer-wants-to-read-them) | Apple's own engines duck-type on substrings, and the LLM path reads states **positionally** |
+| "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md#10-multi-function-assets-and-the-finding-that-reframes-them) | Split when stages run at different cadences; preserve Apple’s names if you also adopt `coreai-models`’ sample routing policy |
+| "`unsupported ATen ops` — but the docs list that op", or the error appears only with `dynamic_shapes=` | [8.2 §2](references/02-op-coverage-composites-and-externalization.md#2-the-coverage-table-and-the-overload-rule) → [§4](references/02-op-coverage-composites-and-externalization.md#4-diagnosing-an-overload-mismatch) | The overload rule, and a two-minute diagnosis that queries the registry instead of the docs |
+| "I need an op Core AI has never heard of" | [8.2 §7](references/02-op-coverage-composites-and-externalization.md#7-custom-lowerings) | `register_torch_lowering`, `allow_override`, the six-way dispatch ladder, Apple's own shipping call site |
+| "I want attention / RoPE / RMSNorm to hit a fast kernel" | [8.2 §5](references/02-op-coverage-composites-and-externalization.md#5-composite-ops-a-library-you-author-models-from), [§8](references/02-op-coverage-composites-and-externalization.md#8-externalization) | Composite ops and `ExternalizeSpec` — including Apple's verbatim shipping spec list |
+| "I'm converting a MoE or a Qwen3-Next-class hybrid" | [8.2 §6](references/02-op-coverage-composites-and-externalization.md#6-the-unadvertised-capability-first-class-moe-and-ssm) | Both have first-class composites. **MoE is a shipped path; SSM is IR-complete and runtime-incomplete** |
+| "Integer division, `mask.sum()`, `cat` on quantized weights, or partial-rotary RoPE is wrong" | [8.2 §9](references/02-op-coverage-composites-and-externalization.md#9-four-live-silent-miscompile-defects-on-041), [§5.7](references/02-op-coverage-composites-and-externalization.md#57-️-rope-fp32-is-mandatory-and-the-partial-rotary-pairing-is-a-trap) | Live miscompiles on 0.4.1, each with a one-line workaround |
+| "Profiling says one op dominates and no built-in fits" | [8.3 §2](references/03-custom-metal-kernels.md#2-when-to-do-this-at-all) | The escalation ladder, and whether the kernel can reach the Neural Engine at all (it cannot) |
+| "My kernel dies at `load_function`", or "CPU reference passes and device output is NaN" | [8.3 §12.4](references/03-custom-metal-kernels.md#124-️-the-one-that-gets-everybody-a-bad-kernel-body-is-not-a-conversion-error), [§5.2](references/03-custom-metal-kernels.md#52-️-the-axis-reversal) | Every MSL mistake gives the same one-line message with no diagnostic; and the axis reversal, which the reference cannot catch |
 
 ---
 
 ## The guides in this part
 
 ### [8.1 — `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract](references/01-conversion-and-the-io-contract.md)
+
 The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly
 which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only
 `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()` as where the
@@ -96,7 +98,7 @@ multi-function split; and the Python-side verification gate that catches everyth
 > gate on rectangular toy tensors passes while your square production case is broken. And you often cannot
 > simply skip it: **a stateful model requires `optimize()`**, because mutation outputs only become handle
 > tokens after `_UPDATE_SIGNATURE_TO_HANDLES` runs.
-
+>
 > ⚠️ **SILENT FAILURE (four more).** `run_decompositions(torch.export.default_decompositions())` compiles,
 > converts, saves, loads and is numerically fine — with your fused attention composite gone. An in-place
 > mutation of a `forward` argument silently moves it from an input to a **state**, changing the calling
@@ -104,13 +106,14 @@ multi-function split; and the Python-side verification gate that catches everyth
 > loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
 > **GPU preference** instead of its Neural Engine preference, with a log line rather than an error. Direct
 > Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
-
+>
 > 🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
 > the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog and whether
 > `optimize()` takes arguments at all; the character set allowed in IO names; the semantics of
 > `ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
 
 ### [8.2 — When an op will not convert: coverage, composite ops, custom lowerings, externalization](references/02-op-coverage-composites-and-externalization.md)
+
 The debugging guide for conversion failures — and, more usefully, for **conversions that succeed and should
 not have**. Four failure classes with different fixes; the overload rule and a registry query that settles
 any docs-versus-error argument in two minutes; all fifteen documented composites with their attribute
@@ -125,7 +128,7 @@ recurrence** — Core AI's IR has first-class MoE and SSM support.
 > assert on `composite_declaration<"…">` in `str(program)` instead. Same shape for `composite_attrs` typos,
 > for `target_class=RMSNorm` where only `RMSNormImpl` matches, and for `instance_norm` without
 > `use_input_stats`.
-
+>
 > ⚠️ **SILENT FAILURE — `composite_ops.SDPA` is lower-right causal; `F.scaled_dot_product_attention` is
 > upper-left.** They agree whenever `q_len == k_len` and disagree **on every decode step**, so a model that
 > passes its parity test on a full-sequence forward pass can be wrong the moment you run it
@@ -133,7 +136,7 @@ recurrence** — Core AI's IR has first-class MoE and SSM support.
 > `cat` on packed sub-byte tensors ignores `dim`, and `sum`/`prod` narrow their int64 accumulator to int32.
 > And an inverted trap worth naming: passing PyTorch's *default* decomposition table gives you a graph that
 > **fails to convert** — you decomposed *more*, the error says *unsupported*, the fix is to decompose *less*.
-
+>
 > 🔴 **GAP — nobody has measured what externalizing a composite is worth.** The mechanism is documented in
 > Apple's own words; the magnitude is published nowhere, by Apple or by the community. Externalize as Apple
 > does — it costs a list literal — but do not promise a stakeholder a percentage. Also open: which
@@ -141,6 +144,7 @@ recurrence** — Core AI's IR has first-class MoE and SSM support.
 > shipping export disagree), and `HardwareConstraints` semantics.
 
 ### [8.3 — `TorchMetalKernel`: writing and embedding a custom Metal kernel](references/03-custom-metal-kernels.md)
+
 The seam, not the shader: how a kernel you already know how to write gets into an `.aimodel`. Three pieces —
 a PyTorch reference that exists only for shape inference, an MSL *body*, and the registration binding them —
 plus the constructor field by field, dispatch tuples, scalars baked as literals, dtype templating and the
@@ -154,7 +158,7 @@ honest performance picture, where the same author on the same machine measured a
 > the Metal body has the wrong convention. The recorded community failure is a per-row scale buffer that
 > *"passed on CPU either way"* and read out of bounds on the engine, producing NaN logits. Do the 30-line
 > dispatch probe (§14.1) once per project.
-
+>
 > ⚠️ **SILENT FAILURE — a malformed MSL body converts, optimizes, saves and loads cleanly**, then fails at
 > `load_function` with `RuntimeError: Kernel coreai.metal4_kernel invoked with invalid parameters` — no line
 > number, no column, no compiler output. Apple's own test proves it with a body of `A[s] = sdfs`. Syntax
@@ -164,7 +168,7 @@ honest performance picture, where the same author on the same machine measured a
 > leaves untouched tail elements rather than erroring; and a kernel is a **fusion barrier** whose boundary
 > dtype casts materialize as full-size tensors, so replacing one cheap op with a kernel is usually a
 > regression your kernel's own timing will never show.
-
+>
 > ✅ **VERIFIED (Xcode 27 correction) — scale planes are real.** Xcode 27 adds `MTLTensor` data types for int2,
 > FP4, FP8 and unsigned E8M0 scales, plus `MTLTensorAuxiliaryPlaneDescriptor.blockFactors` and
 > `MTLTensorDescriptor.auxiliaryPlanes`. For supported E8M0 block-scaled tensors, TensorOps can consume
@@ -183,20 +187,20 @@ regression — and §11 is the verification gate that makes every other silent f
 If you read nothing else, read those two and paste §11.7's four A/Bs into CI.
 
 **Then branch by symptom, not by curiosity.** If your conversion *raises*,
-[8.2 §1–§4](references/02-op-coverage-composites-and-externalization.md) classifies the error in two minutes
+[8.2 §1–§4](references/02-op-coverage-composites-and-externalization.md#1-four-ways-a-conversion-fails) classifies the error in two minutes
 and three of the four classes are five-minute fixes. If it *succeeds and is wrong*:
-[8.1 §11.4](references/01-conversion-and-the-io-contract.md) → [8.2 §9](references/02-op-coverage-composites-and-externalization.md).
-If it succeeds and is *slow*: [8.2 §5](references/02-op-coverage-composites-and-externalization.md) and
-[§8](references/02-op-coverage-composites-and-externalization.md) — composite ops before anything exotic.
+[8.1 §11.4](references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) → [8.2 §9](references/02-op-coverage-composites-and-externalization.md#9-four-live-silent-miscompile-defects-on-041).
+If it succeeds and is *slow*: [8.2 §5](references/02-op-coverage-composites-and-externalization.md#5-composite-ops-a-library-you-author-models-from) and
+[§8](references/02-op-coverage-composites-and-externalization.md#8-externalization) — composite ops before anything exotic.
 
 **[8.3](references/03-custom-metal-kernels.md) is last on purpose, and most readers never need it** — its
 §2.2 ladder has four rungs and MSL is the top one. Two exceptions worth reading out of order: **§2.4 is a
 model-architecture fact** (a custom kernel makes its whole function GPU-resident, permanently, foreclosing
 Neural Engine residency and — per [Part 4](../part-04-beyond-the-built-in-model/) — `@Generable`), and **§13
 is a go/no-go** you want before you budget the work. **Skippable outright:**
-[8.1 §12](references/01-conversion-and-the-io-contract.md) unless you intend to use the Debugger;
-[8.2 §6](references/02-op-coverage-composites-and-externalization.md) unless your model is MoE or
-hybrid-attention; [8.2 §7](references/02-op-coverage-composites-and-externalization.md) unless you have
+[8.1 §12](references/01-conversion-and-the-io-contract.md#12-locations-module-stacks-and-the-debugger) unless you intend to use the Debugger;
+[8.2 §6](references/02-op-coverage-composites-and-externalization.md#6-the-unadvertised-capability-first-class-moe-and-ssm) unless your model is MoE or
+hybrid-attention; [8.2 §7](references/02-op-coverage-composites-and-externalization.md#7-custom-lowerings) unless you have
 already hit a genuinely unsupported op.
 
 ---

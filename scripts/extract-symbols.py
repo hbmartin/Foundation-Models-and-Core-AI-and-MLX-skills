@@ -3,13 +3,22 @@
 
 Output TSV: symbol<TAB>framework-guess<TAB>total-mentions<TAB>n-guides<TAB>sdk26<TAB>sdk27<TAB>guides
   sdk26/sdk27: Y if the bare symbol name appears in any captured 26.x / 27.0 swiftinterface.
-  guides: semicolon list of "path:count", highest count first, capped at 12.
+  guides: semicolon list of "path:count", highest count first, capped at GUIDE_CAP.
+
+Importable as well as runnable: scripts/build-skills.py calls collect_symbol_counts()
+and symbol_rows() directly so it can slice per skill against the *uncapped* guide
+list. Slicing the rendered guides/API-INDEX.md instead would lose coverage twice
+over, because that page shows only the first 4 of a list already capped here.
 """
 import os, re, sys
 from collections import defaultdict
 
-ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
-IFACE_DIR = sys.argv[2] if len(sys.argv) > 2 else "notes/sdk-interfaces"
+from mdlinks import iter_lines
+
+# Guides shown per symbol in the TSV. The committed API-INDEX.md is generated
+# from this cap, so changing it changes that page; callers who need the full
+# association set pass cap=None to symbol_rows().
+GUIDE_CAP = 12
 
 # A symbol is: a CamelCase identifier, optionally dotted / parenthesised, found in `code`.
 SPAN = re.compile(r'`([^`\n]{2,90})`')
@@ -47,52 +56,91 @@ def guess_fw(sym):
             return fw
     return 'other'
 
-counts = defaultdict(lambda: defaultdict(int))  # sym -> file -> count
-for dirpath, dirnames, filenames in os.walk(ROOT):
-    dirnames.sort()
-    for fn in sorted(filenames):
-        # Never scan the generated index pages: the symbol index would index
-        # itself, inflating every count on each regeneration.
-        if not fn.endswith('.md') or fn in ('SILENT-FAILURES.md', 'API-INDEX.md'):
-            continue
-        path = os.path.join(dirpath, fn)
-        rel = os.path.relpath(path, ROOT)
-        text = open(path, encoding='utf-8').read()
-        # Inline `code` spans only; fenced blocks contribute nothing (a fence
-        # line never forms a span), so no stripping pass is needed.
-        for m in SPAN.finditer(text):
-            s = norm(m.group(1))
-            if SYM.match(s) and not re.search(r'\.(swift|py|md|json|txt|h)$', s):
-                counts[s][rel] += 1
 
-# SDK presence: build one big set of words per SDK generation
-def iface_text(pattern):
-    buf = []
-    if not os.path.isdir(IFACE_DIR):
-        return ''
-    for fn in os.listdir(IFACE_DIR):
-        if pattern in fn and fn.endswith('.swiftinterface'):
-            buf.append(open(os.path.join(IFACE_DIR, fn), encoding='utf-8').read())
-    return '\n'.join(buf)
+def collect_symbol_counts(root):
+    """symbol -> {guide-relative path: mention count}, uncapped and unfiltered."""
+    counts = defaultdict(lambda: defaultdict(int))
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames.sort()
+        for fn in sorted(filenames):
+            # Never scan the generated index pages: the symbol index would index
+            # itself, inflating every count on each regeneration.
+            if not fn.endswith('.md') or fn in ('SILENT-FAILURES.md', 'API-INDEX.md'):
+                continue
+            path = os.path.join(dirpath, fn)
+            rel = os.path.relpath(path, root)
+            with open(path, encoding='utf-8') as handle:
+                text = handle.read()
+            # Scan prose lines only. Backticks inside fenced examples are source
+            # syntax, not inline mentions, and previously advertised fake symbols
+            # such as fixture type names in the generated API index.
+            for line, _newline, inside_fence in iter_lines(text):
+                if inside_fence:
+                    continue
+                for m in SPAN.finditer(line):
+                    s = norm(m.group(1))
+                    if (
+                        SYM.match(s)
+                        and not re.search(r'\.(swift|py|md|json|txt|h|zip)$', s)
+                        # Reject handle-like prose tokens such as `J0hn` without
+                        # excluding API families whose digits end a component
+                        # (`Float16`) or precede another capital (`SHA256Digest`).
+                        and not re.search(r'\d[a-z]', s)
+                    ):
+                        counts[s][rel] += 1
+    return counts
 
-sdk26 = iface_text('-26.')
-sdk27 = iface_text('-27.')
 
-out = []
-for sym, files in counts.items():
-    total = sum(files.values())
-    if total < 2 and len(files) < 2:
-        continue  # noise floor: mentioned once in one guide
-    base = sym.lstrip('@.').split('.')[0].split('(')[0]
-    in26 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk26) else ''
-    in27 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk27) else ''
-    # Counts often tie at the visible cutoff. Use the guide path as an explicit
-    # secondary key so selection stays stable independently of traversal order.
-    top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))[:12]
-    out.append((sym, guess_fw(sym), total, len(files), in26, in27,
-                ';'.join(f'{p}:{c}' for p, c in top)))
+def sdk_presence(iface_dir):
+    """(text of every captured 26.x interface, text of every 27.x interface)."""
+    def iface_text(pattern):
+        buf = []
+        if not os.path.isdir(iface_dir):
+            return ''
+        for fn in os.listdir(iface_dir):
+            if pattern in fn and fn.endswith('.swiftinterface'):
+                with open(os.path.join(iface_dir, fn), encoding='utf-8') as handle:
+                    buf.append(handle.read())
+        return '\n'.join(buf)
+    return iface_text('-26.'), iface_text('-27.')
 
-out.sort(key=lambda r: (-r[2], r[0]))
-for r in out:
-    print('\t'.join(str(x) for x in r))
-print(f"# symbols kept: {len(out)}", file=sys.stderr)
+
+def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
+    """Rendered rows in TSV order. cap=None keeps every guide association.
+
+    The noise floor and the sort are corpus-wide on purpose: a caller slicing
+    per skill must start from the same symbol set the series index uses, or it
+    produces a different index rather than a subset of one.
+    """
+    out = []
+    for sym, files in counts.items():
+        total = sum(files.values())
+        if total < 2 and len(files) < 2:
+            continue  # noise floor: mentioned once in one guide
+        base = sym.lstrip('@.').split('.')[0].split('(')[0]
+        in26 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk26) else ''
+        in27 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk27) else ''
+        # Counts often tie at the visible cutoff. Use the guide path as an explicit
+        # secondary key so selection stays stable independently of traversal order.
+        top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))
+        if cap is not None:
+            top = top[:cap]
+        out.append((sym, guess_fw(sym), total, len(files), in26, in27,
+                    ';'.join(f'{p}:{c}' for p, c in top)))
+    out.sort(key=lambda r: (-r[2], r[0]))
+    return out
+
+
+def main():
+    root = sys.argv[1] if len(sys.argv) > 1 else "guides"
+    iface_dir = sys.argv[2] if len(sys.argv) > 2 else "notes/sdk-interfaces"
+    sdk26, sdk27 = sdk_presence(iface_dir)
+    out = symbol_rows(collect_symbol_counts(root), sdk26, sdk27)
+    for r in out:
+        print('\t'.join(str(x) for x in r))
+    print(f"# symbols kept: {len(out)}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

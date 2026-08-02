@@ -73,17 +73,17 @@ There is one guide in this part, so the column that matters is the **section**.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have an `mlx-lm` causal LM and want a Core AI bundle" | [14.1 §3](references/01-mlx2coreai-and-third-party-bridges.md), then **§6** | One command; it reproduces Apple's `keyCache`/`valueCache` contract exactly. §6 is not optional |
-| "I have an MLX vision or audio model — one graph, no state" | [14.1 §5](references/01-mlx2coreai-and-third-party-bridges.md) | The generic converter. `ConversionConfig` field by field, and the three fields that need a warning label |
-| "It converted. The text is fine at step 1 and nonsense by step 30" | [14.1 §3.5, §7](references/01-mlx2coreai-and-third-party-bridges.md) | The classic KV-offset bug, and the eight lossy lowerings that produce plausible garbage |
-| "I am writing my own bridge / my bundle won't load" | [14.1 §4](references/01-mlx2coreai-and-third-party-bridges.md) | Schema 0.2 field by field, what Apple's reader enforces, and a targeting checklist |
-| `unsupported metadata_version '0.1'` | [14.1 §4.2](references/01-mlx2coreai-and-third-party-bridges.md) | Absent key defaults to `"0.1"`; or you pointed at the `.aimodel`, not the bundle dir |
-| `Failed to convert to versioned IR` | [14.1 §2.3](references/01-mlx2coreai-and-third-party-bridges.md) | The wheel-pin collision, plus a ninety-second probe that settles it before a 4 GB conversion |
-| "My model has sliding-window attention, an SSM block, or MoE" | [14.1 §2.4, §12.1](references/01-mlx2coreai-and-third-party-bridges.md) | `make_mask` raises `NotImplementedError`; no SSM lowering. Not this bridge |
-| "I need to consume a Core AI bundle — or a VLM — from Swift" | [14.1 §9](references/01-mlx2coreai-and-third-party-bridges.md) | The densest inventory of `CoreAILanguageModels` outside Apple's own repo, and the three-asset VLM contract |
-| "Should I set `expectFrequentReshapes`?" · "SIGSEGV at `AIModel(contentsOf:options:)`" | [14.1 §10](references/01-mlx2coreai-and-third-party-bridges.md) | Four sources, three verdicts, one device-validated crash, and a safe default ladder |
-| "I need to benchmark this" | [14.1 §8.3, §11.4](references/01-mlx2coreai-and-third-party-bridges.md) | The backend auto-selection trap, and why thermals move numbers 2.3–4.1× |
-| "Should I convert at all?" · "Is Core AI even the right target?" | [14.1 §12](references/01-mlx2coreai-and-third-party-bridges.md) | Five cases where re-authoring is the honest answer, and a Core AI vs MLX head-to-head |
+| "I have an `mlx-lm` causal LM and want a Core AI bundle" | [14.1 §3](references/01-mlx2coreai-and-third-party-bridges.md#3-the-stateful-llm-path), then **§6** | One command; it reproduces Apple's `keyCache`/`valueCache` contract exactly. §6 is not optional |
+| "I have an MLX vision or audio model — one graph, no state" | [14.1 §5](references/01-mlx2coreai-and-third-party-bridges.md#5-the-generic-path-and-the-pipeline-by-module-name) | The generic converter. `ConversionConfig` field by field, and the three fields that need a warning label |
+| "It converted. The text is fine at step 1 and nonsense by step 30" | [14.1 §3.5, §7](references/01-mlx2coreai-and-third-party-bridges.md#35-position_ids-is-the-full-position-vector) | The classic KV-offset bug, and the eight lossy lowerings that produce plausible garbage |
+| "I am writing my own bridge / my bundle won't load" | [14.1 §4](references/01-mlx2coreai-and-third-party-bridges.md#4-the-bundle-layout-is-the-interchange-format) | Schema 0.2 field by field, what Apple's reader enforces, and a targeting checklist |
+| `unsupported metadata_version '0.1'` | [14.1 §4.2](references/01-mlx2coreai-and-third-party-bridges.md#42-what-the-reader-enforces) | Absent key defaults to `"0.1"`; or you pointed at the `.aimodel`, not the bundle dir |
+| `Failed to convert to versioned IR` | [14.1 §2.3](references/01-mlx2coreai-and-third-party-bridges.md#23-️-the-wheel-pin-collision) | The wheel-pin collision, plus a ninety-second probe that settles it before a 4 GB conversion |
+| "My model has sliding-window attention, an SSM block, or MoE" | [14.1 §2.4, §12.1](references/01-mlx2coreai-and-third-party-bridges.md#24-what-it-does-not-have) | `make_mask` raises `NotImplementedError`; no SSM lowering. Not this bridge |
+| "I need to consume a Core AI bundle — or a VLM — from Swift" | [14.1 §9](references/01-mlx2coreai-and-third-party-bridges.md#9-swift-lm-a-real-third-party-core-ai-integration) | The densest inventory of `CoreAILanguageModels` outside Apple's own repo, and the three-asset VLM contract |
+| "Should I set `expectFrequentReshapes`?" · "SIGSEGV at `AIModel(contentsOf:options:)`" | [14.1 §10](references/01-mlx2coreai-and-third-party-bridges.md#10-expectfrequentreshapes-four-sources-three-verdicts) | Four sources, three verdicts, one device-validated crash, and a safe default ladder |
+| "I need to benchmark this" | [14.1 §8.3, §11.4](references/01-mlx2coreai-and-third-party-bridges.md#83-the-build-recipe-and-the-auto-selection-trap) | The backend auto-selection trap, and why thermals move numbers 2.3–4.1× |
+| "Should I convert at all?" · "Is Core AI even the right target?" | [14.1 §12](references/01-mlx2coreai-and-third-party-bridges.md#12-decision-table-which-bridge-and-when-to-re-author-instead) | Five cases where re-authoring is the honest answer, and a Core AI vs MLX head-to-head |
 
 ---
 
@@ -108,7 +108,7 @@ table, including the case where the answer is "re-author from the checkpoint ins
 > wrong slice of a 5-D cache. The arithmetic is valid for any input, so nothing throws; logits stay
 > finite, the sampler keeps producing tokens, and the text degrades *gradually*. Code review will not
 > find this — only a token-for-token comparison against the MLX original will.
-
+>
 > ⚠️ **SILENT FAILURE — the lowerings that convert and lie (§7).** A **boolean** attention mask is
 > `cast` and **added**, so `True` becomes `+1.0` on every visible position and masked positions are left
 > completely unmasked — and `passes.py` computes a `mask_mode` attribute that would fix it which the
@@ -118,7 +118,7 @@ table, including the case where the answer is "re-author from the checkpoint ins
 > log and `left_shift` / `right_shift` collapse to bitwise **AND**, because MLX remaps them to shared
 > primitive names and the base/op selector is dropped. `allow_unknown_sources=True` — the **default** —
 > invents `TensorSpec(shape=(), dtype="fp32")` for any tensor it cannot spec.
-
+>
 > ⚠️ **SILENT FAILURE — the tooling around it (§8, §9.8, §11.3–§11.4).** `mlx2coreai.run_aimodel`, the
 > packaged public API, has **no `state=` argument**, so it cannot execute the stateful asset the tool's
 > headline command produces. The benchmark's `--runtime-backend auto` silently swaps Swift for Python,
@@ -129,7 +129,7 @@ table, including the case where the answer is "re-author from the checkpoint ins
 > apart — `main.mlirb` differs by 7 bytes, `main.hash` entirely), so a stored hash is worthless as a
 > reproducibility criterion. And in a persistent Python runner, letting the `AIModel` get garbage
 > collected while holding only the loaded function returns **garbage output with no crash**.
-
+>
 > 🔴 **GAP — the Python surface is inferred from call sites, and it is thin.** `GraphOp(...)`'s keyword
 > arguments, `coreai.slice_`'s argument order, `NDArray(data=, backing=)` and
 > `function(inputs=, state=)` appear only as *calls* in third-party code; no declaration exists anywhere
@@ -143,7 +143,7 @@ table, including the case where the answer is "re-author from the checkpoint ins
 
 ## Reading order
 
-**Everyone starts with the guide's intro block and [§6](references/01-mlx2coreai-and-third-party-bridges.md)**,
+**Everyone starts with the guide's intro block and [§6](references/01-mlx2coreai-and-third-party-bridges.md#6-️-asset-generation-coverage-is-not-numerical-parity)**,
 then **§2.3**. That is fifteen minutes and it changes what you do next: §6 tells you that 156/156 op
 coverage is an asset-generation claim, and §2.3 tells you the wheel you are about to install may write
 bundles the current SDK loader rejects. Reading §3 before §6 is how people lose a week.
@@ -155,7 +155,7 @@ bridge or a bundle producer:* §4 end to end, then §9.5, which is the validator
 consuming side. *A Swift developer consuming somebody's bundle:* §9, plus §10 only if you touch
 `SpecializationOptions`.
 
-**Read one thing out of order:** [§12.3](references/01-mlx2coreai-and-third-party-bridges.md) — *is Core
+**Read one thing out of order:** [§12.3](references/01-mlx2coreai-and-third-party-bridges.md#123-one-more-consideration-is-core-ai-even-the-right-destination) — *is Core
 AI even the right destination* — belongs **before** you start, not after. Community head-to-heads put
 dense transformers at tie-to-+12 % for Core AI, MoE at **0.5–0.78×** (MLX wins), and exotic attention as
 a loss; and guided generation needs logits the GPU-pipelined Core AI path does not expose.

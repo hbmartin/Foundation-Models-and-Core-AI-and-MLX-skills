@@ -1,0 +1,9 @@
+# skills/ is generated from guides/ by scripts/build-skills.sh and is committed only
+# so `npx skills add <owner>/<repo>` can resolve it. Marking it generated keeps a guide
+# edit's real diff readable instead of burying it under the derived copy.
+#
+# linguist-generated collapses these files in GitHub's diff view, which is the
+# whole goal. Deliberately no `-diff`: that marks them binary everywhere, and a
+# regenerated skill is exactly the thing a reviewer wants to read line by line
+# when a guide edit changes it.
+skills/** linguist-generated=true

@@ -54,27 +54,28 @@ Four things make MLX-in-Swift harder than "add a package and call `generate`."
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The sample code I found doesn't compile" | [13.1 §1, §2.6](references/01-mlx-swift-lm-in-an-app.md) | It is 2.x. The migration table is there |
-| "First build fails and I don't know which products to link" | [13.1 §2–§3](references/01-mlx-swift-lm-in-an-app.md) | Nine products, **three integration styles**; §3.5 decides for you |
-| `ModelFactoryError.noModelFactoryAvailable` | [13.1 §4.2](references/01-mlx-swift-lm-in-an-app.md) · [13.3 §3.3](references/03-fm-bridge-and-guided-generation.md) | You linked `MLXLMCommon` but not `MLXLLM`/`MLXVLM`; the registry uses `NSClassFromString` |
-| "cannot find `MLXLanguageModel` in scope" | [13.3 §1](references/03-fm-bridge-and-guided-generation.md) · [13.1 §9.1](references/01-mlx-swift-lm-in-an-app.md) | You are on the 26 SDK. The target compiled to an empty library |
-| "It is killed on device with no crash report" | [13.1 §6.7–§6.8](references/01-mlx-swift-lm-in-an-app.md) | Jetsam. `Memory.snapshot()` reports MLX's allocator, not `phys_footprint` |
-| "It crashes when the app backgrounds mid-generation" | [13.1 §5.6](references/01-mlx-swift-lm-in-an-app.md) | A Metal command-buffer error on a completion handler Swift cannot catch |
-| "The VLM describes a rotated scene" · "VLM prefill OOMs" | [13.1 §7.4, §7.7](references/01-mlx-swift-lm-in-an-app.md) | EXIF orientation; merged-sequence attention growing as (Σ Lᵢ)² |
-| "My 'waiting for first token' spinner never stops" | [13.2 §2.5](references/02-generation-tools-and-caching.md) | The first stream element can be `.toolCall` with **zero** `.chunk` events |
-| "The model recites a function call at the user" | [13.2 §7.5](references/02-generation-tools-and-caching.md) | `ToolCallFormat.infer` returned `nil`, the loop assumed `.json` |
-| "Output is fluent but subtly worse than it should be" | [13.2 §6.4–§6.5](references/02-generation-tools-and-caching.md) | The chat template is the contract and nothing checks it |
-| "I set `kvBits` and memory didn't drop" · "quality collapses mid-generation" | [13.2 §8.5, §9.1](references/02-generation-tools-and-caching.md) | `RotatingKVCache.toQuantized()` is never called; and `#312` |
-| "Speculative decoding gives wrong answers on Gemma" | [13.2 §9.2](references/02-generation-tools-and-caching.md) | `#424` — generation continues on tokens that were never emitted |
+| "The sample code I found doesn't compile" | [13.1 §1, §2.6](references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full) | It is 2.x. The migration table is there |
+| "First build fails and I don't know which products to link" | [13.1 §2–§3](references/01-mlx-swift-lm-in-an-app.md#2-the-package-nine-products-what-each-is-for) | Nine products, **three integration styles**; §3.5 decides for you |
+| `ModelFactoryError.noModelFactoryAvailable` | [13.1 §4.2](references/01-mlx-swift-lm-in-an-app.md#42-the-factory-registry-and-the-error-you-will-hit-first) · [13.3 §3.3](references/03-fm-bridge-and-guided-generation.md#33-️-silent-failure-almost-nomodelfactoryavailable) | You linked `MLXLMCommon` but not `MLXLLM`/`MLXVLM`; the registry uses `NSClassFromString` |
+| "cannot find `MLXLanguageModel` in scope" | [13.3 §1](references/03-fm-bridge-and-guided-generation.md#1--the-two-gates-and-the-four-cell-matrix) · [13.1 §9.1](references/01-mlx-swift-lm-in-an-app.md#91-the-gate) | You are on the 26 SDK. The target compiled to an empty library |
+| "It is killed on device with no crash report" | [13.1 §6.7–§6.8](references/01-mlx-swift-lm-in-an-app.md#67-what-jetsam-looks-like-and-how-to-see-it-coming) | Jetsam. `Memory.snapshot()` reports MLX's allocator, not `phys_footprint` |
+| "It crashes when the app backgrounds mid-generation" | [13.1 §5.6](references/01-mlx-swift-lm-in-an-app.md#56-cancellation--and-the-ios-crash-it-prevents) | A Metal command-buffer error on a completion handler Swift cannot catch |
+| "The VLM describes a rotated scene" · "VLM prefill OOMs" | [13.1 §7.4, §7.7](references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) | EXIF orientation; merged-sequence attention growing as (Σ Lᵢ)² |
+| "My 'waiting for first token' spinner never stops" | [13.2 §2.5](references/02-generation-tools-and-caching.md#25-the-stream-event-types) | The first stream element can be `.toolCall` with **zero** `.chunk` events |
+| "The model recites a function call at the user" | [13.2 §7.5](references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) | `ToolCallFormat.infer` returned `nil`, the loop assumed `.json` |
+| "Output is fluent but subtly worse than it should be" | [13.2 §6.4–§6.5](references/02-generation-tools-and-caching.md#64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it) | The chat template is the contract and nothing checks it |
+| "I set `kvBits` and memory didn't drop" · "quality collapses mid-generation" | [13.2 §8.5, §9.1](references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) | `RotatingKVCache.toQuantized()` is never called; and `#312` |
+| "Speculative decoding gives wrong answers on Gemma" | [13.2 §9.2](references/02-generation-tools-and-caching.md#92-speculativetokeniterator-discards-trimpromptcaches-return-value) | `#424` — generation continues on tokens that were never emitted |
 | "Where *is* `MLXFoundationModels`?" | [13.3, opening](references/03-fm-bridge-and-guided-generation.md) | Answered in the first paragraph, because forum thread 836264 asked |
-| "`session.prewarm()` does nothing" · "usage is zero" | [13.3 §7.6, §8.8](references/03-fm-bridge-and-guided-generation.md) | A witness that didn't bind; and a deliberately-dropped channel send |
-| "I want `@Generable`-style JSON on iOS 17" | [13.3 §9](references/03-fm-bridge-and-guided-generation.md) | `MLXGuidedGeneration` is standalone — no Foundation Models, no 27 floor |
+| "`session.prewarm()` does nothing" · "usage is zero" | [13.3 §7.6, §8.8](references/03-fm-bridge-and-guided-generation.md#76-️-silent-failure-the-prewarm-witness-must-match-exactly) | A witness that didn't bind; and a deliberately-dropped channel send |
+| "I want `@Generable`-style JSON on iOS 17" | [13.3 §9](references/03-fm-bridge-and-guided-generation.md#9--mlxguidedgeneration-from-json-schema-to-token-mask) | `MLXGuidedGeneration` is standalone — no Foundation Models, no 27 floor |
 
 ---
 
 ## The guides in this part
 
 ### [13.1 — `mlx-swift-lm` in an app: setup, concurrency, memory, and media input](references/01-mlx-swift-lm-in-an-app.md)
+
 The "make it survive contact with an iPhone" guide, in the order things hurt: the 3.x break and the
 nine products; the **three integration styles** for tokenizers and downloaders (implement the
 protocols, use an integration package, or use the `MLXHuggingFace` macros) with a decision in §3.5;
@@ -93,7 +94,7 @@ building against both the 26 and 27 SDKs. §10 is a failure catalogue plus a pre
 > `skipSpecialTokens: false`**, so `<think>` renders as literal text; **`generation_config.json`'s
 > `eos_token_id` replaces rather than unions** the set from `config.json`; and **EXIF orientation is
 > dropped**, so the VLM confidently describes a rotated scene.
-
+>
 > 🔴 **GAP — the integration package `using.md` names may not exist.** `upgrade.md` shows a call
 > shape with no `using:` parameter, importing an `IntegrationPackage` that has no corresponding
 > module, dependency, or published overload anywhere we could find. **Safe default: use style 1 or
@@ -102,6 +103,7 @@ building against both the 26 and 27 SDKs. §10 is a failure catalogue plus a pre
 > alias — write `Memory.cacheLimit`.
 
 ### [13.2 — Generation, tool calling, and KV cache management in Swift](references/02-generation-tools-and-caching.md)
+
 Deliberately structured to mirror [Part 12 guide 04](../part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md)
 so you can move between the languages, naming the Python spelling wherever one corresponds — and
 calling out every place it doesn't, because each of those divergences has produced a real bug.
@@ -121,20 +123,21 @@ explains why an upstream fix takes four tag bumps to reach your app.
 > `0.6`, not `0` — every test asserting on text is flaky until you set it); an unrecognised `kvScheme`
 > string is dropped with no message; and `RotatingKVCache.toQuantized()` **exists and is never
 > called**, so on sliding-window models `kvBits` converts nothing and memory does not drop.
-
+>
 > ⚠️ **Two open bugs that destroy output quality rather than crashing (§9).** `#312` —
 > `maybeQuantizeKVCache` replaces array *elements* instead of mutating objects, so the caller keeps
 > stale references and **the model loses all context generated after `quantizedKVStart`**. `#424` —
 > `SpeculativeTokenIterator` discards `trimPromptCache`'s return value, and once one sliding layer
 > wraps the rollback silently returns `0`, so **generation continues on a transcript containing
 > tokens that were never emitted**. Both OPEN as of 2026-07-29; treat the status as a snapshot.
-
+>
 > 🔴 **GAP — no verified public API for registering a custom `ToolCallParser`.** `ToolCallProcessor.init`
 > takes a closed `String`-backed `ToolCallFormat` enum you cannot extend. If your model's wire format
 > is not one of the ten, parse it yourself outside the loop (§7.8 remedy d). Also open: cross-language
 > prompt-cache round-tripping, and the accept/reject arithmetic inside `SpeculativeTokenIterator`.
 
 ### [13.3 — `MLXFoundationModels` and `MLXGuidedGeneration`: backing `LanguageModelSession` with an MLX model](references/03-fm-bridge-and-guided-generation.md)
+
 Opens by answering the question a developer asked on forum thread **836264** after seeing
 `import MLXFoundationModels` on a WWDC26 session-339 slide: it is a library target in the package,
 not an SDK framework, and it needs the 27.0 SDK. From there it is the most useful thing in the part
@@ -156,7 +159,7 @@ binary (e.g. CoreAI's prebuilt copy)."*
 > an unrecognised name are `compactMap`ped away with **no error and no log**; `flushLogs()` returns
 > `nil` unconditionally, so `diagnosticLog: true` yields nothing; and `emitUsage` computes usage,
 > notifies the test observer, and **sends nothing to the framework**.
-
+>
 > ⚠️ **The `updateUsage` SIGSEGV is the beta-SDK failure mode to fear (§13.2).** The FM-27
 > `.swiftinterface` declares a three-parameter `updateUsage(input:output:metadata:)`; the shipping
 > dylib exports only the two-parameter form. Relying on the `metadata:` default mangles a reference to
@@ -164,7 +167,7 @@ binary (e.g. CoreAI's prebuilt copy)."*
 > aborts the process at image load, before any `#available` or `dlsym` guard can run.** The only fix
 > is to delete the call — which is what they did, at the cost of the missing-usage silent failure
 > above. `dyld_info -exports` is how you check.
-
+>
 > 🔴 **GAP — every performance number in this guide is an unattributed source comment (G4).** Six of
 > them, none carrying hardware, OS build, model or date, and two in open tension (*"grammar
 > compilation ~5-20ms"* versus *"hundreds of milliseconds on a cold grammar compile"*). Nine more
@@ -177,7 +180,7 @@ binary (e.g. CoreAI's prebuilt copy)."*
 
 ## Reading order
 
-**Everyone starts at [13.1 §1–§4](references/01-mlx-swift-lm-in-an-app.md).** The 3.x break, the
+**Everyone starts at [13.1 §1–§4](references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full).** The 3.x break, the
 product list, the three integration styles and model loading are the vocabulary the other two guides
 assume, and getting §3 wrong is the single most common reason a first build fails. Then **§6, in
 full, before you write a feature** — memory is what decides whether the app ships, and every number
@@ -192,14 +195,14 @@ gates), §3 (setup), §6 (capabilities) and §7 (availability) are the ones you 
 file-by-file walk doubles as the checklist for
 [Part 4 guide 3](../part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md).
 
-**Read two out of order.** [13.1 §9](references/01-mlx-swift-lm-in-an-app.md) before you configure
+**Read two out of order.** [13.1 §9](references/01-mlx-swift-lm-in-an-app.md#9-sdk-compatibility-macos-26-and-27-in-one-build) before you configure
 CI, because the 26-versus-27 SDK question decides your build matrix and cannot be papered over with
-`@available`. And [13.3 §11](references/03-fm-bridge-and-guided-generation.md) before you pick a
+`@available`. And [13.3 §11](references/03-fm-bridge-and-guided-generation.md#11--the-constraint-guided-generation-needs-logits) before you pick a
 backend, because "does this engine expose logits" is the question that decides whether `@Generable`
 works at all.
 
-**Deferrable.** [13.1 §7](references/01-mlx-swift-lm-in-an-app.md) unless you ship a VLM;
-[13.2 §9–§10](references/02-generation-tools-and-caching.md) unless you enable KV quantization,
+**Deferrable.** [13.1 §7](references/01-mlx-swift-lm-in-an-app.md#7-media-input-for-vlms) unless you ship a VLM;
+[13.2 §9–§10](references/02-generation-tools-and-caching.md#9-two-real-swift-side-cache-bugs) unless you enable KV quantization,
 speculative decoding, or need an embedder in-process; all of
 [13.3](references/03-fm-bridge-and-guided-generation.md) if you are on Xcode 26 — except **§9**,
 which is `MLXGuidedGeneration` and has no 27 floor at all, so grammar-constrained JSON is available
@@ -212,7 +215,7 @@ to you on iOS 17 without Foundation Models anywhere in the picture.
 - **Porting a model architecture to Swift.** `@ModuleInfo`/`@ParameterInfo` conventions,
   `sanitize(weights:)`, the canonical attention body, and trace-and-compare debugging against Python
   live in the package's own `Documentation.docc/porting.md` (777 lines) and
-  `skills/mlx-swift-lm/references/model-porting.md`. [13.1 §10.4](references/01-mlx-swift-lm-in-an-app.md)
+  `skills/mlx-swift-lm/references/model-porting.md`. [13.1 §10.4](references/01-mlx-swift-lm-in-an-app.md#104-where-to-go-next)
   points you at both. **LoRA / DoRA on device** (`LoRAContainer`, `LoRATrain`) is likewise out of
   scope here.
 - **The `LanguageModel` protocol taught abstractly**, the executor store, and choosing among the five

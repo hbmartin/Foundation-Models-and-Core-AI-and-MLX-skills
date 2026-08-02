@@ -52,6 +52,7 @@ Work down this table. If any row applies to you, jump to the guide named in the 
 ## The guides in this part
 
 ### [17.1 — What changed between iOS 26 and iOS 27: the complete checklist](references/01-what-changed-checklist.md)
+
 The exhaustive diff, organised by framework, with each item marked as *additive*, *behavioural*,
 *renamed* or *withdrawn*. Includes the version-floor table (26.0 / 26.4 / 27.0, plus the separate
 TensorOps ladder), the
@@ -60,6 +61,7 @@ user has Siri enabled, and the Python-SDK generation lag. **Start here if more t
 triage table apply to you.**
 
 ### [17.2 — The adapter sunset: migrating off custom LoRA adapters](references/02-adapter-sunset.md)
+
 What was withdrawn, what the evidence for the withdrawal actually is, and the three realistic
 forward paths: re-frame the task as prompting plus guided generation; move the specialised model to
 Core AI and drive it through `CoreAILanguageModel`; or move it to MLX and drive it through
@@ -75,6 +77,7 @@ failure that developers hit shipping adapters through TestFlight, for readers st
 > documented it end to end nowhere. This guide constructs it from parts and says so explicitly.
 
 ### [17.3 — Error taxonomy migration: `GenerationError` → `LanguageModelError`](references/03-error-taxonomy-migration.md)
+
 The mapping table, old case to new case — now SDK-interface-verified on **both** sides (the 26.5 and
 27.0 beta `FoundationModels.swiftinterface` dumps), with every destination confirmed by the per-case
 deprecation messages Apple attached to the old enum in the 27 SDK. Why a rebuild
@@ -87,6 +90,7 @@ limitation that it does not apply to `Generable`, and a regression-test recipe u
 Evaluations framework so you find out before your users do.
 
 ### [17.4 — Building for two SDKs: conditional compilation across 26 and 27](references/04-dual-sdk-builds.md)
+
 `#if canImport` versus `@available` versus SDK-version checks, and when each is the right tool.
 How to keep one codebase compiling against both the macOS 26 and 27 SDKs — the pattern
 `mlx-swift-lm` uses in CI. Which symbols are hard 27-only (`MLXFoundationModels`, the whole
@@ -95,6 +99,7 @@ runtime check. Includes the watchOS 27 beta `CoreImage` module-resolution failur
 around it.
 
 ### [17.5 — Core ML to Core AI: what moves, what stays, and how](references/05-coreml-to-coreai.md)
+
 Core AI is the successor path for **neural networks**; Core ML remains correct for decision trees,
 tabular feature engineering, and the rest of its non-neural surface — so this is a partial
 migration by design. Covers the mental-model translation (`MLModel` → `AIModel`, `MLMultiArray` →
@@ -104,6 +109,7 @@ compilation), and what you give up (a decade of samples and Stack Overflow answe
 with **zero** Apple sample-code projects). Includes a decision table for *don't migrate yet*.
 
 ### [17.6 — Toolchain and asset compatibility](references/06-toolchain-and-asset-compatibility.md)
+
 The migration nobody warns you about: your *build artifacts* have compatibility constraints
 independent of your source.
 - **The `coreai-torch` 0.4.0 IR incident** — 0.4.0 baked PyTorch stack traces into MLIR locations

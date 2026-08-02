@@ -52,30 +52,31 @@ at least measure. This one you can only evaluate.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I keep hitting `contextSizeExceeded`" | [3.1 §6–§7](references/01-context-window-and-kv-cache.md) | The four levers, Apple's documented recovery, and the 26.0-only rebuild path |
-| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md) | TN3193 settles the figure at 4,096 (probe-confirmed on the 27.0 simulator); an uncorroborated 8192 claim survives only for 27 hardware. Still read `contextSize` |
-| "Time-to-first-token climbs turn over turn, prompt size flat" | [3.1 §8](references/01-context-window-and-kv-cache.md) | Something is invalidating your prefix. §8.10's expensive list is the checklist |
-| "I need to know what a turn actually cost" | [3.1 §5](references/01-context-window-and-kv-cache.md) | `Usage`, `cachedTokenCount`, and the cache-hit-rate formula |
-| "I'm choosing a model for a multi-turn chat" | [3.1 §10](references/01-context-window-and-kv-cache.md) | Linear-attention hybrids **cannot prefix-cache at all**. This outranks parameter count |
+| "I keep hitting `contextSizeExceeded`" | [3.1 §6–§7](references/01-context-window-and-kv-cache.md#6-overflow-contextsizeexceeded-and-the-pattern-people-hand-rolled) | The four levers, Apple's documented recovery, and the 26.0-only rebuild path |
+| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md#3-reading-the-budget-contextsize-and-the-4096-token-window) | TN3193 settles the figure at 4,096 (probe-confirmed on the 27.0 simulator); an uncorroborated 8192 claim survives only for 27 hardware. Still read `contextSize` |
+| "Time-to-first-token climbs turn over turn, prompt size flat" | [3.1 §8](references/01-context-window-and-kv-cache.md#8-the-kv-cache-is-a-prefix) | Something is invalidating your prefix. §8.10's expensive list is the checklist |
+| "I need to know what a turn actually cost" | [3.1 §5](references/01-context-window-and-kv-cache.md#5-counting-after-you-spend-usage-and-the-cache-hit-rate) | `Usage`, `cachedTokenCount`, and the cache-hit-rate formula |
+| "I'm choosing a model for a multi-turn chat" | [3.1 §10](references/01-context-window-and-kv-cache.md#10-️-the-model-selection-consequence-architectures-that-cannot-prefix-cache) | Linear-attention hybrids **cannot prefix-cache at all**. This outranks parameter count |
 | "I want two personas in one conversation" | [3.2](references/02-dynamic-profiles-and-session-state.md) | `DynamicProfile`, `Profile`, `DynamicInstructions` — and the two spellings in circulation that do not compile |
-| "My profile never switches" | [3.2 §2, §6](references/02-dynamic-profiles-and-session-state.md) | The body is a projection; check what state you read versus what you mutate |
-| "Where do I put state that a tool and a profile both need?" | [3.2 §11](references/02-dynamic-profiles-and-session-state.md) | `@SessionPropertyEntry` on `SessionPropertyValues`, read via `@SessionProperty(\.…)` |
-| "Should I use `history` or `historyTransform`?" | [3.2 §12](references/02-dynamic-profiles-and-session-state.md) | Lossy-and-global versus lossless-and-per-profile. The most consequential choice in the API |
+| "My profile never switches" | [3.2 §2, §6](references/02-dynamic-profiles-and-session-state.md#2-the-framing-a-profile-is-a-projection-of-app-state) | The body is a projection; check what state you read versus what you mutate |
+| "Where do I put state that a tool and a profile both need?" | [3.2 §11](references/02-dynamic-profiles-and-session-state.md#11-session-properties) | `@SessionPropertyEntry` on `SessionPropertyValues`, read via `@SessionProperty(\.…)` |
+| "Should I use `history` or `historyTransform`?" | [3.2 §12](references/02-dynamic-profiles-and-session-state.md#12-history-versus-historytransform) | Lossy-and-global versus lossless-and-per-profile. The most consequential choice in the API |
 | "I want Apple's ready-made trimming modifiers" | [3.3](references/03-skills-and-history-modifiers.md) | All three, line by line — including the one Apple ships with a test that says it crashes |
-| "My summarisation modifier does nothing" | [3.3 §5–§6](references/03-skills-and-history-modifiers.md) | Every composed example Apple ships is arithmetically inert |
-| "I want to load domain knowledge just-in-time" | [3.3 §11–§17](references/03-skills-and-history-modifiers.md) | `Skills`, and the one line of source that decides whether your KV cache survives |
-| "One model should hand off to another" | [3.4 §2](references/04-agentic-orchestration.md) | Baton-pass — and what Apple's shipping sample does instead |
-| "I want a specialist opinion without polluting the conversation" | [3.4 §3](references/04-agentic-orchestration.md) | Phone-a-friend: a child session with an isolated transcript |
-| "`respond(to:)` never returns" | [3.4 §6](references/04-agentic-orchestration.md) | `.required` is an unbounded `while` loop. Apple documents exactly two exits |
-| "The model wants to change the user's data" | [3.4 §7](references/04-agentic-orchestration.md) | Origami's propose/confirm pattern. The tool proposes; the app disposes |
-| "Is a hop to PCC worth it?" | [3.4 §8](references/04-agentic-orchestration.md) | Routing economics, quota gates, and the backend constraint that kills `@Generable` |
-| "How do I test that the handoff happened?" | [3.4 §10](references/04-agentic-orchestration.md) | Trajectory expectations — and why `disallowed` is the assertion people skip |
+| "My summarisation modifier does nothing" | [3.3 §5–§6](references/03-skills-and-history-modifiers.md#5-️-every-composed-example-in-the-repository-is-inert) | Every composed example Apple ships is arithmetically inert |
+| "I want to load domain knowledge just-in-time" | [3.3 §11–§17](references/03-skills-and-history-modifiers.md#11-skills-the-api-surface) | `Skills`, and the one line of source that decides whether your KV cache survives |
+| "One model should hand off to another" | [3.4 §2](references/04-agentic-orchestration.md#2-baton-pass) | Baton-pass — and what Apple's shipping sample does instead |
+| "I want a specialist opinion without polluting the conversation" | [3.4 §3](references/04-agentic-orchestration.md#3-phone-a-friend) | Phone-a-friend: a child session with an isolated transcript |
+| "`respond(to:)` never returns" | [3.4 §6](references/04-agentic-orchestration.md#6-️-required-is-a-while-loop-and-you-supply-the-exit) | `.required` is an unbounded `while` loop. Apple documents exactly two exits |
+| "The model wants to change the user's data" | [3.4 §7](references/04-agentic-orchestration.md#7-tool-as-consent-request-apples-origami-pattern) | Origami's propose/confirm pattern. The tool proposes; the app disposes |
+| "Is a hop to PCC worth it?" | [3.4 §8](references/04-agentic-orchestration.md#8-model-routing-economics) | Routing economics, quota gates, and the backend constraint that kills `@Generable` |
+| "How do I test that the handoff happened?" | [3.4 §10](references/04-agentic-orchestration.md#10-evaluating-agentic-behaviour) | Trajectory expectations — and why `disallowed` is the assertion people skip |
 
 ---
 
 ## The guides in this part
 
 ### [3.1 — Token budgeting, transcript anatomy, and KV-cache economics](references/01-context-window-and-kv-cache.md)
+
 The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and
 `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in both the 26.0 and 27.0 idioms, and
 then the KV material — token layout, the blast-radius table, the ordering rule for `DynamicInstructions`,
@@ -99,6 +100,7 @@ models forfeit it entirely** because a running scan cannot be rewound.
 > read — 2026-07-27 — and settles the on-device figure at 4,096; see §3.3.)
 
 ### [3.2 — Dynamic Profiles, modifiers, and session state](references/02-dynamic-profiles-and-session-state.md)
+
 The flagship 2026 API, built around the projection framing above. Three layers and their exact spellings,
 `DynamicInstructions` composition (nesting concatenates instructions *and* tools), the full modifier
 catalogue with the three-tier precedence rule, custom modifiers via `DynamicProfileModifier`, session
@@ -114,7 +116,7 @@ spellings are corrected against Apple's shipping sample: it is `Profile { … }.
 > `true` is session misuse surfaced as the typed
 > `LanguageModelSession.Error.transcriptMutationWhileResponding`; guard every write so the response
 > task never reaches that failure.[^transcript-mutation-error]
-
+>
 > ✅ **Closed 2026-07-29 against the 27.0 beta interface** — the lifecycle closures are now read
 > verbatim: each of `onPrompt`/`onResponse`/`onReasoning`/`onToolCall`/`onToolOutput` has a
 > zero-argument **and** a payload-taking overload (`Transcript.Prompt`/`.Response`/`.Reasoning`/
@@ -127,6 +129,7 @@ spellings are corrected against Apple's shipping sample: it is `Profile { … }.
 > `:1059-1063`).
 
 ### [3.3 — `foundation-models-utilities`: Skills and history transforms](references/03-skills-and-history-modifiers.md)
+
 An audit of Apple's separately-versioned experimental package — two commits, issues disabled, no CI — and
 the two feature areas that change how you think about a transcript. All three history modifiers line by
 line; the outside-in execution order; and **Skills**, which is the clearest worked example of KV-cache
@@ -141,12 +144,13 @@ than the per-profile `historyTransform` that Apple's own session tells you to pr
 > `summarizeHistory` is a no-op whenever the trailing entry is not a `.prompt`, which in a tool-heavy
 > session is most of the time. And `rollingWindow(entries:)` ships with a test whose own comment reads
 > *"this documents the (buggy) naive outcome; in practice it crashes partway through."*
-
+>
 > 🔴 **GAP** — the bundled `skills/foundation-models-utilities/SKILL.md` is a **stale beta-1 document with
 > eight verified wrong claims**, including a SwiftPM trait system that does not exist. If you run coding
 > agents against this repository, that file is generating broken code today.
 
 ### [3.4 — Baton-pass, phone-a-friend, model routing, and tool-calling control](references/04-agentic-orchestration.md)
+
 Apple named two orchestration patterns — collaboration versus consultation — and then shipped a sample that
 uses neither literally, so this guide separates the verified narration from the reconstructed code and says
 which is which at every listing. Then the four things you actually have to decide: tool-calling mode as a
@@ -161,7 +165,7 @@ the fastest backend loses `@Generable` entirely.
 > `options:` silently overrides your profile's loop exit; a failed consultation returned as plausible prose
 > becomes fact the parent reasons from; and an unanswered consent proposal leaves every later turn generated
 > against "a confirmation is pending."
-
+>
 > 🔴 **GAP** — **there is no first-party call site for `toolCallingMode` anywhere.** No Apple sample sets
 > it (the API itself is SDK-verified: one `GenerationOptions.ToolCallingMode` type shared by the
 > options field and the profile modifier, `FoundationModels-27.0-macos.swiftinterface:933,
@@ -176,7 +180,7 @@ the fastest backend loses `@Generable` entirely.
 **Everyone reads [3.1](references/01-context-window-and-kv-cache.md) first, and most people can stop after
 §8.** The other three guides are applications of its two ideas; without them, the rules in 3.2 and 3.3 read
 as arbitrary style advice. §§9–10 (the measured prefix-reuse numbers, the architectures that cannot cache)
-are for people choosing a backend and can be deferred until you are.
+are for people choosing a backend and can be deferred until you are choosing one.
 
 **Then [3.2](references/02-dynamic-profiles-and-session-state.md) if you are on 27.0.** It is the API
 reference for this whole part and everything after it assumes you can write a profile and read a session
@@ -189,12 +193,12 @@ tool loop; §6 is worth reading on its own the moment anyone types `.required`.
 just-in-time knowledge loading — and read §5 and §7 before you paste anything from Apple's README.
 
 **Defer or skip:**
-- **[3.3 §19](references/03-skills-and-history-modifiers.md)** (`ChatCompletionsLanguageModel`) is a pointer;
+- **[3.3 §19](references/03-skills-and-history-modifiers.md#19-chatcompletionslanguagemodel-briefly)** (`ChatCompletionsLanguageModel`) is a pointer;
   the real treatment is [Part 4](../part-04-beyond-the-built-in-model/).
-- **[3.4 §10](references/04-agentic-orchestration.md)** (trajectory evaluation) is a preview of
+- **[3.4 §10](references/04-agentic-orchestration.md#10-evaluating-agentic-behaviour)** (trajectory evaluation) is a preview of
   [Part 6](../part-06-evaluations/). Read it when you have something worth regression-testing — but read it
   *before* you ship, because none of this part's techniques is assertable with `#expect`.
-- **[3.1 §9](references/01-context-window-and-kv-cache.md)** is provider-internals; skip unless you are
+- **[3.1 §9](references/01-context-window-and-kv-cache.md#9-what-prefix-reuse-is-worth-measured)** is provider-internals; skip unless you are
   writing a `LanguageModelExecutor`.
 
 ---
