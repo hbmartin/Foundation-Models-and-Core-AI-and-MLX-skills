@@ -400,9 +400,13 @@ runtime property you must handle.
 > **4K / 32K**, reasoning not-supported / multiple-levels.
 
 > ⚠️ **Do not hardcode 4096.** Apple's slide, Apple's docs, and TN3193 all put the on-device
-> context at 4,096 tokens per session — settled in §10. (A shipping third-party app's source
-> carries an uncorroborated comment that "the iOS 27 model reports 8K"; that app hardcodes 4096
-> only as a fallback for when `contextSize` returns `<= 0`.)
+> context at 4,096 tokens per session — settled in §10 — and as of 2026-08-02 Apple's ML
+> frameworks panel has said so for **iOS 27 specifically**, adding that the budget is **shared
+> across input and output**: *"if you feed in 4000 tokens, the response can use the remaining
+> ~96"* (WWDC26 Group Lab 8121, ch. `0:08:11`). (A shipping third-party app's source carries a
+> comment that "the iOS 27 model reports 8K"; that is now **contradicted** rather than merely
+> uncorroborated, and that app hardcodes 4096 only as a fallback for when `contextSize`
+> returns `<= 0`.)
 > Read `SystemLanguageModel.default.contextSize` — it is `@backDeployed`
 > to 26.4, so it is safe to call without an availability fence on any 26.4+ deployment. Treat `<= 0`
 > as unknown.

@@ -554,6 +554,25 @@ technote states the number plainly, and it is now the fourth independent Apple c
 > forum thread 790736 — *"You are correct that currently the token limit for Foundation Models
 > framework is **around 4,000**."*
 
+> ✅ **Fifth Apple channel, and the one that names iOS 27 explicitly (2026-08-02).** Asked at a
+> WWDC26 group lab *"What is the on-device Foundation Models context window **in iOS 27**, and is
+> input plus output counted against one shared token budget?"*, Apple's ML frameworks panel
+> answered: **the on-device context is 4096 tokens and is a shared budget** — *"if you feed in
+> 4000 tokens, the response can use the remaining ~96"* — with **PCC at 32K, also shared**.
+> Group Lab **8121**, ch. `0:08:11`.[^ctx-grouplab-8121]
+>
+> Two things this adds that TN3193 does not. First, **it is scoped to iOS 27 by the question
+> itself**, which is what the noema comment claims changed — so the demotion in the footnote below
+> is now a contradiction by Apple, not merely an absence of corroboration. Second, it states the
+> **shared input+output budget** as an arithmetic rule with a worked example, which is the framing
+> §4 depends on.
+
+[^ctx-grouplab-8121]: WWDC26 Group Lab **8121**, *"Coding Intelligence, Machine Learning & AI Group
+    Lab"*, `https://developer.apple.com/videos/play/wwdc2026/8121/`. ⚠️ Apple publishes **no
+    caption track** for group labs — only a chaptered Q&A index with Apple's own written summary
+    per answer. Cite as Apple's paraphrase of the panel, never as an engineer's spoken words.
+    Analysis: `notes/web/2026-08-02-harvest/wwdc2026-8121-ml-ai-group-lab.md`.
+
 > 📎 **Footnote — the 8192 source comment, demoted.** One third-party app carries a comment claiming a
 > device probe returns 8K on iOS 27 (`noemaai-labs/noema-ios`, `Noema/AFMLLMClient.swift:133-146`:
 > *"iOS 26 reports 4K while the iOS 27 model reports 8K"*). **No Apple source corroborates it** — not

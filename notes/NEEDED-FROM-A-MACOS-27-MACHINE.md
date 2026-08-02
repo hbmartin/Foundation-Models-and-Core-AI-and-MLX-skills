@@ -20,13 +20,35 @@ GAPs are executable XCTest probes; see `probes/README.md` for per-destination co
 
 ---
 
-## 1. The `fm` CLI — 🔴 still open, now sharper
+## 1. The `fm` CLI — 🔴 still open, now much sharper
 
 Rechecked 2026-08-01: `fm` is **absent from the Xcode 27.0 beta** —
 `xcrun --no-cache --find fm` exits 72 and an
 exhaustive `find` of Xcode-beta.app returns nothing. That is *consistent* with the corpus claim
 that `fm` comes **preinstalled with macOS 27** (this host is 26.5.2, so the claim is untested, not
-false). Guide `part-05/references/02-fm-cli-and-python-sdk.md` still has no attested flag surface.
+false).
+
+**Updated 2026-08-02 — the guide is no longer flag-blind.** A web harvest found **three
+independent third-party write-ups by people who ran the binary on macOS 27**, one of which pastes
+`fm --help` from build **`26A5378n`**. Folded into
+`part-05/references/02-fm-cli-and-python-sdk.md` as 🟠 **Suggestive** (never ✅ — nobody on this
+project has run it). Now reported:
+
+- installed path **`/usr/bin/fm`**;
+- **seven** subcommands — `available`, `chat`, `quota-usage`, `respond`, `schema`, `serve`,
+  `token-count` (three of which Apple never named in any session);
+- `fm respond` flags **`--model pcc`**, **`--image <path>`**, **`--schema <file>`**, `--help`;
+- `fm schema object --name <T> --string <prop> [--array]`, emitting JSON **on stdout**.
+
+Evidence and the source-reliability analysis:
+`notes/web/2026-08-02-harvest/fm-cli-real-machine-evidence.md`.
+
+**What the run below still buys, and why it is still worth doing:** the `--help` paste is
+**truncated mid-line on `token-count`**, so the list may not be complete; `--instructions` is
+listed by one source and demonstrated by none; no short forms are known; no source shows the flags
+of any subcommand except `respond`; every `fm serve` behaviour (port, bind address, auth, protocol
+coverage) is unattested; and exit codes, stderr discipline and streaming are entirely unknown.
+Priority: **unchanged — still the highest-value single run in this file.**
 
 On a machine running macOS 27:
 
@@ -147,12 +169,19 @@ Part 11.
   says deleting a referenced entry throws; the caching article says deletion is deferred until the
   `AIModel` deallocates. One test settles it. (The interfaces confirm only spellings, not
   behaviour — checked 2026-07-29.)
-- **On-device `contextSize`.** Narrowed 2026-07-29: the 26.5 interface **hardcodes `return 4096`**;
+- **On-device `contextSize`.** ⬇️ **Priority downgraded 2026-08-02 — Apple has answered.**
+  Narrowed 2026-07-29: the 26.5 interface **hardcodes `return 4096`**;
   the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below.
   Narrowed again 2026-07-31: the `probes/` run measured **4096 on the iOS 27.0 simulator runtime**
   (and the overflow error text there independently says "maximum allowed context size of 4096").
-  The third-party 8192 claim now rests entirely on 27 *hardware* — print
-  `SystemLanguageModel().contextSize` on a real 27 device to settle it.
+  **Settled 2026-08-02:** asked the iOS-27 question directly at WWDC26 Group Lab 8121
+  (ch. `0:08:11`), Apple's ML frameworks panel stated **4096, shared across input and output**,
+  with PCC at 32K. The third-party 8192 claim is now **contradicted by Apple**, not merely
+  uncorroborated. Folded into guides 17.1 §1.1 and 3.1 §3.3.
+  **Still worth one run if a 27 device is to hand** — Apple's answer is a platform statement and
+  the 27.0 interface plainly returns a *dynamic* value, so printing
+  `SystemLanguageModel().contextSize` on real hardware is the only way to rule out a
+  device-specific figure. No longer blocking any guide text.
 
 ---
 

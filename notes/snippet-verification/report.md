@@ -10,7 +10,7 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | sim27 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios27.0-simulator |
 | sim27-on-26 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios26.0-simulator |
 
-**Totals over 1354 Swift fences:** ILLUSTRATIVE 480 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
+**Totals over 1358 Swift fences:** ILLUSTRATIVE 484 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
 
 **UNCLASSIFIED backlog (the metric): 0**
 
@@ -41,9 +41,9 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-06-evaluations/references/02-model-judges-and-alignment.md | 26 | 3 | 0 | 0 | 7 | 0–0 | 0 |
 | part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md | 26 | 3 | 0 | 0 | 8 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md | 21 | 5 | 0 | 1 | 9 | 0–0 | 0 |
-| part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md | 37 | 3 | 0 | 0 | 16 | 0–0 | 0 |
+| part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md | 38 | 3 | 0 | 0 | 17 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md | 21 | 3 | 0 | 0 | 15 | 0–0 | 0 |
-| part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md | 81 | 9 | 0 | 0 | 29 | 0–0 | 0 |
+| part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md | 84 | 9 | 0 | 0 | 32 | 0–0 | 0 |
 | part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md | 4 | 0 | 0 | 0 | 2 | 0–0 | 0 |
 | part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md | 1 | 0 | 0 | 0 | 0 | 0–0 | 0 |
 | part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md | 3 | 2 | 0 | 0 | 1 | 0–0 | 0 |

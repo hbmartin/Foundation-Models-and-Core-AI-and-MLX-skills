@@ -988,6 +988,55 @@ no memory; holding an `InferenceFunction` is what costs memory. If you have a sc
 need the model soon, load the `AIModel` early and defer `loadFunction(named:)` until you actually
 need to run.
 
+### 7.1 How Apple's own tools clear the cache — and the measurement pattern worth stealing
+
+✅ **VERIFIED — source read 2026-08-02.** `apple/coreai-models` commit `aa3bbf6`, *"Add
+`--clear-coreai-cache` flag to clear Core AI specialization cache before model load (#127)"*,
+2026-07-29. The flag was added to **four** of the repo's runner tools at once — `benchmark`,
+`speech-runner`, `diffusion-runner`, `image-segmenter` — which is itself the signal: Apple's
+sample tooling treats "clear the specialization cache before loading" as a standard operating mode,
+not a debugging afterthought.
+
+The benchmark tool's sequence is the part worth copying
+(`swift/Sources/Tools/benchmark/BenchmarkMain.swift:70-78`):
+
+```swift illustrative
+// 🟡 Abridged from apple/coreai-models @ aa3bbf6 — the ordering is the point.
+if clearCoreAICache {
+    let cleared = try PreparedModel.clearCache(at: bundle.bundlePath)
+    print("\n🗑️  Cleared specialization cache for \(bundle.name) (\(cleared.count) component(s))")
+}
+
+// Detect an existing cached specialization before loading so we can annotate the load
+// time below. This only inspects the cache; it never triggers specialization.
+let cacheHit = PreparedModel.isCached(at: modelURL)
+```
+
+Three things to take from it:
+
+1. **`clearCache(at:)` returns the components it cleared**, and the tool prints the count. A model
+   bundle is multi-component (§4), so "did the clear do anything?" is a real question with a
+   numeric answer — do not assume a clear that returns an empty collection failed, and do not
+   assume it succeeded either. Check.
+2. **`isCached(at:)` is a pure query.** The comment says so explicitly: *"This only inspects the
+   cache; it never triggers specialization."* That is the gating primitive §3 is about, in its
+   read-only form, and it is the honest way to label a timing number as cold or warm.
+3. ⭐ **The pattern is `clear → probe → load → attribute`**, and it is the correct shape for any
+   honest first-load measurement. Without the explicit clear you cannot reproduce a cold start;
+   without the `isCached` probe you cannot prove the run you just timed *was* cold. Part 15's
+   benchmarking guide argues for exactly this discipline; here is Apple's own tooling doing it.
+
+> ⚠️ **`PreparedModel.clearCache(at:)` is `coreai-models` API, not `CoreAI` framework API.** It is a
+> helper in Apple's open-source sample package, keyed on a **bundle path**, and it is not one of
+> the four `AIModelCache` deletion methods documented above. Do not reach for it in app code
+> expecting a framework guarantee — use `AIModelCache.deleteEntries(for:)`. The value of the flag
+> is as evidence of *how Apple measures*, and as a ready-made escape hatch if you are already
+> building on `coreai-models`.
+
+> 🔴 **GAP — this does not settle the deletion contradiction below.** The tools clear the cache
+> *before* any `AIModel` exists, so they never exercise the disputed case: deleting an entry that a
+> live `AIModel` is pinning. `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7 stands.
+
 ---
 
 ## 8. Sharing a cache across an app group

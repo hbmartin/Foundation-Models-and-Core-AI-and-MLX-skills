@@ -177,6 +177,7 @@ Opens with the frame (§0): **custom Foundation Models adapters are discontinued
 | 10. Evaluating the result | `#10-evaluating-the-result` |
 | 11. `mlx_lm.fuse`, and what it costs you | `#11-mlx_lmfuse-and-what-it-costs-you` |
 | 12. The complete worked run | `#12-the-complete-worked-run` |
+| 13. Beyond `mlx_lm.lora`: the third-party training layer | `#13-beyond-mlx_lmlora-the-third-party-training-layer` |
 
 ## Part 13 — MLX in Swift
 

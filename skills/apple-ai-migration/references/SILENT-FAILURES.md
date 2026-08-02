@@ -1,6 +1,6 @@
 # Silent-failure index — Migrating an Apple AI integration from 26 to 27
 
-**170 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**172 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-02. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -16,10 +16,10 @@
 | [Resource growth](#resource-growth) | 4 |
 | [Precision loss](#precision-loss) | 1 |
 | [Misleading signals](#misleading-signals) | 23 |
-| [Version drift](#version-drift) | 22 |
+| [Version drift](#version-drift) | 23 |
 | [Docs vs reality](#docs-vs-reality) | 13 |
 | [API footguns](#api-footguns) | 19 |
-| [General cautions](#general-cautions) | 35 |
+| [General cautions](#general-cautions) | 36 |
 
 ## Wrong output
 
@@ -158,6 +158,7 @@
 
 - [Nothing announces itself: a rebuild changes what your catch blocks catch; conversions emit 2.2x-slower artifacts](part-17-migration-from-pre-ios-27/README.md#part-17--migration-from-pre-ios-27) — 17.README 🔇
 - [Apps built with Xcode 26 keep catching GenerationError until you rebuild with 27; catch semantics change on rebuild](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#what-changed-between-ios-26-and-ios-27-the-complete-checklist) — 17.1 🔇
+- [contextSize is a compiled-in 4096 below OS 27 and dynamic at or above it; hardcoding either number breaks on one side.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
 - [catch GenerationError clauses still compile after an Xcode 27 rebuild but stop firing; the catch-all absorbs them](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#71-renamed--generationerror--languagemodelerror-and-two-siblings) — 17.1 🔇
 - [A wheel built with Xcode 26 permanently lacks image support; ImagePromptError surfaces on the first image call](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#9-the-python-sdk-generation-lag) — 17.1
 - [Xcode 26 gives no build-time signal of the adapter sunset: no attested deprecation, and the packaging CLI still ships](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#the-adapter-sunset-migrating-off-custom-lora-adapters) — 17.2 🔇
@@ -225,6 +226,7 @@
 
 **Part 17**
 
+- [Group Labs ship no caption track — cite Apple's written Q&A summary as paraphrase, never as an engineer's words.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
 - [TensorOps availability is per-symbol, not a blanket 26.2; quote each header annotation as a header annotation](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#2-the-tensorops-ladder-is-a-different-ladder) — 17.1
 - [Mutating session.transcript during an in-flight request throws the new transcriptMutationWhileResponding error](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#49-additive--a-mutable-transcript-and-transcripthistory) — 17.1
 - [Pointer: watchOS 27 beta 2 has an Apple-confirmed build break, covered in the checklist's section 10](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#412-additive--watchos) — 17.1

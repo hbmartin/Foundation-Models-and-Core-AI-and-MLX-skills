@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1769 of them, 1410 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1780 of them, 1418 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -27,10 +27,10 @@ Start from the symptom column that matches what you observe. Within each section
 | [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 86 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 157 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
-| [API footguns](#api-footguns) | 255 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 359 | Warnings and considerations that are not themselves silent failures. |
+| [Version drift](#version-drift) | 88 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Docs vs reality](#docs-vs-reality) | 159 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
+| [General cautions](#general-cautions) | 362 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -1463,6 +1463,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
+- [coreai-models moved six commits past the pin; VLM bundles lost the .llmasset extension and the KV-cache primitives were rewritten.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 **Part 11**
 
@@ -1504,6 +1505,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Nothing announces itself: a rebuild changes what your catch blocks catch; conversions emit 2.2x-slower artifacts](part-17-migration-from-pre-ios-27/README.md#part-17--migration-from-pre-ios-27) — 17.README 🔇
 - [Apps built with Xcode 26 keep catching GenerationError until you rebuild with 27; catch semantics change on rebuild](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#what-changed-between-ios-26-and-ios-27-the-complete-checklist) — 17.1 🔇
+- [contextSize is a compiled-in 4096 below OS 27 and dynamic at or above it; hardcoding either number breaks on one side.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
 - [catch GenerationError clauses still compile after an Xcode 27 rebuild but stop firing; the catch-all absorbs them](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#71-renamed--generationerror--languagemodelerror-and-two-siblings) — 17.1 🔇
 - [A wheel built with Xcode 26 permanently lacks image support; ImagePromptError surfaces on the first image call](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#9-the-python-sdk-generation-lag) — 17.1
 - [Xcode 26 gives no build-time signal of the adapter sunset: no attested deprecation, and the packaging CLI still ships](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#the-adapter-sunset-migrating-off-custom-lora-adapters) — 17.2 🔇
@@ -1533,7 +1535,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 1**
 
-- [Docs and slides say 4K context but the iOS 27 model reports 8K; hardcoding 4096 halves it — read contextSize.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
+- [Do not hardcode 4096: contextSize is dynamic on OS 27+ and the third-party 8K claim is contradicted by Apple (Group Lab 8121) — read it, treat <=0 as unknown.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
 - [Apple's documented PCC URL 404s; the live path is developer.apple.com/private-cloud-compute/ — entitlement is managed.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#32-privatecloudcomputelanguagemodel--270-the-one-with-a-policy-gate) — 1.1
 - [Only Core AI's graph compiler is OS-resident; the LLM runtime ships as Swift code in your app, despite Apple's framing.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
 - [Session 330 calls the tensor-ops API 'new in 27'; the header floor is 26.2 — only the quantized macro is 27.0.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#262--the-metalhardware-floor) — 1.2
@@ -1584,6 +1586,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is unverified.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written docs.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
+- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste say otherwise.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
+- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-gap-stated-plainly) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -1859,11 +1863,14 @@ Start from the symptom column that matches what you observe. Within each section
 - [minimumByteCount is a programming error while hasDynamicShape — resolve dimensions first](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
 - [preferredStrides likewise traps on an unresolved dynamic descriptor](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
 - [AssetError covers ASSET operations only — inference and cache failures throw other, mostly untyped errors](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
+- [PreparedModel.clearCache(at:) is coreai-models sample API keyed on a bundle path, not an AIModelCache framework method.](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#71-how-apples-own-tools-clear-the-cache--and-the-measurement-pattern-worth-stealing) — 7.2
 - [availableKinds varies by device but not by model — a present Neural Engine says nothing about your graph's eligibility](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#availablekinds--check-before-you-prefer) — 7.2
 - [Inside withUnsafeMutablePointer the shape/strides are Span<Int> — not a Sequence, so no reduce; ship a product helper](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#52-ndarraydescriptor-gives-you-the-layout-the-hardware-wants) — 7.3
 - [.aimodel and .aimodelc are directories, not files — file-oriented copy, zip and signing steps mishandle them](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#23-️-aimodel-and-aimodelc-are-directories) — 7.4
 - [autoDetectVariant calls preconditionFailure on an unrecognized bundle — it crashes rather than throwing](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#52-the-three-variants-and-how-one-is-chosen) — 7.4
 - [Engine variant is a String?, not an enum — the Variant type is private, so typos cannot be caught at compile time](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#58-choosing-an-engine-the-decision-table) — 7.4
+- [rollback() is @discardableResult and fallible; over-budget calls return false and silently leave grammar state unmoved.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
+- [fillBitmask(into:) states its buffer-size contract only in a doc comment; an undersized pointer writes out of bounds unchecked.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
 - [Sampling applies minP before topP before topK — not the order most stacks use, so identical settings sample differently](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [SamplingConfiguration.init preconditions, not throws — a topP of 0 from a config or slider crashes the app](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [DecodingType has exactly one case (.vanilla) — the factory and builder cannot select any custom decoding strategy](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#93-what-bring-your-own-sampling-strategy-actually-means) — 7.4
@@ -1994,6 +2001,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [In update intents nil means both 'clear' and 'untouched' — if-let code silently drops every 'remove the due date'](part-16-adjacent-capabilities/README.md#162--app-schema-domains-the-complete-map-of-what-siri-can-actually-do) — 16.README 🔇
 - [finish() alone never terminates the result streams — 'for try await result' waits forever and the stop button hangs](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#23-what-finished-means) — 16.1 🔇
 - [assetInstallationRequest is nil on already-provisioned devices — force-unwrap and you crash exactly where all is fine](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#53-the-four-step-process-and-the-ordering-that-matters) — 16.1 🔇
+- [A local withTaskCancellationShield shadows the Swift 6.4 stdlib function with different generics and no async/sync overload pair.](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#94-what-withtaskcancellationshield-actually-is) — 16.1
 - [Code comment: the installation request is nil when assets are already installed — never force-unwrap](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#10-a-complete-worked-example) — 16.1
 - [SpeechDetector.Result is not speech/silence events — the name promises what the stream doesn't carry](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#123-️-speechdetectorresult-is-not-what-its-name-suggests) — 16.1
 - [speechDetector.results carries only VAD model errors per Apple's docs — subscribe for speech events and get none](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#123-️-speechdetectorresult-is-not-what-its-name-suggests) — 16.1 🔇
@@ -2099,6 +2107,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 3**
 
+- [Group Labs ship no caption track — cite Apple's written Q&A summary as paraphrase, never as an engineer's words.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#33--the-on-device-figure-is-4096--settled-by-tn3193) — 3.1
 - [Sample logging line: prints a KV cache hit-rate warning so prefix changes show up during development.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#51-the-cache-hit-rate) — 3.1
 - [Scope: trimKVCache(to:) is a community-fork Core AI primitive, not a Foundation Models API you can call.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#9-what-prefix-reuse-is-worth-measured) — 3.1
 - [Attribution: the prefix-reuse numbers are one community Mac run (qwen3-0.6b); exact hardware and build unstated.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#96-the-numbers) — 3.1
@@ -2344,6 +2353,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [lm-eval with --limit 200 across eight tasks is a smoke test, not a benchmark; don't publish those numbers.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#103-benchmarks--the-capability-check) — 12.6
 - [Publish the adapter alongside the fused model; it's two orders of magnitude smaller and others can rebase it.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#116-uploading) — 12.6
 - [mlx_lm.server's own startup banner says it is not recommended for production; treat it as a dev tool.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#step-10--serve-and-hand-off) — 12.6
+- [This section is project READMEs only — nothing in it was cloned, run or measured; treat flag names as pointers to check.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#13-beyond-mlx_lmlora-the-third-party-training-layer) — 12.6
 
 **Part 13**
 
@@ -2431,6 +2441,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 17**
 
+- [Group Labs ship no caption track — cite Apple's written Q&A summary as paraphrase, never as an engineer's words.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
 - [TensorOps availability is per-symbol, not a blanket 26.2; quote each header annotation as a header annotation](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#2-the-tensorops-ladder-is-a-different-ladder) — 17.1
 - [Mutating session.transcript during an in-flight request throws the new transcriptMutationWhileResponding error](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#49-additive--a-mutable-transcript-and-transcripthistory) — 17.1
 - [Pointer: watchOS 27 beta 2 has an Apple-confirmed build break, covered in the checklist's section 10](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#412-additive--watchos) — 17.1

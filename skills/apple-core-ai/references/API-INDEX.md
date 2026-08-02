@@ -1,6 +1,6 @@
 # API & symbol index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**386 symbols, of 1204 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**386 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-02; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -129,7 +129,7 @@
 | `MPSGraphAICodeCompilerDelegate` |  |  | [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `MPSGraphCompositeSampler` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) |
 | `MPSGraphExecutableExecutionDescriptor` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
-| `MTLBuffer` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
+| `MTLBuffer` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [7.README](part-07-coreai-swift-runtime/README.md) |
 | `MTLTensor` |  |  | [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [8.README](part-08-coreai-pytorch-conversion/README.md) |
 | `MTLTensorAuxiliaryPlaneDescriptor` |  |  | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [9.README](part-09-coreai-compression-numerics/README.md) +2 more |
 | `MTLTensorAuxiliaryPlaneDescriptorMap` |  |  | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) |

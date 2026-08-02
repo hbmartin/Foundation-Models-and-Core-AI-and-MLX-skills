@@ -71,8 +71,8 @@ dual-SDK builds.
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,769,
-  of which 1,410 describe a concrete silent failure), in one page, sorted by the symptom you
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,780,
+  of which 1,418 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
 - **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
   presence flags against the captured 26.5 / 27.0-beta SDK interfaces.

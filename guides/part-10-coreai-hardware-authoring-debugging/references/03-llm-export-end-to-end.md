@@ -3851,6 +3851,25 @@ Stated explicitly because all of them are in circulation:
 | Source | What it grounded |
 |---|---|
 | `apple/coreai-models` @ `5ed9981` (2026-07-23), local clone | Everything in §§1–3, 5, 7–9, 11. `python/src/coreai_models/{model_registry,llm/export,llm/eval,export/*,models/registry,models/base,primitives/*}.py`; `swift/Sources/{CoreAIShared,CoreAILanguageModels,Tools}/**`; `Package.swift`; `pyproject.toml`; `models/*/README.md` |
+
+> ⚠️ **Upstream drift, checked 2026-08-02 — the pin above is a snapshot, and upstream has moved
+> six commits past it to `49becc6` (2026-07-31).** Every `file:line` citation in this guide remains
+> correct *for `5ed9981`*, which is what the pin means. Three of the six commits land on files this
+> guide reads, so re-verify before you trust a line number against a fresh clone:
+>
+> | Commit | Date | Touches |
+> |---|---|---|
+> | `86b4c04` "Remove Deprecated LLMAsset Terminology" | 07-28 | ⚠️ **Breaking path change** — VLM export now writes `<name>/`, **not `<name>.llmasset/`** (`python/src/coreai_models/vlm/export.py`, `models/README.md`, `models/vlm/README.md`). Any script that globs `*.llmasset` breaks. |
+> | `367ad52` "New custom op for KV cache update" | 07-29 | `export/mlir_ops.py` (+337/−…), `primitives/_ops.py`, **`primitives/ios/cache.py`**, **`primitives/macos/cache.py`** — i.e. the exact files behind §627, §939 and §2011 here, and Part 7.3's cache-shape claims. |
+> | `f3e8689` "Fix compiler warnings from macOS 27 Beta 4 SDKs" | 07-31 | Swift sources; cosmetic, but confirms upstream is tracking beta 4. |
+>
+> The other three (`49becc6` guided-decoding extensions, `aa3bbf6` `--clear-coreai-cache`,
+> `c7421ba` flux2 quantization cast) are folded into
+> [Part 7.4 §7.3.1](../../part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going)
+> and [Part 7.2 §7.1](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#71-how-apples-own-tools-clear-the-cache--and-the-measurement-pattern-worth-stealing).
+> 🔴 **Not yet re-read: what `367ad52` changed about the KV-cache primitive.** That is the
+> highest-value follow-up in this file — it may invalidate the cache-shape and `seq_len_dim()`
+> claims at §627/§939.
 | `apple/coreai-models/skills/**` | §3.1, §5.4–5.7, §6.3, §7.7 — `model-authoring` + `references/{neural_engine_rules,gpu_rules,common_issues}.md`, `working-with-coreai` + `references/guidance.md`, `model-compression-exploration` |
 | `apple/coreai-torch` docs + module map | §6.6, §8.3, §8.5, §9.1 — `docs/api/{TorchConverter,TorchMetalKernel,debugging}.md`, `docs/getting-started/quickstart.ipynb`, `docs/coreai-core/tutorials/run-an-aimodel.ipynb`, `docs/guides/conversion-workflows.ipynb` |
 | `apple/coreai-optimization` source + docs | §7 — `quantization/config/quantization_config.py`, `_presets/quantizer_config.py`, `palettization/{spec,kmeans}`, `casting/`, `docs/src/quantization/config.md` |

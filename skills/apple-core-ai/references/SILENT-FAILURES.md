@@ -1,6 +1,6 @@
 # Silent-failure index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**524 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**528 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-02. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -17,9 +17,9 @@
 | [Resource growth](#resource-growth) | 11 |
 | [Precision loss](#precision-loss) | 9 |
 | [Misleading signals](#misleading-signals) | 42 |
-| [Version drift](#version-drift) | 18 |
+| [Version drift](#version-drift) | 19 |
 | [Docs vs reality](#docs-vs-reality) | 45 |
-| [API footguns](#api-footguns) | 59 |
+| [API footguns](#api-footguns) | 62 |
 | [General cautions](#general-cautions) | 121 |
 
 ## Wrong output
@@ -452,6 +452,7 @@
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
+- [coreai-models moved six commits past the pin; VLM bundles lost the .llmasset extension and the KV-cache primitives were rewritten.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 ## Docs vs reality
 
@@ -537,11 +538,14 @@
 - [minimumByteCount is a programming error while hasDynamicShape — resolve dimensions first](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
 - [preferredStrides likewise traps on an unresolved dynamic descriptor](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
 - [AssetError covers ASSET operations only — inference and cache failures throw other, mostly untyped errors](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#151-the-whole-runtime-api-on-one-screen) — 7.1
+- [PreparedModel.clearCache(at:) is coreai-models sample API keyed on a bundle path, not an AIModelCache framework method.](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#71-how-apples-own-tools-clear-the-cache--and-the-measurement-pattern-worth-stealing) — 7.2
 - [availableKinds varies by device but not by model — a present Neural Engine says nothing about your graph's eligibility](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#availablekinds--check-before-you-prefer) — 7.2
 - [Inside withUnsafeMutablePointer the shape/strides are Span<Int> — not a Sequence, so no reduce; ship a product helper](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#52-ndarraydescriptor-gives-you-the-layout-the-hardware-wants) — 7.3
 - [.aimodel and .aimodelc are directories, not files — file-oriented copy, zip and signing steps mishandle them](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#23-️-aimodel-and-aimodelc-are-directories) — 7.4
 - [autoDetectVariant calls preconditionFailure on an unrecognized bundle — it crashes rather than throwing](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#52-the-three-variants-and-how-one-is-chosen) — 7.4
 - [Engine variant is a String?, not an enum — the Variant type is private, so typos cannot be caught at compile time](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#58-choosing-an-engine-the-decision-table) — 7.4
+- [rollback() is @discardableResult and fallible; over-budget calls return false and silently leave grammar state unmoved.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
+- [fillBitmask(into:) states its buffer-size contract only in a doc comment; an undersized pointer writes out of bounds unchecked.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
 - [Sampling applies minP before topP before topK — not the order most stacks use, so identical settings sample differently](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [SamplingConfiguration.init preconditions, not throws — a topP of 0 from a config or slider crashes the app](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [DecodingType has exactly one case (.vanilla) — the factory and builder cannot select any custom decoding strategy](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#93-what-bring-your-own-sampling-strategy-actually-means) — 7.4
