@@ -6,8 +6,10 @@ agree (they previously kept byte-identical private copies).
 
 The algorithm mirrors github-slugger over the rendered heading text: lowercase,
 drop every character that is not a Unicode letter, mark, number, connector
-punctuation, space, or hyphen, then turn spaces into hyphens. GitHub does not
-collapse repeated hyphens and keeps leading and trailing ones, so a heading
+punctuation, space, or hyphen, then turn spaces into the caller-provided
+separator. Literal hyphens remain hyphens; GitHub-compatible callers pass the
+default hyphen separator. GitHub does not collapse repeated hyphens and keeps
+leading and trailing ones, so a heading
 "3. Incident — the break" anchors at #3-incident--the-break and "⚠️ Trap"
 anchors at #️-trap: the warning sign U+26A0 is dropped as a symbol while its
 variation selector U+FE0F survives as a mark.
@@ -50,6 +52,7 @@ def _render_away_emphasis(text):
 
 
 def slugify(heading, separator="-"):
+    """Slugify a heading, replacing spaces but preserving literal hyphens."""
     code_spans = []
     escaped_characters = []
 
