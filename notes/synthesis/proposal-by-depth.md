@@ -1,5 +1,9 @@
 # Proposed guide series — organized by DEPTH LAYER
 
+> **Status 2026-08-01:** historical input to the merged proposal. Its 2026-07-27 counts and open
+> questions are intentionally frozen; use the current `guides/` tree and operational notes for
+> completion state.
+
 **Lens:** app-level API → high-level frameworks → runtime internals → compiler/conversion →
 quantization math → Metal/ANE hardware.
 **Written for:** a reader who wants to genuinely understand the machine, not just call it.

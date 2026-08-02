@@ -1,24 +1,29 @@
-# What to run on a macOS 27 / Xcode 27 machine
+# What still requires macOS 27, Instruments UI, or a physical OS-27 device
 
-**Status update 2026-07-29.** The **Xcode 27.0 beta (27A5228h)** is now installed on this machine
-(host OS still macOS 26.5.2), and `scripts/dump-sdk-interfaces.sh` has captured the full 27.0
+**Status checked 2026-08-01.** **Xcode 27.0 beta 4 (`27A5228h`)**, its optional Metal Toolchain,
+and the **iOS 27.0 beta 4 simulator (`24A5390f`)** are installed. The host remains macOS 26.5.2
+(`25F84`), with Apple's 26.6 (`25G72`) update still to apply. The full simulator probe suite now
+passes (36 tests, 2 intentional skips), and `scripts/dump-sdk-interfaces.sh` has captured the 27.0
 interface set into `notes/sdk-interfaces/` — including the Core AI SubFrameworks umbrella
 (`CoreAIRuntime`, `CoreAIAsset`, `CoreAIDelegates`), the cross-import overlays
 (`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
 **Items 2, 4, 5 and 6 below are resolved and folded into the guides (2 and 6's toolchain half fell
 on 2026-07-31 when the Metal Toolchain component turned out to contain `coreai-build` and the Metal
-compiler). Items 1, 3 and 7 still genuinely need a machine (or recording target / device) *running*
-macOS 27 — the toolchain alone cannot produce them.**
+compiler). Items 1, 3, and 7 still need, respectively, a macOS 27 host, one manual Instruments GUI
+recording against the OS-27 target, or a physical OS-27 device — the toolchain alone cannot produce
+them.**
 
 Run what you can, paste the raw output back. Partial is fine — every item is independent.
 
-**Probes for these now live in `probes/`** — every behavioral item below (5's runtime residue, both halves of 7) plus the guide-level 🔴 GAPs are executable XCTest probes; see `probes/README.md` for the per-destination one-liners.
+**Probes for these live in `probes/`** — the remaining behavioral items plus the guide-level 🔴
+GAPs are executable XCTest probes; see `probes/README.md` for per-destination commands.
 
 ---
 
 ## 1. The `fm` CLI — 🔴 still open, now sharper
 
-Verified 2026-07-29: `fm` is **absent from the Xcode 27.0 beta** — `xcrun --find fm` fails and an
+Rechecked 2026-08-01: `fm` is **absent from the Xcode 27.0 beta** —
+`xcrun --no-cache --find fm` exits 72 and an
 exhaustive `find` of Xcode-beta.app returns nothing. That is *consistent* with the corpus claim
 that `fm` comes **preinstalled with macOS 27** (this host is 26.5.2, so the claim is untested, not
 false). Guide `part-05/references/02-fm-cli-and-python-sdk.md` still has no attested flag surface.
@@ -154,7 +159,7 @@ Part 11.
 ## Not needed from you
 
 Everything else is either resolved or resolvable from material already on disk. The research corpus
-is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass and
-the 2026-07-31 Metal-Toolchain pass, the three items above (1, 3, 7 — plus item 5's small runtime
-probe, now in probes/) are the residue
-that genuinely requires a running macOS 27 / an OS 27 recording target / a 27 device.
+is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass,
+the 2026-07-31 Metal-Toolchain pass, and the 2026-08-01 simulator acceptance run, items 1, 3, and 7
+are the residue
+that genuinely require a running macOS 27, an OS-27 recording target, or a physical OS-27 device.

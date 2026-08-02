@@ -1,25 +1,27 @@
 # Research index — Apple 2026 AI/ML stack sweep
 
-Index of every notes file produced by the research sweep, so this investigation can be reconstructed later.
+Index of the grounded research and synthesis files, so the investigation can be reconstructed
+later. For current operational status, start at `notes/README.md`.
 
-**Sweep date:** 2026-07-27 · **Corpus root:** `/Volumes/ExtStor/FM and MLX and CoreAI/notes/`
-**Total:** 34 research files + 4 synthesis files, ~3.6 MB
+**Initial sweep:** 2026-07-27 · **Index reconciled:** 2026-08-01 · **Corpus root:** `notes/`
+**Current total:** 37 research files + 7 synthesis files, ~5.2 MB
 **Subject matter:** WWDC 2026 / iOS 27 / macOS 27 / Xcode 27 era. **This postdates the model's training data — nothing in the guides may be written from memory.**
 
 ---
 
 ## How the sweep was structured
 
-Five parallel research fleets, each writing to one subdirectory, plus three files written by the lead agent from its own independent reading:
+Four parallel research fleets, each writing to one subdirectory, plus lead-agent grounding and
+the synthesis layer:
 
 | Fleet | Directory | Method |
 |---|---|---|
-| Transcripts | `transcripts/` | Deep-read of 16 WWDC26 session transcripts, grouped into 6 themes |
+| Transcripts | `transcripts/` | Deep-read of 23 WWDC26/Tech Talk sessions, grouped into 7 files |
 | Repos | `repos/` | Local clones read file-by-file, 16 repos + 3 issue-mining sweeps; exact snapshots are pinned[^repo-snapshot-pins] |
 | Web/docs | `web/` | Live fetches of Apple developer docs, the MLX docs site, and community blogs |
 | Forums | `forums/` | RSS captures plus live thread fetches of `developer.apple.com/forums` |
 | Lead agent | `00–02*.md` | Independent grounding, written before and alongside subagent output |
-| Synthesis | `synthesis/` | Three independent topic proposals + the merged final proposal |
+| Synthesis | `synthesis/` | Three independent topic proposals, merged plan, critique, taxonomy, and this index |
 
 **Shared provenance convention** used across every file: `VERBATIM` / `VERIFIED: path:line` for text read directly; `RECONSTRUCTED` for code reassembled from spoken narration; `UNVERIFIED` for anything not corroborated. This convention should be carried into the guides themselves.
 
@@ -35,7 +37,7 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 
 ---
 
-## `transcripts/` — WWDC26 session deep-reads (6 files, 16 sessions)
+## `transcripts/` — WWDC26 session deep-reads (7 files, 23 sessions)
 
 | File | Sessions covered | Description |
 |---|---|---|
@@ -45,12 +47,15 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 | `coreai-intro.md` | 324 "Meet Core AI"; 326 (Core AI app features / language-learning app) | Core AI positioning and runtime: `AIModelAsset`/`AIModel`/`InferenceFunction`/`NDArray`, specialization and caching, the snake-game states/KV-cache story, AOT with `coreai-build`, the multi-model app pattern and Background Assets distribution. |
 | `coreai-python-metal.md` | 325 "Dive into Core AI model authoring and optimization"; 330 "Optimize custom ML operations with Metal tensors" | The Python toolchain (`coreai-torch`, `coreai-opt`), the Core AI Debugger and sync points, model re-authoring, `TorchMetalKernel`, and the whole TensorOps layer: `matmul2d`, quantized Metal tensors, MX scale planes, cooperative tensors and FlashAttention. Cross-checked against the **Xcode 26.6 SDK headers**. |
 | `evals-mlx.md` | 298 "Meet the Evaluations framework"; 299 (agentic evaluations); 335 "Improve your prompts by hill climbing with Evaluations"; 232 (agentic AI workflows on Mac with MLX) | The complete Evaluations story — protocol, metrics, Swift Testing integration, the Xcode report, model judges, `ScoreDimension`, drift, Cohen's kappa, `SampleGenerator`, `TrajectoryExpectation` — plus the MLX local agentic stack and `mlx_lm.server`. |
+| `missing-sessions.md` | 240, 237, 233, 343, 344, 345; Tech Talk 111432 | Closure pass for the seven sessions missing from the initial corpus: App Schemas/Siri, advanced App Intents, image understanding, distributed MLX, and the M5/A19 GPU talk. Includes fetched transcripts and Apple's separately published code samples with explicit provenance tags. |
 
-> All six carry the caveat that transcripts contain **no literal on-screen code**; every code block is tagged `VERBATIM-ISH`, `RECONSTRUCTED` or `UNVERIFIED`.
+> The original six thematic files carry the caveat that transcripts contain **no literal on-screen
+> code**. `missing-sessions.md` separately distinguishes Apple's published code-sample blocks from
+> reconstruction; follow each file's local provenance tags.
 
 ---
 
-## `web/` — documentation and community sources (4 files)
+## `web/` — documentation, samples, and community sources (6 files)
 
 | File | Description |
 |---|---|
@@ -58,6 +63,8 @@ Five parallel research fleets, each writing to one subdirectory, plus three file
 | `apple-docs-coreai.md` | Complete Core AI API reference harvest (312 symbol paths). Per-type pages for `AIModel`, `AIModelAsset`, `InferenceFunction`, `InferenceFunctionDescriptor`, `InferenceValue`, `ImageDescriptor`, `ComputeStream`, `NDArray` and its four view types, the 33-case `ScalarType` enum, `InterleaveLayout` (the most detailed page in the framework), `NDArrayDescriptor`, `AIModelCache`, `SpecializationOptions`, `ComputeUnitKind`, `AssetError` — plus the seven articles (integration, specialization/caching, AOT compilation, debug gauge, Instruments, Core AI Debugger, reference-run validation). Notes that Core AI ships **zero sample code** and that `/documentation/updates/coreai` 404s. |
 | `mlx-docs-site.md` | Exhaustive crawl of `ml-explore.github.io/mlx` (MLX 0.32.0). Signatures extracted verbatim from raw HTML via a custom parser rather than WebFetch summaries. Covers arrays, lazy evaluation, unified memory, streams, `mx.compile`, function transforms, export, `mx.fast`, quantization, custom Metal/CUDA kernels, distributed collectives and backends, `mlx.nn`, and optimizers. |
 | `community-blogs.md` | Community coverage with an explicit **A–D reliability grading system**, which was the session's most important finding: the 2026 community corpus is heavily polluted with AI-generated slop that invents API names. Grade A is the independent `apple-silicon-llm-bench` harness (reproducible, raw JSONL, published fairness rules) — the source of the Core AI vs MLX, burst-vs-sustained and joules-per-token measurements. §9 documents two **fabricated** sources in detail (`.coreaimodel`, a `coreai-torch convert` CLI, "iOS 20 / macOS 17", an invented on-device LoRA training API) so nobody re-adds them. |
+| `app-intents-siri-schemas.md` | App Intents, App Schemas, on-screen awareness, entity hand-off, Spotlight indexing, and Apple-staff clarifications recovered from docs and session pages. |
+| `apple-sample-code.md` | Source-level audit of Apple's downloadable WWDC26 projects, including Origami, Book Tracker, Spotlight, generative game content, and Speech; corrections were applied through C9 in the corrections register. |
 
 ---
 
@@ -124,7 +131,10 @@ exact full commit used during research rather than at a moving default branch.[^
 | `proposal-by-framework.md` | Topic proposal organized by **framework/product line** (16 pillars, 55 topics). Strongest on per-framework completeness and on the "verified vs unverified" editorial convention. |
 | `proposal-by-task.md` | Topic proposal organized by **developer task / reader journey** (12 pillars, 56 topics). Strongest on ordering, on the five reader journeys, and on surfacing the silent-failure theme. |
 | `proposal-by-depth.md` | Topic proposal organized by **stack depth**, L0→L10 (11 pillars, 55 topics). Strongest on the vertical dependency structure and on the low-level Core AI / TensorOps material other lenses under-weighted. |
-| **`PROPOSED-GUIDE-TOPICS.md`** | **The merged, adjudicated final proposal — 50 guides in 16 parts.** Landscape summary, pillars, table of contents, per-topic detail (scope, key sections, sources, evidence strength, length, dependencies), the must-write-12 recommendation with a five-wave phasing plan, cross-cutting editorial rules, and an honest accounting of thin evidence. **This is the file to read.** |
+| **`PROPOSED-GUIDE-TOPICS.md`** | The merged, adjudicated initial plan — 50 guides in 16 parts. It is now a historical planning artifact; the 17-part `guides/` tree is authoritative. |
+| `COVERAGE-CRITIQUE.md` | Adversarial review that found the initial plan's missing non-LLM Core AI, repo, and source coverage; its accepted gaps were later closed in the guides. |
+| `SYMPTOM-TAXONOMY.md` | Canonical symptom vocabulary used by the silent-failure index and committed callout classifications. |
+| `RESEARCH-INDEX.md` | This reconstruction map and the current boundary ledger for the notes corpus. |
 
 [^repo-snapshot-pins]: The exact revisions are recorded in
     [`scripts/clone-research-repos.sh`](../../scripts/clone-research-repos.sh), including Apple
@@ -136,10 +146,19 @@ exact full commit used during research rather than at a moving default branch.[^
 
 ## Known corpus boundaries
 
-Recorded so a later pass knows what was *not* covered:
+Recorded so a later pass knows what remains outside the evidence envelope:
 
-- **Two WWDC26 sessions referenced but absent**: "Explore distributed inference and training with MLX", and the M5 machine-learning talk.
-- **App Intents / App Schemas / Siri AI sessions (240, 343, 345) are not in the corpus**, despite an 8-thread forum cluster on them.
-- **Apple's sample-code projects were never read**: Origami (dynamic profiles), Book Tracker (Evaluations, 31 KB), the generative-game-content sample, the advanced speech-to-text sample. These are the richest end-to-end examples in existence and are the highest-value cheap follow-up.
-- **Nothing was executed.** No macOS 27 machine, no Xcode 27, no 27-beta device, no Metal Toolchain. Every live-machine gap is listed in `PROPOSED-GUIDE-TOPICS.md` §6.1.
-- **The MSL bodies demoed in sessions 325 and 330** (FlashAttention, SiLU) were on screen but never read aloud, and the TensorOps sample code was not downloadable.
+- The host is still macOS 26.5.2. Xcode 27 beta 4, the optional Metal Toolchain, and an iOS 27
+  simulator are installed and exercised, but no macOS 27 host or physical OS-27 device has run the
+  remaining hardware/OS probes. The precise residue is maintained in
+  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
+- The `fm` executable is absent from both installed Xcode toolchains. Its claimed macOS-27 CLI
+  surface remains untested until the host OS changes.
+- Core AI is absent from the simulator SDK, so cache deletion semantics, device specialization,
+  ANE behavior, thermals, and physical-device context size remain device evidence gaps.
+- The six Foundation Models and Core AI Instruments lane headers still require one manual GUI
+  recording; headless `xctrace` cannot recover them on this host.
+- The MSL bodies demoed in sessions 325 and 330 (FlashAttention, SiLU) were on screen but never
+  read aloud, and the exact bodies were not downloadable.
+- Repository and defect-state evidence is snapshot-based and continues to age. Use
+  `notes/FRESHNESS-RUNBOOK.md` before treating an OPEN/CLOSED/MERGED statement as current.

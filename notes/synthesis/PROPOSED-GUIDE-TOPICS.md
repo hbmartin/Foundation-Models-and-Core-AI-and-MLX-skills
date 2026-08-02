@@ -1,8 +1,13 @@
-# Proposed guide series — Apple's 2026 AI/ML developer stack
+# Historical guide proposal — Apple's 2026 AI/ML developer stack
 
-**Merged, adjudicated topic list · 50 guides in 16 parts**
+> **Status 2026-08-01:** planning artifact, implemented and expanded. The authoritative corpus is
+> now `guides/`: 60 reference guides across 17 parts (78 Markdown pages excluding the two generated
+> indexes), with 1,354 classified Swift fences. Counts and gaps below describe the 2026-07-27
+> proposal, not current completion state.
+
+**Merged, adjudicated initial topic list · 50 guides in 16 parts**
 Final editor's synthesis of three independent proposals (by framework, by task, by depth), reconciled against the research corpus in `notes/`.
-Date: 2026-07-27 · Corpus: 34 research files, ~3.6 MB of grounded notes.
+Date: 2026-07-27 · Initial corpus: 34 research files, ~3.6 MB of grounded notes.
 
 ---
 

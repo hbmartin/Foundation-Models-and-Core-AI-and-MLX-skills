@@ -2,9 +2,14 @@
 
 Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
 Baseline for "changed?" everywhere below: Xcode 27.0 beta `27A5228h`, macOS SDK 27.0,
-host macOS 26.5.2, dumps committed in `notes/sdk-interfaces/`. Companion docs:
+host macOS 26.5.2, iOS 27 simulator runtime `24A5390f`, dumps committed in
+`notes/sdk-interfaces/`. Companion docs:
 `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` (items that need a *running* OS 27, not just
 a toolchain — this checklist covers what a toolchain drop CAN answer).
+
+> **Pending event, 2026-08-01:** macOS 26.6 build `25G72` is available while this host remains on
+> 26.5.2 build `25F84`. Run this ritual after updating the host. Xcode 27 beta 4 and the iOS 27
+> beta 4 runtime already match the recorded baseline.
 
 Every item is independent; check them off per beta. Commands are copy-pasteable from
 the repo root.
@@ -53,6 +58,8 @@ the repo root.
   ```bash
   ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification
   ```
+  `--sdk 27` is additive: it ensures target 27 is resolved and reported while marker-requested
+  26/simulator/deployment-floor targets still run. It is not a corpus filter.
   Any fence that WAS green and turns red **is the beta's snippet-level API drift**, with
   the failing symbol named by the compiler at a mapped guide line. Fold fixes into the
   guides, re-run, commit the refreshed `results.tsv` + `report.md`.
@@ -84,25 +91,29 @@ the repo root.
   ./scripts/dump-sdk-interfaces.sh            # new SDK version only
   xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
   ```
-- [ ] Re-run the runtime probes. The `probes/` package is tracked (31 probes committed in
-  `b7a9432`, extended 2026-07-31; see `probes/README.md` for the four-destination table
-  HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the healthy-baseline counts). Probes that need an
+- [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
+  four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
+  2026-08-01 healthy baselines are **43 host tests, 34 skipped, 0 failures** and **36 simulator
+  tests, 2 intentional skips, 0 failures**. Probes that need an
   OS 27 runtime `XCTSkip` on this 26.5 host, so re-run per beta on both local destinations AND
   once on a real OS 27 machine:
   ```bash
   (cd probes && swift test)
-  (cd probes && xcodebuild test -scheme Probes-Package \
+  (cd probes && DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+    xcodebuild test -scheme Probes-Package \
       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
   ```
   Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
-  beta's behavioral drift. The probes that motivated the package are documented in
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` items 5 and 7.
+  beta's behavioral drift. The remaining destination gaps are documented in
+  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
 - [ ] Re-check the GitHub defect hedges (a doc refresh usually rides a beta):
   ```bash
   ./scripts/refresh-defect-statuses.sh > /tmp/defect-report.md   # full report
   ./scripts/refresh-defect-statuses.sh --changed-only            # just the edits needed
   ```
-  Work the STATE-CHANGED rows into the guides by hand; the script never edits.
+  Human-review every `STATE-CHANGED` row against its cited sentence before editing. The
+  2026-08-01 sweep exposed same-paragraph state-language leakage for five already-correct claims;
+  see `notes/FRESHNESS-RUNBOOK.md` §1. The script never edits guides.
 - [ ] After guide edits, rebuild the indexes. Per the header of
   `scripts/build-indexes.sh`: re-run `python3 scripts/extract-callouts.py`, then
   **classify any NEW ⚠️ callout rows by hand** (symptom ids per
@@ -207,7 +218,7 @@ line ~271; related gap at line ~458).
   grep -rn 'TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET' "$MPP" | head    # new gate macros = new ladder rung
   grep -rln 'e2m1\|e4m3\|e5m2' "$MPP"                              # do the fp4/fp8 rows reach conv2d files?
   ```
-- [ ] ~~Also still pending on THIS machine (NEEDED item 6): the `static_slice` and `-std=metal`
+- [x] ~~Also still pending on THIS machine (NEEDED item 6): the `static_slice` and `-std=metal`
   questions in guide 11.1.~~ **Resolved 2026-07-31** (NEEDED item 6: `static_slice` does not
   exist — the real API is `slice<...>`; the tensor macros are `-std`-gated, measured per version)
   and folded into guide 11.1. Per beta, only re-check that the compiler's answers hold.
