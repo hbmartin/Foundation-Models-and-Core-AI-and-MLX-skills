@@ -1,0 +1,91 @@
+site_name: Apple AI Guides
+site_description: Independent, evidence-backed guides to Foundation Models, Core AI, MLX, Evaluations, Speech, and Metal.
+site_url: https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/
+repo_url: https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills
+repo_name: hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills
+
+docs_dir: guides
+site_dir: .build/mkdocs-site
+use_directory_urls: true
+strict: true
+
+hooks:
+  - scripts/mkdocs_hooks.py
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+  font: false
+  icon:
+    logo: material/layers-triple
+    menu: material/menu
+    repo: fontawesome/brands/github
+    search: material/magnify
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.tracking
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme)"
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Use system appearance
+
+plugins:
+  - material/search
+
+markdown_extensions:
+  - attr_list
+  - footnotes
+  - md_in_html
+  - sane_lists
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+      toc_depth: 2-4
+      title: On this page
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/stylesheets/docc.css
+
+extra:
+  repository_branch: main
+  header_links:
+    - title: Guides
+      url: .
+    - title: API Index
+      url: API-INDEX/
+    - title: Silent Failures
+      url: SILENT-FAILURES/
+    - title: GitHub
+      url: https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills

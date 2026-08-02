@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block header %}
+  <header class="md-header docc-header" data-md-component="header">
+    <div class="docc-masthead">
+      <div class="docc-masthead__inner">
+        <a class="docc-wordmark" href="{{ nav.homepage.url | url }}" aria-label="Apple AI Guides home">
+          <span class="docc-wordmark__mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span>Apple AI Guides</span>
+        </a>
+        <nav class="docc-global-nav" aria-label="Global navigation">
+          {% for link in config.extra.header_links %}
+            <a href="{{ link.url | url }}">{{ link.title }}</a>
+          {% endfor %}
+        </nav>
+        <div class="docc-masthead__controls">
+          {% if config.theme.palette and not config.theme.palette is mapping %}
+            {% include "partials/palette.html" %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="docc-context-bar">
+      <div class="docc-context-bar__product">
+        <span>Apple on-device AI</span>
+        <label class="docc-drawer-button md-icon" for="__drawer" aria-label="Open documentation navigator">
+          {% include ".icons/material/menu.svg" %}
+        </label>
+      </div>
+      <nav class="docc-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{{ nav.homepage.url | url }}">Documentation</a>
+        {% for ancestor in page.ancestors | reverse %}
+          <span aria-hidden="true">/</span>
+          {% if ancestor.url %}
+            <a href="{{ ancestor.url | url }}">{{ ancestor.title }}</a>
+          {% else %}
+            <span>{{ ancestor.title }}</span>
+          {% endif %}
+        {% endfor %}
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">
+          {% if page.is_homepage %}Apple on-device AI{% else %}{{ page.title }}{% endif %}
+        </span>
+      </nav>
+      <div class="docc-language-label">Languages: <strong>Swift · Python · Metal</strong></div>
+      <label class="docc-mobile-search md-icon" for="__search" aria-label="Search documentation">
+        {% include ".icons/material/magnify.svg" %}
+      </label>
+    </div>
+
+    <div class="docc-search-surface">
+      {% include "partials/search.html" %}
+    </div>
+    {% if config.theme.palette and not config.theme.palette is mapping %}
+      {% include "partials/javascripts/palette.html" %}
+    {% endif %}
+  </header>
+
+  <label class="docc-filter-launch" for="__search">
+    <span class="docc-filter-launch__icon md-icon" aria-hidden="true">
+      {% include ".icons/material/filter-variant.svg" %}
+    </span>
+    <span>Filter</span>
+    <kbd>/</kbd>
+  </label>
+{% endblock %}
+
+{% block hero %}
+  {% if page.is_homepage %}
+    <section class="docc-hero" aria-labelledby="docc-hero-title">
+      <div class="docc-hero__inner">
+        <div class="docc-hero__copy">
+          <p class="docc-hero__eyebrow">Developer guide series</p>
+          <h1 id="docc-hero-title">Apple on-device AI</h1>
+          <p>Foundation Models, Core AI, MLX, Evaluations, Speech, and Metal—from first API call to shipping on device.</p>
+        </div>
+        <div class="docc-hero__mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block footer %}{% endblock %}
