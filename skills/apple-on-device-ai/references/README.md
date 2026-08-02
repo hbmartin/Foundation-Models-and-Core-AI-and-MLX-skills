@@ -51,7 +51,7 @@ a Swift app.
 
 <div class="docc-topic-card" markdown>
 
-**[Debug something that fails silently](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md)**
+**[Debug something that fails silently](SILENT-FAILURES.md)**
 
 The silent-failure index, sorted by the symptom you observe: wrong output, empty output,
 performance cliff, version drift.
@@ -71,10 +71,10 @@ dual-SDK builds.
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md)** — every warning callout in the series (1,769,
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,769,
   of which 1,410 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
-- **[The API & symbol index](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
+- **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
   presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
 
 ---
@@ -146,8 +146,8 @@ All 60 reference guides, by part. Each part's `README.md` is the entry point and
 its references you actually need.
 
 **[Part 1 — Orientation and gating](part-01-orientation-and-gating/README.md)**
-- [The 2026 Apple AI stack, and how to choose a model backend](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md)
-- [Every version, hardware, entitlement and runtime-surface gate](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md)
+- [The 2026 Apple AI stack, and how to choose a model backend](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md)
+- [Every version, hardware, entitlement and runtime-surface gate](part-01-orientation-and-gating/references/02-platform-and-version-gating.md)
 
 **[Part 2 — Foundation Models: the everyday API](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/README.md)**
 - [`LanguageModelSession` end to end](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md)

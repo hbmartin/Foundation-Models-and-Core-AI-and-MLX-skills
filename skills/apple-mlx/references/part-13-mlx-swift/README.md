@@ -54,27 +54,27 @@ Four things make MLX-in-Swift harder than "add a package and call `generate`."
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The sample code I found doesn't compile" | [13.1 §1, §2.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full) | It is 2.x. The migration table is there |
-| "First build fails and I don't know which products to link" | [13.1 §2–§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#2-the-package-nine-products-what-each-is-for) | Nine products, **three integration styles**; §3.5 decides for you |
-| `ModelFactoryError.noModelFactoryAvailable` | [13.1 §4.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#42-the-factory-registry-and-the-error-you-will-hit-first) · [13.3 §3.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#33-️-silent-failure-almost-nomodelfactoryavailable) | You linked `MLXLMCommon` but not `MLXLLM`/`MLXVLM`; the registry uses `NSClassFromString` |
-| "cannot find `MLXLanguageModel` in scope" | [13.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#1--the-two-gates-and-the-four-cell-matrix) · [13.1 §9.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#91-the-gate) | You are on the 26 SDK. The target compiled to an empty library |
-| "It is killed on device with no crash report" | [13.1 §6.7–§6.8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#67-what-jetsam-looks-like-and-how-to-see-it-coming) | Jetsam. `Memory.snapshot()` reports MLX's allocator, not `phys_footprint` |
-| "It crashes when the app backgrounds mid-generation" | [13.1 §5.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#56-cancellation--and-the-ios-crash-it-prevents) | A Metal command-buffer error on a completion handler Swift cannot catch |
-| "The VLM describes a rotated scene" · "VLM prefill OOMs" | [13.1 §7.4, §7.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) | EXIF orientation; merged-sequence attention growing as (Σ Lᵢ)² |
-| "My 'waiting for first token' spinner never stops" | [13.2 §2.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#25-the-stream-event-types) | The first stream element can be `.toolCall` with **zero** `.chunk` events |
-| "The model recites a function call at the user" | [13.2 §7.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) | `ToolCallFormat.infer` returned `nil`, the loop assumed `.json` |
-| "Output is fluent but subtly worse than it should be" | [13.2 §6.4–§6.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it) | The chat template is the contract and nothing checks it |
-| "I set `kvBits` and memory didn't drop" · "quality collapses mid-generation" | [13.2 §8.5, §9.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) | `RotatingKVCache.toQuantized()` is never called; and `#312` |
-| "Speculative decoding gives wrong answers on Gemma" | [13.2 §9.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#92-speculativetokeniterator-discards-trimpromptcaches-return-value) | `#424` — generation continues on tokens that were never emitted |
-| "Where *is* `MLXFoundationModels`?" | [13.3, opening](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) | Answered in the first paragraph, because forum thread 836264 asked |
-| "`session.prewarm()` does nothing" · "usage is zero" | [13.3 §7.6, §8.8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#76-️-silent-failure-the-prewarm-witness-must-match-exactly) | A witness that didn't bind; and a deliberately-dropped channel send |
-| "I want `@Generable`-style JSON on iOS 17" | [13.3 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#9--mlxguidedgeneration-from-json-schema-to-token-mask) | `MLXGuidedGeneration` is standalone — no Foundation Models, no 27 floor |
+| "The sample code I found doesn't compile" | [13.1 §1, §2.6](references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full) | It is 2.x. The migration table is there |
+| "First build fails and I don't know which products to link" | [13.1 §2–§3](references/01-mlx-swift-lm-in-an-app.md#2-the-package-nine-products-what-each-is-for) | Nine products, **three integration styles**; §3.5 decides for you |
+| `ModelFactoryError.noModelFactoryAvailable` | [13.1 §4.2](references/01-mlx-swift-lm-in-an-app.md#42-the-factory-registry-and-the-error-you-will-hit-first) · [13.3 §3.3](references/03-fm-bridge-and-guided-generation.md#33-️-silent-failure-almost-nomodelfactoryavailable) | You linked `MLXLMCommon` but not `MLXLLM`/`MLXVLM`; the registry uses `NSClassFromString` |
+| "cannot find `MLXLanguageModel` in scope" | [13.3 §1](references/03-fm-bridge-and-guided-generation.md#1--the-two-gates-and-the-four-cell-matrix) · [13.1 §9.1](references/01-mlx-swift-lm-in-an-app.md#91-the-gate) | You are on the 26 SDK. The target compiled to an empty library |
+| "It is killed on device with no crash report" | [13.1 §6.7–§6.8](references/01-mlx-swift-lm-in-an-app.md#67-what-jetsam-looks-like-and-how-to-see-it-coming) | Jetsam. `Memory.snapshot()` reports MLX's allocator, not `phys_footprint` |
+| "It crashes when the app backgrounds mid-generation" | [13.1 §5.6](references/01-mlx-swift-lm-in-an-app.md#56-cancellation--and-the-ios-crash-it-prevents) | A Metal command-buffer error on a completion handler Swift cannot catch |
+| "The VLM describes a rotated scene" · "VLM prefill OOMs" | [13.1 §7.4, §7.7](references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) | EXIF orientation; merged-sequence attention growing as (Σ Lᵢ)² |
+| "My 'waiting for first token' spinner never stops" | [13.2 §2.5](references/02-generation-tools-and-caching.md#25-the-stream-event-types) | The first stream element can be `.toolCall` with **zero** `.chunk` events |
+| "The model recites a function call at the user" | [13.2 §7.5](references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) | `ToolCallFormat.infer` returned `nil`, the loop assumed `.json` |
+| "Output is fluent but subtly worse than it should be" | [13.2 §6.4–§6.5](references/02-generation-tools-and-caching.md#64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it) | The chat template is the contract and nothing checks it |
+| "I set `kvBits` and memory didn't drop" · "quality collapses mid-generation" | [13.2 §8.5, §9.1](references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) | `RotatingKVCache.toQuantized()` is never called; and `#312` |
+| "Speculative decoding gives wrong answers on Gemma" | [13.2 §9.2](references/02-generation-tools-and-caching.md#92-speculativetokeniterator-discards-trimpromptcaches-return-value) | `#424` — generation continues on tokens that were never emitted |
+| "Where *is* `MLXFoundationModels`?" | [13.3, opening](references/03-fm-bridge-and-guided-generation.md) | Answered in the first paragraph, because forum thread 836264 asked |
+| "`session.prewarm()` does nothing" · "usage is zero" | [13.3 §7.6, §8.8](references/03-fm-bridge-and-guided-generation.md#76-️-silent-failure-the-prewarm-witness-must-match-exactly) | A witness that didn't bind; and a deliberately-dropped channel send |
+| "I want `@Generable`-style JSON on iOS 17" | [13.3 §9](references/03-fm-bridge-and-guided-generation.md#9--mlxguidedgeneration-from-json-schema-to-token-mask) | `MLXGuidedGeneration` is standalone — no Foundation Models, no 27 floor |
 
 ---
 
 ## The guides in this part
 
-### [13.1 — `mlx-swift-lm` in an app: setup, concurrency, memory, and media input](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md)
+### [13.1 — `mlx-swift-lm` in an app: setup, concurrency, memory, and media input](references/01-mlx-swift-lm-in-an-app.md)
 
 The "make it survive contact with an iPhone" guide, in the order things hurt: the 3.x break and the
 nine products; the **three integration styles** for tokenizers and downloaders (implement the
@@ -102,9 +102,9 @@ building against both the 26 and 27 SDKs. §10 is a failure catalogue plus a pre
 > actually does (leave it `false`), and whether `GPU.set(cacheLimit:)` survives as a deprecated
 > alias — write `Memory.cacheLimit`.
 
-### [13.2 — Generation, tool calling, and KV cache management in Swift](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md)
+### [13.2 — Generation, tool calling, and KV cache management in Swift](references/02-generation-tools-and-caching.md)
 
-Deliberately structured to mirror [Part 12 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md)
+Deliberately structured to mirror [Part 12 guide 04](../part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md)
 so you can move between the languages, naming the Python spelling wherever one corresponds — and
 calling out every place it doesn't, because each of those divergences has produced a real bug.
 `generate` / `generateTokens` / `generateTask` / `ChatSession` and the `TokenIterator` underneath;
@@ -136,7 +136,7 @@ explains why an upstream fix takes four tag bumps to reach your app.
 > is not one of the ten, parse it yourself outside the loop (§7.8 remedy d). Also open: cross-language
 > prompt-cache round-tripping, and the accept/reject arithmetic inside `SpeculativeTokenIterator`.
 
-### [13.3 — `MLXFoundationModels` and `MLXGuidedGeneration`: backing `LanguageModelSession` with an MLX model](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md)
+### [13.3 — `MLXFoundationModels` and `MLXGuidedGeneration`: backing `LanguageModelSession` with an MLX model](references/03-fm-bridge-and-guided-generation.md)
 
 Opens by answering the question a developer asked on forum thread **836264** after seeing
 `import MLXFoundationModels` on a WWDC26 session-339 slide: it is a library target in the package,
@@ -180,31 +180,31 @@ binary (e.g. CoreAI's prebuilt copy)."*
 
 ## Reading order
 
-**Everyone starts at [13.1 §1–§4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full).** The 3.x break, the
+**Everyone starts at [13.1 §1–§4](references/01-mlx-swift-lm-in-an-app.md#1-the-3x-version-warning-in-full).** The 3.x break, the
 product list, the three integration styles and model loading are the vocabulary the other two guides
 assume, and getting §3 wrong is the single most common reason a first build fails. Then **§6, in
 full, before you write a feature** — memory is what decides whether the app ships, and every number
 in it is a device number.
 
 **Then branch by what you are building.** *Driving MLX directly:* go to
-[13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md) — §2–§4 make it work, §6 makes it correct
+[13.2](references/02-generation-tools-and-caching.md) — §2–§4 make it work, §6 makes it correct
 (read §6.4 even if you skip everything else), §7 only if you call tools, §8–§9 only when memory or
 long conversations become a problem. *Putting an MLX model behind `LanguageModelSession`:* go
-straight to [13.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) after 13.1 §1–§4 — §1 (the two
+straight to [13.3](references/03-fm-bridge-and-guided-generation.md) after 13.1 §1–§4 — §1 (the two
 gates), §3 (setup), §6 (capabilities) and §7 (availability) are the ones you cannot skip, and §8's
 file-by-file walk doubles as the checklist for
 [Part 4 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md).
 
-**Read two out of order.** [13.1 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#9-sdk-compatibility-macos-26-and-27-in-one-build) before you configure
+**Read two out of order.** [13.1 §9](references/01-mlx-swift-lm-in-an-app.md#9-sdk-compatibility-macos-26-and-27-in-one-build) before you configure
 CI, because the 26-versus-27 SDK question decides your build matrix and cannot be papered over with
-`@available`. And [13.3 §11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#11--the-constraint-guided-generation-needs-logits) before you pick a
+`@available`. And [13.3 §11](references/03-fm-bridge-and-guided-generation.md#11--the-constraint-guided-generation-needs-logits) before you pick a
 backend, because "does this engine expose logits" is the question that decides whether `@Generable`
 works at all.
 
-**Deferrable.** [13.1 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#7-media-input-for-vlms) unless you ship a VLM;
-[13.2 §9–§10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#9-two-real-swift-side-cache-bugs) unless you enable KV quantization,
+**Deferrable.** [13.1 §7](references/01-mlx-swift-lm-in-an-app.md#7-media-input-for-vlms) unless you ship a VLM;
+[13.2 §9–§10](references/02-generation-tools-and-caching.md#9-two-real-swift-side-cache-bugs) unless you enable KV quantization,
 speculative decoding, or need an embedder in-process; all of
-[13.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) if you are on Xcode 26 — except **§9**,
+[13.3](references/03-fm-bridge-and-guided-generation.md) if you are on Xcode 26 — except **§9**,
 which is `MLXGuidedGeneration` and has no 27 floor at all, so grammar-constrained JSON is available
 to you on iOS 17 without Foundation Models anywhere in the picture.
 
@@ -215,7 +215,7 @@ to you on iOS 17 without Foundation Models anywhere in the picture.
 - **Porting a model architecture to Swift.** `@ModuleInfo`/`@ParameterInfo` conventions,
   `sanitize(weights:)`, the canonical attention body, and trace-and-compare debugging against Python
   live in the package's own `Documentation.docc/porting.md` (777 lines) and
-  `skills/mlx-swift-lm/references/model-porting.md`. [13.1 §10.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#104-where-to-go-next)
+  `skills/mlx-swift-lm/references/model-porting.md`. [13.1 §10.4](references/01-mlx-swift-lm-in-an-app.md#104-where-to-go-next)
   points you at both. **LoRA / DoRA on device** (`LoRAContainer`, `LoRATrain`) is likewise out of
   scope here.
 - **The `LanguageModel` protocol taught abstractly**, the executor store, and choosing among the five

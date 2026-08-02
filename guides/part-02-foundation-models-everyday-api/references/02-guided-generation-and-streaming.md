@@ -764,8 +764,8 @@ break out yourself; do not assume the corrective string converges.
 text, verbatim:
 
 ```
-You can ONLY call the tool getCityInfo for the these cities: "London", 
-"Paris", "New York". For questions about all other cities you MUST tell 
+You can ONLY call the tool getCityInfo for the these cities: "London",
+"Paris", "New York". For questions about all other cities you MUST tell
 the user "Sorry, I can't look up that city."
 ```
 
@@ -891,9 +891,9 @@ func call(arguments: GeneratedContent) async throws -> Prompt {
       rawContent: arguments.jsonString,
       debugDescription: """
         Model attempted to toggle a skill named '\(name)', \
-        but no matching skill was found. 
+        but no matching skill was found.
 
-        Available skills: 
+        Available skills:
         \(skills.map(\.name).joined(separator: "\n"))
         """
     )
@@ -2337,13 +2337,13 @@ do {
 
     }
 } catch let error as LanguageModelError {
-   
+
 } catch let error as LanguageModelSession.Error {
 
 } catch let error as LanguageModelSession.GenerationError {
    // Deprecated in 27.0
 } catch {
-    
+
 }
 ```
 

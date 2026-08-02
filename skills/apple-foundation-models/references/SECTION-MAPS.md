@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, `prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`, `Response.usage`, and the six-case `Transcript` data model.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md)
 
 | Section | Anchor |
 |---|---|
@@ -40,7 +40,7 @@ The foundational guide: every initializer form, `Instructions`/`Prompt` and thei
 
 What the `@Generable` macro synthesises, every `@Guide` form with evidence, the guide-to-type compatibility matrix, runtime schemas, `GeneratedContent`, and why streaming gives you *snapshots* rather than deltas (you assign, never append).
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md)
 
 | Section | Anchor |
 |---|---|
@@ -65,7 +65,7 @@ What the `@Generable` macro synthesises, every `@Guide` form with evidence, the 
 
 `Tool` member by member; the `@Generable` arguments struct as the contract between model and tool (and why Apple's own evaluation sample makes every argument optional); writing descriptions that say *when* rather than *what*; the six-entry anatomy of one tool-using turn; `toolCallingMode` in both places it can be set, with the precedence rule; transcript rollback on a thrown tool error and `TranscriptErrorHandlingPolicy`.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md)
 
 | Section | Anchor |
 |---|---|
@@ -91,7 +91,7 @@ What the `@Generable` macro synthesises, every `@Guide` form with evidence, the 
 
 Apple's answer to "RAG on device without a vector database": the model writes and executes queries against your own Core Spotlight index.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md)
 
 | Section | Anchor |
 |---|---|
@@ -120,7 +120,7 @@ Apple's answer to "RAG on device without a vector database": the model writes an
 
 `Attachment` and every source it accepts, the `orientation:` parameter, labels and `ImageReference` for keying structured output back to specific images, the transcript types images become, and which backends accept images at all.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md)
 
 | Section | Anchor |
 |---|---|
@@ -145,7 +145,7 @@ Apple's answer to "RAG on device without a vector database": the model writes an
 
 The largest guide in the part, organised as symptom → cause → fix across five failure planes.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md>
+**Local reference:** [part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md)
 
 | Section | Anchor |
 |---|---|
@@ -171,7 +171,7 @@ The largest guide in the part, organised as symptom → cause → fix across fiv
 
 The conceptual spine: the six `Transcript.Entry` cases and what each costs, `contextSize` and `tokenCount(for:)`, `Usage` and the cache-hit rate, overflow recovery in both the 26.0 and 27.0 idioms, and then the KV material — token layout, the blast-radius table, the ordering rule for `DynamicInstructions`, stateless shape-preserving transforms, and why you batch one big consolidation instead of trimming every turn.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md>
+**Local reference:** [part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md)
 
 | Section | Anchor |
 |---|---|
@@ -197,7 +197,7 @@ The conceptual spine: the six `Transcript.Entry` cases and what each costs, `con
 
 The flagship 2026 API, built around the projection framing above.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md>
+**Local reference:** [part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md)
 
 | Section | Anchor |
 |---|---|
@@ -226,7 +226,7 @@ The flagship 2026 API, built around the projection framing above.
 
 An audit of Apple's separately-versioned experimental package — two commits, issues disabled, no CI — and the two feature areas that change how you think about a transcript.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md>
+**Local reference:** [part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md)
 
 | Section | Anchor |
 |---|---|
@@ -260,7 +260,7 @@ An audit of Apple's separately-versioned experimental package — two commits, i
 
 Apple named two orchestration patterns — collaboration versus consultation — and then shipped a sample that uses neither literally, so this guide separates the verified narration from the reconstructed code and says which is which at every listing.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/04-agentic-orchestration.md>
+**Local reference:** [part-03-context-profiles-agentic/references/04-agentic-orchestration.md](part-03-context-profiles-agentic/references/04-agentic-orchestration.md)
 
 | Section | Anchor |
 |---|---|
@@ -286,7 +286,7 @@ Apple named two orchestration patterns — collaboration versus consultation —
 
 Apple's server model behind a one-line swap: 32K context, three reasoning levels, no API keys, no token cost to you, and Foundation Models on watchOS for the first time *because* the inference is remote.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md>
+**Local reference:** [part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md)
 
 | Section | Anchor |
 |---|---|
@@ -313,7 +313,7 @@ Apple's server model behind a one-line swap: 32K context, three reasoning levels
 
 The consumer side of bringing your own model, with real initializers rather than demo lines.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md>
+**Local reference:** [part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md)
 
 | Section | Anchor |
 |---|---|
@@ -336,7 +336,7 @@ The consumer side of bringing your own model, with real initializers rather than
 
 The best-evidenced deep topic in the series, because Apple ships an **815-line agent skill** on exactly this question plus **two complete worked conformances you can read line by line**.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md>
+**Local reference:** [part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
 
 | Section | Anchor |
 |---|---|
@@ -365,7 +365,7 @@ The best-evidenced deep topic in the series, because Apple ships an **815-line a
 
 The mechanics that decide whether a provider is fast or slow and — more often than expected — whether it is *correct*.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md>
+**Local reference:** [part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md)
 
 | Section | Anchor |
 |---|---|
@@ -392,7 +392,7 @@ The mechanics that decide whether a provider is fast or slow and — more often 
 
 Three tools used in a fixed order.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md>
+**Local reference:** [part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md)
 
 | Section | Anchor |
 |---|---|
@@ -420,7 +420,7 @@ Three tools used in a fixed order.
 
 Two products, two floors, and — unusually — two opposite evidence classes, which the guide flags in its own opening.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md>
+**Local reference:** [part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)
 
 | Section | Anchor |
 |---|---|

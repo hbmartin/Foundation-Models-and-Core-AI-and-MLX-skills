@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The map, and the decision it replaced.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md>
+**Local reference:** [part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md)
 
 | Section | Anchor |
 |---|---|
@@ -34,7 +34,7 @@ The map, and the decision it replaced.
 
 The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring for FoundationModels, Core AI, Evaluations, Speech and TensorOps, the SDK-versus-runtime distinction that `@available` cannot paper over, the Apple Intelligence hardware floor (A17 Pro / M1 / M2) and the **two on-device model tiers** that split by device from the fall Siri release, four first-party packages with four different version floors, the PCC entitlement and its three conditions, and the full `availability` / quota / locale runtime surface.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md>
+**Local reference:** [part-01-orientation-and-gating/references/02-platform-and-version-gating.md](part-01-orientation-and-gating/references/02-platform-and-version-gating.md)
 
 | Section | Anchor |
 |---|---|

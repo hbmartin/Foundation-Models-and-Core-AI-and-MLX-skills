@@ -36,6 +36,8 @@ on:
       - 'scripts/tests/test_skills.py'
       - '.github/workflows/skills.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '17 8 * * 1'
 
 permissions:
   contents: read
@@ -68,21 +70,32 @@ jobs:
       - name: Verify the committed tree
         run: python3 scripts/verify-skills.py --skills skills
 
+      - name: Validate against the Agent Skills reference implementation
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -euo pipefail
+          validator="$RUNNER_TEMP/skills-ref"
+          python3 -m venv "$validator"
+          "$validator/bin/pip" install --disable-pip-version-check skills-ref==0.1.1
+          for skill in skills/*/; do
+            "$validator/bin/agentskills" validate "$skill"
+          done
+
       # Skipped on pull requests from forks. Every step above runs only
       # repository-controlled Python; this one downloads and executes a package
       # tree from npm, and there is no reason to hand that to a PR the
       # maintainers have not read yet. The steps that decide correctness — the
       # generator tests and verify-skills.py — still run on fork PRs, so a fork
       # gets real feedback; only the install proof waits for a maintainer.
-      - name: Install with the real CLI and compare against the committed tree
+      - name: Install for Codex and Claude Code with the pinned CLI
         if: >-
           github.event_name != 'pull_request' ||
           github.event.pull_request.head.repo.full_name == github.repository
         timeout-minutes: 6
         run: |
           set -euo pipefail
-          project="$(mktemp -d)"
-          cd "$project"
           # Pinned, because the byte-identical diff below makes this CLI's copy
           # semantics decide pass/fail: on @latest a layout change upstream would
           # fail CI on skills that are perfectly valid, and a green run could not
@@ -92,17 +105,55 @@ jobs:
           # the registry on every run — enough to stop an upstream release from
           # turning CI red overnight, short of the lockfile or vendored copy true
           # determinism would need.
-          npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" --agent claude-code --all -y
-          # The CLI stores one copy under .agents/skills and symlinks the
-          # agent-specific directory at it, so resolve through the link.
-          test -f .claude/skills/apple-mlx/SKILL.md
-          test -f .claude/skills/apple-mlx/references/SILENT-FAILURES.md
-          test -d .claude/skills/apple-core-ai/references/part-07-coreai-swift-runtime
-          for skill in "$GITHUB_WORKSPACE"/skills/*/; do
-            name="$(basename "$skill")"
-            diff -r "$skill" ".claude/skills/$name"
+          for agent in codex claude-code; do
+            project="$(mktemp -d)"
+            cd "$project"
+            npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" \
+              --skill '*' --agent "$agent" --copy -y
+            if [ "$agent" = codex ]; then
+              installed="$project/.agents/skills"
+            else
+              installed="$project/.claude/skills"
+            fi
+            test -f "$installed/apple-mlx/SKILL.md"
+            test -f "$installed/apple-mlx/agents/openai.yaml"
+            test -f "$installed/apple-mlx/evals/eval_queries.json"
+            test -f "$installed/apple-mlx/references/part-12-mlx-python/references/01-core-fundamentals.md"
+            for skill in "$GITHUB_WORKSPACE"/skills/*/; do
+              name="$(basename "$skill")"
+              diff -r "$skill" "$installed/$name"
+            done
+            echo "Installed $(find "$installed" -mindepth 1 -maxdepth 1 -type d | wc -l) byte-identical skills for $agent"
           done
-          echo "Installed $(ls .claude/skills | wc -l) skills, byte-identical to the repository"
 
       - name: Verify the guides were not modified
         run: git diff --exit-code -- guides
+
+  latest-cli-canary:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Exercise the latest skills CLI without changing the pinned gate
+        run: |
+          set -euo pipefail
+          for agent in codex claude-code; do
+            project="$(mktemp -d)"
+            cd "$project"
+            npx -y skills@latest add "$GITHUB_WORKSPACE" \
+              --skill '*' --agent "$agent" --copy -y
+            if [ "$agent" = codex ]; then
+              installed="$project/.agents/skills"
+            else
+              installed="$project/.claude/skills"
+            fi
+            for skill in "$GITHUB_WORKSPACE"/skills/*/; do
+              name="$(basename "$skill")"
+              diff -r "$skill" "$installed/$name"
+            done
+          done

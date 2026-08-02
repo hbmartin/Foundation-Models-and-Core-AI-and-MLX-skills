@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The operational guide for how a model reaches a device and how it gets replaced later: the size problem, the feature-introduction screen (which does three jobs at once and is where you hide specialization latency), delivery, `coreai-build compile` and per-architecture `.aimodelc` variants, specialization and its cache, the update sequence, storage hygiene, app groups, and the App Store reality.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md>
+**Local reference:** [part-15-shipping-and-operating/references/01-model-distribution-and-updates.md](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md)
 
 | Section | Anchor |
 |---|---|
@@ -38,7 +38,7 @@ The operational guide for how a model reaches a device and how it gets replaced 
 
 The gap between a demo that works on your desk and an app that survives a week on someone else's phone.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md>
+**Local reference:** [part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md)
 
 | Section | Anchor |
 |---|---|

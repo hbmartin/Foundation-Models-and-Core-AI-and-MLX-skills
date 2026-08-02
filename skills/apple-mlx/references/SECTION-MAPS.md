@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The conceptual primer the other five assume, built on five ideas: unified memory (you never move arrays, you choose per-op *which device runs it*), lazy evaluation, the composable function transforms (`grad`, `vjp`, `jvp`, `vmap`, `checkpoint`, `custom_function`, `compile` — each returns something the others can transform again), what `mx.compile` fuses and what makes it recompile, and `nn.Module` as a plain parameter tree that is a `dict` subclass, not a PyTorch module respelled.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md>
+**Local reference:** [part-12-mlx-python/references/01-core-fundamentals.md](part-12-mlx-python/references/01-core-fundamentals.md)
 
 | Section | Anchor |
 |---|---|
@@ -38,7 +38,7 @@ The conceptual primer the other five assume, built on five ideas: unified memory
 
 Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md>
+**Local reference:** [part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md)
 
 | Section | Anchor |
 |---|---|
@@ -62,7 +62,7 @@ Where MLX stops being a portable array library and becomes a program on one spec
 
 Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather tile constant of `BK = 64`), and a calibration procedure.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md>
+**Local reference:** [part-12-mlx-python/references/03-quantization.md](part-12-mlx-python/references/03-quantization.md)
 
 | Section | Anchor |
 |---|---|
@@ -90,7 +90,7 @@ Quantization in MLX is four things wearing one name: a numeric format (affine at
 
 The layer where MLX becomes an LLM runtime: **18 command-line entry points** enumerated from `setup.py`; the Python generation API (`load`, `generate`, `stream_generate`, and the `generate_step` generator underneath, with how samplers and logits processors compose and where their defaults disagree); and the deepest treatment in this part — **nine concrete KV-cache classes**, the trimmability contract everything else rests on, prompt caching to disk, quantized KV (which can *increase* peak memory), speculative decoding and continuous batching.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md>
+**Local reference:** [part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md)
 
 | Section | Anchor |
 |---|---|
@@ -115,7 +115,7 @@ The layer where MLX becomes an LLM runtime: **18 command-line entry points** enu
 
 Two halves.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md>
+**Local reference:** [part-12-mlx-python/references/05-serving-and-distributed.md](part-12-mlx-python/references/05-serving-and-distributed.md)
 
 | Section | Anchor |
 |---|---|
@@ -155,7 +155,7 @@ Two halves.
 
 Opens with the frame (§0): **custom Foundation Models adapters are discontinued in OS 27**, per two independent Apple-staff forum statements, with the Adapter Training Toolkit stopping at 26.0.0 — which leaves MLX's LoRA/DoRA as the surviving adaptation path.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md>
+**Local reference:** [part-12-mlx-python/references/06-finetuning-and-porting-models.md](part-12-mlx-python/references/06-finetuning-and-porting-models.md)
 
 | Section | Anchor |
 |---|---|
@@ -184,7 +184,7 @@ Opens with the frame (§0): **custom Foundation Models adapters are discontinued
 
 The "make it survive contact with an iPhone" guide, in the order things hurt: the 3.x break and the nine products; the **three integration styles** for tokenizers and downloaders (implement the protocols, use an integration package, or use the `MLXHuggingFace` macros) with a decision in §3.5; `ModelContainer`/`ModelContext`, download progress and exactly where weights land; concurrency — why `ModelContainer` is *not* an actor, why `MLXArray` is not `Sendable`, what `SendableBox` is for; **memory**, the longest section and the one that decides whether you ship; VLM media input; and building against both the 26 and 27 SDKs.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md>
+**Local reference:** [part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md)
 
 | Section | Anchor |
 |---|---|
@@ -207,9 +207,9 @@ The "make it survive contact with an iPhone" guide, in the order things hurt: th
 
 ### 13.2 — Generation, tool calling, and KV cache management in Swift
 
-Deliberately structured to mirror [Part 12 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) so you can move between the languages, naming the Python spelling wherever one corresponds — and calling out every place it doesn't, because each of those divergences has produced a real bug.
+Deliberately structured to mirror [Part 12 guide 04](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) so you can move between the languages, naming the Python spelling wherever one corresponds — and calling out every place it doesn't, because each of those divergences has produced a real bug.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md>
+**Local reference:** [part-13-mlx-swift/references/02-generation-tools-and-caching.md](part-13-mlx-swift/references/02-generation-tools-and-caching.md)
 
 | Section | Anchor |
 |---|---|
@@ -234,7 +234,7 @@ Deliberately structured to mirror [Part 12 guide 04](https://github.com/hbmartin
 
 Opens by answering the question a developer asked on forum thread **836264** after seeing `import MLXFoundationModels` on a WWDC26 session-339 slide: it is a library target in the package, not an SDK framework, and it needs the 27.0 SDK.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md>
+**Local reference:** [part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md)
 
 | Section | Anchor |
 |---|---|
@@ -267,7 +267,7 @@ Opens by answering the question a developer asked on forum thread **836264** aft
 
 Three bridges, one destination.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md>
+**Local reference:** [part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md)
 
 | Section | Anchor |
 |---|---|

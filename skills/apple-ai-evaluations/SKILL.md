@@ -1,7 +1,6 @@
 ---
 name: apple-ai-evaluations
-description: "Apple's Evaluations framework, new in the 27 cycle with no back-deployment: building an eval harness for on-device model output, hill-climbing a prompt against it, model-as-judge graders and judge alignment, synthetic data generation, and tool-trajectory evaluation. Also DNIKit, for auditing a dataset or a network before you spend time converting it."
-when_to_use: Use when measuring or regression-testing LLM output quality on Apple platforms, writing or calibrating graders, scoring generations, building an adversarial or synthetic eval set, evaluating whether an agent called the right tools in the right order, or checking a training dataset for duplicates and a convnet for excess width.
+description: "Measure and regression-test on-device model output with Apple's Evaluations framework: eval harnesses, prompt hill-climbing, model-as-judge graders and alignment, synthetic or adversarial data, and tool-trajectory scoring; also use DNIKit to audit datasets and networks before conversion. Use when scoring generations, calibrating graders, checking agent tool order, constructing eval sets, finding duplicate training data, or inspecting excess network width."
 ---
 
 # Evaluations: measuring on-device model output
@@ -27,24 +26,22 @@ with the claim into anything you say, write, or put in a code comment.
 
 ## Find the answer in three moves
 
-`references/` holds far more than fits in context. Never read a file whole —
-route to the section you need:
+`references/` holds far more than fits in context. Route to the section you need:
 
 1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — `Grep` `references/SILENT-FAILURES.md` for words from what
+   something ignored) — search `references/SILENT-FAILURES.md` for words from what
    you actually observed. Entries are grouped by symptom and each links to the
    guide section that explains it.
 2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   `Grep` `references/API-INDEX.md`. The row shows whether the symbol appears in
+   search `references/API-INDEX.md`. The row shows whether the symbol appears in
    the captured 26.5 and 27.0 SDK interfaces; **blank in both columns means the
    spelling is not SDK-confirmed**, so treat it as provisional.
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled, so reaching one needs network access
-to the public repository. `references/SECTION-MAPS.md` lists every top-level
-section with its anchor; fetch a single section rather than a whole file. Offline,
-everything above still works — the part READMEs and both indexes are local.
+The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
+guide and lists each top-level section anchor. Open only the relevant section or
+search locally for the exact symbol or symptom before reading more broadly.
 
 ## Version floors
 
@@ -65,39 +62,33 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have never written an `Evaluation`" | 6.1 | The five steps, mapped to exact API, with a complete copyable file |
-| "I have eval code from a blog post or a transcript reconstruction" | 6.1 §19 | The corrections table. Four out of four spellings in circulation are wrong and do not compile |
-| "My tests are green and the output is visibly bad" | 6.1 §10 | The defect is in your measurements. Four heuristics passed on tags including "overrated" and a wrong genre |
-| "My pass rate is 100% and I am suspicious" | 6.1 §7 | A range metric reads 100% over a collapsed distribution. Pair it with a scored metric and a σ |
-| "I work in Python" | 6.1, then Part 5 | Evaluations is Swift-only. Apple's guidance is the Python FM SDK plus your own scoring code |
-| "I need to measure something I can only describe in words" | 6.2 | `ModelJudgeEvaluator`, `ScoreDimension`, `ScoringScale` |
-| "I disagree with a score the judge gave" | 6.2 §7 | **Split the question.** The judge is usually right by the rubric you wrote |
-| "The judge scores everything 3" | 6.2 §5.1 | Odd-numbered scale, or a question that is asking two things |
-| "Can I trust the judge at all?" | 6.2 §16 | The κ meta-evaluation: freeze the output, replay it, score it against your own ratings |
+| "I have never written an `Evaluation`" | [6.1](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md) | The five steps, mapped to exact API, with a complete copyable file |
+| "I have eval code from a blog post or a transcript reconstruction" | [6.1 §19](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md#19-quick-reference) | The corrections table. Four out of four spellings in circulation are wrong and do not compile |
+| "My tests are green and the output is visibly bad" | [6.1 §10](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md#10-the-quantitative--qualitative-rule-of-thumb) | The defect is in your measurements. Four heuristics passed on tags including "overrated" and a wrong genre |
+| "My pass rate is 100% and I am suspicious" | [6.1 §7](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md#7-step-4--aggregatemetricsusing) | A range metric reads 100% over a collapsed distribution. Pair it with a scored metric and a σ |
+| "I work in Python" | [6.1](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md), then Part 5 | Evaluations is Swift-only. Apple's guidance is the Python FM SDK plus your own scoring code |
+| "I need to measure something I can only describe in words" | [6.2](references/part-06-evaluations/references/02-model-judges-and-alignment.md) | `ModelJudgeEvaluator`, `ScoreDimension`, `ScoringScale` |
+| "I disagree with a score the judge gave" | [6.2 §7](references/part-06-evaluations/references/02-model-judges-and-alignment.md#7-the-key-technique-split-the-question) | **Split the question.** The judge is usually right by the rubric you wrote |
+| "The judge scores everything 3" | [6.2 §5.1](references/part-06-evaluations/references/02-model-judges-and-alignment.md#51-why-an-even-number-of-levels) | Odd-numbered scale, or a question that is asking two things |
+| "Can I trust the judge at all?" | [6.2 §16](references/part-06-evaluations/references/02-model-judges-and-alignment.md#16-the-meta-evaluation-end-to-end) | The κ meta-evaluation: freeze the output, replay it, score it against your own ratings |
 
 **Part 16 — Adjacent capabilities** ([all 15 rows](references/part-16-adjacent-capabilities/README.md#read-this-first-the-triage-table))
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "Dirty dataset, or a convnet that may be over-wide" | 16.5 §6.3, §6.5, §8 | `Duplicates` and PFA. Prune, retrain, *then* convert |
-| Anything transformer, MLX, Core ML or Core AI shaped | **skip 16.5** | DNIKit supports none of them. §1 says so in a table |
+| "Dirty dataset, or a convnet that may be over-wide" | [16.5 §6.3, §6.5, §8](references/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#63-duplicates--the-one-you-should-run-first) | `Duplicates` and PFA. Prune, retrain, *then* convert |
+| Anything transformer, MLX, Core ML or Core AI shaped | **skip [16.5](references/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)** | DNIKit supports none of them. §1 says so in a table |
 
 ## The deep reference guides
 
-Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
+Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.
 
-- **6.1** Building blocks, Swift Testing integration, and evaluation-driven development — The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed from spoken narration.
-- **6.2** Model judges, score dimensions, drift, and Cohen's kappa — The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to be trusted.
-- **6.3** `SampleGenerator`, synthetic datasets, and evaluating tool trajectories — Two subjects that share a chapter because both are about honesty.
-- **16.5** DNIKit: auditing datasets and networks before you convert — The shortest guide in the series, on purpose.
+- **[6.1 Building blocks, Swift Testing integration, and evaluation-driven development](references/part-06-evaluations/references/01-foundations-and-hill-climbing.md)** — The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed from spoken narration.
+- **[6.2 Model judges, score dimensions, drift, and Cohen's kappa](references/part-06-evaluations/references/02-model-judges-and-alignment.md)** — The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to be trusted.
+- **[6.3 `SampleGenerator`, synthetic datasets, and evaluating tool trajectories](references/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md)** — Two subjects that share a chapter because both are about honesty.
+- **[16.5 DNIKit: auditing datasets and networks before you convert](references/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)** — The shortest guide in the series, on purpose.
 
-To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse \
-  https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills.git
-cd Foundation-Models-and-Core-AI-and-MLX-skills && git sparse-checkout set guides
-```
+Search the local guide first, then open only the section needed for the answer. Preserve its evidence marker and citation when carrying a claim into code or prose.
 
 ## Related skills
 

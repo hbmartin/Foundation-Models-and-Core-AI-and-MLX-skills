@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The ground floor, written header-first: the two namespaces and where each physically lives, the seven positional arguments of `matmul2d_descriptor`, the complete execution-scope vocabulary, the three tensor construction tags, cooperative tensors, and reductions.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md>
+**Local reference:** [part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md)
 
 | Section | Anchor |
 |---|---|
@@ -31,7 +31,7 @@ The ground floor, written header-first: the two namespaces and where each physic
 
 The advanced guide, and the longer of the two.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md>
+**Local reference:** [part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md)
 
 | Section | Anchor |
 |---|---|

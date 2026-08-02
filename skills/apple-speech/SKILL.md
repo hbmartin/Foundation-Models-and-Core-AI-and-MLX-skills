@@ -1,7 +1,6 @@
 ---
 name: apple-speech
-description: "Apple's 2026 Speech framework: SpeechAnalyzer, SpeechTranscriber and DictationTranscriber, asset installation through AssetInventory, custom vocabulary, live and file-based transcription, AnalyzerInputConverter, and volatile-versus-finalized results."
-when_to_use: "Use for any speech-to-text or live transcription work on Apple platforms: an empty transcript with a clean console, a final sentence that gets cut off, duplicated phrases in a merged transcript, custom vocabulary that is ignored, or looking for a speech generation API on this framework."
+description: "Build and debug speech-to-text with Apple's Speech framework: SpeechAnalyzer, SpeechTranscriber, DictationTranscriber, AssetInventory installation, custom vocabulary, live or file transcription, AnalyzerInputConverter, and volatile versus finalized results. Use for empty transcripts with a clean console, truncated final sentences, duplicated merged phrases, ignored vocabulary, asset or audio-format problems, or determining whether this framework provides speech generation."
 ---
 
 # SpeechAnalyzer: live and file-based transcription
@@ -27,24 +26,22 @@ with the claim into anything you say, write, or put in a code comment.
 
 ## Find the answer in three moves
 
-`references/` holds far more than fits in context. Never read a file whole —
-route to the section you need:
+`references/` holds far more than fits in context. Route to the section you need:
 
 1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — `Grep` `references/SILENT-FAILURES.md` for words from what
+   something ignored) — search `references/SILENT-FAILURES.md` for words from what
    you actually observed. Entries are grouped by symptom and each links to the
    guide section that explains it.
 2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   `Grep` `references/API-INDEX.md`. The row shows whether the symbol appears in
+   search `references/API-INDEX.md`. The row shows whether the symbol appears in
    the captured 26.5 and 27.0 SDK interfaces; **blank in both columns means the
    spelling is not SDK-confirmed**, so treat it as provisional.
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
-The deep reference guides are not bundled, so reaching one needs network access
-to the public repository. `references/SECTION-MAPS.md` lists every top-level
-section with its anchor; fetch a single section rather than a whole file. Offline,
-everything above still works — the part READMEs and both indexes are local.
+The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
+guide and lists each top-level section anchor. Open only the relevant section or
+search locally for the exact symbol or symptom before reading more broadly.
 
 ## Version floors
 
@@ -64,25 +61,19 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "The keynote promised speech generation and I can't find the API" | 16.1 §1.1 | It does not exist. AVFoundation, per Apple staff on thread 834149 |
-| "I'm learning the 2026 Speech API from the downloadable sample" | 16.1 §1.2 | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
-| "Users report the last sentence gets cut off" | 16.1 §9, §6.6 | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
-| "My transcript reads *'I went to the I went to the store'*" | 16.1 §8.3 | Your preset does not emit `.audioTimeRange`, so the merge always appends |
-| "Empty transcript, clean console" | 16.1 §5.5 | Assets before format before analyzer before audio. The analyzer converts nothing |
+| "The keynote promised speech generation and I can't find the API" | [16.1 §1.1](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#11-there-is-no-new-text-to-speech-api) | It does not exist. AVFoundation, per Apple staff on thread 834149 |
+| "I'm learning the 2026 Speech API from the downloadable sample" | [16.1 §1.2](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) | That ZIP is WWDC25. It has **none** of the 2026 input symbols |
+| "Users report the last sentence gets cut off" | [16.1 §9, §6.6](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
+| "My transcript reads *'I went to the I went to the store'*" | [16.1 §8.3](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#83-️-silent-failure-strategy-a-silently-degrades-to-append-only) | Your preset does not emit `.audioTimeRange`, so the merge always appends |
+| "Empty transcript, clean console" | [16.1 §5.5](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) | Assets before format before analyzer before audio. The analyzer converts nothing |
 
 ## The deep reference guides
 
-Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
+Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.
 
-- **16.1** SpeechAnalyzer: live transcription, assets, and custom vocabulary — The 2026 speech-to-text stack end to end: an actor owning analysis modules, fed one time-coded audio sequence, handing each module's output back as its own `AsyncSequence` — with **no accumulated transcript**, because assembling the document is your job.
+- **[16.1 SpeechAnalyzer: live transcription, assets, and custom vocabulary](references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md)** — The 2026 speech-to-text stack end to end: an actor owning analysis modules, fed one time-coded audio sequence, handing each module's output back as its own `AsyncSequence` — with **no accumulated transcript**, because assembling the document is your job.
 
-To read one, `WebFetch` its URL from `references/SECTION-MAPS.md` with a prompt naming the section. For sustained work, ask the user before cloning the corpus locally:
-
-```bash
-git clone --depth 1 --filter=blob:none --sparse \
-  https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills.git
-cd Foundation-Models-and-Core-AI-and-MLX-skills && git sparse-checkout set guides
-```
+Search the local guide first, then open only the section needed for the answer. Preserve its evidence marker and citation when carrying a claim into code or prose.
 
 ## Related skills
 

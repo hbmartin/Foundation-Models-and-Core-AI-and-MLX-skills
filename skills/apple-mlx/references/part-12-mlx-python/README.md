@@ -58,23 +58,23 @@ in twenty.** Four reasons this is six long guides rather than a quickstart.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I know NumPy; what breaks first?" · "why is my program using 60 GB?" | [12.1 §1–§4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md#1-unified-memory-the-defining-design-decision) | Unified memory, laziness, the transforms — nothing computes until forced |
-| "`mx.compile` made my code *slower*" · "my gradient is zero and nothing threw" | [12.1 §8.4, §5.3, §7.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) | A varying Python `int` is in the cache key; captured arrays are frozen constants |
-| "Green on my M3, red on the M5" · "`allclose(rtol=1e-5)` started failing" | [12.2 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#3-tf32-and-the-hardware-gate--one-feature-two-halves) | TF32 by default; `MLX_ENABLE_TF32` is the only control |
-| "Prefill is slow" · "OOM at a context length the arithmetic said fits" | [12.2 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#5-️-the-silent-sdpa-fallback) | Silent SDPA fallback — check `head_dim` against the allow-list |
-| "MLX has no op for this" | [12.2 §7–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#7-mxfastmetal_kernel-the-complete-api) | `mx.fast.metal_kernel`: a JIT'd string, no Xcode, no build step |
-| "Which bits, group size and mode?" · "3-bit is unusable" | [12.3 §2–§3, §8, §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md#2-the-mode-inventory) | Mode inventory, sizing arithmetic, selection table; AWQ/GPTQ/DWQ/dynamic |
-| **"I run a quantized MoE model on an M5"** | **[12.3 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md#9-️-the-corruption-bugs) — before you trust its output** | Unwritten rows, OPEN as of 2026-07-29 |
-| "Which KV cache class?" · "output quality changed and I cannot explain it" | [12.4 §4–§6, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#4-kv-caching-the-nine-cache-classes) | Nine cache classes and the trimmability contract; the chat template is not the one you think |
-| "I want an OpenAI endpoint / an agent in Xcode 27" · "the server 404s and my URL is fine" | [12.5 Part A](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md) | Every flag and endpoint; *every* load failure surfaces as 404 |
-| "The model does not fit on one Mac" | [12.5 Part B](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md) | `mlx.launch`, hostfiles, Thunderbolt-5 RDMA, mesh vs ring |
-| "My adapter broke on OS 27" · "I need domain knowledge in the model" | [12.6 §0, §3–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#0-the-frame-custom-adapters-are-gone-in-os-27) | Adapters are gone; MLX LoRA/DoRA is what is left |
+| "I know NumPy; what breaks first?" · "why is my program using 60 GB?" | [12.1 §1–§4](references/01-core-fundamentals.md#1-unified-memory-the-defining-design-decision) | Unified memory, laziness, the transforms — nothing computes until forced |
+| "`mx.compile` made my code *slower*" · "my gradient is zero and nothing threw" | [12.1 §8.4, §5.3, §7.1](references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) | A varying Python `int` is in the cache key; captured arrays are frozen constants |
+| "Green on my M3, red on the M5" · "`allclose(rtol=1e-5)` started failing" | [12.2 §3](references/02-numerics-hardware-gating-and-custom-kernels.md#3-tf32-and-the-hardware-gate--one-feature-two-halves) | TF32 by default; `MLX_ENABLE_TF32` is the only control |
+| "Prefill is slow" · "OOM at a context length the arithmetic said fits" | [12.2 §5](references/02-numerics-hardware-gating-and-custom-kernels.md#5-️-the-silent-sdpa-fallback) | Silent SDPA fallback — check `head_dim` against the allow-list |
+| "MLX has no op for this" | [12.2 §7–§9](references/02-numerics-hardware-gating-and-custom-kernels.md#7-mxfastmetal_kernel-the-complete-api) | `mx.fast.metal_kernel`: a JIT'd string, no Xcode, no build step |
+| "Which bits, group size and mode?" · "3-bit is unusable" | [12.3 §2–§3, §8, §12](references/03-quantization.md#2-the-mode-inventory) | Mode inventory, sizing arithmetic, selection table; AWQ/GPTQ/DWQ/dynamic |
+| **"I run a quantized MoE model on an M5"** | **[12.3 §9](references/03-quantization.md#9-️-the-corruption-bugs) — before you trust its output** | Unwritten rows, OPEN as of 2026-07-29 |
+| "Which KV cache class?" · "output quality changed and I cannot explain it" | [12.4 §4–§6, §9](references/04-mlx-lm-cli-generation-and-caching.md#4-kv-caching-the-nine-cache-classes) | Nine cache classes and the trimmability contract; the chat template is not the one you think |
+| "I want an OpenAI endpoint / an agent in Xcode 27" · "the server 404s and my URL is fine" | [12.5 Part A](references/05-serving-and-distributed.md) | Every flag and endpoint; *every* load failure surfaces as 404 |
+| "The model does not fit on one Mac" | [12.5 Part B](references/05-serving-and-distributed.md) | `mlx.launch`, hostfiles, Thunderbolt-5 RDMA, mesh vs ring |
+| "My adapter broke on OS 27" · "I need domain knowledge in the model" | [12.6 §0, §3–§6](references/06-finetuning-and-porting-models.md#0-the-frame-custom-adapters-are-gone-in-os-27) | Adapters are gone; MLX LoRA/DoRA is what is left |
 
 ---
 
 ## The guides in this part
 
-### [12.1 — MLX fundamentals: unified memory, lazy evaluation, transforms, and `compile`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md)
+### [12.1 — MLX fundamentals: unified memory, lazy evaluation, transforms, and `compile`](references/01-core-fundamentals.md)
 
 The conceptual primer the other five assume, built on five ideas: unified memory (you never move arrays, you
 choose per-op *which device runs it*), lazy evaluation, the composable function transforms (`grad`, `vjp`,
@@ -93,7 +93,7 @@ Apple's own warning makes **a build artefact, not an archive**.
 > is baked in at first call (§9.3); writing through a NumPy view is invisible to autodiff (§12.4); and the
 > DLPack handoff to PyTorch passes a pointer without waiting for queued work.
 
-### [12.2 — Numerics, hardware gating, and writing custom Metal kernels from Python](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md)
+### [12.2 — Numerics, hardware gating, and writing custom Metal kernels from Python](references/02-numerics-hardware-gating-and-custom-kernels.md)
 
 Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
 Three coupled themes: the dtype inventory (including the CPU-only one, and why fp8/fp4 are ops and storage
@@ -116,7 +116,7 @@ hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENAB
 > time**. Neighbour: building MLX below `MACOSX_DEPLOYMENT_TARGET=26.2` drops **every NAX kernel**, behind
 > nothing but a CMake warning.
 
-### [12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md)
+### [12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs](references/03-quantization.md)
 
 Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or
 `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a
@@ -138,7 +138,7 @@ defaults, and a pre-ship verification recipe.
 > of the PR on 2026-07-29). The one that bites: **MLX exposes no API to ask which quantized kernel
 > a given call dispatched to**, so §6's gates are the only way to reason about the fast path.
 
-### [12.4 — mlx-lm: the CLI surface, the generation API, and KV caching](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md)
+### [12.4 — mlx-lm: the CLI surface, the generation API, and KV caching](references/04-mlx-lm-cli-generation-and-caching.md)
 
 The layer where MLX becomes an LLM runtime: **18 command-line entry points** enumerated from `setup.py`; the
 Python generation API (`load`, `generate`, `stream_generate`, and the `generate_step` generator underneath, with
@@ -156,7 +156,7 @@ disk, quantized KV (which can *increase* peak memory), speculative decoding and 
 > propagating it (mlx-lm#1494, OPEN — run `--prompt-cache-size 1` on Llama 4 until it lands); and §9.6, the
 > Swift port's worse variants.
 
-### [12.5 — `mlx_lm.server`, local agents, and distributed inference over Thunderbolt](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md)
+### [12.5 — `mlx_lm.server`, local agents, and distributed inference over Thunderbolt](references/05-serving-and-distributed.md)
 
 Two halves. **Part A (§1–§13), one machine:** every server flag with its verified default, every endpoint, every
 request field actually parsed, the two response fields clients get wrong (`message.reasoning`,
@@ -181,7 +181,7 @@ depends on model size and architecture.
 > ranks wedge (mlx#3862). Unresolved: **which RDMA-enablement procedure is current on macOS 26.2+**, and
 > `mlx_lm.share`'s hostfile schema. Run `ibv_devices` on every node before you launch.
 
-### [12.6 — LoRA and DoRA fine-tuning, and adding a new architecture](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md)
+### [12.6 — LoRA and DoRA fine-tuning, and adding a new architecture](references/06-finetuning-and-porting-models.md)
 
 Opens with the frame (§0): **custom Foundation Models adapters are discontinued in OS 27**, per two independent
 Apple-staff forum statements, with the Adapter Training Toolkit stopping at 26.0.0 — which leaves MLX's
@@ -206,23 +206,23 @@ as the binding constraint (honest floor 32 GB); `mlx_lm.fuse`; and a complete wo
 
 ## Reading order, and what you can defer
 
-**Everyone starts at [12.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md) §1–§4 and §8.** Laziness, unified memory, the
+**Everyone starts at [12.1](references/01-core-fundamentals.md) §1–§4 and §8.** Laziness, unified memory, the
 transforms and the `mx.compile` cache key are the vocabulary the other five assume, and §8 is a day-one need
 rather than a post-mortem one. **Defer** §5 (`custom_function`), §10 (streams) and §12 (interop, `.mlxfn`).
 
-**Then branch.** *Running a model:* [12.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) §2–§3, then §4
-once your workload has shared prefixes. *Shrinking one:* [12.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md) §1–§3 and §12 to
+**Then branch.** *Running a model:* [12.4](references/04-mlx-lm-cli-generation-and-caching.md) §2–§3, then §4
+once your workload has shared prefixes. *Shrinking one:* [12.3](references/03-quantization.md) §1–§3 and §12 to
 pick a format, §10 to verify it — **§9 first on M5-class hardware**. *Serving or agent work:*
-[12.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md) Part A end to end; Part B is a separate project, not a next
-step. *Adapting one:* [12.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md) §0–§3, then §12's worked run,
+[12.5](references/05-serving-and-distributed.md) Part A end to end; Part B is a separate project, not a next
+step. *Adapting one:* [12.6](references/06-finetuning-and-porting-models.md) §0–§3, then §12's worked run,
 then §8 when you hit the memory wall.
 
-**Read two out of order:** [12.2 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#3-tf32-and-the-hardware-gate--one-feature-two-halves), because
+**Read two out of order:** [12.2 §3](references/02-numerics-hardware-gating-and-custom-kernels.md#3-tf32-and-the-hardware-gate--one-feature-two-halves), because
 `MLX_ENABLE_TF32=0` belongs in your harness before you write the tests, and
-[12.4 §9.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#91-️-silent-failure--the-chat-template-you-are-using-is-not-the-one-you-think), because chat-template drift is otherwise
+[12.4 §9.1](references/04-mlx-lm-cli-generation-and-caching.md#91-️-silent-failure--the-chat-template-you-are-using-is-not-the-one-you-think), because chat-template drift is otherwise
 diagnosed as a modelling problem. **Skippable unless it is your job:**
-[12.2 §7–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#7-mxfastmetal_kernel-the-complete-api) — compose ops and `mx.compile` first
-— and [12.5 Part B](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md), which needs two or more Macs, Thunderbolt-5
+[12.2 §7–§9](references/02-numerics-hardware-gating-and-custom-kernels.md#7-mxfastmetal_kernel-the-complete-api) — compose ops and `mx.compile` first
+— and [12.5 Part B](references/05-serving-and-distributed.md), which needs two or more Macs, Thunderbolt-5
 cables between *every pair*, macOS 26.2 everywhere, and a reboot per machine.
 
 **Scope note.** The six references are complete for their declared scope. Guides 12.1, 12.2, 12.5,
@@ -272,9 +272,9 @@ them. **Community measurements** are labelled as such at every point of use, wit
 and never presented as Apple figures.
 
 [^part12-scope]: See the declared contents and terminal sections in
-    [12.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/01-core-fundamentals.md),
-    [12.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md),
-    [12.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md), and
-    [12.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md). API evidence is pinned to
+    [12.1](references/01-core-fundamentals.md),
+    [12.2](references/02-numerics-hardware-gating-and-custom-kernels.md),
+    [12.5](references/05-serving-and-distributed.md), and
+    [12.6](references/06-finetuning-and-porting-models.md). API evidence is pinned to
     [`ml-explore/mlx@973e27f`](https://github.com/ml-explore/mlx/tree/973e27f82ffe68dbd626cda31ba34997045d1eb7)
     and [`ml-explore/mlx-lm@e5baded`](https://github.com/ml-explore/mlx-lm/tree/e5baded8c1d286754edb479ffbde4655a68e2758).

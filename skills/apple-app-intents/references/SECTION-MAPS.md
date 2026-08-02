@@ -1,6 +1,6 @@
 # Section maps for the deep reference guides
 
-The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
+The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
 > Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -10,7 +10,7 @@ The deep guides are 94–232 KB each and are **not bundled** with this skill. Ea
 
 The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK interface on 2026-07-29** — in one place for the first time, with per-domain commentary on what each one's shape tells you.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md>
+**Local reference:** [part-16-adjacent-capabilities/references/02-app-schema-domains.md](part-16-adjacent-capabilities/references/02-app-schema-domains.md)
 
 | Section | Anchor |
 |---|---|
@@ -41,7 +41,7 @@ The enumeration is the product: **all 23 domains in three tiers — 182 intents,
 
 This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity` executes but which Siri answers from screen text, and an image app whose `entities(for:)` **never fires**.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md>
+**Local reference:** [part-16-adjacent-capabilities/references/03-onscreen-awareness.md](part-16-adjacent-capabilities/references/03-onscreen-awareness.md)
 
 | Section | Anchor |
 |---|---|
@@ -67,7 +67,7 @@ This guide exists to answer two live forum threads Apple did not: a cycling app 
 
 Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**"* — left a second on-ramp nobody could identify.
 
-**URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md>
+**Local reference:** [part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md)
 
 | Section | Anchor |
 |---|---|

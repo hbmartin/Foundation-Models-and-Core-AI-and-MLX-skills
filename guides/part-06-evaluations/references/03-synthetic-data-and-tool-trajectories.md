@@ -1938,10 +1938,10 @@ line. The whole evaluation is 39 lines, and every one of them is load-bearing.
 ```swift illustrative
 struct SearchToolEvaluations: Evaluation {
     var dataset = samples
-    
+
     let pass = Metric("All Passed")
     let percent = Metric("Percentage Passed")
-    
+
     var evaluators: Evaluators {
         ToolCallEvaluator(allPass: pass, percentagePass: percent)
     }

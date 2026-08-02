@@ -80,25 +80,25 @@ What falls out is a surface with an unusual failure profile:
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#02-quantized-multiplane-tensors-26x-fallback-and-xcode-27-native-surface) · [11.2 §0.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#03-the-26x-fallback-and-xcode-27-multiplane-path) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
-| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#1-the-version-story-two-ladders-both-true) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
-| `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#22-the-two-guards-that-make-the-whole-thing-vanish) · [11.2 §0.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
-| "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#01-the-two-header-roots) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
-| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#54-️-static_slice-does-not-exist--the-real-spelling-is-templated-slice) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
-| Compile error deep inside `__mutmul2d_detail` | [11.2 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#3--the-asymmetry-element-types-vs-operand-types) · [11.1 §6.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#63-the-three-getters--and-the-asymmetry-that-is-the-1-compile-failure) | The input getters take **element** types; the destination getter takes **operand** types |
-| "My K loop returns only the last chunk" | [11.1 §3.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#35-️-the-default-mode-is-multiply-and-the-semantics-are-not-fully-settled) · [11.2 §5.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#55-️-cooperative-tensors-are-not-zero-initialised) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
-| "Attention quality dropped and I can't find a bug" | [11.2 §6.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#63-️-silent-failure--the-identity-default) · [11.1 §7.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#72-️-silent-failure-the-identity-default-is-sum_identity-regardless-of-the-operation) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |
-| "Right shape, transposed or scrambled content" | [11.1 §3.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#34-the-x-y-versus-m-n-transposition) | `slice()` is `(dim0, dim1)`; the descriptor is `(m, n)`. They are opposite |
-| "I want to write a fused attention kernel" | [11.2 §8–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#8--building-flashattention-step-by-step) | The six steps, then the assembled listing — and §8.7 for what the six steps omit |
-| "Correct, but the profiler shows 0% accelerator" | [11.2 §14](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#14--performance-the-three-things-that-actually-move-the-number) | You are on the fallback shader path, or SIMD groups have drifted across K |
-| "Wrong numbers from MLX on one tile shape" | [11.2 §13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#132-the-one-to-know-about) | `tile_matmad_nax` has no `else`; some shapes compile to nothing (upstream PR #3924) |
-| "How does this kernel get into a Core AI model?" | [11.2 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#12--getting-the-kernel-into-a-model) → [Part 8 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) | `TorchMetalKernel`'s `src` is the **body only**; your includes go in `helper_src` |
+| "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](references/01-tensorops-and-quantized-operands.md#02-quantized-multiplane-tensors-26x-fallback-and-xcode-27-native-surface) · [11.2 §0.3](references/02-cooperative-tensors-and-flash-attention.md#03-the-26x-fallback-and-xcode-27-multiplane-path) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
+| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md#1-the-version-story-two-ladders-both-true) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
+| `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md#22-the-two-guards-that-make-the-whole-thing-vanish) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
+| "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md#01-the-two-header-roots) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
+| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md#54-️-static_slice-does-not-exist--the-real-spelling-is-templated-slice) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
+| Compile error deep inside `__mutmul2d_detail` | [11.2 §3](references/02-cooperative-tensors-and-flash-attention.md#3--the-asymmetry-element-types-vs-operand-types) · [11.1 §6.3](references/01-tensorops-and-quantized-operands.md#63-the-three-getters--and-the-asymmetry-that-is-the-1-compile-failure) | The input getters take **element** types; the destination getter takes **operand** types |
+| "My K loop returns only the last chunk" | [11.1 §3.5](references/01-tensorops-and-quantized-operands.md#35-️-the-default-mode-is-multiply-and-the-semantics-are-not-fully-settled) · [11.2 §5.5](references/02-cooperative-tensors-and-flash-attention.md#55-️-cooperative-tensors-are-not-zero-initialised) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
+| "Attention quality dropped and I can't find a bug" | [11.2 §6.3](references/02-cooperative-tensors-and-flash-attention.md#63-️-silent-failure--the-identity-default) · [11.1 §7.2](references/01-tensorops-and-quantized-operands.md#72-️-silent-failure-the-identity-default-is-sum_identity-regardless-of-the-operation) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |
+| "Right shape, transposed or scrambled content" | [11.1 §3.4](references/01-tensorops-and-quantized-operands.md#34-the-x-y-versus-m-n-transposition) | `slice()` is `(dim0, dim1)`; the descriptor is `(m, n)`. They are opposite |
+| "I want to write a fused attention kernel" | [11.2 §8–§9](references/02-cooperative-tensors-and-flash-attention.md#8--building-flashattention-step-by-step) | The six steps, then the assembled listing — and §8.7 for what the six steps omit |
+| "Correct, but the profiler shows 0% accelerator" | [11.2 §14](references/02-cooperative-tensors-and-flash-attention.md#14--performance-the-three-things-that-actually-move-the-number) | You are on the fallback shader path, or SIMD groups have drifted across K |
+| "Wrong numbers from MLX on one tile shape" | [11.2 §13.2](references/02-cooperative-tensors-and-flash-attention.md#132-the-one-to-know-about) | `tile_matmad_nax` has no `else`; some shapes compile to nothing (upstream PR #3924) |
+| "How does this kernel get into a Core AI model?" | [11.2 §12](references/02-cooperative-tensors-and-flash-attention.md#12--getting-the-kernel-into-a-model) → [Part 8 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) | `TorchMetalKernel`'s `src` is the **body only**; your includes go in `helper_src` |
 
 ---
 
 ## The guides in this part
 
-### [11.1 — TensorOps: `matmul2d`, tensor types, and what quantization actually looks like](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md)
+### [11.1 — TensorOps: `matmul2d`, tensor types, and what quantization actually looks like](references/01-tensorops-and-quantized-operands.md)
 
 The ground floor, written header-first: the two namespaces and where each physically lives, the seven
 positional arguments of `matmul2d_descriptor`, the complete execution-scope vocabulary, the three
@@ -135,7 +135,7 @@ tensor construction, cooperative tensors, reductions, and the 26.x-versus-27.0 q
 Guide 11.2 carries the complete fused-attention kernel, M5 gating, performance material, and Core AI
 handoff. The obsolete §8–§18 promises have been removed from guide 11.1's contents.
 
-### [11.2 — Cooperative tensors, reductions, and building a fused attention kernel](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md)
+### [11.2 — Cooperative tensors, reductions, and building a fused attention kernel](references/02-cooperative-tensors-and-flash-attention.md)
 
 The advanced guide, and the longer of the two. It starts from *why* cooperative tensors exist — a
 `64×256` float32 score tile is 64 KB of intermediate that exists only to be consumed, and the only
@@ -187,7 +187,7 @@ they qualify. Obsolete contents entries for unwritten standalone gap/checklist s
 
 ## Reading order
 
-**Read [11.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) §0–§4 first, in order, whoever you
+**Read [11.1](references/01-tensorops-and-quantized-operands.md) §0–§4 first, in order, whoever you
 are.** §0 is the bibliography that tells you which claims to trust; §1 stops you putting the wrong
 number in your build settings; §2 stops the two most common first compile errors; §3 and §4 are the
 descriptor and the scope, which every later line assumes. That is roughly an hour and it is not
@@ -196,19 +196,19 @@ optional.
 **Then branch.** *Writing a plain GEMM or a fused epilogue:* finish 11.1 (§5 tensors, §6 cooperative
 tensors, §7 reductions) and stop — you need nothing in 11.2 except §10.1's dispatch rule and §14's
 performance guidance. *Writing FlashAttention or anything with an in-register softmax:* read
-[11.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) §1–§7 next for the element/operand
+[11.2](references/02-cooperative-tensors-and-flash-attention.md) §1–§7 next for the element/operand
 asymmetry, the compatibility predicates and `map_iterator`, then §8 and §9 together; §8.7 (the online
 softmax rescale across key blocks) is the part session 330's six steps leave out and the part a real
 kernel actually needs.
 
-**Read one thing out of order:** [11.1 §4.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#46-mlx-picks-the-other-strategy--and-there-is-a-header-level-reason). A
+**Read one thing out of order:** [11.1 §4.6](references/01-tensorops-and-quantized-operands.md#46-mlx-picks-the-other-strategy--and-there-is-a-header-level-reason). A
 single `static_assert` — *"Input cooperative tensors require a single SIMD group"* — means cooperative
 tensors as matmul **inputs** are legal only under `execution_simdgroup`, which explains MLX's entire
 architecture and constrains your decomposition before you write a line. The paired constraint in
-[11.1 §6.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#66-the-conversion-overloads--the-fusion-primitive-and-its-five-hard-constraints) belongs with it: `k = dynamic_extent`
+[11.1 §6.6](references/01-tensorops-and-quantized-operands.md#66-the-conversion-overloads--the-fusion-primitive-and-its-five-hard-constraints) belongs with it: `k = dynamic_extent`
 and cooperative-tensor inputs are **mutually exclusive**, so fusion means you own the K loop.
 
-**Deferrable.** [11.2 §11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#11--the-expert-escape-hatch-what-mlx-does-instead) (what MLX does
+**Deferrable.** [11.2 §11](references/02-cooperative-tensors-and-flash-attention.md#11--the-expert-escape-hatch-what-mlx-does-instead) (what MLX does
 instead) is an expert escape hatch, not a starting point — its whole contact surface with TensorOps is
 twelve tokens in four sites, and it declines nearly every portable API these guides teach. §12
 (`TorchMetalKernel`) waits until your kernel is correct; §13 (freshness) and §14.4 (Morton order) are

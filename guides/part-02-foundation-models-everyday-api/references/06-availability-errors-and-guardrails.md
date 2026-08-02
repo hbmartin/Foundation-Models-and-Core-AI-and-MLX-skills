@@ -951,13 +951,13 @@ do {
 
     }
 } catch let error as LanguageModelError {
-   
+
 } catch let error as LanguageModelSession.Error {
 
 } catch let error as LanguageModelSession.GenerationError {
    // Deprecated in 27.0
 } catch {
-    
+
 }
 ```
 
@@ -1689,8 +1689,8 @@ drop the guide and put the constraint in capitals:
 
 > ✅ **VERIFIED (Apple staff, thread 812501)** — recommended workaround, verbatim:
 > ```
-> You can ONLY call the tool getCityInfo for the these cities: "London", 
-> "Paris", "New York". For questions about all other cities you MUST tell 
+> You can ONLY call the tool getCityInfo for the these cities: "London",
+> "Paris", "New York". For questions about all other cities you MUST tell
 > the user "Sorry, I can't look up that city."
 > ```
 
@@ -1963,11 +1963,11 @@ whose domains appear in no documentation.
 > #Playground {
 >
 >     let session = LanguageModelSession()
->     
+>
 >     let response = try await session.respond(to: "List all states of USA.")
->     
+>
 >     print(response.content)
->     
+>
 >
 > }
 > ```
@@ -2005,7 +2005,7 @@ language model itself reports available*.
 > ```swift
 > import CoreSpotlight
 > import FoundationModels
->   
+>
 > let tool = SpotlightSearchTool()
 >
 > let session = LanguageModelSession(tools: [tool])

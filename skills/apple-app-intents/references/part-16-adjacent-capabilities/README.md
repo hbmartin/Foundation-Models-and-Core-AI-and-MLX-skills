@@ -75,14 +75,14 @@ index content — into a shape Apple Intelligence can use, which is where integr
 | "Users report the last sentence gets cut off" | [16.1 §9, §6.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
 | "My transcript reads *'I went to the I went to the store'*" | [16.1 §8.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#83-️-silent-failure-strategy-a-silently-degrades-to-append-only) | Your preset does not emit `.audioTimeRange`, so the merge always appends |
 | "Empty transcript, clean console" | [16.1 §5.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) | Assets before format before analyzer before audio. The analyzer converts nothing |
-| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 domains enumerated — then the categories with no domain at all |
-| "My category isn't covered. What is left?" | [16.2 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | `.system.searchInApp`, with code. Works without domains or indexing |
-| "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
-| "Siri answers from my screen text and ignores my `AppEntity`" | [16.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#1-the-two-paths) | Descriptive requests take the screenshot path and never call `entities(for:)` |
-| "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#5-handing-content-to-another-app) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**; the verified export path needs a real file, while draft identifiers cover pre-materialization identity[^identifier-availability] |
-| "Siri asks to clarify, or acts on the wrong item" | [16.3 §4, §8.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#4-fast-resolution) | A slow `displayRepresentations`; or per-row annotation on a scrolling list |
-| "My own model invents details for content I indexed" | [16.4 §7.3, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#73-️-silent-failure--the-index-is-searchable-but-not-readable) | The index is searchable, not readable. The hydration hook is the fix |
-| "What are *'indexed entities for Apple Intelligence'*?" | [16.4 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#1-the-question-and-its-answer) | `IndexedEntity` + `indexAppEntities(_:)`. Same index, different door |
+| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 domains enumerated — then the categories with no domain at all |
+| "My category isn't covered. What is left?" | [16.2 §8](references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | `.system.searchInApp`, with code. Works without domains or indexing |
+| "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](references/02-app-schema-domains.md#141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
+| "Siri answers from my screen text and ignores my `AppEntity`" | [16.3 §1](references/03-onscreen-awareness.md#1-the-two-paths) | Descriptive requests take the screenshot path and never call `entities(for:)` |
+| "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](references/03-onscreen-awareness.md#5-handing-content-to-another-app) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**; the verified export path needs a real file, while draft identifiers cover pre-materialization identity[^identifier-availability] |
+| "Siri asks to clarify, or acts on the wrong item" | [16.3 §4, §8.2](references/03-onscreen-awareness.md#4-fast-resolution) | A slow `displayRepresentations`; or per-row annotation on a scrolling list |
+| "My own model invents details for content I indexed" | [16.4 §7.3, §9](references/04-entities-spotlight-and-foundation-models.md#73-️-silent-failure--the-index-is-searchable-but-not-readable) | The index is searchable, not readable. The hydration hook is the fix |
+| "What are *'indexed entities for Apple Intelligence'*?" | [16.4 §1](references/04-entities-spotlight-and-foundation-models.md#1-the-question-and-its-answer) | `IndexedEntity` + `indexAppEntities(_:)`. Same index, different door |
 | "Dirty dataset, or a convnet that may be over-wide" | [16.5 §6.3, §6.5, §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#63-duplicates--the-one-you-should-run-first) | `Duplicates` and PFA. Prune, retrain, *then* convert |
 | Anything transformer, MLX, Core ML or Core AI shaped | **skip [16.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md)** | DNIKit supports none of them. §1 says so in a table |
 
@@ -118,7 +118,7 @@ Core AI runtime, cross-linked to Part 7.
 > signature gap is resolved by Apple's current async declaration for
 > `cancelAndFinishNow()`.[^speech-cancel]
 
-### [16.2 — App Schema Domains: the complete map of what Siri can actually do](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md)
+### [16.2 — App Schema Domains: the complete map of what Siri can actually do](references/02-app-schema-domains.md)
 
 The enumeration is the product: **all 23 domains in three tiers — 182 intents, 74 entities and 50
 enums, censused symbol-by-symbol against the macOS 27.0 beta SDK interface on 2026-07-29** — in one
@@ -141,7 +141,7 @@ execution model — `LongRunningIntent` past the 30-second wall, `ExecutionTarge
 > properties are verified for exactly two of ~180 schemas, and the co-requisite graph rests on one
 > demonstrated pair.
 
-### [16.3 — On-screen awareness: making Siri understand "this"](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md)
+### [16.3 — On-screen awareness: making Siri understand "this"](references/03-onscreen-awareness.md)
 
 This guide exists to answer two live forum threads Apple did not: a cycling app whose `AppEntity`
 executes but which Siri answers from screen text, and an image app whose `entities(for:)` **never
@@ -165,7 +165,7 @@ that: `EntityIdentifier` and its five consumers, the four annotation shapes,
 > identifiers support unsaved document identity, but this verified `FileRepresentation` export still
 > needs a real file payload, so transient renders must be written out before hand-off.[^identifier-availability]
 
-### [16.4 — One index, three consumers: entities, Spotlight, and Foundation Models](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md)
+### [16.4 — One index, three consumers: entities, Spotlight, and Foundation Models](references/04-entities-spotlight-and-foundation-models.md)
 
 Session 246's one-line prerequisite — *"donated searchable items to Core Spotlight, **or indexed
 entities for Apple Intelligence**"* — left a second on-ramp nobody could identify. It is `IndexedEntity`
@@ -216,12 +216,12 @@ quantize second (§8). It is equally clear about fit: **skip it unless you have 
 **Nobody reads this part front to back, and it is not built for that.** Pick by the surface you are
 integrating; the four Swift guides are independent enough to take in any order.
 
-**Anything Siri- or Spotlight-shaped starts at [16.2 §2 and §5–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#2-discovery-versus-action--the-framing-everything-else-follows-from)**
+**Anything Siri- or Spotlight-shaped starts at [16.2 §2 and §5–§6](references/02-app-schema-domains.md#2-discovery-versus-action--the-framing-everything-else-follows-from)**
 — fifteen minutes that tell you whether the schema system covers your app at all, which gates everything
 after it. If it does not, §8's `.system.searchInApp` plus 16.4's indexing is your whole available
 surface and most of 16.3 becomes optional. **Then 16.4 before 16.3** for discovery or your own RAG, or
 **16.3 before 16.4** for *"do this to the thing on screen"* — and in that case read
-[16.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#1-the-two-paths) before writing a line, because it decides whether the
+[16.3 §1](references/03-onscreen-awareness.md#1-the-two-paths) before writing a line, because it decides whether the
 work is worth doing at all. **Speech is standalone:**
 [16.1 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#1-two-warnings-before-you-write-any-code) is mandatory and takes two minutes, and §9 and
 §16 decide whether your feature ships correctly.

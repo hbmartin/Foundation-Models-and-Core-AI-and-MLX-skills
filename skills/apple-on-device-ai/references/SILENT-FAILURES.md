@@ -390,7 +390,7 @@
 
 **Part 1**
 
-- [buildURLRequest sniffs 'v1' in baseURL pathComponents; servers on any other version path get broken URLs (FB23837262).](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#35-chatcompletionslanguagemodel--the-one-that-works-today) — 1.1
+- [buildURLRequest sniffs 'v1' in baseURL pathComponents; servers on any other version path get broken URLs (FB23837262).](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#35-chatcompletionslanguagemodel--the-one-that-works-today) — 1.1
 
 **Part 2**
 
@@ -698,7 +698,7 @@
 
 **Part 1**
 
-- [Constructing PrivateCloudComputeLanguageModel without its entitlement is a fatalError crash, not a catchable throw.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#83-the-pcc-entitlement-itself) — 1.2 🔇
+- [Constructing PrivateCloudComputeLanguageModel without its entitlement is a fatalError crash, not a catchable throw.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#83-the-pcc-entitlement-itself) — 1.2 🔇
 
 **Part 2**
 
@@ -835,13 +835,13 @@
 
 **Part 1**
 
-- [GPU runtimes shed 50-60% of throughput over 10 sustained minutes on iPhone 17 Pro; the ANE retains ~65-67%.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Without AOT + AIModelCache, cold specialization stalls launch: ~4.8 s at 0.8B, ~29 s at 2.3 GB, 194 s for one 3 GB model.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Recurrent-state models (SSM/Mamba2) refuse KV rewind; the running scan cannot truncate, so every edit re-prefills.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#52-the-second-cliff-prefix-reuse-and-the-models-that-cannot-have-it) — 1.1
-- [trimKVCache(to:) returns negative on unsupported rewind, nothing throws — chats hit 23 s/turn on the wrong model.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#52-the-second-cliff-prefix-reuse-and-the-models-that-cannot-have-it) — 1.1 🔇
-- [Below-floor devices get no .aimodelc; on-device respecialization brings back the multi-second first-launch stall.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#41-the-apple-intelligence-floor) — 1.2 🔇
-- [A deployment target under 26.2 defines MLX_METAL_NO_NAX and drops every NAX kernel; only a scrolled CMake warning says so.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#43-the-mlx--tensorops-hardware-gate-a-different-floor-entirely) — 1.2 🔇
-- [Background FM execution is OS-throttled with no priority control (thread 833666).](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
+- [GPU runtimes shed 50-60% of throughput over 10 sustained minutes on iPhone 17 Pro; the ANE retains ~65-67%.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Without AOT + AIModelCache, cold specialization stalls launch: ~4.8 s at 0.8B, ~29 s at 2.3 GB, 194 s for one 3 GB model.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Recurrent-state models (SSM/Mamba2) refuse KV rewind; the running scan cannot truncate, so every edit re-prefills.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#52-the-second-cliff-prefix-reuse-and-the-models-that-cannot-have-it) — 1.1
+- [trimKVCache(to:) returns negative on unsupported rewind, nothing throws — chats hit 23 s/turn on the wrong model.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#52-the-second-cliff-prefix-reuse-and-the-models-that-cannot-have-it) — 1.1 🔇
+- [Below-floor devices get no .aimodelc; on-device respecialization brings back the multi-second first-launch stall.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#41-the-apple-intelligence-floor) — 1.2 🔇
+- [A deployment target under 26.2 defines MLX_METAL_NO_NAX and drops every NAX kernel; only a scrolled CMake warning says so.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#43-the-mlx--tensorops-hardware-gate-a-different-floor-entirely) — 1.2 🔇
+- [Background FM execution is OS-throttled with no priority control (thread 833666).](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
 
 **Part 3**
 
@@ -1134,14 +1134,14 @@
 
 **Part 1**
 
-- [All seven Core AI benchmark rows used the no-@Generable pipelined engine — for guided generation the config is unshippable.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#61-m4-max-dense-models-tie-or-favour-core-ai-moe-favours-mlx) — 1.1
-- [The 2.47x claim rests on a stale macOS 26 export (~500 tok/s re-exported) and a Debug-build MLX baseline on iPhone.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#61-m4-max-dense-models-tie-or-favour-core-ai-moe-favours-mlx) — 1.1
-- [isAvailable == true is not a promise that a request will succeed — treat availability as advisory only.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#76-️-availability-is-not-a-promise) — 1.2
-- [isAvailable == true yet requests fail with error -1 wrapping undocumented ModelManagerError 1046, even on real devices.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#76-️-availability-is-not-a-promise) — 1.2 🔇
-- [The Simulator on a macOS 27 host runs the host's model, not your target's; adapters are broken outright (issue 177684296).](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
-- [The Simulator on a macOS 26 host emits meaningless -1 errors — pure host/SDK version skew (thread 831404).](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
-- [The Shortcuts 'Use Model' action works but errors cannot be detected — failures pass silently (thread 813757).](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
-- [A preflight verdict of .onDeviceOnly/.cloudOnly is no success guarantee; wrap each respond in the three-arm catch.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#11-a-runnable-preflight-check) — 1.2 🔇
+- [All seven Core AI benchmark rows used the no-@Generable pipelined engine — for guided generation the config is unshippable.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#61-m4-max-dense-models-tie-or-favour-core-ai-moe-favours-mlx) — 1.1
+- [The 2.47x claim rests on a stale macOS 26 export (~500 tok/s re-exported) and a Debug-build MLX baseline on iPhone.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#61-m4-max-dense-models-tie-or-favour-core-ai-moe-favours-mlx) — 1.1
+- [isAvailable == true is not a promise that a request will succeed — treat availability as advisory only.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#76-️-availability-is-not-a-promise) — 1.2
+- [isAvailable == true yet requests fail with error -1 wrapping undocumented ModelManagerError 1046, even on real devices.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#76-️-availability-is-not-a-promise) — 1.2 🔇
+- [The Simulator on a macOS 27 host runs the host's model, not your target's; adapters are broken outright (issue 177684296).](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
+- [The Simulator on a macOS 26 host emits meaningless -1 errors — pure host/SDK version skew (thread 831404).](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
+- [The Shortcuts 'Use Model' action works but errors cannot be detected — failures pass silently (thread 813757).](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#102-what-does-and-does-not-work-where) — 1.2
+- [A preflight verdict of .onDeviceOnly/.cloudOnly is no success guarantee; wrap each respond in the three-arm catch.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#11-a-runnable-preflight-check) — 1.2 🔇
 
 **Part 2**
 
@@ -1339,12 +1339,12 @@
 **Part 1**
 
 - [On the 26 SDK MLXFoundationModels builds as an empty library; import succeeds and the late error blames your call site.](part-01-orientation-and-gating/README.md#12--every-version-hardware-entitlement-and-runtime-surface-gate) — 1.README 🔇
-- [mlx-swift-lm main is a breaking 3.x that split tokenizer and downloader packages — pin a version.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
-- [Xcode 27 adds Transcript.Reasoning/AttachmentSegment payloads; 26-era switches fall to default or stop compiling.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#23-what-is-hard-270-in-foundationmodels) — 1.2 🔇
-- [A false canImport(_version:) doesn't error — guarded code ceases to exist and the library builds empty.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#33-️-the-empty-library-failure) — 1.2
-- [MLXFoundationModels is empty on the 26 SDK: import and build succeed; 'cannot find MLXLanguageModel' blames your code.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#33-️-the-empty-library-failure) — 1.2 🔇
-- [A rebuild under Xcode 27 changes which catch fires; deprecated GenerationError arms go dead without any diagnostic.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2
-- [catch GenerationError compiles under Xcode 27 but never fires — new error types drop every tested path into bare catch.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2 🔇
+- [mlx-swift-lm main is a breaking 3.x that split tokenizer and downloader packages — pin a version.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
+- [Xcode 27 adds Transcript.Reasoning/AttachmentSegment payloads; 26-era switches fall to default or stop compiling.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#23-what-is-hard-270-in-foundationmodels) — 1.2 🔇
+- [A false canImport(_version:) doesn't error — guarded code ceases to exist and the library builds empty.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#33-️-the-empty-library-failure) — 1.2
+- [MLXFoundationModels is empty on the 26 SDK: import and build succeed; 'cannot find MLXLanguageModel' blames your code.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#33-️-the-empty-library-failure) — 1.2 🔇
+- [A rebuild under Xcode 27 changes which catch fires; deprecated GenerationError arms go dead without any diagnostic.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2
+- [catch GenerationError compiles under Xcode 27 but never fires — new error types drop every tested path into bare catch.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2 🔇
 
 **Part 2**
 
@@ -1471,12 +1471,12 @@
 
 **Part 1**
 
-- [Docs and slides say 4K context but the iOS 27 model reports 8K; hardcoding 4096 halves it — read contextSize.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
-- [Apple's documented PCC URL 404s; the live path is developer.apple.com/private-cloud-compute/ — entitlement is managed.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#32-privatecloudcomputelanguagemodel--270-the-one-with-a-policy-gate) — 1.1
-- [Only Core AI's graph compiler is OS-resident; the LLM runtime ships as Swift code in your app, despite Apple's framing.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
-- [Session 330 calls the tensor-ops API 'new in 27'; the header floor is 26.2 — only the quantized macro is 27.0.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#262--the-metalhardware-floor) — 1.2
-- [Docs and session 339 promise watchOS support, but SystemLanguageModel and its types carry no watchOS 27 availability.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#22-️-the-watchos-contradiction-you-must-plan-around) — 1.2
-- [Apple's three-arm catch omits SystemLanguageModel.Error, unreachable via LanguageModelError — those failures fall through.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2 🔇
+- [Docs and slides say 4K context but the iOS 27 model reports 8K; hardcoding 4096 halves it — read contextSize.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
+- [Apple's documented PCC URL 404s; the live path is developer.apple.com/private-cloud-compute/ — entitlement is managed.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#32-privatecloudcomputelanguagemodel--270-the-one-with-a-policy-gate) — 1.1
+- [Only Core AI's graph compiler is OS-resident; the LLM runtime ships as Swift code in your app, despite Apple's framing.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
+- [Session 330 calls the tensor-ops API 'new in 27'; the header floor is 26.2 — only the quantized macro is 27.0.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#262--the-metalhardware-floor) — 1.2
+- [Docs and session 339 promise watchOS support, but SystemLanguageModel and its types carry no watchOS 27 availability.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#22-️-the-watchos-contradiction-you-must-plan-around) — 1.2
+- [Apple's three-arm catch omits SystemLanguageModel.Error, unreachable via LanguageModelError — those failures fall through.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#34-️-the-xcode-26--27-rebuild-changes-which-catch-fires) — 1.2 🔇
 
 **Part 2**
 
@@ -1679,8 +1679,8 @@
 **Part 1**
 
 - [A near-miss prewarm(model:transcript:) signature compiles but never binds; the framework's default no-op runs instead.](part-01-orientation-and-gating/README.md#11--the-2026-apple-ai-stack-and-how-to-choose-a-model-backend) — 1.README 🔇
-- [supportsGuidedGeneration: is a flag you assert, not a probe — claim it and schema enforcement rests on your server.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [prewarm has a default no-op extension; a near-miss signature never binds and session.prewarm() quietly does nothing.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#7-silent-failures-you-can-hit-before-you-write-a-line-of-model-code) — 1.1 🔇
+- [supportsGuidedGeneration: is a flag you assert, not a probe — claim it and schema enforcement rests on your server.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [prewarm has a default no-op extension; a near-miss signature never binds and session.prewarm() quietly does nothing.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#7-silent-failures-you-can-hit-before-you-write-a-line-of-model-code) — 1.1 🔇
 
 **Part 2**
 
@@ -1987,21 +1987,21 @@
 
 **Part 1**
 
-- [Pipelined Core AI samples on-GPU with no logits; a correct provider must throw on schema requests, not approximate.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
-- [BYO-model @Generable leaves MLX or sequential Core AI; MLX keeps logit tooling without a slower engine.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
-- [Correction: MLX does run on iPhone via mlx-swift — only the ANE is closed to it; an earlier community claim erred.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
-- [Every table warning is one fact: pipelined Core AI has no logits, so no @Generable — read 5.1 before relying on a row.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [The system model is sealed — no weight swaps, no custom LoRA on OS 27; specific models mean Core AI or MLX.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Past 4,096 tokens you need PCC (32K) or a Core AI/MLX model; the Core AI branch carries the @Generable caveat.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Reasoning needs PCC levels or a Core AI/MLX reasoning model; SystemLanguageModel does not reason.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Core AI's fastest engine has no logits so .guidedGeneration is off — and every Core AI benchmark used that engine.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Apple FM measures 0.11 J/token, ~2x better than GPU runtimes and ~4x the CoreML/ANE path; bundles are engine-dependent.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [The robust ANE win is GPU exclusivity, not speed — inference off-GPU keeps the UI's GPU free; MLX cannot reach this.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
-- [Meta note: every warning row above is the same Generable-vs-fastest-engine fact wearing a different hat.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#51-the-first-cliff-generable-and-the-fastest-engine) — 1.1
-- [Bring your own model and you lose @Generable exactly when picking the fastest backend — stated nowhere by Apple.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#51-the-first-cliff-generable-and-the-fastest-engine) — 1.1
-- [Source retention numbers conflict (38% vs 64-67% MLX); keep only the qualitative point — GPU throttles, ANE holds.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#axis-2--sustained-throughput-thermals) — 1.1
-- [Version mistakes here yield empty libraries, dead catches, evaporating #if code, error -1 — rarely a real diagnostic.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#12--every-version-hardware-entitlement-and-runtime-surface-gate) — 1.2 🔇
-- [PCC's Small Business condition is reconstructed — on the dev site, in no WWDC transcript; confirm before planning on it.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-01-orientation-and-gating/references/02-platform-and-version-gating.md#82-private-cloud-compute-three-conditions-and-two-of-them-are-commercial) — 1.2
+- [Pipelined Core AI samples on-GPU with no logits; a correct provider must throw on schema requests, not approximate.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
+- [BYO-model @Generable leaves MLX or sequential Core AI; MLX keeps logit tooling without a slower engine.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
+- [Correction: MLX does run on iPhone via mlx-swift — only the ANE is closed to it; an earlier community claim erred.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#34-mlxlanguagemodel--270-sdk-the-hugging-face-firehose) — 1.1
+- [Every table warning is one fact: pipelined Core AI has no logits, so no @Generable — read 5.1 before relying on a row.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [The system model is sealed — no weight swaps, no custom LoRA on OS 27; specific models mean Core AI or MLX.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Past 4,096 tokens you need PCC (32K) or a Core AI/MLX model; the Core AI branch carries the @Generable caveat.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Reasoning needs PCC levels or a Core AI/MLX reasoning model; SystemLanguageModel does not reason.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Core AI's fastest engine has no logits so .guidedGeneration is off — and every Core AI benchmark used that engine.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Apple FM measures 0.11 J/token, ~2x better than GPU runtimes and ~4x the CoreML/ANE path; bundles are engine-dependent.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [The robust ANE win is GPU exclusivity, not speed — inference off-GPU keeps the UI's GPU free; MLX cannot reach this.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#5-the-decision-table) — 1.1
+- [Meta note: every warning row above is the same Generable-vs-fastest-engine fact wearing a different hat.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#51-the-first-cliff-generable-and-the-fastest-engine) — 1.1
+- [Bring your own model and you lose @Generable exactly when picking the fastest backend — stated nowhere by Apple.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#51-the-first-cliff-generable-and-the-fastest-engine) — 1.1
+- [Source retention numbers conflict (38% vs 64-67% MLX); keep only the qualitative point — GPU throttles, ANE holds.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#axis-2--sustained-throughput-thermals) — 1.1
+- [Version mistakes here yield empty libraries, dead catches, evaporating #if code, error -1 — rarely a real diagnostic.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#12--every-version-hardware-entitlement-and-runtime-surface-gate) — 1.2 🔇
+- [PCC's Small Business condition is reconstructed — on the dev site, in no WWDC transcript; confirm before planning on it.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#82-private-cloud-compute-three-conditions-and-two-of-them-are-commercial) — 1.2
 
 **Part 2**
 

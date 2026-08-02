@@ -432,7 +432,7 @@ possibly a release behind.
 >
 > - implementing protocols
 > - using an integration package
-> - using [MLXHuggingFace](MLXHuggingFace) macros
+> - using `MLXHuggingFace` macros
 >
 > If you are <doc:upgrade> from mlx-swift-lm 2.x the macros will be the simplest way, but consider
 > <doc:#Integration-Packages> as there are alternate implementations that may provide features and
