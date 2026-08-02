@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 GUIDES = REPO / 'guides'
 CLASSIFIED = REPO / 'notes' / 'synthesis' / 'callout-classifications'
 LEGACY_CLASSIFIED = REPO / 'notes' / 'synthesis' / 'callout-classification'
+ANCHOR_SECTION_LINKS = REPO / 'scripts' / 'anchor-section-links.py'
 
 
 class RepositoryIndexTests(unittest.TestCase):
@@ -26,6 +27,10 @@ class RepositoryIndexTests(unittest.TestCase):
             any(path.is_file() for path in LEGACY_CLASSIFIED.rglob('*')),
             'remove the stale singular classification directory; use callout-classifications',
         )
+
+    def test_section_scoped_links_have_verified_fragments(self):
+        result = self.run_command(sys.executable, ANCHOR_SECTION_LINKS, GUIDES)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def run_command(self, *arguments, env=None):
         return subprocess.run(

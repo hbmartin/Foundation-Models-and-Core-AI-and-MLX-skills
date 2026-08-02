@@ -13,6 +13,8 @@ over, because that page shows only the first 4 of a list already capped here.
 import os, re, sys
 from collections import defaultdict
 
+from mdlinks import iter_lines
+
 # Guides shown per symbol in the TSV. The committed API-INDEX.md is generated
 # from this cap, so changing it changes that page; callers who need the full
 # association set pass cap=None to symbol_rows().
@@ -69,12 +71,23 @@ def collect_symbol_counts(root):
             rel = os.path.relpath(path, root)
             with open(path, encoding='utf-8') as handle:
                 text = handle.read()
-            # Inline `code` spans only; fenced blocks contribute nothing (a fence
-            # line never forms a span), so no stripping pass is needed.
-            for m in SPAN.finditer(text):
-                s = norm(m.group(1))
-                if SYM.match(s) and not re.search(r'\.(swift|py|md|json|txt|h)$', s):
-                    counts[s][rel] += 1
+            # Scan prose lines only. Backticks inside fenced examples are source
+            # syntax, not inline mentions, and previously advertised fake symbols
+            # such as fixture type names in the generated API index.
+            for line, _newline, inside_fence in iter_lines(text):
+                if inside_fence:
+                    continue
+                for m in SPAN.finditer(line):
+                    s = norm(m.group(1))
+                    if (
+                        SYM.match(s)
+                        and not re.search(r'\.(swift|py|md|json|txt|h|zip)$', s)
+                        # Reject handle-like prose tokens such as `J0hn` without
+                        # excluding API families whose digits end a component
+                        # (`Float16`) or precede another capital (`SHA256Digest`).
+                        and not re.search(r'\d[a-z]', s)
+                    ):
+                        counts[s][rel] += 1
     return counts
 
 

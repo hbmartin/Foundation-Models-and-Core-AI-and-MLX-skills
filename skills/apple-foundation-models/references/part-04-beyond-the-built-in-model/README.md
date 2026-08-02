@@ -54,27 +54,28 @@ across turns is your job alone.
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I want Apple's server model — 32K and reasoning" | [4.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) | `PrivateCloudComputeLanguageModel` end to end. Start at §1: **three** eligibility conditions, one in no WWDC session, and the download threshold is **lifetime** across all your apps |
-| "My PCC app crashes instead of throwing" | [4.1 §2.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) | A missing managed entitlement is a `fatalError`, not a catchable error |
-| "`isAvailable` is `true` and every request fails" | [4.1 §5.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) | Quota is **orthogonal** to availability, in Apple's own words |
-| "I need a quota progress bar" | [4.1 §7.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) | You cannot build one. Three coarse states, no numbers, FB23378161 open |
-| "I'm ineligible, or my six-month clock started" | [4.1 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) → [4.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | A different architecture, not a different flag |
-| "I want a Hugging Face model in my real prompt flow today" | [4.2 §2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | A local server + `ChatCompletionsLanguageModel`; no conversion step, no 27-SDK model packages |
-| "Where is `MLXFoundationModels`? There are no beta branches" | [4.2 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | The direct answer to forum thread 836264 |
-| "`Cannot find MLXLanguageModel in scope`" | [4.2 §3.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | You built against the 26 SDK; the target compiled to an *empty library* |
-| "`@Generable` throws `unsupportedCapability` on my own model" | [4.2 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | The logits constraint. Not workaroundable at the call site |
-| "Which of the three should I pick, and can I swap later?" | [4.2 §8–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | The comparison that decides it; then one stored property, branching on capabilities not type |
+| "My PCC app crashes instead of throwing" | [4.1 §2.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#23-️-silent-failure--the-missing-entitlement-does-not-throw) | A missing managed entitlement is a `fatalError`, not a catchable error |
+| "`isAvailable` is `true` and every request fails" | [4.1 §5.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#54-️-silent-failure--availability-is-not-a-health-check) | Quota is **orthogonal** to availability, in Apple's own words |
+| "I need a quota progress bar" | [4.1 §7.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#76-️-you-cannot-build-a-usage-meter) | You cannot build one. Three coarse states, no numbers, FB23378161 open |
+| "I'm ineligible, or my six-month clock started" | [4.1 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#12-if-you-are-not-eligible) → [4.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) | A different architecture, not a different flag |
+| "I want a Hugging Face model in my real prompt flow today" | [4.2 §2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#2-path-1--any-openai-compatible-server-today) | A local server + `ChatCompletionsLanguageModel`; no conversion step, no 27-SDK model packages |
+| "Where is `MLXFoundationModels`? There are no beta branches" | [4.2 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#31-the-answer-to-thread-836264) | The direct answer to forum thread 836264 |
+| "`Cannot find MLXLanguageModel in scope`" | [4.2 §3.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#32-️-the-double-gate-and-the-empty-library) | You built against the 26 SDK; the target compiled to an *empty library* |
+| "`@Generable` throws `unsupportedCapability` on my own model" | [4.2 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#5-️-the-logits-constraint-why-the-fastest-backend-loses-generable) | The logits constraint. Not workaroundable at the call site |
+| "Which of the three should I pick, and can I swap later?" | [4.2 §8–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#8-choosing-concretely) | The comparison that decides it; then one stored property, branching on capabilities not type |
 | "I'm shipping a `LanguageModel` package for other people" | [4.3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md) | Both protocols verbatim, all seven request fields, the whole channel |
-| "`session.prewarm()` does nothing" | [4.3 §3.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md) · [4.4 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) | A near-miss signature binds the framework's no-op default. No diagnostic |
-| "My package crashes at launch with an unbound symbol" | [4.3 §9.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md) | A beta `.swiftinterface` advertising a symbol the dylib does not export |
-| "My provider's second turn is 7× slower than its first" | [4.4 §7–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) | The re-prefill tax, transcript diffing, prefix reuse |
-| "Changing the timeout had no effect" | [4.4 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) | The `URLSession` is not in the cache key — in Apple's own package |
-| "I'm choosing between a hybrid/SSM model and a plain one" | [4.4 §9.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) | Linear attention forfeits prefix caching entirely. A model-selection fact |
+| "`session.prewarm()` does nothing" | [4.3 §3.5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#35-prewarm--and-the-single-worst-footgun-in-the-protocol) · [4.4 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#62-️-the-near-miss-signature-that-binds-the-default) | A near-miss signature binds the framework's no-op default. No diagnostic |
+| "My package crashes at launch with an unbound symbol" | [4.3 §9.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#97--the-updateusage-symbol-that-exists-in-the-interface-and-not-in-the-dylib) | A beta `.swiftinterface` advertising a symbol the dylib does not export |
+| "My provider's second turn is 7× slower than its first" | [4.4 §7–§9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#7-what-arrives-on-every-call-and-what-it-costs) | The re-prefill tax, transcript diffing, prefix reuse |
+| "Changing the timeout had no effect" | [4.4 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#3-️-the-urlsession-that-isnt-in-the-key) | The `URLSession` is not in the cache key — in Apple's own package |
+| "I'm choosing between a hybrid/SSM model and a plain one" | [4.4 §9.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#94-️-linear-attention-forfeits-prefix-caching-entirely) | Linear attention forfeits prefix caching entirely. A model-selection fact |
 
 ---
 
 ## The guides in this part
 
 ### [4.1 — Private Cloud Compute: eligibility, reasoning, and quota UX](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md)
+
 Apple's server model behind a one-line swap: 32K context, three reasoning levels, no API keys, no token
 cost to you, and Foundation Models on watchOS for the first time *because* the inference is remote. The
 guide leads with eligibility because **PCC is gated on your business, not your code** — three
@@ -89,7 +90,7 @@ four quota-UI rules, and the Xcode scheme option that simulates both states.
 > in nothing you render, so `contextSizeExceeded` arrives from a conversation that "obviously" fits.
 > Also here: switching a profile from PCC back to `SystemLanguageModel` mid-conversation throws because
 > the transcript is shared — the fix is a `historyTransform` on the *smaller*-model branch.
-
+>
 > ✅ **PCC supports image input.** Session 319 feeds “the text and images” into a PCC-backed
 > `LanguageModelSession`, and Apple's multimodal prompting guidance recommends
 > `PrivateCloudComputeLanguageModel` when image analysis needs additional reasoning or context.[^pcc-images]
@@ -98,6 +99,7 @@ four quota-UI rules, and the Xcode scheme option that simulates both states.
 > `QuotaUsage.Status` case list, and how PCC's `Error` relates to `LanguageModelError`.
 
 ### [4.2 — Core AI, MLX, and any OpenAI-compatible server behind `LanguageModelSession`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md)
+
 The consumer side of bringing your own model, with real initializers rather than demo lines. Path 1 is
 the under-advertised one: `ChatCompletionsLanguageModel` ships in `apple/foundation-models-utilities`,
 and because `mlx_lm.server`, Ollama, vLLM and LM Studio all speak chat-completions, it is **any
@@ -109,7 +111,7 @@ where `MLXFoundationModels` lives; path 3 is one line to a Core AI bundle. Then 
 > **GPU-pipelined** engine samples on-GPU and returns no logits, so guided generation is impossible
 > there — and `variant: nil` means auto-detect, so **you do not know which engine you got unless you
 > asked.** Every published Core AI throughput number came from the engine that has no `@Generable`.
-
+>
 > ⚠️ **SILENT FAILURE (four more, all live).** `supportsGuidedGeneration:` defaults to **`true`**,
 > wrong for most local servers — over-declaring produces well-formed JSON with invented fields rather
 > than an error. The SSE parser requires **exactly one space** after `data:`, so a spec-legal server
@@ -119,12 +121,13 @@ where `MLXFoundationModels` lives; path 3 is one line to a Core AI bundle. Then 
 > `pathComponents.contains("v1")` and otherwise injects `/v1`, breaking Gemini's OpenAI-compatible
 > endpoint, every `/v2` or `/v3` API and every Azure deployment path — acknowledged (FB23837262) *after*
 > the newest tag, so put a literal `v1` in your base URL.
-
+>
 > 🔴 **GAP — Linux.** The package is *structured* for it and the README claims it, but there is no CI,
 > no Dockerfile and no build matrix anywhere, and exactly the three test suites using `@Generable` are
 > Darwin-gated. Plan Linux deployments around plain text generation.
 
 ### [4.3 — Authoring a `LanguageModel` provider package](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
+
 The best-evidenced deep topic in the series, because Apple ships an **815-line agent skill** on exactly
 this question plus **two complete worked conformances you can read line by line**. Both protocols
 verbatim, the 40-line minimum viable conformance from Apple's own test mock, all seven request fields
@@ -136,20 +139,20 @@ authentication, and custom segments as the extension point for new modalities.
 > extension, so a signature that is *almost* right compiles cleanly, becomes an ordinary method nothing
 > calls, and lets the framework's default win. `some Collection<Transcript.Entry>` — idiomatic modern
 > Swift, and `Transcript` really is a `Collection` — is exactly the near miss.
-
+>
 > ⚠️ **SILENT FAILURE (three more).** `updateMetadata` and `updateUsage` are **wholesale snapshots, not
 > additive** — a later event with fewer keys *deletes* the ones you stopped sending. An unhandled
 > transcript entry or segment is *silently dropped* by every catch-all in every shipped translator, and
 > the model answers confidently from incomplete context. And the framework coalesces only
 > **consecutive** same-type events, so thought/text/thought/text shatters into four transcript entries
 > unless you mint three stable `entryID`s at the top of `respond`.
-
+>
 > 🚨 **The session's prescribed event order is contradicted by four of four shipping implementations.**
 > Session 339 says metadata → usage → text deltas. On the 27.0 beta a `.response(updateUsage:)` on a
 > turn that ends in tool calls **materialises an empty `Response` transcript entry**, because the three
 > top-level events are peer *entry kinds*. Apple's Core AI adapter, Apple's mock and
 > `ChatCompletionsLanguageModel` all send usage at the end; §10.3 keeps the intent without the bug.
-
+>
 > 🔴 **GAP — App Attest.** Session 339 tells cloud-backed provider authors to integrate device
 > attestation and points at a session nobody captured; there is not one line of `DCAppAttestService`
 > anywhere in the corpus, so the guide states *that* and *what for* and refuses to invent it. Also
@@ -157,6 +160,7 @@ authentication, and custom segments as the extension point for new modalities.
 > conformance.
 
 ### [4.4 — Executor lifecycle, configuration identity, and preserving work across calls](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md)
+
 The mechanics that decide whether a provider is fast or slow and — more often than expected — whether
 it is *correct*. The executor store keyed by `Configuration`; what belongs in that key and the manual
 `==`/`hash` escape hatch every real provider reaches for; the teardown you do not write and the two
@@ -172,12 +176,12 @@ pure-attention model, one integer assignment.
 > transferable idea in the part — **every field you exclude from `==` is a promise that two
 > configurations differing only in it are interchangeable, and the framework keeps that promise whether
 > or not it is true.**
-
+>
 > ⚠️ **SILENT FAILURE — linear attention forfeits prefix caching entirely.** An SSM / GatedDeltaNet /
 > Mamba2 state is a running scan, not positionally addressed, so it cannot be rewound — Qwen3.5,
 > Qwen3.6, LFM2.5 and Granite 4 re-prefill in full every turn. Nothing errors, nothing logs, output is
 > perfect, and turn-2 TTFT is an order of magnitude worse than a pure-attention model of the same size.
-
+>
 > ⚠️ **Read the §9 preamble before you use any of it.** `trimKVCache(to:)` and
 > `prefixReuseFeedsFullSequence` are **not Apple APIs** — they are a community patch to a *fork* of the
 > Core AI `InferenceEngine` protocol, and `trimPromptCache(_:numTokens:)` is MLX Swift, not Foundation
@@ -203,8 +207,8 @@ measurably slow. **Two exceptions:** §9.4 is a *model-selection* fact, so read 
 checkpoint; and §3 is worth ten minutes if you already ship two models differing only in transport.
 
 **Skippable outright.** [4.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) if you fail the eligibility
-checklist — read §1.5 and §12 and leave; [4.3 §12–§13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
-if your package fronts a local engine, not a service; [4.2 §2.9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) unless you deploy Swift on Linux.
+checklist — read §1.5 and §12 and leave; [4.3 §12–§13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#12-step-3--authentication)
+if your package fronts a local engine, not a service; [4.2 §2.9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#29-linux-and-the-streaming-you-do-not-get-there) unless you deploy Swift on Linux.
 
 ---
 

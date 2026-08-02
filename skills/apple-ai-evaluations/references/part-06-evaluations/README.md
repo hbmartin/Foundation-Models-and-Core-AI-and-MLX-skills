@@ -73,27 +73,28 @@ the tool-trajectory path must also treat this thrown error as a broken evaluatio
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I have never written an `Evaluation`" | [6.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md) | The five steps, mapped to exact API, with a complete copyable file |
-| "I have eval code from a blog post or a transcript reconstruction" | [6.1 §19](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md) | The corrections table. Four out of four spellings in circulation are wrong and do not compile |
-| "My tests are green and the output is visibly bad" | [6.1 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md) | The defect is in your measurements. Four heuristics passed on tags including "overrated" and a wrong genre |
-| "My pass rate is 100% and I am suspicious" | [6.1 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md) | A range metric reads 100% over a collapsed distribution. Pair it with a scored metric and a σ |
+| "I have eval code from a blog post or a transcript reconstruction" | [6.1 §19](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md#19-quick-reference) | The corrections table. Four out of four spellings in circulation are wrong and do not compile |
+| "My tests are green and the output is visibly bad" | [6.1 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md#10-the-quantitative--qualitative-rule-of-thumb) | The defect is in your measurements. Four heuristics passed on tags including "overrated" and a wrong genre |
+| "My pass rate is 100% and I am suspicious" | [6.1 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md#7-step-4--aggregatemetricsusing) | A range metric reads 100% over a collapsed distribution. Pair it with a scored metric and a σ |
 | "I work in Python" | [6.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md), then [Part 5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Evaluations is Swift-only. Apple's guidance is the Python FM SDK plus your own scoring code |
 | "I need to measure something I can only describe in words" | [6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) | `ModelJudgeEvaluator`, `ScoreDimension`, `ScoringScale` |
-| "I disagree with a score the judge gave" | [6.2 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) | **Split the question.** The judge is usually right by the rubric you wrote |
-| "The judge scores everything 3" | [6.2 §5.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) | Odd-numbered scale, or a question that is asking two things |
-| "Can I trust the judge at all?" | [6.2 §16](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) | The κ meta-evaluation: freeze the output, replay it, score it against your own ratings |
-| "Where is Cohen's kappa in the framework?" | [6.2 §15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) | **It is not there.** 72 lines of ordinary Swift in Apple's sample. You are writing it |
-| "Thirteen hand-written samples feel like enough" | [6.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | They are enough to mislead you, and Apple demonstrates exactly how on camera |
-| "I asked for 100 samples and got 87" | [6.3 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | `targetCount` is the size of the *final* dataset, seeds included |
-| "The back half of my generated dataset repeats itself" | [6.3 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | `sessionProvider` was called a second time and the new session remembers nothing |
-| "The answer looks right but I don't think it called my tool" | [6.3 §12–§17](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | `TrajectoryExpectation`, `ToolCallEvaluator`, and the nine argument matchers |
-| "My tool metrics are 0% everywhere, or blank" | [6.3 §17.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | You built `ModelSubject(value:)` without `transcript:`. It compiles |
-| "Does an eval run spend my users' PCC quota?" | [6.3 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) | 🔴 Nobody knows. Apple has not answered it. Treat generation as manual and attended |
+| "I disagree with a score the judge gave" | [6.2 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#7-the-key-technique-split-the-question) | **Split the question.** The judge is usually right by the rubric you wrote |
+| "The judge scores everything 3" | [6.2 §5.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#51-why-an-even-number-of-levels) | Odd-numbered scale, or a question that is asking two things |
+| "Can I trust the judge at all?" | [6.2 §16](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#16-the-meta-evaluation-end-to-end) | The κ meta-evaluation: freeze the output, replay it, score it against your own ratings |
+| "Where is Cohen's kappa in the framework?" | [6.2 §15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#15-implementing-kappa--the-framework-does-not-ship-it) | **It is not there.** 72 lines of ordinary Swift in Apple's sample. You are writing it |
+| "Thirteen hand-written samples feel like enough" | [6.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#1-the-thirteen-sample-lie) | They are enough to mislead you, and Apple demonstrates exactly how on camera |
+| "I asked for 100 samples and got 87" | [6.3 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#3-️-targetcount-counts-the-samples-you-already-have) | `targetCount` is the size of the *final* dataset, seeds included |
+| "The back half of my generated dataset repeats itself" | [6.3 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#5-️-sessionprovider-is-a-factory-and-it-may-be-called-twice) | `sessionProvider` was called a second time and the new session remembers nothing |
+| "The answer looks right but I don't think it called my tool" | [6.3 §12–§17](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#12-why-the-final-answer-is-not-enough) | `TrajectoryExpectation`, `ToolCallEvaluator`, and the nine argument matchers |
+| "My tool metrics are 0% everywhere, or blank" | [6.3 §17.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#172-the-line-everyone-forgets) | You built `ModelSubject(value:)` without `transcript:`. It compiles |
+| "Does an eval run spend my users' PCC quota?" | [6.3 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#62-pcc-quota-is-per-user-and-generation-is-not-free) | 🔴 Nobody knows. Apple has not answered it. Treat generation as manual and attended |
 
 ---
 
 ## The guides in this part
 
 ### [6.1 — Building blocks, Swift Testing integration, and evaluation-driven development](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md)
+
 The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` →
 `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the
 corrected spelling verified against Apple's Book Tracker sample rather than reconstructed from spoken
@@ -110,7 +111,7 @@ structural rather than a testing convenience.
 > `@Guide(.count(3...8))` fixed the range and silently collapsed the output to a constant 8. An
 > evaluation that constructs its session differently from the app — a dropped `guardrails:` argument is
 > enough — reports a number about a model you do not ship.
-
+>
 > 🔴 **GAP — several, and each has a stated safe default.** Whether `Metric` identity is by **name or by
 > instance** (Apple's doc example and Apple's sample code imply opposite answers; the interface shows a
 > hand-written `==` but not its semantics); what `aggregateValue(.mean(of:))` returns when every sample
@@ -121,8 +122,9 @@ structural rather than a testing convenience.
 > assert the scored row count before you assert anything computed from it.
 
 ### [6.2 — Model judges, score dimensions, drift, and Cohen's kappa](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md)
+
 The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing
-doing the judging deserves to. A judge is just another `Evaluator` producing the same `Metric`, so it
+doing the judging deserves to be trusted. A judge is just another `Evaluator` producing the same `Metric`, so it
 drops into an existing `evaluators` block with no restructuring. The single highest-yield technique in the
 part is here — **when you disagree with a score, split the question into two dimensions** — along with why
 an even number of scale levels is structural, why *accuracy* is the wrong alignment measure on a dataset
@@ -134,7 +136,7 @@ against your own ratings.
 > length as a first-class part of the workflow and never says otherwise, so readers reasonably conclude it
 > ships. **It does not.** `MetricsAggregator` has no agreement statistic of any kind; Apple's sample
 > hand-writes 72 lines in `Statistics.swift` and wires it in through `custom(of:label:_:)`.
-
+>
 > ⚠️ **SILENT FAILURE — the κ apparatus is a machine for producing plausible numbers.** The join between
 > the judge's scores and the expert's is **positional and nothing validates it**; a misaligned join lands
 > around 0.0–0.2, which reads exactly like "my judge is badly calibrated", and you will spend a day
@@ -143,7 +145,7 @@ against your own ratings.
 > returns confident, *stable* numbers from a model that does not know what your app is. And the one that
 > points the wrong way: a **contaminated calibration reports a higher κ**, so this failure makes your
 > judge look better the more you break it.
-
+>
 > 🔴 **GAP — narrowed by the 2026-07-29 interface pass.** `ScoringMode` is now pinned to
 > `.discrete | .continuous` with `.discrete` the default (still omit it, as Apple does at all three of
 > its judge call sites — the *semantics* of `.continuous` remain undocumented); `ModelJudgeError`'s five
@@ -159,6 +161,7 @@ against your own ratings.
 > than trusting whatever aggregate it still reports.
 
 ### [6.3 — `SampleGenerator`, synthetic datasets, and evaluating tool trajectories](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md)
+
 Two subjects that share a chapter because both are about honesty. First, getting *enough* data: the two
 doors into synthetic generation, what `sessionProvider`, `samplingStrategy` and `validator` really do, why
 generation belongs in a command-line target whose output you commit rather than in a test, and the finding
@@ -177,7 +180,7 @@ catch that.
 > length") is **vacuous** and accepts everything; the tell is an empty `invalidSamples`. A
 > `ModelSubject(value:)` without `transcript:` still **compiles**, but `ToolCallEvaluator` rejects it
 > with `EvaluationError.missingTranscript(evaluatorType:)` before scoring.[^missing-transcript]
-
+>
 > 🔴 **GAP — the most consequential unanswered question in the part is a billing question.** Nobody has
 > established **whose PCC quota an evaluation run spends** — a 100-sample judge evaluation or an 87-sample
 > generation is hundreds of Private Cloud Compute requests, and no session, doc page or sample says
@@ -199,28 +202,28 @@ heuristic `Evaluator` and a passing `@Test`. §10's rule of thumb — *if you ca
 quantitative; if you can only describe it in words you need a `ModelJudgeEvaluator`* — is what tells you
 whether you need guide 6.2 at all.
 
-**Then follow the ladder in [6.2 §1.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md), which is Apple's own
+**Then follow the ladder in [6.2 §1.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#11-the-order-to-add-things-in), which is Apple's own
 file layout rather than our invention:** `#Playground` → heuristics over a curated `ArrayLoader` → a model
 judge → coverage → κ calibration. Do not skip the heuristic rung to get to the judge faster; a judge whose
 disagreements you cannot interpret is worse than no judge.
 
 **One ordering correction the guides make explicitly.** The ladder puts dataset expansion before judge
-calibration, but [6.2 §12.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md) argues the reverse and is right:
+calibration, but [6.2 §12.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#122-the-mechanics-and-the-part-that-should-alarm-you) argues the reverse and is right:
 drift is a *bias*, not noise, so it **widens as your dataset grows**. Calibrate the judge before you scale
 to a thousand samples, or you will hill-climb a feature against a ruler that was never straight.
 
 **Defer or skip:**
 - **All of [6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md)** if every expectation you have is
   code-measurable. Judges cost an inference per sample per run and buy you nothing a `count` would answer.
-- **[6.2 §12–§18](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md)** (drift, κ, the meta-evaluation, the four
+- **[6.2 §12–§18](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#12-drift)** (drift, κ, the meta-evaluation, the four
   documented hill-climb iterations) until you have a judge whose scores you are about to make decisions
   with. It is the most demanding material in the part and it needs a human willing to score 30–100 rows.
-- **[6.2 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md)** (pairwise judging) is documentation-sourced
+- **[6.2 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#10-pairwise-judging)** (pairwise judging) is documentation-sourced
   with no precedent in Apple's sample archive, and it is the wrong tool for calibration anyway.
-- **[6.3 §1–§11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md)** (synthetic data) until your
+- **[6.3 §1–§11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#1-the-thirteen-sample-lie)** (synthetic data) until your
   curated 20–30 rows stop telling you anything new. Coverage beats count, and a hundred samples from one
   narrow generator prompt is thirteen samples with extra steps.
-- **[6.3 §12–§19](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md)** (trajectories) only if your
+- **[6.3 §12–§19](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#12-why-the-final-answer-is-not-enough)** (trajectories) only if your
   feature calls tools — but read it the same day you add your first one.
 
 ---

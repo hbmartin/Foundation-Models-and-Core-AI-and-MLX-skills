@@ -2,7 +2,7 @@
 
 The deep guides are 94–232 KB each and are **not bundled** with this skill. Each one below gives its URL once, then every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. To read a section, `WebFetch` `<url>#<anchor>` — never the whole file. If you need sustained access, ask the user before cloning the corpus (see SKILL.md).
 
-> Generated 2026-08-01 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Generated 2026-08-02 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## Part 6 — Evaluations
 
@@ -40,7 +40,7 @@ The foundation everything else hangs on: the `Evaluation` protocol's five steps 
 
 ### 6.2 — Model judges, score dimensions, drift, and Cohen's kappa
 
-The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to.
+The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to be trusted.
 
 **URL:** <https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md>
 

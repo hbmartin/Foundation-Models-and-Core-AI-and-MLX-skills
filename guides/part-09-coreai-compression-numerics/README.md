@@ -65,27 +65,28 @@ Four things make that gap wider here than it looks:
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I just need something smaller, today" | [9.1 §3](references/01-quantization.md) | `presets.w4()` / `w8()`, and the eleven fields each one silently sets |
-| "My compressed model is bigger than the arithmetic says" | [9.1 §7.5](references/01-quantization.md) · [9.3 §2.7](references/03-numeric-formats-across-the-stack.md) | The block-divisibility silent skip. The single most common defect in this part |
-| "My model won't `torch.export`" | [9.1 §8.4](references/01-quantization.md) | EAGER mode — and the non-obvious externalization reason for choosing it |
-| "I need to quantize activations, not just weights" | [9.1 §8–§9](references/01-quantization.md) | GRAPH mode, observers, calibration, and the six ops whose qscheme is overridden behind your back |
-| "Quality fell off a cliff below 8 bits" | [9.1 §10.2, §11, §13](references/01-quantization.md) → [9.2 §14–§15](references/02-palettization-pruning-and-joint.md) | The bit-width ladder, then QAT; then the SAM3 diagnosis and the sensitivity sweep that automates it |
-| "I'm targeting iOS / the Neural Engine" | [9.2 §1.3, §5](references/02-palettization-pruning-and-joint.md) | Apple's exporter **refuses** to build a quantized iOS bundle. Palettization, grouped-channel, and the rank-5 ceiling |
-| "I'm targeting the macOS GPU" | [9.3 §9.1](references/03-numeric-formats-across-the-stack.md) | int4 `symmetric_with_clipping`, per-block 32 — Apple's own preset, and why int8 buys bandwidth not arithmetic |
-| "Should I prune?" | [9.2 §11.1, §11.8](references/02-palettization-pruning-and-joint.md) | Apple's own answer is "probably not", and the 🔴 GAP under it should decide it for you |
-| "I want palettized weights *and* quantized activations" | [9.2 §13](references/02-palettization-pruning-and-joint.md) | Joint compression: mandatory ordering, mandatory `lut_qspec`, CoreAI backend only |
-| "Which format can the hardware actually multiply?" | [9.3 §1.2](references/03-numeric-formats-across-the-stack.md) | The master matrix. Emit vs store vs compute, on one page |
-| "Numbers are right; it's just slower than it should be" | [9.3 §7.1](references/03-numeric-formats-across-the-stack.md) | Eighteen crossings that silently degrade, with a detection method each |
-| "How do I verify what I actually shipped?" | [9.3 §8](references/03-numeric-formats-across-the-stack.md) · [9.2 §16](references/02-palettization-pruning-and-joint.md) | Model viewer, `AIModelAsset.Summary`, Instruments — then Apple's PSNR acceptance gates |
-| "I only have an `.aimodel`, no PyTorch model" | [9.1 §15](references/01-quantization.md) · [9.2 §12](references/02-palettization-pruning-and-joint.md) | Program-level passes. Apple's own docs call this the non-preferred path |
-| "I have to ship to `ct.target.iOS26`" | [9.1 §16.2](references/01-quantization.md) · [9.3 §2.8](references/03-numeric-formats-across-the-stack.md) | The CoreML restriction matrix. It rejects loudly at `finalize()`, which is the good news |
-| "I'm deploying an LLM and the KV cache is the budget" | [9.1 §12](references/01-quantization.md) | KV-cache quantization: graph mode only, in no session, with a correctness precondition nothing checks |
+| "I just need something smaller, today" | [9.1 §3](references/01-quantization.md#3-presets-the-one-liners-and-what-they-expand-to) | `presets.w4()` / `w8()`, and the eleven fields each one silently sets |
+| "My compressed model is bigger than the arithmetic says" | [9.1 §7.5](references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) · [9.3 §2.7](references/03-numeric-formats-across-the-stack.md#27-️-silent-failure--a-block-size-your-weight-doesnt-divide-by-leaves-the-layer-at-full-precision) | The block-divisibility silent skip. The single most common defect in this part |
+| "My model won't `torch.export`" | [9.1 §8.4](references/01-quantization.md#84-which-mode-actually) | EAGER mode — and the non-obvious externalization reason for choosing it |
+| "I need to quantize activations, not just weights" | [9.1 §8–§9](references/01-quantization.md#8-graph-vs-eager-a-structural-split-not-a-flag) | GRAPH mode, observers, calibration, and the six ops whose qscheme is overridden behind your back |
+| "Quality fell off a cliff below 8 bits" | [9.1 §10.2, §11, §13](references/01-quantization.md#102-the-bit-width-ladder-and-where-it-breaks) → [9.2 §14–§15](references/02-palettization-pruning-and-joint.md#14-mixed-precision) | The bit-width ladder, then QAT; then the SAM3 diagnosis and the sensitivity sweep that automates it |
+| "I'm targeting iOS / the Neural Engine" | [9.2 §1.3, §5](references/02-palettization-pruning-and-joint.md#13-the-strongest-evidence-apples-shipped-presets-split-by-platform) | Apple's exporter **refuses** to build a quantized iOS bundle. Palettization, grouped-channel, and the rank-5 ceiling |
+| "I'm targeting the macOS GPU" | [9.3 §9.1](references/03-numeric-formats-across-the-stack.md#91-pick-a-format-by-where-you-want-it-to-run) | int4 `symmetric_with_clipping`, per-block 32 — Apple's own preset, and why int8 buys bandwidth not arithmetic |
+| "Should I prune?" | [9.2 §11.1, §11.8](references/02-palettization-pruning-and-joint.md#111-the-verdict-first) | Apple's own answer is "probably not", and the 🔴 GAP under it should decide it for you |
+| "I want palettized weights *and* quantized activations" | [9.2 §13](references/02-palettization-pruning-and-joint.md#13-joint-compression) | Joint compression: mandatory ordering, mandatory `lut_qspec`, CoreAI backend only |
+| "Which format can the hardware actually multiply?" | [9.3 §1.2](references/03-numeric-formats-across-the-stack.md#12-the-master-matrix) | The master matrix. Emit vs store vs compute, on one page |
+| "Numbers are right; it's just slower than it should be" | [9.3 §7.1](references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) | Eighteen crossings that silently degrade, with a detection method each |
+| "How do I verify what I actually shipped?" | [9.3 §8](references/03-numeric-formats-across-the-stack.md#8-how-to-check-what-you-actually-got) · [9.2 §16](references/02-palettization-pruning-and-joint.md#16-apples-psnr-acceptance-gates) | Model viewer, `AIModelAsset.Summary`, Instruments — then Apple's PSNR acceptance gates |
+| "I only have an `.aimodel`, no PyTorch model" | [9.1 §15](references/01-quantization.md#15-coreai_optcoreai_utils-compressing-an-already-converted-program) · [9.2 §12](references/02-palettization-pruning-and-joint.md#12-program-level-compression-palettize_weights-and-sparsify_weights) | Program-level passes. Apple's own docs call this the non-preferred path |
+| "I have to ship to `ct.target.iOS26`" | [9.1 §16.2](references/01-quantization.md#162-what-coreml-cannot-do) · [9.3 §2.8](references/03-numeric-formats-across-the-stack.md#28-the-coreml-export-backend-is-a-strictly-smaller-set--and-it-rejects-at-finalize) | The CoreML restriction matrix. It rejects loudly at `finalize()`, which is the good news |
+| "I'm deploying an LLM and the KV cache is the budget" | [9.1 §12](references/01-quantization.md#12-kv-cache-quantization-graph-mode-only) | KV-cache quantization: graph mode only, in no session, with a correctness precondition nothing checks |
 
 ---
 
 ## The guides in this part
 
 ### [9.1 — `coreai-opt` quantization: configs, GRAPH vs EAGER, calibration and QAT](references/01-quantization.md)
+
 The foundation guide, and the one everything else assumes. The four-method compressor lifecycle
 (`__init__` → `prepare` → `calibration_mode`/`training_mode` → `finalize`) that quantization,
 palettization and pruning all share; the presets and what they expand to; the three-level config
@@ -100,7 +101,7 @@ narrative in the part.
 > bugs. Apple's own source says it plainly: the two modes are ***"not guaranteed to produce equivalent
 > quantized models."*** So **never compare a graph-mode result to an eager-mode result**, and inspect
 > in the mode you will compress in.
-
+>
 > ⚠️ **SILENT FAILURE (the headline one).** A **block size your weight dimension isn't divisible by
 > leaves the layer at full precision** — warning only, and the fake-quant node is then *deleted* from
 > the prepared graph. Also live: **diffusion quantization failures are swallowed with a warning**
@@ -112,7 +113,7 @@ narrative in the part.
 > Core AI backend **frees the original dense weights in place**; this is not a universal behavior of
 > every `finalize()` backend or graph mode. Preserve a float reference with `deepcopy` before
 > `prepare()`.[^destructive-finalize-scope]
-
+>
 > 🔴 **GAP — fourteen, tabulated in §20.3, and nothing is guessed inside any of them.** The sharpest:
 > whether diffusion `metadata.json` records the **attempted** or the **achieved** compression. If it
 > records the attempted setting, your bundle metadata actively confirms a compression that did not
@@ -120,6 +121,7 @@ narrative in the part.
 > compression** — verify by size.
 
 ### [9.2 — Palettization, pruning, joint compression, and mixed precision](references/02-palettization-pruning-and-joint.md)
+
 The other three things `coreai-opt` does, plus the two ways of combining them. Lookup-table
 compression via k-means with its three schemes (scalar per-tensor, scalar per-grouped-channel, and
 vector `cluster_dim > 1` for *fractional* bits per weight); `MagnitudePruner`; joint compression; and
@@ -138,7 +140,7 @@ because an agent needs a number.
 > battery regression surfaces in field telemetry weeks later. Session 325 says the SAM3 encoders use
 > per-channel scales; the shipped pipeline sets it to `False` **and explains why in a docstring**.
 > The source wins.
-
+>
 > ⚠️ **SILENT FAILURE (five more).** A **group size your weight isn't divisible by** disables the
 > module permanently and removes the parametrization. **Vector palettization is non-deterministic** —
 > seeding does not reach spawned workers, so the artefact you evaluated is not the artefact you
@@ -148,7 +150,7 @@ because an agent needs a number.
 > value. And **a sweep optimising PSNR will pick the setting that costs you the ANE**, because
 > `enable_per_channel_scale` is one of the axes Apple's own exploration skill sweeps and it improves
 > PSNR.
-
+>
 > 🔴 **GAP — nobody can show that Core AI's runtime does anything with unstructured sparsity.**
 > A pruned model converts, and there is an export test. What op the masked weight lowers to, whether
 > the `.aimodel` stores a sparse encoding or a dense tensor of zeros, and whether any compute unit
@@ -157,6 +159,7 @@ because an agent needs a number.
 > at runtime**, and use it as Apple's docs describe it — a measurement instrument.
 
 ### [9.3 — int4 to MX: which layer supports which numeric format](references/03-numeric-formats-across-the-stack.md)
+
 A reference rather than a tutorial, answering one question in as many tables as it takes: for a given
 format — int4, FP8 E4M3, FP4 E2M1, MXFP4, a 6-bit palette, E8M0 block scales — which layer can
 **emit** it, which can **store** it, and which can actually **compute** on it. Those are three
@@ -174,7 +177,7 @@ other guides cite — the eighteen-row table of crossings that silently degrade.
 > narrowed to int32 overflows above `INT32_MAX`**, and **`-inf` as a softmax mask is mishandled by the
 > ANE hardware — use `-40000.0`**. A bare Python float literal that fp16 can't round-trip (`1e-6`)
 > is enough to move an entire op to the GPU.
-
+>
 > 🔴 **GAP — the inference-time error taxonomy is undocumented across all 312 Core AI symbols.**
 > `AssetError` covers asset operations only; nothing documents what `AIModel.init(contentsOf:)`,
 > `loadFunction(named:)`, `run(...)` or `encode(...)` throw. **Do not write a `catch let e as
@@ -203,14 +206,14 @@ between them are a ten-minute read that will save you a week.
 **[9.3](references/03-numeric-formats-across-the-stack.md) §7.1 and §8 are worth reading *before* you
 compress anything, not after.** The eighteen silent crossings change which configurations you try, and
 the four inspection tools mean you find out on day one rather than in field telemetry. Pair them with
-[9.2 §16](references/02-palettization-pruning-and-joint.md), Apple's PSNR gates, and wire a metric up
+[9.2 §16](references/02-palettization-pruning-and-joint.md#16-apples-psnr-acceptance-gates), Apple's PSNR gates, and wire a metric up
 before your first `prepare()` — Apple's own compression skill refuses to run without one.
 
-**Skippable outright.** [9.2 §11](references/02-palettization-pruning-and-joint.md) (pruning) unless
+**Skippable outright.** [9.2 §11](references/02-palettization-pruning-and-joint.md#11-pruning-the-technique-nobody-presented) (pruning) unless
 you have a training loop, a dataset and a verified hardware requirement — read §11.1 and §11.8 and
-leave. [9.1 §16](references/01-quantization.md) and [9.3 §2.8](references/03-numeric-formats-across-the-stack.md)
-unless you ship to `ct.target.iOS26`; [9.3 §6](references/03-numeric-formats-across-the-stack.md)
-unless you also use MLX; [9.1 §12](references/01-quantization.md) unless you deploy an LLM.
+leave. [9.1 §16](references/01-quantization.md#16-export-backends-and-the-coreml-restriction-matrix) and [9.3 §2.8](references/03-numeric-formats-across-the-stack.md#28-the-coreml-export-backend-is-a-strictly-smaller-set--and-it-rejects-at-finalize)
+unless you ship to `ct.target.iOS26`; [9.3 §6](references/03-numeric-formats-across-the-stack.md#6-mlx-the-widest-menu-implemented-in-software)
+unless you also use MLX; [9.1 §12](references/01-quantization.md#12-kv-cache-quantization-graph-mode-only) unless you deploy an LLM.
 
 ---
 

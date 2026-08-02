@@ -87,7 +87,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 Not bundled. `references/SECTION-MAPS.md` has every section and its anchor.
 
 - **6.1** Building blocks, Swift Testing integration, and evaluation-driven development — The foundation everything else hangs on: the `Evaluation` protocol's five steps (`subject(from:)` → `dataset` → `evaluators` + `Metric` → `aggregateMetrics(using:)` → a Swift Testing `@Test`), each with the corrected spelling verified against Apple's Book Tracker sample rather than reconstructed from spoken narration.
-- **6.2** Model judges, score dimensions, drift, and Cohen's kappa — The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to.
+- **6.2** Model judges, score dimensions, drift, and Cohen's kappa — The half of evaluation that cannot be written as an `if`, and then the harder half: proving the thing doing the judging deserves to be trusted.
 - **6.3** `SampleGenerator`, synthetic datasets, and evaluating tool trajectories — Two subjects that share a chapter because both are about honesty.
 - **16.5** DNIKit: auditing datasets and networks before you convert — The shortest guide in the series, on purpose.
 

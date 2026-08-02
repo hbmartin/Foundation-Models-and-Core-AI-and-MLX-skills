@@ -52,29 +52,30 @@ the evidence markers; they are doing real work here.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I want to iterate on a prompt without rebuilding the app" | [5.1 §2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | `#Playground` sees your whole project without building it; blocks become tabs |
-| "The model refused something benign / returned nonsense" | [5.1 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | Reproduce in a playground, click the thumbs. This is Apple's own documented process, from a pinned DTS thread |
-| "I need to collect model feedback from real users" | [5.1 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | `logFeedbackAttachment(sentiment:issues:desiredOutput:)` — and it contains the whole transcript |
-| "I need to test my 'Apple Intelligence is off' or 'quota exhausted' UI" | [5.1 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | The scheme option makes the framework lie to you; there is a test matrix worth pinning up |
-| "My feature is slow and I do not know where the time went" | [5.1 §6.2, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | Yellow is prefill, orange is decode. The bar shape names your problem before you read a number |
-| "The model loops, keeps offering the same thing, nothing throws" | [5.1 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | The canonical bug, diagnosed in four clicks and no code read |
-| "Every turn of the conversation has a long prefill" | [5.1 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | KV-cache invalidation, with a blast-radius table and a measurement loop |
-| "I am about to attach a `.trace` to a Feedback Assistant report" | [5.1 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) | **Stop.** It stores prompts and responses unencrypted |
-| "I want the model in a shell script or a cron job" | [5.2 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | The pattern is verified; read [§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) first, because no flag is |
-| "I need PCC from something that is not Swift" | [5.2 §2.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | `fm serve` — an OpenAI-compatible endpoint, and the only sanctioned path |
-| "I want to batch-compare prompts in pandas" | [5.2 §15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Apple's own case study, including the counter-intuitive result |
-| "My Swift feature uses dynamic profiles, PCC, or a BYO backend" | [5.2 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | The Python SDK **cannot represent it.** Evaluate in Swift — [Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/README.md) |
-| "My seeded Python runs will not reproduce" | [5.2 §8.3, §8.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Two bugs that compose. Use `schema=` plus `greedy()` |
-| "`pip install apple-fm-sdk` fails on my CI runner" | [5.2 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Command Line Tools are rejected; you need full Xcode, opened once |
-| "Image prompts raise on a machine that supports images" | [5.2 §6.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Your *build* machine's SDK decided it, permanently |
-| "A batch image job dies around 250 items" | [5.2 §13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | An FD leak, measured, fixed on `main`, in no release |
-| "I have transcripts from a shipping Swift app" | [5.2 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) | Analysis needs no SDK, no Apple silicon, no Apple Intelligence — they are JSON |
+| "I want to iterate on a prompt without rebuilding the app" | [5.1 §2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#2-playground-the-inner-loop) | `#Playground` sees your whole project without building it; blocks become tabs |
+| "The model refused something benign / returned nonsense" | [5.1 §3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#3-playground-is-also-the-bug-reporting-channel) | Reproduce in a playground, click the thumbs. This is Apple's own documented process, from a pinned DTS thread |
+| "I need to collect model feedback from real users" | [5.1 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) | `logFeedbackAttachment(sentiment:issues:desiredOutput:)` — and it contains the whole transcript |
+| "I need to test my 'Apple Intelligence is off' or 'quota exhausted' UI" | [5.1 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#4-scheme-simulation-reaching-states-you-cannot-otherwise-reach) | The scheme option makes the framework lie to you; there is a test matrix worth pinning up |
+| "My feature is slow and I do not know where the time went" | [5.1 §6.2, §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#62-the-model-inference-lane--yellow-is-prefill-orange-is-decode) | Yellow is prefill, orange is decode. The bar shape names your problem before you read a number |
+| "The model loops, keeps offering the same thing, nothing throws" | [5.1 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#8-️-the-canonical-worked-bug-a-tool-named-in-prose-missing-from-the-toolset) | The canonical bug, diagnosed in four clicks and no code read |
+| "Every turn of the conversation has a long prefill" | [5.1 §10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#10-detecting-kv-cache-invalidation) | KV-cache invalidation, with a blast-radius table and a measurement loop |
+| "I am about to attach a `.trace` to a Feedback Assistant report" | [5.1 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#52-️-the-record-anyway-dialog--read-this-before-you-click) | **Stop.** It stores prompts and responses unencrypted |
+| "I want the model in a shell script or a cron job" | [5.2 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#4-the-shell-automation-pattern-attested-with-unverified-flags-marked) | The pattern is verified; read [§3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-gap-stated-plainly) first, because no flag is |
+| "I need PCC from something that is not Swift" | [5.2 §2.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) | `fm serve` — an OpenAI-compatible endpoint, and the only sanctioned path |
+| "I want to batch-compare prompts in pandas" | [5.2 §15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#15-the-evaluation-pipeline-session-334s-case-study) | Apple's own case study, including the counter-intuitive result |
+| "My Swift feature uses dynamic profiles, PCC, or a BYO backend" | [5.2 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) | The Python SDK **cannot represent it.** Evaluate in Swift — [Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/README.md) |
+| "My seeded Python runs will not reproduce" | [5.2 §8.3, §8.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) | Two bugs that compose. Use `schema=` plus `greedy()` |
+| "`pip install apple-fm-sdk` fails on my CI runner" | [5.2 §6.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#62-the-preflight-ladder-and-the-two-error-strings-that-identify-it) | Command Line Tools are rejected; you need full Xcode, opened once |
+| "Image prompts raise on a machine that supports images" | [5.2 §6.4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#64-️-the-build-machine-silently-decides-whether-images-work) | Your *build* machine's SDK decided it, permanently |
+| "A batch image job dies around 250 items" | [5.2 §13.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#132-the-fd-leak-and-why-the-fix-is-not-in-any-release) | An FD leak, measured, fixed on `main`, in no release |
+| "I have transcripts from a shipping Swift app" | [5.2 §12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#12-the-cross-language-workflow-swift-transcripts-into-python) | Analysis needs no SDK, no Apple silicon, no Apple Intelligence — they are JSON |
 
 ---
 
 ## The guides in this part
 
 ### [5.1 — `#Playground`, scheme simulation, and reading a Foundation Models trace](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md)
+
 Three tools used in a fixed order. `#Playground` as the prompt bench — the refresh button re-runs the
 *entire* block, multiple blocks become tabs, and Apple's Book Tracker ships one calling the real service
 with deliberately unruly fixtures. The scheme's *Simulated Apple Foundation Models Availability* menu,
@@ -93,14 +94,14 @@ Apple's official bug-reporting channel for the model itself.
 > Apple Designer's accepted forum answer calls this "punching out to macOS". **A Foundation Models bug is
 > not a bug until you have reproduced it on a physical device on the matching OS**, and this is the
 > single largest source of phantom bug reports in the forums.
-
+>
 > ⚠️ **The trace file is a personal-data artefact.** Foundation Models logging is off in production and
 > **on for the duration of your recording**; Instruments makes you click "Record Anyway" for a reason.
 > Apple's written version is blunter than the dialog: recordings capture prompts and responses **in an
 > unencrypted form**. Add `*.trace` to `.gitignore` now, profile with fixtures rather than your own
 > content, and read a trace before you attach it to anything. The same applies with the same force to
 > `logFeedbackAttachment` JSON (§3.1) and to Origami's `TranscriptRecorder` snapshots (§13.1).
-
+>
 > 🔴 **GAP — Apple states the instrument has six lanes and names two.** *Instructions* and *Model
 > Inference* are quoted; the other four are never named in any source in this corpus, and this guide
 > refuses to invent them — "plausible" is exactly how the fabricated API names in circulation got there.
@@ -111,6 +112,7 @@ Apple's official bug-reporting channel for the model itself.
 > toolchain.
 
 ### [5.2 — The `fm` CLI and the Foundation Models SDK for Python](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)
+
 Two products, two floors, and — unusually — two opposite evidence classes, which the guide flags in its
 own opening. The `fm` half covers what is genuinely attested: preinstalled on macOS 27, `respond` /
 `chat` / `schema` / `schema object` "and more", `/model` and `/save` inside `fm chat`, an on-device
@@ -131,13 +133,13 @@ your Swift app exported verbatim, tools, images, memory, and the session-334 eva
 > `fm` is **not in the Xcode 27.0 beta toolchain** — `xcrun --find fm` fails and `Xcode-beta.app`
 > contains no `fm` binary on a macOS 26.5 host — so the ninety seconds require a machine actually
 > running macOS 27, exactly as Apple's "pre-installed with macOS 27" framing implies (guide 5.2 §3).
-
+>
 > ⚠️ **SILENT FAILURE — a shell pipeline cannot tell "the model declined" from "the model answered in
 > prose".** If a schema flag does not apply — wrong spelling, malformed schema, an OS that ignored it —
 > you still get text on stdout and an exit status you did not check. `jq` then fails thirty lines later
 > blaming the wrong thing, or worse, succeeds against something structurally valid and semantically
 > empty. Validate **shape and count**, not parseability, before touching a file.
-
+>
 > ⚠️ **SILENT FAILURE (Python, and two of them compose).** `respond(prompt, generating=X, options=…)`
 > passes two arguments where every sibling branch passes three, so **your `options` are dropped on the
 > flagship typed path** — temperature, sampling and token caps have no effect. Separately, random-sampling
@@ -146,7 +148,7 @@ your Swift app exported verbatim, tools, images, memory, and the session-334 eva
 > typed evaluation is reproducible in neither respect. Use `schema=` plus `greedy()`. The third edge in
 > the same family: optionality is detected by substring-matching `str(type)`, so `int | None` is never
 > optional and on **Python 3.14 even `Optional[int]` stops matching** — pin ≤3.13.
-
+>
 > ⚠️ **The Python SDK is a 26-generation product, and that is a scope decision rather than a lag.** No
 > PCC (an Apple member: "we do not currently plan to add support"), no `LanguageModel` protocol and
 > therefore no BYO backends, no dynamic profiles, no mutable transcript, no `toolCallingMode`, no
@@ -157,7 +159,7 @@ your Swift app exported verbatim, tools, images, memory, and the session-334 eva
 
 ## Reading order
 
-**Everyone reads [5.1 §1–§2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) first**, including the
+**Everyone reads [5.1 §1–§2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#1-three-properties-that-break-normal-debugging) first**, including the
 Simulator trap in §2.6. It is ten minutes, it establishes which of the three tools answers which
 question, and it prevents the most commonly wasted afternoon in this stack.
 
@@ -166,25 +168,25 @@ slow → §6.2 then §9. A conversation gets slower turn by turn → §10. A tra
 §7.2's one-sentence invariant. The quick reference in §14 is built for exactly this and is worth reading
 on its own.
 
-**Do [5.1 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) as a pass before you ship**, not while you
+**Do [5.1 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#4-scheme-simulation-reaching-states-you-cannot-otherwise-reach) as a pass before you ship**, not while you
 build. The test matrix in §4.5 is a twenty-minute exercise and it covers branches your users will
 otherwise meet first.
 
-**Read [5.2 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) before writing a line of Python.** It decides
+**Read [5.2 §5.2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) before writing a line of Python.** It decides
 whether the SDK can represent your feature at all, and if it cannot, the correct move is
 [Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/README.md) in Swift rather than a workaround.
 
 **Defer or skip:**
 - **All of 5.2** is skippable if you work only in Swift and only in Xcode — with one exception worth a
-  single paragraph: [§2.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) is the answer to "how does anything
+  single paragraph: [§2.6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) is the answer to "how does anything
   that is not Swift reach Apple's models."
-- **[5.1 §11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md)** (the 2025 vs 2026 instrument) matters only
+- **[5.1 §11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#11-what-changed-between-the-2025-and-2026-instrument)** (the 2025 vs 2026 instrument) matters only
   if your mental model came from last year's code-along and you are hunting a UI that moved.
-- **[5.1 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md)** (`LanguageModelFeedback`) can wait until
+- **[5.1 §3.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback)** (`LanguageModelFeedback`) can wait until
   you actually have users producing feedback to collect.
-- **[5.2 §6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)** (build-backend internals) is unread until
+- **[5.2 §6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#6-installing-it-and-why-pip-install-compiles-swift)** (build-backend internals) is unread until
   `pip install` fails — at which point it is the entire answer, error string by error string.
-- **[5.2 §13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)** (memory across the boundary) is deferrable until
+- **[5.2 §13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#13-️-memory-across-the-boundary)** (memory across the boundary) is deferrable until
   you cross a few hundred iterations — but read it *before* you write that loop, not after it dies.
 
 ---

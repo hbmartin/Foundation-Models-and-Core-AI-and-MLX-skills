@@ -90,13 +90,13 @@ research group, and the guide says so on the section header.
 > no-op extension. A near-miss signature compiles, fails to bind as the protocol witness, and the
 > framework's no-op wins silently. Three independent sources report it, including in Apple's own
 > Core AI adapter today. Put a breakpoint in your `prewarm`; do not infer it from timing.
-
+>
 > ⚠️ **SILENT FAILURE** — a response stream can finish having yielded **zero** partials. If the model
 > answers a turn with only a tool call, the stream completes normally, and any UI that shows a spinner
 > "until the first token" hangs forever — nothing threw and nothing timed out. Count the partials you
 > consumed and branch on zero. Apple's Origami sample is the only one that handles this, and no WWDC26
 > session mentions it.
-
+>
 > 🔴 **GAP (narrowed)** — which `LanguageModelSession.init(model:…)` overload actually exists on the
 > 27 SDK. Apple's reference page types the classic initializers against `SystemLanguageModel`; Apple's
 > PCC article says you can pass any conformer to the same initializer; and Apple's sample code
@@ -105,7 +105,7 @@ research group, and the guide says so on the section header.
 > configuration, so the swapped form is untested code in a comment. The generic reading is now much
 > the likelier one. Resolution still needs a read of `FoundationModels.swiftinterface` from an
 > Xcode 27 SDK.
-
+>
 > 🔴 **GAP** — **Core AI has no Apple sample code at all.** A sweep of Apple's sample-code indexes
 > found zero projects for `coreai`, against three for `foundationmodels` / `evaluations` /
 > `corespotlight`. Every Core AI claim in this series is doc-, transcript- or community-sourced,
@@ -129,27 +129,27 @@ knowing before you start:
 > code does not error, it **ceases to exist**. `MLXFoundationModels` compiles to an empty library on
 > the 26 SDK; your import succeeds, your build succeeds, and the diagnostic you eventually get
 > points at your call site instead of your Xcode version. This broke mlx-swift-lm's own nightly job.
-
+>
 > ⚠️ **SILENT FAILURE** — rebuilding with Xcode 27 changes which `catch` fires. Your
 > `catch let e as LanguageModelSession.GenerationError` block still compiles (deprecated, not
 > removed) and simply never fires again. Apple states this in a deprecation notice rather than a
 > release note.
-
+>
 > ⚠️ **SILENT FAILURE** — the canonical three-arm `catch` an Apple engineer posted on the forums, now
 > confirmed verbatim in **two** Apple sample projects, does **not** mention `SystemLanguageModel.Error`
 > — and that type is not reachable as a `LanguageModelError` case. Copy the pattern as-is and every
 > "Apple Intelligence isn't available right now" failure falls straight through to your bare
 > `catch { }`, which is the one category of failure the user could have fixed themselves. Check
 > `SystemLanguageModel.Error` **first**.
-
+>
 > ⚠️ **Not silent — fatal.** Constructing a `PrivateCloudComputeLanguageModel` without the granted
 > entitlement triggers a `fatalError`, not a catchable throw.
-
+>
 > 🔴 **GAP** — `SystemLanguageModel`'s symbol page carries no watchOS availability, while the same
 > page's model-version list and session 339 both say watchOS 27 is supported. Unresolved. Until
 > someone greps the watchOS 27 SDK's `.swiftinterface`, design watch features as if the on-device
 > model may not be reachable there — PCC on watchOS is not in doubt.
-
+>
 > 🔴 **GAP** — what actually differs between **AFM 3 Core** and **AFM 3 Core Advanced** is unknown,
 > and there is no API that tells you which tier you got. Apple named the device split and said
 > "guidance will evolve." Evaluate on both tiers.

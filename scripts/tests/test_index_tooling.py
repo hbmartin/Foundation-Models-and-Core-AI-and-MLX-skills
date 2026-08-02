@@ -13,6 +13,7 @@ REPO = Path(__file__).resolve().parents[2]
 EXTRACT_CALLOUTS = REPO / 'scripts' / 'extract-callouts.py'
 EXTRACT_SYMBOLS = REPO / 'scripts' / 'extract-symbols.py'
 BUILD_INDEXES = REPO / 'scripts' / 'build-indexes.py'
+ANCHOR_SECTION_LINKS = REPO / 'scripts' / 'anchor-section-links.py'
 
 
 class IndexToolingTests(unittest.TestCase):
@@ -250,6 +251,59 @@ class IndexToolingTests(unittest.TestCase):
                 rows['TieSymbol'][6],
                 'a-first.md:2;m-middle.md:2;z-last.md:2',
             )
+
+    def test_symbol_extractor_ignores_fences_and_non_symbol_literals(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides, interfaces = root / 'guides', root / 'interfaces'
+            guides.mkdir()
+            interfaces.mkdir()
+            (guides / 'guide.md').write_text(
+                '`RealSymbol` `RealSymbol`\n'
+                '`ArchiveName.zip` `ArchiveName.zip`\n'
+                '`J0hn` `J0hn`\n'
+                '```swift\n'
+                '`FencedSymbol` `FencedSymbol`\n'
+                '```\n\n'
+                '> ~~~python\n'
+                '> `QuotedFenceSymbol` `QuotedFenceSymbol`\n'
+                '> ~~~\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_SYMBOLS, guides, interfaces)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            symbols = {line.split('\t')[0] for line in result.stdout.splitlines()}
+            self.assertEqual(symbols, {'RealSymbol'})
+
+    def test_section_link_tool_adds_and_verifies_github_fragments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory) / 'guides'
+            part = guides / 'part-01-example'
+            references = part / 'references'
+            references.mkdir(parents=True)
+            readme = part / 'README.md'
+            readme.write_text(
+                '# Part 1\n\n[Read 1.1 §2.1](references/01-guide.md)\n\n'
+                '```markdown\n[Example §2.1](references/01-guide.md)\n```\n',
+                encoding='utf-8',
+            )
+            (references / '01-guide.md').write_text(
+                '# Guide\n\n```markdown\n### 2.1 Fake section\n```\n\n'
+                '### 2.1 Real section\n',
+                encoding='utf-8',
+            )
+            written = self.run_python(ANCHOR_SECTION_LINKS, guides, '--write')
+            self.assertEqual(written.returncode, 0, written.stderr)
+            self.assertIn(
+                '(references/01-guide.md#21-real-section)',
+                readme.read_text(encoding='utf-8'),
+            )
+            self.assertIn(
+                '[Example §2.1](references/01-guide.md)',
+                readme.read_text(encoding='utf-8'),
+            )
+            verified = self.run_python(ANCHOR_SECTION_LINKS, guides)
+            self.assertEqual(verified.returncode, 0, verified.stderr)
 
     def build_fixture(self, classification_rows):
         temporary = tempfile.TemporaryDirectory()

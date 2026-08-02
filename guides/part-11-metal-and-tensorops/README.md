@@ -80,25 +80,26 @@ What falls out is a surface with an unusual failure profile:
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.3](references/02-cooperative-tensors-and-flash-attention.md) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
-| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
-| `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
-| "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
-| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
-| Compile error deep inside `__mutmul2d_detail` | [11.2 §3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §6.3](references/01-tensorops-and-quantized-operands.md) | The input getters take **element** types; the destination getter takes **operand** types |
-| "My K loop returns only the last chunk" | [11.1 §3.5](references/01-tensorops-and-quantized-operands.md) · [11.2 §5.5](references/02-cooperative-tensors-and-flash-attention.md) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
-| "Attention quality dropped and I can't find a bug" | [11.2 §6.3](references/02-cooperative-tensors-and-flash-attention.md) · [11.1 §7.2](references/01-tensorops-and-quantized-operands.md) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |
-| "Right shape, transposed or scrambled content" | [11.1 §3.4](references/01-tensorops-and-quantized-operands.md) | `slice()` is `(dim0, dim1)`; the descriptor is `(m, n)`. They are opposite |
-| "I want to write a fused attention kernel" | [11.2 §8–§9](references/02-cooperative-tensors-and-flash-attention.md) | The six steps, then the assembled listing — and §8.7 for what the six steps omit |
-| "Correct, but the profiler shows 0% accelerator" | [11.2 §14](references/02-cooperative-tensors-and-flash-attention.md) | You are on the fallback shader path, or SIMD groups have drifted across K |
-| "Wrong numbers from MLX on one tile shape" | [11.2 §13.2](references/02-cooperative-tensors-and-flash-attention.md) | `tile_matmad_nax` has no `else`; some shapes compile to nothing (upstream PR #3924) |
-| "How does this kernel get into a Core AI model?" | [11.2 §12](references/02-cooperative-tensors-and-flash-attention.md) → [Part 8 guide 3](../part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) | `TorchMetalKernel`'s `src` is the **body only**; your includes go in `helper_src` |
+| "Session 330 promised me scale planes / MX / E8M0" | [11.1 §0.2](references/01-tensorops-and-quantized-operands.md#02-quantized-multiplane-tensors-26x-fallback-and-xcode-27-native-surface) · [11.2 §0.3](references/02-cooperative-tensors-and-flash-attention.md#03-the-26x-fallback-and-xcode-27-multiplane-path) | Use Xcode 27's multiplane `MTLTensor` API; hand-dequantize only for older targets or custom formats |
+| "I read TensorOps is iOS 27 / macOS 27" | [11.1 §1](references/01-tensorops-and-quantized-operands.md#1-the-version-story-two-ladders-both-true) | The core surface is 26.x; only the newer tensor formats (multiplane, int2/FP4/FP8/E8M0) are 27.0. §1.5 is the deployment-target cheat sheet |
+| `no member named 'matmul2d' in namespace 'mpp::tensor_ops'` | [11.1 §2.2](references/01-tensorops-and-quantized-operands.md#22-the-two-guards-that-make-the-whole-thing-vanish) · [11.2 §0.2](references/02-cooperative-tensors-and-flash-attention.md#02-the-version-ladder-and-the-262-annotation) | `__HAVE_TENSOR__` is undefined and the header expanded to nothing |
+| "I can't find `metal_cooperative_tensor` anywhere in Xcode" | [11.2 §0.1](references/02-cooperative-tensors-and-flash-attention.md#01-the-two-header-roots) | It is in the cryptex Metal toolchain. `xcrun -sdk macosx --find metal`; never hardcode the path |
+| `static_slice` / `get_mask` won't compile | [11.1 §5.4, §6.4](references/01-tensorops-and-quantized-operands.md#54-️-static_slice-does-not-exist--the-real-spelling-is-templated-slice) | Neither exists (`static_slice` toolchain-verified absent, 2026-07-31). Real spellings: templated `slice<…>()` and `is_valid_element` |
+| Compile error deep inside `__mutmul2d_detail` | [11.2 §3](references/02-cooperative-tensors-and-flash-attention.md#3--the-asymmetry-element-types-vs-operand-types) · [11.1 §6.3](references/01-tensorops-and-quantized-operands.md#63-the-three-getters--and-the-asymmetry-that-is-the-1-compile-failure) | The input getters take **element** types; the destination getter takes **operand** types |
+| "My K loop returns only the last chunk" | [11.1 §3.5](references/01-tensorops-and-quantized-operands.md#35-️-the-default-mode-is-multiply-and-the-semantics-are-not-fully-settled) · [11.2 §5.5](references/02-cooperative-tensors-and-flash-attention.md#55-️-cooperative-tensors-are-not-zero-initialised) | Descriptor mode defaults to `multiply`. Zero the destination, pass the mode explicitly |
+| "Attention quality dropped and I can't find a bug" | [11.2 §6.3](references/02-cooperative-tensors-and-flash-attention.md#63-️-silent-failure--the-identity-default) · [11.1 §7.2](references/01-tensorops-and-quantized-operands.md#72-️-silent-failure-the-identity-default-is-sum_identity-regardless-of-the-operation) | `reduce_rows(…, max)` with three arguments computes `max(0, row)` |
+| "Right shape, transposed or scrambled content" | [11.1 §3.4](references/01-tensorops-and-quantized-operands.md#34-the-x-y-versus-m-n-transposition) | `slice()` is `(dim0, dim1)`; the descriptor is `(m, n)`. They are opposite |
+| "I want to write a fused attention kernel" | [11.2 §8–§9](references/02-cooperative-tensors-and-flash-attention.md#8--building-flashattention-step-by-step) | The six steps, then the assembled listing — and §8.7 for what the six steps omit |
+| "Correct, but the profiler shows 0% accelerator" | [11.2 §14](references/02-cooperative-tensors-and-flash-attention.md#14--performance-the-three-things-that-actually-move-the-number) | You are on the fallback shader path, or SIMD groups have drifted across K |
+| "Wrong numbers from MLX on one tile shape" | [11.2 §13.2](references/02-cooperative-tensors-and-flash-attention.md#132-the-one-to-know-about) | `tile_matmad_nax` has no `else`; some shapes compile to nothing (upstream PR #3924) |
+| "How does this kernel get into a Core AI model?" | [11.2 §12](references/02-cooperative-tensors-and-flash-attention.md#12--getting-the-kernel-into-a-model) → [Part 8 guide 3](../part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) | `TorchMetalKernel`'s `src` is the **body only**; your includes go in `helper_src` |
 
 ---
 
 ## The guides in this part
 
 ### [11.1 — TensorOps: `matmul2d`, tensor types, and what quantization actually looks like](references/01-tensorops-and-quantized-operands.md)
+
 The ground floor, written header-first: the two namespaces and where each physically lives, the seven
 positional arguments of `matmul2d_descriptor`, the complete execution-scope vocabulary, the three
 tensor construction tags, cooperative tensors, and reductions. It is also where the session-330
@@ -116,12 +117,12 @@ match is documented **undefined behaviour**, not an error.
 > read of 0.0 is the right identity for `sum` and the wrong one for `max`. Guard with
 > `is_valid_element(i)` — **not** `get_mask(i)`, which a `grep` over the whole Metal toolchain shows
 > does not exist despite appearing twice in Apple's own example comment.
-
+>
 > ⚠️ **SILENT FAILURE — the reduction identity (§7.2).** `reduce_rows`' `identity` parameter defaults
 > to `sum_identity`, i.e. **0**, whatever `reduction_operation` you pass. `reduce_rows(S, m, max)`
 > computes `max(0, row)` and clamps every negative row maximum to zero. Rule: never call `reduce_rows`
 > or `reduce_columns` with three arguments.
-
+>
 > 🔴 **GAP — the semantics of `mode::multiply` (§3.5).** The enum names and one numerically-validated
 > community implementation say *overwrite*; the header's own opening line (*"C = A\*B + C"*) and one of
 > its examples imply *accumulate*. The real behaviour lives in `extern "C" EXTERNALLY_DEFINED_ATTR`
@@ -135,6 +136,7 @@ Guide 11.2 carries the complete fused-attention kernel, M5 gating, performance m
 handoff. The obsolete §8–§18 promises have been removed from guide 11.1's contents.
 
 ### [11.2 — Cooperative tensors, reductions, and building a fused attention kernel](references/02-cooperative-tensors-and-flash-attention.md)
+
 The advanced guide, and the longer of the two. It starts from *why* cooperative tensors exist — a
 `64×256` float32 score tile is 64 KB of intermediate that exists only to be consumed, and the only
 place to keep it that is neither device nor threadgroup memory is the participating threads' registers
@@ -147,7 +149,7 @@ when a kernel you already wrote produces wrong numbers.
 > below 26.2. When it does, MLX emits a **CMake warning** and drops every accelerated kernel from the
 > build. Nothing fails; the library is simply slower on a code path you never chose. Two upstream PRs
 > (#3622, #3824) exist because people hit this.
-
+>
 > ⚠️ **SILENT FAILURE — uninitialised cooperative tensors (§5.5), and mismatched dispatch (§10.1).**
 > Cooperative tensors are not zero-initialised, and uninitialised GPU register storage frequently reads
 > as zero on a fresh pipeline and as garbage on the second launch — it works, you ship it, it fails for
@@ -155,14 +157,14 @@ when a kernel you already wrote produces wrong numbers.
 > threadgroup; the mismatch is UB with no Metal validation check and no runtime assertion, because it
 > is a compile-time template parameter on one side of the process boundary and a runtime `MTLSize` on
 > the other.
-
+>
 > ⚠️ **Before you paste any code from §5, §6.3's defensive form, or §9: substitute
 > `is_valid_element(i)` for `get_mask(i)`.** This guide uses `get_mask` throughout, following Apple's
 > header comment, and files a 🔴 GAP at §5.2 saying its signature was not located and that grepping
 > `<metal_cooperative_tensor>` would resolve it. **Guide 11.1 §6.4 ran that grep: zero hits.** The two
 > guides disagree and 11.1 has the stronger evidence. Everything else about the idiom — per-thread
 > `get_capacity()` as the loop bound, the mandatory `#pragma unroll full` — is unaffected.
-
+>
 > 🔴 **GAP — the layout-compatibility question you cannot answer statically (§4.3).**
 > `is_compatible_as_left_input` returns a **runtime `bool`**, not a `constexpr` one, and the guide
 > could not verify what happens if you convert without checking — trap, garbage, or a defensive
@@ -172,7 +174,7 @@ when a kernel you already wrote produces wrong numbers.
 > GPU architecture strings, and the **MPP Programming Guide PDF** — referenced four times by Tech Talk
 > 111432 as the source for tile sizes, barrier frequency and traversal order, and read by nobody in
 > this project.
-
+>
 > ⚠️ **Nothing in this part was compiled or executed.** §9's kernel is explicitly 🟡 RECONSTRUCTED
 > assembly over verified identifiers, no M5-class hardware was available, and §13 documents that four
 > NAX correctness fixes landed or opened upstream in the three days before the guide was written.
@@ -199,14 +201,14 @@ asymmetry, the compatibility predicates and `map_iterator`, then §8 and §9 tog
 softmax rescale across key blocks) is the part session 330's six steps leave out and the part a real
 kernel actually needs.
 
-**Read one thing out of order:** [11.1 §4.6](references/01-tensorops-and-quantized-operands.md). A
+**Read one thing out of order:** [11.1 §4.6](references/01-tensorops-and-quantized-operands.md#46-mlx-picks-the-other-strategy--and-there-is-a-header-level-reason). A
 single `static_assert` — *"Input cooperative tensors require a single SIMD group"* — means cooperative
 tensors as matmul **inputs** are legal only under `execution_simdgroup`, which explains MLX's entire
 architecture and constrains your decomposition before you write a line. The paired constraint in
-[11.1 §6.6](references/01-tensorops-and-quantized-operands.md) belongs with it: `k = dynamic_extent`
+[11.1 §6.6](references/01-tensorops-and-quantized-operands.md#66-the-conversion-overloads--the-fusion-primitive-and-its-five-hard-constraints) belongs with it: `k = dynamic_extent`
 and cooperative-tensor inputs are **mutually exclusive**, so fusion means you own the K loop.
 
-**Deferrable.** [11.2 §11](references/02-cooperative-tensors-and-flash-attention.md) (what MLX does
+**Deferrable.** [11.2 §11](references/02-cooperative-tensors-and-flash-attention.md#11--the-expert-escape-hatch-what-mlx-does-instead) (what MLX does
 instead) is an expert escape hatch, not a starting point — its whole contact surface with TensorOps is
 twelve tokens in four sites, and it declines nearly every portable API these guides teach. §12
 (`TorchMetalKernel`) waits until your kernel is correct; §13 (freshness) and §14.4 (Morton order) are

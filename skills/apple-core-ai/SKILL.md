@@ -51,7 +51,7 @@ everything above still works — the part READMEs and both indexes are local.
 | Part | Floor |
 |---|---|
 | [7](references/part-07-coreai-swift-runtime/README.md) | everything here is **27.0 and only 27.0**. |
-| [8](references/part-08-coreai-pytorch-conversion/README.md) | `coreai-torch` **0.4.1** (2026-07-06), which pins `coreai-core==**1.0.0b2**` *exactly*, requires **Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to **2.13.0**; above that, a `UserWarning` and you are on your own). |
+| [8](references/part-08-coreai-pytorch-conversion/README.md) | `coreai-torch` **0.4.1** (2026-07-06), which pins `coreai-core==1.0.0b2` *exactly*, requires **Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to **2.13.0**; above that, a `UserWarning` and you are on your own). |
 | [9](references/part-09-coreai-compression-numerics/README.md) | this part is almost entirely **host-side Python**. |
 | [10](references/part-10-coreai-hardware-authoring-debugging/README.md) | everything here is **27.0 and only 27.0**. |
 

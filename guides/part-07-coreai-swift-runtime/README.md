@@ -6,10 +6,10 @@ framework* in the 27 cycle, not a rename of Core ML: nothing back-deploys, no `@
 fallback buys you anything, and there is no release-notes page to diff against —
 `/documentation/updates/coreai` returns **404**. You need **Xcode 27** and the **Metal Toolchain**, a
 separate download (`xcodebuild -downloadComponent MetalToolchain`); without it any target containing a
-`.aimodel` fails to build with a *missing Metal compiler* error that never mentions Core AI. Three
-Metal-interop APIs **drop watchOS** per their doc pages (the captured macOS 27.0 beta SDK interface
-declares them `watchOS 27.0` — see 7.1 §16.3), and `apple/coreai-models` is **macOS 27 and iOS 27
-only**.
+`.aimodel` fails to build with a *missing Metal compiler* error that never mentions Core AI.
+Metal-interop APIs **omit watchOS from their doc-page availability lists**, while the captured macOS
+27.0 beta SDK interface declares them `watchOS 27.0` (see 7.1 §16.3); treat the interface as the
+stronger signature evidence and verify on device. `apple/coreai-models` is **macOS 27 and iOS 27 only**.
 
 **Who this is for:** Swift developers who have a converted model and must make it load, run and stay fast
 on a device. Producing the `.aimodel` is [Part 8](../part-08-coreai-pytorch-conversion/); choosing Core AI
@@ -63,24 +63,25 @@ The three-line version — `try await AIModel(contentsOf:)`, `loadFunction(named
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have a `.aimodel` and want it running today" | [7.1 §0–§9](references/01-runtime-and-ndarray.md) | The whole object model; §14 is a runner you can paste |
-| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](references/01-runtime-and-ndarray.md) | ✅ SDK-verified: untyped throws, `AssetError` only; preferred strides or interleave; `Span` is not a `Sequence` |
-| "My first launch stalls for minutes" | [7.2 §1–§5](references/02-specialization-caching-and-aot.md) | Specialization. Gate on `model(for:options:)`, pre-specialize behind explanatory UI |
-| "The stall came back after I was sure I'd paid it" | [7.2 §4, §6](references/02-specialization-caching-and-aot.md) | The key is `(asset, options)` — or an OS update, which purges everything regardless of policy |
-| "Inference intervals grow along the Instruments timeline" | [7.3 §1–§5](references/03-states-and-pipelined-execution.md) | No states. The one bug here that announces itself visually |
-| "Output is right, throughput is a flat multiple too low" · "SIGTRAP at the first execute" | [7.3 §8.1, §13](references/03-states-and-pipelined-execution.md) | Copy-on-write on the state, invisible in the Core AI instrument; or the MPSGraph in-graph KV-write bug |
-| "Turn 2 of my chat is as slow as turn 1" · "hybrid/SSM or plain?" | [7.3 §14](references/03-states-and-pipelined-execution.md) · [7.4 §6](references/04-bundles-engines-and-guided-decoding.md) | Prefix reuse: ~101× on turn-2 TTFT, one integer assignment — and linear attention forfeits it entirely |
-| "`@Generable` throws `unsupportedCapability`" · "I want topK/topP" | [7.4 §7.8, §9](references/04-bundles-engines-and-guided-decoding.md) | You are on the pipelined engine; and sampling knobs live on `TextGenerator`, not `GenerationOptions` |
-| "`unsupported metadata_version '0.1'`" · "works on my Mac, not on device" | [7.4 §2.3, §2.7](references/04-bundles-engines-and-guided-decoding.md) | You pointed at the `.aimodel`, not the bundle dir; or a missing `tokenizer/` is fetching from the Hub |
-| "Should my vision pipeline be one function or three?" · "Why is SAM3 on a different compute unit?" | [7.5 §3–§4, §9](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Inspect before specializing; distinguish the package's loader policy from a framework routing rule |
-| "What does warmup actually warm?" · "Why is my detector cold at a new shape?" | [7.5 §5, §7–§8](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Load, function load, dummy forward, specialization cache, and semantic feature cache are separate states |
-| "How should a diffusion bundle own its components?" · "Should I use lazy loading?" | [7.5 §6, §8–§9](references/05-non-llm-engines-bundles-warmup-and-caching.md) | Multi-asset GPU components have independent residency; unload is not specialization-cache deletion |
+| "I have a `.aimodel` and want it running today" | [7.1 §0–§9](references/01-runtime-and-ndarray.md#0-orientation-the-pipeline-the-file-the-toolchain) | The whole object model; §14 is a runner you can paste |
+| "What error type do I `catch`?" · "`contiguousElements` is `nil`" · "`shape.reduce` won't compile" | [7.1 §13, §7](references/01-runtime-and-ndarray.md#13--the-error-type-answer-and-how-to-write-a-catch-block) | ✅ SDK-verified: untyped throws, `AssetError` only; preferred strides or interleave; `Span` is not a `Sequence` |
+| "My first launch stalls for minutes" | [7.2 §1–§5](references/02-specialization-caching-and-aot.md#1-what-specialization-actually-is) | Specialization. Gate on `model(for:options:)`, pre-specialize behind explanatory UI |
+| "The stall came back after I was sure I'd paid it" | [7.2 §4, §6](references/02-specialization-caching-and-aot.md#4-the-cache-key-and-how-to-double-your-disk-usage-by-accident) | The key is `(asset, options)` — or an OS update, which purges everything regardless of policy |
+| "Inference intervals grow along the Instruments timeline" | [7.3 §1–§5](references/03-states-and-pipelined-execution.md#1-the-symptom-intervals-that-grow) | No states. The one bug here that announces itself visually |
+| "Output is right, throughput is a flat multiple too low" · "SIGTRAP at the first execute" | [7.3 §8.1, §13](references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) | Copy-on-write on the state, invisible in the Core AI instrument; or the MPSGraph in-graph KV-write bug |
+| "Turn 2 of my chat is as slow as turn 1" · "hybrid/SSM or plain?" | [7.3 §14](references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101) · [7.4 §6](references/04-bundles-engines-and-guided-decoding.md#6-kv-cache-strategy-and-prefix-reuse) | Prefix reuse: ~101× on turn-2 TTFT, one integer assignment — and linear attention forfeits it entirely |
+| "`@Generable` throws `unsupportedCapability`" · "I want topK/topP" | [7.4 §7.8, §9](references/04-bundles-engines-and-guided-decoding.md#78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive) | You are on the pipelined engine; and sampling knobs live on `TextGenerator`, not `GenerationOptions` |
+| "`unsupported metadata_version '0.1'`" · "works on my Mac, not on device" | [7.4 §2.3, §2.7](references/04-bundles-engines-and-guided-decoding.md#23-️-aimodel-and-aimodelc-are-directories) | You pointed at the `.aimodel`, not the bundle dir; or a missing `tokenizer/` is fetching from the Hub |
+| "Should my vision pipeline be one function or three?" · "Why is SAM3 on a different compute unit?" | [7.5 §3–§4, §9](references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) | Inspect before specializing; distinguish the package's loader policy from a framework routing rule |
+| "What does warmup actually warm?" · "Why is my detector cold at a new shape?" | [7.5 §5, §7–§8](references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) | Load, function load, dummy forward, specialization cache, and semantic feature cache are separate states |
+| "How should a diffusion bundle own its components?" · "Should I use lazy loading?" | [7.5 §6, §8–§9](references/05-non-llm-engines-bundles-warmup-and-caching.md#6-diffusion-a-bundle-of-independently-owned-models) | Multi-asset GPU components have independent residency; unload is not specialization-cache deletion |
 
 ---
 
 ## The guides in this part
 
 ### [7.1 — `AIModel`, `InferenceFunction`, `NDArray`, and the memory model](references/01-runtime-and-ndarray.md)
+
 The object-model primer every other guide assumes, built around the structural fact that makes app
 architecture fall out: **`AIModel` owns nothing and pins a cache entry; `InferenceFunction` owns the
 weights**, so "when does this cost me a gigabyte?" is answered *at `loadFunction`, not at `init`*. Then
@@ -99,7 +100,7 @@ survives a model re-export, the three low-level performance APIs session 324 nam
 > `MTLBuffer`-backed value (§11.3); a dtype flag cached from the *input* descriptor and used on an
 > *output* reinterprets bits into numeric garbage (§7.10); and EXIF orientation is nobody's job — Apple's
 > own repo applies it on one path and not the other, so the same JPEG yields two orientations (§12.4).
-
+>
 > ✅ **ANSWERED (was the part's biggest GAP) — the error you catch is `AssetError`, or nothing (§13).**
 > The macOS 27.0 beta SDK interface, captured 2026-07-29, settles it: `AIModel.init`, `loadFunction`,
 > `run`, `encode` and the cache `delete*` methods all throw **untyped** errors, and the only public
@@ -110,6 +111,7 @@ survives a model re-export, the three low-level performance APIs session 324 nam
 > catch-broadly, degrade-don't-retry ladder is therefore not a workaround but the correct shape.
 
 ### [7.2 — Specialization, the model cache, and ahead-of-time compilation](references/02-specialization-caching-and-aot.md)
+
 The single largest source of first-launch stalls, wedged loads and mysterious disk growth. Specialization
 is two phases — compilation (*"the one which incurs most of the latency"*) then per-device artifact
 generation — and every lever follows from that split: `coreai-build compile` moves phase 1 to your Mac,
@@ -126,7 +128,7 @@ five-rung recovery ladder for wedged loads.
 > specialization and compile on device** when requested on an all-static graph, observed case a
 > `SIGSEGV` inside the Metal compiler with no message (§11). And **`coreai-build compile` exits 0 for
 > architectures the device will reject**; only a device load validates the choice (§13).
-
+>
 > 🔴 **GAP — Apple's reference pages and Apple's article contradict each other (§7).** Delete a cache
 > entry a live `AIModel` still references and the reference pages say *"an error is thrown"* while the
 > prose article says Core AI *"defers deletion."* The guide quotes both, gives a device test that would
@@ -138,6 +140,7 @@ five-rung recovery ladder for wedged loads.
 > for `specialize`.
 
 ### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
+
 A decode loop written the naive way gets slower every step, and in Instruments it is unmistakable:
 **inference intervals that visibly widen along the timeline**. The fix is *states* — arguments the model
 both reads and writes in place — taught across all three layers they touch, because a mistake at any one
@@ -155,7 +158,7 @@ step *n+1* while the GPU computes step *n*, with the framework inserting the dep
 > `state_names` ordering is *observed FX behaviour, not a PyTorch contract* while every consumer indexes
 > `stateNames` positionally, so a swap yields a model that attends keys to values with a clean bill of
 > health from every tool (§4); and nothing resets a state between conversations (§8.4).
-
+>
 > 🔴 **GAP + incident — the fixed-shape/ANE decode recipe crashes on the betas (§13).** Community
 > isolation (FB23024751, `apple/coreai-models` #5) narrowed it to one variable: deriving the KV write
 > index **in-graph from runtime data**. Conversion succeeds; load and execute die — SIGTRAP on Mac GPU,
@@ -165,6 +168,7 @@ step *n+1* while the GPU computes step *n*, with the framework inserting the dep
 > sequential engine**, and no controlled comparison of the two exists (§12).
 
 ### [7.4 — Model bundles, the LLM engines, and grammar-constrained decoding](references/04-bundles-engines-and-guided-decoding.md)
+
 The layer above the runtime, where a raw `.aimodel` becomes something shippable and Apple's own Swift
 package turns "I have a converted Qwen3" into `LanguageModelSession(model:)`. **The bundle format** —
 schema `0.2`, a role→filename `assets` map, sidecars — which Apple's documentation never specifies,
@@ -183,7 +187,7 @@ framework itself all reach for **`mlc-ai/xgrammar`** to do it — documented now
 > the ANE static-shape engine is auto-selected and it works out of the box. Worse, the check you would
 > write lies: with the default `mode: .lazy`, **`capabilities` reports `.guidedGeneration` before the
 > engine loads**. Use `mode: .eager` whenever you branch on it.
-
+>
 > ⚠️ **SILENT FAILURE (four more).** `metadata.json`'s `compression` records the **request, not the
 > result** — a quantization that raised is caught, logged as one `WARNING` mid-export, and ships a
 > float16 artifact ~4× too big with exit code 0 (§2.11). A missing `tokenizer/tokenizer.json` falls back
@@ -191,13 +195,14 @@ framework itself all reach for **`mlc-ai/xgrammar`** to do it — documented now
 > `ConstrainedGenerationSession` accepts a `stopTokenIds` array, documents it as what prevents EOS
 > mid-object, **logs it, and discards it** (§7.4). And `vocabType` defaults differ between initializers,
 > where the wrong one over-constrains the grammar into producing nothing (§7.5).
-
+>
 > 🔴 **GAP — `CoreAISpeech` has no exporter.** `SpeechBundle` requires `encoder.aimodel` +
 > `decoder.aimodel` and **nothing in the repository produces that split**; treat it as pre-release
 > (§2.9). Also open: whether a multi-name `function_map` is honoured anywhere, and whether
 > `SystemLanguageModel`'s own structured output is this same xgrammar mechanism.
 
 ### [7.5 — Non-LLM engines: bundles, function structure, warmup, specialization, and caching](references/05-non-llm-engines-bundles-warmup-and-caching.md)
+
 The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAIDiffusion`. It compares
 the three shapes Apple's package actually ships: a single `main`; one asset with
 `image_encode` / `text_encode` / `detect`; and a diffusion directory containing independently loaded
@@ -231,12 +236,12 @@ plus §13–§14 if the model is large enough to want AOT. *A language model you
 7.1**, because `apple/coreai-models` implements most of 7.3 for you and the thing you must actually
 decide — which engine, and therefore whether `@Generable` works — is §5.8 and §7.8.
 
-**Read two out of order** — [7.3 §14](references/03-states-and-pipelined-execution.md), because hybrid
+**Read two out of order** — [7.3 §14](references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101), because hybrid
 architectures cannot do prefix reuse and that should reach you before you pick a checkpoint, and
-[7.2 §14.1](references/02-specialization-caching-and-aot.md), because AOT only produces artifacts for
-Apple-Intelligence-capable devices. **Skippable:** [7.1 §11.3](references/01-runtime-and-ndarray.md) and
-[7.3 §10–§13](references/03-states-and-pipelined-execution.md) unless you hand-write a pipelined decode
-loop; [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md) is superseded by 7.5 for anyone
+[7.2 §14.1](references/02-specialization-caching-and-aot.md#141-️-aot-only-compiles-for-apple-intelligence-capable-devices), because AOT only produces artifacts for
+Apple-Intelligence-capable devices. **Skippable:** [7.1 §11.3](references/01-runtime-and-ndarray.md#113-asynchronous-values-and-computestream) and
+[7.3 §10–§13](references/03-states-and-pipelined-execution.md#10-pipelined-execution-encode-computestream-async-values) unless you hand-write a pipelined decode
+loop; [7.4 §2.8](references/04-bundles-engines-and-guided-decoding.md#28-the-diffusion-bundle-three-resolution-mechanisms-in-one-directory) is superseded by 7.5 for anyone
 who actually ships diffusion.
 
 ---
@@ -247,7 +252,7 @@ who actually ships diffusion.
   ANE-vs-GPU authoring rules: [Part 8](../part-08-coreai-pytorch-conversion/) and
   [Part 10](../part-10-coreai-hardware-authoring-debugging/). This part covers only the slice of authoring
   that produces a *state* (7.3 §3–§4), which you cannot debug from the Swift side alone.
-- **Why `NDArray.ScalarType` has 35 cases**[^scalar-type-count] — compression, palettization, and whether your 4-bit export
+- **Why `NDArray.ScalarType` has 35 cases** [^scalar-type-count] — compression, palettization, and whether your 4-bit export
   is any good: [Part 9](../part-09-coreai-compression-numerics/). **The Debugger, the gauge and the
   Instruments template in depth:** [Part 10](../part-10-coreai-hardware-authoring-debugging/); they
   appear here only as how you *see* a specialization event or a growing inference interval.
@@ -279,7 +284,7 @@ the three LLM engines and the VLM engine, `ModelStructure.swift` (the structure�
 strongest guidance on `SpecializationOptions` anywhere), the bundle readers, `NDArray+Helpers.swift`,
 `ImagePreprocessor.swift`, the two xgrammar wrappers, `CoreAILanguageModel.swift`, the four Python bundle
 writers, `Package.swift`/`Package.resolved` and the agent skills in `skills/` — plus merged PRs **#62,
-#74, #89**, still-open PR **#85** (re-checked via `gh` 2026-07-31) and issues **#5, #55, #58, #112**,
+\#74, #89**, still-open PR **#85** (re-checked via `gh` 2026-07-31) and issues **#5, #55, #58, #112**,
 each documenting a real failure; and
 `apple/coreai-torch` v0.4.1 (`converter.py`, `_utils.py`, `tests/test_stateful.py`, the notebooks, and
 the release note that gates 0.4.0 assets). **Apple documentation**, harvested 2026-07-27 via `sosumi.ai`
