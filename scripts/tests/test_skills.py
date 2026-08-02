@@ -419,6 +419,24 @@ class SkillBuildTests(unittest.TestCase):
                 self.build(root, guides)
             self.assertIn("1024", str(caught.exception))
 
+    def test_refuses_a_manifest_entry_with_an_unrecognized_key(self):
+        # when_to_use is exactly the kind of leftover this guards against: the
+        # schema dropped it, and silently ignoring it would shrink the skill's
+        # triggering surface without a word.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            manifest = dict(SKILL_MANIFEST)
+            manifest["skills"] = [
+                dict(manifest["skills"][0], when_to_use="Claude only")
+            ]
+            (root / "notes" / "skill-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8"
+            )
+            with self.assertRaises(builder.SkillError) as caught:
+                self.build(root, guides)
+            self.assertIn("when_to_use", str(caught.exception))
+
     def test_refuses_an_unrecognized_part_heading(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -503,7 +521,19 @@ class RenderingHelperTests(unittest.TestCase):
                 self.assertEqual(fields["description"], value)
 
     def test_yaml_scalar_rejects_physical_line_breaks(self):
-        for value in ("first\nsecond", "first\rsecond", "first\r\nsecond"):
+        # Everything str.splitlines() breaks on, not just \n and \r: the verifier
+        # reads frontmatter with splitlines(), and json.dumps leaves NEL, LS and
+        # PS literal under ensure_ascii=False.
+        for value in (
+            "first\nsecond",
+            "first\rsecond",
+            "first\r\nsecond",
+            "first\vsecond",
+            "first\fsecond",
+            "first\x85second",
+            "first\u2028second",
+            "first\u2029second",
+        ):
             with self.subTest(value=repr(value)):
                 with self.assertRaises(builder.SkillError):
                     builder.yaml_scalar(value)
@@ -843,10 +873,13 @@ class CommittedSkillsTests(unittest.TestCase):
                 )
 
     def test_committed_skills_pass_verification(self):
-        expected = len(json.loads(MANIFEST.read_text(encoding="utf-8"))["skills"])
+        entries = json.loads(MANIFEST.read_text(encoding="utf-8"))["skills"]
         summary = verifier.verify(SKILLS, SKILLS / "skills-manifest.json")
-        self.assertEqual(summary["skills"], expected)
-        self.assertEqual(summary["trigger_evals"], expected * 8)
+        self.assertEqual(summary["skills"], len(entries))
+        self.assertEqual(
+            summary["trigger_evals"],
+            sum(len(entry["trigger_evals"]) for entry in entries),
+        )
 
     def test_portable_docs_and_routers_avoid_host_specific_tool_names(self):
         paths = [REPO / "README.md", SKILLS / "README.md"]
