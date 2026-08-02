@@ -1697,11 +1697,10 @@ The explicit `else` is required in a live session: `nil` means no audio was cons
 > it straight to `analyzeSequence(_:)` without annotating remains the tidier style, but annotating
 > is no longer a gamble.
 
-> 🔴 **GAP — `withTaskCancellationShield`.** See §9.4. It appears verbatim in Apple's article and
-> nowhere else in our corpus. One elimination made 2026-07-29: it is **not** a Speech framework
-> symbol — it does not appear anywhere in the macOS 27.0 beta Speech interface — which leaves a
-> Swift concurrency library function or a helper defined inside the SpokenWord sample. §9.4 gives
-> you a shield you can write yourself either way.
+> ✅ **`withTaskCancellationShield` — RESOLVED 2026-08-02** (a 🔴 GAP until this date). It is the
+> **Swift standard library**: SE-0504, *Task Cancellation Shields*, Implemented in **Swift 6.4**.
+> The 2026-07-29 elimination was right that it is not a Speech symbol — it is a toolchain symbol,
+> not an SDK one. Call Apple's; §9.4 has the signatures and a renamed pre-6.4 fallback.
 
 ### 6.5 Files and assets: `AssetInputSequenceProvider`
 
@@ -2583,35 +2582,72 @@ throw.** The API is correct, your code compiles, the types check, and the output
 
 ### 9.4 What `withTaskCancellationShield` actually is
 
-> 🔴 **GAP — the provenance of `withTaskCancellationShield`.** It appears in Apple's article code
-> block, in a comment written by Apple, and **nowhere else in our corpus** — not in the Speech
-> framework symbol index, not in the iOS 26 sample, not in any other documentation page we fetched,
-> and (checked 2026-07-29) **not anywhere in the macOS 27.0 beta Speech `.swiftinterface`**, which
-> rules out the Speech framework as its home. It is therefore one of:
+> ✅ **RESOLVED 2026-08-02 — it is the Swift standard library.** (A 🔴 GAP until this date. The gap
+> box offered two candidates: a Swift concurrency library function, or a helper local to the
+> SpokenWord sample. **It is the first.**)
 >
-> - a Swift concurrency library function (in which case it is a Swift-evolution addition, not a
->   Speech API, and belongs to the toolchain rather than the SDK);
-> - a helper defined inside the SpokenWord sample project, which we cannot read (§1.2).
+> `withTaskCancellationShield` is **[SE-0504, *Task Cancellation Shields*][^se0504]**, status
+> **"Implemented (Swift 6.4)"**, accepted by review manager John McCall and implemented in
+> `swiftlang/swift` at `stdlib/public/Concurrency/TaskCancellation.swift`. Both are first-party
+> `swiftlang` repositories. That also explains cleanly why the 2026-07-29 sweep found nothing in
+> the Speech `.swiftinterface` — it was never a Speech symbol, it belongs to the **toolchain**, not
+> the SDK.
 >
-> **Resolving this** takes one line in a scratch Swift file on a machine with the Swift 6.x
-> toolchain that ships with Xcode 27: type the name and see whether it resolves.
+> **Two overloads, verbatim from the proposal:**
 >
-> **SAFE DEFAULT — write it yourself.** The semantics are unambiguous ("run this child work in a
-> context where the parent's cancellation flag is not visible"), and an unstructured `Task` already
-> has exactly that property: a `Task { }` created inside another task does *not* inherit
+> ```swift
+> public func withTaskCancellationShield<Value, Failure>(
+>   _ operation: () throws(Failure) -> Value
+> ) throws(Failure) -> Value
+> ```
+> ```swift
+> public nonisolated(nonsending) func withTaskCancellationShield<Value, Failure>(
+>   _ operation: nonisolated(nonsending) () async throws(Failure) -> Value
+> ) async throws(Failure) -> Value
+> ```
+>
+> Semantics, from the proposal: `Task.isCancelled` reads `false` inside the shielded block even
+> when the enclosing task is cancelled, and cancellation does not propagate through the task tree
+> while shielded. The motivating case is exactly the one Apple's article hits — **cleanup that must
+> run even in a cancelled task** — and the proposal names the pre-shield workaround as *"creating
+> unstructured tasks, introducing unnecessary scheduling overhead and timing delays"*. That is
+> precisely the polyfill below, described by its authors as the thing the language feature replaces.
+
+[^se0504]: `https://github.com/swiftlang/swift-evolution/blob/main/proposals/0504-task-cancellation-shields.md`.
+    Implementation: `https://github.com/swiftlang/swift/blob/main/stdlib/public/Concurrency/TaskCancellation.swift`.
+    🔴 **One residue:** which Xcode 27 beta ships Swift 6.4 was not confirmed. `xcrun swift --version`
+    on the build you target answers it in one line.
+
+> ⚠️ **Therefore: do not paste the polyfill below into a Swift 6.4 project under this name.** A
+> global function with the same name and arity in your own module **shadows the standard library
+> one**, and the two are not equivalent — ours takes `@escaping @Sendable`, constrains `T: Sendable`,
+> has no typed `throws(Failure)`, is missing the `nonisolated(nonsending)` isolation behaviour, and
+> supplies no synchronous overload. Swapping the stdlib's semantics for ours silently, at every
+> call site, is a worse outcome than the original gap.
+>
+> **Use Apple's.** Keep the implementation below only if you must target a toolchain older than
+> Swift 6.4 — and if you do, **rename it** (`withCancellationShieldCompat`) so it cannot shadow.
+
+> **THE PRE-6.4 FALLBACK — write it yourself.** The semantics are unambiguous ("run this child work
+> in a context where the parent's cancellation flag is not visible"), and an unstructured `Task`
+> already has exactly that property: a `Task { }` created inside another task does *not* inherit
 > cancellation. So:
 
 ```swift compile:27
 /// Runs `body` in a context that does not observe the calling task's cancellation.
 ///
-/// 🟡 OUR IMPLEMENTATION of the semantics Apple's article describes. If
-/// `withTaskCancellationShield` resolves in your toolchain, prefer Apple's — the name in the
-/// article is the one to search for first.
+/// 🟡 OUR PRE-6.4 FALLBACK for the semantics of the standard library's
+/// `withTaskCancellationShield` (SE-0504, Swift 6.4). **On Swift 6.4 and later, delete this and
+/// call the standard library function instead.**
+///
+/// Deliberately NOT named `withTaskCancellationShield`: a same-named global in your module would
+/// shadow the stdlib overloads, which differ (typed `throws(Failure)`, `nonisolated(nonsending)`,
+/// a synchronous overload, no `Sendable` constraint on the result).
 ///
 /// The mechanism: an unstructured `Task` does not inherit the cancellation state of the task
 /// that created it. Awaiting its `value` re-suspends the caller, but the child keeps running
 /// even after the parent is cancelled.
-func withTaskCancellationShield<T: Sendable>(
+func withCancellationShieldCompat<T: Sendable>(
     _ body: @escaping @Sendable () async throws -> T
 ) async throws -> T {
     let shielded = Task { try await body() }
@@ -3036,8 +3072,9 @@ a real iOS 27 device once. Each item takes a minute and each one closes a gap in
 the provider signatures — G4, G7, G8, G9 — so the list is shorter than it was.)
 
 1. `print(AssetInventory.maximumReservedLocales)` — gap G5.
-2. Type `withTaskCancellationShield` in a scratch file. Does it resolve? — gap G6 (the SDK check
-   confirmed it is not a Speech-framework symbol, so this tells you toolchain vs. sample helper).
+2. ~~Type `withTaskCancellationShield` in a scratch file. Does it resolve?~~ ✅ **Answered
+   2026-08-02 without a machine** — it is SE-0504, Swift 6.4 standard library (§9.4). The only
+   thing left to check is `xcrun swift --version`, to confirm your Xcode 27 build is ≥ 6.4.
 3. Print `result.text.runs` for a **volatile** result from `progressiveLongDictation` and check
    whether a time-range attribute is present — gap G1, the §8.3 conflict.
 4. Record, speak, and hit stop **mid-word**. Is the last word present? — §9.5.
@@ -3930,7 +3967,7 @@ follow, kept for the audit trail
 |---|---|---|---|---|
 | **G1** | **`progressiveLongDictation` vs `.audioTimeRange`.** Apple's article merges by time range using a preset the preset page says has no time-range attributes (§8.3). | Two Apple pages disagree; the sample that would settle it is unavailable (§1.2). A preset's option contents are runtime values — invisible in a `.swiftinterface` (checked 2026-07-29). | Print `result.text.runs` for a volatile result on an iOS 27 device; or read the SpokenWord source. | `.union([.audioTimeRange])` explicitly. Costs nothing, removes the ambiguity. |
 | **G5** | Value of `AssetInventory.maximumReservedLocales`. | A computed property's value is not in the interface; likely device-dependent. | One `print` on a device. | Assume 1. Release aggressively. Treat the throw as recoverable. |
-| **G6** | **Provenance of `withTaskCancellationShield`.** *Narrowed:* it is **not** a Speech-framework symbol — absent from the 27.0 interface. | Appears in Apple's article and nowhere else in the corpus; remaining candidates are the Concurrency library or a sample-local helper. | Type the name in a scratch file with the Xcode 27 toolchain. | Write your own (§9.4) — the semantics are unambiguous, and an unstructured `Task` already has them. |
+| **G6** | ~~**Provenance of `withTaskCancellationShield`.**~~ ✅ **CLOSED 2026-08-02** — it is the **Swift standard library**: SE-0504 *Task Cancellation Shields*, Implemented (Swift 6.4), `stdlib/public/Concurrency/TaskCancellation.swift`. The 2026-07-29 elimination was correct: not a Speech symbol, a **toolchain** symbol. | Two `swiftlang` first-party repos: the accepted proposal and the implementation. | — | **Call Apple's.** §9.4 has both overload signatures. The former hand-written shield is retained only as a pre-6.4 fallback and has been **renamed** `withCancellationShieldCompat` so it cannot shadow the stdlib function. Residue: confirm your Xcode 27 build ships Swift ≥ 6.4 (`xcrun swift --version`). |
 | **G13** | `SFSpeechLanguageModel.Configuration`'s initializer, and the type of `prepareCustomLanguageModel(for:)`. | **Objective-C API — a `.swiftinterface` cannot show it** (checked 2026-07-29; the type's existence is attested via `ContentHint.customizedLanguage`). Still the only unverified API in the custom-vocabulary path. | Fetch `/documentation/speech/sfspeechlanguagemodel/configuration` or read the ObjC header. | Isolate both in one small function (§11.5) and fix against autocompletion in five minutes. |
 | **G15** | Whether a `Template`'s `count:` is per-expansion or divided across expansions. | Behavioural, not declarational — no interface can settle it. | An A/B recognition experiment. | Treat counts as relative weights on one consistent scale; tune empirically. |
 | **G18** | The default `ModelRetention`. *Narrowed:* `priority`'s type is SDK-verified as `TaskPriority` (§13.2). | `options:` defaults to `nil`; what `nil` maps to is internal. | Apple documenting it, or measurement. | `SpeechAnalyzer(modules:)` with no options, as both Apple examples do. |
@@ -3974,7 +4011,7 @@ For auditability, since a previous batch in this series was found to contain a f
 | Quotes from a compiling Apple sample (iOS 26, stale) | 3 blocks | Locale comparison by BCP-47, the asset ladder, the two-transcript merge |
 | Quotes from an Apple staff forum reply | 1 | Thread 834149, "no new API has been released specific to that model" |
 | Read from `apple/coreai-models` source | §14 entirely | Line-numbered citations throughout |
-| **Assembled by us and marked 🟡** | ~8 listings | `makeTranscriber` composition, `switchLocale`, `transcribeFile`, `makeInputSequence`, `withTaskCancellationShield`, the `datagenerator` CLI, `TranscriptStore`, the §10 controller |
+| **Assembled by us and marked 🟡** | ~8 listings | `makeTranscriber` composition, `switchLocale`, `transcribeFile`, `makeInputSequence`, `withCancellationShieldCompat` (the pre-Swift-6.4 fallback; the real `withTaskCancellationShield` is Apple's — §9.4), the `datagenerator` CLI, `TranscriptStore`, the §10 controller |
 | **Declared 🔴 unknown** | 11 still open (of an original 24; 13 closed by the SDK/runtime audit, several with corrections) | The tables above; the former async-signature gap is resolved by the current API declaration.[^speech-cancel] |
 
 Nothing in this guide is written from recollection of an API. Where a name, type or default could

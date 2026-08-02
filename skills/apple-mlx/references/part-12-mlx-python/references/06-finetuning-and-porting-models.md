@@ -54,10 +54,15 @@ what you end up doing when the first one fails with `Model type <x> not supporte
 - **Learned quantization** (`mlx_lm.dwq`, `awq`, `gptq`, `dynamic_quant`). Those are quantization
   algorithms that happen to use gradients; they are covered in this part's quantization guide.
 - **`mlx_lm.server`, batching, prompt caching, distributed serving.** This part's serving guide.
-- **RLHF/DPO/GRPO.** mlx-lm ships `batch_generate(return_logprobs=..., return_token_ids=...)`
+- **RLHF/DPO/GRPO — in `mlx_lm` itself.** mlx-lm ships
+  `batch_generate(return_logprobs=..., return_token_ids=...)`
   explicitly for "reinforcement learning (e.g. RLOO, PPO) where behavior log-probabilities are
   needed for importance weighting" (docstring, `generate.py`) — but no RL trainer. There is no
-  preference-optimization command in this package at this commit.
+  preference-optimization command in this package at this commit. **That remains true and is the
+  reason this guide stops at SFT.** It is *not* the same as saying preference optimisation is
+  unavailable on Apple silicon: a third-party layer built on top of mlx-lm provides it, and
+  **§13 now maps that layer** so the boundary is a deliberate scope choice rather than an
+  apparent hole.
 - **Vision-language fine-tuning.** `mlx_lm` is text-only; `save_config` even deletes
   `vision_config` from any config it writes (§9.4). VLM work lives in `mlx-vlm`, out of scope.
 - **Running the adapter from Swift** — [Part 13](../../part-13-mlx-swift/README.md) — or converting the fused
@@ -121,6 +126,7 @@ different checkout, grep for the symbol, not the line.
 | [10](#10-evaluating-the-result) | Evaluating the result |
 | [11](#11-mlx_lmfuse-and-what-it-costs-you) | `mlx_lm.fuse`, and what it costs you |
 | [12](#12-the-complete-worked-run) | The complete worked run |
+| [13](#13-beyond-mlx_lmlora-the-third-party-training-layer) | Beyond `mlx_lm.lora`: the third-party training layer |
 
 ---
 
@@ -1214,6 +1220,13 @@ heavy domain shift) and you have both the data and the RAM.
 > cited by LORA.md's footnotes), which were not measured on Apple silicon or on these
 > implementations. **Do not quote a "DoRA is N% better" number.** Resolving this needs a controlled
 > run on your own data; §10 gives you the harness.
+>
+> **Searched again 2026-08-02, and this is now a documented negative rather than an untested
+> assumption.** A sweep of the wider MLX training ecosystem — `mlx-lm-lora`, `mlx-tune`,
+> `MLX-GRPO`, `SiLLM`, and the ~140-project `awesome-mlx` index (§13) — found **no
+> LoRA-vs-DoRA-vs-full quality ablation anywhere**. The third-party projects publish
+> *throughput and memory* numbers, not quality. So the absence is not an artefact of where this
+> corpus looked; as of this date nobody in the ecosystem has published one.
 
 ---
 
@@ -1468,6 +1481,11 @@ better bet; for domain vocabulary and factual content, the MLP projections (`gat
 > documentation, undated, hardware unstated for the loss figure). Attribute it as such and do not
 > generalise from it. **Safe default: rank 16, attention-only, and run §10's evaluation before you
 > touch anything else.**
+>
+> **Ecosystem sweep 2026-08-02: still none.** The third-party training projects surveyed in §13
+> expose `--lora-parameters '{"rank": …}'` and per-layer targeting the same way mlx-lm does, and
+> publish no sweep over either. Treat this as a genuine ecosystem-wide absence, not a gap in this
+> corpus's reading.
 
 ### 6.4 `scale` — mlx-lm's alpha, and the trap in it
 
@@ -1822,6 +1840,11 @@ large relative to compute, and hurts when the opposite is true.
 > turn it on when you are otherwise about to reduce `--num-layers` below 8, and measure both
 > `peak_memory` (reported every `--steps-per-report` iterations) and `iterations_per_second` for
 > 50 steps with and without. That A/B costs two minutes.
+>
+> **Ecosystem sweep 2026-08-02: still none** — `mlx-lm-lora` exposes the same `--grad-checkpoint`
+> flag and recommends it for 13B+ models (§13) without measuring it either. Given the two-minute
+> cost of the A/B above, **this gap is better closed by running it than by more searching**, and
+> it is a good candidate for a committed benchmark in this repo rather than a citation.
 
 ### 8.5 ⚠️ The peak-memory number the trainer prints is not your memory footprint
 
@@ -2853,6 +2876,145 @@ it only implements basic security checks."* (✅ `notes/repos/mlx-lm.md` §2.6.)
 - **Behind a `LanguageModelSession`** — point `ChatCompletionsLanguageModel` at
   `http://localhost:8080/v1`. [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), and note C4:
   guided generation needs logits, which not every backend exposes.
+
+---
+
+## 13. Beyond `mlx_lm.lora`: the third-party training layer
+
+Everything above is `mlx_lm`, read from source. This section is different in kind and is marked
+accordingly.
+
+> ⚠️ **Evidence tier for this whole section: 🟡 project READMEs, not source reads, not runs.**
+> Nothing here was cloned, executed or measured by this project. It exists because the scope note
+> at the top of this guide — *"there is no preference-optimization command in this package"* — is
+> true of `mlx_lm` and false of the ecosystem, and a reader who stops at the scope note will
+> conclude that DPO and GRPO are simply unavailable on Apple silicon. They are not. **Treat every
+> flag name below as a pointer to check, not as an attested spelling.** Harvest notes:
+> `notes/web/2026-08-02-harvest/mlx-training-and-ecosystem.md`.
+
+### 13.1 Why this matters for the boundary this guide draws
+
+`mlx_lm.lora` gives you **SFT** in three flavours (LoRA / DoRA / `full`), with QLoRA arriving
+automatically when the base is quantized (§5). That is the whole of Apple's first-party training
+surface in this package. Post-training alignment — preference optimisation, reward models,
+group-relative RL — has **no first-party MLX command at all**.
+
+The gap is filled by projects that import `mlx_lm` and add trainers on top. Two are worth naming.
+
+### 13.2 `mlx-lm-lora` — the training superset
+
+`https://github.com/Goekdeniz-Guelmez/mlx-lm-lora` · `pip install -U mlx-lm-lora`
+
+Claims **12 training algorithms**, grouped by what they need:
+
+| Family | Methods | Needs |
+|---|---|---|
+| Supervised | SFT | prompt/completion or chat data |
+| Offline preference | DPO, CPO, ORPO | `{prompt, chosen, rejected}` triples |
+| Group-relative RL | GRPO, GSPO, Dr. GRPO, DAPO | a prompt set + reward functions |
+| Online / judge-in-loop | Online DPO, XPO, RLHF Reinforce, PPO | a judge or reward model |
+
+The entry point mirrors `mlx_lm.lora` closely enough to be legible from §3:
+
+```bash
+# 🟡 UNVERIFIED — README grammar, not run by this project.
+mlx_lm_lora.train --model <model_path> --data <data_path> --train \
+  --train-type lora --train-mode dpo --beta 0.1
+```
+
+`--train-type {lora,dora,full}` is the axis this guide's §4 covers; `--train-mode` is the new one.
+The memory and optimisation flags are recognisably the same family (`--grad-checkpoint`,
+`--gradient-accumulation-steps`, `--num-layers`, `--lora-parameters '{"rank": …}'`), which is what
+you would expect from a layer built on mlx-lm's trainer.
+
+Two things in it have no counterpart anywhere else in this part:
+
+- **QAT (quantization-aware training)** — `--qat-enable`, `--qat-bits` (default 8),
+  `--qat-group-size` (default 64, `0` = per-tensor), `--qat-mode` (default `affine`),
+  `--qat-start-step`, `--qat-interval`. Described as projecting weights onto quantized grids
+  *during* training, and offered for SFT, DPO and ORPO. This part's quantization guide covers
+  **post-training** quantization thoroughly; QAT is the missing sibling, and this is the only MLX
+  implementation of it the 2026-08-02 sweep found.
+- **Custom reward functions**, registered in Python and selected by name — the piece GRPO needs:
+
+  ```python
+  # 🟡 UNVERIFIED — README example.
+  from mlx_lm_lora.reward_functions import register_reward_function
+
+  @register_reward_function()
+  def my_reward(prompt, completion, reference_answer, **kwargs):
+      return score  # float 0-1
+  ```
+
+  invoked as `--reward-functions-file ./my_rewards.py --reward-functions "my_reward"`.
+
+There is also a separate judge-training entry point
+(`python -m mlx_lm_lora.train_judge --model <model> --train-type full --data <data>`), which is the
+local, MLX-native counterpart to the model-judge material in
+[Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md). If you are
+calibrating a judge there, this is where you would train one here.
+
+> 🚩 **About its benchmark table — read the batch size before you read the numbers.** The project
+> publishes a comparison against Unsloth on an A100 and against `mlx-tune`, at **batch size 1,
+> context 4096, 100 steps**, and reports (for example) Qwen3-8B SFT 4-bit at ~4.1 it/s on an
+> M4 Pro versus ~1.3 it/s for Unsloth on an A100.
+>
+> **Batch size 1 is the configuration that most disadvantages a datacentre GPU**, so this is a
+> latency result, not a throughput result, and it does not tell you what an A100 does at the batch
+> sizes anyone would actually run. Do not cite it as "Apple silicon beats an A100". The
+> **memory-envelope** half of the same table is the defensible half, and the structural claim under
+> it — unified memory up to 512 GB on an Ultra versus 24–80 GB of VRAM — does not depend on the
+> benchmark at all. See [Part 15](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md)
+> for why this shape of comparison is the one to distrust.
+
+Its stated memory guidance, which is at least internally consistent with §8's arithmetic:
+1–3B → `--batch-size 4 --num-layers 16`; 7B → `--batch-size 2 --num-layers 8 --load-in-8bits`;
+13B+ → `--batch-size 1 --num-layers 4 --load-in-4bits --grad-checkpoint`.
+
+### 13.3 `mlx-tune` — the Unsloth-source-compatible path
+
+`https://github.com/ARahim3/mlx-tune`. Methods: SFT, DPO, ORPO, GRPO, **KTO**, **SimPO**, plus
+dedicated trainers for **vision, TTS, STT, embeddings and OCR** — note that last group, since
+`mlx_lm` is text-only by construction (§"What this does not cover"). Requirements as stated:
+Apple silicon M1–M5, macOS 13.0+, 8 GB+ unified RAM (16 GB+ recommended), Python 3.9+,
+**MLX 0.20+**.
+
+Its distinguishing claim is a **"100% compatible" Unsloth API** — `FastLanguageModel` and
+`SFTTrainer` — so that "training scripts written once work identically whether training on Mac or
+CUDA GPUs".
+
+> **If that claim holds, it is the most interesting thing in this section**, because it makes the
+> Mac a drop-in target for an existing CUDA training script rather than a port. That is a
+> cross-stack bridge in the sense [Part 14](../../part-14-bridges-between-stacks/README.md) uses the word,
+> and it points the opposite way from the rest of that part (which moves *models* between stacks,
+> not *training code*).
+>
+> 🔴 **GAP — the compatibility claim is unverified.** "100% compatible" is the project's own
+> wording; no source in this corpus tests it, and API-compatibility claims of this shape usually
+> hold for the documented happy path and not for callbacks, custom collators, or anything touching
+> device placement. **Before you plan a migration around it, port one real script and diff the
+> results.**
+
+### 13.4 The rest of the ecosystem, as a pointer list
+
+`awesome-mlx` (`https://github.com/raullenchai/awesome-mlx`) indexes ~140 projects. The ones
+adjacent to this guide, so you can name an existing implementation instead of building one:
+
+- **Training:** `MLX-GRPO` (pure-MLX GRPO pipeline), `SiLLM`, `TransformerLab` (training +
+  evaluation environment), `rlx`, `mlx-lm-gui` and `MLX-LoRA-Studio` (native macOS fine-tuning
+  GUIs), `nanoGPT_mlx`, `mlx-gpt2` (both educational).
+- **Guided generation in the MLX world**, which Part 13.3 currently reasons about from first
+  principles: `outlinesmlx`, `Toolio` (JSON-schema steering plus tool calling),
+  `mlx-swift-structured`.
+- **Benchmarking:** `mlx-benchmark` (MLX ops vs MPS vs CUDA) — a candidate cross-check for
+  Part 15's numbers.
+- **Speech**, adjacent to [Part 16.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md):
+  `speech-swift` (ASR/TTS/VAD/diarization over MLX **and** Core ML), `mlx-audio`, `parakeet-mlx`,
+  `lightning-whisper-mlx`.
+
+> **How to use this list:** as a search index, not as a recommendation. None of these projects has
+> been read or run by this project, none carries Apple's support, and the churn rate in this corner
+> of the ecosystem is high. The value is that "does this exist for MLX?" now has a place to look.
 
 [^scope-source]: Source snapshot: [`ml-explore/mlx-lm` at `e5baded`](https://github.com/ml-explore/mlx-lm/tree/e5baded8c1d286754edb479ffbde4655a68e2758).
 [^trust-source]: The pinned [`lora.py` parser](https://github.com/ml-explore/mlx-lm/blob/e5baded8c1d286754edb479ffbde4655a68e2758/mlx_lm/lora.py#L210-L221)

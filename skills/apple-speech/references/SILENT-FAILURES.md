@@ -1,6 +1,6 @@
 # Silent-failure index — SpeechAnalyzer: live and file-based transcription
 
-**41 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**42 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-02. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -12,7 +12,7 @@
 | [Compiles but unavailable](#compiles-but-unavailable) | 5 |
 | [Version drift](#version-drift) | 2 |
 | [Docs vs reality](#docs-vs-reality) | 4 |
-| [API footguns](#api-footguns) | 6 |
+| [API footguns](#api-footguns) | 7 |
 | [General cautions](#general-cautions) | 12 |
 
 ## Empty output / no-op
@@ -74,6 +74,7 @@
 
 - [finish() alone never terminates the result streams — 'for try await result' waits forever and the stop button hangs](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#23-what-finished-means) — 16.1 🔇
 - [assetInstallationRequest is nil on already-provisioned devices — force-unwrap and you crash exactly where all is fine](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#53-the-four-step-process-and-the-ordering-that-matters) — 16.1 🔇
+- [A local withTaskCancellationShield shadows the Swift 6.4 stdlib function with different generics and no async/sync overload pair.](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#94-what-withtaskcancellationshield-actually-is) — 16.1
 - [Code comment: the installation request is nil when assets are already installed — never force-unwrap](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#10-a-complete-worked-example) — 16.1
 - [SpeechDetector.Result is not speech/silence events — the name promises what the stream doesn't carry](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#123-️-speechdetectorresult-is-not-what-its-name-suggests) — 16.1
 - [speechDetector.results carries only VAD model errors per Apple's docs — subscribe for speech events and get none](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#123-️-speechdetectorresult-is-not-what-its-name-suggests) — 16.1 🔇

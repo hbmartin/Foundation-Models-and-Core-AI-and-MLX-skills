@@ -1,6 +1,6 @@
 # API & symbol index — Migrating an Apple AI integration from 26 to 27
 
-**400 symbols, of 1204 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**401 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-02; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -248,7 +248,7 @@
 | `CVPixelBuffer` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `CVReadOnlyPixelBuffer` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 
-## Swift/Foundation  <sub>16 symbols</sub>
+## Swift/Foundation  <sub>17 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -266,6 +266,7 @@
 | `SendableMetatype` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `String` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `Task` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
+| `Task.isCancelled` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `URL` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `URLSession` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 

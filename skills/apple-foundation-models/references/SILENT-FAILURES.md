@@ -1,6 +1,6 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**386 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**389 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-02. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -17,9 +17,9 @@
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
 | [Version drift](#version-drift) | 21 |
-| [Docs vs reality](#docs-vs-reality) | 38 |
+| [Docs vs reality](#docs-vs-reality) | 40 |
 | [API footguns](#api-footguns) | 70 |
-| [General cautions](#general-cautions) | 54 |
+| [General cautions](#general-cautions) | 55 |
 
 ## Wrong output
 
@@ -421,6 +421,8 @@
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is unverified.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written docs.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
+- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste say otherwise.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
+- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-gap-stated-plainly) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -536,6 +538,7 @@
 
 **Part 3**
 
+- [Group Labs ship no caption track — cite Apple's written Q&A summary as paraphrase, never as an engineer's words.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#33--the-on-device-figure-is-4096--settled-by-tn3193) — 3.1
 - [Sample logging line: prints a KV cache hit-rate warning so prefix changes show up during development.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#51-the-cache-hit-rate) — 3.1
 - [Scope: trimKVCache(to:) is a community-fork Core AI primitive, not a Foundation Models API you can call.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#9-what-prefix-reuse-is-worth-measured) — 3.1
 - [Attribution: the prefix-reuse numbers are one community Mac run (qwen3-0.6b); exact hardware and build unstated.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#96-the-numbers) — 3.1

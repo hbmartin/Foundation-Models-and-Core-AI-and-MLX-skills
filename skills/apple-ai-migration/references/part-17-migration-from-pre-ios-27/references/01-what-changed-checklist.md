@@ -177,11 +177,42 @@ func contextBudget() -> Int {
 > (Note the doc slug: `…tn3193-managing-the-on-device-foundation-model-s-context-window` — `model-s`,
 > not `models`; the other spelling 404s.)
 
-> 🟡 **RECONSTRUCTED** — a community source reports device probing returning **8192** on iOS 27
-> where iOS 26 reported 4096. Apple has not corroborated 8192 anywhere we can find, and the WWDC26
-> session 319 comparison table and Apple's PCC article both still say **4K on-device / 32K PCC**.
-> Treat 8192 as an unconfirmed observation and — either way — **read `contextSize` at runtime rather
-> than hardcoding either number.** That advice is version-proof; the constants are not.
+> ✅ **VERIFIED 2026-08-02 — Apple states 4096 for iOS 27, and the budget is shared.** Asked
+> directly *"What is the on-device Foundation Models context window in iOS 27, and is input plus
+> output counted against one shared token budget?"*, Apple's ML frameworks panel answered: **the
+> on-device context is 4096 tokens and is a shared budget** — *"if you feed in 4000 tokens, the
+> response can use the remaining ~96"* — while **Private Cloud Compute offers 32K, also shared**.
+> WWDC26 **Group Lab 8121**, *"Coding Intelligence, Machine Learning & AI Group Lab"*,
+> ch. `0:08:11`.[^ctx-grouplab]
+>
+> This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
+> we can find" and left the question open. Apple has now corroborated **4096**, for iOS 27
+> specifically, on the record. Three other lines of evidence agree: session 319's comparison table
+> and Apple's PCC article (4K/32K), the repo's own simulator measurement (4096 on the iOS 27.0
+> simulator runtime, `probes/`), and the 27.0 `swiftinterface`, which returns a dynamic
+> `_contextSize` on OS 27+ with a **4096 fallback** below it.
+>
+> **The community 8192 report is now contradicted, not merely uncorroborated.** It is a single
+> comment describing device probing; Apple's statement is a platform statement. If both are honest,
+> the reconciliation would have to be a device-specific runtime value that Apple's answer does not
+> describe — which is exactly why the standing advice below does not change.
+>
+> ⚠️ **Read `contextSize` at runtime rather than hardcoding either number.** Apple's answer is a
+> statement about the platform, not a per-device guarantee, and the 27.0 interface plainly returns
+> a *dynamic* value. The advice is version-proof; the constants are not.
+>
+> **Budget accounting, from the same lab:** ch. `0:39:42` adds that **every tool definition and
+> instruction consumes the same shared budget** — *"keep prompts and tool definitions lean … only
+> include the tools relevant to the task"*. That matches TN3193's list above
+> (instructions, prompts, tools, schemas, transcript entries) and is the operational reason the
+> 4096 figure bites sooner than people expect.
+
+[^ctx-grouplab]: WWDC26 Group Lab **8121**, `https://developer.apple.com/videos/play/wwdc2026/8121/`.
+    ⚠️ **Citation discipline for Group Labs:** Apple publishes **no caption track** for lab
+    sessions — only a chaptered Q&A index with Apple's own written summary per answer. Quotations
+    above are from Apple's published summary text, so cite them as *Apple's paraphrase of the
+    panel*, never as an engineer's spoken words. Analysis:
+    `notes/web/2026-08-02-harvest/wwdc2026-8121-ml-ai-group-lab.md`.
 
 ### 1.2 Deployment target vs SDK vs runtime OS
 
@@ -2568,7 +2599,7 @@ discount if you want only first-party evidence.
 
 | Claim | Attribution |
 |---|---|
-| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 | Community source comment in a shipping third-party app. **Not corroborated by Apple**, which still publishes 4K. §1.1 |
+| ~~`contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096~~ **CONTRADICTED 2026-08-02** | Community source comment in a shipping third-party app. Apple's ML frameworks panel has since stated **4096, shared input+output**, for iOS 27 on the record (Group Lab 8121, ch. `0:08:11`), joining session 319, the PCC article, the repo's simulator measurement and the 27.0 interface fallback. Do not repeat the 8192 figure. §1.1 |
 | Core AI first-load of a 3 GB model at **194 seconds** on iPhone | Community-measured. §6.10 |
 | Foundation Models may downsample images to **896 px** on the longest dimension | Developer inference in thread 838613. **Never Apple-confirmed.** §4.1 |
 | Grammar-constrained decoding (`@Generable`) is unavailable on GPU-pipelined Core AI bundles because logits are not exposed | Community-measured. §4.3 |

@@ -9,6 +9,15 @@
 > (`5ed9981303b38d5a44aa6b45509bc4f6945029f5`, the pinned checkout in `scripts/clone-research-repos.sh`).
 > All code quoted with `path:LINE` citations relative to that repo root.
 > Anything not directly read is marked **UNVERIFIED**.
+>
+> ⚠️ **Upstream drift, 2026-08-02: the local clone has been fast-forwarded to `49becc6`
+> (2026-07-31), six commits past this pin.** Citations below remain correct for `5ed9981`.
+> Two affect this file's subject matter: **`86b4c04` (2026-07-28) drops the `.llmasset` extension**
+> — VLM bundles are now plain `<name>/` directories, so the `.llmasset/` spellings in the model
+> table below (e.g. `qwen3_vl_2b.llmasset/`) are stale — and **`367ad52` (2026-07-29) adds a new
+> custom op for KV-cache update**, rewriting `export/mlir_ops.py` and both
+> `primitives/{ios,macos}/cache.py`. Full drift table:
+> `guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md` §18.1.
 
 ## Table of contents
 

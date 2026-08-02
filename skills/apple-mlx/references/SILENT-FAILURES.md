@@ -1,6 +1,6 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**340 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**341 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-08-02. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -20,7 +20,7 @@
 | [Version drift](#version-drift) | 12 |
 | [Docs vs reality](#docs-vs-reality) | 13 |
 | [API footguns](#api-footguns) | 59 |
-| [General cautions](#general-cautions) | 69 |
+| [General cautions](#general-cautions) | 70 |
 
 ## Wrong output
 
@@ -464,6 +464,7 @@
 - [lm-eval with --limit 200 across eight tasks is a smoke test, not a benchmark; don't publish those numbers.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#103-benchmarks--the-capability-check) — 12.6
 - [Publish the adapter alongside the fused model; it's two orders of magnitude smaller and others can rebase it.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#116-uploading) — 12.6
 - [mlx_lm.server's own startup banner says it is not recommended for production; treat it as a dev tool.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#step-10--serve-and-hand-off) — 12.6
+- [This section is project READMEs only — nothing in it was cloned, run or measured; treat flag names as pointers to check.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#13-beyond-mlx_lmlora-the-third-party-training-layer) — 12.6
 
 **Part 13**
 

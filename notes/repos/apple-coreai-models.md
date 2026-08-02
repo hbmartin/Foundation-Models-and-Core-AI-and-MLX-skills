@@ -375,6 +375,14 @@ public struct LanguageBundle: Sendable {
 `LanguageBundle(bundle:)` throws `.kindMismatch` if kind isn't llm/vlm, `.missingField("assets.main")`, `.missingField("language")`, and (for vlm) `.missingField("vision")`.
 
 ### VLM bundle layout (`models/vlm/README.md:29-39`)
+
+> ⚠️ **STALE as of upstream `86b4c04` (2026-07-28), checked 2026-08-02.** The commit
+> *"Remove Deprecated LLMAsset Terminology"* **drops the `.llmasset` extension**: VLM export now
+> writes `<name>/`, not `<name>.llmasset/` (`python/src/coreai_models/vlm/export.py` —
+> `bundle_path = output_dir / output_name`, previously `output_dir / (output_name + ".llmasset")`).
+> The layout *inside* the directory is unchanged. Anything globbing `*.llmasset` breaks against a
+> current clone. Left below as read at `5ed9981`.
+
 Directory `<name>.llmasset/` with `kind=vlm`:
 | Asset role | File | Role |
 |---|---|---|

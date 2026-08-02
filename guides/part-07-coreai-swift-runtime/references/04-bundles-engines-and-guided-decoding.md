@@ -2424,7 +2424,8 @@ a malformed *schema* is an error.
 ### 7.3 `ConstrainedGenerationSession` — the type you would actually use
 
 The high-level wrapper, and a rare public `~Copyable` type. ✅ VERIFIED,
-`GuidedGeneration/ConstrainedGenerationSession.swift:19-253`:
+`GuidedGeneration/ConstrainedGenerationSession.swift:19-253` at `5ed9981`, **extended at
+`49becc6` (2026-07-31) — the three additions are marked below and explained in §7.3.1**:
 
 ```swift prelude:guide-context
 public struct ConstrainedGenerationSession: ~Copyable {
@@ -2446,6 +2447,17 @@ public struct ConstrainedGenerationSession: ~Copyable {
     @discardableResult public mutating func applyMask(to logits: inout [Float16]) -> Bool  // non-x86_64
     @discardableResult public mutating func acceptToken(_ tokenId: Int32) -> Bool
     public mutating func reset()
+
+    // NEW at 49becc6 (2026-07-31) — "Part 1 of 4 for GPU-based constrained sampling (#114)".
+    @discardableResult public mutating func rollback(_ numTokens: Int = 1) -> Bool
+    public func findJumpForwardString() -> String?
+
+    public enum BitmaskResult: Equatable {
+        case terminated     // grammar terminated or all tokens blocked — stop generating
+        case unconstrained  // all tokens allowed — no mask needed
+        case constrained    // bitmask written — apply it
+    }
+    public mutating func fillBitmask(into pointer: UnsafeMutablePointer<Int32>) -> BitmaskResult
 }
 
 public enum ConstrainedGenerationError: Error, LocalizedError {
@@ -2484,6 +2496,99 @@ public mutating func nextTokenBitmask() -> [Int32]? {
 The masking loop itself is a nice piece of code and worth copying if you implement this elsewhere —
 it short-circuits fully-set words (`0xFFFF_FFFF` → `continue`) and fully-clear words (write 32
 `-inf`s in a row) rather than testing every bit (`:255-279`).
+
+#### 7.3.1 Three additions at `49becc6` — and what they tell you about where this is going
+
+✅ **VERIFIED — source read 2026-08-02** at `apple/coreai-models` `49becc6`, *"Extend
+`ConstrainedGenerationSession` with rollback, jump-forward, and direct bitmask fill (#131)"*,
+authored 2026-07-31. The commit message labels itself **"Part 1 of 4 for GPU-based constrained
+sampling (#114)"** — so read these three as the first quarter of a larger change, not as a
+finished feature.
+
+Each has a matching C-bridge entry point (`XGrammarRollback`, `XGrammarFindJumpForwardString`,
+`XGrammarFillNextTokenBitmask`), which is the tell that they are exposures of xgrammar capability
+rather than Swift-side inventions — consistent with §7.2's account of the bridge.
+
+**1. `rollback(_:)` — unwind grammar state by N tokens.**
+
+```swift illustrative
+/// Rollback the grammar state by N tokens. Returns false if rollback failed
+/// (e.g., exceeds maxRollbackTokens budget).
+@discardableResult
+public mutating func rollback(_ numTokens: Int = 1) -> Bool
+```
+
+The budget is a compile-time constant: `static let maxRollbackTokens = 64` (`:20`), passed to the
+matcher at construction (`:98`). Two ways to get `false`: a negative argument (guarded at the top),
+or exceeding the 64-token budget.
+
+> ⚠️ **`@discardableResult` on a fallible state mutation is a footgun.** `session.rollback(80)`
+> compiles silently, returns `false`, and leaves the grammar state **where it was** — so a
+> speculative-decoding loop that assumes the rollback happened will then feed tokens into a matcher
+> that is out of sync with the caller's own token history, and the corruption surfaces later as a
+> grammar violation with no obvious cause. **Check the return value.** This is the same shape as
+> the `stopTokenIds` trap in §7.4: an API that accepts the request and declines to honour it.
+
+**2. `findJumpForwardString()` — peek at deterministic continuations.**
+
+```swift illustrative
+/// Find the longest deterministic string from the current grammar state.
+/// Does not change the matcher state. Returns nil if no jump-forward is possible.
+public func findJumpForwardString() -> String?
+```
+
+Note it is **non-`mutating`** and explicitly documented as state-preserving, so it is safe to call
+speculatively. This is the *jump-forward decoding* optimisation: when the grammar admits exactly
+one continuation — the `":"` and `"` between a JSON key and its value, say — you can emit those
+characters directly instead of running a forward pass per token. For heavily-structured schemas
+that is a large fraction of the output. **Nothing in the corpus previously described this
+optimisation as available in Core AI's stack.**
+
+**3. `fillBitmask(into:)` — write the mask into caller memory, and a tri-state result.**
+
+```swift illustrative
+/// Fill the bitmask directly into a caller-provided buffer (e.g., a GPU-visible MTLBuffer).
+///
+/// The caller must ensure the pointer has room for at least `(vocabularySize + 31) / 32`
+/// Int32 words.
+public mutating func fillBitmask(into pointer: UnsafeMutablePointer<Int32>) -> BitmaskResult
+```
+
+This is `nextTokenBitmask()` without the per-token `[Int32]` allocation — the commit message's
+stated motive is "avoiding array allocation per token", and the doc comment names the intended
+destination: **a GPU-visible `MTLBuffer`**. Together with the issue title ("GPU-based constrained
+sampling") that says where this is heading: masking applied on the GPU, in the sampling kernel,
+instead of round-tripping logits to the CPU.
+
+That matters for **§7.8**, which documents the architectural constraint that guided generation and
+the fastest (pipelined) engine are mutually exclusive *because logits are not exposed to the CPU*.
+🟡 **This commit is the first visible move toward dissolving that constraint** — if masking happens
+GPU-side, the logits never need to come back. It is one of four parts and nothing is shipped yet;
+do not rewrite §7.8's advice on the strength of it. **Re-read #114 before the next beta.**
+
+⚠️ **The buffer-sizing contract is the caller's**, stated only in a doc comment: at least
+`(vocabularySize + 31) / 32` `Int32` words. Undersize it and you get out-of-bounds writes into
+whatever follows — with an `UnsafeMutablePointer` there is no bounds check and no error.
+
+The `BitmaskResult` tri-state is worth reading carefully, because two of the three cases mean
+"do not apply a mask" for opposite reasons:
+
+| Case | Meaning | What the caller must do |
+|---|---|---|
+| `.terminated` | grammar is finished, **or** every token is blocked | stop generating |
+| `.unconstrained` | every token is allowed | sample **without** a mask — the buffer contents are not meaningful |
+| `.constrained` | mask written | apply it |
+
+The implementation returns `.unconstrained` when xgrammar signals no mask is needed, and otherwise
+scans the buffer for all-zeros — if nothing is allowed it sets `allTokensBlocked` and returns
+`.terminated`. So `.terminated` from this method also **mutates** `isTerminated`, which is why it
+is `mutating` while `findJumpForwardString()` is not.
+
+> 🔴 **GAP — none of this is exercised anywhere we can read.** The commit adds tests for
+> `rollback` and `findJumpForwardString` only; there is no test, sample, or caller for
+> `fillBitmask(into:)` in the repository at this commit, so the GPU path it exists for does not
+> yet exist in public form. Availability on device is untested here (Core AI is absent from the
+> simulator SDK — see Part 1). **Treat all three as source-verified but behaviour-unverified.**
 
 ### 7.4 ⚠️ SILENT FAILURE — the dead `stopTokenIds` parameter
 
