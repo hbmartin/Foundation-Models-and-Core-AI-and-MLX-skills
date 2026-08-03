@@ -72,8 +72,9 @@ paste independently corroborates `serve`; **three subcommands are new to this co
 | `token-count` | Count tokens in a… *(truncated)* | **never mentioned** — maps to the five `tokenCount(for:)` overloads |
 | `serve` | Start a Chat Completions API server | already verified by an Apple member's written statement; S1 corroborates the spelling |
 
-Note how cleanly the four undocumented ones mirror the Swift API surface the guides already
-document. That is corroborating structure, not proof.
+Note how cleanly the four Apple-undocumented subcommands — the three new ones plus `serve` —
+mirror the Swift API surface the guides already document. That is corroborating structure, not
+proof.
 
 > 🔴 **Still open after this harvest:** the *ordering* suggests the list is alphabetical and
 > therefore complete at seven, but S1's paste is cut mid-line on `token-count`, so a subcommand

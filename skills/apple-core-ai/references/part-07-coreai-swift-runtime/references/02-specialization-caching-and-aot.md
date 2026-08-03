@@ -1016,9 +1016,9 @@ Three things to take from it:
 
 1. **`clearCache(at:)` returns the asset URLs it discovered and processed**, and the tool prints
    that count. The implementation computes `modelAssetURLs(at:)`, calls
-   `AIModelCache.deleteEntries(for:)` for each resolved URL, and returns the original URL array.
-   The count therefore does **not** prove that those cache entries existed or that that many entries
-   were removed. Probe cache state separately if the distinction matters.
+   `AIModelCache.default.deleteEntries(for:)` for each resolved URL, and returns the original URL
+   array. The count therefore does **not** prove that those cache entries existed or that that many
+   entries were removed. Probe cache state separately if the distinction matters.
 2. **`isCached(at:)` is a pure query.** The comment says so explicitly: *"This only inspects the
    cache; it never triggers specialization."* That is the gating primitive §3 is about, in its
    read-only form, and it is the honest way to label a timing number as cold or warm.
@@ -1031,9 +1031,9 @@ Three things to take from it:
 > ⚠️ **`PreparedModel.clearCache(at:)` is `coreai-models` API, not `CoreAI` framework API.** It is a
 > helper in Apple's open-source sample package, keyed on a **bundle path**, and it is not one of
 > the four `AIModelCache` deletion methods documented above. Do not reach for it in app code
-> expecting a framework guarantee — use `AIModelCache.deleteEntries(for:)`. The value of the flag
-> is as evidence of *how Apple measures*, and as a ready-made escape hatch if you are already
-> building on `coreai-models`.
+> expecting a framework guarantee — use `AIModelCache.default.deleteEntries(for:)`. The value of
+> the flag is as evidence of *how Apple measures*, and as a ready-made escape hatch if you are
+> already building on `coreai-models`.
 >
 > 🔴 **GAP — this does not settle the deletion contradiction below.** The tools clear the cache
 > *before* any `AIModel` exists, so they never exercise the disputed case: deleting an entry that a

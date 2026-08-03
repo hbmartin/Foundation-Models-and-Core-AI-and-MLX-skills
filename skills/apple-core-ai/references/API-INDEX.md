@@ -1,6 +1,6 @@
 # API & symbol index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**387 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**386 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-02; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -22,7 +22,7 @@
 | `Tool` | ✓ | ✓ | [7.README](part-07-coreai-swift-runtime/README.md) |
 | `Transcript.Reasoning` | ✓ | ✓ | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 
-## CoreAI  <sub>72 symbols</sub>
+## CoreAI  <sub>71 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -41,9 +41,8 @@
 | `AIModelAssetMetadata` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `AIModelCache` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) +3 more |
 | `AIModelCache.default` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
-| `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) |
+| `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) |
 | `AIModelCache.default.model(for:options:)` |  | ✓ | [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) |
-| `AIModelCache.deleteEntries(for:)` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `AIModelCache.model(for:options:)` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) |
 | `AIModelCache.Policy` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `AIModelError` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |

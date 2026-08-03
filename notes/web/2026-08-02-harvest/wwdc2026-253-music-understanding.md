@@ -12,7 +12,8 @@
 > ⚠️ **Provenance.** Code blocks below are copied from Apple's published "Code Samples" block on
 > the session page (each carries Apple's own timestamp + chapter label). Prose is Apple's
 > transcript. Nothing here is model-reconstructed. Several transcription or integration defects in
-> Apple's own sample block are preserved verbatim and flagged inline.
+> Apple's own sample block are preserved verbatim and flagged inline. Trailing whitespace in the
+> copied blocks is normalized for Markdown lint; they are otherwise byte-verbatim.
 
 Speaker: **Conner, Computational Music Team.**
 
