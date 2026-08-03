@@ -19,17 +19,17 @@ Recorded so nobody re-does it. Detail in
 | Closed | Where |
 |---|---|
 | `fm` CLI surface raised from "no attested flags" to 🟠 seven subcommands + four flag spellings + the `schema object` builder grammar | `part-05` ref 02 §2.1–2.4, §2.6, §3, §17.5 |
-| `contextSize` 4096-vs-8192 settled by Apple (Group Lab 8121); shared input+output budget documented | `part-17` ref 01 §1.1, `part-03` ref 01 §3.3, `part-01` ref 01 §3.1 |
-| Gap **G6** — `withTaskCancellationShield` is SE-0504 (Swift 6.4 stdlib); polyfill renamed to stop it shadowing | `part-16` ref 01 §9.4 |
+| `contextSize` 4096 recorded as Apple's documented iOS 27 platform value (Group Lab 8121 written Q&A); alleged device-specific 8192 result retained as uncorroborated; shared input+output budget documented | `part-17` ref 01 §1.1, `part-03` ref 01 §3.3, `part-01` ref 01 §3.1 |
+| Gap **G6** — `withTaskCancellationShield` is SE-0504 (Swift 6.4 stdlib), needs Apple OS 27 runtime support, and does not back-deploy; compatibility helper renamed to stop it shadowing | `part-16` ref 01 §9.4 |
 | `ConstrainedGenerationSession` rollback / jump-forward / bitmask-fill; `--clear-coreai-cache`; upstream drift incl. the `.llmasset` rename | `part-07` refs 04 §7.3.1 and 02 §7.1, `part-10` ref 03 §18.1 |
-| Third-party MLX training layer mapped; the three fine-tuning 🔴 converted to documented ecosystem-wide negatives | `part-12` ref 06 §13 |
+| Third-party MLX training layer mapped; the three fine-tuning 🔴 checked against named project documentation | `part-12` ref 06 §13 |
 | Six transcripts installed (328, 253, 297, 375, 310, 258) | `transcripts/` — 23 → 29 files |
 
 ---
 
 ## 1. Highest value: an entire framework is missing
 
-### 1.1 🚨 Music Understanding has zero corpus coverage
+### 1.1 🚨 Music Understanding has no pre-harvest guide or captured-SDK coverage
 
 `MusicUnderstanding` returns **0 hits** across `guides/`, `notes/sdk-interfaces/` and (before this
 harvest) `transcripts/`. It is a **new on-device ML framework in the 2026 release** — six analysis
@@ -176,9 +176,10 @@ the migration is not uniformly available across platforms. Belongs in `part-16` 
 > `grep -rn "deprecated: 27" notes/sdk-interfaces/` would likely surface more of these in one pass.
 > `scripts/diff-interfaces.sh` only diffs a *fresh* capture against git.
 
-### 3.2 Group Lab 8121 material still unwritten
+### 3.2 Remaining Group Lab 8121 written-summary material
 
-Beyond the context-window answer already folded in:
+Beyond the written context-window summary already folded in, Apple's other written Q&A summaries
+still support these proposed edits:
 
 - **Core ML → Core AI repositioning**, in Apple's words: Core ML "is now focused on traditional ML
   like decision trees"; "**anything new involving neural networks should move to Core AI**"; Core AI
@@ -259,8 +260,9 @@ with digests, transcripts, code, and an `llms.txt`).
   memory-saved / time-cost figure. The A/B is ~2 minutes: 50 steps with and without, reading
   `peak_memory` and `iterations_per_second`. **Better closed by running it than by citing anyone.**
   Candidate for a committed benchmark.
-- **Swift version in the Xcode 27 beta** — `xcrun swift --version`, to confirm ≥ 6.4 so that
-  `withTaskCancellationShield` (SE-0504) actually resolves. One line; the last residue of gap G6.
+- ~~**Swift version in the Xcode 27 beta**~~ — **closed 2026-08-02:** the selected toolchain reports
+  Apple Swift 6.4 (`swiftlang-6.4.0.27.1`). SE-0504 still requires an Apple OS 27 runtime and does
+  not back-deploy, so older deployment targets use `withCancellationShieldCompat`.
 
 ### 4.3 Negative results — do not re-search these
 
@@ -269,8 +271,8 @@ with digests, transcripts, code, and an `llms.txt`).
 | What changed in **Speech** for iOS 27? | The community has written **nothing**. Every result is WWDC25/iOS 26. The SDK diff (§3.1) is the only source. |
 | `maximumReservedLocales` **value** | It is a computed property; the value is not in the interface. Runtime probe only. `part-16` ref 01 `:1243` stands. |
 | Does system **generated-subtitles** (session 256) expose a Speech API? | **No.** System-level, automatic, `MediaAccessibility` styling only. |
-| LoRA-vs-DoRA-vs-full **quality** ablation | Does not exist in `mlx-lm`, `mlx-lm-lora`, `mlx-tune`, `MLX-GRPO`, `SiLLM`, or the ~140-project `awesome-mlx` index. |
-| Instruments 27 **lane names** / Core AI Debugger in session 258 | Not there. See §2.5. |
+| LoRA-vs-DoRA-vs-full **quality** ablation | None was found in the inspected documentation for `mlx-lm`, `mlx-lm-lora`, `mlx-tune`, `MLX-GRPO`, or `SiLLM`, or in the ~140-project `awesome-mlx` index. |
+| Instruments 27 **lane names** / Core AI Debugger in session 258 | The AI-specific lanes and Core AI Debugger are not there. The session does cover Organizer, Instruments, and Top Functions. See §2.5. |
 
 ### 4.4 One source to distrust
 
@@ -285,8 +287,8 @@ with that reasoning attached.
 ## 5. Method notes for the next editor
 
 **Editing a guide shifts every callout below the edit**, and `notes/synthesis/callout-classifications/*.tsv`
-are keyed on `(file, line, kind)`. `scripts/build-indexes.sh` refuses to build until they are
-re-keyed. Match on `(file, anchor, kind)` + ordinal within the group.
+are keyed on `(file, line, anchor, kind)`. `scripts/build-indexes.sh` refuses to build until they are
+re-keyed. For the manual re-keying step, match on `(file, anchor, kind)` + ordinal within the group.
 
 > ⚠️ **The ordinal trap, which bit once in this pass.** Inserting a callout *above* an existing one
 > in the same anchor+kind group silently slides that group's blurbs down by one — every row still

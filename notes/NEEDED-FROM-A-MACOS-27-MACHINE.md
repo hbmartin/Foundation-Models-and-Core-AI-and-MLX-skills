@@ -174,10 +174,10 @@ Part 11.
   the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below.
   Narrowed again 2026-07-31: the `probes/` run measured **4096 on the iOS 27.0 simulator runtime**
   (and the overflow error text there independently says "maximum allowed context size of 4096").
-  **Settled 2026-08-02:** asked the iOS-27 question directly at WWDC26 Group Lab 8121
-  (ch. `0:08:11`), Apple's ML frameworks panel stated **4096, shared across input and output**,
-  with PCC at 32K. The third-party 8192 claim is now **contradicted by Apple**, not merely
-  uncorroborated. Folded into guides 17.1 §1.1 and 3.1 §3.3.
+  **Documented 2026-08-02:** Apple's written Q&A summary for WWDC26 Group Lab 8121
+  (ch. `0:08:11`) gives **4096, shared across input and output**, as the iOS 27 platform value,
+  with PCC at 32K. The third-party 8192 device report remains uncorroborated rather than disproved.
+  Folded into guides 17.1 §1.1 and 3.1 §3.3.
   **Still worth one run if a 27 device is to hand** — Apple's answer is a platform statement and
   the 27.0 interface plainly returns a *dynamic* value, so printing
   `SystemLanguageModel().contextSize` on real hardware is the only way to rule out a

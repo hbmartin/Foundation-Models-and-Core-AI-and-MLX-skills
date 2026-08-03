@@ -10,7 +10,7 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | sim27 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios27.0-simulator |
 | sim27-on-26 | 27.0 (27A5228h) | 27.0 (24A5390e) | arm64-apple-ios26.0-simulator |
 
-**Totals over 1358 Swift fences:** ILLUSTRATIVE 484 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
+**Totals over 1359 Swift fences:** ILLUSTRATIVE 485 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 678 · VERIFIED 192 · XFAIL-PROVEN 2
 
 **UNCLASSIFIED backlog (the metric): 0**
 
@@ -58,7 +58,7 @@ against the exact SDK builds below, never against "iOS 27" in the abstract.
 | part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md | 19 | 1 | 0 | 0 | 5 | 0–0 | 0 |
 | part-15-shipping-and-operating/references/01-model-distribution-and-updates.md | 53 | 14 | 0 | 0 | 10 | 0–0 | 0 |
 | part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md | 31 | 2 | 0 | 0 | 18 | 0–0 | 0 |
-| part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md | 59 | 8 | 0 | 0 | 25 | 0–0 | 0 |
+| part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md | 60 | 8 | 0 | 0 | 26 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/02-app-schema-domains.md | 37 | 0 | 0 | 0 | 7 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/03-onscreen-awareness.md | 36 | 0 | 0 | 0 | 5 | 0–0 | 0 |
 | part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md | 25 | 0 | 0 | 0 | 3 | 0–0 | 0 |

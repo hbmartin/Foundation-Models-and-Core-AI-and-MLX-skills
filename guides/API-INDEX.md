@@ -1,6 +1,6 @@
 # API & symbol index
 
-**1205 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1206 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-02; regenerate rather than hand-edit.
 
@@ -173,7 +173,7 @@
 | `TranscriptRecorder` |  |  | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [5.README](part-05-prototyping-profiling-non-swift/README.md) |
 | `UnavailableReason` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [1.1](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md), [1.2](part-01-orientation-and-gating/references/02-platform-and-version-gating.md) |
 
-## CoreAI  <sub>73 symbols</sub>
+## CoreAI  <sub>74 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -195,6 +195,7 @@
 | `AIModelCache.default` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AIModelCache.default.model(for:options:)` |  | ✓ | [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
+| `AIModelCache.deleteEntries(for:)` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `AIModelCache.model(for:options:)` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) +1 more |
 | `AIModelCache.Policy` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `AIModelError` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) +2 more |

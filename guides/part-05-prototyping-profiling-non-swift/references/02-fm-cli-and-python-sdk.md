@@ -189,11 +189,12 @@ Nothing here was read from a man page, a `--help` dump, or a screenshot.
 Two independent sessions agree on the platform and the preinstalled status. Take those as solid.
 
 > 🟠 **Suggestive, 2026-08-02 — the installed path is reported as `/usr/bin/fm`** (a 🔴 GAP until
-> this date). Two independent third-party write-ups state the binary is a **system binary at
-> `/usr/bin/fm`**, preinstalled with macOS 27, needing no download and no Xcode component
-> ([Agarwal, 2026-07-16, tested on macOS 27.0 build `26A5378n`][^fm-agarwal];
-> [Crosley, 2026-06-09][^fm-crosley]). That is the **first** of the three guesses this box used to
-> list, and it is consistent with the repo's own negative finding below.
+> this date). Agarwal reports the binary as a **system binary at `/usr/bin/fm`** on macOS 27.0
+> build `26A5378n`, needing no download or Xcode component.[^fm-agarwal] Crosley's independent
+> write-up repeats that path but is derived from the WWDC transcript rather than a machine run, so
+> it is secondary corroboration rather than a second real-machine observation.[^fm-crosley] The
+> reported path is the **first** of the three guesses this box used to list and is consistent with
+> the repo's own negative finding below.
 > **Still 🔴:** whether the tool is present when Apple Intelligence is *disabled*. Neither source
 > says, and it is the one third of the original gap that a `which fm` does not answer.
 > **One elimination, checked 2026-07-29:** on a macOS 26.5.2 host with the Xcode 27.0 beta
@@ -237,7 +238,7 @@ Two independent sessions agree on the platform and the preinstalled status. Take
 > 🟠 **Suggestive, 2026-08-02 — the subcommand list is reported as seven** (a 🔴 GAP until this
 > date). [Agarwal][^fm-agarwal] pastes the top-level help from macOS 27.0 build `26A5378n`:
 >
-> ```
+> ```text
 > % fm --help
 >
 > USAGE
@@ -312,10 +313,11 @@ Four options were then described. **Every one of them was named semantically —
 | *"the **help** option"* | *"To check out all the options, use the help option"* (`334:55`) | 🟠 `--help` |
 | *(instructions)* | *"passing my **instructions** and my prompt"* (`334:79`) — described as a thing passed, never as an option | 🔴 **UNKNOWN** — see below |
 
-> 🟠 **Suggestive, 2026-08-02 — four of the five spellings are now corroborated** (all five were
-> 🔴 **UNKNOWN** until this date). Two sources that agree, and that were written two months and
-> one language apart: [Nuthalapati][^fm-nuthalapati] (English, macOS 27 developer beta) and
-> [Hack-Log][^fm-hacklog] (Japanese, macOS 27). Both show the long form with a value:
+> 🟠 **Suggestive, 2026-08-02 — three spellings have two-source command evidence, and one has
+> a single help artifact** (all five were 🔴 **UNKNOWN** until this date). Nuthalapati
+> (English, macOS 27 developer beta)[^fm-nuthalapati] and Hack-Log (Japanese, macOS 27)[^fm-hacklog]
+> independently demonstrate `--model`, `--image`, and `--schema` with values. Agarwal's pasted
+> top-level help separately establishes the conventional `--help` spelling:
 >
 > ```bash
 > fm respond "prompt text"
@@ -333,15 +335,16 @@ Four options were then described. **Every one of them was named semantically —
 > and no source shows whether it is an option, a second positional, or a file path. Do not write
 > it into a script.
 >
-> **Why 🟠 and not ✅:** two blog posts, no first-party documentation, no run by anyone on this
-> project, and both posts explicitly flag the tool as beta software whose flags may change.
-> Nuthalapati's own caveat: these tools remain "beta software" with potential flag changes before
+> **Why 🟠 and not ✅:** the three value-taking flags come from two blog posts, `--help` comes
+> from one third-party paste, there is no first-party option reference, and nobody on this project
+> ran the commands. Nuthalapati also flags the tool as beta software whose flags may change before
 > release.
 
 The conventional guesses were `--model`, `--image`, `--schema`, `--help`, `--instructions`, and
-this guide's own research index records them in that form. **Four of the five guesses turned out
-right**, which is unsurprising and is *not* retroactive evidence for the fifth. One Apple-adjacent
-data point exists and is worth showing precisely because of who said it:
+this guide's own research index records them in that form. **Four of the five spellings now have
+positive evidence**, but only the first three have two-source command examples; `--help` has one
+help artifact, and none of that is retroactive evidence for `--instructions`. One Apple-adjacent
+data point is still worth showing precisely because of who said it:
 
 [^fm-nuthalapati]: Varun Nuthalapati, "Local AI in Your Terminal: Scripting with Apple's New fm CLI
     and MLX", 2026-06, `https://nuthalapativarun.github.io/mlx-whisper-article/terminal-fm-mlx.html`
@@ -351,12 +354,11 @@ data point exists and is worth showing precisely because of who said it:
     `https://note.com/hacklog_stealth/n/ne3c55b94af3f`. Japanese; the shell commands are
     reproduced verbatim in the archived analysis and are independent of [^fm-nuthalapati].
 
-> 🟡 **RECONSTRUCTED — and note whose reconstruction.** On `apple/python-apple-fm-sdk` issue #13, the
-> *reporter* (not Apple) asks whether they can write
-> `subprocess.check_output(["fm", "respond", query, "--model", "pcc"], text=True)`. **Apple did not
-> answer that follow-up.** So `--model pcc` is a community guess that has been sitting unconfirmed in
-> an Apple repository since June 2026. It is the single most likely spelling in circulation and it is
-> still not evidence.
+> 🟡 **Historical evidence note.** On `apple/python-apple-fm-sdk` issue #13, the *reporter* (not
+> Apple) proposed
+> `subprocess.check_output(["fm", "respond", query, "--model", "pcc"], text=True)`, and Apple did not
+> answer that follow-up. The issue was not evidence by itself; the two independent command examples
+> above are what now corroborate the spelling and value.
 
 ### 2.5 The default is on-device, and PCC is metered
 
@@ -388,7 +390,7 @@ session. It came from an Apple engineer closing a GitHub issue.
 
 Four separate facts fall out of one sentence:
 
-1. **`fm serve` exists**, and it is the fifth subcommand — none of the sessions mention it.
+1. **`fm serve` exists** — none of the sessions mention it.
    **Independently corroborated 2026-08-02:** it appears in the `fm --help` paste in §2.2 as
    `serve   Start a Chat Completions API server`, which matches @rxwei's description almost word
    for word. See the box below for a source that disputes this.
@@ -413,7 +415,7 @@ Four separate facts fall out of one sentence:
 > **Safe default meanwhile:** if you need a serving endpoint *today* from Python, use `mlx_lm.server`
 > or another local OpenAI-compatible server (Part 12), and keep the client code protocol-generic so
 > that pointing it at `fm serve` later is a base-URL change.
-
+>
 > ⚠️ **One source claims `fm serve` does not exist. It is wrong, and the way it is wrong is
 > instructive.** A community write-up[^fm-chatforest] prints a self-correction retracting its own
 > earlier `fm serve` claim, and argues the subcommand does not exist on the grounds that *"That
@@ -3568,12 +3570,13 @@ async def batch(prompts, instructions, chunk=100):
 | | Status |
 |---|---|
 | Ships preinstalled with macOS 27 | ✅ verified (two sessions) |
-| Installed at `/usr/bin/fm` | 🟠 suggestive 2026-08-02 (two third-party reports) — §2.1 |
+| Installed at `/usr/bin/fm` | 🟠 suggestive 2026-08-02 (one named-build report; one transcript-derived corroboration) — §2.1 |
 | `fm respond`, `fm chat`, `fm schema`, `fm schema object` | ✅ verified (spoken names) |
 | `fm serve` → Chat Completions endpoint | ✅ verified (Apple member, GitHub); subcommand corroborated in a `--help` paste |
 | Full subcommand list | 🟠 suggestive 2026-08-02 — **seven**, `--help` paste truncated on the last row — §2.2 |
 | `available`, `quota-usage`, `token-count` exist | 🟠 suggestive 2026-08-02 — never named by Apple — §2.2 |
-| `--model pcc`, `--image <path>`, `--schema <file>`, `--help` | 🟠 suggestive 2026-08-02 (two independent sources) — §2.4 |
+| `--model pcc`, `--image <path>`, `--schema <file>` | 🟠 suggestive 2026-08-02 (two independent command sources) — §2.4 |
+| `--help` | 🟠 suggestive 2026-08-02 (one pasted help artifact) — §2.2, §2.4 |
 | `--instructions` spelling | 🔴 **unknown** — listed by one source, demonstrated by none |
 | Short flag forms; flags of any subcommand but `respond` | 🔴 **unknown** |
 | `fm schema object` grammar | 🟠 suggestive 2026-08-02 — flag-per-property builder, JSON to stdout; **only `--string` attested** — §3 item 3 |

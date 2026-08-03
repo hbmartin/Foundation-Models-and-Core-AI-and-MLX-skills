@@ -46,21 +46,25 @@ scheduling overhead and timing delays" — which is precisely what the guide's �
 
 > ⚠️ **This makes the guide's polyfill actively harmful, not merely redundant.** §9.4 at `:2614`
 > declares
+>
 > ```swift
 > func withTaskCancellationShield<T: Sendable>(
 > ```
+>
 > A same-named, same-arity global function in the user's module **shadows the stdlib one** with
 > different generics (no typed throws, no `nonisolated(nonsending)`, an extra `Sendable`
 > constraint the real API does not impose, and no async overload pairing). On a Swift 6.4
 > toolchain that is a silent behavioural substitution.
 >
-> **Recommended edit to §9.4:** lead with SE-0504 and the real signatures; demote the polyfill to
-> "only if you must target a pre-Swift-6.4 toolchain", and rename it in that case
+> **Recommended edit to §9.4:** lead with SE-0504 and the real signatures; retain the fallback
+> for a pre-Swift-6.4 compiler or pre-Apple-OS-27 runtime, and rename it in either case
 > (e.g. `withCancellationShieldCompat`) so it cannot shadow. Delete checklist item 2 at `:3039`
 > ("Type `withTaskCancellationShield` in a scratch file. Does it resolve?") — it is answered.
 
-**Residual:** which Xcode 27 beta ships Swift 6.4 was not confirmed. That is a one-line local
-check (`xcrun swift --version`), not a research question.
+**Availability correction:** SE-0504 requires runtime changes and explicitly does not back-deploy.
+The selected Xcode 27 toolchain reports Apple Swift 6.4 (`swiftlang-6.4.0.27.1`), but an app that
+deploys below Apple OS 27 still needs the compatibility path. Compiler and runtime availability
+are separate checks.
 
 ## ⭐ 2. The 4096-vs-8192 `contextSize` dispute — Apple has now stated 4096 for iOS 27
 
@@ -169,10 +173,10 @@ fold the `deprecated: 27` sweep from §3 into that pass.
 |---|---|---|
 | What changed in **Speech** for iOS 27? | 5 queries across community blogs, Argmax/WhisperKit, MacStories, forums | **The community has written nothing about Speech in 27.** Every result is WWDC25/iOS 26 material. The SDK diff (§3) is the only source. |
 | `maximumReservedLocales` **value** | web + SDK | Interface declares `public static var maximumReservedLocales: Swift::Int` — a **computed property**, so the value is not in the interface. Still a runtime probe. Guide's 🔴 at `:1243` stands. |
-| Instruments 27 **lane names** / Core AI Debugger | session 258 fetched in full | 258 is entirely about **coding agents**; no Instruments, no Core AI Debugger. `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 unchanged. |
+| Instruments 27 **lane names** / Core AI Debugger | session 258 fetched in full | The AI-specific lane names and Core AI Debugger are absent, so `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 remains open. The session does contain a substantial Organizer/Instruments section, including Top Functions. |
 | Does system **generated-subtitles** expose a Speech API? | session 256 fetched in full | **No.** System-level, automatic, `MediaAccessibility`-styled only. |
-| LoRA-vs-DoRA-vs-full **quality** ablation | mlx-lm, mlx-lm-lora, mlx-tune, awesome-mlx sweep | **Does not exist** in the third-party layer either. Part 12.6 `:1211` / `:1464` stand as documented negatives. |
-| `fm serve` existence | two conflicting sources | Contested — see `fm-cli-real-machine-evidence.md` §4. A pasted `--help` from build `26A5378n` lists it; one commentator argues from transcript-absence that it does not exist. |
+| LoRA-vs-DoRA-vs-full **quality** ablation | mlx-lm, mlx-lm-lora, mlx-tune, awesome-mlx sweep | None was found in the named project documentation or index surveyed. Part 12.6 records that scoped negative. |
+| `fm serve` existence and endpoint family | Apple-member statement + help output | **Verified.** The Apple member says it serves the model as a Chat Completions endpoint, and a pasted `--help` from build `26A5378n` independently lists the subcommand. Port, binding, authentication, accepted fields, streaming, and quota behaviour remain unknown. |
 
 ## 8. One source to distrust
 

@@ -130,7 +130,7 @@ different checkout, grep for the symbol, not the line.
 
 ---
 
-**Scope:** this reference intentionally ends at §12; architecture porting and parity verification
+**Scope:** this reference intentionally ends at §13; architecture porting and parity verification
 belong to a separate guide. API spellings and CLI flags are pinned to the inspected mlx-lm revision.[^scope-source]
 
 ## 0. The frame: custom adapters are gone in OS 27
@@ -1221,12 +1221,11 @@ heavy domain shift) and you have both the data and the RAM.
 > implementations. **Do not quote a "DoRA is N% better" number.** Resolving this needs a controlled
 > run on your own data; §10 gives you the harness.
 >
-> **Searched again 2026-08-02, and this is now a documented negative rather than an untested
-> assumption.** A sweep of the wider MLX training ecosystem — `mlx-lm-lora`, `mlx-tune`,
-> `MLX-GRPO`, `SiLLM`, and the ~140-project `awesome-mlx` index (§13) — found **no
-> LoRA-vs-DoRA-vs-full quality ablation anywhere**. The third-party projects publish
-> *throughput and memory* numbers, not quality. So the absence is not an artefact of where this
-> corpus looked; as of this date nobody in the ecosystem has published one.
+> **Searched again 2026-08-02, with the negative scoped to the material surveyed.** The project
+> documentation for `mlx-lm-lora`, `mlx-tune`, `MLX-GRPO`, and `SiLLM`, plus the ~140-project
+> `awesome-mlx` index (§13), contains no LoRA-vs-DoRA-vs-full quality ablation. The named projects
+> publish *throughput and memory* numbers, not quality. This widens the corpus beyond mlx-lm, but it
+> is not an exhaustive claim about every repository, issue, paper, or unpublished experiment.
 
 ---
 
@@ -1484,8 +1483,8 @@ better bet; for domain vocabulary and factual content, the MLP projections (`gat
 >
 > **Ecosystem sweep 2026-08-02: still none.** The third-party training projects surveyed in §13
 > expose `--lora-parameters '{"rank": …}'` and per-layer targeting the same way mlx-lm does, and
-> publish no sweep over either. Treat this as a genuine ecosystem-wide absence, not a gap in this
-> corpus's reading.
+> their inspected documentation publishes no sweep over either. Treat this as a negative for the
+> named material surveyed on that date, not as proof of an ecosystem-wide absence.
 
 ### 6.4 `scale` — mlx-lm's alpha, and the trap in it
 

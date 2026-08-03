@@ -2555,16 +2555,19 @@ public mutating func fillBitmask(into pointer: UnsafeMutablePointer<Int32>) -> B
 ```
 
 This is `nextTokenBitmask()` without the per-token `[Int32]` allocation — the commit message's
-stated motive is "avoiding array allocation per token", and the doc comment names the intended
-destination: **a GPU-visible `MTLBuffer`**. Together with the issue title ("GPU-based constrained
-sampling") that says where this is heading: masking applied on the GPU, in the sampling kernel,
-instead of round-tripping logits to the CPU.
+stated motive is "avoiding array allocation per token", and the doc comment gives a GPU-visible
+`MTLBuffer` as an example destination. The current bridge still wraps the pointer as a **`kDLCPU`
+DLTensor** and fills it on the CPU, so an `MTLBuffer` is suitable here only when its contents are
+CPU-accessible. The issue title ("GPU-based constrained sampling") describes where the completed
+four-part integration is heading: a later GPU sampling stage can consume the populated buffer
+without copying the mask through a temporary Swift array.
 
 That matters for **§7.8**, which documents the architectural constraint that guided generation and
 the fastest (pipelined) engine are mutually exclusive *because logits are not exposed to the CPU*.
-🟡 **This commit is the first visible move toward dissolving that constraint** — if masking happens
-GPU-side, the logits never need to come back. It is one of four parts and nothing is shipped yet;
-do not rewrite §7.8's advice on the strength of it. **Re-read #114 before the next beta.**
+🟡 **This commit is the first visible move toward dissolving that constraint** — the mask is still
+filled on the CPU today, but a future GPU sampler could consume it without bringing logits back.
+It is one of four parts and no end-to-end GPU sampling path is shipped yet; do not rewrite §7.8's
+advice on the strength of it. **Re-read #114 before the next beta.**
 
 ⚠️ **The buffer-sizing contract is the caller's**, stated only in a doc comment: at least
 `(vocabularySize + 31) / 32` `Int32` words. Undersize it and you get out-of-bounds writes into
@@ -2584,11 +2587,13 @@ scans the buffer for all-zeros — if nothing is allowed it sets `allTokensBlock
 `.terminated`. So `.terminated` from this method also **mutates** `isTerminated`, which is why it
 is `mutating` while `findJumpForwardString()` is not.
 
-> 🔴 **GAP — none of this is exercised anywhere we can read.** The commit adds tests for
-> `rollback` and `findJumpForwardString` only; there is no test, sample, or caller for
-> `fillBitmask(into:)` in the repository at this commit, so the GPU path it exists for does not
-> yet exist in public form. Availability on device is untested here (Core AI is absent from the
-> simulator SDK — see Part 1). **Treat all three as source-verified but behaviour-unverified.**
+> ✅ **Unit-tested at this commit.** `fillBitmaskIntoPointerMatchesNextTokenBitmask` verifies that
+> the pointer-writing method matches `nextTokenBitmask()`, and
+> `fillBitmaskReturnsTerminatedWhenDone` verifies the terminal result. The remaining 🔴 **GAP** is
+> integration-level: there is still no public caller exercising an `MTLBuffer`, no end-to-end GPU
+> sampling path, and no on-device run in this corpus (Core AI is absent from the simulator SDK —
+> see Part 1). Treat the API's basic behavior as source-and-test-verified and its GPU/device
+> integration as unverified.
 
 ### 7.4 ⚠️ SILENT FAILURE — the dead `stopTokenIds` parameter
 

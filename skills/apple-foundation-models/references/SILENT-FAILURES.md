@@ -353,7 +353,7 @@
 - [The iOS 27 metadata: overloads drop includeSchemaInPrompt — the knob moved into ContextOptions.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#91-respond-vs-streamresponse-exactly) — 2.2
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
-- [Community measurement: on-device context reports 4K on iOS 26 but 8K on iOS 27 — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 - [No source change needed — rebuilding with Xcode 27 is what silently flips which error types your catches see.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 
@@ -365,7 +365,7 @@
 - [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
-- [The 4K context figure is contested — iOS 26 reports 4K, iOS 27 8K; probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
 
 **Part 4**
 

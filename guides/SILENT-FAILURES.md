@@ -1412,7 +1412,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [The iOS 27 metadata: overloads drop includeSchemaInPrompt — the knob moved into ContextOptions.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#91-respond-vs-streamresponse-exactly) — 2.2
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
-- [Community measurement: on-device context reports 4K on iOS 26 but 8K on iOS 27 — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 - [No source change needed — rebuilding with Xcode 27 is what silently flips which error types your catches see.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 
@@ -1424,7 +1424,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
-- [The 4K context figure is contested — iOS 26 reports 4K, iOS 27 8K; probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
 
 **Part 4**
 
@@ -1535,7 +1535,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 1**
 
-- [Do not hardcode 4096: contextSize is dynamic on OS 27+ and the third-party 8K claim is contradicted by Apple (Group Lab 8121) — read it, treat <=0 as unknown.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
+- [Do not hardcode 4096: Apple documents 4096 for iOS 27, but contextSize is dynamic and the third-party 8K device report remains uncorroborated — read it and treat <=0 as unknown.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#31-systemlanguagemodel--260-the-default) — 1.1
 - [Apple's documented PCC URL 404s; the live path is developer.apple.com/private-cloud-compute/ — entitlement is managed.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#32-privatecloudcomputelanguagemodel--270-the-one-with-a-policy-gate) — 1.1
 - [Only Core AI's graph compiler is OS-resident; the LLM runtime ships as Swift code in your app, despite Apple's framing.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
 - [Session 330 calls the tensor-ops API 'new in 27'; the header floor is 26.2 — only the quantized macro is 27.0.](part-01-orientation-and-gating/references/02-platform-and-version-gating.md#262--the-metalhardware-floor) — 1.2
