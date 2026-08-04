@@ -3660,8 +3660,8 @@ evidence class.
     MLX's own source. §7.7.
 11. **`maybeQuantizeKVCache` replaces array *elements*, not objects**, so the caller's `[KVCache]`
     keeps stale references and the model loses all context generated after the quantisation
-    threshold. Community-reported, `mlx-swift-lm` issue **#312** (OPEN at the time of the mining
-    pass; PR #358 in flight). If you enable `quantizedKVStart`, verify your output.
+    threshold. Community-reported, `mlx-swift-lm` issue **#312** (still OPEN 2026-08-03; fix now
+    PR #453, after #358 closed unmerged). If you enable `quantizedKVStart`, verify your output.
 12. **`temperature` defaults to `0.6`, not `0`.** ✅ VERIFIED, `Evaluate.swift:54-169`. Any test that
     asserts on generated text is flaky until you pass `temperature: 0`. And **`seed` is inert at
     `temperature == 0`** — setting a seed to "make it deterministic" while temperature is already 0

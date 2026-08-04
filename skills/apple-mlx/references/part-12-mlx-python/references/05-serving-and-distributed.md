@@ -1217,8 +1217,8 @@ best kernel" is the operative clause.
 
 ⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Four
 correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
-`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912, #3922, #3924 — all three
-still open, unmerged, on a 2026-07-31 `gh` re-check). Separately,
+`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912/#3922 still open, #3924
+closed unmerged 2026-08-02, on a 2026-08-03 `gh` re-check). Separately,
 mlx#3897 (open) reports that **batched vs single-sequence attention diverges numerically on M5**.
 If you are on M5 and chasing a correctness difference, update MLX before you debug anything else,
 and do not assert bit-equality between batched and unbatched paths.

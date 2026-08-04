@@ -9,10 +9,11 @@ Everything here uses tools that already exist in the repo. Nothing below edits a
 automatically — scripts report, humans (or a supervised agent session) fold results in under the
 house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
-> **Current trigger, checked 2026-08-01:** Apple has released macOS 26.6 build `25G72`; this host
-> remains on 26.5.2 build `25F84`. Run the §3 event ritual after the host update. Xcode 27 beta 4
-> (`27A5228h`) and the iOS 27 beta 4 runtime (`24A5390f`) already match the current local baseline;
-> `xcrun --no-cache --find fm` still exits 72.
+> **Current trigger, checked 2026-08-03:** the host is now on macOS 26.6 build `25G72`, and the §3
+> event ritual ran the same day — interface diff clean for every framework, host probes 46/34/0
+> with no PROBE-RESULT drift, defect sweep folded in. Xcode 27 beta 4 (`27A5228h`) and the iOS 27
+> beta 4 runtime (`24A5390f`) still match the local baseline; `xcrun --no-cache --find fm` still
+> exits 72. Next expected event: Xcode 27 beta 5.
 
 ---
 
@@ -43,7 +44,10 @@ rows where the cited guide text already matched live state: `apple/coreai-models
 `#89` (merged); `apple/coreai-torch#7` (closed unmerged); and `ml-explore/mlx#3893` (merged).
 The failure mode is state-language leakage from another reference in the same paragraph or nearby
 OPEN wording. Until claim-context parsing and mixed-state tests are tightened, treat every
-`STATE-CHANGED` row as a review lead, not an edit instruction.
+`STATE-CHANGED` row as a review lead, not an edit instruction — and triage **per sighting**, not
+per ref: the 2026-08-03 pass found a genuinely stale sentence ("Open PR `coreai-torch#7`", part-08
+ref 01) hiding behind this same known-false-positive list. A ref on this list can still contain
+one sighting that really does claim the old state.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 
@@ -79,7 +83,7 @@ indexes unchanged), or re-date untouched hedges.
 2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
    framework updated underneath you):
    ```bash
-   cd probes && swift test   # host: 43 tests, 34 skipped is the 2026-08-01 baseline
+   cd probes && swift test   # host: 46 tests, 34 skipped is the 2026-08-03 baseline (macOS 26.6)
    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
      xcodebuild test -scheme Probes-Package \
        -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'

@@ -2048,8 +2048,8 @@ gates the whole accelerated path on `MLX_ENABLE_TF32` for float32 inputs
 (`mlx/utils.h:195-197`, `matmul.cpp:916-918`). One feature, two halves. If you set
 `relaxed_precision = true` in your own kernel, you are opting into the same trade and you should
 expose the same escape hatch to your callers. Upstream PR **#3883** ("Warn once when float32 ops
-silently run at TF32 precision", still open as of 2026-07-29) exists because MLX's users were surprised by
-it — which is a good reason to make yours explicit.
+silently run at TF32 precision", closed unmerged 2026-08-03) was opened because MLX's users were
+surprised by it — which is a good reason to make yours explicit.
 
 ---
 
@@ -3119,8 +3119,8 @@ No error, no assertion, no NaN — just wrong output for certain tile shapes. Th
 *are* present check only that the M, N and K dimensions agree between operands
 (`steel/gemm/nax.h:834,838,842`), not that the shape is one the dispatch handles.
 
-PR #3924's title — *"Add a tile-shape `static_assert` to `tile_matmad_nax`"* — is the
-acknowledgement that this is a real defect, still open as of 2026-07-29.
+PR #3924's title — *"Add a tile-shape `static_assert` to `tile_matmad_nax`"* — acknowledged a
+real defect. It was closed unmerged 2026-08-02 (maintainer declined); the hazard remains at HEAD.
 
 ### 13.3 What to do about it
 
@@ -3132,7 +3132,7 @@ acknowledgement that this is a real defect, still open as of 2026-07-29.
    handles.
 3. **Assume the same class of gap exists in code you write from this guide.** The §9 kernel has
    fixed `TILE_M` / `TILE_N` / `HEAD_DIM` for exactly this reason; if you template them, add the
-   assert #3924 is adding.
+   assert #3924 proposed.
 4. **Check the PR list yourself before writing.** The table above is a snapshot dated 2026-07-27 and
    will be stale by the time you read it.
 

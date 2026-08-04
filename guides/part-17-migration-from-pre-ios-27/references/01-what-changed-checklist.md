@@ -1963,14 +1963,14 @@ Tiny, but it will produce a deprecation warning the moment you adopt image tools
 > ✅ **VERIFIED** — the documentation harvest (2026-07-27) presents `func resolved(in:) ->
 > Transcript.ImageAttachment?` as current and `func resolve(in:)` as **(Deprecated)**.
 
-> ⚠️ **Contradiction with the captured SDK, flagged rather than smoothed.** The 27.0 beta interface
-> (`27A5228h`, read 2026-07-29) contains **only** `func resolve(in transcript: Transcript) ->
-> Transcript.ImageAttachment?`, carrying **no deprecation attribute**, and no `resolved(in:)` at all
-> (`27.0:2959-2963`). So the docs and this beta's interface disagree: either `resolved(in:)` landed
-> in a later build than the one captured, or the documentation is ahead of the SDK. The two
-> spellings also take **different argument types** in the documented call sites —
-> `resolved(in: history)` with an `ArraySlice<Transcript.Entry>` versus
-> `resolve(in: Transcript(entries:))` with a whole `Transcript` — so don't mechanically rename;
+> ⚠️ **Contradiction with the captured SDK, flagged rather than smoothed — still live 2026-08-03.**
+> The 27.0 beta interface (`27A5228h`, read 2026-07-29) contains **only** `func resolve(in
+> transcript: Transcript) -> Transcript.ImageAttachment?`, no deprecation attribute, no
+> `resolved(in:)` at all (`27.0:2959-2963`) — while a live-docs re-check (2026-08-03) still
+> presents `resolved(in:)` as current, its parameter now `some Sequence<Transcript.Entry>` (was
+> `ArraySlice<Transcript.Entry>` in the 07-27 harvest), and `resolve(in:)` as deprecated. Either
+> `resolved(in:)` landed in a later build than the one captured, or the documentation is ahead of
+> the SDK. The two spellings take **different argument types** — so don't mechanically rename;
 > write whichever one your actual SDK's `ImageReference` declares, and check the argument type when
 > a new beta lands.
 

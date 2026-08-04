@@ -28,8 +28,8 @@ returns the graft boundary (`ca60290`), not the introducing commit.
 
 **So: pin `mlx==0.32.*` and `mlx-lm==0.31.3`, read the shipped `mlx/version.h` rather than trusting any date
 including these guides', and re-run your own numerics after every bump.** Not boilerplate — **four NAX
-correctness fix PRs opened in the 72 hours before 2026-07-27** (PRs #3912, #3922, #3924 — all three still open,
-unmerged, per a 2026-07-31 `gh` re-check, so no release or checkout contains them), one a *missing
+correctness fix PRs opened in the 72 hours before 2026-07-27** (PRs #3912, #3922 still open and #3924 closed
+unmerged 2026-08-02, per a 2026-08-03 `gh` re-check — so no release or checkout contains them), one a *missing
 `else`* in `tile_matmad_nax` that compiles odd tile shapes to nothing and produces garbage. Second version axis:
 **PyPI mlx-lm 0.31.3 is dated 2026-04-22 and `main` has moved substantially past it**, so several fixes here are
 unreleased — and **0.31.0 was pulled from practical use** for a `BatchKVCache` cross-contamination bug.
@@ -104,8 +104,8 @@ hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENAB
 > ⚠️ **SILENT FAILURE — TF32 you did not choose (§3.3).** Community measurements in mlx#3860 put M5 `float32`
 > matmul error at **2^-10.4** versus **2^-19.8** with `MLX_ENABLE_TF32=0`; `x.dtype` still says `float32`,
 > because it is — only the multiply-accumulate is relaxed. **Set `MLX_ENABLE_TF32=0` before importing mlx in any
-> test suite**, which is exactly what MLX's own harness does. A warn-once PR (#3883) and a docs PR (#3894) were
-> both open as of 2026-07-29.
+> test suite**, which is exactly what MLX's own harness does. A docs PR (#3894) remains open as of 2026-08-03;
+> the warn-once PR (#3883) was closed unmerged 2026-08-03.
 >
 > ⚠️ **SILENT FAILURE — fused attention silently becomes unfused (§5).**
 > `mx.fast.scaled_dot_product_attention` returns the mathematically correct answer via `matmul → softmax →

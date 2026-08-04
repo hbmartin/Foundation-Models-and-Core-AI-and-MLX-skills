@@ -7,9 +7,11 @@ host macOS 26.5.2, iOS 27 simulator runtime `24A5390f`, dumps committed in
 `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` (items that need a *running* OS 27, not just
 a toolchain — this checklist covers what a toolchain drop CAN answer).
 
-> **Pending event, 2026-08-01:** macOS 26.6 build `25G72` is available while this host remains on
-> 26.5.2 build `25F84`. Run this ritual after updating the host. Xcode 27 beta 4 and the iOS 27
-> beta 4 runtime already match the recorded baseline.
+> **Event log, 2026-08-03:** the host updated to macOS 26.6 build `25G72` and this ritual ran the
+> same day — interface diff clean for every framework, `coreai-build` help at its documented 27.0
+> fingerprint, snippet pass unchanged, probes 46/34/0 (host) and 39/2/0 (sim), defect sweep folded
+> in. Xcode 27 beta 4 and the iOS 27 beta 4 runtime still match the recorded baseline; the next
+> expected event is Xcode 27 beta 5.
 
 Every item is independent; check them off per beta. Commands are copy-pasteable from
 the repo root.
@@ -93,8 +95,8 @@ the repo root.
   ```
 - [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
   four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
-  2026-08-01 healthy baselines are **43 host tests, 34 skipped, 0 failures** and **36 simulator
-  tests, 2 intentional skips, 0 failures**. Probes that need an
+  2026-08-03 healthy baselines are **46 host tests, 34 skipped, 0 failures** and **39 simulator
+  tests, 2 intentional skips, 0 failures** (both re-verified on the macOS 26.6 host). Probes that need an
   OS 27 runtime `XCTSkip` on this 26.5 host, so re-run per beta on both local destinations AND
   once on a real OS 27 machine:
   ```bash
@@ -199,10 +201,12 @@ Xcode fallback in that order, so a move shows up as a changed path in its output
 
 Docs present `resolved(in:)` as current and `resolve(in:)` as deprecated; the captured
 27.0 interface has **only** un-deprecated `resolve(in: Transcript)`
-(`FoundationModels-27.0-macos.swiftinterface:2959-2963`). Tracked at
+(`FoundationModels-27.0-macos.swiftinterface:2959-2963`). Live-docs re-check 2026-08-03:
+unchanged — `resolved(in:)` still current, its parameter now `some Sequence<Transcript.Entry>`
+(was `ArraySlice<Transcript.Entry>` in the 07-27 harvest), `resolve(in:)` still deprecated.
+The contradiction stands. Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
-§7.6 (line ~1929) and gap-table row 11 (line ~2570): resolves via "a later beta's
-interface, or a doc revision".
+§7.6 (line ~1959): resolves via "a later beta's interface, or a doc revision".
 
 - [ ] After each re-dump:
   ```bash
@@ -282,8 +286,8 @@ Gap at `guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-t
   `probes/Tests/ProbesTests/SpeechProbes.swift` measured **26.5 host:
   `unsupported<supported<downloading<installed`; 27.0 sim:
   `unsupported<downloading<supported<installed`** — `<` is synthesized and the ordering really
-  changed (guide 16.1 §5.2 / G2 closed). Re-run per beta and compare against
-  `probes/README.md`.
+  changed (guide 16.1 §5.2 / G2 closed). The 26-generation order held on the 26.6 host
+  (re-measured 2026-08-03). Re-run per beta and compare against `probes/README.md`.
 
 ## 8. AppIntents — the 26.4-annotation-vs-26.5-capture oddity
 

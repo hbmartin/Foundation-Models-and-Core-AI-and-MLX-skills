@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-08-02 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-08-03 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -1158,7 +1158,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [64-bit types are narrowed on the way in: int64 to int32 and fp64 to fp32, silently](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-️-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [The converter narrows int64/fp64 to 32-bit silently — NDArray has 64-bit ScalarTypes the converter never produces](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-️-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [MLX's own caveat: mxfp8 results differ on <1% of elements and can exceed 1 ULP for small values; nvfp4 matches exactly](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#63-python-signatures) — 9.3
-- [MLX float32 matmuls silently run at TF32 on the NAX path — PR #3883 exists because users keep being surprised](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#65-the-four-gates-on-mlxs-accelerated-quantized-path) — 9.3
+- [MLX float32 matmuls silently run at TF32 on the NAX path — the warn-once PR (#3883) was closed unmerged, so nothing announces it](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#65-the-four-gates-on-mlxs-accelerated-quantized-path) — 9.3
 - [Failure #12: MLX fp32 matmul at default env runs TF32 relaxed precision — set MLX_ENABLE_TF32=0 and diff](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) — 9.3
 - [Failure #15: int64 index tensors are narrowed to int32 — values above INT32_MAX overflow, mostly unclamped](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) — 9.3
 

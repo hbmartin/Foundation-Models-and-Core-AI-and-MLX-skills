@@ -52,9 +52,11 @@ standalone fallback binary lives in `Workload/fmworkload.swift` (outside the pac
 `PROBE_ENUM_RUNS=100 PROBE_CONCURRENT_SESSIONS=16` — plain env prefixing reaches the
 test runner on this beta (verified 2026-07-31).
 
-**Verified 2026-07-31 (after the probe-suite extension):** `swift test` on the host —
-39 tests, 34 skipped, 0 failures, exit 0. SIM-27 full run — 32 tests, 2 skipped (PCC
-opt-in + the env-gated Instruments workload), 0 failures, `TEST SUCCEEDED`.
+**Verified 2026-08-03 (host now macOS 26.6 `25G72`):** `swift test` on the host —
+46 tests, 34 skipped, 0 failures, exit 0. SIM-27 full run — 39 tests, 2 skipped (PCC
+opt-in + the env-gated Instruments workload), 0 failures, `TEST SUCCEEDED`. All five
+host-runnable PROBE-RESULT values matched their 26.5 baselines on 26.6 — no behavioral
+drift from the 26.5.2 → 26.6 host update.
 
 ## Probe inventory
 
