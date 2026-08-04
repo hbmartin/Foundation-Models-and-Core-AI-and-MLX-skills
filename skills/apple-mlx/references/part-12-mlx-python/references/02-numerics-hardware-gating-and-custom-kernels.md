@@ -98,10 +98,10 @@ is `973e27f`. That has two consequences you must hold onto:
 > Source: `notes/repos/mlx-tensorops-kernels.md` §13.
 
 > ⚠️ **The NAX path is new and actively being fixed.** Four NAX correctness pull requests opened in
-> the three days before **2026-07-27** — and #3912/#3922/#3924 were **all still open, unmerged, on
-> a 2026-07-31 `gh` re-check**: **#3912** (fp quantized matmul corruption
+> the three days before **2026-07-27** — on a **2026-08-03 `gh` re-check** #3912/#3922 were still
+> open and #3924 was **closed unmerged 2026-08-02**: **#3912** (fp quantized matmul corruption
 > when the quantized dim is not a multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary
-> handling), **#3924** (a tile-shape `static_assert` for `tile_matmad_nax` — added because the
+> handling), **#3924** (a tile-shape `static_assert` for `tile_matmad_nax` — proposed because the
 > function has **no `else` branch**, so odd tile shapes compile to *nothing* and the GEMM produces
 > garbage). Treat every M5-specific behaviour in this guide as sharp-edged and version-sensitive.
 > Source: `notes/repos/mlx-tensorops-kernels.md` §13; `notes/repos/issues-mlx-stack.md` §11.
@@ -767,10 +767,10 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 > **Why it is like this.** The kernel-side `relaxed_precision = true` (§3.1) is unconditional, so the
 > host-side flag is the *only* precision control available, and it is all-or-nothing. This is
 > acknowledged upstream: **mlx PR #3883, "Warn once when float32 ops silently run at TF32 precision"
-> — OPEN as of 2026-07-29**, and **mlx#3860** was retitled in-thread to
+> — closed unmerged 2026-08-03**, and **mlx#3860** was retitled in-thread to
 > *"fp32 matmul silently defaults to TF32-class precision (`MLX_ENABLE_TF32=1`), undocumented on both
 > backends"*. A one-time log line at actual TF32 engagement was agreed in-thread; **mlx PR #3894**
-> (open) documents the default. Neither had landed as of 2026-07-29.
+> (open as of 2026-08-03) documents the default. Neither has landed.
 >
 > **Safe default.** In any test suite, set `MLX_ENABLE_TF32=0` **before importing mlx**. That is
 > exactly what MLX's own test harness does — `python/tests/mlx_tests.py` sets

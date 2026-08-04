@@ -1316,8 +1316,8 @@ Three effects, in decreasing order of how often they bite:
 ### 5.4 The NAX caveat, stated sharply
 
 Four NAX (neural-accelerator) correctness fix PRs opened against `ml-explore/mlx` in the **three
-days** before 2026-07-27 — `#3912`, `#3922`, `#3924`, all three **still open and unmerged** on a
-2026-07-31 `gh` re-check — including a **missing `else` in `tile_matmad_nax` that silently
+days** before 2026-07-27 — `#3912`, `#3922`, `#3924`; the first two **still open**, #3924 **closed
+unmerged 2026-08-02**, on a 2026-08-03 `gh` re-check — including a **missing `else` in `tile_matmad_nax` that silently
 miscompiles odd tile shapes**. NAX is the newest code path in the stack and it is sharp-edged.
 
 > **Safe default while this settles.** If your fine-tune produces a loss curve that looks *fine*

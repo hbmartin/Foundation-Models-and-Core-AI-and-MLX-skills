@@ -101,8 +101,8 @@ when the feature landed" unless it is attached to a specific PR number that the 
 a date. Where I know a date, I give it; where I do not, I say so.
 
 **Second: the NAX quantized path is new and actively churning.** Four correctness fix PRs touching
-NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**, all
-three still open and unmerged on a 2026-07-31 `gh` re-check
+NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**; on a
+2026-08-03 `gh` re-check the first two were still open and #3924 was closed unmerged 2026-08-02
 — including a *missing `else`* in `tile_matmad_nax` that silently compiles to nothing for odd tile
 shapes and produces garbage. The research note that found it puts it plainly:
 
@@ -2024,18 +2024,18 @@ arithmetic — it produces no arithmetic at all**, leaving output rows unwritten
 the recycled Metal buffer last held. Sometimes that is obviously garbage. Sometimes it is
 coincidentally plausible. That is the whole problem.
 
-**Status legend.** Every entry below is marked with its state *as of 2026-07-29* (re-checked
-against live GitHub via `gh` on 2026-07-29; the notes behind this section were taken 2026-07-27).
+**Status legend.** Every entry below is marked with its state *as of 2026-08-03* (re-checked
+against live GitHub via `gh` on 2026-08-03; the notes behind this section were taken 2026-07-27).
 Statuses move. Check the issue before you rely on this table.
 
-| # | Defect | Issue / PR | Status 2026-07-29 | Affects |
+| # | Defect | Issue / PR | Status 2026-08-03 | Affects |
 |---|---|---|---|---|
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **OPEN**, fix PR **OPEN** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** | **OPEN** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
 | 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
-| 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **OPEN** (opened 2026-07-26) | all NAX GEMM |
+| 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
 | 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** | **OPEN** — but **throws**, does not corrupt | nvfp4 on Apple silicon |
 
 Read the last column carefully. **Five of the seven are M5-generation-only.** On an M1 through M4
@@ -2286,7 +2286,7 @@ heads. This one is merged; it is here as a pattern to recognise.
 
 ### 9.6 `tile_matmad_nax` has no `else` — PR #3924
 
-**Status: OPEN, opened 2026-07-26 — the day before these notes were taken.**
+**Status: closed unmerged 2026-08-02, maintainer declined — the missing `else` is still at HEAD.**
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1417-1428`: `tile_matmad_nax` picks
 > between two `mma` overloads by tile shape at `steel/gemm/nax.h:847,865`. "**Note there is no
@@ -2721,7 +2721,7 @@ The conclusion from that thread is worth memorising:
 
 **2. The library default and the CLI default disagree.**
 
-> ✅ **VERIFIED** — mlx-lm#1566 (OPEN), `notes/repos/issues-mlx-stack.md:561-563`:
+> ✅ **VERIFIED** — mlx-lm#1566 (closed 2026-08-03, no fix merged), `notes/repos/issues-mlx-stack.md:561-563`:
 > `generate_step()` and `speculative_generate_step()` both default `quantized_kv_start=0`, while
 > the CLIs default `--quantized-kv-start` to `DEFAULT_QUANTIZED_KV_START = 5000`.
 > **A library caller that passes `kv_bits=` without `quantized_kv_start=` quantizes from token 0

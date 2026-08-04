@@ -674,7 +674,7 @@ PyTorch's naïve decomposition, and some of those decompositions are numerically
 > `replace_log_softmax` in `_aten_to_core.py`.
 >
 > **Status:** PR #22 proposes stable forms (`max(x,0) + log(1+exp(-|x|))` etc.) and adds the three ops
-> to `_COMPOSITE_OPS`. **Not merged as of 2026-07-29.** On shipped `coreai-torch 0.4.1`, softplus,
+> to `_COMPOSITE_OPS`. **Not merged as of 2026-08-03.** On shipped `coreai-torch 0.4.1`, softplus,
 > mish, logsumexp and logcumsumexp are fp16-unsafe on the ANE.
 >
 > **Safe default meanwhile:** substitute in your PyTorch source before export —
@@ -1628,7 +1628,7 @@ is an open bug with a precise trigger:
 >
 > Internals named: `_dim_for_sym` in `_utils.py` reads `var_to_range` when reconstructing the `Dim`
 > for the submodule re-export; a `torch._check(key.size(-2) <= cap)` in the **parent** forward does
-> **not** propagate into that re-export. Open PR `coreai-torch#7` targets it; unmerged.
+> **not** propagate into that re-export. PR `coreai-torch#7` targeted it; closed unmerged 2026-07-29.
 >
 > **Workaround:** drop `SDPA` from the externalize list so it decomposes to primitive ops — you lose
 > the composite (and its fast path) but the conversion completes.

@@ -1,8 +1,8 @@
 # API & symbol index
 
-**1206 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1205 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-02; regenerate rather than hand-edit.
+> `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-03; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>163 symbols</sub>
@@ -141,7 +141,7 @@
 | `Tool.Output` | ✓ | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md), [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) +1 more |
 | `Tool.parameters` | ✓ | ✓ | [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md), [2.README](part-02-foundation-models-everyday-api/README.md), [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Tool.SessionProperty` | ✓ | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md) |
-| `Transcript` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) +21 more |
+| `Transcript` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md) +21 more |
 | `Transcript.Attachment` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
 | `Transcript.AttachmentSegment` | ✓ | ✓ | [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [1.2](part-01-orientation-and-gating/references/02-platform-and-version-gating.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
 | `Transcript.CustomSegment` | ✓ | ✓ | [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.README](part-04-beyond-the-built-in-model/README.md) |
@@ -173,7 +173,7 @@
 | `TranscriptRecorder` |  |  | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [5.README](part-05-prototyping-profiling-non-swift/README.md) |
 | `UnavailableReason` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [1.1](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md), [1.2](part-01-orientation-and-gating/references/02-platform-and-version-gating.md) |
 
-## CoreAI  <sub>74 symbols</sub>
+## CoreAI  <sub>73 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -193,9 +193,8 @@
 | `AIModelAssetMetadata` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `AIModelCache` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) +10 more |
 | `AIModelCache.default` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
-| `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
+| `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AIModelCache.default.model(for:options:)` |  | ✓ | [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
-| `AIModelCache.deleteEntries(for:)` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `AIModelCache.model(for:options:)` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) +1 more |
 | `AIModelCache.Policy` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `AIModelError` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) +2 more |

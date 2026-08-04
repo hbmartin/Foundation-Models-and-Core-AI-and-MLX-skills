@@ -89,8 +89,8 @@ LagunaXS open source coding model in nvfp4", 2026-07-26) in this session. That i
 **Second: MLX moves weekly, and this clone is shallow.** It was cloned `--depth 50`, so `git log`
 on most paths returns only the graft boundary. **Do not treat any date in this guide as
 authoritative** beyond the HEAD commit date. Four NAX correctness fix PRs opened against mlx core
-in the three days before 2026-07-27 alone (#3912/#3922/#3924 still open, unmerged, on a 2026-07-31
-`gh` re-check). Anything described here as "new" should be re-read against
+in the three days before 2026-07-27 alone (#3912/#3922 still open, #3924 closed unmerged, on a
+2026-08-03 `gh` re-check). Anything described here as "new" should be re-read against
 `main` before you build on it.
 
 **Third: the docs disagree with the code in several documented places, and the code wins.** mlx-lm
@@ -1896,10 +1896,10 @@ Use it when you are out of room, not when you want to go faster.
 
 **(a) The library default and the CLI default disagree, and the library's is worse.**
 
-> ✅ **VERIFIED** — mlx-lm#1566 (OPEN). `generate_step()` and `speculative_generate_step()` both
-> default `quantized_kv_start=0`. The CLIs default `--quantized-kv-start` to
-> `DEFAULT_QUANTIZED_KV_START = 5000`. **A library caller who passes `kv_bits=` without
-> `quantized_kv_start=` quantizes from token 0 and eats the full overhead on every short prompt.**
+> ✅ **VERIFIED** — mlx-lm#1566 (closed 2026-08-03; no fix merged, defaults unchanged at HEAD).
+> `generate_step()` and `speculative_generate_step()` both default `quantized_kv_start=0`. The
+> CLIs default `--quantized-kv-start` to `DEFAULT_QUANTIZED_KV_START = 5000`. **A library caller
+> who passes `kv_bits=` without `quantized_kv_start=` quantizes from token 0 and eats the full overhead.**
 
 Measured (community, **M4 Pro 24 GB, mlx 0.32.0**), 512-token prompt / 64 generated, decode tok/s:
 
@@ -2879,7 +2879,7 @@ Swift.
 > `KVCacheSimple` references … **The model loses all context generated after the quantization
 > threshold.**"*
 >
-> Fix in flight: PR #358. A `KVCacheBox` reference wrapper is the maintainer-endorsed direction.
+> Fix in flight: PR #453 (supersedes #358, closed unmerged 2026-08-03); the reference-wrapper approach stands.
 
 Compare with §6.1: mlx-lm's Python `maybe_quantize_kv_cache` does *the same element replacement* —
 `prompt_cache[e] = c.to_quantized(...)` — and it is safe **only because Python lists are reference

@@ -2,6 +2,8 @@
 
 **Harvested 2026-08-02** by direct WebFetch of `developer.apple.com/videos/play/wwdc2026/<n>/`.
 All five return **0 hits** when grepped for across `guides/`, `notes/`, `transcripts/`.
+Code blocks marked "verbatim" are Apple's published samples with trailing whitespace normalized
+for Markdown lint; they are otherwise byte-verbatim.
 
 None of the five appears on `https://developer.apple.com/wwdc26/guides/machine-learning/` — that
 page lists only the 18 sessions in the ML track. These five sit in the **Siri/App Intents, Media,
