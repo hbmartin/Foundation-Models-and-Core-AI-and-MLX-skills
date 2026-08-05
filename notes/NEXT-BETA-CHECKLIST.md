@@ -97,7 +97,7 @@ the repo root.
   four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
   2026-08-03 healthy baselines are **46 host tests, 34 skipped, 0 failures** and **39 simulator
   tests, 2 intentional skips, 0 failures** (both re-verified on the macOS 26.6 host). Probes that need an
-  OS 27 runtime `XCTSkip` on this 26.5 host, so re-run per beta on both local destinations AND
+  OS 27 runtime `XCTSkip` on this 26.6 host, so re-run per beta on both local destinations AND
   once on a real OS 27 machine:
   ```bash
   (cd probes && swift test)

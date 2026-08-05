@@ -989,7 +989,7 @@ VLMs, with no error.** Three linked issues document this:
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
-- **`#420` (still OPEN as of 2026-08-03)** — M-RoPE state dropped **across `ChatSession` turns**:
+- **`#420` (still OPEN as of 2026-07-31)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
   cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399

@@ -86,8 +86,8 @@ training with MLX"*. Where they disagree — and they disagree twice, on a flag 
 turn RDMA on — this guide says so and tells you which to trust.
 
 **MLX moves weekly and this surface is new.** The clone is `--depth 50`, so most `git log` output
-bottoms out at the graft boundary and no date in it should be treated as authoritative. Four NAX
-correctness fixes landed in the three days before 2026-07-27. There is an entire open cluster of
+bottoms out at the graft boundary and no date in it should be treated as authoritative. Three NAX
+correctness fix PRs opened, none merged, in the three days before 2026-07-27. There is an open cluster of
 distributed-backend crash and hang reports (§24). Treat everything in Part B as sharp-edged.
 
 **Markers.** ✅ VERIFIED means quoted from a source read this session, with the citation attached.
@@ -1215,7 +1215,7 @@ a 4K×4K matmul goes **2 s → 0.5 s → 0.33 s** across three kernel versions. 
 are reachable only through the newer kernel formulations, which is precisely why "MLX selects the
 best kernel" is the operative clause.
 
-⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Four
+⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Three
 correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
 `tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912/#3922 still open, #3924
 closed unmerged 2026-08-02, on a 2026-08-03 `gh` re-check). Separately,

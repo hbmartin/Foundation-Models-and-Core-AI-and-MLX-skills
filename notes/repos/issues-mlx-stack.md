@@ -277,7 +277,7 @@ Fix rounds the override up to the next multiple of 32. **Gotcha: if you set `MLX
 
 ## 3. Numerics: TF32, NAX, and cross-silicon divergence
 
-### 3.1 `MLX_ENABLE_TF32` defaults to 1 — mlx#3860 (OPEN, 7 comments) + PR #3894 (open docs PR)
+### 3.1 `MLX_ENABLE_TF32` defaults to 1 — mlx#3860 (CLOSED/completed 2026-08-04, 9 comments) + PR #3894 (MERGED 2026-08-04)
 
 **Title (retitled in-thread):** "fp32 matmul silently defaults to TF32-class precision (`MLX_ENABLE_TF32=1`), undocumented on both backends"
 
@@ -318,7 +318,8 @@ Two mechanics repeatedly cost people bisections:
 - `mlx-lm/tests/test_generate.py`: **8 of 28 tests fail on gen-17** (all batch-vs-single equivalence, models pinned `set_dtype(mx.float32)`); all pass with the flag off.
 - `mlx-lm/tests/test_models.py::test_ssm` fails out of the box on any M5 + mlx ≥ 0.32.
 - mlx-lm **PR #1595** pins `MLX_ENABLE_TF32=0` in `tests/test_models.py` (but *not* `test_generate.py`).
-- mlx **PR #3894** (open) documents the default; a one-time log line at actual TF32 engagement was agreed in-thread.
+- mlx **PR #3894** — **MERGED 2026-08-04 06:16 UTC** (`0b5e91f`), adding `docs/src/usage/precision.rst` (21 lines) plus an `index.rst` toctree entry. The landed page was deliberately **reduced to what holds independently of backend and hardware generation**: it names the affected op family (matmul, quantized matmul, grouped matmul, convolution, attention), says results "can differ from a full-precision reference by several orders of magnitude more than `float32` rounding alone would explain", and gives `MLX_ENABLE_TF32=0`. It does **not** carry the gen-17/macOS 26.2 Metal gate, the CUDA-always rule, the measured numbers, or the fp16/bf16 boundary sentence — all of which were drafted in-thread and then cut. The hardware-specific measurements were re-posted into the #3860 thread (2026-08-03) precisely because the docs page no longer carries them.
+- mlx **#3860** — **CLOSED as completed 2026-08-04 06:22 UTC by `zcbenz`**, six minutes after #3894 merged: *"I'm closing this issue since this behavior is being documented in #3894, having a programmable switch would be nice but at the moment I think there is no necessarility to add that."* **This settles the API question: the env var is the only control, by decision rather than by omission.** The one-time log line agreed in-thread never landed (#3883 closed unmerged 2026-08-03), so there is still **no runtime signal** that reduced precision engaged.
 
 ### 3.2 Batched vs single-sequence attention diverges on M5 — mlx#3897 (OPEN, 7 comments)
 
@@ -1165,7 +1166,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 ## Open questions / unverified
 
 1. **Line numbers drift.** All source line references (`allocator.cpp:132/166-190`, `buffer_cache.h:30-38`, `scaled_dot_product_attention.cpp:621-633`, `quantized_nax.h:1532-1535`, `cache.py:37/552/1578/1630/1674`, `generate.py:294/589-591/622-634/1332/1369`, `server.py:1037/1048`, `ToolCallFormat.swift:174`, `GemmaFunctionParser.swift:8-9`) come from issue bodies at specific commits. **Verify against the actual checkout before quoting in a guide.**
-2. **Did mlx#3922 merge?** It was open with a proposed fix at research time. Same for #3918/#3919/#3920, #3894, mlx-lm#1584/#1585/#1588/#1598, and mlx-swift-lm #467–#471.
+2. **Did mlx#3922 merge?** It was open with a proposed fix at research time. Same for #3918/#3919/#3920, mlx-lm#1584/#1585/#1588/#1598, and mlx-swift-lm #467–#471. ✅ **RESOLVED for #3894** — merged 2026-08-04, closing #3860 with it (§3.1).
 3. **`mlx_lm` on PyPI is 0.31.3 (April) while `main` has months of fixes.** I did not determine whether 0.31.4+ shipped. Guide readers on PyPI will hit several of the bugs above that are fixed on main.
 4. **Exact `mx.device_info()` key set** — I verified only `resource_limit` and `device_name` appear in these threads.
 5. **`MLX_METAL_GPU_ARCH`** is used in #3897/#3860 as a same-silicon kernel-family override (`applegpu_g16s`). Its documented status, valid values, and whether it is supported vs. debug-only are **UNVERIFIED**.

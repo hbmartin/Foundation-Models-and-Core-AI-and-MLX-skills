@@ -88,7 +88,7 @@ LagunaXS open source coding model in nvfp4", 2026-07-26) in this session. That i
 
 **Second: MLX moves weekly, and this clone is shallow.** It was cloned `--depth 50`, so `git log`
 on most paths returns only the graft boundary. **Do not treat any date in this guide as
-authoritative** beyond the HEAD commit date. Four NAX correctness fix PRs opened against mlx core
+authoritative** beyond the HEAD commit date. Three NAX correctness fix PRs opened against mlx core
 in the three days before 2026-07-27 alone (#3912/#3922 still open, #3924 closed unmerged, on a
 2026-08-03 `gh` re-check). Anything described here as "new" should be re-read against
 `main` before you build on it.
@@ -2879,7 +2879,7 @@ Swift.
 > `KVCacheSimple` references … **The model loses all context generated after the quantization
 > threshold.**"*
 >
-> Fix in flight: PR #453 (supersedes #358, closed unmerged 2026-08-03); the reference-wrapper approach stands.
+> Fix in flight: PR #453, open as of 2026-08-03 (supersedes #358, closed unmerged); the reference-wrapper approach stands.
 
 Compare with §6.1: mlx-lm's Python `maybe_quantize_kv_cache` does *the same element replacement* —
 `prompt_cache[e] = c.to_quantized(...)` — and it is safe **only because Python lists are reference

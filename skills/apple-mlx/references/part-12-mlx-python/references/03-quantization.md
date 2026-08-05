@@ -100,7 +100,7 @@ returns the graft boundary, not real history. No date in this guide should be re
 when the feature landed" unless it is attached to a specific PR number that the notes recorded with
 a date. Where I know a date, I give it; where I do not, I say so.
 
-**Second: the NAX quantized path is new and actively churning.** Four correctness fix PRs touching
+**Second: the NAX quantized path is new and actively churning.** Three correctness fix PRs touching
 NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**; on a
 2026-08-03 `gh` re-check the first two were still open and #3924 was closed unmerged 2026-08-02
 — including a *missing `else`* in `tile_matmad_nax` that silently compiles to nothing for odd tile

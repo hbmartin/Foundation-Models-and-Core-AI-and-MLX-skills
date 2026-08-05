@@ -1748,9 +1748,9 @@ four must pass.
 > Complex dtypes are excluded outright.
 >
 > ⚠️ Upstream PR #3883 ("Warn once when float32 ops silently run at TF32 precision") existed
-> because users are being surprised by this — it was **closed unmerged 2026-08-03**, so no runtime
-> warning is coming. **This is the MLX analogue of the Core AI silent-fallback problem**: a
-> precision reduction that produces correct-looking numbers and announces itself nowhere.
+> because users are being surprised by this — it was **closed unmerged 2026-08-03**, so as of that
+> check no runtime warning exists. **This is the MLX analogue of the Core AI silent-fallback
+> problem**: a precision reduction that produces correct-looking numbers and announces itself nowhere.
 
 ⚠️ NAX is also **not a drop-in accelerator** — it changes which *algorithm* is selected, not just
 which kernel implements it. ✅ VERIFIED, `matmul.cpp:924`: the old split-K path is taken only when
