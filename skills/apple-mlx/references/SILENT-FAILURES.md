@@ -2,7 +2,7 @@
 
 **341 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-08-03. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-08-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -314,7 +314,7 @@
 **Part 12**
 
 - [export_function is experimental; .mlxfn files from older MLX versions may not load in future ones.](part-12-mlx-python/references/01-core-fundamentals.md#126-export_function--import_function--the-mlxfn-format) — 12.1
-- [Four NAX correctness PRs within three days (#3912 quant corruption, #3922 gather_qmm bounds); pin and re-verify.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#️-read-this-before-you-trust-a-signature-below) — 12.2
+- [Three NAX correctness PRs within three days (#3912 quant corruption, #3922 gather_qmm bounds); pin and re-verify.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#️-read-this-before-you-trust-a-signature-below) — 12.2
 - [mlx-lm 0.31.0 was pulled from PyPI for BatchKV cache cross-contamination; know exactly which version you run.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#mlx-lm-the-cli-surface-the-generation-api-and-kv-caching) — 12.4
 - [PyPI's mlx-lm (0.31.3, April) trails main by months of fixes; 0.31.0 was yanked for BatchKV cross-contamination.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#12-versions-on-disk-and-the-pypi-gap) — 12.6
 
@@ -447,7 +447,7 @@
 - [Scope note: flag names below were verified against argparse declarations, not the docs.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4
 - [Marker for this guide's register of six silent failures; none of them throw.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4 🔇
 - [Scope note: server signatures verified from source at a pinned commit; PyPI lags main by months.](part-12-mlx-python/references/05-serving-and-distributed.md#️-read-this-before-you-trust-a-signature-below) — 12.5
-- [Freshness: NAX code paths are new and moving, with four correctness fixes within days of writing.](part-12-mlx-python/references/05-serving-and-distributed.md#101-the-m5-neural-accelerators) — 12.5
+- [Freshness: NAX code paths are new and moving, with three correctness fixes within days of writing.](part-12-mlx-python/references/05-serving-and-distributed.md#101-the-m5-neural-accelerators) — 12.5
 - [--host 0.0.0.0 exposes a server with no authentication; anyone on the network can drive your model.](part-12-mlx-python/references/05-serving-and-distributed.md#113-xcode-27--the-one-most-readers-will-use) — 12.5
 - [HTTP exposes no logits, so @Generable guided generation is unavailable on this path; use tools plus your own validation.](part-12-mlx-python/references/05-serving-and-distributed.md#️-the-v1-path-bug-you-will-hit-within-five-minutes) — 12.5
 - [Ring backend restriction: send and recv work only between ring neighbours, not arbitrary ranks.](part-12-mlx-python/references/05-serving-and-distributed.md#142-the-one-property-that-removes-all-your-if-statements) — 12.5

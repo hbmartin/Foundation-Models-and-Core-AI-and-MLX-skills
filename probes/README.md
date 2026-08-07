@@ -21,7 +21,7 @@ candidate answers, and what to write back for each outcome.
 
 | Destination | Meaning | Command |
 |---|---|---|
-| **HOST-26** | today's host, macOS 26.5 | `cd probes && swift test` |
+| **HOST-26** | today's host, macOS 26.6 | `cd probes && swift test` |
 | **SIM-27** | iOS 27.0 Simulator on today's host | `cd probes && xcodebuild test -scheme Probes-Package -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'` (create a device first with `xcrun simctl create` if none exists; `xcodebuild -list` shows the scheme name for a plain package is `<name>-Package`) |
 | **MAC-27** | upgrade day, a Mac running macOS 27 | `cd probes && swift test 2>&1 \| grep PROBE-RESULT` — the one-liner |
 | **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | `xcodebuild test -scheme Probes-Package -destination 'platform=iOS,name=<your device>'` |

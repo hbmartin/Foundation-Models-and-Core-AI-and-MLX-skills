@@ -989,7 +989,7 @@ VLMs, with no error.** Three linked issues document this:
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
-- **`#420` (still OPEN as of 2026-08-03)** — M-RoPE state dropped **across `ChatSession` turns**:
+- **`#420` (still OPEN as of 2026-07-31)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
   cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399
@@ -3035,14 +3035,14 @@ and both destroy output quality rather than crashing. They are here not as a bug
 each one is a **class of error** that will recur — one about value semantics, one about ignored
 return values — and recognising the class is more useful than memorising the instance.
 
-**Status of everything in this section: as of 2026-08-03**, based on a `gh`-CLI pass over
-`ml-explore/mlx-swift-lm` on 2026-08-03 plus a source read at HEAD `3cbf928` (2026-07-24). Re-check
+**Status of everything in this section: as of 2026-08-07**, based on a `gh`-CLI pass over
+`ml-explore/mlx-swift-lm` on 2026-08-07 plus a source read at HEAD `c97539d` (2026-08-06). Re-check
 before you build around either.
 
 ### 9.1 `maybeQuantizeKVCache` replaces array elements instead of mutating objects
 
-**Issue: `mlx-swift-lm#312`. Status: OPEN as of 2026-08-03. Fix in flight: now PR #453 — the
-maintainer closed PR #358 unmerged 2026-08-03 in its favor ("same approach", broader coverage).**
+**Issue: `mlx-swift-lm#312`. Status: still OPEN as of 2026-08-07, but the fix landed on main — PR
+#453 merged 2026-08-05 (#358 closed unmerged in its favor). No release carries it: latest is 3.31.4.**
 
 #### What happens
 
@@ -3138,8 +3138,8 @@ Three places to look for the same shape:
 3. **Any Python `list[...]` translated to a Swift `Array<...>` in a port**, where the Python code
    mutates the list itself rather than its elements.
 
-**The mitigation you can apply today, without waiting for PR #453:** do not use mid-generation KV
-quantization together with a caller-held cache.
+**The mitigation on any released version — 3.31.4 and earlier all predate PR #453's merge:** do not
+use mid-generation KV quantization together with a caller-held cache.
 
 ```swift prelude:guide-context
 // SAFE: quantization threshold is never crossed mid-generation, because the whole
@@ -3604,9 +3604,9 @@ them throws.
 
 Plus the two §9 bugs, which are defects rather than design:
 
-| Issue | Status 2026-08-03 | Silent symptom |
+| Issue | Status 2026-08-07 | Silent symptom |
 |---|---|---|
-| `#312` `maybeQuantizeKVCache` replaces elements, not objects | **OPEN**; fix now PR #453 (#358 closed unmerged) | model loses all context after `quantizedKVStart` |
+| `#312` `maybeQuantizeKVCache` replaces elements, not objects | **OPEN**; fixed on main by PR #453 (merged 2026-08-05), unreleased | model loses all context after `quantizedKVStart` |
 | `#424` `trimPromptCache` return discarded in `SpeculativeTokenIterator` | **OPEN** | generation continues on a transcript containing never-emitted tokens |
 
 ### 11.3 The gap register

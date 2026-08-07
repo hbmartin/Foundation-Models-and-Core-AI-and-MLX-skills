@@ -97,7 +97,7 @@ is `973e27f`. That has two consequences you must hold onto:
 > To resolve: `git -C <mlx-repo> fetch --unshallow` and re-run.
 > Source: `notes/repos/mlx-tensorops-kernels.md` §13.
 
-> ⚠️ **The NAX path is new and actively being fixed.** Four NAX correctness pull requests opened in
+> ⚠️ **The NAX path is new and actively being fixed.** Three NAX correctness pull requests opened in
 > the three days before **2026-07-27** — on a **2026-08-03 `gh` re-check** #3912/#3922 were still
 > open and #3924 was **closed unmerged 2026-08-02**: **#3912** (fp quantized matmul corruption
 > when the quantized dim is not a multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary
@@ -765,12 +765,12 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 > user files a bug you cannot reproduce.
 >
 > **Why it is like this.** The kernel-side `relaxed_precision = true` (§3.1) is unconditional, so the
-> host-side flag is the *only* precision control available, and it is all-or-nothing. This is
-> acknowledged upstream: **mlx PR #3883, "Warn once when float32 ops silently run at TF32 precision"
-> — closed unmerged 2026-08-03**, and **mlx#3860** was retitled in-thread to
-> *"fp32 matmul silently defaults to TF32-class precision (`MLX_ENABLE_TF32=1`), undocumented on both
-> backends"*. A one-time log line at actual TF32 engagement was agreed in-thread; **mlx PR #3894**
-> (open as of 2026-08-03) documents the default. Neither has landed.
+> host-side flag is the *only* precision control, and upstream has now settled on keeping it that way.
+> Docs PR **mlx#3894 merged 2026-08-04** (`docs/src/usage/precision.rst`) — but reduced to what "holds
+> independently of backend and hardware generation", so it names no generation, no gate and no numbers;
+> §3.2 and §3.4 remain your only source for scope and magnitude. On the strength of it **mlx#3860 was
+> closed as completed** the same day, `zcbenz` declining a runtime opt-out — *"having a programmable
+> switch would be nice … there is no necessarility"*. Warn-once **#3883** stays **closed unmerged**.
 >
 > **Safe default.** In any test suite, set `MLX_ENABLE_TF32=0` **before importing mlx**. That is
 > exactly what MLX's own test harness does — `python/tests/mlx_tests.py` sets
@@ -780,8 +780,8 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.4 What it measures out at
 
-All of the following are **community-measured**, from the mlx#3860 thread (OPEN, 7 comments, mid-2026),
-contributed by `pierre427` and `mabaeyens`. They are not Apple figures. Attribution is per row.
+All of the following are **community-measured**, from the mlx#3860 thread (**closed as completed
+2026-08-04**, 9 comments), by `pierre427` and `mabaeyens`. Not Apple figures. Attribution is per row.
 
 **Metal — plain `float32` 512×512×512 matmul, GPU versus CPU, expressed as the error exponent:**
 

@@ -2,7 +2,7 @@
 
 The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
-> Generated 2026-08-03 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Generated 2026-08-07 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## Part 11 — Metal and TensorOps
 

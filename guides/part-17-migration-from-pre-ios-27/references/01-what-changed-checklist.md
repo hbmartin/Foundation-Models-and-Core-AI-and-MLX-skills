@@ -1958,7 +1958,7 @@ Also new and easy to miss when constructing a transcript by hand:
 
 ### 7.6 SUPERSEDED — `ImageReference.resolve(in:)` → `resolved(in:)`
 
-Tiny, but it will produce a deprecation warning the moment you adopt image tools.
+Tiny — and the deprecation warning is SDK-dependent: only a build that declares it will warn.
 
 > ✅ **VERIFIED** — the documentation harvest (2026-07-27) presents `func resolved(in:) ->
 > Transcript.ImageAttachment?` as current and `func resolve(in:)` as **(Deprecated)**.
