@@ -20,7 +20,7 @@ written; operational files below are the maintained source of truth for what to 
 - A 2026-08-03 defect sweep folded four upstream closures into Parts 8/9/11/12/13: mlx#3883 and
   mlx#3924 closed unmerged (TF32 stays unannounced; the `tile_matmad_nax` missing-`else` is still
   at HEAD), mlx-lm#1566 closed with `generate_step` defaults unchanged, and mlx-swift-lm#358
-  superseded by open PR #453. None closed with a fix landing — the hazards they document stand.
+  superseded by PR #453, which merged 2026-08-05 — the only one of the four to land a fix.
 - The remaining machine-dependent evidence is limited to the `fm` CLI on macOS 27 (now narrowed by
   third-party reports, not closed), one manual Instruments GUI capture, and physical-device
   Core AI probes. The on-device `contextSize` question is **answered by Apple** and no longer

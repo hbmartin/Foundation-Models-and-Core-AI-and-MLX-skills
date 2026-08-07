@@ -931,7 +931,7 @@ class KVCacheBox : KVCache {
 }
 ```
 > "I think making a box type like this is probably the way to go — it will give us the most flexibility in terms of having behavior over the full KVCache and let us fix this problem. ... I do think that a higher level type that represents the collection of `KVCache` instances might be better. It would be nice to call it `KVCache` but that name is taken for the per-layer ones. The drawback: it doesn't match the python plain-list implementation."
-Fix in flight: **PR #358** "Fix KV cache quantization: cache updates lost due to value-type propagation."
+Fix landed: **PR #453** merged 2026-08-05, superseding #358 "Fix KV cache quantization: cache updates lost due to value-type propagation" (closed unmerged 2026-08-03 — davidkoski: "I like the shape of this but I think I am going to take #453 over this. It has the same approach but also covers the ChatSession side"). The box shipped essentially as proposed above: `KVCacheStorage` (`KVCachePlan.swift:104`), a `package final class` holding `var cache: [KVCache]`, now shared by `TokenIterator` (`Evaluate.swift:670`), `ChatSession` (`ChatSession.swift:242-260`), `MTPSpeculativeTokenIterator` and `GuidedGenerationLoop`. Two caveats: the legacy `maybeQuantizeKVCache(cache: inout [KVCache], …)` shim survives on main and still does `plan.apply(to: &cache)`, and #312 was never closed. No release carries the fix — latest tag is 3.31.4 (2026-06-30). Verified 2026-08-07 at HEAD `c97539d`.
 
 **swift-lm#424 (OPEN): `RotatingKVCache` becomes untrimmable once the window wraps.**
 `RotatingKVCache.isTrimmable` is `offset < maxCacheSize`, and `offset` only grows.

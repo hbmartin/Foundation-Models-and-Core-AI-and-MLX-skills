@@ -2,7 +2,7 @@
 
 **1205 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-05; regenerate rather than hand-edit.
+> `26.5` / `27.0` = the bare symbol name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/` (a presence check, not a full signature match — the guides carry the signature-level citations). Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-08-07; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>163 symbols</sub>

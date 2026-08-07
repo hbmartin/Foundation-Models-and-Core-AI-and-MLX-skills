@@ -35,4 +35,4 @@ npx skills add hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills --skill app
 
 Each skill's `SKILL.md` is a router: it carries the evidence-marker legend, the version floors, a triage table, and a lookup protocol. The bulk of the material sits in `references/`, which costs nothing until read — the part READMEs, a symbol index sliced to that skill, a silent-failure index sliced to that skill, and section maps addressing the bundled deep reference guides. Each skill also includes OpenAI UI metadata and portable trigger-evaluation fixtures.
 
-Generated 2026-08-05.
+Generated 2026-08-07.
