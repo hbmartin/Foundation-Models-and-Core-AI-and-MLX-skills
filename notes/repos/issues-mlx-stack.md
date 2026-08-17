@@ -40,7 +40,7 @@ Contrast: `mlx-swift-lm` maintainer `davidkoski` is visibly active and responsiv
 
 ## 1. Memory, the Metal allocator, and OOM — the single richest theme
 
-### 1.1 `mx.get_peak_memory()` does NOT include the buffer pool — mlx#3896 (OPEN)
+### 1.1 `mx.get_peak_memory()` does NOT include the buffer pool — mlx#3896 (closed 2026-08-08)
 
 **Title:** `mx.get_peak_memory() significantly under-reports actual GPU memory footprint on Apple Silicon (Metal)`
 
@@ -80,7 +80,7 @@ Measured churn loop (60 × ~500 MB alloc→eval→drop), GB:
 - `mx.clear_cache()` genuinely returns the memory, but **`phys_footprint` trails the call by a few seconds** (retraction comment: 0.00 cache at t+0 with 15.14 GB footprint; 0.02 GB at t+4 s). Don't sample immediately after and conclude there's a leak.
 - Metal heap in mlx is `heap_size_ = 1<<20` (1 MB) and only serves buffers below `small_size_ = 256 B` — it cannot hold GBs, so a multi-GB "residual" is never the heap.
 
-### 1.2 `[metal::malloc] Resource limit (499000) exceeded` — mlx#3849 (OPEN)
+### 1.2 `[metal::malloc] Resource limit (499000) exceeded` — mlx#3849 (closed 2026-08-05)
 
 **Title:** "How can the Metal resource limit be queried or configured on macOS?"
 
@@ -321,7 +321,7 @@ Two mechanics repeatedly cost people bisections:
 - mlx **PR #3894** — **MERGED 2026-08-04 06:16 UTC** (`0b5e91f`), adding `docs/src/usage/precision.rst` (21 lines) plus an `index.rst` toctree entry. The landed page was deliberately **reduced to what holds independently of backend and hardware generation**: it names the affected op family (matmul, quantized matmul, grouped matmul, convolution, attention), says results "can differ from a full-precision reference by several orders of magnitude more than `float32` rounding alone would explain", and gives `MLX_ENABLE_TF32=0`. It does **not** carry the gen-17/macOS 26.2 Metal gate, the CUDA-always rule, the measured numbers, or the fp16/bf16 boundary sentence — all of which were drafted in-thread and then cut. The hardware-specific measurements were re-posted into the #3860 thread (2026-08-03) precisely because the docs page no longer carries them.
 - mlx **#3860** — **CLOSED as completed 2026-08-04 06:22 UTC by `zcbenz`**, six minutes after #3894 merged: *"I'm closing this issue since this behavior is being documented in #3894, having a programmable switch would be nice but at the moment I think there is no necessarility to add that."* **This settles the API question: the env var is the only control, by decision rather than by omission.** The one-time log line agreed in-thread never landed (#3883 closed unmerged 2026-08-03), so there is still **no runtime signal** that reduced precision engaged.
 
-### 3.2 Batched vs single-sequence attention diverges on M5 — mlx#3897 (OPEN, 7 comments)
+### 3.2 Batched vs single-sequence attention diverges on M5 — mlx#3897 (closed 2026-08-09; 7 comments at snapshot)
 
 M5 base (`applegpu_g17g`, 32 GB, macOS 26.5.2 / 25F84), mlx 0.31.2 and 0.32.0 both reproduce; M3 Max clean.
 
@@ -449,7 +449,7 @@ while (split_k > 1 && (K % (split_k * k_align) != 0)) split_k--;
 
 Example failure: `K=64, group_size=16 → split_k=4, k_partition_size=16 < BK=32`.
 
-### 4.4 NVFP4 tensor-scale is NOT implemented on Metal — mlx#3911 (OPEN)
+### 4.4 NVFP4 tensor-scale is NOT implemented on Metal — mlx#3911 (closed 2026-08-05)
 
 PR #3022 added per-tensor scale (`global_scale`) for NVFP4 on **CUDA and CPU**. Metal explicitly rejects it (`mlx/backend/metal/quantized.cpp` L1725-1730):
 
@@ -972,7 +972,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 **M-RoPE state loss (three linked issues):**
 - **#419 (MERGED PR)** — prefill `LMOutput.State` dropped on `TokenIterator`'s `.logits` path.
 - **#420 (OPEN)** — M-RoPE state dropped **across `ChatSession` turns**: *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by **PR #399**; still open for Qwen2.5-VL / Qwen2-VL / Qwen3-VL (PR #448 wires them).
-- **#443 (OPEN)** — `savePromptCache`/`loadPromptCache` drop `LMOutput.State`: *"`ChatSession.saveCache(to:)` matches `.kvcache(let cache, _, _)` and passes only the KV arrays ... The safetensors layout has no slot for it, `loadPromptCache` returns only `([KVCache], metadata)`, and both cache-accepting `ChatSession` initializers hard-code `state: nil`."* Quantified in #399: on a tiny random-weight model warm turn-2 logits diverge from a cold full prefill by **0.43 max-abs** against an **8.3e-07** decode-path noise floor. *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
+- **#443 (closed 2026-08-10)** — `savePromptCache`/`loadPromptCache` dropped `LMOutput.State` in the researched snapshot: *"`ChatSession.saveCache(to:)` matches `.kvcache(let cache, _, _)` and passes only the KV arrays ... The safetensors layout has no slot for it, `loadPromptCache` returns only `([KVCache], metadata)`, and both cache-accepting `ChatSession` initializers hard-code `state: nil`."* Quantified in #399: on a tiny random-weight model warm turn-2 logits diverge from a cold full prefill by **0.43 max-abs** against an **8.3e-07** decode-path noise floor. *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
 - **PR #411** Qwen3VL: apply the sRGB tone curve in image preprocess (issue #410: linear-light values made dark content unreadable).
 - **PR #398** Qwen3VL: default per-image resolution to a **1,280 vision-token budget** (issue #396: uncapped resolution let the ViT allocate tens of GB).
 

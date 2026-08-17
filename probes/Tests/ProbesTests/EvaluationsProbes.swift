@@ -316,10 +316,17 @@ final class EvaluationsProbes: XCTestCase {
     //             (consistent with retry-forever; the guide's "bound by wall-clock" advice
     //             stands verified).
     // Write-back: §3's GAP box with the outcome and invocation count.
-    // NOTE: needs a live model (generation), so MAC-27/DEVICE-27, not SIM today.
+    // NOTE: needs a live model. The macOS 27 beta-5 host blocks inside generation before the
+    // timeout task can run; Simulator can consume nearly the full budget and poison subsequent
+    // host-backed model calls. Both require PROBE_ENABLE_GENERATOR=1. DEVICE-27 remains enabled.
     func testSampleGeneratorUnreachableTarget() async throws {
         try requireOS27()
         guard #available(macOS 27.0, iOS 27.0, *) else { return }
+        #if os(macOS) || targetEnvironment(simulator)
+        guard Probe.env("PROBE_ENABLE_GENERATOR") == "1" else {
+            throw XCTSkip("SKIPPED: beta 5 host-backed generator blocks or poisons later calls; set PROBE_ENABLE_GENERATOR=1 to retry")
+        }
+        #endif
         guard SystemLanguageModel.default.isAvailable else {
             throw XCTSkip("SystemLanguageModel unavailable: \(SystemLanguageModel.default.availability)")
         }

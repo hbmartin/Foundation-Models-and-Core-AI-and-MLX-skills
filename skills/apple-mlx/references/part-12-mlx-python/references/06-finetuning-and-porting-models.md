@@ -1306,8 +1306,8 @@ Three effects, in decreasing order of how often they bite:
 > `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (OPEN at research time): affine
 > `gather_qmm` silently corrupts MoE output when gathered rows are `> 32768 && % 64 != 0`, and
 > separately when `K % 64 != 0` (which also hits `mxfp4`). It **cannot be reproduced on M1–M4**.
-> Fix PRs `#3922` (mlx) and `#1585` (mlx-lm, "pad sorted gather rows to 64") were open — `#3922`
-> still open on a 2026-07-31 `gh` re-check, as were issue #3856 and its sibling #3887. Also
+> Fix PRs `mlx#3922` and `mlx-lm#1585` ("pad sorted gather rows to 64") were open — `mlx#3922`
+> still open on a 2026-07-31 `gh` re-check, as were issue `mlx#3856` and its sibling `mlx#3887`. Also
 > **mlx#3912**, "fp quantized matmul corruption when the quantized dim isn't a multiple of 32".
 > If you are fine-tuning an MoE in 4-bit on M5-generation silicon, verify your checkout includes
 > those fixes before trusting a single loss curve. These are community-reported and
@@ -1850,7 +1850,7 @@ large relative to compute, and hurts when the opposite is true.
 The trainer reports `peak_mem = mx.get_peak_memory() / 1e9` (✅ `trainer.py:345`), which lands in
 the callback payload as `"peak_memory"`. That number **excludes the allocator's buffer pool.**
 
-> ✅ **VERIFIED** via `notes/repos/issues-mlx-stack.md` §1.1, quoting mlx#3896 (OPEN) and a
+> ✅ **VERIFIED** via `notes/repos/issues-mlx-stack.md` §1.1, quoting mlx#3896 (closed 2026-08-08) and a
 > contributor's read of `mlx/backend/metal/allocator.cpp` at v0.32.0:
 > ```cpp
 > active_memory_ += buf->length();

@@ -43,6 +43,16 @@ Environment knobs:
 - `PROBE_ARTIFACT_DIR=/absolute/output/path` — writes complete probe artifacts when a
   destination can access that path. `fm.spotlight-tool-surface` always also attaches its
   complete schema to the XCTest result, which is the reliable simulator export path.
+- `PROBE_ENABLE_ATTACHMENT=1` — retries the image-attachment probe on the macOS 27 beta-5 host or
+  iOS 27 beta-5 Simulator. Both block inside image tokenization by default on the 2026-08-17
+  runtime, before an async timeout can execute, so weekly runs skip this probe there.
+- `PROBE_ENABLE_GENERATOR=1` — retries the unreachable-target `SampleGenerator` probe on the
+  macOS 27 beta-5 host or Simulator. The host call blocks non-cancellably; Simulator can consume
+  nearly the full timeout and poison subsequent host-backed model calls. Physical devices remain
+  enabled by default.
+- `PROBE_ENABLE_HOST_MODEL=1` — retries model-dependent Foundation Models probes on the macOS 27
+  beta-5 host or Simulator. The host-backed runtime reports `.available`, but generation calls can
+  block before test timeouts execute; offline/static probes remain enabled without this override.
 
 **Instruments lane-name capture** (the one manual GUI session): `INSTRUMENTS-RECORDING.md`
 — workload command, attach procedure, transcription checklist, write-back list. A
@@ -57,6 +67,14 @@ test runner on this beta (verified 2026-07-31).
 opt-in + the env-gated Instruments workload), 0 failures, `TEST SUCCEEDED`. All five
 host-runnable PROBE-RESULT values matched their 26.5 baselines on 26.6 — no behavioral
 drift from the 26.5.2 → 26.6 host update.
+
+**Verified 2026-08-17 (macOS 27 beta 5 `26A5406e`, Xcode `27A5237l`):** the default bounded
+host run is **46 tests, 23 skipped, 0 failures**; the iOS 27 Simulator (`24A5408d`) run is
+**39 tests, 19 skipped, 0 failures**, `TEST SUCCEEDED`. Beta 5 reports its host-backed model
+available while some generation and image-tokenization calls block non-cancellably. The default
+suite therefore skips model-dependent, attachment, and unreachable-generator probes on host-backed
+destinations; use the three `PROBE_ENABLE_*` overrides above after a runtime update or service
+restart. Offline/static `PROBE-RESULT` values remained stable.
 
 ## Probe inventory
 

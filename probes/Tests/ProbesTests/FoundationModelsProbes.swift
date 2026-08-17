@@ -84,6 +84,11 @@ private struct BookTags {
 // MARK: - Shared helpers (internal: also used by SpotlightProbes and InstrumentsWorkloadProbes)
 
 func skipUnlessModelAvailable(file: StaticString = #filePath, line: UInt = #line) throws {
+    #if os(macOS) || targetEnvironment(simulator)
+    guard Probe.env("PROBE_ENABLE_HOST_MODEL") == "1" else {
+        throw XCTSkip("SKIPPED: beta 5 host-backed model reports available but calls can block; set PROBE_ENABLE_HOST_MODEL=1 to retry")
+    }
+    #endif
     let model = SystemLanguageModel.default
     guard model.isAvailable else {
         throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")
@@ -831,7 +836,7 @@ final class FoundationModelsProbes: XCTestCase {
         )
     }
 
-    // MARK: fm.attachment-label-recording  [SIM-27 (partial: fingerprints) · MAC-27 · DEVICE-27]
+    // MARK: fm.attachment-label-recording  [DEVICE-27 · MAC-27 opt-in]
     //
     // GAP: part-02 …/05-image-input-and-attachments.md §6.4 ⚠️ (an unlabelled attachment is
     //      invisible to an image tool — silent no-op) and …/03-tools-and-tool-calling.md's
@@ -844,12 +849,18 @@ final class FoundationModelsProbes: XCTestCase {
     //      (3) does a REQUIRED tool call actually run for labeled vs unlabeled attachments.
     // Candidates: (1) same/different token cost; (2) label recorded verbatim / nil;
     //             (3) labeled runs + unlabeled silently skips (claim CONFIRMED) / both run.
-    // Expected on SIM-27: image attachments error (LanguageModelError -1, measured
-    //      2026-07-31) — halves 2–3 then record fingerprints; the full answer lands on
-    //      MAC-27/DEVICE-27.
+    // SIM-27 and the macOS 27 beta-5 host are skipped by default: both block inside image
+    // tokenization before an async timeout can run (Simulator logs CVPixelBufferCreate -6680,
+    // measured 2026-08-17). Set PROBE_ENABLE_ATTACHMENT=1 to retry after a runtime update.
+    // The full answer otherwise lands on DEVICE-27, where image attachments are supported.
     // Write-back: 2.5 §6.4 and 2.3's label callout, per destination.
     func testAttachmentLabelRecording() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
+        #if os(macOS) || targetEnvironment(simulator)
+        guard Probe.env("PROBE_ENABLE_ATTACHMENT") == "1" else {
+            throw XCTSkip("SKIPPED: beta 5 host/Simulator blocks in image tokenization; set PROBE_ENABLE_ATTACHMENT=1 to retry")
+        }
+        #endif
         try skipUnlessModelAvailable()
 
         func solidImage(side: Int) -> CGImage? {
@@ -888,14 +899,19 @@ final class FoundationModelsProbes: XCTestCase {
         let variants: [(String, Bool)] = [("unlabeled", false), ("labeled", true)]
         // Half 1: token cost with vs without a label.
         for (tag, labeled) in variants {
-            let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
-            let prompt = Prompt {
-                "Describe the attached image."
-                attachment
-            }
             do {
-                let count = try await model.tokenCount(for: prompt)
-                rows.append("\(tag)Tokens=\(count)")
+                let result = try await Probe.withTimeout(seconds: 30) { [image] in
+                    let attachment = labeled ? Attachment(image).label("probe-img") : Attachment(image)
+                    let prompt = Prompt {
+                        "Describe the attached image."
+                        attachment
+                    }
+                    return try await model.tokenCount(for: prompt)
+                }
+                switch result {
+                case .value(let count): rows.append("\(tag)Tokens=\(count)")
+                case .timedOut: rows.append("\(tag)Tokens=timeout")
+                }
             } catch {
                 let ns = error as NSError
                 rows.append("\(tag)Tokens=error(\(ns.domain):\(ns.code))")
