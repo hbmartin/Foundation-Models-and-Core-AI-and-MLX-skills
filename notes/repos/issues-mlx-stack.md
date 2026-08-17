@@ -466,7 +466,7 @@ if (mode_ == QuantizationMode::Nvfp4 &&
 
 Related merged PR: **#3723 "[CUDA] Make qmv support global scale"** — *"`qqmm` reroutes to `qmv` when M=1, while the latter did not support global scales."*
 
-### 4.5 2-bit loses its advantage at M ≥ 3 — mlx#3852 (OPEN)
+### 4.5 2-bit loses its advantage at M ≥ 3 — mlx#3852 (CLOSED 2026-08-16)
 
 M4 Pro (`applegpu_g16s`), mlx 0.32.0 wheel, macOS 15.6, group_size=128:
 
@@ -483,6 +483,11 @@ Dispatch facts established in-thread:
 - gen 16 takes **`qmv_wide`** for affine at **M ≥ 2** (`use_qmv_wide`), up to **`get_qmv_batch_limit`** (10–12 at these dims), then **`qmm`**.
 - Past the qmv batch limit the qmm path is **flat at 0.887 ms for every M from 10 to 32** — so M=10 pays the M=32 price.
 - Half-precision arithmetic ran at identical speed (**no 2× half rate on M-series**), and `math_mode: "fast"` was a no-op for this kernel.
+
+**Closure context (2026-08-16):** the maintainer closed the issue to focus optimization work on
+real inference cases; the measurements were not disputed and no fix landed. The proposed BM=16
+optimization PR #3863 had already closed unmerged on 2026-08-02, so the findings above remain the
+current evidence rather than a resolved historical limitation.
 
 ---
 

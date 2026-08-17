@@ -1297,9 +1297,12 @@ nothing in kernel time. Batch harder.
 
 Everyone assumes fewer bits is monotonically faster. On the quantized matmul path, it is not.
 
-> ✅ **VERIFIED** — mlx#3852 (OPEN), measured on **M4 Pro (`applegpu_g16s`), mlx 0.32.0 wheel,
-> macOS 15.6, group_size=128**. Recorded at `notes/repos/issues-mlx-stack.md:470-479`. Figures are
-> the M=1 absolute time followed by speedups relative to it:
+> ✅ **VERIFIED** — mlx#3852 (**CLOSED 2026-08-16 without an optimization**), measured on **M4 Pro
+> (`applegpu_g16s`), mlx 0.32.0 wheel, macOS 15.6, group_size=128**. The maintainer closed it to
+> prioritize real inference cases; the measurements were not disputed, and the proposed BM=16
+> optimization PR #3863 had already closed unmerged on 2026-08-02. Recorded at
+> `notes/repos/issues-mlx-stack.md:470-479`. Figures are the M=1 absolute time followed by
+> speedups relative to it:
 >
 > | shape (K→N) | bits | M1 | M2 | M3 | M4 | M8 | M10 | M32 |
 > |---|---|---|---|---|---|---|---|---|
