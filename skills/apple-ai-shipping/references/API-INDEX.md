@@ -1,8 +1,8 @@
 # API & symbol index — Shipping and operating on-device AI in a released app
 
-**85 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**87 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-17; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>11 symbols</sub>
 
@@ -20,7 +20,7 @@
 | `SystemLanguageModel.availability` | ✓ | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `SystemLanguageModel.default.availability` | ✓ | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 
-## CoreAI  <sub>22 symbols</sub>
+## CoreAI  <sub>23 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -34,6 +34,7 @@
 | `AIModelAsset.Metadata` |  | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AIModelCache` |  | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [15.2](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md) |
 | `AIModelCache.default.deleteEntries(for:)` |  | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
+| `AIModelCacheError.failedToPurge` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AIModelError` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [15.README](part-15-shipping-and-operating/README.md) |
 | `AssetError` | ✓ | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `CoreAI` |  | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
@@ -73,7 +74,7 @@
 | `URLSession` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [15.README](part-15-shipping-and-operating/README.md) |
 | `URLSessionConfiguration.default` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 
-## other  <sub>41 symbols</sub>
+## other  <sub>42 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -84,6 +85,7 @@
 | `BGContinuedProcessingTask` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [15.2](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md) |
 | `Bool` | ✓ | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `CancellationError` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
+| `D83AP` |  |  | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [15.README](part-15-shipping-and-operating/README.md) |
 | `Documents` |  | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `Double` | ✓ | ✓ | [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `EngineOptions` |  |  | [15.2](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md), [15.README](part-15-shipping-and-operating/README.md) |

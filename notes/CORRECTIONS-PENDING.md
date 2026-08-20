@@ -373,13 +373,14 @@ not published. Resolving needs an SDK interface dump.~~ **RESOLVED 2026-07-29** 
 `_Vision_FoundationModels` cross-import overlay answers it (`Output` is a deliberately unnameable
 opaque `some PromptRepresentable`); cited in part-02 ref 03 §10.
 
-### C10.2 — ✅ APPLIED: image tool calls require an attachment label
+### C10.2 — ✅ SUPERSEDED 2026-08-20: labels identify images; they do not gate every tool call
 **Affects:** guides 2.3 and 2.5, **both already written and already corrected once.**
 
-`Attachment(image).label("flyer")` is **REQUIRED** for image tool calls, and **silently no-ops if
-omitted.** This is exactly the class of defect the series exists to document. The required-label
-callout is now present in both affected guides: part-02 reference 03 (tool calling) and reference
-05 (image inputs and attachments).
+The original correction overgeneralized Apple's statement that labels help tools identify specific
+attachments. A physical iPhone 15 Pro / iOS build `24A5408d` probe made a required generic tool run
+for **both** labeled and unlabeled image prompts; the transcript recorded `nil` versus the exact
+label. Labels remain mandatory for `ImageReference`-dependent selection/resolution, but omission
+does not universally suppress tool invocation. Guides 2.3 and 2.5 now carry that measured boundary.
 
 ### C10.3 — `.system.searchInApp` is a RENAME, not a new schema
 **Affects:** the Part 16 App Intents guides (since written; see C8).

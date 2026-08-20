@@ -2,9 +2,10 @@
 
 A SwiftPM package whose XCTest cases are **executable evidence collectors**: one probe per
 open 🔴 GAP in the guide series that a machine can decide. The package **builds and tests
-green on the authoring host today** (macOS 26.5.2, Xcode 27.0 beta 27A5228h); every probe
-that needs an OS 27 runtime skips with `SKIPPED: needs OS 27` until run on one. On upgrade
-day, `swift test` turns the remaining gaps into log lines.
+green on the authoring host today** (macOS 27 beta 5 `26A5406e`, Xcode 27 beta 5
+`27A5237l`), and its hosted runner has completed a first physical-device baseline on an iPhone 15
+Pro running iOS 27 build `24A5408d`. On upgrade day, the same tests turn behavioral drift into log
+lines.
 
 **Output contract.** Probes never fake a pass/fail. A measuring probe prints
 
@@ -24,12 +25,37 @@ candidate answers, and what to write back for each outcome.
 | **HOST-26** | today's host, macOS 26.6 | `cd probes && swift test` |
 | **SIM-27** | iOS 27.0 Simulator on today's host | `cd probes && xcodebuild test -scheme Probes-Package -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'` (create a device first with `xcrun simctl create` if none exists; `xcodebuild -list` shows the scheme name for a plain package is `<name>-Package`) |
 | **MAC-27** | upgrade day, a Mac running macOS 27 | `cd probes && swift test 2>&1 \| grep PROBE-RESULT` — the one-liner |
-| **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | `xcodebuild test -scheme Probes-Package -destination 'platform=iOS,name=<your device>'` |
+| **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Generate the hosted device project and run its scheme; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. See the commands immediately below. |
+
+Physical-device XCTest needs an app host. Generate the ignored Xcode project from the committed
+XcodeGen spec, then use the device UDID from `xcrun xctrace list devices` (or the `Hardware: UDID`
+field from `xcrun devicectl device info details`):
+
+```bash
+cd probes
+xcodegen generate --spec device-project.yml
+xcodebuild test \
+  -project DeviceProbes.xcodeproj \
+  -scheme DeviceProbes \
+  -destination 'platform=iOS,id=<device-udid>' \
+  -allowProvisioningUpdates \
+  DEVELOPMENT_TEAM=<your-team-id>
+```
+
+Keep the phone unlocked through destination preflight. The former
+`xcodebuild test -scheme Probes-Package -destination 'platform=iOS,…'` command fails before launch
+with `Tool-hosted testing is unavailable on device destinations`; the generated project supplies
+the required minimal `DeviceProbeHost` app. XcodeGen is available from Homebrew (`brew install
+xcodegen`). The host is probe infrastructure only and displays no data.
 
 Environment knobs:
 
 - `PROBE_AIMODEL_URL=/path/to/model.aimodelc` — unlocks the four asset-dependent Core AI
-  cache probes (they `XCTSkip` without it). Produce an asset with
+  cache probes (they `XCTSkip` without it). For DEVICE-27, copy the asset directory into
+  `probes/DeviceProbeAssets/` before generating the project. The device runner auto-selects it
+  when exactly one `.aimodel` or `.aimodelc` is present because shell environment variables do not
+  propagate through this physical-device test launch; if several are bundled, it resolves the
+  requested host path by its last path component. Assets in that directory are ignored by Git. Produce one with
   `xcrun coreai-build compile … --output …` (ships in the optional Metal Toolchain
   component — `xcodebuild -downloadComponent MetalToolchain`; see
   `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 2) or `xcrun aimodelc`.
@@ -74,7 +100,18 @@ host run is **46 tests, 23 skipped, 0 failures**; the iOS 27 Simulator (`24A5408
 available while some generation and image-tokenization calls block non-cancellably. The default
 suite therefore skips model-dependent, attachment, and unreachable-generator probes on host-backed
 destinations; use the three `PROBE_ENABLE_*` overrides above after a runtime update or service
-restart. Offline/static `PROBE-RESULT` values remained stable.
+restart. Offline/static `PROBE-RESULT` values remained stable except that Spotlight's unpublished
+schema grew from 83,494 to 83,570 characters. Simulator donation and cleanup still work; on the
+host, both fail because the Spotlight helper is unavailable (`CSIndexErrorDomain -1003`).
+
+**Verified 2026-08-20 (iPhone 15 Pro `iPhone16,1` / `D83AP`, iOS 27 build `24A5408d`, wired):**
+the hosted XCTest runner launched successfully. The offline/static pass completed 11 tests with 4
+asset skips and 0 failures; a second pass with a bundled 12,288-byte portable toy `.aimodel`
+completed all 4 asset-dependent Core AI tests with 0 failures. The device reported
+`contextSize=4096`, `deviceArchitectureName=h16p`, and `expectFrequentReshapes=false` for both
+`.default` and `.cpuOnly`. Cache deletion threw while a live model pinned the entry, the entry
+remained findable, and deletion succeeded after release. The cache-location and cancellation
+measurements below are deliberately bounded to what the tiny fixture can establish.
 
 ## Probe inventory
 
@@ -85,45 +122,92 @@ knob (asset/entitlement).
 
 | Probe id | Gap | Guide § | Destination | Status |
 |---|---|---|---|---|
-| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HOST-26 · SIM-27 · MAC-27 | ✅ `true` (26.5 host AND 27.0 sim) |
-| `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HOST-26 · SIM-27 | ✅ verbatim type name, both runtimes |
-| `fm.contextSize` | 4096 vs 8192 on 27 | NEEDED item 7 · 3.1 | HOST-26 · SIM-27 · DEVICE-27 | ✅ 4096 on 26.5 host AND 27.0 sim (error text confirms) · device-27 residual |
+| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
+| `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HOST-26 · SIM-27 · DEVICE-27 | ✅ verbatim type name on every tested runtime |
+| `fm.contextSize` | 4096 vs 8192 on 27 | NEEDED item 7 · 3.1 | HOST-26 · SIM-27 · DEVICE-27 | ✅ 4096 on host, sim, and iPhone 15 Pro / iOS build `24A5408d` |
 | `fm.availability` | does FM work against the Simulator | 5.1 §13.4 · 17.2 | HOST-26 · SIM-27 | ✅ sim: `available`, inference runs |
-| `fm.toolCallingMode-precedence` | options vs profile modifier | 2.6 §7.4 · 17.1 §4.8 | MAC-27 / DEVICE-27 | 🟠 sim suggests options win (see below) |
-| `fm.includeSchemaInPrompt-recording` | legacy param vs `ContextOptions` | 17.1 §4.11 | SIM-27 · MAC-27 | ✅ one knob, two spellings; default `true` |
-| `fm.error-domain-context-overflow` | error type/domain table row | 17.3 §6.3 | SIM-27 · MAC-27 | ✅ `LanguageModelError` code 0, single-type |
-| `fm.parsingError-thrown` | is `GeneratedContent.ParsingError` thrown | 17.3 §4.4 · 17.1 ledger 9 | SIM-27 · MAC-27 | ✅ YES, thrown on truncation |
-| `fm.stream-early-break` | transcript after early `break` | 2.2 ledger 8 | SIM-27 · MAC-27 | ✅ partial response entry lands; `isResponding` stays true |
-| `fm.collect-after-iteration` | `collect()` after manual iteration | 2.2 ledger 7 §9.3 | SIM-27 · MAC-27 | ✅ allowed, returns full response |
-| `fm.image-token-cost` | tokens per image; the 896 px hypothesis | 3.1 §2.4 + ledger | MAC-27 / DEVICE-27 | 🟠 sim: attachments error (`LanguageModelError -1`), baseline prompt = 6 tokens |
-| `fm.concurrent-session-limit` | concurrent-session ceiling | 2.1 §8 | SIM-27 · MAC-27 / DEVICE-27 | 🟠 sim: 8/8 ok, no ceiling at n=8 |
-| `fm.onToolCall-throw-effect` | per-call veto vs turn abort | 3.4 §6 | MAC-27 / DEVICE-27 | 🟠 sim blocked by missing tool-calling assets |
-| `fm.required-mode-no-tools` | `.required` with empty toolset | 3.4 §6 · 2.6 §7.4 | SIM-27 · MAC-27 | ✅ generic `-1` NSError, NOT castable to `LanguageModelError` |
-| `fm.transcript-policy-nil-default` | which policy `nil` selects | 17.3 §2.2 · 17.1 ledger 5 | SIM-27 · MAC-27 | ✅ `nil` behaves like `.revertTranscript` |
+| `fm.toolCallingMode-precedence` | options vs profile modifier | 2.6 §7.4 · 17.1 §4.8 | MAC-27 / DEVICE-27 | ✅ call-site options win; device confirms both directions |
+| `fm.includeSchemaInPrompt-recording` | legacy param vs `ContextOptions` | 17.1 §4.11 | SIM-27 · MAC-27 · DEVICE-27 | ✅ one knob, two spellings; default `true` |
+| `fm.error-domain-context-overflow` | error type/domain table row | 17.3 §6.3 | SIM-27 · MAC-27 · DEVICE-27 | ✅ `LanguageModelError.contextSizeExceeded`, code 0 |
+| `fm.parsingError-thrown` | is `GeneratedContent.ParsingError` thrown | 17.3 §4.4 · 17.1 ledger 9 | SIM-27 · MAC-27 · DEVICE-27 | ✅ YES, thrown on truncation |
+| `fm.stream-early-break` | transcript after early `break` | 2.2 ledger 8 | SIM-27 · MAC-27 · DEVICE-27 | ✅ partial response entry lands; `isResponding` stays true |
+| `fm.collect-after-iteration` | `collect()` after manual iteration | 2.2 ledger 7 §9.3 | SIM-27 · MAC-27 · DEVICE-27 | ✅ allowed, returns full response |
+| `fm.image-token-cost` | tokens per image; the 896 px hypothesis | 3.1 §2.4 + ledger | MAC-27 / DEVICE-27 | 🟠 device: text=6, all six image sizes throw `LanguageModelError -1`; cost remains unknown |
+| `fm.concurrent-session-limit` | concurrent-session ceiling | 2.1 §8 | SIM-27 · MAC-27 / DEVICE-27 | 🟠 sim + device: 8/8 ok, no ceiling at n=8 |
+| `fm.onToolCall-throw-effect` | per-call veto vs turn abort | 3.4 §6 | MAC-27 / DEVICE-27 | ✅ device: tool body does not run; whole turn throws `ToolCallError` and reverts |
+| `fm.required-mode-no-tools` | `.required` with empty toolset | 3.4 §6 · 2.6 §7.4 | SIM-27 · DEVICE-27 | ✅ both throw, but bridge differs: sim generic code −1; device typed `.unsupportedGenerationGuide`, code 6 |
+| `fm.transcript-policy-nil-default` | which policy `nil` selects | 17.3 §2.2 · 17.1 ledger 5 | SIM-27 · MAC-27 · DEVICE-27 | ✅ `nil` behaves like `.revertTranscript` |
 | `fm.pcc-availability` | PCC vs Siri-disabled; PCC-in-sim | 4.1 §5.8 | DEVICE-27 (manual Siri toggle) | 🔒 `PROBE_ENABLE_PCC=1` |
-| `fm.anyOf-enum-enforcement` | `.anyOf` constrained or advisory | 2.2 §4.6 | SIM-27 · MAC-27 | 🟠 sim: 10/10 runs, 0 violations (constrained reading; small N) |
-| `fm.guardrails-permissive-generable` | permissive guardrails on `@Generable` | 2.2 §11.3 ledger 13 · 17.3 | MAC-27 / DEVICE-27 | 🟠 sim: both settings blocked identically → inert on this path |
-| `coreai.deviceArchitectureName` | authoritative arch codes | 15.1 §4.4 | MAC-27 · DEVICE-27 (**no sim** — see below) | ⏳ |
-| `coreai.specializationOptions-defaults` | `expectFrequentReshapes` default; compute-unit sets | 7.1 §4.3, §16.3-7 | MAC-27 · DEVICE-27 | ⏳ |
-| `coreai.ndarray-zero-init` | does `NDArray(shape:scalarType:)` zero storage | 7.3 §8.3 | MAC-27 · DEVICE-27 | ⏳ |
-| `coreai.cache-delete-while-referenced` | delete throws vs defers | 7.2 §7 + NEEDED item 7 | MAC-27 / DEVICE-27 | 🔒 `PROBE_AIMODEL_URL` |
-| `coreai.specialize-cancellation` | is specialization cancellable | 7.2 §5 · 17.6 §5 | MAC-27 / DEVICE-27 | 🔒 `PROBE_AIMODEL_URL` |
-| `coreai.cache-location-size` | cache location and entry size | 7.2 §6 | MAC-27 / DEVICE-27 | 🔒 `PROBE_AIMODEL_URL` |
-| `coreai.specialize-return-identity` | `specialize()` return vs `model(for:)` | 7.2 §9 | MAC-27 / DEVICE-27 | 🔒 `PROBE_AIMODEL_URL` |
+| `fm.anyOf-enum-enforcement` | `.anyOf` constrained or advisory | 2.2 §4.6 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 sim + device: 20/20 aggregate runs, 0 violations (constrained reading; still a small N) |
+| `fm.guardrails-permissive-generable` | permissive guardrails on `@Generable` | 2.2 §11.3 ledger 13 · 17.3 | MAC-27 / DEVICE-27 | 🟠 device: both settings succeeded; probe did not trip a guardrail, so effect remains unresolved |
+| `coreai.deviceArchitectureName` | authoritative arch codes | 15.1 §4.4 | MAC-27 · DEVICE-27 (**no sim** — see below) | ✅ iPhone 15 Pro `iPhone16,1` / `D83AP` = `h16p` |
+| `coreai.specializationOptions-defaults` | `expectFrequentReshapes` default; compute-unit sets | 7.1 §4.3, §16.3-7 | MAC-27 · DEVICE-27 | ✅ device: default and cpuOnly both `false`; allowed units recorded below |
+| `coreai.ndarray-zero-init` | does `NDArray(shape:scalarType:)` zero storage | 7.3 §8.3 | MAC-27 · DEVICE-27 | 🟠 six 8 MiB device allocations were all zero; still not an initialization contract |
+| `coreai.cache-delete-while-referenced` | delete throws vs defers | 7.2 §7 + NEEDED item 7 | MAC-27 / DEVICE-27 | ✅ device: throws while live, remains findable, succeeds after release |
+| `coreai.specialize-cancellation` | is specialization cancellable | 7.2 §5 · 17.6 §5 | MAC-27 / DEVICE-27 | 🔒 tiny device fixture completed before cancellation; retry with a slow asset |
+| `coreai.cache-location-size` | cache location and entry size | 7.2 §6 | MAC-27 / DEVICE-27 | 🟠 default cache observed at `Library/Caches/coreai-cache`; one toy-model size result below |
+| `coreai.specialize-return-identity` | `specialize()` return vs `model(for:)` | 7.2 §9 | MAC-27 / DEVICE-27 | 🟠 default cache: identical 181-byte bookmarks; entitled app-group variant remains |
 | `eval.metric-identity` | `Metric` identity: name or instance | 6.1 §8.2, §17 | SIM-27 · MAC-27 | ✅ BY NAME |
 | `eval.mean-over-all-ignored` | mean over zero scored samples | 6.1 §17.5 | SIM-27 · MAC-27 | ✅ sentinel `-1.0` |
 | `eval.subject-throws` | per-sample subject failure handling | 6.1 §17.7 | SIM-27 · MAC-27 | ✅ run continues; failures excluded from aggregate |
 | `eval.disallowed-arguments-narrowing` | do `disallowed` matchers narrow | 6.3 | SIM-27 · MAC-27 | ✅ YES, arguments narrow |
 | `eval.allowsAdditionalCalls-false` | semantics of `false` | 6.3 ledger | SIM-27 · MAC-27 | ✅ enforced; extra call fails `allPass` |
 | `eval.generator-unreachable-target` | unreachable `targetCount` behavior | 6.3 §3, §5 | SIM-27 · MAC-27 | ✅ gives up after retry budget, finishes short |
-| `speech.assetInventory-status-order` | `Status` `Comparable` ordering per OS generation | 16.1 §5.2 · G2 · NEXT-BETA §7 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ **ordering DIFFERS** — 26: `unsupported<supported<downloading<installed`; 27 sim: `unsupported<downloading<supported<installed` (`<` is synthesized) |
-| `fm.capabilities` | does `capabilities` reflect per-destination reality | 5.1 §13.4 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 sim: claims `.vision`+`.toolCalling` while both fail at runtime → static declaration; compare on MAC-27 |
-| `fm.attachment-label-recording` | `.label(_:)` token cost / transcript write-through / tool no-op | 2.5 §6.4 · 2.3 | MAC-27 · DEVICE-27 (SIM-27 partial) | 🟠 sim: all three halves blocked (images −1, tools 1026) — fingerprints recorded |
-| `fm.stream-zero-partials-tool-turn` | tool-only turn yields zero partials? | 2.1 §6.4 · 2.2 §9.6 · SILENT-FAILURES | MAC-27 · DEVICE-27 | 🟠 sim blocked by tool assets (1026) |
-| `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 | 🟠 sim: **silent success** — `am_ET` unsupported per `supportsLocale`, prompt answered anyway, no error; confirm on MAC-27 |
-| `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 | ✅ `spotlight_search`, `includesSchema=true`; complete 83,494-character schema committed under `artifacts/` |
-| `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ donation works; all three tested encodings rejected **in-band** (code-100 JSON, never throws); 3 replies observed, with no API correlation IDs |
+| `speech.assetInventory-status-order` | `Status` `Comparable` ordering per OS generation | 16.1 §5.2 · G2 · NEXT-BETA §7 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ **ordering DIFFERS** — 26: `unsupported<supported<downloading<installed`; 27 sim + device: `unsupported<downloading<supported<installed` (`<` is synthesized) |
+| `fm.capabilities` | does `capabilities` reflect per-destination reality | 5.1 §13.4 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 sim + device claim vision/tool-calling/guided-generation and no reasoning; attachment device probe hit tokenizer failures, so treat as declaration |
+| `fm.attachment-label-recording` | `.label(_:)` token cost / transcript write-through / tool no-op | 2.5 §6.4 · 2.3 | MAC-27 · DEVICE-27 | 🟠 device: token count errors; responses work; labels write through exactly; generic tool runs labeled and unlabeled, then required loop times out |
+| `fm.stream-zero-partials-tool-turn` | tool-only turn yields zero partials? | 2.1 §6.4 · 2.2 §9.6 · SILENT-FAILURES | MAC-27 · DEVICE-27 | 🟠 device tool ran, but required loop ended in `contextSizeExceeded` before proving zero-partial completion |
+| `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 `am_ET`: sim silently succeeds; device throws a guardrail violation, not unsupported-locale — named case still unobserved |
+| `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 · DEVICE-27 | ✅ `spotlight_search`, `includesSchema=true`, beta-5 schema 83,570 characters on sim + device |
+| `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ sim + device donation works; all three encodings rejected **in-band** (code-100 JSON, never throws); 3 replies observed |
 | `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 `PROBE_INSTRUMENTS_WORKLOAD=1`; procedure in `INSTRUMENTS-RECORDING.md` |
+
+## Results harvested 2026-08-20 (physical iPhone)
+
+Destination: iPhone 15 Pro (`iPhone16,1`, hardware `D83AP`), iOS 27.0 build `24A5408d`,
+Xcode 27 beta 5 (`27A5237l`). The asset pass used a 12,288-byte portable linear/ReLU toy model
+with one `float32[1,4]` input and output. It is intentionally useful for cache semantics, not for
+timing or cancellation conclusions. Lines below preserve the exact `value` and compact `detail`;
+the complete console and large Spotlight reply payload remain in the ignored `.xcresult` bundle.
+
+```
+PROBE-RESULT name=fm.contextSize value=4096 detail=os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.availability value=available detail=availability=available os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.capabilities value=vision=true toolCalling=true guidedGeneration=true reasoning=false detail=availability=available os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.anyOf-enum-enforcement value=runs=10 violations=0 errors=0 detail=violatingValues=[] os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.attachment-label-recording value=unlabeledTokens=error(FoundationModels.LanguageModelError:-1) labeledTokens=error(FoundationModels.LanguageModelError:-1) unlabeledRespond=ok segments=[text,attachment(label:nil)] labeledRespond=ok segments=[text,attachment(label:probe-img)] unlabeledTool=timeout toolRan=true labeledTool=timeout toolRan=true detail=os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.collect-after-iteration value=collect-succeeded detail=iterations=12 contentChars=51 os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.concurrent-session-limit value=n=8 detail=0=ok 1=ok 2=ok 3=ok 4=ok 5=ok 6=ok 7=ok os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.image-token-cost value=none=6 128px=error(FoundationModels.LanguageModelError:-1) 256px=error(FoundationModels.LanguageModelError:-1) 512px=error(FoundationModels.LanguageModelError:-1) 896px=error(FoundationModels.LanguageModelError:-1) 1024px=error(FoundationModels.LanguageModelError:-1) 1792px=error(FoundationModels.LanguageModelError:-1) detail=os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.onToolCall-throw-effect value=respond-threw(ToolCallError) detail=toolRan=false entries=[instructions] os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.required-mode-no-tools value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=6 casts=[LanguageModelError] fmcase=unsupportedGenerationGuide desc=UnsupportedGuide os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.stream-zero-partials-tool-turn value=iteration-threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] fmcase=contextSizeExceeded(contextSize:4096,tokenCount:4099) toolRan=true os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.toolCallingMode-precedence value=profileRequired+optionsDisallowed=[toolCalled=false toolRan=false] profileDisallowed+optionsRequired=[threw LanguageModelError.contextSizeExceeded(contextSize:4096,tokenCount:4099)] detail=os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.transcript-policy-nil-default value=initialProperty=nil detail=nil=[threw(ToolCallError) toolRan=true entries=[instructions]] revert=[threw(ToolCallError) toolRan=true entries=[instructions]] preserve=[threw(ToolCallError) toolRan=true entries=[instructions,prompt,toolCalls]] os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.unsupportedLanguageOrLocale-error value=supportedCount=24 currentSupported=true probeLocale=am_ET respond=threw detail=LanguageModelError.guardrailViolation os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-device-os27.0.0-24A5408d-xcode-27A5237l.txt artifactWrite=not-requested detail=Version 27.0 (Build 24A5408d) os=27.0.0 platform=iOS
+PROBE-RESULT name=fm.spotlight-direct-call value=donation=ok naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3 detail=cleanup=ok os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.deviceArchitectureName value=h16p detail=hw.model=D83AP os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.ndarray-zero-init value=all-zero-inconclusive detail=rounds=6 roundsWithGarbage=0 nonzeroBytesTotal=0 os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.specializationOptions-defaults value=default.expectFrequentReshapes=false detail=default.allowed=[gpu,cpu,neuralEngine] default.preferred=nil cpuOnly.allowed=[cpu] cpuOnly.expectFrequentReshapes=false availableKinds=[cpu,neuralEngine,gpu] os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.cache-delete-while-referenced value=live=threw(AIModelCacheError: failedToPurge("Deletion could not be completed, assets still in use")) detail=findableAfterLiveDelete=non-nil afterRelease=succeeded os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.cache-location-size value=cachesGrowth=24576 appSupportGrowth=0 detail=sourceAsset=12288B specializeTook=0.0s newCacheEntries=["coreai-cache"] os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.specialize-cancellation value=completed detail=elapsed=10.0s cacheAfter=entry-present os=27.0.0 platform=iOS
+PROBE-RESULT name=coreai.specialize-return-identity value=same-entry detail=returnedBookmarkBytes=181 lookedUpBookmarkBytes=181 os=27.0.0 platform=iOS
+PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed] detail=pairs=[unsupported<downloading=true,downloading<supported=true,supported<installed=true] os=27.0.0 platform=iOS
+```
+
+Interpretation boundaries:
+
+- `AIModelCacheError` is the runtime's dynamic name, not a public type in the captured Swift
+  interface; use a generic `catch`.
+- `24576 / 12288` is not a general 2× storage rule. It is the smallest measured default-cache
+  footprint for this fixture and filesystem state.
+- The cancellation probe did **not** establish cancellation semantics: specialization finished
+  before the cancellation request could interrupt useful work. Repeat with a model whose
+  specialization remains in flight.
+- The bookmark result closes the default-cache composition only. An app-group cache still needs a
+  signed, entitled target.
 
 ## Results harvested 2026-07-31 (verbatim probe output, both runs)
 

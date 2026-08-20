@@ -1,10 +1,10 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1780 of them, 1418 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1777 of them, 1415 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-08-17 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-08-20 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -19,7 +19,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Wrong output](#wrong-output) | 174 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
 | [Empty output / no-op](#empty-output--no-op) | 60 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
 | [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
-| [Ignored input](#ignored-input) | 117 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
+| [Ignored input](#ignored-input) | 114 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
 | [Data & artifact loss](#data--artifact-loss) | 41 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
 | [Compiles but unavailable](#compiles-but-unavailable) | 90 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
@@ -428,11 +428,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Python respond(generating:) drops options= on the floor — temperature, sampling, max tokens have no effect; evals lie.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#123-️-three-python-side-silent-failures) — 2.2 🔇
 - [.anyOf on tool arguments is confirmed broken — a three-city constraint got called with 'Beijing'; validate in the tool.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#33-anyof-does-not-constrain--validate-anyway) — 2.3 🔇
 - [An unlabelled attachment is invisible to image tools — everything runs, the barcode or OCR just never reads the image.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
-- [Symbol table: Attachment.label(_:) is required for image tool calls and silently no-ops if omitted.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#131-symbols-with-version-floor-and-evidence) — 2.3
 - [A CustomStage conforms and is accepted, but the 27.0-beta pipeline never routes items through it — measured no-op.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#124-the-beta-era-caveat) — 2.4 🔇
-- [Symbol table: Attachment.label(_:) is required for tool calls — silently no-ops when omitted.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#1-the-symbol-inventory-and-where-each-one-came-from) — 2.5
 - [For any tool expected to read an image, .label(_:) is mandatory — omit it and the tool silently never sees the image.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
-- [The attachment label is how the tool knows which image to read — without it the OCR/barcode call quietly reads nothing.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#83-ocrtool-and-barcodereadertool) — 2.5
 - [permissiveContentTransformations does not apply to @Generable — adopting guided output silently drops permissive mode.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#52-the-blind-spot-it-does-not-apply-to-generable) — 2.6
 
 **Part 3**
@@ -1371,8 +1368,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [compatibleAdapterNotFound really means the adapter is not downloaded yet; the name sends you auditing compatibility](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#42-apples-answer-one-missing-call) — 17.2 🔇
 - [A download that never starts yields an AsyncSequence with zero elements; 0% progress is indistinguishable from pending](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#45-the-sibling-failure-a-download-that-never-starts-and-never-complains) — 17.2 🔇
 - [A generic catch turns every user cancellation into an error banner; it reads as flakiness, not a ladder bug](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#62-what-the-ordering-does-do) — 17.3 🔇
-- [Prompting in an unsupported locale throws nothing; the model answers anyway, so a catch arm never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63--gap-two-thrown-rows-plus-one-measured-nonthrow--one-value-two-checks-the-concern-is-real) — 17.3
-- [unsupportedLanguageOrLocale is not raised by out-of-set prompts; gate with supportsLocale yourself](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63--gap-two-thrown-rows-plus-one-measured-nonthrow--one-value-two-checks-the-concern-is-real) — 17.3
+- [An unsupported-locale prompt can silently succeed on the simulator; a catch arm never fires.](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-destination-dependent-bridging--one-value-two-checks-the-concern-is-real) — 17.3
+- [The same unsupported locale bridges differently by destination: simulator success, physical-device guardrailViolation, never unsupportedLanguageOrLocale.](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-destination-dependent-bridging--one-value-two-checks-the-concern-is-real) — 17.3
 - [Server 429s arrive as RequestError.httpError, never .rateLimited; backoff keyed on .rateLimited never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#81-the-concrete-evidence) — 17.3 🔇
 - [availability/isAvailable can report healthy while the call still throws (catalog asset and PCC entitlement failures)](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#132-comappleunifiedassetframework-code5000--the-model-catalog) — 17.3 🔇
 - [A green Xcode 26 run proves MLX inference only; the FM adapter is not in that binary, so one check covers half](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#84-what-ran-where) — 17.4
@@ -1587,7 +1584,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is unverified.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written docs.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
 - [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste say otherwise.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-gap-stated-plainly) — 5.2
+- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -1730,7 +1727,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Utilities package traps: from: 1.0.0 never resolves, SkillActivations lost its collection shape, API is experimental](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#45-additive--skills-and-history-modifiers-the-utilities-package) — 17.1
 - [Evaluations ships no agreement statistic; the sample's Statistics.cohensKappa is 72 lines of hand-rolled Swift](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#51-additive--the-evaluations-framework-xcode-27) — 17.1
 - [.coreaimodel, .aiasset and a coreai-torch convert CLI are fabrications; real forms are .aimodel/.aimodelc directories](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
-- [Docs describe resolved(in:) but the 27.0 beta interface ships only resolve(in:), with no deprecation attribute](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#76-superseded--imagereferenceresolvein--resolvedin) — 17.1
+- [Beta 4, beta 5, and current docs expose conflicting ImageReference resolve/resolved spellings and argument types; compile against the selected SDK.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#76-contradicted--imagereferenceresolvein-vs-resolvedin) — 17.1
 - [The apple-intelligence/private-cloud-compute documentation path 404s; use the shorter private-cloud-compute URL](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#144-apple-documentation-pages) — 17.1
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
 - ['8K context on iOS 27' is an uncorroborated third-party comment; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
@@ -2450,8 +2447,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Whether the concurrency/thermal restriction also covers SystemLanguageModel is unanswered on the forums](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#68-behavioural--concurrency-and-thermals-throttle-you-invisibly) — 17.1
 - [Custom LoRA adapters are removed outright; the LanguageModel protocol succeeds the goal, not the train-a-delta mechanism](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#81-withdrawn--custom-lora-adapters) — 17.1
 - [Meta note: this section collects every silent failure in the 26-to-27 migration into one table](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-every-silent-failure-in-this-migration-collected) — 17.1
-- [FoundationModelsCoffeeGame still targets iOS 26.0; cite it only as the before column, never as 2026 API](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [SwiftTranscriptionSampleApp is a WWDC25 leftover, named only so nobody mistakes it for 2026 evidence](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
+- [FoundationModelsCoffeeGame still targets iOS 26.0; cite it only as the before column, never as 2026 API](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [Repeated audit result: the coreai documentation index contains zero sample-code projects](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [Session 241's transcript says 'Our 2027 release' while every OS reference is 27; do not write '2027 release'](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#146-transcripts) — 17.1
 - [Three unresolved unknowns about legacy adapters under iOS 27, each paired with a safe default](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2

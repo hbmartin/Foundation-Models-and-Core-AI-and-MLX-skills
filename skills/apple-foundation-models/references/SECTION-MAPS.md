@@ -2,7 +2,7 @@
 
 The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
-> Generated 2026-08-17 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Generated 2026-08-20 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## Part 2 — Foundation Models: the everyday API
 
@@ -430,7 +430,7 @@ Two products, two floors, and — unusually — two opposite evidence classes, w
 | Contents | `#contents` |
 | 1. Why these two tools exist at all | `#1-why-these-two-tools-exist-at-all` |
 | 2. The `fm` CLI: everything that is actually attested | `#2-the-fm-cli-everything-that-is-actually-attested` |
-| 3. 🔴 The `fm` gap, stated plainly | `#3--the-fm-gap-stated-plainly` |
+| 3. ✅ The `fm` help surface, captured on macOS 27 | `#3--the-fm-help-surface-captured-on-macos-27` |
 | 4. The shell-automation pattern (attested) with unverified flags (marked) | `#4-the-shell-automation-pattern-attested-with-unverified-flags-marked` |
 | 5. The Python SDK: what it is, and the version discrepancy | `#5-the-python-sdk-what-it-is-and-the-version-discrepancy` |
 | 6. Installing it, and why `pip install` compiles Swift | `#6-installing-it-and-why-pip-install-compiles-swift` |

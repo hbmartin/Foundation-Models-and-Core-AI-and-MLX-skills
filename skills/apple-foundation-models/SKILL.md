@@ -70,7 +70,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I keep hitting `contextSizeExceeded`" | [3.1 §6–§7](references/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#6-overflow-contextsizeexceeded-and-the-pattern-people-hand-rolled) | The four levers, Apple's documented recovery, and the 26.0-only rebuild path |
-| "I hardcoded 4096" | [3.1 §3](references/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#3-reading-the-budget-contextsize-and-the-4096-token-window) | TN3193 settles the figure at 4,096 (probe-confirmed on the 27.0 simulator); an uncorroborated 8192 claim survives only for 27 hardware. Still read `contextSize` |
+| "I hardcoded 4096" | [3.1 §3](references/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#3-reading-the-budget-contextsize-and-the-4096-token-window) | TN3193 settles the figure at 4,096, now probe-confirmed on simulator and iPhone 15 Pro / iOS build `24A5408d`; the 8192 report remains uncorroborated. Still read `contextSize` |
 | "Time-to-first-token climbs turn over turn, prompt size flat" | [3.1 §8](references/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#8-the-kv-cache-is-a-prefix) | Something is invalidating your prefix. §8.10's expensive list is the checklist |
 | "I need to know what a turn actually cost" | [3.1 §5](references/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#5-counting-after-you-spend-usage-and-the-cache-hit-rate) | `Usage`, `cachedTokenCount`, and the cache-hit-rate formula |
 

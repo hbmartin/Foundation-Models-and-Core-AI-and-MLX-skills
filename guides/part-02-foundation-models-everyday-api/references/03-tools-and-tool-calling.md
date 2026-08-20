@@ -1217,6 +1217,10 @@ So a `GenerationOptions(toolCallingMode: .disallowed)` at the call site silently
 profile (§7) and then pass `options:` at a call site out of habit, you have disabled it. **Pick one
 surface per session and stay there.**
 
+> ✅ **DEVICE-CONFIRMED 2026-08-20** — on iPhone 15 Pro / iOS build `24A5408d`, profile
+> `.required` plus call-site `.disallowed` made no call, while profile `.disallowed` plus call-site
+> `.required` ran the tool loop until its context-size exit. Call-site options won both directions.
+
 ### 6.5 `.required` with no tools
 
 The MLX reference provider treats this as an error:
@@ -1239,19 +1243,15 @@ the observed symptom is uglier:
 > tool array was not reaching the inference layer. Watch for the string **"Tool Choice requires tools"**
 > in the console; it means "required mode, empty toolset", regardless of what you thought you passed.
 
-> ✅ **Probe-verified, 2026-07-31 — `.required` with an empty toolset throws, and it throws the
-> *generic* error.** (was a 🔴 GAP; `probes/` `fm.required-mode-no-tools`, run on the 27.0 sim
-> runtime.) The call does not hang and the mode is not ignored: `respond` throws an error whose
-> NSError **domain** is `FoundationModels.LanguageModelError` with **code `-1`** — exactly the
-> shape the forums thread above reported — and which carries wrapped underlying errors via
-> `NSMultipleUnderlyingErrorsKey`. Crucially, it does **NOT** cast to the Swift
-> `LanguageModelError` type (`casts=[]` in the probe output), so a
-> `catch let e as LanguageModelError` clause never sees it; only NSError-domain matching does.
-> The beta "bug report" behaviour is therefore the actual behaviour on this runtime — there is no
-> dedicated error case. See 17.3 §6.3, where this confirms the "one value, two checks" concern for
-> this failure mode. The forums thread's *other* anomaly (the tool array not reaching inference
-> even when non-empty) remains a separate open question; the probe passed a genuinely empty
-> toolset.
+> ✅ **Probe-verified, with destination drift — `.required` with an empty toolset throws.** The
+> 2026-07-31 iOS 27 Simulator run produced the generic bridge: NSError domain
+> `FoundationModels.LanguageModelError`, code `-1`, wrapped underlying errors, and **no** cast to
+> Swift `LanguageModelError`. The 2026-08-20 iPhone 15 Pro / iOS build `24A5408d` run instead threw
+> typed `LanguageModelError.unsupportedGenerationGuide`, NSError code **6**, while the device log
+> named the invalid configuration: required tool choice with no available tools. Both destinations
+> reject the request without hanging, but do not key recovery to code `-1` or one cast result. See
+> 17.3 §6.3. The forums thread's other anomaly — a non-empty tool array not reaching inference —
+> remains separate.
 
 ---
 
@@ -1826,6 +1826,11 @@ Profile {
 > conversation."* Their conclusion: **wrapping the `Tool` conformance is still needed for non-fatal
 > feedback.** Filed as **FB23092325**.
 >
+> ✅ **DEVICE-CONFIRMED 2026-08-20** — on iPhone 15 Pro / iOS build `24A5408d`, an
+> `onToolCall` closure that threw prevented the tool body from running (`toolRan=false`) and made
+> `respond` throw `LanguageModelSession.ToolCallError`. The transcript reverted to instructions
+> only under the probe's default policy.
+>
 > So `onToolCall` is a kill switch, not a veto. If you want "deny this call, let the model try something
 > else", implement it by wrapping the tool and returning a refusal string from `call(arguments:)`:
 
@@ -2005,18 +2010,20 @@ func analyzeBarcodeImage(_ image: CGImage) async {
 
 Three things that sample does establish: the tools are **default-initialisable** and go into the
 ordinary `tools:` array; they are meant to be paired with an image `Attachment` in the same prompt; and
-the `.label(_:)` on that attachment is load-bearing rather than decorative — which is the next callout,
-because getting it wrong costs you nothing at compile time and everything at runtime.
+Apple labels that attachment so it has a stable identity.
 
-> ⚠️ **SILENT FAILURE — an unlabelled attachment is invisible to an image tool.**
+> ⚠️ **SILENT FAILURE — an unlabelled attachment has no stable image identity.**
 >
-> ✅ **VERIFIED** — the `.label(_:)` in Apple's sample above is **required**, not stylistic:
-> *"Labels help the model identify specific attachments when making tool calls"* (the `Attachment`
-> page). Omit it and everything still *works* — the image is still sent, the tool is still registered,
-> the prompt still asks for a barcode — and the tool is **simply never called**. No thrown
-> `ToolCallError`, no console line, no empty result. What you get back is a fluent answer written from
-> the prose alone: for `BarcodeReaderTool`, an invented payload; for `OCRTool`, the model's own
-> untrusted reading of the pixels, which is precisely the capability Apple says it does not have.
+> Apple's `Attachment` page says labels help the model identify specific attachments when making
+> tool calls, and `ImageReference.attachmentLabel` is the handle that `resolved(in:)` matches. That
+> makes `.label(_:)` load-bearing whenever a tool or structured result must refer to a particular
+> image.
+>
+> A 2026-08-20 device probe narrows an earlier overclaim: on iPhone 15 Pro / iOS build `24A5408d`,
+> a required generic `EchoTool` ran for **both** labeled and unlabeled image prompts. The transcript
+> recorded `nil` for the latter and `probe-img` for the former. An absent label therefore does not
+> universally prevent tool invocation. The probe did not use `BarcodeReaderTool`, `OCRTool`, or an
+> `ImageReference` argument, so the identity-dependent built-in path still needs a direct A/B.
 >
 > ```swift
 > // ✅ correct — the label is the handle the tool call resolves against
@@ -2025,17 +2032,17 @@ because getting it wrong costs you nothing at compile time and everything at run
 >     Attachment(image).label("barcode-image")     // ← REQUIRED
 > }
 >
-> // ⚠️ silently wrong — compiles, runs, returns confident prose, never calls the tool
+> // ⚠️ ambiguous — no stable handle for ImageReference-based selection
 > try await session.respond {
 >     "Scan this image for any barcodes and explain the encoded content."
 >     Attachment(image)                            // ← no label
 > }
 > ```
 >
-> The rule generalises to any tool that takes an `ImageReference` argument (§3.1): the label is the only
-> handle the model has on an image, and `ImageReference.attachmentLabel` is what `resolved(in:)` matches
-> against. **Label every attachment in a session that has image tools registered**, with a stable,
-> app-generated string. Full labelling rules in
+> The rule applies directly to any tool that takes an `ImageReference` argument (§3.1):
+> `ImageReference.attachmentLabel` is what `resolved(in:)` matches. **Label every attachment that a
+> tool or structured result may need to identify**, with a stable, app-generated string. Full
+> labelling rules in
 > [`05-image-input-and-attachments.md`](05-image-input-and-attachments.md).
 
 ### What the two declarations actually say
@@ -2384,7 +2391,7 @@ before you write a single test. See
 | `ImageReference` (image arguments in tools) | **27.0** | ✅ docs |
 | `BarcodeReaderTool` — `struct`, `_Vision_FoundationModels` overlay; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · **also watchOS** | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`) — `Arguments` is `Generable`, `Output` is opaque `some PromptRepresentable` (§10) |
 | `OCRTool` — `struct`, `_Vision_FoundationModels` overlay; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · ⚠️ **no watchOS** (SDK-confirmed) | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:49-83`) — same shape as `BarcodeReaderTool` (§10) |
-| `Attachment.label(_:)` — **required** for image tool calls | **27.0** | ✅ docs + Apple sample code · ⚠️ silently no-ops if omitted |
+| `Attachment.label(_:)` — stable identity for `ImageReference` workflows | **27.0** | ✅ docs + Apple sample + device transcript probe; generic tool invocation also works unlabeled |
 | `SpotlightSearchTool` (`_CoreSpotlight_FoundationModels` overlay) | **27.0** | ✅ SDK-verified (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:330-394`) · known schema bug |
 
 ### 13.2 The checklist
@@ -2406,8 +2413,8 @@ Before you ship a tool-using feature:
       knowing the call site wins. (§6.4)
 - [ ] You know what happens to your transcript when a tool throws, and if you set `.preserveTranscript`
       you have a repair path guarded by `!session.isResponding`. (§7.3)
-- [ ] Every image `Attachment` in a session with image tools registered carries a `.label(_:)` —
-      without it the tool is never called and nothing tells you. (§10)
+- [ ] Every image `Attachment` that output or a tool must identify carries a stable `.label(_:)`;
+      generic tool invocation alone does not prove the image can be resolved. (§10)
 - [ ] Tool output that contains third-party text is treated as data, not instructions. (§4.3)
 - [ ] A tool that returns "I asked the user" does not also claim the thing was done. (§9.4)
 - [ ] Your loading UI exits on stream **completion**, not on the first partial — a turn that produces
@@ -2433,7 +2440,7 @@ Before you ship a tool-using feature:
 | Denying one tool call ended the conversation | `onToolCall` throws kill the whole turn | §9.3 |
 | Spinner never clears on a turn that only called a tool | the stream completed yielding zero partials | §1 |
 | Model announces an action the user was only *asked* to confirm | the tool returned an optimistic string | §9.4 |
-| `OCRTool`/`BarcodeReaderTool` never fires; you get confident prose about the image instead | the `Attachment` carries no `.label(_:)` | §10 |
+| An `ImageReference` cannot resolve the intended image | the `Attachment` carries no matching `.label(_:)`, or history compaction removed it | §10 |
 | `ToolCallError` wrapping *"Failed to parse generated content"* from `SpotlightSearchTool` | first-party description/schema mismatch (known issue) | §10 |
 | Tool calls parse fine on Apple's model, vanish behind MLX | wrong `ToolCallFormat`, defaulted to `.json` | §11.1 |
 | It worked last month and does not now | the on-device model changed with the OS | §11.4 |

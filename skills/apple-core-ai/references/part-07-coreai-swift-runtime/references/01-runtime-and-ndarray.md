@@ -567,11 +567,11 @@ write a cache-eviction path:
 > The **prose article** says, verbatim: *"If an `AIModel` instance still uses a cache entry, Core AI
 > **defers deletion** until that instance is deallocated."*
 >
-> Those are different contracts. **Assume it throws** — write the release-then-delete-then-retry
-> path, since that is correct under both readings. The macOS 27.0 beta `.swiftinterface` dump
-> (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:37-43`) confirms all four delete
-> APIs are spelled as plain `throws`, but an interface cannot say *when* they throw — resolving the
-> contract still needs a device experiment. And the error they would throw is untyped; see §13.
+> Those are different contracts. **The iOS 27 beta build `24A5408d` runtime follows the reference
+> pages:** on an iPhone 15 Pro, `deleteEntries(for:)` threw while a live `AIModel` retained the entry,
+> the entry remained findable, and deletion succeeded after the model was released. The observed
+> dynamic error was `AIModelCacheError.failedToPurge`, but that type is absent from the public beta
+> interface, so keep a generic `catch`; see §13. Release, delete, and verify the cache lookup.
 
 ---
 
@@ -719,10 +719,14 @@ Engine preference. Direct `AIModel` callers choose their own `SpecializationOpti
 > (`CoreAIDelegates-27.0-macos.swiftinterface:100`): `public var expectFrequentReshapes: Bool`, the
 > only settable property on the type. Its documentation page carries an abstract — *"Setting to
 > allow more optimal specialization if the model performs frequent reshapes based on usage"* — and
-> **no Discussion section at all**. 🔴 The **default value is still undocumented** — a stored
-> property's initial value does not print in a `.swiftinterface`, and no initializer sets it. Safe
-> default: leave it alone unless your model has dynamic shapes that change every call, in which
-> case follow Apple's own code and set it on a `var` copy of the options.
+> **no Discussion section at all**. The default remains **undocumented**, but it is no longer
+> unmeasured: ✅ `probes/` printed **`false`** for both
+> `SpecializationOptions.default.expectFrequentReshapes` and `.cpuOnly.expectFrequentReshapes` on
+> a physical iPhone 15 Pro running iOS 27 beta 5 (`24A5408d`, 2026-08-20). On that device,
+> `.default` allowed CPU + GPU + Neural Engine with no preferred unit; `.cpuOnly` allowed only CPU.
+> Treat those as runtime evidence, not an API promise. Safe default: leave the flag alone unless
+> your model has dynamic shapes that change every call, in which case follow Apple's own code and
+> set it on a `var` copy of the options.
 
 ---
 
@@ -3715,12 +3719,12 @@ originally carried. The ledger, updated:
 6. **How a value is *marked* as an image at conversion time.** Neither transcript covers it and we
    could not find a `coreai-torch` page for it. Blocks writing the image half of §12 with the same
    confidence as the tensor half.
-7. **`SpecializationOptions.expectFrequentReshapes`' default value and semantics** (§4.3). The
-   interface confirms the spelling (`public var expectFrequentReshapes: Bool`) but a
-   `.swiftinterface` does not print stored-property defaults, so the default remains unknown.
-8. **Deletion-while-referenced: throws or defers?** (§3.4). The reference pages and the prose
-   article state different contracts; the interface confirms only the `throws` spellings, not the
-   behaviour. Needs a device test.
+7. **`SpecializationOptions.expectFrequentReshapes` semantics** (§4.3). The interface confirms the
+   spelling, and a 2026-08-20 physical-device probe measured `false` for `.default` and `.cpuOnly`,
+   but Apple still does not document the semantic effect or guarantee those defaults.
+8. ~~**Deletion-while-referenced: throws or defers?**~~ **Closed on iPhone 15 Pro / iOS build
+   `24A5408d` (§3.4):** the call throws while referenced and succeeds after release, matching the
+   reference pages. Re-run on later seeds for drift.
 9. **`ComputeStream` guidance beyond "serialized as needed"** — how many concurrent streams are
    advisable, and how a stream interacts with `run`'s implicit one. Undocumented.
 10. **`AIModelAsset.removeDerivedArtifacts()`** — spelling confirmed

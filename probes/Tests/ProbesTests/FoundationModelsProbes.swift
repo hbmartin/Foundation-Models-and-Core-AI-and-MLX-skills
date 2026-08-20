@@ -228,16 +228,13 @@ final class FoundationModelsProbes: XCTestCase {
 
     // MARK: fm.toolCallingMode-precedence  [MAC-27 · DEVICE-27]
     //
-    // GAP: part-02 …/06-availability-errors-and-guardrails.md §7.4 and
-    //      part-17 …/01-what-changed-checklist.md §4.8 — `toolCallingMode` exists on both
-    //      `GenerationOptions` and as a `DynamicProfile` modifier (same type, SDK-verified);
-    //      which surface wins when both are set is stated nowhere.
+    // DRIFT BASELINE: call-site options won both directions on iPhone 15 Pro / iOS
+    //      build 24A5408d (2026-08-20), matching the documented general precedence rule.
     // Candidates: (a) per-call options win; (b) profile wins; (c) merge/other.
     // Method: profile says .required, per-call options say .disallowed (and the inverse on a
     //      fresh session); with greedy sampling, whether a toolCalls entry lands in the
     //      transcript tells you which surface the inference layer honored.
-    // Write-back: one sentence in both guides naming the winner; delete the "safe default:
-    //      don't mix" hedge or keep it with the measured reason.
+    // Write-back on drift: part-02 §7.4 and part-17 §4.8.
     func testToolCallingModePrecedence() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         try skipUnlessModelAvailable()
@@ -613,13 +610,12 @@ final class FoundationModelsProbes: XCTestCase {
 
     // MARK: fm.required-mode-no-tools  [MAC-27 · DEVICE-27]
     //
-    // GAP: part-03 …/04-agentic-orchestration.md §6 and part-02 …/03-tools §? — the
-    //      documented behavior of `.required` with an empty toolset is unknown; betas emit
-    //      console-only "Tool Choice requires tools" wrapped in LanguageModelError -1
-    //      (FB23643759). Needs a clean 27.0 GA device test.
+    // DRIFT BASELINE: Simulator emitted an untyped LanguageModelError-domain code -1;
+    //      iPhone 15 Pro / 24A5408d emitted typed
+    //      LanguageModelError.unsupportedGenerationGuide, code 6.
     // Candidates: (a) a specific LanguageModelError case; (b) generic -1; (c) mode ignored,
     //             respond succeeds.
-    // Write-back: the error taxonomy row + §6's GAP box; note whether the GA fixed FB23643759.
+    // Write-back on drift: the error taxonomy row + tools §6.5.
     func testRequiredToolCallingModeWithNoTools() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         try skipUnlessModelAvailable()
@@ -838,22 +834,21 @@ final class FoundationModelsProbes: XCTestCase {
 
     // MARK: fm.attachment-label-recording  [DEVICE-27 · MAC-27 opt-in]
     //
-    // GAP: part-02 …/05-image-input-and-attachments.md §6.4 ⚠️ (an unlabelled attachment is
-    //      invisible to an image tool — silent no-op) and …/03-tools-and-tool-calling.md's
-    //      required-label callout — corpus-attested (session 241 + recovered transcripts),
-    //      never runtime-verified. Three recordable halves, in increasing dependence on
-    //      working image support:
+    // DRIFT / BOUNDARY PROBE: an earlier guide overgeneralized labels as required for every
+    //      tool call. On iPhone 15 Pro / 24A5408d, generic required tools ran for labeled
+    //      and unlabeled attachments; labels still wrote through exactly to the transcript.
+    //      Three recordable halves, in increasing dependence on working image support:
     //      (1) does `.label(_:)` change `tokenCount(for:)`;
     //      (2) does `.label(_:)` write through to the recorded
     //          `Transcript.AttachmentSegment.label` (interface :2323-2327);
     //      (3) does a REQUIRED tool call actually run for labeled vs unlabeled attachments.
-    // Candidates: (1) same/different token cost; (2) label recorded verbatim / nil;
-    //             (3) labeled runs + unlabeled silently skips (claim CONFIRMED) / both run.
+    // Candidates: (1) same/different/error token cost; (2) label recorded verbatim / nil;
+    //             (3) labeled-only tool run / both run. Built-in ImageReference-based tools
+    //             remain a separate A/B.
     // SIM-27 and the macOS 27 beta-5 host are skipped by default: both block inside image
     // tokenization before an async timeout can run (Simulator logs CVPixelBufferCreate -6680,
     // measured 2026-08-17). Set PROBE_ENABLE_ATTACHMENT=1 to retry after a runtime update.
-    // The full answer otherwise lands on DEVICE-27, where image attachments are supported.
-    // Write-back: 2.5 §6.4 and 2.3's label callout, per destination.
+    // Write-back on drift: 2.5 §6.4 and 2.3's label callout, per destination.
     func testAttachmentLabelRecording() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         #if os(macOS) || targetEnvironment(simulator)

@@ -30,10 +30,36 @@ import ProbeSupport
 import XCTest
 
 private func modelURLFromEnvironment() throws -> URL {
-    guard let path = Probe.env("PROBE_AIMODEL_URL") else {
-        throw XCTSkip("SKIPPED: set PROBE_AIMODEL_URL to a compiled .aimodel/.aimodelc to run cache probes")
+    let requestedURL = Probe.env("PROBE_AIMODEL_URL").map(URL.init(fileURLWithPath:))
+    if let requestedURL, FileManager.default.fileExists(atPath: requestedURL.path) {
+        return requestedURL
     }
-    return URL(fileURLWithPath: path)
+
+    // A host path is meaningless inside a physical-device XCTest process. The XcodeGen
+    // device project copies probes/DeviceProbeAssets into the test bundle. Resolve the same
+    // last path component there, or auto-select the only bundled model when shell environment
+    // variables did not propagate through xcodebuild's physical-device test launch.
+    if let resources = Bundle(for: CoreAIProbes.self).resourceURL {
+        let assetDirectory = resources.appendingPathComponent("DeviceProbeAssets", isDirectory: true)
+        if let requestedURL {
+            let bundledURL = assetDirectory
+                .appendingPathComponent(requestedURL.lastPathComponent, isDirectory: true)
+            if FileManager.default.fileExists(atPath: bundledURL.path) {
+                return bundledURL
+            }
+        } else if let candidates = try? FileManager.default.contentsOfDirectory(
+            at: assetDirectory,
+            includingPropertiesForKeys: nil
+        ) {
+            let modelCandidates = candidates.filter { ["aimodel", "aimodelc"].contains($0.pathExtension) }
+            if modelCandidates.count == 1 {
+                return modelCandidates[0]
+            }
+        }
+    }
+
+    let requested = requestedURL?.lastPathComponent ?? "none"
+    throw XCTSkip("SKIPPED: no usable Core AI model (requested=\(requested)); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets")
 }
 
 final class CoreAIProbes: XCTestCase {
@@ -127,16 +153,12 @@ final class CoreAIProbes: XCTestCase {
 
     // MARK: coreai.cache-delete-while-referenced  [MAC-27 · DEVICE-27]
     //
-    // GAP: notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 7 (first bullet) and
-    //      part-07 …/02-specialization-caching-and-aot.md §7 — Apple's reference pages say
-    //      deleting a referenced entry THROWS; the caching article says Core AI DEFERS
-    //      deletion until the AIModel deallocates. Both cannot be true. Also §7's
-    //      sub-question: does a deferred-deleted entry stop being findable by
-    //      model(for:options:) immediately?
+    // DRIFT BASELINE: on iPhone 15 Pro / iOS build 24A5408d, deletion threw while a live
+    //      AIModel retained the entry, the entry remained findable, and deletion succeeded
+    //      after release — matching the reference pages, not the caching article.
     // Candidates: (a) throws while referenced; (b) succeeds + defers (entry findable until
     //             dealloc); (c) succeeds + immediately unfindable.
-    // Write-back: rewrite §7's contradiction box with the winner; update the
-    //      retireModel(at:) recommendation if the throw arm never happens.
+    // Write-back on drift: part-07 §7 and the operational notes.
     func testCacheDeleteWhileReferenced() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         let url = try modelURLFromEnvironment()

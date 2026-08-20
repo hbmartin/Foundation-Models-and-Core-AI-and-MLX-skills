@@ -148,14 +148,15 @@ exact full commit used during research rather than at a moving default branch.[^
 
 Recorded so a later pass knows what remains outside the evidence envelope:
 
-- The host is still macOS 26.5.2. Xcode 27 beta 4, the optional Metal Toolchain, and an iOS 27
-  simulator are installed and exercised, but no macOS 27 host or physical OS-27 device has run the
-  remaining hardware/OS probes. The precise residue is maintained in
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
-- The `fm` executable is absent from both installed Xcode toolchains. Its claimed macOS-27 CLI
-  surface remains untested until the host OS changes.
-- Core AI is absent from the simulator SDK, so cache deletion semantics, device specialization,
-  ANE behavior, thermals, and physical-device context size remain device evidence gaps.
+- The active host is macOS 27 beta 5 with Xcode 27 beta 5, the optional Metal Toolchain, and the
+  iOS 27 beta-5 simulator. An iPhone 15 Pro on the matching iOS build completed the first physical
+  baseline on 2026-08-20. The precise residue is maintained in
+  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` and `probes/README.md`.
+- The OS-bundled `/usr/bin/fm` surface is captured on macOS 27. Runtime-only CLI questions remain,
+  but the executable and its eight-command help surface are no longer evidence gaps.
+- Core AI remains absent from the simulator SDK. Hardware now covers cache deletion, default cache
+  placement, specialization identity, architecture naming, and bounded NDArray initialization;
+  cancellation with a slow asset, entitled app-group behavior, ANE performance, and thermals remain.
 - The six Foundation Models and Core AI Instruments lane headers still require one manual GUI
   recording; headless `xctrace` cannot recover them on this host.
 - The MSL bodies demoed in sessions 325 and 330 (FlashAttention, SiLU) were on screen but never

@@ -400,6 +400,12 @@ precisely why Apple's Instruments session exists.
 > attachments (`LanguageModelError -1`). So the sim is more usable for plain/guided-generation
 > prototyping than the folklore says — and still useless for tool calling, attachments, PCC, and
 > any number you intend to quote.
+>
+> ✅ **Physical baseline, 2026-08-20:** the attached iPhone 15 Pro / iOS build `24A5408d` reported
+> `available` and declared `.vision`, `.toolCalling`, and `.guidedGeneration` but not `.reasoning`.
+> Text, guided generation, and tool invocation ran. Image `respond` calls also ran, while
+> `tokenCount(for:)` with the same generated image threw code `-1` at every tested size. Treat
+> `capabilities` as routing/declaration metadata, not proof that every auxiliary path is healthy.
 
 One live example of how unhelpful the failure looks, so you recognise it:
 

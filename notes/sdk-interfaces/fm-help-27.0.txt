@@ -1,0 +1,265 @@
+# fm help surface
+
+===== fm --help =====
+
+ [38;2;153;153;153mApple Foundation Models CLI[0m
+
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⠀[38;2;90;180;137m⠀[38;2;88;177;140m⣠[38;2;85;175;144m⠞[38;2;82;172;147m⠛[38;2;79;170;150m⠳[38;2;76;167;154m⣄[38;2;74;165;157m⠀[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⢀[38;2;90;180;137m⣀[38;2;88;177;140m⣿[38;2;85;175;144m⡀[38;2;82;172;147m⠀[38;2;79;170;150m⢀[38;2;76;167;154m⣽[38;2;74;165;157m⣀[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⣀[38;2;102;190;123m⣤[38;2;99;187;127m⠴[38;2;96;185;130m⠚[38;2;93;182;133m⠋[38;2;90;180;137m⢁[38;2;88;177;140m⡼[38;2;85;175;144m⠛[38;2;82;172;147m⠛[38;2;79;170;150m⠛[38;2;76;167;154m⢧[38;2;74;165;157m⡈[38;2;71;162;161m⠙[38;2;68;160;164m⠓[38;2;65;157;167m⠦[38;2;62;155;171m⣤[38;2;60;152;174m⣀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⢠[38;2;127;212;93m⡶[38;2;124;210;96m⠒[38;2;121;207;100m⠲[38;2;118;205;103m⣦[38;2;116;202;106m⣠[38;2;113;200;110m⡴[38;2;110;197;113m⠞[38;2;107;195;117m⠋[38;2;104;192;120m⠉[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⣴[38;2;90;180;137m⠟[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⠹[38;2;71;162;161m⣆[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠈[38;2;57;150;177m⠙[38;2;54;147;181m⠲[38;2;51;145;184m⠦[38;2;48;142;188m⣄[38;2;46;140;191m⣠[38;2;43;137;194m⠖[38;2;40;135;198m⠒[38;2;37;132;201m⢦[38;2;35;130;205m⡀[0m
+ [38;2;130;215;90m⢿[38;2;127;212;93m⡀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⣸[38;2;116;202;106m⣇[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⣠[38;2;96;185;130m⡾[38;2;93;182;133m⠁[38;2;90;180;137m⠀[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⠀[38;2;71;162;161m⠈[38;2;68;160;164m⢳[38;2;65;157;167m⡄[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⣨[38;2;46;140;191m⣇[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⢀[38;2;35;130;205m⡿[0m
+ [38;2;130;215;90m⠈[38;2;127;212;93m⠛[38;2;124;210;96m⠲[38;2;121;207;100m⠚[38;2;118;205;103m⢿[38;2;116;202;106m⡍[38;2;113;200;110m⠙[38;2;110;197;113m⠳[38;2;107;195;117m⢦[38;2;104;192;120m⣤[38;2;102;190;123m⣴[38;2;99;187;127m⠋[38;2;96;185;130m⠀[38;2;93;182;133m⠀[38;2;90;180;137m⠀[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⠀[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠙[38;2;62;155;171m⣦[38;2;60;152;174m⣠[38;2;57;150;177m⠴[38;2;54;147;181m⠖[38;2;51;145;184m⠋[38;2;48;142;188m⢁[38;2;46;140;191m⡽[38;2;43;137;194m⠓[38;2;40;135;198m⠒[38;2;37;132;201m⠋[38;2;35;130;205m⠁[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠹[38;2;113;200;110m⣦[38;2;110;197;113m⡀[38;2;107;195;117m⣠[38;2;104;192;120m⠟[38;2;102;190;123m⠉[38;2;99;187;127m⠛[38;2;96;185;130m⠲[38;2;93;182;133m⢦[38;2;90;180;137m⣄[38;2;88;177;140m⣠[38;2;85;175;144m⡴[38;2;82;172;147m⠶[38;2;79;170;150m⢦[38;2;76;167;154m⣄[38;2;74;165;157m⣠[38;2;71;162;161m⡤[38;2;68;160;164m⠖[38;2;65;157;167m⠛[38;2;62;155;171m⠉[38;2;60;152;174m⠳[38;2;57;150;177m⣄[38;2;54;147;181m⠀[38;2;51;145;184m⣴[38;2;48;142;188m⠋[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⢈[38;2;110;197;113m⣿[38;2;107;195;117m⣏[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⠀[38;2;90;180;137m⢈[38;2;88;177;140m⣿[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⣿[38;2;74;165;157m⡁[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⣸[38;2;54;147;181m⣿[38;2;51;145;184m⡁[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⣴[38;2;113;200;110m⠟[38;2;110;197;113m⠀[38;2;107;195;117m⠙[38;2;104;192;120m⣧[38;2;102;190;123m⣀[38;2;99;187;127m⣤[38;2;96;185;130m⠶[38;2;93;182;133m⠚[38;2;90;180;137m⠋[38;2;88;177;140m⠙[38;2;85;175;144m⠳[38;2;82;172;147m⠶[38;2;79;170;150m⠞[38;2;76;167;154m⠋[38;2;74;165;157m⠙[38;2;71;162;161m⠓[38;2;68;160;164m⠦[38;2;65;157;167m⣤[38;2;62;155;171m⣀[38;2;60;152;174m⡴[38;2;57;150;177m⠋[38;2;54;147;181m⠀[38;2;51;145;184m⠹[38;2;48;142;188m⣄[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⢀[38;2;127;212;93m⣤[38;2;124;210;96m⠶[38;2;121;207;100m⢦[38;2;118;205;103m⣾[38;2;116;202;106m⣃[38;2;113;200;110m⣤[38;2;110;197;113m⡴[38;2;107;195;117m⠞[38;2;104;192;120m⠋[38;2;102;190;123m⠻[38;2;99;187;127m⣄[38;2;96;185;130m⠀[38;2;93;182;133m⠀[38;2;90;180;137m⠀[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⠀[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⣠[38;2;62;155;171m⠟[38;2;60;152;174m⠙[38;2;57;150;177m⠒[38;2;54;147;181m⠦[38;2;51;145;184m⣄[38;2;48;142;188m⡈[38;2;46;140;191m⣳[38;2;43;137;194m⡤[38;2;40;135;198m⠤[38;2;37;132;201m⢤[38;2;35;130;205m⡀[0m
+ [38;2;130;215;90m⣿[38;2;127;212;93m⠁[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⢹[38;2;116;202;106m⡏[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠙[38;2;96;185;130m⢷[38;2;93;182;133m⡀[38;2;90;180;137m⠀[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⠀[38;2;71;162;161m⢀[38;2;68;160;164m⡾[38;2;65;157;167m⠃[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⢉[38;2;46;140;191m⡏[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⡷[0m
+ [38;2;130;215;90m⠘[38;2;127;212;93m⠷[38;2;124;210;96m⠦[38;2;121;207;100m⠶[38;2;118;205;103m⠟[38;2;116;202;106m⠙[38;2;113;200;110m⠳[38;2;110;197;113m⢦[38;2;107;195;117m⣤[38;2;104;192;120m⣀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⠻[38;2;90;180;137m⣦[38;2;88;177;140m⠀[38;2;85;175;144m⠀[38;2;82;172;147m⠀[38;2;79;170;150m⠀[38;2;76;167;154m⠀[38;2;74;165;157m⣴[38;2;71;162;161m⠏[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⣀[38;2;57;150;177m⣠[38;2;54;147;181m⠴[38;2;51;145;184m⠒[38;2;48;142;188m⠋[38;2;46;140;191m⠙[38;2;43;137;194m⠦[38;2;40;135;198m⠤[38;2;37;132;201m⠞[38;2;35;130;205m⠁[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠉[38;2;102;190;123m⠛[38;2;99;187;127m⠲[38;2;96;185;130m⢦[38;2;93;182;133m⣄[38;2;90;180;137m⡈[38;2;88;177;140m⢳[38;2;85;175;144m⣤[38;2;82;172;147m⠤[38;2;79;170;150m⣤[38;2;76;167;154m⡞[38;2;74;165;157m⢁[38;2;71;162;161m⣠[38;2;68;160;164m⡤[38;2;65;157;167m⠖[38;2;62;155;171m⠋[38;2;60;152;174m⠉[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⠈[38;2;90;180;137m⠉[38;2;88;177;140m⣿[38;2;85;175;144m⠁[38;2;82;172;147m⠀[38;2;79;170;150m⠈[38;2;76;167;154m⣻[38;2;74;165;157m⠉[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+ [38;2;130;215;90m⠀[38;2;127;212;93m⠀[38;2;124;210;96m⠀[38;2;121;207;100m⠀[38;2;118;205;103m⠀[38;2;116;202;106m⠀[38;2;113;200;110m⠀[38;2;110;197;113m⠀[38;2;107;195;117m⠀[38;2;104;192;120m⠀[38;2;102;190;123m⠀[38;2;99;187;127m⠀[38;2;96;185;130m⠀[38;2;93;182;133m⠀[38;2;90;180;137m⠀[38;2;88;177;140m⠙[38;2;85;175;144m⢦[38;2;82;172;147m⣤[38;2;79;170;150m⠴[38;2;76;167;154m⠋[38;2;74;165;157m⠀[38;2;71;162;161m⠀[38;2;68;160;164m⠀[38;2;65;157;167m⠀[38;2;62;155;171m⠀[38;2;60;152;174m⠀[38;2;57;150;177m⠀[38;2;54;147;181m⠀[38;2;51;145;184m⠀[38;2;48;142;188m⠀[38;2;46;140;191m⠀[38;2;43;137;194m⠀[38;2;40;135;198m⠀[38;2;37;132;201m⠀[38;2;35;130;205m⠀[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm [38;2;153;153;153m<command> [options][0m
+
+  [38;2;55;195;160m[1mCOMMANDS[0m
+    [1mavailable     [0mCheck model availability
+    [1mchat          [0mStart an interactive chat session
+    [1mcount-tokens  [0mCount tokens in a prompt or instructions
+    [1mlicense       [0mShow and agree to the Legal Notice & Terms
+    [1mquota-usage   [0mCheck model quota usage
+    [1mrespond       [0mGenerate a response to a prompt
+    [1mschema        [0mGenerate a structured output generation schema
+    [1mserve         [0mStart a Chat Completions API server
+
+  [38;2;55;195;160m[1mMODELS[0m
+    [1msystem        [0mOn-device Apple Foundation Model [38;2;153;153;153m(default)[0m
+    [1mpcc           [0mApple Foundation Model on Private Cloud Compute
+
+  [38;2;55;195;160m[1mEXAMPLES[0m
+    [38;2;153;153;153m%[0m fm respond 'What is Swift?'
+    [38;2;153;153;153m%[0m fm respond --model pcc --stream 'Summarize this article'
+    [38;2;153;153;153m%[0m fm chat --instructions 'You are a coding assistant'
+    [38;2;153;153;153m%[0m fm count-tokens 'Hello world'
+    [38;2;153;153;153m%[0m fm schema object --name Person --string name --int age
+
+  [3m[38;2;153;153;153mRun 'fm <command> --help' for more information on a command.[0m
+
+
+===== fm available --help =====
+
+  [38;2;55;195;160m[1mfm available[0m
+  [38;2;153;153;153mCheck model availability.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm available
+    [38;2;153;153;153m%[0m fm available --model system
+    [38;2;153;153;153m%[0m fm available --model pcc
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help           [0mShow help information
+    [1m-m, --model <model>  [0mModel to check (system, pcc); checks all if omitted
+
+
+===== fm chat --help =====
+
+  [38;2;55;195;160m[1mfm chat[0m
+  [38;2;153;153;153mStart an interactive chat session.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm chat
+    [38;2;153;153;153m%[0m fm chat --resume my-session
+    [38;2;153;153;153m%[0m fm chat --instructions 'You are a helpful coding assistant'
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m--continue               [0mContinue the most recent chat session
+    [1m-h, --help               [0mShow help information
+    [1m-i, --instructions <t>   [0mInstructions for the model
+    [1m-m, --model <model>      [0mModel to use (system, pcc)
+    [1m-r, --resume <name>      [0mResume a saved chat session
+    [1m--set-default-model <m>  [0mPersist default model (system or pcc)
+    [1m--tool <name>            [0mBuilt-in tool to enable (barcode, ocr; repeatable)
+
+  [3m[38;2;153;153;153mSessions are saved to ~/.fm/sessions/ and can be resumed with --resume.[0m
+
+
+===== fm count-tokens --help =====
+
+  [38;2;55;195;160m[1mfm count-tokens[0m
+  [38;2;153;153;153mCount the tokens in a prompt, instructions, or transcript.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm count-tokens 'What is Swift?'
+    [38;2;153;153;153m%[0m fm count-tokens -i 'You are a helpful assistant' 'What is Swift?'
+    [38;2;153;153;153m%[0m fm count-tokens -i 'Answer concisely'
+    [38;2;153;153;153m%[0m fm count-tokens --image photo.jpg --text 'Describe this image'
+    [38;2;153;153;153m%[0m echo 'What is Swift?' | fm count-tokens
+    [38;2;153;153;153m%[0m fm count-tokens --transcript session.json
+
+  [38;2;55;195;160m[1mARGUMENTS[0m
+    [1m<prompt>                [0mPrompt to count tokens for
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help              [0mShow help information
+    [1m--image <path>          [0mImage to include in the prompt (repeatable)
+    [1m-i, --instructions <t>  [0mInstructions to include in the count
+    [1m-q, --quiet             [0mPrint only the integer count
+    [1m--text <t>              [0mAdditional text segment to include (repeatable)
+    [1m--transcript <f>        [0mSaved transcript to count as a framed conversation
+
+  [3m[38;2;153;153;153mOnly works with the on-device system model. Output is 'Token count: N' in a terminal and a bare integer when piped; use --quiet to force the bare form.[0m
+
+
+===== fm license --help =====
+
+  [38;2;55;195;160m[1mfm license[0m
+  [38;2;153;153;153mShow and agree to the Apple Foundation Models CLI Legal Notice & Terms.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm license
+    [38;2;153;153;153m%[0m fm license --status
+    [38;2;153;153;153m%[0m fm license --show
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help  [0mShow help information
+    [1m--show      [0mPrint the license text without prompting
+    [1m--status    [0mReport whether the license has been agreed to
+
+
+===== fm quota-usage --help =====
+
+  [38;2;55;195;160m[1mfm quota-usage[0m
+  [38;2;153;153;153mCheck model quota usage.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm quota-usage
+    [38;2;153;153;153m%[0m fm quota-usage --model system
+    [38;2;153;153;153m%[0m fm quota-usage --model pcc
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help           [0mShow help information
+    [1m-m, --model <model>  [0mModel to check (system, pcc); checks all if omitted
+
+  [38;2;55;195;160m[1mMODELS[0m
+    [1msystem               [0mOn-device Apple Foundation Model [38;2;153;153;153m(default)[0m
+    [1mpcc                  [0mApple Foundation Model on Private Cloud Compute
+
+
+===== fm respond --help =====
+
+  [38;2;55;195;160m[1mfm respond[0m
+  [38;2;153;153;153mGenerate a response to a prompt.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm respond 'What is Swift?'
+    [38;2;153;153;153m%[0m fm respond --model pcc 'What is Swift?'
+    [38;2;153;153;153m%[0m fm respond --use-case content-tagging 'Analyze this text'
+    [38;2;153;153;153m%[0m fm respond --image photo.jpg --text 'What is in this image?'
+    [38;2;153;153;153m%[0m echo 'What is Swift?' | fm respond
+
+  [38;2;55;195;160m[1mARGUMENTS[0m
+    [1m<prompt>                [0mPrompt for the model to respond to
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-m, --model <model>     [0mModel to use (system, pcc)
+    [1m-i, --instructions <t>  [0mInstructions for the model to follow
+    [1m--schema <file>         [0mPath to a structured output schema file
+    [1m--text <text>           [0mText segment to include in the prompt
+    [1m--image <path>          [0mImage file path to include in the prompt
+    [1m--label <name>          [0mLabel for the corresponding --image (paired by order)
+    [1m--tool <name>           [0mBuilt-in tool to enable (barcode, ocr; repeatable)
+    [1m--resume <f>            [0mContinue a saved conversation from its transcript
+    [1m--save-transcript <f>   [0mSave transcript to a file after responding
+    [1m--[no-]stream           [0mStream the output as it's generated (default: on)
+    [1m-g, --greedy            [0mUse greedy sampling
+    [1m-v, --verbose           [0mPrint verbose output
+    [1m-h, --help              [0mShow help information
+
+  [38;2;55;195;160m[1mSYSTEM MODEL OPTIONS[0m
+    [1m--use-case <case>       [0mModel use case (general, content-tagging)
+    [1m--guardrails <level>    [0mGuardrail level (default, permissive-content-transformations)
+
+  [38;2;55;195;160m[1mMODELS[0m
+    [1msystem                  [0mOn-device Apple Foundation Model [38;2;153;153;153m(default)[0m
+    [1mpcc                     [0mApple Foundation Model on Private Cloud Compute
+
+
+===== fm schema --help =====
+
+  [38;2;55;195;160m[1mfm schema[0m
+  [38;2;153;153;153mGenerate a structured output generation schema.[0m
+
+  [38;2;55;195;160m[1mSUBCOMMANDS[0m
+    [1mobject  [0mGenerate a structured output schema for an object type
+
+  [38;2;55;195;160m[1mEXAMPLES[0m
+    [38;2;153;153;153m%[0m fm schema object --name Person --string name --int age
+    [38;2;153;153;153m%[0m fm schema object --name Dog --string breed --boolean friendly
+
+  [3m[38;2;153;153;153mRun 'fm schema object --help' for detailed property declaration syntax.[0m
+
+
+===== fm schema object --help =====
+
+  [38;2;55;195;160m[1mfm schema object[0m
+  [38;2;153;153;153mGenerate a structured output schema for an object type.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm schema object --name Person --string name --int age --description 'Age in years'
+    [38;2;153;153;153m%[0m fm schema object --name Restaurant --string name --string address.street --string address.zip
+    [38;2;153;153;153m%[0m fm schema object --name Restaurant --string title \
+      --nested address --schema "$(fm schema object --name Address --string zipcode)"
+    [38;2;153;153;153m%[0m fm schema object --name SearchResult --anyOf \
+      --schema "$(fm schema object --name Found --string name)" \
+      --schema "$(fm schema object --name NotFound --string reason)"
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help            [0mShow help information
+    [1m--name <name>         [0mName of the root object type (required)
+
+  [38;2;55;195;160m[1mPROPERTY DECLARATIONS[0m
+    [1m--anyOf               [0mBuild an anyOf union; subsequent --schema args become choices
+    [1m--boolean <name>      [0mDeclare a boolean property
+    [1m--double <name>       [0mDeclare a floating-point property
+    [1m--integer <name>      [0mDeclare an integer property
+    [1m--object <name>       [0mDeclare a nested object property (follow with --schema)
+    [1m--schema <json>       [0mProvide a structured output schema (after --object or --anyOf)
+    [1m--string <name>       [0mDeclare a string property
+
+  [38;2;55;195;160m[1mPROPERTY MODIFIERS[0m
+    [1m--array               [0mMark the preceding property as an array of that type
+    [1m--description <text>  [0mSet a description on the preceding property
+    [1m--optional            [0mMark the preceding property as optional
+
+  [3m[38;2;153;153;153mUse dot notation in property names (e.g. 'address.street') to create nested objects.[0m
+
+
+===== fm serve --help =====
+
+  [38;2;55;195;160m[1mfm serve[0m
+  [38;2;153;153;153mStart a Chat Completions API server for Foundation Models.[0m
+
+  [38;2;55;195;160m[1mUSAGE[0m
+    [38;2;153;153;153m%[0m fm serve
+    [38;2;153;153;153m%[0m fm serve --port 1976
+    [38;2;153;153;153m%[0m fm serve --host 0.0.0.0 --port 1976
+    [38;2;153;153;153m%[0m fm serve --socket /tmp/fm.sock
+
+  [38;2;55;195;160m[1mOPTIONS[0m
+    [1m-h, --help                 [0mShow help information
+    [1m--host <host>              [0mHost address to bind to (TCP mode)
+    [1m--port <port>              [0mPort to listen on, 1–65535 (TCP mode)
+    [1m--socket <path>            [0mUnix domain socket path (socket mode)
+
+  [38;2;55;195;160m[1mENDPOINTS[0m
+    [1mGET  /health               [0mHealth check
+    [1mGET  /v1/models            [0mList available models
+    [1mPOST /v1/chat/completions  [0mChat completions (streaming & non-streaming)
+
+  [38;2;55;195;160m[1mMODELS[0m
+    [1msystem                     [0mOn-device Apple Foundation Model [38;2;153;153;153m(default)[0m
+    [1mpcc                        [0mApple Foundation Model on Private Cloud Compute
+
+  [3m[38;2;153;153;153mUse --socket for Unix domain socket transport (recommended for local Python bindings).[0m
+

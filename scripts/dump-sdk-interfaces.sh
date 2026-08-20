@@ -155,7 +155,7 @@ FM_VERSION=''
 FM_PRESENT=0
 if FM_PATH="$(xcrun --no-cache --find fm 2>/dev/null)"; then
   FM_PRESENT=1
-  if FM_VERSION="$("$FM_PATH" --version)"; then
+  if FM_VERSION="$("$FM_PATH" --version 2>/dev/null)"; then
     FM_VERSION="$(printf '%s\n' "$FM_VERSION" | sed -n '1p')"
   else
     FM_VERSION=''
@@ -351,8 +351,14 @@ if [ -n "$FM_PATH" ]; then
   FM_HELP_NAME="fm-help-${MACOS_SDK_VERSION}.txt"
   {
     printf '# fm help surface\n'
-    printf '\n===== fm --help =====\n'
-    "$FM_PATH" --help
+    for args in '--help' 'available --help' 'chat --help' 'count-tokens --help' \
+      'license --help' 'quota-usage --help' 'respond --help' 'schema --help' \
+      'schema object --help' 'serve --help'; do
+      printf '\n===== fm %s =====\n' "$args"
+      # Intentional word splitting: args is a fixed list above, never user input.
+      # shellcheck disable=SC2086
+      "$FM_PATH" $args
+    done
   } > "$CAPTURE_DIR/$FM_HELP_NAME"
   printf '%s\t%s\n' "$FM_HELP_NAME" 'xcrun/fm' >> "$SOURCE_MAP"
   printf '  %-32s -> %s\n' 'fm help' "$FM_HELP_NAME"

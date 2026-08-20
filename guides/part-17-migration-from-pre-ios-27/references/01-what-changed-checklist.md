@@ -186,15 +186,16 @@ func contextBudget() -> Int {
 >
 > This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
 > we can find" and left the question open. Apple has now corroborated **4096**, for iOS 27
-> specifically, on the record. Three other lines of evidence agree: session 319's comparison table
-> and Apple's PCC article (4K/32K), the repo's own simulator measurement (4096 on the iOS 27.0
-> simulator runtime, `probes/`), and the 27.0 `swiftinterface`, which returns a dynamic
-> `_contextSize` on OS 27+ with a **4096 fallback** below it.
+> specifically, on the record. Four other lines of evidence agree: session 319's comparison table
+> and Apple's PCC article (4K/32K), the repo's simulator measurement, a **2026-08-20 physical
+> iPhone 15 Pro measurement** (4096 on iOS 27 beta-5 build `24A5408d`, `probes/`), and the 27.0
+> `swiftinterface`, which returns a dynamic `_contextSize` on OS 27+ with a **4096 fallback** below
+> it.
 >
 > **The community 8192 report remains uncorroborated.** It is a single comment describing device
-> probing; Apple's written summary establishes 4096 as the documented iOS 27 platform value but
-> does not rule out a device-specific runtime value. That unresolved distinction is exactly why
-> the standing advice below does not change.
+> probing, and the first project-run 27-hardware check returned 4096. One iPhone family cannot
+> prove every device reports the same value, which is exactly why the standing advice below does
+> not change.
 >
 > ⚠️ **Read `contextSize` at runtime rather than hardcoding either number.** Apple's answer is a
 > statement about the platform, not a per-device guarantee, and the 27.0 interface plainly returns
@@ -465,10 +466,12 @@ func describe(_ image: CGImage) async throws -> String {
 }
 ```
 
-> ⚠️ **SILENT FAILURE — the attachment label.** `Attachment(image).label("…")` is **required for
-> image tool calls, and silently no-ops if omitted.** You do not get a diagnostic; the tool simply
-> never sees the image and the model improvises. If you are adopting image input *and* tools in the
-> same change, label every attachment.
+> ⚠️ **SILENT FAILURE — the attachment identity.** `Attachment(image).label("…")` supplies the
+> stable handle used by `ImageReference.attachmentLabel` and `resolved(in:)`. Without it, an
+> identity-dependent result or tool cannot resolve the intended image. A 2026-08-20 iPhone 15 Pro
+> probe narrowed the rule: a required generic tool ran for both labeled and unlabeled image prompts,
+> while the transcript recorded the expected label versus `nil`. So omission does not universally
+> suppress tool invocation; label every attachment that output or a tool must identify.
 
 Two additional facts worth carrying into a migration plan:
 
@@ -951,13 +954,10 @@ struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
 > (*"You can use `.toolCallingMode` with `DynamicProfiles` for this."*), while developers in the wild
 > use the `GenerationOptions` form. The same-type half of this is now settled: ✅ **SDK-verified**
 > (`27.0:933`), the profile modifier takes exactly `GenerationOptions.ToolCallingMode?` — one type,
-> two surfaces. **🔴 GAP:** which surface wins when both are set is still **unverified** — that is
-> precedence behaviour, which the interface (read 2026-07-29) cannot express. 🟠 **Suggestive,
-> 2026-07-31** (`probes/` `fm.toolCallingMode-precedence`, 27.0 sim runtime — where tool-calling
-> assets are missing, so directional only): profile `.required` + options `.disallowed` produced no
-> tool call; profile `.disallowed` + options `.required` engaged the tool machinery. Both halves
-> lean **per-call options win**; confirm on MAC-27/DEVICE-27 before relying on it. **Safe
-> default:** pick one surface per feature and don't mix them in a single session.
+> two surfaces. ✅ **DEVICE-RESOLVED 2026-08-20:** on iPhone 15 Pro / iOS build `24A5408d`, profile
+> `.required` + options `.disallowed` made no call, while the inverse ran the required tool loop.
+> **Per-call options win**, matching the article's general precedence rule. Still pick one surface
+> per feature unless an intentional per-turn override is clearer.
 
 > ⚠️ **Initializer footgun.** In the iOS 27 four-argument `GenerationOptions` initializer,
 > `toolCallingMode` has **no default value** while `samplingMode`, `temperature` and
@@ -1956,23 +1956,22 @@ Also new and easy to miss when constructing a transcript by hand:
 > `Encodable`, so `JSONEncoder().encode(session.transcript)` works and is the cheapest possible
 > migration-era diagnostic.
 
-### 7.6 SUPERSEDED — `ImageReference.resolve(in:)` → `resolved(in:)`
+### 7.6 CONTRADICTED — `ImageReference.resolve(in:)` vs `resolved(in:)`
 
 Tiny — and the deprecation warning is SDK-dependent: only a build that declares it will warn.
 
 > ✅ **VERIFIED** — the documentation harvest (2026-07-27) presents `func resolved(in:) ->
 > Transcript.ImageAttachment?` as current and `func resolve(in:)` as **(Deprecated)**.
 
-> ⚠️ **Contradiction with the captured SDK, flagged rather than smoothed — still live 2026-08-03.**
-> The 27.0 beta interface (`27A5228h`, read 2026-07-29) contains **only** `func resolve(in
-> transcript: Transcript) -> Transcript.ImageAttachment?`, no deprecation attribute, no
-> `resolved(in:)` at all (`27.0:2959-2963`) — while a live-docs re-check (2026-08-03) still
-> presents `resolved(in:)` as current, its parameter now `some Sequence<Transcript.Entry>` (was
-> `ArraySlice<Transcript.Entry>` in the 07-27 harvest), and `resolve(in:)` as deprecated. Either
-> `resolved(in:)` landed in a later build than the one captured, or the documentation is ahead of
-> the SDK. The two spellings take **different argument types** — so don't mechanically rename;
-> write whichever one your actual SDK's `ImageReference` declares, and check the argument type when
-> a new beta lands.
+> ⚠️ **Contradiction with the captured SDK, re-checked 2026-08-17.** The beta-4
+> interface (`27A5228h`) contains only un-deprecated `resolve(in: Transcript)`
+> (`27.0:2959-2963`). The beta-5 interface (`27A5237l`) instead contains only un-deprecated
+> `resolved(in: some Sequence<Transcript.Entry>)` (`27.0:3023-3027`). Apple's current docs list
+> **both**, presenting `resolve(in: Transcript)` as current and `resolved(in: Sequence)` as
+> deprecated, while the overview uses `resolve(in:)`. The interface therefore moved toward the
+> earlier documentation spelling while the documentation moved toward the earlier interface
+> spelling; neither beta matches today's two-member documented surface. **Do not mechanically
+> rename**: use the spelling and argument type that the selected SDK actually declares.
 
 ### 7.7 SUPERSEDED — hand-rolled context management
 
@@ -2598,7 +2597,7 @@ discount if you want only first-party evidence.
 
 | Claim | Attribution |
 |---|---|
-| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 — **UNCORROBORATED 2026-08-02** | Community source comment in a shipping third-party app. Apple's written Group Lab 8121 summary documents **4096, shared input+output**, as the iOS 27 platform value, joining session 319, the PCC article, the repo's simulator measurement and the 27.0 interface fallback. The device-specific report remains unverified; read `contextSize` at runtime. §1.1 |
+| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 — **UNCORROBORATED; first project-run hardware check disagreed 2026-08-20** | Community source comment in a shipping third-party app. Apple's Group Lab 8121 summary documents **4096, shared input+output**, joining session 319, the PCC article, the repo's simulator measurement, the 27.0 interface fallback, and now a physical iPhone 15 Pro measurement of 4096 on build `24A5408d`. Read `contextSize` at runtime. §1.1 |
 | Core AI first-load of a 3 GB model at **194 seconds** on iPhone | Community-measured. §6.10 |
 | Foundation Models may downsample images to **896 px** on the longest dimension | Developer inference in thread 838613. **Never Apple-confirmed.** §4.1 |
 | Grammar-constrained decoding (`@Generable`) is unavailable on GPU-pipelined Core AI bundles because logits are not exposed | Community-measured. §4.3 |
@@ -2614,14 +2613,14 @@ Collected so a future pass can close them. Each is a 🔴 **GAP** in the body wi
 | 1 | What actually differs between **AFM 3 Core** and **AFM 3 Core Advanced**, and whether any API reports the tier | An Apple doc page or a `SystemLanguageModel` property | §3.3 |
 | 2 | ~~The `Arguments` / `Output` associated types of `OCRTool` and `BarcodeReaderTool`, and the `Barcode` type~~ ✅ **RESOLVED 2026-07-29** — the `_Vision_FoundationModels` overlay interface was captured: `Arguments` is a Generable struct with no named public properties, `Output` is the opaque `some PromptRepresentable` return of `call`, and no public `Barcode` type exists | — | §4.6 |
 | 3 | Why `BarcodeReaderTool` lists watchOS and `OCRTool` does not | An Apple statement; the difference itself is verified | §4.6 |
-| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type~~ ✅ **RESOLVED 2026-07-29** — the profile modifier takes `GenerationOptions.ToolCallingMode?` (`27.0:933`). **Still open:** which wins when both are set — 🟠 suggestive 2026-07-31: per-call options appear to win (`probes/` `fm.toolCallingMode-precedence`, 27.0 sim runtime; needs 27 hardware) | An Apple answer or a device experiment | §4.8 |
-| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1885-1892, 937`). ~~Still open: the default~~ ✅ **RESOLVED 2026-07-31, probe-verified** — initial value is `nil`, and `nil` behaves like `.revertTranscript` (`probes/` `fm.transcript-policy-nil-default`, 27.0 sim runtime) | — | §4.10 |
-| 6 | ~~Which `includeSchemaInPrompt` wins when set both on `ContextOptions` and on `respond(…)`~~ ✅ **RESOLVED 2026-07-31, probe-verified** — one knob, two spellings: both record identically on `Transcript.Prompt.contextOptions` (default records `Optional(true)`), so there is nothing to win; only profile-vs-call precedence stays open (`probes/` `fm.includeSchemaInPrompt-recording`, 27.0 sim runtime) | — | §4.11 |
+| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type and which wins~~ ✅ **RESOLVED** — same type (SDK, 2026-07-29); per-call options override the profile modifier (iPhone 15 Pro probe, 2026-08-20) | — | §4.8 |
+| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1885-1892, 937`). ~~Still open: the default~~ ✅ **RESOLVED, probe-verified on sim + iPhone 15 Pro** — initial value is `nil`, and `nil` behaves like `.revertTranscript` (`fm.transcript-policy-nil-default`) | — | §4.10 |
+| 6 | ~~Which `includeSchemaInPrompt` wins when set both on `ContextOptions` and on `respond(…)`~~ ✅ **RESOLVED, probe-verified on sim + iPhone 15 Pro** — one knob, two spellings: both record identically; default records `Optional(true)` (`fm.includeSchemaInPrompt-recording`) | — | §4.11 |
 | 7 | `fm schema object`'s argument grammar, and the full `fm` subcommand list | `fm --help` / `fm schema object --help` on macOS 27. *(Checked 2026-07-29: no `fm` binary ships in the Xcode 27.0 beta toolchain (`27A5228h`) — consistent with it being a macOS 27 OS tool, which this macOS 26.5 machine cannot run)* | §5.2 |
 | 8 | Where the open-sourced core Foundation Models framework lives | The repository appearing | §5.5 |
-| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`); ~~whether the framework throws it remains a device test~~ ✅ **RESOLVED 2026-07-31, probe-verified** — the framework DOES throw it on truncated structured output (code 1; `probes/` `fm.parsingError-thrown`, 27.0 sim runtime; see 17.3 §4.4) | — | §7.1 |
+| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header names `GeneratedContent.ParsingError` (`27.0:3491-3494`); runtime throws it on truncated structured output (code 1), confirmed on sim and iPhone 15 Pro (`fm.parsingError-thrown`; see 17.3 §4.4) | — | §7.1 |
 | 10 | ~~Whether `LanguageModelSession(transcript:)` is formally deprecated~~ ✅ **RESOLVED 2026-07-29** — it is not; no deprecation in the 27.0 interface (`27.0:41`) | — | §7.5 |
-| 11 | The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)` — **now a live docs-vs-SDK contradiction**: the captured 27.0 beta interface has only un-deprecated `resolve(in: Transcript)` (`27.0:2959-2963`) while the docs present `resolved(in:)` as current | A later beta's interface, or a doc revision | §7.6 |
+| 11 | The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)` — **still a live docs-vs-SDK contradiction as of beta 5**: beta 4 has only un-deprecated `resolve(in: Transcript)`, beta 5 only un-deprecated `resolved(in: Sequence)`, while current docs list both with `resolved(in:)` deprecated | A later beta's interface, or a doc revision | §7.6 |
 | 12 | Whether the Python SDK's tool calling is current (README omits it; the session claims it) | A README update, or reading `tests/test_tool.py` | §9 |
 | 13 | Current beta status of the watchOS `CoreImage` break, the `SkillActivation` Xcode 26 failure, PCC-in-Simulator, and the `updateUsage` symbol mismatch | Re-running each reproduction on the current beta | §10.2 |
 | 14 | Whether the Siri-availability coupling is fixed | A release note, or the symptom disappearing | §6.5 |

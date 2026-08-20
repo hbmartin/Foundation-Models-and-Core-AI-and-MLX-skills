@@ -849,13 +849,11 @@ a `@Generable enum` with four unusual cases, greedy sampling, and a prompt that 
 value. Run it a hundred times and count. Until someone does that, treat *both* mechanisms as
 advisory and validate.
 
-> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass at larger N.** The probe suite
-> ran a small version of that experiment (`probes/` `fm.anyOf-enum-enforcement`, on the 27.0 sim
-> runtime): 10 greedy runs against a prompt begging for an out-of-vocabulary value produced
-> **0 violations, 0 errors** — consistent with the constrained-decoding reading on that runtime.
-> N=10 is far too small to close a bug that reproduces intermittently (the original thread-812501
-> failure was on-device, iOS 26.2); rerun with `PROBE_ENUM_RUNS=100` on 27 hardware before relying
-> on it. The gap stays open; keep validating.
+> 🟠 **Suggestive on Simulator and device; larger N still needed.** The probe suite ran 10 greedy
+> adversarial samples on the iOS 27 Simulator (2026-07-31) and another 10 on iPhone 15 Pro / iOS
+> build `24A5408d` (2026-08-20): **20/20 aggregate runs, 0 violations, 0 errors**. That is consistent
+> with constrained decoding, but N=10 per destination is too small to close an intermittent defect
+> first reported on iOS 26.2. Re-run with `PROBE_ENUM_RUNS=100`; keep validating in `call` meanwhile.
 
 ### 4.7 Apple's own code validates `.anyOf` results
 
@@ -2482,12 +2480,10 @@ is one initializer argument — but budget for it not helping, and do not build 
 Full guardrail treatment in
 [`06-availability-errors-and-guardrails.md`](./06-availability-errors-and-guardrails.md).
 
-> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** The probe suite ran exactly
-> that comparison, but on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`): a
-> guardrail-tripping `@Generable` request threw `LanguageModelError` code 2 under **both**
-> `.default` and `.permissiveContentTransformations` — identical outcomes, supporting the
-> forum developer's "inert on the structured path" reading *on this runtime*. Sim guardrail assets
-> may differ from device; the gap stays open until the same probe runs on 27 hardware.
+> 🟠 **Device run completed, stimulus did not reproduce.** The Simulator comparison threw
+> guardrail code 2 under both settings. On iPhone 15 Pro / iOS build `24A5408d`, the same two
+> requests both succeeded. That removes the destination blocker but does not isolate the setting;
+> resolving the gap now needs a prompt that reliably trips the same false positive on device.
 
 ### 11.4 Determinism when you are testing structured output
 
@@ -2754,18 +2750,18 @@ line-numbered citations.
 | # | Unknown | What would resolve it |
 |---|---|---|
 | 1 | `representNilExplicitlyInGeneratedContent:` **semantics** on `@Generable` — the three overloads, their floors (26.0 / 26.4 / 27.0), and the 27.0 default `= false` are now SDK-verified (§2.2) | The macro's doc page, or *Expand Macro* in Xcode 27 |
-| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) — 🟠 suggestive 2026-07-31: 10/10 clean runs on the 27.0 sim runtime (`probes/` `fm.anyOf-enum-enforcement`); needs N=100 on 27 hardware | A 100-iteration `#Playground` on a device with a four-case enum and an adversarial prompt |
-| 3 | Whether the `.anyOf` defect is fixed in iOS 27.0 — the reproduction is confirmed on **iOS 26.2** and the corpus's forum capture (2026-07-27) still lists it as open | Re-run the thread-812501 repro on an iOS 27 device |
+| 2 | Whether `@Generable enum` suffers the same non-enforcement as `.anyOf` (§4.6) — 🟠 20/20 aggregate clean runs across iOS 27 sim + iPhone 15 Pro, but only N=10 per destination | A 100-iteration device run with a four-case enum and adversarial prompt |
+| 3 | Whether the `.anyOf` defect is fixed in iOS 27.0 — narrowed by the clean beta-5 runs above; original reproduction is iOS 26.2 | Re-run the exact thread-812501 repro at large N on device |
 | 4 | Where in the pipeline the `.anyOf` constraint is lost (§5.4) | Symbol-level tracing of `TokenGenerationCore` on macOS 27 |
 | 5 | Whether `SystemLanguageModel` uses `xgrammar` (§5.2) — verified only for Core AI and MLX | Symbol inspection of the shipped `FoundationModels.framework` / `TokenGenerationCore` binary |
 | 6 | ~~Full declarations of the `respond(to:schema:…)` / `streamResponse(to:schema:…)` overload family~~ — **✅ RESOLVED** (§7.3): all return `Response<GeneratedContent>` / `ResponseStream<GeneratedContent>` | Resolved — 27.0 `.swiftinterface:2016-2018, :2063-2071, :2107-2119` |
-| 7 | ~~Whether `ResponseStream.collect()` may be called after manual iteration (§9.3)~~ — **✅ RESOLVED, probe-verified 2026-07-31**: yes, and it returns the complete response (`probes/` `fm.collect-after-iteration`, 27.0 sim runtime) | Resolved by runtime probe |
-| 8 | ~~Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands in the transcript~~ — **✅ RESOLVED, probe-verified 2026-07-31**: a partial `.response` entry lands and `isResponding` stays `true` (§9.7; `probes/` `fm.stream-early-break`, 27.0 sim runtime) | Resolved by runtime probe |
+| 7 | ~~Whether `ResponseStream.collect()` may be called after manual iteration (§9.3)~~ — **✅ RESOLVED on sim + iPhone 15 Pro:** yes; it returns the complete response (`fm.collect-after-iteration`) | Resolved by runtime probe |
+| 8 | ~~Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands~~ — **✅ RESOLVED on sim + iPhone 15 Pro:** partial `.response` lands and `isResponding` remains `true` (§9.7; `fm.stream-early-break`) | Resolved by runtime probe |
 | 9 | ~~`ContextOptions`' exact initializer labels (iOS 27)~~ — **✅ RESOLVED**: `init(includeSchemaInPrompt: Bool? = nil, reasoningLevel: ContextOptions.ReasoningLevel? = nil)`, both properties optional-typed | Resolved — 27.0 `.swiftinterface:3068-3072` |
 | 10 | What `GenerationSchema.name` returns for an anonymous/inline schema — the declaration (`var name: String`, non-optional, 27.0) is now SDK-verified (§7.6) | The `generationschema/name` doc page, or a `print` |
 | 11 | ~~Whether `GeneratedContent.ParsingError` is *specifically* the successor to `GenerationError.decodingFailure`~~ — **✅ RESOLVED**: the SDK's own deprecation message names it (§8.3) | Resolved — 27.0 `.swiftinterface:3491-3494` |
 | 12 | The declared signature of the description-less `@Guide(_ guides:)` overload — the three `@Guide` macro declarations in the interface all carry `description:` first (`@Guide(description: String? = nil, _ guides: GenerationGuide<T>...)`, `:1099-1105`), so the "description-less" call form works because `description:` has a default | The macro's doc page |
-| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. A developer says no; Apple's Book Tracker sample pairs them anyway (§11.3) — 🟠 suggestive 2026-07-31: identical blocks under both settings on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`); needs 27 hardware | A device test tripping a guardrail false positive under both settings |
+| 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. Simulator blocked both settings; iPhone 15 Pro succeeded under both, so neither run isolated the knob (§11.3) | A device prompt that reliably trips a guardrail false positive, under both settings |
 | 14 | Whether a tool-only turn is the *only* cause of a zero-snapshot stream — Apple's comment says "for example" (§9.6) | An instrumented empty-response or guardrailed request on device |
 | 15 | Whether `LanguageModelSession.Error` is real in practice — its two cases are SDK-verified (`:1986-1994`), but it is used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
 

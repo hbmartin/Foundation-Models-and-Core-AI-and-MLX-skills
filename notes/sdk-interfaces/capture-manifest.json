@@ -102,192 +102,6 @@
       ]
     },
     {
-      "capture_id": "documented-xcode-27A5228h-macosx-27.0",
-      "captured_at": null,
-      "documented_capture_date": "2026-07-29",
-      "provenance": "documented-backfill",
-      "provenance_note": "Repository notes document Xcode 27.0 beta build 27A5228h, host macOS 26.5.2, and a 2026-07-29 interface capture. On 2026-07-31 every tracked interface was matched byte-for-byte to its normalized source in the still-selected macOS SDK build 26A5388f. The original run did not record exact time, host build, iPhoneOS SDK version/build, or Metal Toolchain identity; unknown fields remain null.",
-      "xcode": {
-        "version": "27.0",
-        "build": "27A5228h"
-      },
-      "sdks": {
-        "macosx": {
-          "version": "27.0",
-          "build": "26A5388f"
-        },
-        "iphoneos": {
-          "version": null,
-          "build": null
-        }
-      },
-      "host": {
-        "architecture": "arm64",
-        "os_version": "26.5.2",
-        "os_build": null
-      },
-      "metal_toolchain": null,
-      "optional_tools": {
-        "fm": {
-          "present": false,
-          "evidence": "The 2026-07-29 repository note records xcrun lookup failure on macOS 26.5.2."
-        }
-      },
-      "absent_or_non_swift_frameworks": null,
-      "files": [
-        {
-          "path": "AppIntents-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "ebbaababbb88c35f124e43e4d883a8d286fe7853f90a694ab80d70ee00581949",
-          "size_bytes": 1252680,
-          "line_count": 16826,
-          "source": "macosx-sdk/System/Library/Frameworks/AppIntents.framework/Versions/A/Modules/AppIntents.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "AppIntents"
-        },
-        {
-          "path": "CoreAI-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "38c8e2cc669f09b3967a0c1eed2dec32b4403c7fd954921f49cf08ac4a475b0d",
-          "size_bytes": 1179,
-          "line_count": 9,
-          "source": "macosx-sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAI"
-        },
-        {
-          "path": "CoreAIAsset-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "30d63ca440a36d364d3fd3c308c8cdb692829bfcca14cb5335c0c1f9fcb0db61",
-          "size_bytes": 12109,
-          "line_count": 247,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIAsset.framework/Versions/A/Modules/CoreAIAsset.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAIAsset"
-        },
-        {
-          "path": "CoreAICache-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "a402d949d1126a978ca88e547af7fce3bb7d38a160d32bcd33531326a0089f3f",
-          "size_bytes": 1144,
-          "line_count": 9,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICache.framework/Versions/A/Modules/CoreAICache.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAICache"
-        },
-        {
-          "path": "CoreAICommon-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "cd25658982d256bd6edd449f9d54444a3b1a341c0e0eb5c2d5ce591acab8810a",
-          "size_bytes": 1259,
-          "line_count": 9,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICommon.framework/Versions/A/Modules/CoreAICommon.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAICommon"
-        },
-        {
-          "path": "CoreAICompiler-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "568434946ab5de33ab423aaffee03afcc75245794ad6081c7180c84122a783c3",
-          "size_bytes": 1288,
-          "line_count": 10,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICompiler.framework/Versions/A/Modules/CoreAICompiler.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAICompiler"
-        },
-        {
-          "path": "CoreAIDelegates-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "15f5e37da4e13b399dd8de7ea177b83f5193642abec12403a43d862cbf1d4e2d",
-          "size_bytes": 7405,
-          "line_count": 122,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIDelegates.framework/Versions/A/Modules/CoreAIDelegates.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAIDelegates"
-        },
-        {
-          "path": "CoreAIRuntime-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "cc6879beed2326d4e410345c2854cfcf63482e20a22f8af4e0cc623fccad6311",
-          "size_bytes": 63795,
-          "line_count": 1428,
-          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIRuntime.framework/Versions/A/Modules/CoreAIRuntime.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreAIRuntime"
-        },
-        {
-          "path": "CoreSpotlight-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "018577fdba4d38ab7bd7a1050bb01650d72697affdbcf6dd59645bf07544211d",
-          "size_bytes": 24522,
-          "line_count": 357,
-          "source": "macosx-sdk/System/Library/Frameworks/CoreSpotlight.framework/Versions/A/Modules/CoreSpotlight.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "CoreSpotlight"
-        },
-        {
-          "path": "Evaluations-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "eceafd49e4dc025424639fc59fe56f8682dcb8664360afe33a9df7ac7f56522a",
-          "size_bytes": 43601,
-          "line_count": 885,
-          "source": "macosx-platform/Developer/Library/Frameworks/Evaluations.framework/Versions/A/Modules/Evaluations.swiftmodule/arm64-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "Evaluations"
-        },
-        {
-          "path": "FoundationModels-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "139965bdaee111baaf47ef6cf3391a55ba6c619c92bf7bcd89da0de6d6beb70a",
-          "size_bytes": 203219,
-          "line_count": 3583,
-          "source": "macosx-sdk/System/Library/Frameworks/FoundationModels.framework/Versions/A/Modules/FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "FoundationModels"
-        },
-        {
-          "path": "Speech-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "38ecffa07bcec77d3cdcdfe6959e3230859b00cf32aa6266ebc242123e297ac6",
-          "size_bytes": 41154,
-          "line_count": 742,
-          "source": "macosx-sdk/System/Library/Frameworks/Speech.framework/Versions/A/Modules/Speech.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "Speech"
-        },
-        {
-          "path": "Vision-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "19a15e78f8fd4bd280a88e15ca6a2d252ad46491360f62dcc15fd4f132911abb",
-          "size_bytes": 174138,
-          "line_count": 3510,
-          "source": "macosx-sdk/System/Library/Frameworks/Vision.framework/Versions/A/Modules/Vision.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "Vision"
-        },
-        {
-          "path": "_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "9446b71b2156780d390836d1a066d60b4111068b9f5377bd3c49a8765198639a",
-          "size_bytes": 32356,
-          "line_count": 513,
-          "source": "macosx-sdk/System/Library/Frameworks/_CoreSpotlight_FoundationModels.framework/Versions/A/Modules/_CoreSpotlight_FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "_CoreSpotlight_FoundationModels"
-        },
-        {
-          "path": "_Vision_FoundationModels-27.0-macos.swiftinterface",
-          "kind": "swiftinterface",
-          "sha256": "19b7d7b6aa204275295a11891d3d7c3d5d62a8b0de471e49e303be163fe24229",
-          "size_bytes": 4551,
-          "line_count": 83,
-          "source": "macosx-sdk/System/Library/Frameworks/_Vision_FoundationModels.framework/Versions/A/Modules/_Vision_FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
-          "captured_at": null,
-          "framework_or_tool": "_Vision_FoundationModels"
-        }
-      ]
-    },
-    {
       "capture_id": "documented-xcode-27A5228h-metal-32023-920-1",
       "captured_at": null,
       "documented_capture_date": "2026-07-31",
@@ -336,6 +150,219 @@
           "source": "metal-toolchain/Metal.xctoolchain/usr/bin/coreai-build",
           "captured_at": null,
           "framework_or_tool": "coreai-build"
+        }
+      ]
+    },
+    {
+      "capture_id": "xcode-27A5237l-macosx-27.0-26A5406c-iphoneos-24A5408c-metal-27A5237l-com-apple-dt-toolchain-Metal-32023-921-1",
+      "captured_at": "2026-08-17T18:06:10Z",
+      "provenance": "scripted-capture",
+      "xcode": {
+        "version": "27.0",
+        "build": "27A5237l"
+      },
+      "sdks": {
+        "macosx": {
+          "version": "27.0",
+          "build": "26A5406c"
+        },
+        "iphoneos": {
+          "version": "27.0",
+          "build": "24A5408c"
+        }
+      },
+      "host": {
+        "architecture": "arm64",
+        "os_version": "27.0",
+        "os_build": "26A5406e"
+      },
+      "metal_toolchain": {
+        "component_build": "27A5237l",
+        "identifier": "com.apple.dt.toolchain.Metal.32023.921.1",
+        "coreai_build_version": "coreai-build 3600.82.1",
+        "metal_version": "Apple metal version 32023.921 (metalfe-32023.921.3)",
+        "coreai_build_path": "Metal.xctoolchain/usr/bin/coreai-build",
+        "metal_path": "Metal.xctoolchain/usr/bin/metal"
+      },
+      "optional_tools": {
+        "fm": {
+          "present": true,
+          "version": null
+        }
+      },
+      "absent_or_non_swift_frameworks": [
+        "MetalPerformancePrimitives"
+      ],
+      "files": [
+        {
+          "path": "AppIntents-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "94714e4a254dee4c1c437e8467be401608c2cfab64b09377a89cf22718c028ff",
+          "size_bytes": 1251012,
+          "line_count": 16797,
+          "source": "macosx-sdk/System/Library/Frameworks/AppIntents.framework/Versions/A/Modules/AppIntents.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "AppIntents"
+        },
+        {
+          "path": "CoreAI-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "a733ae3b32c452006b50f88edf056df4f5191f9c234abd3a7b602eeb49a28116",
+          "size_bytes": 1184,
+          "line_count": 9,
+          "source": "macosx-sdk/System/Library/Frameworks/CoreAI.framework/Versions/A/Modules/CoreAI.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAI"
+        },
+        {
+          "path": "CoreAIAsset-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "c01a86a43d98c69bfe12a7643b3840340d2835279fa95ec1aa4731440c50f97e",
+          "size_bytes": 12114,
+          "line_count": 247,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIAsset.framework/Versions/A/Modules/CoreAIAsset.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAIAsset"
+        },
+        {
+          "path": "CoreAICache-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "bdfb90f36b7dd16b01644c2dbbda1e016652a7a3756f054bc205420c78e1a99a",
+          "size_bytes": 1149,
+          "line_count": 9,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICache.framework/Versions/A/Modules/CoreAICache.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAICache"
+        },
+        {
+          "path": "CoreAICommon-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "92b8e83840e903c7995f85baceaaf0ac26c247d9d5570aff1bf04a17c2752901",
+          "size_bytes": 1264,
+          "line_count": 9,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICommon.framework/Versions/A/Modules/CoreAICommon.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAICommon"
+        },
+        {
+          "path": "CoreAICompiler-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "038f0f12ee46edab2b27e0b50210b8aeae7c1edf818eb43c8cc55d208dee97d1",
+          "size_bytes": 1293,
+          "line_count": 10,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAICompiler.framework/Versions/A/Modules/CoreAICompiler.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAICompiler"
+        },
+        {
+          "path": "CoreAIDelegates-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "431ecb7736a25fecd87f7083bad60bae52e9ddfd39573ea0b2324b1c31df823a",
+          "size_bytes": 7410,
+          "line_count": 122,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIDelegates.framework/Versions/A/Modules/CoreAIDelegates.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAIDelegates"
+        },
+        {
+          "path": "CoreAIRuntime-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "3faecadaacf4205a06d918a4ef23ab8d1cb60557014b0629e31318829db9d634",
+          "size_bytes": 63800,
+          "line_count": 1428,
+          "source": "macosx-sdk/System/Library/SubFrameworks/CoreAIRuntime.framework/Versions/A/Modules/CoreAIRuntime.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreAIRuntime"
+        },
+        {
+          "path": "CoreSpotlight-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "2243dc38c7389f51b6397ca764ac58c5ac50dc9aabb72766f8a68aac81654648",
+          "size_bytes": 24526,
+          "line_count": 357,
+          "source": "macosx-sdk/System/Library/Frameworks/CoreSpotlight.framework/Versions/A/Modules/CoreSpotlight.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "CoreSpotlight"
+        },
+        {
+          "path": "Evaluations-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "ea1754d59caa7903cbe8da835a3996fd0f85e17b09b7e9d1b5336f3fc6c4e500",
+          "size_bytes": 44844,
+          "line_count": 906,
+          "source": "macosx-platform/Developer/Library/Frameworks/Evaluations.framework/Versions/A/Modules/Evaluations.swiftmodule/arm64-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "Evaluations"
+        },
+        {
+          "path": "FoundationModels-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "530b923fe31334ea2020d1e71e5f5c19549d4c02a8872fa01d50f7186d5b3d2f",
+          "size_bytes": 206459,
+          "line_count": 3647,
+          "source": "macosx-sdk/System/Library/Frameworks/FoundationModels.framework/Versions/A/Modules/FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "FoundationModels"
+        },
+        {
+          "path": "Speech-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "253c5594ef576121e032fb8838faf35ef6847f21d9bf71c2b912dde5bbd2affd",
+          "size_bytes": 41154,
+          "line_count": 742,
+          "source": "macosx-sdk/System/Library/Frameworks/Speech.framework/Versions/A/Modules/Speech.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "Speech"
+        },
+        {
+          "path": "Vision-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "b641e18982641828a0c4575ba9a8579d7d2c3b5974f155aba1ed8695b6cef979",
+          "size_bytes": 175198,
+          "line_count": 3535,
+          "source": "macosx-sdk/System/Library/Frameworks/Vision.framework/Versions/A/Modules/Vision.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "Vision"
+        },
+        {
+          "path": "_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "22f3af6350dd47558e60134b6c8875bfb9e9fc5557755aa98aa6587d01353922",
+          "size_bytes": 32349,
+          "line_count": 513,
+          "source": "macosx-sdk/System/Library/Frameworks/_CoreSpotlight_FoundationModels.framework/Versions/A/Modules/_CoreSpotlight_FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "_CoreSpotlight_FoundationModels"
+        },
+        {
+          "path": "_Vision_FoundationModels-27.0-macos.swiftinterface",
+          "kind": "swiftinterface",
+          "sha256": "cc8915b5a59dbc76be5581ad1bf53b0ca25088d712822459f4a7bab8243e5f7d",
+          "size_bytes": 4551,
+          "line_count": 83,
+          "source": "macosx-sdk/System/Library/Frameworks/_Vision_FoundationModels.framework/Versions/A/Modules/_Vision_FoundationModels.swiftmodule/arm64e-apple-macos.swiftinterface",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "_Vision_FoundationModels"
+        },
+        {
+          "path": "coreai-build-help-27.0.txt",
+          "kind": "cli-help",
+          "sha256": "e596743f04fb5ffb36c316c3dae6f0b48bc779eb9793c59472175033ed748c2a",
+          "size_bytes": 5321,
+          "line_count": 118,
+          "source": "metal-toolchain/Metal.xctoolchain/usr/bin/coreai-build",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "coreai-build"
+        },
+        {
+          "path": "fm-help-27.0.txt",
+          "kind": "cli-help",
+          "sha256": "56973f571dd0c8e9ef2f89fb3422ce87f3645a74ee6428c55f926b78c7f630c4",
+          "size_bytes": 22772,
+          "line_count": 265,
+          "source": "xcrun/fm",
+          "captured_at": "2026-08-17T18:06:10Z",
+          "framework_or_tool": "fm"
         }
       ]
     }

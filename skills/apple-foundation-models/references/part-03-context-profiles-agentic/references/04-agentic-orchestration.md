@@ -1678,16 +1678,14 @@ On Apple's own stack the observed symptom is uglier:
 > tools" in the console** — it means "required mode, empty toolset", regardless of what you thought
 > you passed.
 
-> ✅ **Probe-verified, 2026-07-31 — `.required` with no tools throws the generic `-1`, and there is
-> no dedicated case.** (was a 🔴 GAP; `probes/` `fm.required-mode-no-tools`, run on the 27.0 sim
-> runtime.) A genuinely empty toolset under `.required` throws an error whose NSError domain is
-> `FoundationModels.LanguageModelError`, code **`-1`**, wrapping underlying errors via
-> `NSMultipleUnderlyingErrorsKey` — and which does **NOT** cast to the Swift `LanguageModelError`
-> type (`casts=[]`), so a `catch let e as LanguageModelError` never sees it. The mode is not
-> ignored and nothing hangs; the beta symptom above is the actual behaviour on this runtime. Full
-> error-shape analysis in 17.3 §6.3. **The safe default stands: assert your toolset is non-empty
+> ✅ **Probe-verified, with destination drift.** On the iOS 27 Simulator (2026-07-31), a genuinely
+> empty toolset threw the generic NSError-domain code `-1`, did not cast to Swift
+> `LanguageModelError`, and wrapped underlying errors. On iPhone 15 Pro / iOS build `24A5408d`
+> (2026-08-20), it instead threw typed `LanguageModelError.unsupportedGenerationGuide`, code 6.
+> Both reject without hanging; the bridge is not consistent across destinations. Full error-shape
+> analysis in 17.3 §6.3. **The safe default stands: assert your toolset is non-empty
 > before you set `.required`, and treat an error you cannot classify as retry-once-then-degrade —
-> matching by NSError domain, not by Swift type.**
+> logging both Swift type and NSError domain/code.**
 
 > 🔴 **GAP — there is no first-party call site for `toolCallingMode` anywhere.** Origami, Book Tracker
 > and the Core Spotlight sample all ship without it; Origami, the most agentic of the three, steers

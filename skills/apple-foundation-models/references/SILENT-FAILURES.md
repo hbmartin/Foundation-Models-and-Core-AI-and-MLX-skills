@@ -1,15 +1,15 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**389 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**386 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-08-17. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-08-20. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
 | [Wrong output](#wrong-output) | 24 |
 | [Empty output / no-op](#empty-output--no-op) | 25 |
 | [Truncation & limits](#truncation--limits) | 6 |
-| [Ignored input](#ignored-input) | 35 |
+| [Ignored input](#ignored-input) | 32 |
 | [Stale state](#stale-state) | 17 |
 | [Data & artifact loss](#data--artifact-loss) | 15 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 30 |
@@ -124,11 +124,8 @@
 - [Python respond(generating:) drops options= on the floor — temperature, sampling, max tokens have no effect; evals lie.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#123-️-three-python-side-silent-failures) — 2.2 🔇
 - [.anyOf on tool arguments is confirmed broken — a three-city constraint got called with 'Beijing'; validate in the tool.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#33-anyof-does-not-constrain--validate-anyway) — 2.3 🔇
 - [An unlabelled attachment is invisible to image tools — everything runs, the barcode or OCR just never reads the image.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
-- [Symbol table: Attachment.label(_:) is required for image tool calls and silently no-ops if omitted.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#131-symbols-with-version-floor-and-evidence) — 2.3
 - [A CustomStage conforms and is accepted, but the 27.0-beta pipeline never routes items through it — measured no-op.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#124-the-beta-era-caveat) — 2.4 🔇
-- [Symbol table: Attachment.label(_:) is required for tool calls — silently no-ops when omitted.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#1-the-symbol-inventory-and-where-each-one-came-from) — 2.5
 - [For any tool expected to read an image, .label(_:) is mandatory — omit it and the tool silently never sees the image.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
-- [The attachment label is how the tool knows which image to read — without it the OCR/barcode call quietly reads nothing.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#83-ocrtool-and-barcodereadertool) — 2.5
 - [permissiveContentTransformations does not apply to @Generable — adopting guided output silently drops permissive mode.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#52-the-blind-spot-it-does-not-apply-to-generable) — 2.6
 
 **Part 3**
@@ -422,7 +419,7 @@
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is unverified.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written docs.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
 - [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste say otherwise.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-gap-stated-plainly) — 5.2
+- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2

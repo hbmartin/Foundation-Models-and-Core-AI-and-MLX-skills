@@ -2110,6 +2110,12 @@ reaching the inference layer. Note also that this surfaces to your `catch` as th
 see `-1`, always check the console log**, because the real message frequently lives there and never
 reaches your error object.
 
+> ✅ **Empty-tool control, with bridge drift:** a genuinely empty `.required` request produced the
+> generic code `-1` on Simulator, but typed `LanguageModelError.unsupportedGenerationGuide`, code 6,
+> on iPhone 15 Pro / iOS build `24A5408d`. That control does not close FB23643759 — the report passed
+> a non-empty toolset — but it proves code `-1` is not the only public-facing shape of this invalid
+> configuration.
+
 One genuine API ambiguity is visible in that snippet: `toolCallingMode` exists in two places —
 `GenerationOptions(toolCallingMode:)` (used here) and the `DynamicProfile.toolCallingMode(_:)`
 modifier that a Frameworks Engineer recommended in thread 833692 (*"You can use `.toolCallingMode`
@@ -2120,18 +2126,13 @@ with `DynamicProfiles` for this."*).
 > DynamicProfile` — the *same* `GenerationOptions.ToolCallingMode` struct as the options field —
 > ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:933`, with the struct and its
 > `Kind` at `:3229-3249`: statics `.allowed`/`.required`/`.disallowed` over
-> `case allowed/required/disallowed`). 🔴 Still open: **precedence when you set both** — per-call
-> `GenerationOptions(toolCallingMode:)` vs. the profile modifier — is stated nowhere. What would
-> resolve it: an Apple doc sentence, or a two-line device test setting them to conflicting values.
+> `case allowed/required/disallowed`). The dynamic-profiles article's general rule says call-site
+> arguments override profile modifiers, and the runtime now confirms it.
 >
-> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** That two-line test now
-> exists (`probes/` `fm.toolCallingMode-precedence`), but the 27.0 sim runtime lacks tool-calling
-> assets, so the result is only directional: profile `.required` + options `.disallowed` produced
-> **no** tool call, while profile `.disallowed` + options `.required` **engaged the tool machinery**
-> (and then hit the sim's missing-assets `ModelManagerError 1026`). Both halves are consistent with
-> **per-call options winning** — which matches the dynamic-profiles article's general precedence
-> rule ("call-site arguments override all profile … modifiers") — but do not close this on sim
-> evidence; rerun on 27 hardware where the tool call can actually execute.
+> ✅ **DEVICE-RESOLVED 2026-08-20.** On iPhone 15 Pro / iOS build `24A5408d`, profile `.required`
+> + options `.disallowed` produced no tool call; profile `.disallowed` + options `.required` ran the
+> tool loop until `contextSizeExceeded`. **Per-call options win** in both directions. The earlier
+> simulator run pointed the same way but lacked tool-calling assets.
 
 ### 7.5 `ToolCallError` and "Failed to parse generated content"
 
@@ -3196,7 +3197,7 @@ Entries marked 🔴 **GAP** remain unanswered by the corpus; three rows are
 | 5.2 | 🟡 That `.permissiveContentTransformations` is inert in Apple's own Book Tracker sample is our deduction from two verified facts, not a stated one | A demonstration either way, or an Apple clarification of the docs sentence |
 | 7.1 | `com.apple.SensitiveContentAnalysisML` error 15 | Apple reply on 836285 |
 | 7.3 | `ModelManagerServices.ModelManagerError` 1046 | Apple reply, or symbol dump |
-| 7.4 | ~~Are the two `toolCallingMode` surfaces one type?~~ — **✅ RESOLVED 2026-07-29**: yes, `GenerationOptions.ToolCallingMode` in both; precedence when both are set stays 🔴 (🟠 suggestive 2026-07-31: per-call options appear to win — `probes/` `fm.toolCallingMode-precedence` on the 27.0 sim runtime; needs 27 hardware) | Resolved — 27.0 `.swiftinterface:933, :3229-3249` |
+| 7.4 | ~~Are the two `toolCallingMode` surfaces one type, and which wins?~~ **✅ RESOLVED:** same type (SDK, 2026-07-29); call-site options override profile modifiers (iPhone 15 Pro probe, 2026-08-20) | Resolved — 27.0 `.swiftinterface:933, :3229-3249` + device probe |
 | 8.2 | ~~Full `QuotaUsage.Status` case list~~ — **✅ RESOLVED 2026-07-29**: `.belowLimit(_)` / `.limitReached(_)` only | Resolved — 27.0 `.swiftinterface:224-241` |
 | 8.2 | Numeric quota values | None — Apple does not expose them (FB23378161) |
 | 9.2 | ~~Full `LanguageModelFeedback.Issue.Category` list~~ — **✅ RESOLVED 2026-07-29**: eight cases incl. `.triggeredGuardrailUnexpectedly` | Resolved — 27.0 `.swiftinterface:3384-3405` |
