@@ -1313,12 +1313,11 @@ delays and cancellations in background tasks*. There is no documented API to rai
 > way to query it. **What would resolve it:** a controlled experiment on device (N sessions issuing
 > `respond` simultaneously, recording which throw and with what), or an Apple technote.
 >
-> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** The probe suite ran that
-> experiment at n=8 on the 27.0 sim runtime (`probes/` `fm.concurrent-session-limit`): **8 sessions
-> issuing `respond` simultaneously all completed `ok`** — no throw, no visible ceiling at that
-> width. Sim inference is host-backed, so this says nothing about a device's thermal/memory limits;
-> rerun on 27 hardware (`PROBE_CONCURRENT_SESSIONS=16` widens it) before designing around any
-> number. The gap stays open.
+> 🟠 **Measured at n=8 on Simulator and device; ceiling still above the sample.** Eight simultaneous
+> sessions all completed `ok` on the iOS 27 Simulator (2026-07-31) and on iPhone 15 Pro / iOS build
+> `24A5408d` (2026-08-20). No visible ceiling exists at that width on the tested device, but this
+> does not identify the actual limit or its thermal/memory dependence. Re-run with
+> `PROBE_CONCURRENT_SESSIONS=16` before designing around a number. The gap stays open.
 
 ---
 

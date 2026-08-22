@@ -504,9 +504,10 @@ that needs preparation UX must retain the asset URL and exact options outside th
 Diffusion's unload only clears object references (✅ VERIFIED,
 `CoreAIDiffusionModelFunction.swift:38-42`). It does not call `AIModelCache.delete*` (the delete
 family, ✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:39-42`). Conversely,
-deleting a specialization entry is not a safe substitute for releasing functions. The framework docs
-still conflict on deletion while a live model references the entry; [7.2 §7](02-specialization-caching-and-aot.md)
-keeps the unresolved device test and code that is correct under either behavior.
+deleting a specialization entry is not a safe substitute for releasing functions. Although the
+framework docs conflict, an iPhone 15 Pro on iOS 27 build `24A5408d` followed the reference pages:
+deletion threw while a live model pinned the entry and succeeded after release. [7.2
+§7](02-specialization-caching-and-aot.md) records the probe and the release-delete-verify pattern.
 
 ### 8.3 AOT changes packaging, not the function contract
 
@@ -596,7 +597,7 @@ atomic update behavior across bundles.
 
 | Unknown | What would settle it | Safe default |
 |---|---|---|
-| Live-model cache deletion behavior | delete a cache entry while a loaded non-LLM function remains alive, on device | release functions before deletion; follow 7.2's recovery ladder |
+| Whether a loaded non-LLM facade retains the same cache pin as the directly tested `AIModel` (**direct `AIModel` case closed 2026-08-20: deletion throws until release**) | repeat while a facade-owned function remains alive | release functions before deletion; follow 7.2's recovery ladder |
 | Whether failed `AIModelAsset.summary` materially misroutes a trio asset | corrupt or block the summary path while preserving loadability; trace compute unit | treat fallback as observable and allow an explicit policy |
 | How much `prewarmResources` preserves after immediate unload | cold/warm Instruments trace per component and device | call it load/unload prewarm, not inference warmup |
 | The memory and latency crossover for diffusion lazy loading | repeated generations under memory pressure on each supported device | eager during an active session, lazy only from measured need |
@@ -647,8 +648,9 @@ Repository-wide synthesis and source inventory:
 - The 76% number is 🟡 Apple-presented (`transcripts/wwdc2026-325.txt:261`) and lacks a
   hardware/model-condition table in the transcript; the missing conditions are tracked as an open
   question in `notes/transcripts/coreai-python-metal.md:2126`.
-- Cache persistence, deletion with live models, and warmup effects beyond the executed source are 🔴
-  device gaps; the guide does not infer them from API names.
+- Facade-specific cache retention and warmup effects beyond the executed source remain 🔴 device
+  gaps. Direct `AIModel` deletion behavior is device-measured; the guide does not infer facade
+  ownership from API names.
 
 ---
 

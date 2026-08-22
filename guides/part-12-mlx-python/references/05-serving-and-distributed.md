@@ -1219,7 +1219,7 @@ best kernel" is the operative clause.
 correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
 `tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912/#3922 still open, #3924
 closed unmerged 2026-08-02, on a 2026-08-03 `gh` re-check). Separately,
-mlx#3897 (open) reports that **batched vs single-sequence attention diverges numerically on M5**.
+mlx#3897 (closed 2026-08-09) reports that **batched vs single-sequence attention diverges numerically on M5**.
 If you are on M5 and chasing a correctness difference, update MLX before you debug anything else,
 and do not assert bit-equality between batched and unbatched paths.
 
@@ -2325,7 +2325,7 @@ Apple's own inline comment in the documented launch command is literally `# <---
 independent sources call it critical. **Put it in the hostfile's `envs` and stop thinking about
 it.**
 
-⚠️ But know the counterweight. mlx#3830 (community-reported, open) documents a **Metal fence
+⚠️ But know the counterweight. mlx#3830 (community-reported, closed 2026-08-04) documents a **Metal fence
 handoff deadlock under `MLX_METAL_FAST_SYNCH=1`** — an orphaned `fence_wait` kernel that locks the
 GPU until reboot — *and*, when the variable is unset, the same workload hitting the **~5 s GPU
 watchdog** (`kIOGPUCommandBufferCallbackErrorTimeout`, at roughly 7,300 tokens). That is a

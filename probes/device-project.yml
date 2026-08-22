@@ -1,0 +1,62 @@
+name: DeviceProbes
+
+options:
+  bundleIdPrefix: com.haroldmartin.apple-ai-probes
+  deploymentTarget:
+    iOS: "27.0"
+
+settings:
+  base:
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: 6.2
+
+targets:
+  DeviceProbeHost:
+    type: application
+    platform: iOS
+    sources:
+      - DeviceProbeHost
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Device Probes
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.haroldmartin.apple-ai-probes.host
+        TARGETED_DEVICE_FAMILY: 1
+
+  ProbeSupport:
+    type: framework
+    platform: iOS
+    sources:
+      - Sources/ProbeSupport
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.haroldmartin.apple-ai-probes.support
+
+  DeviceProbeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests/ProbesTests
+      - path: DeviceProbeAssets
+        buildPhase: resources
+        type: folder
+    dependencies:
+      - target: DeviceProbeHost
+      - target: ProbeSupport
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.haroldmartin.apple-ai-probes.tests
+
+schemes:
+  DeviceProbes:
+    build:
+      targets:
+        DeviceProbeHost: all
+        DeviceProbeTests:
+          - test
+    test:
+      targets:
+        - DeviceProbeTests

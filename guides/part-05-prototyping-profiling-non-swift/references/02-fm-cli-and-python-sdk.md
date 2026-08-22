@@ -31,17 +31,16 @@ corpus:
 | Half of the guide | Evidence class | Grade |
 |---|---|---|
 | **Python SDK** | The **actual Apple-authored repository, cloned and read file by file** — 15 Python modules, an 1,831-line Swift shim, a 146-line C header, 17 test files, the Sphinx docs, plus the full GitHub issue and PR history. | **Strong.** Comparable to reading a header. Better than a transcript. |
-| **`fm` CLI** | **Spoken narration in one WWDC session**, plus one sentence from an Apple engineer in a GitHub issue, plus (since 2026-08-02) **three independent third-party write-ups from people who ran the binary on macOS 27**, one of which pastes `fm --help` from a named build. **Nobody working on this series has run `fm` on a macOS 27 machine.** | **Weak-to-moderate.** Semantics from Apple; spellings from strangers. |
+| **`fm` CLI** | Apple narration and engineer statements, third-party beta reports, and a **project-run capture of top-level plus every subcommand help page on macOS 27 beta 5** (`26A5406e`, captured 2026-08-17). | **Strong for the command grammar.** Runtime semantics still need focused calls. |
 
 So the two halves are written differently on purpose. The Python sections carry file-and-line
 citations and describe bugs down to the assignment that causes them. The `fm` sections tell you
 what the tool *does*, tell you what third parties report typing — marked 🟠, never ✅ — and hand
 you an exact procedure for finding out in ninety seconds on a real Mac.
 
-If you take one instruction from this guide: **run `fm --help` before you write a script around
-`fm`, and treat every flag spelling printed below as a placeholder.** The 2026-08-02 harvest
-raised several of them from "unknown" to "reported by three strangers who agree"; that is a real
-improvement and it is still not the same as having run it.
+If you take one instruction from this guide: **match scripts to the captured beta's help surface
+and re-check it on later seeds.** The canonical beta-5 capture is
+`notes/sdk-interfaces/fm-help-27.0.txt`; the remaining gaps concern runtime behavior, not spelling.
 
 ---
 
@@ -89,7 +88,7 @@ improvement and it is still not the same as having run it.
 
 1. [Why these two tools exist at all](#1-why-these-two-tools-exist-at-all)
 2. [The `fm` CLI: everything that is actually attested](#2-the-fm-cli-everything-that-is-actually-attested)
-3. [🔴 The `fm` gap, stated plainly](#3--the-fm-gap-stated-plainly)
+3. [✅ The `fm` help surface, captured on macOS 27](#3--the-fm-help-surface-captured-on-macos-27)
 4. [The shell-automation pattern (attested) with unverified flags (marked)](#4-the-shell-automation-pattern-attested-with-unverified-flags-marked)
 5. [The Python SDK: what it is, and the version discrepancy](#5-the-python-sdk-what-it-is-and-the-version-discrepancy)
 6. [Installing it, and why `pip install` compiles Swift](#6-installing-it-and-why-pip-install-compiles-swift)
@@ -452,12 +451,28 @@ case study.
 
 ---
 
-## 3. 🔴 The `fm` gap, stated plainly
+## 3. ✅ The `fm` help surface, captured on macOS 27
+
+> ✅ **RESOLVED 2026-08-17 on macOS 27 beta 5 (`26A5406e`).** `/usr/bin/fm` was run by this
+> project. `fm --help` plus every revealed help page is captured in
+> `notes/sdk-interfaces/fm-help-27.0.txt` under the SDK evidence manifest. The eight top-level
+> commands are `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`, `schema`,
+> and `serve`. The earlier third-party `token-count` spelling is wrong for this seed.
+>
+> The capture also resolves the flag and schema grammar: `respond` supports instructions, model,
+> schema, text/image/label attachments, built-in OCR/barcode tools, transcript resume/save,
+> streaming control, greedy sampling, verbose output, use cases, and guardrail levels;
+> `schema object` supports boolean/double/integer/string properties, nested objects, `anyOf`,
+> arrays, descriptions, and optionality; and `serve` exposes `/health`, `/v1/models`, and
+> `/v1/chat/completions` over TCP or a Unix socket. `fm --version` is not supported.
+
+The historical gap analysis below is retained to show which claims were previously third-party,
+but its command-spelling questions are superseded by the managed beta-5 capture.
 
 This box is the most important thing in the first half of this guide. It is deliberately not
 softened, and it deliberately contains no guesses.
 
-> 🔴 **GAP — nobody in this project has run `fm --help` on a macOS 27 machine.**
+> ✅ **HISTORICAL GAP — closed 2026-08-17 by the beta-5 capture above.**
 >
 > **This box was written when the corpus had only Apple's narration. On 2026-08-02 three
 > third-party write-ups by people who did run it were found, and items 1–3 below are now
@@ -799,7 +814,8 @@ Package facts, all ✅ verified from the repo:
 
 That last line deserves a note, because it is stale in a useful direction:
 
-> ✅ **VERIFIED** — the README says contributions are not being taken, yet **PRs #7 through #18 were
+> ✅ **VERIFIED** — the README says contributions are not being taken, yet
+> **`apple/python-apple-fm-sdk` PRs #7 through #18 were
 > merged**, several from non-Apple contributors. The FD-leak fix in §13 came from an outside
 > contributor. So: file issues, and a well-argued PR may well land — but do not build a plan around
 > a feature you intend to contribute, and read the "alpha" classifier as sincere.
@@ -1045,7 +1061,8 @@ A diagnostic gift, and it is genuinely useful:
 >
 > 🔴 **GAP:** whether PyPI currently serves a prebuilt wheel for any platform could not be checked
 > (no network access during the research pass). `pyproject.toml`'s `package-data` entry
-> (`apple_fm_sdk = ["lib/*.a", "lib/*.dylib"]`) makes wheels *possible*, and issue #6's second
+> (`apple_fm_sdk = ["lib/*.a", "lib/*.dylib"]`) makes wheels *possible*, and
+> `apple/python-apple-fm-sdk#6`'s second
 > commenter explicitly asks for *"distributing a pre-compiled binary version like psycopg"*, which
 > implies none existed then. **Assume you are compiling.** Resolving needs one
 > `pip download apple-fm-sdk --no-deps -d /tmp/x && ls /tmp/x`.
@@ -1297,7 +1314,7 @@ Two caveats carried over from the Swift side, both of which people hit:
 property reported by developers on the forums, and a Python user has already reported it in this
 repository:
 
-> ✅ **VERIFIED** — issue #5 (open), @andrewgleave: *"I have a suite of test cases running against FM,
+> ✅ **VERIFIED** — `apple/python-apple-fm-sdk#5` (open), @andrewgleave: *"I have a suite of test cases running against FM,
 > many of which are triggering **erroneous guardrail violations even when configured with
 > `PERMISSIVE_CONTENT_TRANSFORMATIONS`**."* That issue is primarily about the missing feedback API
 > (§14), but the observation stands on its own.
@@ -2570,11 +2587,12 @@ Every usage form, straight from Apple's tests:
 > Test resource formats present in the repo: `.jpeg` and `.png`.
 
 The labelled form is the same mechanism as Swift's `Attachment(image).label(id)` — ✅ verified, the
-shim calls `Attachment(imageURL: url)` then `.label(_:)`. In Swift, that label is **required** for
-image *tool calls* and silently no-ops if omitted (see
+shim calls `Attachment(imageURL: url)` then `.label(_:)`. In Swift, that label is the stable handle
+for `ImageReference`-dependent output and tools. A 2026-08-20 device probe showed generic tool calls
+can still run unlabeled, while the transcript records `label:nil` (see
 [`../../part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md`](../../part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md)).
-Python has no tool-call image path to trip over, but the same discipline applies: **if your text
-refers to "the first image", label it and refer to the label.**
+Python has no tool-call image path to trip over, but the same discipline applies: **if your text or
+result must identify an image, label it and refer to the label.**
 
 ### 11.2 The iterable trap
 
@@ -3570,24 +3588,21 @@ async def batch(prompts, instructions, chunk=100):
 | | Status |
 |---|---|
 | Ships preinstalled with macOS 27 | ✅ verified (two sessions) |
-| Installed at `/usr/bin/fm` | 🟠 suggestive 2026-08-02 (one named-build report; one transcript-derived corroboration) — §2.1 |
+| Installed at `/usr/bin/fm` | ✅ project-verified 2026-08-17 on macOS 27 beta 5 |
 | `fm respond`, `fm chat`, `fm schema`, `fm schema object` | ✅ verified (spoken names) |
 | `fm serve` → Chat Completions endpoint | ✅ verified (Apple member, GitHub); subcommand corroborated in a `--help` paste |
-| Full subcommand list | 🟠 suggestive 2026-08-02 — **seven**, `--help` paste truncated on the last row — §2.2 |
-| `available`, `quota-usage`, `token-count` exist | 🟠 suggestive 2026-08-02 — never named by Apple — §2.2 |
-| `--model pcc`, `--image <path>`, `--schema <file>` | 🟠 suggestive 2026-08-02 (two independent command sources) — §2.4 |
-| `--help` | 🟠 suggestive 2026-08-02 (one pasted help artifact) — §2.2, §2.4 |
-| `--instructions` spelling | 🔴 **unknown** — listed by one source, demonstrated by none |
-| Short flag forms; flags of any subcommand but `respond` | 🔴 **unknown** |
-| `fm schema object` grammar | 🟠 suggestive 2026-08-02 — flag-per-property builder, JSON to stdout; **only `--string` attested** — §3 item 3 |
+| Full subcommand list | ✅ project-verified: **eight**; `count-tokens` and `license` correct the earlier report |
+| `available`, `quota-usage`, `count-tokens`, `license` exist | ✅ project-verified 2026-08-17 |
+| `respond` flags and short forms | ✅ fully captured, including `-m`, `-i`, `-g`, `-v`, `-h` |
+| `fm schema object` grammar | ✅ fully captured for this seed: scalar, nested object, `anyOf`, array, description, optional |
 | `/model`, `/save` in `fm chat` | ✅ verified |
 | Other slash commands | 🔴 **unknown** (and do not borrow `fmx`'s — §3 item 4) |
 | Default model = on-device; PCC opt-in and quota-limited | ✅ verified |
 | Structured output arrives as JSON on stdout | ✅ verified |
-| `fm serve` port, bind address, auth, protocol coverage | 🔴 **unknown** — §2.6 |
+| `fm serve` transport and advertised endpoints | ✅ TCP host/port or Unix socket; health, models, chat completions. Authentication and field-level compatibility remain untested. |
 | Exit codes, stderr discipline, streaming | 🔴 **unknown** |
 | Behaviour when Apple Intelligence is disabled | 🔴 **unknown** |
-| **Resolution** | one `fm --help` per subcommand on macOS 27 — §3. Unchanged: everything 🟠 above is third-party report, not a run by this project. |
+| **Resolution** | Managed beta-5 capture: `notes/sdk-interfaces/fm-help-27.0.txt`. |
 
 ### 17.6 Five rules that prevent most of the pain
 
@@ -3667,7 +3682,7 @@ Ranked by how much they would improve this guide.
 
 | # | Open question | What resolves it |
 |---|---|---|
-| 1 | **The entire `fm` command line** — subcommands, flags, `fm schema object`'s grammar, slash commands, `fm serve`'s protocol coverage, exit codes | A macOS 27 Mac and the seven `--help` invocations in §3 |
+| 1 | ~~The entire `fm` command line~~ ✅ **RESOLVED 2026-08-17** for beta 5; runtime-only residue: interactive slash commands, refusal/error exits, and field-level `serve` compatibility | Focused live calls against later macOS 27 seeds |
 | 2 | Is the **random-sampling seed** genuinely dead? | Two `respond()` calls with `SamplingMode.random(top=1, seed=1)` on a working install; diff the output (§8.6) |
 | 3 | Does `respond(generating=…, options=…)` really drop options? | Same install: one greedy call via `generating=` and one via `schema=`, repeated; compare variance (§8.3) |
 | 4 | Does **Python 3.14** actually make every property required? | Build the SDK on 3.14 and dump `MyType.generation_schema().to_dict()["required"]` (§9.3) |

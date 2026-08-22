@@ -383,7 +383,8 @@ is one of several reasons the fused primitive is better than your hand-composed 
 single-sequence attention in `float16` / `bfloat16` traces to the **NAX attention kernel's masked
 reduction at 64-aligned head dims** — and `MLX_ENABLE_TF32=0` does **nothing** about it, because the
 TF32 gate's third clause (`dtype != float32`) is satisfied regardless. The only lever that moves it
-is forcing a different architecture string. Source: mlx#3897 (OPEN, 7 comments), M5 base
+is forcing a different architecture string. Source: mlx#3897 (closed 2026-08-09; 7 comments at
+the research snapshot), M5 base
 `applegpu_g17g`, 32 GB, macOS 26.5.2 / build 25F84, reproduced on both mlx 0.31.2 and 0.32.0; M3 Max
 clean. Max |Δ logprob| ≈ **0.031–0.039**, argmax always matched.
 

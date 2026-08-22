@@ -181,10 +181,12 @@ regression head's output, and Apple's own answer on the forums is a redirect to 
 > Related: `summarizeHistory` flattens attachments away, after which the model answers about images it
 > can no longer see, from its own earlier description of them.
 >
-> 🔴 **GAP** — Apple has published **no** per-image token cost, no formula, and no resize policy — and
-> the 27.0 beta interface (checked 2026-07-29) carries no constant for it either. The two figures in
-> circulation (896 px, 576 tokens) are developer inference and a cross-backend community constant. Read
-> `response.usage` and measure your own.
+> 🟡 **DEVICE-NARROWED GAP** — Apple has published **no** per-image token cost, formula, or resize
+> policy. On iPhone 15 Pro / iOS build `24A5408d`, `tokenCount(for:)` returned 6 for text alone but
+> threw `LanguageModelError -1` for all six image sizes tested, even though `respond` accepted the
+> generated image. Read `response.usage` and measure successful turns; do not use image
+> `tokenCount(for:)` as a preflight on this seed. The same run confirmed labels write through to the
+> transcript and that an unlabeled image does **not** universally suppress generic tool invocation.
 
 ### [2.6 — The complete failure taxonomy: availability, errors, guardrails and refusals](references/06-availability-errors-and-guardrails.md)
 

@@ -840,13 +840,14 @@ If that returns a non-empty array on a launch where it returned empty last time,
 a storage purge) happened. That is your cue to show the "preparing" state proactively rather than
 letting the user discover it by tapping the feature.
 
-> 🔴 **GAP — where does the cache live on disk, and how big is it?**
-> Apple documents the cache's semantics and none of its physical properties. There is **no** API for
-> the on-disk size of a cache or an entry, **no** documented location for `AIModelCache.default`'s
-> storage, and **no** way to enumerate entries. `deleteAll()` is the only bulk operation.
-> **What would resolve it:** a device test that measures the app container before and after a
-> specialization, plus an `xcrun simctl`/container inspection to find the directory.
-> **Safe default meanwhile:** treat cache size as *approximately the size of the specialized
+> 🟡 **DEVICE-MEASURED ONCE — the API gap remains.** Apple still exposes **no** API for the
+> on-disk size of a cache or an entry, **no** documented location for `AIModelCache.default`'s
+> storage, and **no** way to enumerate entries. `deleteAll()` is the only bulk operation. On an
+> iPhone 15 Pro (`iPhone16,1`) running iOS 27 beta build `24A5408d`, specializing a deliberately
+> tiny 12,288-byte portable model grew `Library/Caches` by 24,576 bytes, left
+> `Library/Application Support` unchanged, and created `Library/Caches/coreai-cache`. That is one
+> beta/device/model observation, not a storage contract or a general 2× ratio.
+> **Safe default:** treat cache size as *approximately the size of the specialized
 > artifact*, which community measurements put in the same order of magnitude as the source asset —
 > a 1.9 GB `.aimodelc` and a 3 GB `.aimodelc` both appear in the corpus with device-side load
 > footprints of the same scale. Budget as if each `(asset, options)` pair costs you a second copy
@@ -921,33 +922,21 @@ happens when you delete an entry that a live `AIModel` is still using?
 > `AIModel` instance still uses a cache entry, **Core AI defers deletion until that instance is
 > deallocated.**"*
 
-Those cannot both be true. One says *throw*; the other says *defer silently and succeed*. Both are
-Apple documentation, published in the same doc set, in the same release.
+Those cannot both be true. On the tested beta, the runtime breaks the tie in favor of the reference
+pages:
 
-> 🔴 **GAP — the deletion-while-referenced behaviour is genuinely unresolved.**
+> ✅ **RESOLVED ON DEVICE FOR BUILD `24A5408d`.** A probe specialized and loaded a toy model,
+> retained the live `AIModel`, and called `deleteEntries(for:)`. The call threw
+> `AIModelCacheError.failedToPurge("Deletion could not be completed, assets still in use")`; the
+> entry remained findable. After releasing the model, the same delete succeeded. The observed
+> dynamic error name is useful for diagnostics, but `AIModelCacheError` is not declared in the
+> public beta Swift interface, so production code cannot match it as a public typed error.
 >
-> **What is unknown:** whether `deleteEntry`/`deleteEntries`/`deleteAll` throw when an `AIModel`
-> holds the entry, or return successfully and defer the deletion. The macOS 27.0 beta interface
-> confirms all four are spelled plain `throws` (✅ **SDK-verified** —
-> `CoreAIDelegates-27.0-macos.swiftinterface:37-43`) but cannot say *when* they throw. Also known
-> now (§3): if it throws, the error is **untyped** — there is no public cache error type in the
-> beta SDK to match on. Still unknown: whether the deferred-deletion reading means the entry stops
-> being findable by `model(for:options:)` immediately or only after dealloc.
->
-> **What would resolve it:** a five-line device test —
-> ```swift
-> let model = try await AIModel(contentsOf: url)          // hold a live reference
-> do { try AIModelCache.default.deleteEntries(for: url); print("succeeded") }
-> catch { print("threw:", error) }
-> ```
-> run on a real device with Xcode 27, then repeated with `model` out of scope. Nobody in this
-> corpus has run it.
->
-> **Safe default until then — write code that is correct under BOTH readings:**
+> **Production rule:**
 > 1. **Release every `AIModel` for that asset before deleting.** Scope them, `nil` them, or drop the
->    owning object. This is the only state in which both readings agree.
-> 2. **Wrap the delete in `do/catch` and treat a throw as non-fatal**, because under the reference
->    reading it is expected, not exceptional.
+>    owning object.
+> 2. **Wrap the delete in `do/catch` and treat a still-referenced throw as non-fatal.** The public
+>    SDK exposes only an untyped `throws`, so do not depend on the private dynamic type name.
 > 3. **Re-probe with `model(for:options:)` afterwards** instead of assuming the delete took effect.
 >
 > ```swift
@@ -957,15 +946,14 @@ Apple documentation, published in the same doc set, in the same release.
 >     do {
 >         try AIModelCache.default.deleteEntries(for: url)   // 2. tolerate a throw
 >     } catch {
->         log.warning("cache delete threw (may be deferred): \(error)")
+>         log.warning("cache delete threw; an AIModel may still pin the entry: \(error)")
 >     }
 >     // 3. verify rather than assume
 >     let options = ModelSpecialization.options(for: url)
 >     return (try? AIModelCache.default.model(for: url, options: options)) == nil
 > }
 > ```
-> Under the "throws" reading, step 1 makes step 2 succeed. Under the "defers" reading, step 1 makes
-> the deferral immediate. Under either, step 3 tells you the truth.
+> Step 3 catches a second live reference and protects the code if a later beta changes behavior.
 
 ### The pinning rule that underlies both readings
 
@@ -1143,6 +1131,9 @@ enum SharedModel {
 > **What would resolve it:** a device test asserting that the `AIModel` returned by
 > `specialize(…, cache: groupCache, …)` and the one returned by
 > `groupCache.model(for:options:)` reference the same entry (compare `bookmarkData`).
+> **Narrowed 2026-08-20:** the equivalent test on `AIModelCache.default` produced identical
+> 181-byte bookmarks for the returned and re-read models on the iPhone 15 Pro. The app-group
+> variant remains open because it needs an entitled host target.
 > **Safe default meanwhile:** use the two-step Apple demonstrates — `specialize(…, cache:)` for its
 > side effect, then `groupCache.model(for:options:)` to obtain the model you actually use. It is
 > one extra cheap call and it is the composition Apple's own examples show.
@@ -1346,7 +1337,7 @@ func uninstall(_ installed: InstalledModel, holder: inout AIModel?) {
     do {
         try AIModelCache.deleteEntry(referencedBy: installed.bookmark)
     } catch {
-        log.warning("bookmark-scoped delete threw: \(error)")   // see the §7 gap
+        log.warning("bookmark-scoped delete threw: \(error)")   // a live model may still pin it
     }
     if let localURL = installed.localURL {
         try? FileManager.default.removeItem(at: localURL)
@@ -1354,9 +1345,9 @@ func uninstall(_ installed: InstalledModel, holder: inout AIModel?) {
 }
 ```
 
-> ⚠️ Note that `deleteEntry(referencedBy:)` carries the **same** repeated NOTE about live `AIModel`
-> references as the other three delete methods — so the §7 contradiction applies here too. Release
-> the model first.
+> ⚠️ `deleteEntry(referencedBy:)` carries the **same** repeated NOTE about live `AIModel`
+> references as the other three delete methods. The iPhone 15 Pro probe in §7 confirms the throws
+> branch for URL-keyed deletion; release the model before bookmark-keyed deletion too.
 
 ### When *not* to use bookmarks
 
@@ -1724,11 +1715,13 @@ discovered what happens if you get it wrong.
 
 ### 🔴 GAP
 
-> 🔴 **GAP — `expectFrequentReshapes` is undocumented in every respect that matters.**
+> 🔴 **GAP — `expectFrequentReshapes` remains undocumented in the behavioral respects that matter.**
 >
 > **What is unknown:**
-> 1. **Its default value.** `.default` and `.cpuOnly` are opaque `let`s and Apple never prints the
->    flag. It is not even certain that all three constructors agree on it.
+> 1. ~~**Its default value on a current device.**~~ ✅ **Measured 2026-08-20:** `.default` and
+>    `.cpuOnly` both report `false` on a physical iPhone 15 Pro running iOS 27 beta 5
+>    (`24A5408d`). This is a runtime observation, not a documented cross-device guarantee; the
+>    `init(preferredComputeUnitKind:)` family still needs an explicit read if its default matters.
 > 2. **What it actually changes.** "More optimal specialization" is the entire specification. Whether
 >    it compiles a shape-generic kernel, defers some compilation, widens a shape-bucket policy, or
 >    something else, is not stated anywhere.
@@ -1742,13 +1735,13 @@ discovered what happens if you get it wrong.
 >    contains several unrelated MPSGraph compiler crashes in the same window, which makes a beta bug
 >    entirely plausible.
 >
-> **What the SDK dump did and did not resolve (2026-07-29):** the captured beta interface
+> **What the SDK dump and device probe did and did not resolve:** the 2026-07-29 beta interface
 > confirms the spelling — `public var expectFrequentReshapes: Bool`, the only settable property on
 > `SpecializationOptions` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:100`) —
 > but a `.swiftinterface` prints neither a stored property's default value nor which members feed
-> the synthesised `Hashable`, so unknowns 1 and 3 survive the dump.
-> **What would still resolve them:** printing `SpecializationOptions.default.expectFrequentReshapes`
-> on device; and a controlled device A/B of first-load time
+> the synthesised `Hashable`. `probes/` closed the concrete `.default` / `.cpuOnly` measurement on
+> 2026-08-20 (`false` for both), while unknown 3 survives.
+> **What would still resolve the behavioral questions:** a controlled device A/B of first-load time
 > with the flag on and off, on both a static-shape and a dynamic-shape asset, on a non-beta OS.
 > (`coreai-build compile --help` has now been run — 2026-07-31, via the Metal Toolchain component,
 > see §13 — and confirms the compile-side flag spelling `--expect-frequent-reshapes`, *"Hint that
@@ -2748,12 +2741,12 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 | # | Gap | What would resolve it | Section |
 |---|---|---|---|
 | 1 | ~~The error type thrown by `AIModel.init`, `loadFunction`, `run`, and the cache `delete*` methods~~ **CLOSED 2026-07-29 by the SDK interface dump: untyped throws; `AssetError` is the only public error type in the beta SDK** | — | §3 |
-| 2 | **Deletion while an `AIModel` is live: throws (reference) or defers (article)?** (interface confirms `throws` spellings only) | A five-line device test with and without a live reference | §7 |
+| 2 | ~~Deletion while an `AIModel` is live: throws (reference) or defers (article)?~~ **CLOSED 2026-08-20 on iPhone 15 Pro / iOS build `24A5408d`: throws while referenced, remains findable, succeeds after release** | Re-run on later betas to detect drift | §7 |
 | 3 | Cancellation semantics of `specialize` / `init(contentsOf:)` | Cancel a `Task` mid-specialization and inspect the cache | §5 |
-| 4 | Where the cache lives on disk and how large an entry is | Container inspection before/after a specialization | §6 |
+| 4 | **Cache location/size is undocumented; narrowed on device to `Library/Caches/coreai-cache` for the default cache (12,288-byte toy produced 24,576-byte growth)** | Repeat across realistic models/devices; a public size/enumeration API | §6 |
 | 5 | The exact composition of `.default` / `.persistent` in terms of `PurgeConditions` | Printing the raw values, or Apple documenting them | §6 |
-| 6 | Whether the `AIModel` returned by `specialize(…, cache: groupCache)` is backed by the group entry | Compare `bookmarkData` against `groupCache.model(for:options:)`'s | §8 |
-| 7 | **`expectFrequentReshapes`: default value, semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** (spelling now SDK-verified; defaults don't print in an interface) | Printing `SpecializationOptions.default.expectFrequentReshapes` on device, plus a controlled A/B | §11 |
+| 6 | Whether the `AIModel` returned by `specialize(…, cache: groupCache)` is backed by the group entry (**default-cache equivalent closed: identical 181-byte bookmarks**) | Repeat the bookmark comparison in an entitled app-group target | §8 |
+| 7 | **`expectFrequentReshapes`: semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** — spelling is SDK-verified; `.default` and `.cpuOnly` both measured `false` on an iPhone 15 Pro, 2026-08-20 | A controlled static/dynamic A/B; Apple documentation for the semantic contract | §11 |
 | 8 | ~~The full `coreai-build` CLI surface, `--preferred-compute` values, architecture codes, and any subcommands beyond `compile`/`package`~~ **CLOSED 2026-07-31: `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app; `--help` captured (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) — subcommands `compile`/`package`/`inspect`/`metadata`, `--preferred-compute {gpu, neural-engine, none}`, 24 architecture codes enumerated by probing** | — | §13 |
 | 9 | What `--platform watchOS` / `--platform tvOS` produce, given the AOT hardware gate names neither (narrowed 2026-07-31: tvOS accepts codes `h11p`/`h14p` per the validation probe; watchOS accepted none of the swept codes on a macOS 26.5 host) | Running the compile on a real `.aimodel` and reporting the output | §14.1 |
 | 10 | **Whether iOS can JIT a portable `.aimodel` at all**, or whether the reported `Code=2` failures are purely platform-tag mismatches | Export a small model `--platform iOS`, load the **uncompiled** asset on an iPhone | §14.4 |

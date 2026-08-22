@@ -2,7 +2,7 @@
 
 **172 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-08-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-08-20. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -135,8 +135,8 @@
 - [compatibleAdapterNotFound really means the adapter is not downloaded yet; the name sends you auditing compatibility](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#42-apples-answer-one-missing-call) — 17.2 🔇
 - [A download that never starts yields an AsyncSequence with zero elements; 0% progress is indistinguishable from pending](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#45-the-sibling-failure-a-download-that-never-starts-and-never-complains) — 17.2 🔇
 - [A generic catch turns every user cancellation into an error banner; it reads as flakiness, not a ladder bug](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#62-what-the-ordering-does-do) — 17.3 🔇
-- [Prompting in an unsupported locale throws nothing; the model answers anyway, so a catch arm never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63--gap-two-thrown-rows-plus-one-measured-nonthrow--one-value-two-checks-the-concern-is-real) — 17.3
-- [unsupportedLanguageOrLocale is not raised by out-of-set prompts; gate with supportsLocale yourself](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63--gap-two-thrown-rows-plus-one-measured-nonthrow--one-value-two-checks-the-concern-is-real) — 17.3
+- [An unsupported-locale prompt can silently succeed on the simulator; a catch arm never fires.](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-destination-dependent-bridging--one-value-two-checks-the-concern-is-real) — 17.3
+- [The same unsupported locale bridges differently by destination: simulator success, physical-device guardrailViolation, never unsupportedLanguageOrLocale.](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#63-destination-dependent-bridging--one-value-two-checks-the-concern-is-real) — 17.3
 - [Server 429s arrive as RequestError.httpError, never .rateLimited; backoff keyed on .rateLimited never fires](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#81-the-concrete-evidence) — 17.3 🔇
 - [availability/isAvailable can report healthy while the call still throws (catalog asset and PCC entitlement failures)](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#132-comappleunifiedassetframework-code5000--the-model-catalog) — 17.3 🔇
 - [A green Xcode 26 run proves MLX inference only; the FM adapter is not in that binary, so one check covers half](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#84-what-ran-where) — 17.4
@@ -188,7 +188,7 @@
 - [Utilities package traps: from: 1.0.0 never resolves, SkillActivations lost its collection shape, API is experimental](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#45-additive--skills-and-history-modifiers-the-utilities-package) — 17.1
 - [Evaluations ships no agreement statistic; the sample's Statistics.cohensKappa is 72 lines of hand-rolled Swift](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#51-additive--the-evaluations-framework-xcode-27) — 17.1
 - [.coreaimodel, .aiasset and a coreai-torch convert CLI are fabrications; real forms are .aimodel/.aimodelc directories](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
-- [Docs describe resolved(in:) but the 27.0 beta interface ships only resolve(in:), with no deprecation attribute](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#76-superseded--imagereferenceresolvein--resolvedin) — 17.1
+- [Beta 4, beta 5, and current docs expose conflicting ImageReference resolve/resolved spellings and argument types; compile against the selected SDK.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#76-contradicted--imagereferenceresolvein-vs-resolvedin) — 17.1
 - [The apple-intelligence/private-cloud-compute documentation path 404s; use the shorter private-cloud-compute URL](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#144-apple-documentation-pages) — 17.1
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
 - ['8K context on iOS 27' is an uncorroborated third-party comment; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
@@ -235,8 +235,8 @@
 - [Whether the concurrency/thermal restriction also covers SystemLanguageModel is unanswered on the forums](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#68-behavioural--concurrency-and-thermals-throttle-you-invisibly) — 17.1
 - [Custom LoRA adapters are removed outright; the LanguageModel protocol succeeds the goal, not the train-a-delta mechanism](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#81-withdrawn--custom-lora-adapters) — 17.1
 - [Meta note: this section collects every silent failure in the 26-to-27 migration into one table](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-every-silent-failure-in-this-migration-collected) — 17.1
-- [FoundationModelsCoffeeGame still targets iOS 26.0; cite it only as the before column, never as 2026 API](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [SwiftTranscriptionSampleApp is a WWDC25 leftover, named only so nobody mistakes it for 2026 evidence](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
+- [FoundationModelsCoffeeGame still targets iOS 26.0; cite it only as the before column, never as 2026 API](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [Repeated audit result: the coreai documentation index contains zero sample-code projects](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#142-apple-sample-code-projects-used) — 17.1
 - [Session 241's transcript says 'Our 2027 release' while every OS reference is 27; do not write '2027 release'](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#146-transcripts) — 17.1
 - [Three unresolved unknowns about legacy adapters under iOS 27, each paired with a safe default](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2

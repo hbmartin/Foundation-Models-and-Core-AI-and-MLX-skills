@@ -1,8 +1,8 @@
 # API & symbol index — Migrating an Apple AI integration from 26 to 27
 
-**401 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**401 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>107 symbols</sub>
 
@@ -53,6 +53,7 @@
 | `LanguageModelError.refusal(_:)` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelError.Refusal.explanation` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelError.unsupportedCapability(_:)` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `LanguageModelError.unsupportedGenerationGuide` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelError.unsupportedGenerationGuide(_:)` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelError.unsupportedLanguageOrLocale(_:)` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelError.unsupportedTranscriptContent` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
@@ -111,7 +112,6 @@
 | `Transcript.Entry` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `Transcript.Entry.reasoning` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `Transcript.history` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `Transcript.Prompt.contextOptions` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Transcript.Segment` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `Transcript.structuredTranscript` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `TranscriptErrorHandlingPolicy` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |

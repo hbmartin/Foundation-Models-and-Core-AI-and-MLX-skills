@@ -2437,7 +2437,7 @@ def stable_logsumexp(x: torch.Tensor, dim: int, keepdim: bool = False) -> torch.
 
 ### 9.2 Integer true-divide truncates instead of promoting to float
 
-**Status:** PR **#32** open, unmerged.
+**Status:** `apple/coreai-torch#32` merged 2026-07-29.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:3591-3592` and `:3722`:
 
@@ -2479,8 +2479,10 @@ return coreai.broadcasting_divide(
 )
 ```
 
-That is exactly the fix PR #32 proposes — re-point `div.Tensor` / `div.Scalar` /
-`true_divide.Tensor` at `replace_truediv`.
+That is exactly the fix merged by `apple/coreai-torch#32` on 2026-07-29 — re-point
+`div.Tensor` / `div.Scalar` / `true_divide.Tensor` at `replace_truediv`. The source excerpt above
+is the pre-merge defect snapshot; refresh the research mirror before treating those line numbers
+as current HEAD.
 
 > ⚠️ **SILENT FAILURE.** From PR #32, verbatim: the generic handler *"keeps same-kind integers as
 > integers — correct for add/sub/mul, **wrong for true divide**: it divided as ints then cast,
@@ -2547,7 +2549,7 @@ if func is torch.ops.aten.slice.Tensor:
 
 ### 9.4 int64 accumulator narrowing in `sum` and `prod`
 
-**Status:** PR **#45** **closed without merge**. The defect stands.
+**Status:** `apple/coreai-torch#45` **closed without merge**. The defect stands.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:2692-2701`, `replace_sum_dim_intlist`:
 

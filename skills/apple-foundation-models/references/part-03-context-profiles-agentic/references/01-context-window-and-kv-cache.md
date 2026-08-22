@@ -39,10 +39,11 @@ Concretely:
   schemas, which are re-sent per request).
 - **`contextSize`** on `SystemLanguageModel` and `PrivateCloudComputeLanguageModel`, and the
   Apple-published 4K / 32K split. **The on-device window is 4096 tokens per `LanguageModelSession`** —
-  Apple's docs, the WWDC slide and **TN3193** all say so, and a 2026-07-31 runtime probe measured
-  4096 on both the macOS 26.5 host and the 27.0 sim runtime; the lone third-party claim of 8192 is a
-  footnote resting solely on unverified iOS 27 *hardware* (§3.3). The rule is unchanged:
-  **read `contextSize` at runtime, never hardcode.**
+  Apple's docs, the WWDC slide and **TN3193** all say so. Runtime probes measured 4096 on the
+  macOS 26.5 host, the iOS 27 simulator, and — on 2026-08-20 — a physical iPhone 15 Pro running
+  iOS 27 beta 5. The lone third-party claim of 8192 is now contradicted by the first project-run
+  hardware measurement, but the rule is unchanged: **read `contextSize` at runtime, never
+  hardcode.** (§3.3)
 - **`tokenCount(for:)`** — the only pre-flight budget check that exists, its five overloads, and the
   OS floor that makes it unusable as your only strategy.
 - **`Usage`** and `Usage.Input.cachedTokenCount` — the post-hoc accounting, and the cache-hit-rate
@@ -595,14 +596,14 @@ device-specific report.
 > other than 4096. TN3193's number stands as the documented expectation; §3.4's read-don't-hardcode
 > rule is now visibly what the SDK itself is built for.
 
-> ✅ **Probe-verified, 2026-07-31 — a 27 *runtime* answers, and it answers 4096.** (`probes/`
-> `fm.contextSize`, run on the macOS 26.5 host AND the 27.0 sim runtime, where the dynamic
-> `_contextSize` path is live.) Both report **4096** — and a second, independent probe agrees: the
-> context-overflow error text on the 27.0 sim runtime reads *"…exceeds the maximum allowed context
-> size of 4096"* (`probes/` `fm.error-domain-context-overflow`). So the first dynamic answer we
-> have from a 27 runtime is still 4096, and **the noema 8192 comment now rests entirely on iOS 27
-> *hardware*** — the sim runtime does not corroborate it. The device-27 measurement remains the one
-> open residual; the read-don't-hardcode rule is unchanged either way.
+> ✅ **Probe-verified on simulator and hardware.** On 2026-07-31, `probes/` `fm.contextSize`
+> measured **4096** on the macOS 26.5 host and iOS 27 simulator, where the dynamic `_contextSize`
+> path is live. The simulator's context-overflow error independently reads *"…exceeds the maximum
+> allowed context size of 4096"* (`fm.error-domain-context-overflow`). On **2026-08-20**, the same
+> probe measured **4096 on a physical iPhone 15 Pro** (`iPhone16,1`, iOS 27.0 beta-5 build
+> `24A5408d`, Xcode `27A5237l`). The project now has a real 27-hardware answer and it still does
+> not corroborate the lone 8192 source comment. This closes the hardware residual for that device;
+> it does not turn 4096 into a value applications should hardcode.
 
 **Why this does not make the number safe to hardcode.** Apple's 26.4 announcement said the point of
 these APIs is *"to adapt your app to the hardware it's running on"* (session 241, `241:L14-19`);

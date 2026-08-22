@@ -129,15 +129,17 @@ five-rung recovery ladder for wedged loads.
 > `SIGSEGV` inside the Metal compiler with no message (§11). And **`coreai-build compile` exits 0 for
 > architectures the device will reject**; only a device load validates the choice (§13).
 >
-> 🔴 **GAP — Apple's reference pages and Apple's article contradict each other (§7).** Delete a cache
-> entry a live `AIModel` still references and the reference pages say *"an error is thrown"* while the
-> prose article says Core AI *"defers deletion."* The guide quotes both, gives a device test that would
-> settle it, and shows code correct under either reading. The full `coreai-build` CLI surface, open
+> ✅ **DEVICE-RESOLVED 2026-08-20 — the reference pages describe the tested runtime (§7).** On an
+> iPhone 15 Pro running iOS 27 build `24A5408d`, deleting an entry retained by a live `AIModel`
+> threw, left the entry findable, and succeeded after release; the article's silent-deferral wording
+> did not match this run. The guide retains release-delete-verify code and notes that the observed
+> error type is non-public. The full `coreai-build` CLI surface, open
 > when this was written, **closed 2026-07-31**: the tool ships in the optional **Metal Toolchain
 > component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app itself — which is
 > why the 2026-07-29 check found it absent — and its full `--help` is captured in
 > `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt` (§13). Still open: cancellation semantics
-> for `specialize`.
+> for a specialization large enough to remain in flight when cancellation arrives; the 12 KB device
+> fixture completed before it could exercise that branch.
 
 ### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
 

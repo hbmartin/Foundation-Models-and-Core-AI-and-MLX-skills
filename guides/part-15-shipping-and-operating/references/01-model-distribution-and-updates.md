@@ -1319,7 +1319,7 @@ The codes observed in the wild, with what they were reported to correspond to:
 | `h16g` | iPad M4-class | used successfully in a Flux2 compile on iPad Pro M4 | community-reported |
 | `h16s` | M4 Max Mac | used in a compile that then **failed to load** (see below) | community-reported, contested |
 | `h16c` | M4 Max Mac (`Mac16,x`) | *"only `h16c` loads … on an M4 Max"* | community-measured, contested |
-| `h16p` | iPhone 15 Pro-class | listed in an arch glossary | community-reported, unvalidated |
+| `h16p` | iPhone 15 Pro (`iPhone16,1`; hardware `D83AP`) | `AIModel.deviceArchitectureName` printed by this project's physical-device probe on iOS 27 beta 5 (`24A5408d`), 2026-08-20 | ✅ project device-verified |
 | `h13g` `h14g` `h15g` `h16g` `h16p` `h17g` `h17p` `h18p` | the **8 iOS archs** emitted by one `--platform iOS --preferred-compute neural-engine` run | full output listing | community-measured |
 | `h13c` … `h17s` | the **20 macOS archs** emitted by one `--platform macOS` run | count + range only | community-measured |
 
@@ -1342,9 +1342,11 @@ Sources: `notes/repos/john-rocky-models.md:1161-1164, 1176-1181`;
 > device-support data). Method and full matrix:
 > `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, final section.
 >
-> **What is still unknown:** the authoritative list of `deviceArchitectureName` values (the
-> compiler's accepted set is the best proxy, not a definition); the mapping from
-> each code to a device family; and which code a given Mac actually reports.
+> **What is still unknown:** the authoritative complete list of `deviceArchitectureName` values
+> (the compiler's accepted set is the best proxy, not a definition), most code-to-device mappings,
+> and which code a given Mac actually reports. One mapping is now project-verified rather than
+> community-attested: on 2026-08-20, `probes/` printed **`h16p`** on a physical iPhone 15 Pro
+> (`iPhone16,1`, `D83AP`) running iOS 27 beta-5 build `24A5408d`.
 >
 > **The contested part is specific and worth naming.** Two community sources disagree about the M4
 > Max Mac. One says `h16c` is the only code that loads there
@@ -2389,13 +2391,13 @@ Note the asymmetry, worth knowing: there is `inputCount` and `outputCount` but *
 > defers deletion until that instance is deallocated."* ✅ VERIFIED
 > (`notes/web/apple-docs-coreai.md:1343`).
 >
-> These describe different behaviours. One throws and does nothing; the other succeeds and does the
-> work later.
+> These describe different behaviours. On an iPhone 15 Pro running iOS build `24A5408d`, the
+> runtime followed the reference pages: `deleteEntries(for:)` threw
+> `AIModelCacheError.failedToPurge` while a live model pinned the entry, the entry remained
+> findable, and deletion succeeded after release. That dynamic error type is not public in the
+> captured beta SDK, so do not pattern-match it.
 >
-> **What would resolve it:** calling `deleteEntries(for:)` while holding a live `AIModel` on a
-> device and observing. That is a five-line test and nobody in our corpus has run it.
->
-> **SAFE DEFAULT: write code that is correct under BOTH readings.** Release every `AIModel` and
+> **SAFE DEFAULT:** release every `AIModel` and
 > `InferenceFunction` for the entry first, then delete, then treat a throw as recoverable and retry
 > once on the next app lifecycle event. Never rely on deferred deletion to reclaim storage you have
 > promised the user — verify by re-measuring the directory (§11.6).
@@ -2764,9 +2766,9 @@ try AIModelCache.deleteEntry(referencedBy: record.bookmark)
 ✅ VERIFIED — `static func deleteEntry(referencedBy bookmark: Data) throws`
 (`notes/web/apple-docs-coreai.md:1016, 1032`).
 
-⚠️ Subject to the same in-use ambiguity as §7.4: the reference page's NOTE about throwing when an
+⚠️ Subject to the same live-reference pin as §7.4: the reference page's NOTE about throwing when an
 `AIModel` still references the entry is repeated on **all four** delete APIs, this one included.
-Release the model first.
+The URL-keyed device probe selected that throws branch; release the model first.
 
 ---
 
@@ -3576,19 +3578,21 @@ enum ModelStorageAudit {
 }
 ```
 
-> 🔴 **GAP (API absence now SDK-confirmed) — there is no API to measure or locate the Core AI
+> 🟡 **API GAP, DEVICE LOCATION MEASURED ONCE — there is no API to measure or locate the Core AI
 > cache.** `AIModelCache` exposes `default`, `init?(appGroup:)`, `model(for:options:)`, four
 > delete methods and the `Policy`/`PurgeConditions` types, and **nothing else** — no size property,
 > no entry enumeration, no on-disk location. That is no longer just the doc index talking: the
 > macOS 27.0 beta interface dump (2026-07-29) shows exactly that surface
 > (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:27-71`), and the `CoreAICache`
 > SubFramework module — the obvious place for a richer cache API — has an **empty public Swift
-> surface** in this beta (`CoreAICache-27.0-macos.swiftinterface`). Where entries live on disk
-> remains open (`notes/web/apple-docs-coreai.md:2017`).
+> surface** in this beta (`CoreAICache-27.0-macos.swiftinterface`). A 2026-08-20 iPhone 15 Pro /
+> iOS build `24A5408d` container diff narrowed the implementation: specializing a 12,288-byte toy
+> model grew `Library/Caches` by 24,576 bytes, left `Library/Application Support` unchanged, and
+> created `Library/Caches/coreai-cache`. That path and ratio are observations, not contracts.
 >
-> **What would resolve the rest:** Apple adding a size/enumeration API, or somebody diffing the app
-> container before and after a specialization on a device to locate the store. The latter would give
-> you a path, not a supported API — do not ship code that reads it.
+> **What would resolve the rest:** Apple adding a size/enumeration API, plus repeated container diffs
+> across realistic assets and devices. The existing result gives you a diagnostic path, not a
+> supported API — do not ship code that reads it.
 >
 > **SAFE DEFAULT:** report source-asset sizes, which you *can* measure, and label the figure
 > honestly: *"Downloaded models: 3.6 GB. Preparing a model uses additional space that iOS manages."*
@@ -3612,8 +3616,8 @@ Two smaller patterns from the same codebase worth stealing:
 - **Verify an unload actually happened.** *"Unloading must be verified: sample `phys_footprint`
   before/after with a 500 ms settle; treat <32 MiB released as 'unchanged'"*
   (`notes/repos/noema-ios.md:2060`). The same skepticism applies to disk: after a teardown,
-  re-measure rather than trusting that the delete worked — especially given §7.4's unresolved
-  deferred-versus-throwing deletion semantics.
+   re-measure rather than trusting that the delete worked — especially because §7.4's device run
+   showed a live reference makes deletion throw.
 
 ### 11.7 Scheduling downloads considerately
 
@@ -3902,12 +3906,12 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 |---|---|---|---|
 | 1 | **The 2026 Background Assets API for Core AI.** No Apple sample, no WWDC26 transcript, no docs page shows BA delivering a `.aimodel`/`.aimodelc`. §3.2 | The WWDC25 "Discover Apple-Hosted Background Assets" transcript; the current `backgroundassets` reference; any Apple sample. `coreai` currently has **zero** sample-code projects. | Build against your own `ModelDelivery` protocol; implement with `URLSession` first. |
 | 2 | **The packaging CLI for model asset packs.** Only `xcrun ba-package foundation-models package` is attested, and it is adapter-specific (adapters are discontinued in 27). §3.3 | `xcrun ba-package --help` on Xcode 27. | Do not script packaging until you have run `--help`. |
-| 3 | **The `deviceArchitectureName` value set** — narrowed 2026-07-31: the set of codes the *compiler* accepts is now enumerated (24, `h11p…h18p`, via validation probing; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`), but which code each *device* reports remains community-attested and internally contested for Macs (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
+| 3 | **The `deviceArchitectureName` value set** — narrowed 2026-07-31: the compiler accepts 24 codes (`h11p…h18p`; `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`). Narrowed again 2026-08-20: a physical iPhone 15 Pro (`iPhone16,1`, `D83AP`) project-verified `h16p`; most device mappings remain community-attested and Macs remain contested (`h16c` vs `h16s`). §4.4 | Printing the property on one device per family. | Never hardcode. Derive at runtime. Always ship the portable fallback. |
 | 4 | ~~**`--architecture` / `--expect-frequent-reshapes` spellings.**~~ **CLOSED 2026-07-31: both flags tool-verified via `compile --help` — `coreai-build` ships in the Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`), which is why the component-less check of 2026-07-29 could not resolve it. Probing also enumerated the 24 valid `--architecture` codes (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`); the code→device mapping stays open as gap #3.** §4.2 | — | Unchanged: verify on your own machine (with the component installed) before writing a build script. |
 | 5 | ~~**`AIModelError` is not documented.**~~ **CLOSED 2026-07-29 by the SDK interface dump: `AIModelError` is not public in the macOS 27.0 beta SDK; the loading APIs throw untyped; `AssetError` is the only public error type.** §5.3 | — | Do not pattern-match the private type or infer permanent incompatibility from an untyped throw. Preserve cancellation; log and rethrow unknowns. An injected incompatibility classifier must default false; keep cache repair separate and bounded. |
-| 6 | **Deleting an in-use cache entry: throws or defers?** The reference pages and the prose article disagree; the beta interface confirms the `throws` spellings only. §7.4 | A five-line device test. | Write code correct under both: release models, then delete, then retry a throw. |
+| 6 | ~~**Deleting an in-use cache entry: throws or defers?**~~ **CLOSED 2026-08-20 on iPhone 15 Pro / iOS build `24A5408d`: it throws while referenced, remains findable, and succeeds after release.** §7.4 | Re-run on later seeds. | Release models, delete, verify; catch generically because the observed error type is non-public. |
 | 7 | ~~**No progress API for specialization.**~~ **CONFIRMED ABSENT in the macOS 27.0 beta interface (2026-07-29): the full public loading surface has no progress reporting.** §6.4 | Apple shipping one in a later release. | Indeterminate indicator plus honest text and a measured estimate. |
-| 8 | **No API to size or locate the Core AI cache** — API absence now SDK-confirmed (the beta `AIModelCache` surface is exactly the documented members; the `CoreAICache` module's public surface is empty); the on-disk location remains unknown. §11.6 | Apple adding one, or a container diff locating the store. | Report source-asset sizes, label the figure honestly, ship a Remove button that reclaims the rest. |
+| 8 | **No API to size or locate the Core AI cache** — API absence remains SDK-confirmed; narrowed 2026-08-20 when a toy-model device diff observed the default cache at `Library/Caches/coreai-cache` (not a documented contract). §11.6 | Apple adding an API; repeat container diffs across realistic assets/devices. | Report source-asset sizes, label the figure honestly, ship a Remove button that reclaims the rest. |
 | 9 | **Raw composition of `.default` / `.persistent` purge conditions.** 🟡 inferred from prose. §11.2 | Reading back `purgeConditions` on device. | Use the shipped constants; do not construct your own policy yet. |
 | 10 | **The "(on iOS)" qualifier on `AIModelCache(appGroup:)`'s invalid-identifier case.** §10.3 | Calling it with a bogus identifier on macOS 27 and iOS 27. | Treat `nil` as the only failure signal everywhere. |
 | 11 | **Specialized-asset size and specialization scratch requirements.** No Apple figure. §11.4 | Measuring your model on your slowest device. | Budget 3× the asset plus 512 MB headroom, then replace with a measurement. |

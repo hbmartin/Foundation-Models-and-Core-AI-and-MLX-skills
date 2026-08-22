@@ -1,6 +1,6 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.27.1 clang-2100.3.27.1)
-// swift-module-flags: -target arm64e-apple-macos27.0 -target-variant arm64e-apple-ios27.0-macabi -enable-objc-interop -enable-library-evolution -language-mode 5 -O -library-level api -enable-upcoming-feature MemberImportVisibility -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -user-module-version 10.0.39 -module-name Vision
+// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.31.4 clang-2100.3.31.1)
+// swift-module-flags: -target arm64e-apple-macos27.0 -target-variant arm64e-apple-ios27.0-macabi -enable-objc-interop -enable-library-evolution -language-mode 5 -O -library-level api -enable-upcoming-feature MemberImportVisibility -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -user-module-version 10.0.44 -module-name Vision
 // swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4
 import AVFoundation
 import Accelerate
@@ -877,6 +877,9 @@ public struct RecognizeAnimalsRequest : Vision::ImageProcessingRequest {
   public typealias Result = [Vision::RecognizedObjectObservation]
   public enum Revision : Swift::Comparable, Swift::Sendable, Swift::Equatable, Swift::Codable, Swift::Hashable {
     case revision2
+    @available(macOS 27.0, iOS 27.0, tvOS 27.0, visionOS 27.0, *)
+    @available(watchOS, unavailable)
+    case revision3
     public static func < (lhs: Vision::RecognizeAnimalsRequest.Vision::Revision, rhs: Vision::RecognizeAnimalsRequest.Vision::Revision) -> Swift::Bool
     public static func == (a: Vision::RecognizeAnimalsRequest.Vision::Revision, b: Vision::RecognizeAnimalsRequest.Vision::Revision) -> Swift::Bool
     public func encode(to encoder: any Swift::Encoder) throws
@@ -897,7 +900,24 @@ public struct RecognizeAnimalsRequest : Vision::ImageProcessingRequest {
       get
     }
   }
+  @available(macOS 27.0, iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *)
+  public enum Identifier : Swift::String, Swift::Sendable, Swift::Equatable, Swift::Codable, Swift::Hashable {
+    case dog
+    case cat
+    case dogHead
+    case catHead
+    public init?(rawValue: Swift::String)
+    @available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+    public typealias RawValue = Swift::String
+    public var rawValue: Swift::String {
+      get
+    }
+  }
   public var supportedAnimals: [Vision::RecognizeAnimalsRequest.Vision::Animal] {
+    get
+  }
+  @available(macOS 27.0, iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *)
+  public var supportedIdentifiers: [Vision::RecognizeAnimalsRequest.Vision::Identifier] {
     get
   }
   public var regionOfInterest: Vision::NormalizedRect
@@ -1732,6 +1752,9 @@ final public class GenerateIterativeSegmentationRequest : Vision::ImageProcessin
   final public var qualityLevel: Vision::GenerateIterativeSegmentationRequest.Vision::QualityLevel {
     get
     set
+  }
+  final public var supportedComputeStageDevices: [Vision::ComputeStage : [CoreML::MLComputeDevice]] {
+    get
   }
   public static func == (lhs: Vision::GenerateIterativeSegmentationRequest, rhs: Vision::GenerateIterativeSegmentationRequest) -> Swift::Bool
   final public func hash(into hasher: inout Swift::Hasher)
@@ -3500,6 +3523,8 @@ extension Vision::HumanHandPoseObservation.Vision::JointName : Swift::RawReprese
 extension Vision::HumanHandPoseObservation.Vision::JointsGroupName : Swift::RawRepresentable {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, visionOS 2.0, watchOS 27.0, *)
 extension Vision::RecognizeAnimalsRequest.Vision::Animal : Swift::RawRepresentable {}
+@available(macOS 27.0, iOS 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, *)
+extension Vision::RecognizeAnimalsRequest.Vision::Identifier : Swift::RawRepresentable {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, visionOS 2.0, watchOS 27.0, *)
 extension Vision::HumanBodyPoseObservation.Vision::JointName : Swift::RawRepresentable {}
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, visionOS 2.0, watchOS 27.0, *)

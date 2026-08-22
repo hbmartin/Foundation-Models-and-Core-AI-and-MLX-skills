@@ -497,10 +497,13 @@ Two facts fall out of that trace that are not in the session:
   `tool.parameters` verbatim — a **complete query DSL** (discriminated `search | schema | help |
   display` queries; `AllText`/`ContentType`/`Application` predicates; temporal models with
   variables and `DateComponents`; pipeline stages including `Compute`, `Count` and `Custom`;
-  `x-order` annotations throughout). It is published nowhere else. The complete **83,494-character**
-  value is preserved in
+  `x-order` annotations throughout). It is published nowhere else. The beta-4
+  **83,494-character** value is preserved in
   [`probes/artifacts/spotlight-tool-schema-simulator-os27.0.0-24A5390f-xcode-27A5228h.txt`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/probes/artifacts/spotlight-tool-schema-simulator-os27.0.0-24A5390f-xcode-27A5228h.txt),
-  exported from the matching XCTest result bundle; it is no longer inferred from a truncated log.
+  and the beta-5 **83,570-character** device value in
+  [`probes/artifacts/spotlight-tool-schema-device-os27.0.0-24A5408d-xcode-27A5237l.txt`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/probes/artifacts/spotlight-tool-schema-device-os27.0.0-24A5408d-xcode-27A5237l.txt).
+  The whole schema drift is one clarified description: `from` now says to omit it on the entry
+  query stage and set it only when consuming a prior stage.
 
 > ⚠️ **Probe-measured 2026-07-31 — direct programmatic `call(arguments:)` is a dead end in this
 > beta, and it fails *in-band*, not by throwing.** From the SIM-27 test-runner app container
@@ -516,6 +519,11 @@ Two facts fall out of that trace that are not in the session:
 > on 27A5228h/24A5390f, while other encodings remain unproven. The deadline-bounded collector
 > observed **three replies across the three calls**, but `SearchReply` exposes no call correlation
 > ID, so that count does not prove a one-to-one call/reply mapping.
+>
+> ✅ **DEVICE-REPRODUCED 2026-08-20** — the iPhone 15 Pro / iOS build `24A5408d` run also donated
+> and cleaned up successfully, rejected the same three argument encodings in-band with code 100,
+> and produced three `.complete` replies before the bounded listener deadline. This closes the
+> physical-container residual but not the missing call-correlation issue.
 
 The second `fetch_note` call in that trace is not part of Apple's design — it is the workaround
 from §8. Note where it sits in the trajectory: the model got `items` back, found they contained
@@ -1293,7 +1301,7 @@ struct TrailChatView: View {
 > (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:341-379`). **Apple's sample still uses
 > none of them** — it reads only `reply.content` and de-duplicates by identifier.
 
-> 🟠 **Suggestive, 2026-08-01 — needs a clean MAC-27/DEVICE-27 pass.** The overlay interface
+> 🟠 **Measured on Simulator and device; termination semantics remain open.** The overlay interface
 > answers the *type* half: `searchResults` is
 > `some AsyncSequence<SearchReply, Never>` (`:381-383`) — it can never throw, but an opaque
 > `AsyncSequence` alone says nothing about whether it ever *finishes*. The simulator probe
@@ -1302,7 +1310,8 @@ struct TrailChatView: View {
 > deadline; the sequence therefore did not terminate after the first or second call. It still did
 > not terminate after the final call before the collector deadline. Because replies carry no call
 > correlation ID, the observation cannot establish a one-to-one mapping, and per-reply
-> `status == .complete` is not sequence termination.
+> `status == .complete` is not sequence termination. The iPhone 15 Pro run on 2026-08-20 reproduced
+> the same three-reply/non-terminating observation.
 > **Safe default:** adopt Apple's per-query lifetime — construct a fresh tool per request and
 > cancel the listener `Task` when the call ends — so nothing you ship depends on the answer.
 

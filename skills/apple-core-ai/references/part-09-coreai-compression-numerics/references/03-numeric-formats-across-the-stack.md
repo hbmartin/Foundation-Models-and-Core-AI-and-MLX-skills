@@ -2506,7 +2506,7 @@ behaviour surprises people, not as documentation.
 | 8.2 | The **exact strings** in `Summary.computeTypes` / `StorageType.typeName` / `ValueDescriptor.typeName` | Print them once for a real asset |
 | 8.3 | Why the debug gauge shows **three** event types where Instruments shows four (`Setup` missing) | — |
 | 8.5 | ~~The full `coreai-build compile` flag list and the spelling of `--preferred-compute` values~~ **CLOSED 2026-07-31** — `--help` captured via the Metal Toolchain component; values `{gpu, neural-engine, none}` (`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`) | — |
-| 9.4 | The set of `deviceArchitectureName` values (the compiler-accepted code set — 24, `h11p…h18p` — was enumerated 2026-07-31; which code each device *reports* remains open) | Print it per device; never hardcode |
+| 9.4 | The complete set of `deviceArchitectureName` mappings (compiler-accepted set: 24 codes, `h11p…h18p`; first project hardware anchor 2026-08-20: iPhone 15 Pro `iPhone16,1` / `D83AP` reports `h16p`) | Print it per device; never hardcode |
 | 11.3 | No M5 hardware for any TensorOps claim; no non-LLM performance data anywhere in `apple/coreai-models` | Hardware |
 
 ### 13.4 Related guides

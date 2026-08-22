@@ -9,11 +9,11 @@ Everything here uses tools that already exist in the repo. Nothing below edits a
 automatically — scripts report, humans (or a supervised agent session) fold results in under the
 house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
-> **Current trigger, checked 2026-08-03:** the host is now on macOS 26.6 build `25G72`, and the §3
-> event ritual ran the same day — interface diff clean for every framework, host probes 46/34/0
-> with no PROBE-RESULT drift, defect sweep folded in. Xcode 27 beta 4 (`27A5228h`) and the iOS 27
-> beta 4 runtime (`24A5390f`) still match the local baseline; `xcrun --no-cache --find fm` still
-> exits 72. Next expected event: Xcode 27 beta 5.
+> **Current trigger, checked 2026-08-17:** the host is on macOS 27 beta 5 build `26A5406e`, with
+> Xcode 27 beta 5 (`27A5237l`) and iOS 27 Simulator runtime `24A5408d`. The bounded default probe
+> baselines are host 46/23/0 and Simulator 39/19/0; beta-5 host-backed model calls require the
+> explicit `PROBE_ENABLE_*` overrides documented in `probes/README.md`. Next expected event:
+> Xcode 27 beta 6 or a runtime update that makes those calls cancellable again.
 
 ---
 
@@ -83,16 +83,18 @@ indexes unchanged), or re-date untouched hedges.
 2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
    framework updated underneath you):
    ```bash
-   cd probes && swift test   # host: 46 tests, 34 skipped is the 2026-08-03 baseline (macOS 26.6)
+   cd probes && swift test   # host: 46 tests, 23 skipped is the 2026-08-17 macOS 27 beta-5 baseline
    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
      xcodebuild test -scheme Probes-Package \
        -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'
    ```
-   The simulator baseline is 36 tests, 2 intentional skips, 0 failures.
+   The simulator baseline is 39 tests, 19 intentional skips, 0 failures on beta 5. The elevated
+   skip count is deliberate: host-backed model calls can block before async timeouts execute.
    Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is a
    *behavioral drift discovery* — fold it into the owning guide with both values and dates.
-3. **Refresh the research mirrors** (`./scripts/clone-research-repos.sh`) so corpus greps against
-   `repos/` reflect current upstream HEADs.
+3. **Restore the pinned research mirrors** (`./scripts/clone-research-repos.sh`) so corpus greps
+   against `repos/` use the exact commits cited by the guides. This is reproducibility refresh,
+   not an upstream-HEAD update; advancing snapshots requires a deliberate evidence update.
 4. **Skim the watched-contradiction pages** listed in `notes/NEXT-BETA-CHECKLIST.md` §4–8 (the
    `resolve(in:)`/`resolved(in:)` docs conflict, the Evaluations distribution story, etc.) — these
    are doc-side and can flip without a beta.

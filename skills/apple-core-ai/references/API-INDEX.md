@@ -1,8 +1,8 @@
 # API & symbol index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**386 symbols, of 1205 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**388 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>13 symbols</sub>
 
@@ -26,7 +26,7 @@
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
-| `AIModel` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [10.1](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) +12 more |
+| `AIModel` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md), [10.1](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md) +12 more |
 | `AIModel.bookmarkData` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 | `AIModel.deviceArchitectureName` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `AIModel.init` |  | ✓ | [7.README](part-07-coreai-swift-runtime/README.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
@@ -45,6 +45,7 @@
 | `AIModelCache.default.model(for:options:)` |  | ✓ | [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) |
 | `AIModelCache.model(for:options:)` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) |
 | `AIModelCache.Policy` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
+| `AIModelCacheError.failedToPurge` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 | `AIModelError` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `AssetError` | ✓ | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) +1 more |
 | `AssetError.Kind` | ✓ | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
@@ -95,7 +96,6 @@
 | `SpecializationOptions.cpu_only()` |  | ✓ | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `SpecializationOptions.cpuOnly` |  | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) |
 | `SpecializationOptions.default()` |  | ✓ | [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
-| `SpecializationOptions.default.expectFrequentReshapes` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `SpecializationOptions.expectFrequentReshapes` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 
 ## MLX  <sub>5 symbols</sub>
@@ -171,7 +171,7 @@
 | `Task` |  |  | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) |
 | `URL` | ✓ | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 
-## other  <sub>259 symbols</sub>
+## other  <sub>261 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -233,6 +233,7 @@
 | `CorePasses._PROPAGATE_HANDLE_UPDATES` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md) |
 | `CorePasses._UPDATE_SIGNATURE_TO_HANDLES` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md) |
 | `CXGrammar` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
+| `D83AP` |  |  | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 | `DecodingStrategy` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `DetectedObject.boundingBox` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 | `DictAttr` |  |  | [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md) |
@@ -429,6 +430,7 @@
 | `UserWarning` |  |  | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) +1 more |
 | `Value` | ✓ | ✓ | [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md) |
 | `ValueError` |  |  | [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) +3 more |
+| `Variant` |  | ✓ | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `VisionConfig` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `WARNING` |  |  | [7.README](part-07-coreai-swift-runtime/README.md), [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [9.README](part-09-coreai-compression-numerics/README.md) |
 | `WeakBox` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |

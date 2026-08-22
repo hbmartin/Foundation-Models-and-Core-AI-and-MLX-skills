@@ -116,9 +116,10 @@ and a safe default. Two numbers worth carrying in from §4.5: omitting
 > **zero projects**. The only attested packaging CLI is `xcrun ba-package foundation-models`, which is
 > adapter-specific and therefore dead in 27. The guide's answer is a seam: build against a delivery
 > protocol you own, implement it with `URLSession`, swap in Background Assets later without touching
-> any Core AI code. Also open here: the authoritative `deviceArchitectureName` value set (community
-> sources actively *disagree* about the M4 Max), and whether deleting an in-use cache entry throws
-> or defers (Apple's reference page and Apple's article contradict each other). Two former unknowns
+> any Core AI code. Also open here: the full authoritative `deviceArchitectureName` value set
+> (community sources actively *disagree* about the M4 Max); the attached iPhone 15 Pro now anchors
+> `iPhone16,1`/`D83AP` to `h16p`. The cache-deletion contradiction is device-resolved for iOS build
+> `24A5408d`: deleting an in-use entry throws and succeeds after release. Two former unknowns
 > were settled 2026-07-29 against the captured macOS 27.0 beta SDK interface: `AIModelError` (the
 > `CoreAIDelegates.AIModelError error 3` breadcrumb) is confirmed **non-public** — the loading APIs
 > throw untyped, so there is nothing to pattern-match — and the **absence** of any progress API for

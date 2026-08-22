@@ -1177,7 +1177,7 @@ in this order:
 
 4. **The terminal `catch { }` last, obviously — but make it *loud*.** See §6.4.
 
-### 6.3 🔴 GAP (two thrown rows plus one measured nonthrow) — one value, two checks: the concern is real
+### 6.3 Destination-dependent bridging — one value, two checks: the concern is real
 
 **The question:** whether the framework ever throws a value whose `NSError` identity and Swift-type
 identity disagree — a value one check claims and another misses. The plausible mechanism was
@@ -1185,30 +1185,24 @@ identity disagree — a value one check claims and another misses. The plausible
 error whose domain is `FoundationModels.LanguageModelError` and whose `userInfo` carries
 `NSMultipleUnderlyingErrorsKey` containing a `ModelManagerServices.ModelManagerError`.
 
-✅ **Probe-verified, 2026-07-31 — the table now has two thrown rows plus one measured nonthrow.**
-The two throws (`probes/` `fm.error-domain-context-overflow` and `fm.required-mode-no-tools`, run on
-the 27.0 sim runtime) land on opposite sides; the third row records a silent success:
+✅ **Probe-verified on Simulator (2026-07-31) and iPhone 15 Pro (2026-08-20).** The same semantic
+failure can bridge differently by destination/build:
 
 | Failure mode | Dynamic type | NSError domain / code | Casts to |
 |---|---|---|---|
-| Context overflow | `LanguageModelError` | `FoundationModels.LanguageModelError` / 0 | `LanguageModelError` only — **clean, single-type** |
-| `.required` with empty toolset | `NSError` | `FoundationModels.LanguageModelError` / **-1** | **nothing** (`casts=[]`); wraps via `NSMultipleUnderlyingErrorsKey` |
-| Prompt in an unsupported locale | **nothing thrown** | — | — (⚠️ **silent success**, see below) |
+| Context overflow (sim + device) | `LanguageModelError` | `FoundationModels.LanguageModelError` / 0 | `LanguageModelError.contextSizeExceeded` — **clean, single-type** |
+| `.required` with empty toolset (sim) | `NSError` | `FoundationModels.LanguageModelError` / **-1** | **nothing** (`casts=[]`); wraps via `NSMultipleUnderlyingErrorsKey` |
+| `.required` with empty toolset (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **6** | `LanguageModelError.unsupportedGenerationGuide` |
+| `am_ET` prompt (sim) | **nothing thrown** | — | — (⚠️ silent success) |
+| `am_ET` prompt (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **2** | `.guardrailViolation`, **not** `.unsupportedLanguageOrLocale` |
 
-⚠️ A third row measured 2026-07-31 (`probes/`, `fm.unsupportedLanguageOrLocale-error`) is a
-**non-throw**: prompting in Amharic — a locale `supportsLocale(_:)` explicitly rejects on that
-runtime (`am_ET`, 23 supported languages) — threw nothing at all; the model answered anyway. So
-`.unsupportedLanguageOrLocale` is not raised merely by prompting outside the supported set, and a
-locale gate has to be **your** `supportsLocale` check, not a `catch` arm. The remaining cases
-(`.rateLimited`, `.timeout`, `.refusal`, `.unsupportedTranscriptContent`,
-`.unsupportedGenerationGuide`) have no clean, non-abusive trigger and stay unmeasured.
+⚠️ `am_ET` is rejected by `supportsLocale(_:)`, yet neither destination produced
+`.unsupportedLanguageOrLocale`: Simulator answered, while the device's particular prompt tripped a
+guardrail. A locale gate must therefore be **your** `supportsLocale` check, not a `catch` arm.
 
-The second row **confirms the concern for that mode**: the framework really does throw a value
-whose NSError *domain* says `LanguageModelError` but which `catch let e as LanguageModelError`
-does **not** catch. A ladder that trusts the Swift-type checks alone routes that error to its
-terminal arm with a domain string that *looks* classified. The inverse hazard (one value matching
-two typed arms) has not been observed; the remaining failure modes still need their rows, on
-device.
+The empty-tool rows prove why a robust ladder needs both typed arms and terminal NSError logging:
+the Simulator value bypasses a typed catch, while the hardware value enters
+`.unsupportedGenerationGuide`. Do not assume one destination's bridge is the platform contract.
 
 **Safe default, upgraded:** keep Apple's order — `SystemLanguageModel.Error`, then
 `LanguageModelSession.Error`, then `LanguageModelError`, then `GeneratedContent.ParsingError` —
@@ -1844,11 +1838,11 @@ Tracker's `generateTags` on a review containing content the default guardrails b
 `.permissiveContentTransformations` and once without, on a device, and compare. If the outcomes are
 identical, the argument is inert and the documentation is complete.
 
-> 🟠 **Suggestive, 2026-07-31 — needs a clean MAC-27/DEVICE-27 pass.** That A/B now exists as
-> `probes/` `fm.guardrails-permissive-generable` and was run on the 27.0 sim runtime: a
-> guardrail-blocked `@Generable` request threw `LanguageModelError` code 2 under **both** settings
-> — identical outcomes, supporting "inert on the structured path" on that runtime. Sim guardrail
-> assets may differ from device, so this does not close the gap; rerun on 27 hardware.
+> 🟠 **Device run completed, but the stimulus did not reproduce.** The 2026-07-31 Simulator A/B
+> threw guardrail code 2 under both settings. On iPhone 15 Pro / iOS build `24A5408d`, the same two
+> requests both succeeded, so the device run did not trip a guardrail and cannot isolate the knob.
+> The gap now needs a prompt that reliably triggers the *same* false positive under both settings,
+> not merely another destination.
 
 > ⚠️ **SILENT FAILURE — the guardrail setting that does nothing.**
 > This is the shape to remember: you set `.permissiveContentTransformations` because your feature
@@ -2423,6 +2417,11 @@ the *console log*, while the error your code catches is the opaque `LanguageMode
 useful diagnostic is in Console, not in your `catch`. And the message is a lie in a specific way —
 "Tool Choice requires tools" fires *even though tools were passed*, meaning the tool array is not
 reaching the inference layer.
+
+> ✅ **DEVICE UPDATE 2026-08-20:** a genuinely empty toolset on iPhone 15 Pro / iOS build
+> `24A5408d` produced the newer device-log wording *"Tool choice .required requires at least 1 tool
+> be available"* and threw typed `LanguageModelError.unsupportedGenerationGuide`, NSError code 6.
+> The forum's non-empty-tool loss remains a separate bug; the old generic `-1` bridge is not universal.
 
 **Migration relevance:** this is what a 27-only feature failing looks like. `toolCallingMode` is new
 in 27, and it exists in **two** places — `GenerationOptions(toolCallingMode:)` and the
@@ -3392,13 +3391,13 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 | # | Gap | What would resolve it | § |
 |---|---|---|---|
-| 1 | ~~The spelling of the `TranscriptErrorHandlingPolicy` setter~~ ✅ **RESOLVED 2026-07-29** (session property + profile modifier, `27.0:1885-1892, 937`). ~~Still open: which behaviour the Optional's `nil` default selects~~ ✅ **RESOLVED 2026-07-31, probe-verified** — `nil` behaves like `.revertTranscript` (`probes/` `fm.transcript-policy-nil-default`, 27.0 sim runtime) | — | §2.2 |
+| 1 | ~~The spelling of the `TranscriptErrorHandlingPolicy` setter and `nil` behavior~~ ✅ **RESOLVED:** session property + modifier; `nil` behaves like `.revertTranscript`, confirmed on sim and iPhone 15 Pro (`fm.transcript-policy-nil-default`) | — | §2.2 |
 | 2 | ~~Whether `Timeout` / `GuardrailViolation` / `RateLimited` payloads carry fields beyond those in `SKILL.md`~~ ✅ **RESOLVED 2026-07-29** — they do not (`27.0:1499-1622`) | — | §3.5 |
-| 3 | Whether any thrown value can satisfy two of the four new type checks (NSError bridging) — **partially answered, probe-verified 2026-07-31**: the first two table rows exist; the `.required`-no-tools mode throws a domain-tagged NSError that matches NO typed check (§6.3), confirming the divergence hazard; remaining failure modes still need rows on device | The rest of the `type(of:)` + `NSError.domain` table, per failure mode, on device | §6.3 |
-| 4 | ~~`GenerationError.decodingFailure`'s successor~~ ✅ **RESOLVED 2026-07-29** — the SDK's deprecation message names `GeneratedContent.ParsingError` (`27.0:3491-3494`). ~~Still open: whether the framework itself throws it~~ ✅ **RESOLVED 2026-07-31, probe-verified** — it does, on truncated structured output (code 1, `rawContent` = partial JSON; `probes/` `fm.parsingError-thrown`, 27.0 sim runtime) | — | §4.4 |
+| 3 | Whether any thrown value can satisfy two of the four new type checks — **partially answered:** empty `.required` mode is untyped code −1 on Simulator but typed `.unsupportedGenerationGuide` code 6 on iPhone 15 Pro (§6.3), proving destination-dependent bridging; no value has matched two typed arms | Extend the table per failure mode and later builds | §6.3 |
+| 4 | ~~`GenerationError.decodingFailure`'s successor and whether the framework throws it~~ ✅ **RESOLVED:** `GeneratedContent.ParsingError`; truncated structured output throws it on sim and iPhone 15 Pro (`fm.parsingError-thrown`) | — | §4.4 |
 | 5 | ~~Whether `GeneratedContent.ParsingError.rawContent` is exposed as a readable property~~ ✅ **RESOLVED 2026-07-29** — stored `public var rawContent: String` (`27.0:1357`) | — | §7 |
 | 6 | **Which `LanguageModelError` case thread 836673 actually caught** | The reporter re-running with §3.5's `classify` | §9.2 |
-| 7 | Whether `.permissiveContentTransformations` does anything at all in Book Tracker's guided path — 🟠 suggestive 2026-07-31: identical blocks under both settings on the 27.0 sim runtime (`probes/` `fm.guardrails-permissive-generable`); needs 27 hardware | Device A/B on blocked content, with and without the argument | §10.3 |
+| 7 | Whether `.permissiveContentTransformations` affects Book Tracker's guided path — Simulator blocked both settings; iPhone 15 Pro succeeded under both, so the beta-5 probes still did not isolate the setting | Device A/B on content that reliably trips the same guardrail false positive | §10.3 |
 | 8 | The meaning of `SensitiveContentAnalysisML` 15, `ModelManagerError` 1046, `UnifiedAssetFramework` 5000, and `LanguageModelError` code `-1` | Apple documentation, or an Apple answer on 831448 | §13 |
 | 9 | Whether `catch LanguageModelError.<case>` reliably matches, especially on streams | Closure of **FB23061009**. *(27.0 interface read 2026-07-29 — the declarations are ordinary payload cases, so the reported failure is a runtime/stream matter the header cannot settle)* | §14.1 |
 | 10 | ~~The exact spelling for mutating `session.transcript` / `transcript.history` in 27~~ ✅ **RESOLVED 2026-07-29** — both spellings compile (`27.0:1872-1878, 2640-2646`) | — | §12.4 |

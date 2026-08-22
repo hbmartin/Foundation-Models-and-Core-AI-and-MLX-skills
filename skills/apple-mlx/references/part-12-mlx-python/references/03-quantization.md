@@ -528,7 +528,7 @@ These are the exact strings `mlx/ops.cpp` raises. Knowing them saves a debugging
 > }
 > ```
 
-The consequence, from the issue that tracks it (**mlx#3911, OPEN** as of 2026-07-29):
+The consequence, from the issue that tracks it (**mlx#3911, closed 2026-08-05**):
 
 > ✅ **VERIFIED** — quoted from mlx#3911 via `notes/repos/issues-mlx-stack.md:464`:
 > "Without tensor-scale support, NVFP4 on Metal has ~137x less dynamic range than NVIDIA Blackwell
@@ -1297,9 +1297,12 @@ nothing in kernel time. Batch harder.
 
 Everyone assumes fewer bits is monotonically faster. On the quantized matmul path, it is not.
 
-> ✅ **VERIFIED** — mlx#3852 (OPEN), measured on **M4 Pro (`applegpu_g16s`), mlx 0.32.0 wheel,
-> macOS 15.6, group_size=128**. Recorded at `notes/repos/issues-mlx-stack.md:470-479`. Figures are
-> the M=1 absolute time followed by speedups relative to it:
+> ✅ **VERIFIED** — mlx#3852 (**CLOSED 2026-08-16 without an optimization**), measured on **M4 Pro
+> (`applegpu_g16s`), mlx 0.32.0 wheel, macOS 15.6, group_size=128**. The maintainer closed it to
+> prioritize real inference cases; the measurements were not disputed, and the proposed BM=16
+> optimization PR #3863 had already closed unmerged on 2026-08-02. Recorded at
+> `notes/repos/issues-mlx-stack.md:470-479`. Figures are the M=1 absolute time followed by
+> speedups relative to it:
 >
 > | shape (K→N) | bits | M1 | M2 | M3 | M4 | M8 | M10 | M32 |
 > |---|---|---|---|---|---|---|---|---|
@@ -2036,7 +2039,7 @@ Statuses move. Check the issue before you rely on this table.
 | 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
-| 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** | **OPEN** — but **throws**, does not corrupt | nvfp4 on Apple silicon |
+| 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** | **CLOSED** 2026-08-05 — but **throws**, does not corrupt | nvfp4 on Apple silicon |
 
 Read the last column carefully. **Five of the seven are M5-generation-only.** On an M1 through M4
 machine most of this section is history rather than a hazard — but "most" is not "all", and the
@@ -2336,7 +2339,8 @@ first.
 
 **Batch-versus-single equivalence is not achievable on gen-17, in any dtype.**
 
-> ✅ **VERIFIED** — mlx#3897 (OPEN, 7 comments), M5 base `applegpu_g17g` 32 GB, macOS 26.5.2 /
+> ✅ **VERIFIED** — mlx#3897 (closed 2026-08-09; 7 comments at snapshot), M5 base
+> `applegpu_g17g` 32 GB, macOS 26.5.2 /
 > 25F84, reproduced on mlx 0.31.2 **and** 0.32.0; M3 Max clean.
 > `notes/repos/issues-mlx-stack.md:323-337`: `mlx-lm/tests/test_generate.py` fails 8 of 28 on
 > `mx.allclose(batch_logprobs, single_logprobs)` at `rtol=1e-5`, with max |Δlogprob| ≈
@@ -2902,10 +2906,12 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > **Safe default:** 1-D `int32` `rhs_indices` of length `n`, `lhs_indices=None` — the MoE-decode
 > shape mlx-lm's `SwitchLinear` exercises.
 >
-> 🔴 **GAP 5 — whether the fixes for #3856 and #3887 have landed.**
-> Both were **OPEN** on 2026-07-27, with mlx PR #3922 (upstream) and mlx-lm PR #1585 (downstream
-> padding workaround) also open. Re-checked via `gh` **2026-07-31**: issues #3856 and #3887 and fix
-> PR #3922 are **all still open** — nothing has landed. This guide cannot tell you their state on
+> 🔴 **GAP 5 — whether the fixes for `mlx#3856` and `mlx#3887` have landed.**
+> Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
+> `mlx-lm#1585` (downstream
+> padding workaround) also open. Re-checked via `gh` **2026-07-31**: issues `mlx#3856` and
+> `mlx#3887` and fix
+> PR `mlx#3922` are **all still open** — nothing has landed. This guide cannot tell you their state on
 > the day you read it.
 > **Resolution:** check the issues.
 > **Safe default:** assume open. Preserve native 64-alignment and keep the gathered-row workaround
@@ -2962,8 +2968,8 @@ Everything in this guide traces to one of these. Nothing was written from model 
 - `notes/repos/mlx-tensorops-kernels.md` — the Metal kernel sources plus the
   `MetalPerformancePrimitives` headers shipped in the Xcode SDK. The alignment gates (§6.1), the
   hand-dequantization pipeline and the `fp8.h` / `fp4.h` struct finding (§2.4), the instantiation
-  lists (§2.2, §2.3), the NAX build and runtime gates, and the PR ledger including #3912 / #3922 /
-  #3924.
+  lists (§2.2, §2.3), the NAX build and runtime gates, and the PR ledger including `mlx#3912` /
+  `mlx#3922` / `mlx#3924`.
 
 **GitHub issues and PRs with maintainer and contributor participation:**
 

@@ -1,17 +1,17 @@
 # What still requires macOS 27, Instruments UI, or a physical OS-27 device
 
-**Status checked 2026-08-01.** **Xcode 27.0 beta 4 (`27A5228h`)**, its optional Metal Toolchain,
-and the **iOS 27.0 beta 4 simulator (`24A5390f`)** are installed. The host remains macOS 26.5.2
-(`25F84`), with Apple's 26.6 (`25G72`) update still to apply. The full simulator probe suite now
-passes (36 tests, 2 intentional skips), and `scripts/dump-sdk-interfaces.sh` has captured the 27.0
+**Status checked 2026-08-20.** **Xcode 27.0 beta 5 (`27A5237l`)**, its optional Metal Toolchain,
+the **iOS 27.0 beta 5 simulator (`24A5408d`)**, and macOS 27 beta 5 (`26A5406e`) are installed.
+An attached iPhone 15 Pro (`iPhone16,1`, `D83AP`) running iOS 27 build `24A5408d` completed the
+physical-device probes. `scripts/dump-sdk-interfaces.sh` has captured the 27.0
 interface set into `notes/sdk-interfaces/` — including the Core AI SubFrameworks umbrella
 (`CoreAIRuntime`, `CoreAIAsset`, `CoreAIDelegates`), the cross-import overlays
 (`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
-**Items 2, 4, 5 and 6 below are resolved and folded into the guides (2 and 6's toolchain half fell
+**Items 1, 2, 4, 5, 6, and 7 below are resolved and folded into the guides (2 and 6's toolchain half fell
 on 2026-07-31 when the Metal Toolchain component turned out to contain `coreai-build` and the Metal
-compiler). Items 1, 3, and 7 still need, respectively, a macOS 27 host, one manual Instruments GUI
-recording against the OS-27 target, or a physical OS-27 device — the toolchain alone cannot produce
-them.**
+compiler).** **Item 3 — one manual Instruments GUI recording — is the only original item still
+open.** The broader behavioral backlog (including cancellation with a genuinely slow Core AI
+asset and an entitled app-group cache run) remains in `probes/README.md`.
 
 Run what you can, paste the raw output back. Partial is fine — every item is independent.
 
@@ -20,7 +20,19 @@ GAPs are executable XCTest probes; see `probes/README.md` for per-destination co
 
 ---
 
-## 1. The `fm` CLI — 🔴 still open, now much sharper
+## 1. The `fm` CLI — ✅ RESOLVED 2026-08-17 on macOS 27 beta 5
+
+The project ran `/usr/bin/fm` on macOS 27 beta 5 (`26A5406e`) and captured top-level plus every
+revealed subcommand help page in `notes/sdk-interfaces/fm-help-27.0.txt`. The live surface has
+eight commands: `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`, `schema`,
+and `serve`. This corrects the third-party `token-count` spelling and adds the previously unreported
+`license` command. `fm --version` is unsupported. The managed capture includes all short/long flags,
+the complete `schema object` property grammar, and `serve` transports/endpoints.
+
+Runtime-only questions remain in the guide: interactive slash commands beyond Apple's demonstrated
+`/model` and `/save`, refusal/error exit behavior, and field-level Chat Completions compatibility.
+
+### Historical pre-capture record
 
 Rechecked 2026-08-01: `fm` is **absent from the Xcode 27.0 beta** —
 `xcrun --no-cache --find fm` exits 72 and an
@@ -163,13 +175,16 @@ Part 11.
 
 ---
 
-## 7. Two device tests — 🔴 still open (only if you have a 27 device handy)
+## 7. Two device tests — ✅ RESOLVED 2026-08-20
 
-- **`AIModelCache` deletion semantics.** Apple's own docs contradict themselves: the reference page
-  says deleting a referenced entry throws; the caching article says deletion is deferred until the
-  `AIModel` deallocates. One test settles it. (The interfaces confirm only spellings, not
-  behaviour — checked 2026-07-29.)
-- **On-device `contextSize`.** ⬇️ **Priority downgraded 2026-08-02 — Apple has answered.**
+- **`AIModelCache` deletion semantics.** On iPhone 15 Pro / iOS build `24A5408d`, deleting while a
+  live `AIModel` retained the entry threw
+  `AIModelCacheError.failedToPurge("Deletion could not be completed, assets still in use")`; the
+  entry remained findable. After releasing the model, deletion succeeded. The tested runtime
+  therefore matches the reference pages rather than the article's silent-deferral wording. The
+  observed error type is not public in the captured SDK, so production code still needs a generic
+  `catch`.
+- **On-device `contextSize`.** ✅ **4096 on iPhone 15 Pro / iOS build `24A5408d`.**
   Narrowed 2026-07-29: the 26.5 interface **hardcodes `return 4096`**;
   the 27.0 interface returns a dynamic `_contextSize` on OS 27+ and falls back to 4096 below.
   Narrowed again 2026-07-31: the `probes/` run measured **4096 on the iOS 27.0 simulator runtime**
@@ -178,17 +193,15 @@ Part 11.
   (ch. `0:08:11`) gives **4096, shared across input and output**, as the iOS 27 platform value,
   with PCC at 32K. The third-party 8192 device report remains uncorroborated rather than disproved.
   Folded into guides 17.1 §1.1 and 3.1 §3.3.
-  **Still worth one run if a 27 device is to hand** — Apple's answer is a platform statement and
-  the 27.0 interface plainly returns a *dynamic* value, so printing
-  `SystemLanguageModel().contextSize` on real hardware is the only way to rule out a
-  device-specific figure. No longer blocking any guide text.
+  The physical result closes the device-specific residual for this hardware/build and leaves the
+  third-party 8192 report uncorroborated. Continue re-running on later seeds because the OS-27 API
+  remains dynamic.
 
 ---
 
 ## Not needed from you
 
-Everything else is either resolved or resolvable from material already on disk. The research corpus
-is ~85,000 lines and the guides are written against it; after the 2026-07-29 SDK-capture pass,
-the 2026-07-31 Metal-Toolchain pass, and the 2026-08-01 simulator acceptance run, items 1, 3, and 7
-are the residue
-that genuinely require a running macOS 27, an OS-27 recording target, or a physical OS-27 device.
+Everything else in this original machine-dependency list is resolved. After the SDK, Metal
+Toolchain, macOS-27, simulator, and 2026-08-20 physical-device passes, **item 3's manual Instruments
+GUI recording is the sole residue here**. New and partially answered runtime questions are tracked
+at probe granularity in `probes/README.md`.

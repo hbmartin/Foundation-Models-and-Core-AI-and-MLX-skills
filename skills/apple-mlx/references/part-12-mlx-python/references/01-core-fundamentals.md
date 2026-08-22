@@ -417,7 +417,8 @@ The heuristic that generalises:
 Unified memory removes transfers. It does not remove **allocation**, and on Apple silicon
 allocation is where MLX programs actually die. Three community findings, all attributed:
 
-- **`mx.get_peak_memory()` excludes the buffer pool.** *Community-measured*, mlx#3896 (open at time
+- **`mx.get_peak_memory()` excludes the buffer pool.** *Community-measured*, mlx#3896 (closed
+  2026-08-08; open at time
   of research): streaming a 198B MoE layer-by-layer on an **M5 Max 128 GB, mlx 0.32.0, Darwin
   25.4.0**, `mx.get_peak_memory()` reported **~46 GB** while the OS reported **~110 GB**. A
   contributor reading `mlx/backend/metal/allocator.cpp` explained why: *"`peak_memory_` is a
@@ -2355,7 +2356,8 @@ Here is the mechanism that makes `mx.compile` "slower than eager" and looks like
 > every iteration *plus* the fused kernel's execution. The uncompiled version pays only execution.
 > Net: compiled is slower, monotonically, with no error and no log line.
 >
-> **The second symptom is worse: unbounded memory growth.** *Community-measured*, mlx#3849 (open at
+> **The second symptom is worse: unbounded memory growth.** *Community-measured*, mlx#3849 (closed
+> 2026-08-05; open at
 > research time), which is the best-documented account of this failure:
 >
 > > "compiled training with a fixed shape plateaus; compiled training with new sequence shapes grows

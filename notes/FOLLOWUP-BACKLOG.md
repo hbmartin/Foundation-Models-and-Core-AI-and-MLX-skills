@@ -307,7 +307,7 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
 Then bump the hardcoded callout count at `guides/README.md:74-75`
-(**1,780 / 1,418** as of 2026-08-02).
+(**1,777 / 1,415** as of 2026-08-20).
 
 **A new ```swift fence with no marker lands as `UNCLASSIFIED`.** Declaration fragments — a bare
 `public mutating func …` with no enclosing type — want `illustrative`; they cannot compile

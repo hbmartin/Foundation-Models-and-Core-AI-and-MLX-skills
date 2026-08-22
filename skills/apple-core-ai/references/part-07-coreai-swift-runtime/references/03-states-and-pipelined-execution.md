@@ -1678,6 +1678,14 @@ The Python-side statement is explicit and platform-qualified. The Swift-side que
 > the question. This is what Apple's own engine does — `CoreAISequentialEngine` has a `zeroFill`
 > routine it calls from `reset()`, which is how the ~6-second `-Onone` measurement in §5.3 was found.
 
+> ✅ **Bounded device observation, not a guarantee (2026-08-20).** `probes/`
+> `coreai.ndarray-zero-init` dirtied and dropped an 8 MiB `NDArray`, allocated an uninitialised
+> same-sized `.uint8` array, and scanned every byte, for six rounds on a physical iPhone 15 Pro
+> running iOS 27 beta-5 build `24A5408d`. All 50,331,648 examined bytes were zero. That result is
+> useful evidence about this runtime, but it cannot distinguish framework zeroing from fresh
+> kernel pages and therefore does **not** close the documentation gap. The explicit-zeroing rule
+> remains unchanged.
+
 If you are tempted to skip the zeroing on the grounds that your graph masks unwritten positions:
 masking with `-inf` on the ANE is itself a trap. Apple's own authoring skill says so —
 *"Neural Engine hardware does not handle IEEE `-inf` correctly in softmax"*, so its causal mask uses

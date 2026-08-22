@@ -1,8 +1,8 @@
 # Next-beta checklist — run on every new Xcode 27 beta / Apple doc refresh
 
 Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
-Baseline for "changed?" everywhere below: Xcode 27.0 beta `27A5228h`, macOS SDK 27.0,
-host macOS 26.5.2, iOS 27 simulator runtime `24A5390f`, dumps committed in
+Current baseline for "changed?" everywhere below: Xcode 27.0 beta 5 `27A5237l`, macOS 27 beta 5
+build `26A5406e`, iOS 27 SDK build `24A5408c`, and iOS 27 simulator runtime `24A5408d`; dumps are committed in
 `notes/sdk-interfaces/`. Companion docs:
 `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` (items that need a *running* OS 27, not just
 a toolchain — this checklist covers what a toolchain drop CAN answer).
@@ -12,6 +12,27 @@ a toolchain — this checklist covers what a toolchain drop CAN answer).
 > fingerprint, snippet pass unchanged, probes 46/34/0 (host) and 39/2/0 (sim), defect sweep folded
 > in. Xcode 27 beta 4 and the iOS 27 beta 4 runtime still match the recorded baseline; the next
 > expected event is Xcode 27 beta 5.
+
+> **Event log, 2026-08-17:** Xcode 27 beta 5 (`27A5237l`), macOS SDK build `26A5406c`,
+> iOS SDK build `24A5408c`, and iOS Simulator runtime build `24A5408d` were checked on macOS 27 beta 5. The managed
+> interface capture was promoted after real AppIntents, Evaluations, FoundationModels, and Vision
+> drift; host probes passed 46/23/0 and simulator probes passed 39/19/0. Spotlight's unpublished
+> schema grew from 83,494 to 83,570 characters; simulator donation still works, while the host
+> helper is unavailable (`CSIndexErrorDomain -1003`). Snippet verification remains blocked because
+> `/Applications/Xcode.app/Contents/Developer` (the SDK-26 target) is absent.
+
+> **Event log, 2026-08-20:** an attached iPhone 15 Pro (`iPhone16,1`, `D83AP`) running iOS 27
+> build `24A5408d` completed the first hardware baseline. `contextSize=4096`,
+> `deviceArchitectureName=h16p`, Foundation Models availability/capabilities matched the static
+> iOS-27 declarations, and both documented `SpecializationOptions` constructors reported
+> `expectFrequentReshapes=false`. A live Core AI cache pin made deletion throw and remain findable;
+> deletion succeeded after release. The default cache appeared under
+> `Library/Caches/coreai-cache`. Call-site tool mode overrode the profile in both directions;
+> throwing from `onToolCall` aborted the turn before the tool body; empty `.required` mode bridged
+> as typed `.unsupportedGenerationGuide` code 6 (Simulator had generic code −1). Image responses
+> worked, labels wrote through exactly, generic tools ran labeled and unlabeled, but image
+> `tokenCount(for:)` threw code −1. The beta-5 Spotlight schema artifact is now captured from the
+> device result. See `probes/README.md` for exact output and remaining inconclusive branches.
 
 Every item is independent; check them off per beta. Commands are copy-pasteable from
 the repo root.
@@ -95,15 +116,18 @@ the repo root.
   ```
 - [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
   four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
-  2026-08-03 healthy baselines are **46 host tests, 34 skipped, 0 failures** and **39 simulator
-  tests, 2 intentional skips, 0 failures** (both re-verified on the macOS 26.6 host). Probes that need an
-  OS 27 runtime `XCTSkip` on this 26.6 host, so re-run per beta on both local destinations AND
-  once on a real OS 27 machine:
+  beta-5 baselines are **46 host tests, 23 skipped, 0 failures** and **39 simulator tests,
+  19 skipped, 0 failures**. Host-backed generation is gated because some calls block
+  non-cancellably in this seed. Re-run per beta on both local destinations and once on hardware:
   ```bash
   (cd probes && swift test)
   (cd probes && DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
     xcodebuild test -scheme Probes-Package \
       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
+  (cd probes && xcodegen generate --spec device-project.yml && \
+    xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
+      -destination 'platform=iOS,id=<device-udid>' -allowProvisioningUpdates \
+      DEVELOPMENT_TEAM=<your-team-id>)
   ```
   Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
   beta's behavioral drift. The remaining destination gaps are documented in
@@ -165,16 +189,17 @@ and the affected guides now distinguish the app bundle from the required compone
 - [ ] Does `aimodelc`'s usage stub still point at `coreai-build`? (`aimodelc` at
   `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc`, no `--help`.)
 
-## 2. `fm` — still nothing in the toolchain; OS 27 claim untested
+## 2. `fm` — OS-bundled and captured; toolchain absence is expected
 
-`xcrun --find fm` fails on `27A5228h` (verified 2026-07-29; NEEDED item 1). The corpus
-claims it comes preinstalled **with macOS 27**, so the toolchain check can only ever
-prove the negative. Guide with no attested flag surface:
+The beta-5 macOS 27 host resolved `/usr/bin/fm`; top-level and all revealed subcommand help pages
+are captured in `notes/sdk-interfaces/fm-help-27.0.txt`. `xcrun --find fm` may still fail because
+the binary belongs to the OS, not Xcode. The guide now uses the captured eight-command surface:
 `guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`.
 
-- [ ] `xcrun --find fm` on each new beta (absence expected until a beta bundles it).
-- [ ] On any machine actually *running* macOS 27: the full `fm --help` /
-  `fm <subcommand> --help` sweep spelled out in NEEDED item 1.
+- [ ] On each new macOS beta, re-run `scripts/dump-sdk-interfaces.sh` and compare the captured
+  `fm` help body; treat `/usr/bin/fm` as the authority, not `xcrun` discovery.
+- [ ] Recheck the still-open runtime surface: interactive slash commands, refusal/error exit
+  behavior, and field-level Chat Completions compatibility.
 
 ## 3. Evaluations — Xcode-bundled today; watch for an OS-SDK move and tvOS
 
@@ -199,20 +224,19 @@ Xcode fallback in that order, so a move shows up as a changed path in its output
 
 ## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — live docs-vs-SDK contradiction
 
-Docs present `resolved(in:)` as current and `resolve(in:)` as deprecated; the captured
-27.0 interface has **only** un-deprecated `resolve(in: Transcript)`
-(`FoundationModels-27.0-macos.swiftinterface:2959-2963`). Live-docs re-check 2026-08-03:
-unchanged — `resolved(in:)` still current, its parameter now `some Sequence<Transcript.Entry>`
-(was `ArraySlice<Transcript.Entry>` in the 07-27 harvest), `resolve(in:)` still deprecated.
-The contradiction stands. Tracked at
+The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 instead has
+**only** un-deprecated `resolved(in: some Sequence<Transcript.Entry>)`. A live-docs re-check on
+2026-08-17 lists both, presents `resolved(in:)` as deprecated, and uses `resolve(in:)` in the
+`ImageReference` overview. Neither captured beta matches that documented two-member surface.
+Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
-§7.6 (line ~1959): resolves via "a later beta's interface, or a doc revision".
+§7.6 (line ~1959).
 
 - [ ] After each re-dump:
   ```bash
   grep -n 'func resolved\?(in' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface
   ```
-  If `resolved(in:)` appears (or `resolve(in:)` grows a deprecation), update §7.6 —
+  If both spellings appear or either gains a deprecation, update §7.6 —
   and mind the argument-type difference the guide warns about
   (`ArraySlice<Transcript.Entry>` vs whole `Transcript`), so no mechanical rename.
 
@@ -311,7 +335,6 @@ its own OS availability, or the capture caught an odd slice.
 ---
 
 Everything above feeds the same loop: dump → diff → edit guides → re-run
-`refresh-defect-statuses.sh` → rebuild indexes. Items that need a *running* macOS 27
-(fm on-OS, Instruments lane names, AIModelCache deletion semantics, on-device
-`contextSize`) stay in `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` — do not duplicate
-them here.
+`refresh-defect-statuses.sh` → rebuild indexes. The original macOS-27 and physical-device
+dependencies are closed; the remaining manual Instruments lane-name capture stays in
+`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.

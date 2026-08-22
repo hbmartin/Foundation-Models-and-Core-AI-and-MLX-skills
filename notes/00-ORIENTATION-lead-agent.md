@@ -271,7 +271,8 @@ This is a genuinely deep topic and clearly deserves a standalone guide.
   at a moment you choose (after download, on feature opt-in).
 - **`AIModelCache.Policy`**: default (system may reclaim under storage pressure or source-model
   change) vs **`.persistent`**.
-- `cache.deleteEntries(for:)`; deletion deferred while an `AIModel` instance still uses the entry.
+- `cache.deleteEntries(for:)`; on iOS build `24A5408d`, deletion throws while a live `AIModel`
+  pins the entry and succeeds after release (the prose article's deferred wording did not match).
 - **App groups**: `AIModelCache(appGroup:)` + App Groups entitlement ⇒ share specializations
   across apps/extensions instead of duplicating.
 - **Bookmarks**: `model.bookmarkData` → persist (e.g. UserDefaults) → `AIModel(resolvingBookmark:)`

@@ -1,0 +1,118 @@
+# coreai-build help surface
+
+===== coreai-build --help =====
+OVERVIEW: A utility for building model assets.
+
+USAGE: coreai-build <subcommand>
+
+OPTIONS:
+  --version               Print version information and exit
+  -h, --help              Show help information.
+
+SUBCOMMANDS:
+  compile                 Compiles a source model to produce a specialization.
+  package                 Packages a source model to produce a model asset.
+  inspect                 Inspects a model asset.
+  metadata                Updates model metadata.
+
+  See 'coreai-build help <subcommand>' for detailed help.
+
+===== coreai-build compile --help =====
+OVERVIEW: Compiles a source model to produce a specialization.
+
+USAGE: coreai-build compile <input> [--output <output>] [--platform <platform>] [--min-deployment-version <min-deployment-version>] [--preferred-compute <preferred-compute>] [--architecture <architecture> ...] [--expect-frequent-reshapes]
+
+ARGUMENTS:
+  <input>                 The input source model (.aimodel).
+
+OPTIONS:
+  --output <output>       The output directory. If not provided, defaults to
+                          the current directory.
+        The output models will preserve the base input model name and append
+        the architecture and the .aimodelc extension. If the output is a single
+        model you can specify the full model path as output.
+  --platform <platform>   The target platform. (values: iOS, macOS, watchOS,
+                          visionOS, tvOS; default: macOS)
+  --min-deployment-version <min-deployment-version>
+                          The minimum deployment target version. (default: 27.0)
+  --preferred-compute <preferred-compute>
+                          An optional preferred compute unit type. (values:
+                          gpu, neural-engine, none; default: none)
+  --architecture <architecture>
+                          A list of specific architectures to compile for. If
+                          omitted compiles for all supported architectures.
+  --expect-frequent-reshapes
+                          Hint that inference will be run with frequently
+                          changing input shapes.
+  -h, --help              Show help information.
+
+
+===== coreai-build package --help =====
+OVERVIEW: Packages a source model to produce a model asset.
+
+USAGE: coreai-build package <input> [--platform <platform>] [--min-deployment-version <min-deployment-version>] --output <output>
+
+ARGUMENTS:
+  <input>                 The input model. It can be a source model (.aimodel)
+                          or compiled model (.aimodelc).
+
+OPTIONS:
+  -p, --platform <platform>
+                          The target platform. (values: iOS, macOS, watchOS,
+                          visionOS, tvOS; default: macOS)
+  --min-deployment-version <min-deployment-version>
+                          The minimum deployment target version.
+  -o, --output <output>   The output asset path.
+  -h, --help              Show help information.
+
+
+===== coreai-build inspect --help =====
+OVERVIEW: Inspects a model asset.
+
+USAGE: coreai-build inspect <path> [--io] [--no-io] [--metadata] [--no-metadata] [--storage] [--no-storage] [--compute] [--no-compute] [--ops] [--no-ops] [--json]
+
+ARGUMENTS:
+  <path>                  The input model. It can be a source model (.aimodel)
+                          or compiled model (.aimodelc).
+
+OPTIONS:
+  -i, --io/--no-io        Show functions with their inputs and outputs.
+                          (default: --io)
+  -m, --metadata/--no-metadata
+                          Show metadata. (default: --metadata)
+  -s, --storage/--no-storage
+                          Show storage types. (default: --no-storage)
+  -c, --compute/--no-compute
+                          Show compute types. (default: --no-compute)
+  -o, --ops/--no-ops      Show operation distribution. (default: --no-ops)
+  --json                  Output JSON.
+  -h, --help              Show help information.
+
+
+===== coreai-build metadata --help =====
+OVERVIEW: Updates model metadata.
+
+USAGE: coreai-build metadata <path> [--json <json>] [--author <author>] [--license <license>] [--description <description>] [--function-name <function-name> ...] [--argument-name <argument-name> ...] [--argument-description <argument-description> ...]
+
+ARGUMENTS:
+  <path>                  The model. It can be a source model (.aimodel) or
+                          compiled model (.aimodelc).
+
+OPTIONS:
+  --json <json>           When provided, updates the model's metadata to match
+                          the contents of the JSON file (use '-' for stdin)
+  --author <author>       Sets the author.
+  --license <license>     Sets the license.
+  --description <description>
+                          Sets the description.
+  --function-name <function-name>
+                          A function name for which to set a custom argument
+                          description (repeat for each entry).
+  --argument-name <argument-name>
+                          An argument name for which to set a custom
+                          description (repeat for each entry).
+  --argument-description <argument-description>
+                          Custom argument description (matched by position with
+                          --function-name and --argument-name).
+  -h, --help              Show help information.
+

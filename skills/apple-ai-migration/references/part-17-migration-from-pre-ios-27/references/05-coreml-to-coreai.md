@@ -1671,14 +1671,14 @@ Verified doc defects in the current Core AI doc set:
 |---|---|
 | `AIModel.init(contentsOf:)`, `specialize(…)` | An orphaned Note reading *"If specializing or loading the model fails."* — a truncated `- Throws:` clause rendered as a behaviour statement |
 | `AIModelCache.model(for:options:)` | Same malformation: *"If a cache entry was found but the specialized asset failed to load."* |
-| Cache deletion, live-reference behaviour | The **reference pages say it throws**; the **article says deletion is deferred**. Both are Apple, same release, and they contradict each other |
+| Cache deletion, live-reference behaviour | The **reference pages say it throws**; the **article says deletion is deferred**. On iPhone 15 Pro / iOS build `24A5408d`, the runtime threw while referenced and succeeded after release, matching the reference pages |
 | `InferenceFunction.AsyncValue` overview example | Omits the required `to:` stream argument and misspells a variable — it does not compile as written |
 | `NDArrayDescriptor.minimumByteCount` example | Passes `RawView.init` arguments out of declared order and omits `try await` on `run` |
 | `MutableView.copyElements(from:)` | References `layout.scalarCount`, a symbol not present in the public API — an internal-doc leak |
 | Symbol platform lists | Every individual symbol page omits **macOS** from `metadata.platforms` while the framework page lists it. Near-certainly a generation bug, but it will confuse an availability audit |
 
 > ✅ **VERIFIED** — all seven observed directly during the documentation harvest. The deletion
-> contradiction is quoted in full and given a device test that would settle it in
+> contradiction is quoted in full and the resolving device result is recorded in
 > [Part 7 reference 02 §7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md).
 
 The practical rule: **when a Core AI doc example does not compile, believe the declaration, not the

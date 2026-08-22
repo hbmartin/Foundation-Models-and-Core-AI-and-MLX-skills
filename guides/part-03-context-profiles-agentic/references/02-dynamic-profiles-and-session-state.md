@@ -1571,6 +1571,10 @@ But understand the granularity before you build a consent flow on it:
 > the loop"* — which suggests loop-level rather than turn-level recovery. **That claim is
 > community-sourced and conflicts with Apple's documented "propagates to the caller" wording. Apple's
 > documentation wins.** Design for turn-level abort.
+>
+> ✅ **DEVICE-CONFIRMED 2026-08-20** — an iPhone 15 Pro / iOS build `24A5408d` probe threw from
+> `onToolCall`; the tool body did not run, `respond` threw `LanguageModelSession.ToolCallError`, and
+> the default transcript policy left only the instructions entry.
 
 For *asking* rather than *denying*, use the tool-as-consent-request pattern instead: the tool returns
 a string telling the model a human was asked, the app shows a Yes/No UI, and the answer re-enters as a

@@ -77,7 +77,7 @@ written from memory; if a spelling is inferred rather than read, it says so.
 | `Attachment` | `struct Attachment<Content>` | 27.0 | ✅ Apple symbol page |
 | `Attachment.init(_:orientation:)` | *"Creates an attachment from a …"* | 27.0 | ✅ Apple symbol page |
 | `Attachment.init(imageURL:orientation:)` | *"Creates an attachment from a file URL pointing to an image."* | 27.0 | ✅ Apple symbol page + Apple's Python-SDK Swift shim |
-| `Attachment.label(_:)` — ⚠️ **required** for tool calls, no-ops silently if omitted (§6.4) | `func label(_:) -> Attachment` | 27.0 | ✅ Apple symbol page + `Origami/Models/DataModels/Photo.swift:77-91` |
+| `Attachment.label(_:)` — stable handle for `ImageReference`; generic tool calls can still run without one (§6.4) | `func label(_:) -> Attachment` | 27.0 | ✅ Apple symbol page + Apple sample + 2026-08-20 device probe |
 | `ImageAttachmentContent` | `struct ImageAttachmentContent : Sendable, Equatable` | 27.0 | ✅ symbol page + SDK-verified (`FoundationModels-27.0-macos.swiftinterface:2779-2781`) — **deliberately opaque**: no public members beyond `==`; it exists as the phantom `Content` of `Attachment<ImageAttachmentContent>`, whose four inits are constrained on it (`:2784-2789`); **never appears at a call site in any Apple sample** |
 | `ImageReference` | `struct ImageReference`, conforms `Generable` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/ImageAnalysis.swift:11-21` |
 | `ImageReference.attachmentLabel` | `var attachmentLabel: String` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/BrainstormModel.swift:142-144`, `:168-171` |
@@ -476,14 +476,16 @@ budget before the user types anything. So:
    preprocessing is necessary before passing an image to an on-device model, such as isolating a
    region of interest."*
 
-> 🔴 **GAP — does `tokenCount(for:)` count attachments?** `SystemLanguageModel.tokenCount(for:)`
+> 🟡 **DEVICE-MEASURED FAILURE — `tokenCount(for:)` did not count attachments on this seed.** `SystemLanguageModel.tokenCount(for:)`
 > shipped in **26.4** and Apple's C shim for the Python SDK exposes
 > `FMSystemLanguageModelTokenCountForPrompt(model, FMComposedPrompt, …)` — and an `FMComposedPrompt`
 > *can* carry attachments. So counting a prompt that contains an image is at least *expressible*.
-> Whether the returned count includes the image's contribution, returns only the text tokens, or
-> throws, is **not documented and not tested anywhere in this corpus**. Do not build a context meter
-> on the assumption that it does. Resolve by calling `tokenCount(for:)` on a 27.0 device with a
-> text-only prompt and the same prompt plus an image, and diffing.
+> On an iPhone 15 Pro running iOS build `24A5408d`, the text-only prompt returned 6 tokens, while
+> the same prompt with each of six images from 128 to 1,792 px threw
+> `FoundationModels.LanguageModelError` code `-1` (`Unable to tokenize prompt` in the device log).
+> Ordinary `respond` calls accepted the same generated image, so this is a counting-path limitation,
+> not proof that image prompting is unavailable. Do not build a multimodal context meter on this
+> method in the tested beta. The actual per-image cost remains unknown.
 
 Cross-reference: the whole context-budget discipline, including the 26 vs 27 compaction idioms,
 lives in [Part 3 · context window and KV cache](../../part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md).
@@ -826,19 +828,23 @@ Two caveats on the recommended form, both worth knowing before you build on it:
   not use the filename — two photos named `IMG_1234.jpg` will collide.
 - **Short.** The label is text in the prompt; it costs tokens on every turn it survives in the
   transcript.
-- **Mandatory the moment a tool is involved.** Apple: *"Labels help the model identify specific
-  attachments when making tool calls."* Apple's `BarcodeReaderTool` example labels its input
-  `"barcode-image"` — and that is not a style choice. See the callout immediately below.
+- **Mandatory when an image must be referenced by identity.** Apple: *"Labels help the model identify
+  specific attachments when making tool calls."* Apple's `BarcodeReaderTool` example labels its
+  input `"barcode-image"`, and an `ImageReference` cannot resolve a specific attachment without a
+  stable handle. See the measured boundary immediately below.
 
-> ⚠️ **SILENT FAILURE — the missing label.** For a *text* prompt a label is optional polish. For any
-> turn where a tool is expected to read the image — `OCRTool`, `BarcodeReaderTool`, or your own tool
-> with an `ImageReference` argument (§6.3) — **`.label(_:)` is required, and omitting it no-ops
-> silently.** The attachment is still sent, the tool is still registered, the prompt still asks for the
-> barcode, and the tool is **simply never called**. Nothing throws, nothing logs, the response is not
-> empty. You get fluent prose synthesised from the model's own look at the pixels — which for barcodes
-> is an invented payload and for dense text is exactly the untrusted OCR §8.3 warns about. The label is
-> the only handle the model has on a specific attachment; without one there is nothing for a tool call
-> to name.
+> ⚠️ **SILENT FAILURE — the missing identity handle.** For a text prompt or a generic tool call, a
+> label is optional. For structured output or a tool argument that must name a particular image,
+> `.label(_:)` supplies the handle returned by `ImageReference.attachmentLabel` and consumed by
+> `resolved(in:)`; an absent or hallucinated handle makes lookup return `nil`.
+>
+> **Device boundary, 2026-08-20:** on iPhone 15 Pro / iOS build `24A5408d`, both labeled and
+> unlabeled attachments caused a required generic `EchoTool` to run, directly disproving the old
+> blanket claim that an unlabeled attachment prevents *every* tool invocation. The same probe
+> confirmed transcript write-through: the unlabeled prompt recorded `label:nil`, while
+> `.label("probe-img")` recorded that exact string. It did not exercise `BarcodeReaderTool`,
+> `OCRTool`, or an `ImageReference` argument, so keep labels mandatory for those identity-dependent
+> paths and regression-test the specific built-in tool you ship.
 >
 > ```swift
 > // ✅ correct
@@ -848,7 +854,7 @@ Two caveats on the recommended form, both worth knowing before you build on it:
 >     Attachment(image).label("barcode-image")     // ← REQUIRED, not decoration
 > }
 >
-> // ⚠️ silently wrong — compiles, runs, answers, never calls the tool
+> // ⚠️ ambiguous — a generic tool may run, but no stable image identity is recorded
 > try await session.respond {
 >     "Scan this image for any barcodes and explain the encoded content."
 >     Attachment(image)                            // ← no label
@@ -857,8 +863,8 @@ Two caveats on the recommended form, both worth knowing before you build on it:
 >
 > The rule for the file-URL path is the same and the ergonomics are worse, because `.label(_:)` there
 > is a rebinding rather than a chained call (§3.3): `var a = Attachment(imageURL: url); a =
-> a.label(id)`. Easy to write the first line and forget the second. **If the session has image tools
-> registered, label every attachment in it.**
+> a.label(id)`. Easy to write the first line and forget the second. **If a tool or structured result
+> may refer to an image, label every attachment in that request.**
 
 > ⚠️ **SILENT FAILURE — the unmatched label.** `resolved(in:)` returns an *Optional*, and the
 > Origami sample's lookup is `first { $0.idString == image.attachmentLabel }` — also Optional. The
@@ -1108,8 +1114,9 @@ func analyzeBarcodeImage(_ image: CGImage) async {
 }
 ```
 
-Note the label on the attachment — that is how the tool knows which image to read, and ⚠️ **without it
-the tool is never called at all, silently** (§6.4). "In ways it can't
+Note the label on the attachment — that is the stable handle by which a tool can identify the image.
+A generic-tool device probe showed that an unlabeled attachment does not universally suppress tool
+invocation; the built-in Vision-tool path still needs a direct A/B (§6.4). "In ways it can't
 natively" is Apple telling you, in the politest possible terms, that the model's own OCR of a
 dense document is not to be trusted and its barcode decoding does not exist. Both tools live in the
 **Vision** framework's documentation, not Foundation Models'. Deeper coverage of the built-in tools
@@ -1775,7 +1782,7 @@ The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schem
 | 15 | The simulator punches out to the host macOS | Meaningless `LanguageModelError -1` | Test image input on a physical 27.0 device |
 | 16 | A stream can yield **zero** partials when the turn produces only a tool call | Spinner never clears, on a *successful* call, with no error | Track "did I ever receive a partial"; clear the loading state on completion regardless (§6.2) |
 | 17 | Attaching `UIImage`/`NSImage` may or may not carry orientation for you | Same silent quality loss as gotcha 1 | Normalise at the app boundary; don't rely on the container type (§5.1) |
-| 18 | An unlabelled `Attachment` in a session with image tools | The tool is **never called**; you get confident prose instead, no error, no log | `.label(_:)` every attachment once a tool may read it (§6.4) |
+| 18 | An unlabelled `Attachment` in an identity-dependent image workflow | `AttachmentSegment.label` is `nil`; `ImageReference` cannot provide your stable app handle, even though a generic tool may still run | `.label(_:)` every attachment once output or a tool must refer to it (§6.4) |
 
 ### 12.2 Every gap this guide declared
 
@@ -1785,8 +1792,9 @@ The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schem
 2. **Per-image token cost** — no Apple figure, no formula, and the forum thread that asked
    (833783) was never answered. The two circulating numbers (896 px, 576 tokens) are developer
    inference and a cross-backend community constant respectively. (§4.2)
-3. **Whether `tokenCount(for:)` counts attachments** — expressible in the C API, undocumented in
-   behaviour. (§4.2)
+3. **Whether `tokenCount(for:)` counts attachments** — **narrowed 2026-08-20:** on iPhone 15 Pro /
+   iOS build `24A5408d`, every tested image size threw `LanguageModelError -1`; no image count was
+   returned. The cost formula remains unknown. (§4.2)
 4. ~~The `orientation:` parameter's type~~ — **✅ RESOLVED 2026-07-29**:
    `CGImagePropertyOrientation? = nil`, SDK-verified on every image init
    (`FoundationModels-27.0-macos.swiftinterface:2785-2789`, `:2369-2372`). (§5.1)
