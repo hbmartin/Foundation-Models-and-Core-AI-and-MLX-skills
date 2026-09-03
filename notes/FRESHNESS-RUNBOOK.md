@@ -9,6 +9,11 @@ Everything here uses tools that already exist in the repo. Nothing below edits a
 automatically — scripts report, humans (or a supervised agent session) fold results in under the
 house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
+Every durable run writes beneath the ignored
+`artifacts/freshness/<automation-id>/<UTC-run-id>/` tree. Set `AUTOMATION_ID` to a stable job name
+when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and probe attachments
+there; `/tmp` is only for disposable intermediates that will never be linked from a task.
+
 > **Current trigger, checked 2026-08-17:** the host is on macOS 27 beta 5 build `26A5406e`, with
 > Xcode 27 beta 5 (`27A5237l`) and iOS 27 Simulator runtime `24A5408d`. The bounded default probe
 > baselines are host 46/23/0 and Simulator 39/19/0; beta-5 host-backed model calls require the
@@ -77,16 +82,21 @@ indexes unchanged), or re-date untouched hedges.
 
 ## 2. The weekly batch (~30 min, pick a fixed day)
 
-1. **Full defect report, not just changed:** `./scripts/refresh-defect-statuses.sh > /tmp/defects.md`
-   — skim STALE-DATE-ONLY and batch-refresh dates in files with several stale hedges; burn down a
-   few AMBIGUOUS citations.
+1. **Full defect report, not just changed:** create a unique run directory and write the report
+   atomically, then skim STALE-DATE-ONLY and batch-refresh dates in files with several stale
+   hedges; burn down a few AMBIGUOUS citations.
+   ```bash
+   run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+   report_dir="artifacts/freshness/weekly-defects/$run_id"
+   ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json"
+   ```
 2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
    framework updated underneath you):
    ```bash
-   cd probes && swift test   # host: 46 tests, 23 skipped is the 2026-08-17 macOS 27 beta-5 baseline
    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-     xcodebuild test -scheme Probes-Package \
-       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'
+     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh host
+   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh simulator
    ```
    The simulator baseline is 39 tests, 19 intentional skips, 0 failures on beta 5. The elevated
    skip count is deliberate: host-backed model calls can block before async timeouts execute.
@@ -111,7 +121,8 @@ export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 ./scripts/diff-interfaces.sh                        # temp capture + one-screen drift vs HEAD
 # managed capture includes coreai-build top-level + all subcommand help surfaces
 ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification   # snippet-level drift
-cd probes && swift test && cd ..                    # re-run probes on the new runtime
+AUTOMATION_ID=beta-event ./scripts/run-probes.sh host
+AUTOMATION_ID=beta-event ./scripts/run-probes.sh simulator
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
@@ -142,11 +153,14 @@ Special case — **the day this machine gets macOS 27**: run the whole upgrade-d
 
 The daily sweep is deliberately script-shaped. Two ways to take yourself out of the loop:
 
-- **launchd/cron**: run `./scripts/refresh-defect-statuses.sh --changed-only` every morning,
-  mail/notify yourself only when the changed list is non-empty. Zero-output days cost nothing.
-- **A scheduled Claude Code agent** (`/schedule` in a session): have it run the sweep, and when
-  rows appear, draft the guide edits *as a report or branch for your review* — keeping the rule
-  that nothing lands in guides without the evidence conventions applied deliberately.
+- **launchd/cron**: run `./scripts/refresh-defect-statuses.sh --changed-only --format json
+  --output artifacts/freshness/daily-defects/<unique-run-id>/defects.json` every morning and
+  notify yourself only when the changed list is non-empty.
+- **A scheduled Codex automation**: use one of the checked-in contracts under
+  `automations/contracts/`. Validate it with `./scripts/validate-automation-contracts.py` before
+  copying its prompt and schedule into Codex. The contract keeps tracked sources read-only,
+  requires a durable artifact, and tells the automation to report a review lead instead of
+  editing guides.
 
 Whichever route: keep the human in the fold-in step. The scripts are trustworthy about *state*;
 deciding what a state change means for a guide's narrative (close the gap? keep the workaround

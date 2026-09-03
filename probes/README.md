@@ -22,24 +22,21 @@ candidate answers, and what to write back for each outcome.
 
 | Destination | Meaning | Command |
 |---|---|---|
-| **HOST-26** | today's host, macOS 26.6 | `cd probes && swift test` |
-| **SIM-27** | iOS 27.0 Simulator on today's host | `cd probes && xcodebuild test -scheme Probes-Package -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'` (create a device first with `xcrun simctl create` if none exists; `xcodebuild -list` shows the scheme name for a plain package is `<name>-Package`) |
-| **MAC-27** | upgrade day, a Mac running macOS 27 | `cd probes && swift test 2>&1 \| grep PROBE-RESULT` — the one-liner |
-| **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Generate the hosted device project and run its scheme; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. See the commands immediately below. |
+| **HOST-26** | today's host, macOS 26.6 | `./scripts/run-probes.sh host` |
+| **SIM-27** | latest iOS Simulator on today's host | `./scripts/run-probes.sh simulator` (override with `--destination` or `PROBE_SIMULATOR_DESTINATION`) |
+| **MAC-27** | upgrade day, a Mac running macOS 27 | `./scripts/run-probes.sh host` |
+| **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Use the hosted device mode shown below; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. |
 
-Physical-device XCTest needs an app host. Generate the ignored Xcode project from the committed
-XcodeGen spec, then use the device UDID from `xcrun xctrace list devices` (or the `Hardware: UDID`
-field from `xcrun devicectl device info details`):
+`run-probes.sh` puts the generated project, SwiftPM scratch directory or DerivedData, logs,
+attachments, and `.xcresult` in a unique ignored
+`artifacts/freshness/<automation-id>/<UTC-run-id>/` directory. Physical-device XCTest needs the
+app host generated from the committed XcodeGen spec. Use the device UDID from `xcrun xctrace list
+devices` (or the `Hardware: UDID` field from `xcrun devicectl device info details`):
 
 ```bash
-cd probes
-xcodegen generate --spec device-project.yml
-xcodebuild test \
-  -project DeviceProbes.xcodeproj \
-  -scheme DeviceProbes \
-  -destination 'platform=iOS,id=<device-udid>' \
-  -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM=<your-team-id>
+./scripts/run-probes.sh device \
+  --destination 'platform=iOS,id=<device-udid>' \
+  --team-id <your-team-id>
 ```
 
 Keep the phone unlocked through destination preflight. The former

@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-08-01T00:00:00Z",
+  "mode": "extraction",
+  "references": [
+    {
+      "claims": ["CLOSED"],
+      "confidence": 0.9,
+      "diagnostics": [],
+      "latestClaimDate": "2026-07-01",
+      "number": 17,
+      "ref": "apple/coreai-torch#17",
+      "repository": "apple/coreai-torch",
+      "sightingCount": 1,
+      "sightingIds": ["s0004"]
+    },
+    {
+      "claims": ["MERGED"],
+      "confidence": 0.75,
+      "diagnostics": [],
+      "latestClaimDate": "2026-08-01",
+      "number": 62,
+      "ref": "ml-explore/mlx#62",
+      "repository": "ml-explore/mlx",
+      "sightingCount": 1,
+      "sightingIds": ["s0001"]
+    },
+    {
+      "claims": ["MERGED"],
+      "confidence": 0.75,
+      "diagnostics": [],
+      "latestClaimDate": "2026-08-01",
+      "number": 74,
+      "ref": "ml-explore/mlx#74",
+      "repository": "ml-explore/mlx",
+      "sightingCount": 1,
+      "sightingIds": ["s0002"]
+    },
+    {
+      "claims": ["OPEN"],
+      "confidence": 0.75,
+      "diagnostics": [],
+      "latestClaimDate": "2026-08-01",
+      "number": 85,
+      "ref": "ml-explore/mlx#85",
+      "repository": "ml-explore/mlx",
+      "sightingCount": 1,
+      "sightingIds": ["s0003"]
+    }
+  ],
+  "repositoryFilter": null,
+  "schemaVersion": 1,
+  "sightings": [
+    {
+      "claimDate": "2026-08-01",
+      "claimedState": "MERGED",
+      "confidence": 0.75,
+      "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
+      "diagnostics": [],
+      "file": "guides/fixture.md",
+      "form": "bare",
+      "id": "s0001",
+      "line": 1,
+      "number": 62,
+      "repository": "ml-explore/mlx"
+    },
+    {
+      "claimDate": "2026-08-01",
+      "claimedState": "MERGED",
+      "confidence": 0.75,
+      "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
+      "diagnostics": [],
+      "file": "guides/fixture.md",
+      "form": "bare",
+      "id": "s0002",
+      "line": 1,
+      "number": 74,
+      "repository": "ml-explore/mlx"
+    },
+    {
+      "claimDate": "2026-08-01",
+      "claimedState": "OPEN",
+      "confidence": 0.75,
+      "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
+      "diagnostics": [],
+      "file": "guides/fixture.md",
+      "form": "bare",
+      "id": "s0003",
+      "line": 1,
+      "number": 85,
+      "repository": "ml-explore/mlx"
+    },
+    {
+      "claimDate": "2026-07-01",
+      "claimedState": "CLOSED",
+      "confidence": 0.9,
+      "context": "The tracker at https://github.com/apple/coreai-torch/issues/17 was closed as of **2026-07-01**.",
+      "diagnostics": [],
+      "file": "guides/fixture.md",
+      "form": "url",
+      "id": "s0004",
+      "line": 3,
+      "number": 17,
+      "repository": "apple/coreai-torch"
+    }
+  ],
+  "summary": {
+    "ambiguousSightings": 0,
+    "references": 4,
+    "sightings": 4,
+    "verdicts": null
+  }
+}
