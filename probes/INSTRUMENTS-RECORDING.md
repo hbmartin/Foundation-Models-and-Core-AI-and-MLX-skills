@@ -31,17 +31,17 @@ Inference*); the session below reads the other four off the timeline.
 
 ## Session 1 — Foundation Models template
 
-3. Start the workload (10-minute budget; the countdown gives you ~20 s to attach):
-   In Xcode, edit the `Probes-Package` scheme's **Test ▸ Arguments ▸ Environment Variables** and
-   enable `PROBE_INSTRUMENTS_WORKLOAD=1`, `PROBE_WORKLOAD_SECONDS=600`, and
-   `PROBE_WORKLOAD_ATTACH_SECONDS=20`. Then start the runner from the command line if desired:
+3. Start the workload (10-minute budget; the countdown gives you ~20 s to attach). The canonical
+   runner generates the app-hosted `DeviceProbes` project in a clean artifact directory and keeps
+   the log and `.xcresult` there:
 
    ```bash
-   cd probes
    export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
-   xcodebuild test -scheme Probes-Package \
-     -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro' \
-     -only-testing:ProbesTests/InstrumentsWorkloadProbes/testInstrumentsRecordingWorkload
+   PROBE_INSTRUMENTS_WORKLOAD=1 \
+   PROBE_WORKLOAD_SECONDS=600 \
+   PROBE_WORKLOAD_ATTACH_SECONDS=20 \
+     ./scripts/run-probes.sh simulator -- \
+       -only-testing:DeviceProbeTests/InstrumentsWorkloadProbes/testInstrumentsRecordingWorkload
    ```
    The console prints a banner:
    `WORKLOAD … attach-target process=<name> pid=<pid> …` followed by a countdown.
