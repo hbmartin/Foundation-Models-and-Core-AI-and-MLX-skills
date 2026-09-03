@@ -1,14 +1,14 @@
 [
   {
     "claim_date": "2026-08-01",
-    "claimed_state": "OPEN",
+    "claimed_state": "MERGED",
     "form": "bare",
     "number": "62",
     "repo": "ml-explore/mlx"
   },
   {
     "claim_date": "2026-08-01",
-    "claimed_state": "OPEN",
+    "claimed_state": "MERGED",
     "form": "bare",
     "number": "74",
     "repo": "ml-explore/mlx"
