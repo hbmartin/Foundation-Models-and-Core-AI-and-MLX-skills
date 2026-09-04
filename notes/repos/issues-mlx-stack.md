@@ -75,7 +75,7 @@ Measured churn loop (60 × ~500 MB alloc→eval→drop), GB:
 | `cache_limit=0`, same churn | 1.00 | 1.00 | 0.00 | 1.00 | 1.14 |
 
 **ACTIONABLE TAKEAWAY (guide-worthy):**
-- **Gate memory-pressure logic on `mx.get_active_memory() + mx.get_cache_memory()`**, not `get_peak_memory()`. That sum matched the OS footprint to 0.2% in the churn test.
+- **Gate memory-pressure logic on `mx.get_active_memory() + mx.get_cache_memory()`**, not `get_peak_memory()`. That sum matched the OS footprint to 0.2% in the churn test. **Closure context (checked 2026-08-23):** the maintainer (zcbenz) closed the issue by scoping the counter, not changing it — *"`get_peak_memory()` is mostly useful for measuring the memory consumption when ineferencing/training a single model, where cache hit rate would be close to 100%. For longtime and parallel model serving it is not going to accurately report the actual footprint, and I suggest doing manual checking with `get_active_memory() + get_cache_memory()` instead."* (typo in original). No code or docs change landed at closure.
 - `mx.set_cache_limit(0)` (or a modest cap) trades reallocation for a bounded pool — same churn ended at 1.14 GB footprint instead of 60.19 GB.
 - `mx.clear_cache()` genuinely returns the memory, but **`phys_footprint` trails the call by a few seconds** (retraction comment: 0.00 cache at t+0 with 15.14 GB footprint; 0.02 GB at t+4 s). Don't sample immediately after and conclude there's a leak.
 - Metal heap in mlx is `heap_size_ = 1<<20` (1 MB) and only serves buffers below `small_size_ = 256 B` — it cannot hold GBs, so a multi-GB "residual" is never the heap.
@@ -97,7 +97,7 @@ Key facts established in the thread:
 > "compiled training with a fixed shape plateaus; compiled training with new sequence shapes grows when each new shape is introduced; ... the same variable-shape schedule in eager mode remains flat; calling `mx.clear_cache()` after every step does not stop the growth."
 > "`mx.compile` keeps a cache entry per distinct input signature (shape + dtype + constants), and it's unbounded ... `mx.clear_cache()` only drains the allocator's *recycle pool*; it never frees a buffer that's still live."
 
-**Fix:** `mx.compile(train_step, shapeless=True)` compiles a single variant with symbolic leading dims. Caveats stated: shapeless gives up shape specialization, and *constants* varying across calls still make distinct entries. There is an internal `detail::compile_clear_cache` (wired to interpreter exit) but **no public "clear the compile cache" API**; `disable_compile()` turns compilation off rather than reclaiming.
+**Fix:** `mx.compile(train_step, shapeless=True)` compiles a single variant with symbolic leading dims. Caveats stated: shapeless gives up shape specialization, and *constants* varying across calls still make distinct entries. There is an internal `detail::compile_clear_cache` (wired to interpreter exit) but **no public "clear the compile cache" API**; `disable_compile()` turns compilation off rather than reclaiming. **Closure context (checked 2026-08-23):** the maintainer (zcbenz) closed it conceding the guard is broken — *"The code reading resource limit is bugged and we should probably fix it or just remove it"* — but kept it because exceeding it *"clearly indicates some fatal mistakes"* like the compile-variant accumulation above: *"So at the moment I think it is fine keep it be."* No setter and no fix landed at closure.
 
 ### 1.3 BufferCache reuse window defeats growing allocations — mlx#3886 (OPEN)
 
@@ -128,7 +128,7 @@ Measured (M4 Max 128 GB), per "decode step" appending one position to 10 pairs o
 
 **Takeaway:** mlx-lm's Python `KVCache` avoids this by preallocating in 256-step chunks with `slice_update`. **C++/Swift/custom cache authors must do the same.** Nothing in the docs warns about this. Cross-referenced from mlx#3896 as the amplifier of pool growth under jittered allocation sizes.
 
-### 1.4 Unbounded live-buffer growth from lazy graph retention in caches — mlx-lm#1332 (OPEN)
+### 1.4 Unbounded live-buffer growth from lazy graph retention in caches — mlx-lm#1332 (closed 2026-08-27; consolidated into #1662, not established fixed)
 
 DeepSeek-V4 (Flash/Pro) on Apple Silicon: `RuntimeError: [metal::malloc] Resource limit (499000) exceeded` after **~11,300 generated tokens, independent of prompt length**; after failure the Metal command queue is wedged until process restart.
 
@@ -377,7 +377,7 @@ Same model (`mlx-community/Qwen3.6-35B-A3B-4bit`), same prompt, `temperature: 0`
 
 ## 4. Quantization correctness bugs (the scary ones)
 
-### 4.1 Silent MoE corruption: affine `gather_qmm` int16 overflow — mlx#3856 (OPEN, 9 comments) → PR #3922
+### 4.1 Silent MoE corruption: affine `gather_qmm` int16 overflow — mlx#3856 (closed completed 2026-08-26, 9 comments) → PR #3922 (merged 2026-08-26)
 
 **Trigger, stated precisely:** flattened gathered row count `n` with **`n > 32768` AND `n % 64 != 0`**, on the **sorted-indices `gather_qmm` path**, **affine** mode, **NAX-only** (M5-generation GPU on macOS 26.2+). *"The bug cannot be reproduced on M1–M4 hardware."*
 
@@ -420,8 +420,8 @@ Model-level scoping table (M5, one-shot vs 2048-chunked prefill, N=16068):
 | Qwen3-Coder-Next abliterated mxfp4-gs32 | mxfp4 | 1.28 | ok |
 
 **Workarounds / fixes:**
-- Downstream: **mlx-lm PR #1585** "switch_layers: pad sorted gather rows to a multiple of 64" — provably output-neutral (the unsort indexes only original rows).
-- Upstream: **mlx PR #3922** "Fix sorted gather_qmm NAX boundary handling" (open at time of research) — clamps remaining row/column counts in `int` before narrowing.
+- Downstream: **mlx-lm PR #1585** "switch_layers: pad sorted gather rows to a multiple of 64" — provably output-neutral (the unsort indexes only original rows); closed unmerged 2026-08-21.
+- Upstream: **mlx PR #3922** "Fix sorted gather_qmm NAX boundary handling" (open at time of research; merged 2026-08-26) — clamps remaining row/column counts in `int` before narrowing.
 
 **Regression-test note worth quoting:** *"unwritten rows hold whatever the recycled MTLBuffer last contained, which is sometimes coincidentally plausible. A regression test should poison the output buffer (or compare two runs) rather than trust one lucky read."*
 
@@ -449,9 +449,9 @@ while (split_k > 1 && (K % (split_k * k_align) != 0)) split_k--;
 
 Example failure: `K=64, group_size=16 → split_k=4, k_partition_size=16 < BK=32`.
 
-### 4.4 NVFP4 tensor-scale is NOT implemented on Metal — mlx#3911 (closed 2026-08-05)
+### 4.4 NVFP4 tensor-scale on Metal: rejected through 0.32.0, basic support from 0.32.1 via PR #3757 — mlx#3911 (closed 2026-08-05)
 
-PR #3022 added per-tensor scale (`global_scale`) for NVFP4 on **CUDA and CPU**. Metal explicitly rejects it (`mlx/backend/metal/quantized.cpp` L1725-1730):
+PR #3022 added per-tensor scale (`global_scale`) for NVFP4 on **CUDA and CPU**. Through v0.32.0, Metal explicitly rejects it (`mlx/backend/metal/quantized.cpp` L1725-1730 at that tag):
 
 ```cpp
 if (mode_ == QuantizationMode::Nvfp4 &&
@@ -464,7 +464,7 @@ if (mode_ == QuantizationMode::Nvfp4 &&
 
 > "Without tensor-scale support, NVFP4 on Metal has ~137x less dynamic range than NVIDIA Blackwell (unsigned UE4M3 vs signed E4M3 scales) ... This blocks NVFP4 quantization for Apple Silicon users running MoE models (DeepSeek-V3/V4, GLM-5.1, etc.)"
 
-Related merged PR: **#3723 "[CUDA] Make qmv support global scale"** — *"`qqmm` reroutes to `qmv` when M=1, while the latter did not support global scales."*
+Related merged PR: **#3723 "[CUDA] Make qmv support global scale"** — *"`qqmm` reroutes to `qmv` when M=1, while the latter did not support global scales."* **Closure context (checked 2026-08-23):** the issue closed 2026-08-05, one day after PR **#3757 "Add gather_qqmm"** merged (2026-08-04, merge commit `a79332de698`); the maintainer's closing comment (zcbenz): *"#3757 has added some basic support for global scale in QQMatmul, but at the moment not all fast kernels get the support and we are still working on improving things."* The #3757 diff deletes the `[QQMatmul]` throw quoted above **and** the `[quantize]`/`[dequantize]` Metal rejections in `mlx/ops.cpp`, routing a Metal `qqmm` with a global scale through the `qmv` fallback (PR: *"The implementation is bare minimum … for Metal it is `qmv`"*; CPU support explicitly still lacking). First release carrying it: **v0.32.1 (2026-08-18)** — ≤ 0.32.0 wheels still throw. So the claim in this section's original heading ("NOT implemented") is historical: from 0.32.1, tensor-scale nvfp4 *runs* on Metal at fallback-kernel speed, not fast-kernel speed.
 
 ### 4.5 2-bit loses its advantage at M ≥ 3 — mlx#3852 (CLOSED 2026-08-16)
 
@@ -628,7 +628,7 @@ From mlx-lm#1438: *"gpt-oss uses attention sinks, and a quantized KV cache raise
 
 ## 6. Prompt cache correctness (mlx-lm server)
 
-### 6.1 mlx-lm#1494 (OPEN) — reuse can return KV that doesn't match the keyed prefix
+### 6.1 mlx-lm#1494 (administratively closed without a fix 2026-08-21) — reuse can return KV that doesn't match the keyed prefix
 
 `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored cache's KV corresponds exactly to its token key, and (2) `is_trimmable() == True` ⟹ `trim(n)` exactly removes the suffix. **`KVCache` satisfies both; `ChunkedKVCache` (llama4 chunked attention) and `ConcatenateKVCache` do not**, and nothing verifies at reuse time.
 
@@ -697,7 +697,7 @@ Report: `speculative_generate_step` diverges from plain greedy at temp=0 with `n
 
 > "`speculative_generate_step` verifies in a batched target forward (`num_draft+1` wide) while plain `generate_step` runs sequential single-token forwards — same math, different reduction order, so the tie-break can flip between tied ids while staying quality-equivalent. 'Lossless' holds up to floating-point tie-break behavior."
 
-Accept/reject code verified correct: `generate.py:622-634` is a pure greedy argmax-equality test; the rewind at `589-591` is `num_draft - n` for every `n`. Resolution is **documentation** (PR #1592 adds a `Note:` to the docstring), not a code fix.
+Accept/reject code verified correct: `generate.py:622-634` is a pure greedy argmax-equality test; the rewind at `589-591` is `num_draft - n` for every `n`. Proposed resolution was **documentation** (PR #1592 added a `Note:` to the docstring), not a code fix; the PR closed unmerged 2026-08-21.
 
 **Guide-worthy falsifier recipe:** at the divergence index, replay through the plain sequential path and print both candidates' raw logits/probs/ranks. Gap ≈ 0.0 with both top-rank ⟹ benign tie. Materially nonzero gap with a dominant baseline token ⟹ real bug in accept/verify.
 
@@ -727,7 +727,7 @@ And in `qwen3_5.py:312`: `should_shift_norm_weights = has_mtp_weights or has_uns
 
 Fixes: **PR #1306** (load-time warning that MTP tensors were discarded); **PR #990** (native MTP, decouples `should_shift_norm_weights` from MTP detection); **PR #1623** "Fix Qwen3.6 converted RMSNorm double shift".
 
-### 7.4 N-gram / prompt-lookup self-speculation — mlx-lm#1497 (OPEN)
+### 7.4 N-gram / prompt-lookup self-speculation — mlx-lm#1497 (closed unmerged 2026-08-26)
 
 Proposal for hybrid GDN/SA models (Qwen3.5/3.6): CPU-side trigram→bigram→unigram `NgramDraftTable`, `ngram_speculative_generate_step()`, `--ngram-spec` / `--ngram-n` (default n=3), plus `ArraysCache.checkpoint()/rollback()/trim()` (~18 lines; `trim` is a no-op for `ArraysCache` — state-based, not offset-based) and a vectorized `GatedDeltaNet._conv1d_decode_multi()` for S>1.
 
@@ -971,7 +971,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 
 **M-RoPE state loss (three linked issues):**
 - **#419 (MERGED PR)** — prefill `LMOutput.State` dropped on `TokenIterator`'s `.logits` path.
-- **#420 (OPEN)** — M-RoPE state dropped **across `ChatSession` turns**: *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by **PR #399**; still open for Qwen2.5-VL / Qwen2-VL / Qwen3-VL (PR #448 wires them).
+- **#420 (closed completed 2026-08-28)** — M-RoPE state dropped **across `ChatSession` turns**: *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by **PR #399**; the researched snapshot still lacked complete Qwen2.5-VL / Qwen2-VL / Qwen3-VL coverage, so verify the closing implementation before removing the workaround.
 - **#443 (closed 2026-08-10)** — `savePromptCache`/`loadPromptCache` dropped `LMOutput.State` in the researched snapshot: *"`ChatSession.saveCache(to:)` matches `.kvcache(let cache, _, _)` and passes only the KV arrays ... The safetensors layout has no slot for it, `loadPromptCache` returns only `([KVCache], metadata)`, and both cache-accepting `ChatSession` initializers hard-code `state: nil`."* Quantified in #399: on a tiny random-weight model warm turn-2 logits diverge from a cold full prefill by **0.43 max-abs** against an **8.3e-07** decode-path noise floor. *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
 - **PR #411** Qwen3VL: apply the sRGB tone curve in image preprocess (issue #410: linear-light values made dark content unreadable).
 - **PR #398** Qwen3VL: default per-image resolution to a **1,280 vision-token budget** (issue #396: uncapped resolution let the ViT allocate tens of GB).
@@ -1060,8 +1060,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 | **#1465 / #1461 / #1458** | transformers ≥ 5.13 fallout: `AutoTokenizer.register("NewlineTokenizer", ...)` passing a string as `config_class` breaks imports of both `mlx-lm` and `mlx-vlm`. |
 | **#1372 / #1575** | XTC sampling: `xtc_threshold` default 0.0 → **0.1** everywhere; threshold made per-row for batched logits. |
 
-### mlx-lm (open, notable)
-`#1588` expert offload (§8); `#1584` rotating quantized KV; `#1585` pad sorted gather rows to 64 (mlx#3856 workaround); `#1586` fused sequential-scan SSM kernel for S=2–8; `#1596` prompt-cache trimming for recurrent/hybrid/sliding-window via prefill-boundary state checkpoints; `#1598` livelock watchdog; `#1595` pin `MLX_ENABLE_TF32=0` in tests; `#1592` document spec-decode tie-breaking; `#1590` never lower `RLIMIT_NOFILE` on import (issue **#1589**: *"Importing mlx_lm lowers RLIMIT_NOFILE and irreversibly caps the hard limit"*); `#1579` fused Metal kernels for the SSD prefill path in `ssm_update`; `#1609` faster loglikelihood scoring in `mlx_lm.evaluate`; `#1580` keyed per-request sampling; `#1593` drop import-level sampler compilation.
+### mlx-lm (notable at research time)
+`#1588` expert offload (§8); `#1584` rotating quantized KV; `#1585` pad sorted gather rows to 64 (mlx#3856 workaround; closed unmerged 2026-08-21); `#1586` fused sequential-scan SSM kernel for S=2–8; `#1596` prompt-cache trimming for recurrent/hybrid/sliding-window via prefill-boundary state checkpoints; `#1598` livelock watchdog; `#1595` pin `MLX_ENABLE_TF32=0` in tests; `#1592` document spec-decode tie-breaking (closed unmerged 2026-08-21); `#1590` never lower `RLIMIT_NOFILE` on import (issue **#1589**: *"Importing mlx_lm lowers RLIMIT_NOFILE and irreversibly caps the hard limit"*); `#1579` fused Metal kernels for the SSD prefill path in `ssm_update`; `#1609` faster loglikelihood scoring in `mlx_lm.evaluate`; `#1580` keyed per-request sampling; `#1593` drop import-level sampler compilation.
 
 **Model-support velocity (July 2026 alone):** Nanbeige/Nanbeige4.2 (looped transformer, three competing PRs #1597/#1599/#1603), Laguna / Laguna-S 2.1 / Poolside nvfp4 (#1601/#1602/#1334), Apertus 1.5, granitemoe_swa, Kimi K3 (draft, "pending 2026-07-27 weights"), Mellum 2, DeepSeek-OCR + Unlimited-OCR (swift #473), Olmo3, GLM4MOE/GLM4MOELite, Mamba2, Mixtral, DeepSeek-V2/V3.
 
@@ -1137,7 +1137,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 
 ### `ml-explore/mlx-lm` PRs
 - Merged: #1501, #1072, #1345, #1385, #1359 (full bodies); #1504, #1467, #1465, #1431, #1372, #1575, #1327, #1240, #1177, #1109, #1114, #1106, #1090, #1078 (titles)
-- Open: #1588 (full body); #1584, #1585, #1586, #1592, #1595, #1596, #1598, #1607, #1611, #1618, #1619, #1623 + ~25 more (titles)
+- Open at research time: #1588 (full body); #1584, #1585, #1586, #1592, #1595, #1596, #1598, #1607, #1611, #1618, #1619, #1623 + ~25 more (titles). Later state check: #1585 and #1592 closed unmerged 2026-08-21.
 
 ### `ml-explore/mlx-swift-lm` issues
 - #221 (body + 18 comments), #466 (body + 1), #441 (body + 2)
@@ -1171,7 +1171,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 ## Open questions / unverified
 
 1. **Line numbers drift.** All source line references (`allocator.cpp:132/166-190`, `buffer_cache.h:30-38`, `scaled_dot_product_attention.cpp:621-633`, `quantized_nax.h:1532-1535`, `cache.py:37/552/1578/1630/1674`, `generate.py:294/589-591/622-634/1332/1369`, `server.py:1037/1048`, `ToolCallFormat.swift:174`, `GemmaFunctionParser.swift:8-9`) come from issue bodies at specific commits. **Verify against the actual checkout before quoting in a guide.**
-2. **Did mlx#3922 merge?** It was open with a proposed fix at research time. Same for #3918/#3919/#3920, mlx-lm#1584/#1585/#1588/#1598, and mlx-swift-lm #467–#471. ✅ **RESOLVED for #3894** — merged 2026-08-04, closing #3860 with it (§3.1).
+2. **Did mlx#3922 merge?** ✅ **RESOLVED 2026-08-26** — it merged and mlx#3856 closed completed. Downstream mlx-lm#1585 closed unmerged 2026-08-21. The watch remains for #3918/#3919/#3920, mlx-lm#1584/#1588/#1598, and mlx-swift-lm #467–#471. ✅ **RESOLVED for #3894** — merged 2026-08-04, closing #3860 with it (§3.1).
 3. **`mlx_lm` on PyPI is 0.31.3 (April) while `main` has months of fixes.** I did not determine whether 0.31.4+ shipped. Guide readers on PyPI will hit several of the bugs above that are fixed on main.
 4. **Exact `mx.device_info()` key set** — I verified only `resource_limit` and `device_name` appear in these threads.
 5. **`MLX_METAL_GPU_ARCH`** is used in #3897/#3860 as a same-silicon kernel-family override (`applegpu_g16s`). Its documented status, valid values, and whether it is supported vs. debug-only are **UNVERIFIED**.
