@@ -1007,14 +1007,16 @@ from a cold full prefill by **0.43 max-abs**, against an **8.3e-07** decode-path
 *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
 
 > ✅ **VERIFIED** — issue and PR text from the July 2026 issue-mining pass over
-> `ml-explore/mlx-swift-lm`. States re-checked via `gh` **2026-08-17**: issue #420 remains open;
-> #443 closed 2026-08-10; PR #399 merged 2026-07-14, and PR #448 merged 2026-07-30. Re-check the
+> `ml-explore/mlx-swift-lm`. States re-checked via `gh` **2026-09-04**: issue #420 closed completed
+> 2026-08-28 after PR #448 wired Qwen2.5-VL/Qwen2-VL and PR #475 wired Qwen3-VL; #443 closed
+> 2026-08-10; PR #399 merged 2026-07-14. Re-check the
 > released version you ship before relying on this.
 >
 > **Safe default for VLMs today:** if you are doing multi-turn grounding (bounding boxes,
-> coordinates, "the thing on the left"), **do not restore a saved KV cache** and prefer
-> re-prefilling the conversation over reusing a cache across turns until #420 is fixed and the
-> #443 fix is present in the released version you ship. Text-only
+> coordinates, "the thing on the left"), verify that your released version contains the #448/#475
+> family wiring and #443 fix before restoring a saved KV cache; otherwise prefer re-prefilling.
+> Qwen3-VL also needs the session-layer `PreparedInputSplitting` path for end-to-end warm reuse.
+> Text-only
 > models are unaffected — they carry no state in `LMOutput.State`.
 
 ### 4.4 What `next()` actually does
@@ -3603,7 +3605,7 @@ them throws.
 |---|---|---|---|---|
 | 1 | §2.5 | Stream yields `.toolCall` first and **zero** `.chunk` events | a "waiting for first token" spinner never stops | drive UI state from `.info` or stream termination, never from first `.chunk` |
 | 2 | §3.3 | `topP`/`topK`/`minP` are ignored at `temperature: 0`, and `topP: 1.0` / `topK: 0` are no-ops anyway | output is deterministic despite a "sampling" config | run the prompt twice; identical output ⇒ greedy |
-| 3 | §4.3 | `LMOutput.State` dropped across turns ⇒ M-RoPE positions recomputed from zero | VLM grounding answers drift; turn-2 logits diverge by 0.43 max-abs vs 8.3e-07 noise floor | don't reuse caches across turns for VLM grounding until #420/#443 close |
+| 3 | §4.3 | `LMOutput.State` dropped across turns ⇒ M-RoPE positions recomputed from zero | VLM grounding answers drift; turn-2 logits diverge by 0.43 max-abs vs 8.3e-07 noise floor | require releases containing #448/#475 and #443; otherwise re-prefill |
 | 4 | §5.3 | A trailing empty `.assistant("")` closes the assistant turn in the template | model starts a new user turn, or emits EOS immediately | trim it — `ChatSession` does; the raw `UserInput` path does not |
 | 5 | §6.4 | Chat template missing, system role dropped, `additionalContext` keys ignored | fluent output, worse instruction-following | the render-and-eyeball recipe, §6.5 |
 | 6 | §7.5 | `ToolCallFormat.infer` returns `nil` ⇒ loop assumes `.json` ⇒ non-JSON calls stay in the prose | `stopReason == .stop`, `toolCalls == []`, function-call text in the UI | set `toolCallFormat:` explicitly; §7.8 |

@@ -1373,7 +1373,7 @@ the one you should use.
 
 There is a second, subtler memory issue that block growth does *not* fix:
 
-> ✅ **VERIFIED** — mlx-lm#1332 (closed completed 2026-08-27), via `notes/repos/issues-mlx-stack.md:131-139`: unbounded
+> ✅ **VERIFIED** — mlx-lm#1332 (closed 2026-08-27 and consolidated into #1662; not established fixed), via `notes/repos/issues-mlx-stack.md:131-139`: unbounded
 > live-buffer growth from **lazy graph retention** in caches. `RotatingKVCache._update_in_place`
 > and the `Batch*` variants chain identically via sliced functional assignment. The practical
 > consequence is that the cache's arrays can retain a graph of every update until something forces
@@ -1415,7 +1415,7 @@ rather than `min(self.offset, n)`. It exists for chunked-attention architectures
 canonical consumer.
 
 > ⚠️ **`ChunkedKVCache` and `ConcatenateKVCache` violate an assumption the server's prompt cache
-> makes.** From mlx-lm#1494 (closed completed 2026-08-21): `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored
+> makes.** From mlx-lm#1494 (administratively closed without a fix 2026-08-21): `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored
 > cache's KV corresponds exactly to its token key and (2) `is_trimmable() == True` implies
 > `trim(n)` removes exactly the suffix. **`KVCache` satisfies both; `ChunkedKVCache` and
 > `ConcatenateKVCache` do not**, and nothing verifies it at reuse time. See §9.5 — this is a
@@ -1682,7 +1682,7 @@ Four open defects in this subsystem, all community-reported, all worth knowing b
 
 | Issue | Symptom | Status |
 |---|---|---|
-| mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | Closed completed 2026-08-21; repro script in-thread |
+| mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | Administratively closed without a fix 2026-08-21; repro script in-thread |
 | mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | OPEN |
 | mlx-lm#1395 | `fetch_nearest_cache` **deep-copies** the cached KV, doubling peak memory exactly when a cached conversation is reused | OPEN |
 | mlx-lm#1390 | Server aborts with a Metal `Insufficient Memory` command-buffer failure after the prompt cache grew to **23.35 GB / 26.28 GB** | OPEN |
@@ -2836,7 +2836,7 @@ model whose `make_cache()` already returns bounded caches — and drive your pro
 
 ### 9.5 ⚠️ SILENT FAILURE — server prompt-cache reuse returning mismatched KV
 
-> ✅ **VERIFIED** — mlx-lm#1494 (closed completed 2026-08-21), via `notes/repos/issues-mlx-stack.md:625-629`.
+> ✅ **VERIFIED** — mlx-lm#1494 (administratively closed without a fix 2026-08-21), via `notes/repos/issues-mlx-stack.md:625-629`.
 
 `LRUPromptCache.fetch_nearest_cache` rests on two assumptions:
 

@@ -286,7 +286,8 @@ the three LLM engines and the VLM engine, `ModelStructure.swift` (the structureâ
 strongest guidance on `SpecializationOptions` anywhere), the bundle readers, `NDArray+Helpers.swift`,
 `ImagePreprocessor.swift`, the two xgrammar wrappers, `CoreAILanguageModel.swift`, the four Python bundle
 writers, `Package.swift`/`Package.resolved` and the agent skills in `skills/` â€” plus merged PRs **#62,
-\#74, #89**, PR **#85** (**closed unmerged 2026-08-23**) and issues **#5, #55, #58, #112**,
+\#74, #89**, PR **#85** (**closed unmerged 2026-08-23**) and issues **#5, #55** (**closed completed
+2026-08-27 after the beta-6 SIGSEGV disappeared; silent GPU fallback remained**), **#58, #112**,
 each documenting a real failure; and
 `apple/coreai-torch` v0.4.1 (`converter.py`, `_utils.py`, `tests/test_stateful.py`, the notebooks, and
 the release note that gates 0.4.0 assets). **Apple documentation**, harvested 2026-07-27 via `sosumi.ai`

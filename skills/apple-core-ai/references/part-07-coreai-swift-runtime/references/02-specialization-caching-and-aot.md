@@ -1485,6 +1485,10 @@ Community measurement corroborates the practical consequence, hard:
 > ⚠️ That last point is worth internalising: **`ANECCompile() FAILED` in your console during
 > specialization is not necessarily an error.** The same author records having killed a run on the
 > first such message and calls it *"wrong call"*.
+> On macOS 27 beta 6 (`26A5416b`), the issue author confirmed that the original SIGSEGV no longer
+> reproduced, and Apple closed #55 completed on **2026-08-27**. The linear-INT4 static program still
+> failed ANE compilation and produced a GPU-only asset with exit 0, so the crash fix does **not**
+> establish ANE support; treat the silent fallback as a separate unresolved hazard.
 
 And the structural reason: which compute unit you get is decided far more by **how the model was
 exported** than by what you ask for at load time. Apple's own runtime encodes that belief in code.

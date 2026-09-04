@@ -894,7 +894,8 @@ evaluation once, then read.**
 One more lazy-evaluation failure worth knowing before you write anything stateful, because it is
 subtle and it is *not* fixed by the normal training-loop `mx.eval`.
 
-*Community-measured*, mlx-lm#1332 (closed completed 2026-08-27; open at research time), DeepSeek-V4 on Apple silicon:
+*Community-measured*, mlx-lm#1332 (closed 2026-08-27 and consolidated into #1662, not established
+fixed; open at research time), DeepSeek-V4 on Apple silicon:
 `RuntimeError: [metal::malloc] Resource limit (499000) exceeded` after **~11,300 generated tokens,
 independent of prompt length**.
 
