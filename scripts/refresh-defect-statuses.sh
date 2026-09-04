@@ -3,4 +3,5 @@
 
 set -uo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root" || exit 1
 exec python3 "$root/scripts/refresh_defect_statuses.py" "$@"
