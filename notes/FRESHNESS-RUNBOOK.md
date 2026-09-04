@@ -30,29 +30,25 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
-This currently extracts 957 sightings of 322 distinct mapped issue/PR refs from the guides. After
-a few minutes of `gh` calls it prints only rows whose live state appears to disagree with the
-guide's claim. Triage each row:
+This extracts the issue/PR sightings from the guides. After a few minutes of `gh` calls it prints
+only rows whose live state appears to disagree with the guide's claim, while the summary retains
+the full verdict counts so an offline run remains visibly UNREACHABLE. Triage each row:
 
 | Verdict | What to do |
 |---|---|
 | **STATE-CHANGED** | **Human-review the cited sentence first.** If that specific reference really claims the old state, edit the hedge the same day: state + date, keep the incident narrative, close/narrow any 🔴 GAP that hinged on it, and update the in-file gap ledger. Do not edit from the verdict alone: nearby state words can leak between references. |
 | **STALE-DATE-ONLY** | Do **not** churn dates daily — refresh "as of" dates only when you touch the file for another reason, or in the weekly batch (§2). A correct claim with an old date is still correct. |
-| **AMBIGUOUS** | The ref couldn't be mapped to a repo. When you're in that file anyway, tighten the citation to the full `owner/repo#N` form so the script can track it forever after. |
+| **AMBIGUOUS** | The ref couldn't be mapped confidently or its nearby state language conflicts. Inspect the sighting and either tighten the citation to `owner/repo#N` or make the state wording reference-local. |
 | **UNREACHABLE** | Usually a miscitation (wrong repo for the number) — the 2026-07-31 run caught three this way. Verify by hand, fix the citation. |
 
 Precedent for pace: the very first scripted run caught `mlx-swift-lm#448` merging **the day
 before**. Most quiet-day changed lists should be empty or short.
 
-**Known parser limitation, 2026-08-01.** `--changed-only` produced five false `STATE-CHANGED`
-rows where the cited guide text already matched live state: `apple/coreai-models#62`, `#74`, and
-`#89` (merged); `apple/coreai-torch#7` (closed unmerged); and `ml-explore/mlx#3893` (merged).
-The failure mode is state-language leakage from another reference in the same paragraph or nearby
-OPEN wording. Until claim-context parsing and mixed-state tests are tightened, treat every
-`STATE-CHANGED` row as a review lead, not an edit instruction — and triage **per sighting**, not
-per ref: the 2026-08-03 pass found a genuinely stale sentence ("Open PR `coreai-torch#7`", part-08
-ref 01) hiding behind this same known-false-positive list. A ref on this list can still contain
-one sighting that really does claim the old state.
+**Parser guardrail, tightened 2026-09-04.** State claims are clause-scoped and bounded to 80
+characters after or 40 before a reference, with after-reference wording taking precedence.
+Ambiguous state windows no longer produce actionable verdicts, and regression tests pin real
+mixed-state corpus sightings. Still treat every `STATE-CHANGED` row as a review lead rather than
+an edit instruction: triage **per sighting**, since one ref can have both current and stale prose.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 
@@ -98,6 +94,10 @@ indexes unchanged), or re-date untouched hedges.
    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
      AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh simulator
    ```
+   Simulator mode deliberately uses the tool-hosted `Probes-Package` scheme and pins `OS=27.0`,
+   matching the topology used to establish the baseline. It injects supported `PROBE_*` values
+   into the generated `.xctestrun`, because Xcode sanitizes its test process environment. Override
+   the destination only when intentionally establishing a new runtime baseline.
    The simulator baseline is 39 tests, 19 intentional skips, 0 failures on beta 5. The elevated
    skip count is deliberate: host-backed model calls can block before async timeouts execute.
    Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is a

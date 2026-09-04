@@ -23,15 +23,19 @@ candidate answers, and what to write back for each outcome.
 | Destination | Meaning | Command |
 |---|---|---|
 | **HOST-26** | today's host, macOS 26.6 | `./scripts/run-probes.sh host` |
-| **SIM-27** | latest iOS Simulator on today's host | `./scripts/run-probes.sh simulator` (override with `--destination` or `PROBE_SIMULATOR_DESTINATION`) |
+| **SIM-27** | pinned iOS 27.0 Simulator on today's host | `./scripts/run-probes.sh simulator` (override with `--destination` or `PROBE_SIMULATOR_DESTINATION`) |
 | **MAC-27** | upgrade day, a Mac running macOS 27 | `./scripts/run-probes.sh host` |
 | **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Use the hosted device mode shown below; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. |
 
-`run-probes.sh` puts the generated project, SwiftPM scratch directory or DerivedData, logs,
-attachments, and `.xcresult` in a unique ignored
-`artifacts/freshness/<automation-id>/<UTC-run-id>/` directory. Physical-device XCTest needs the
-app host generated from the committed XcodeGen spec. Use the device UDID from `xcrun xctrace list
-devices` (or the `Hardware: UDID` field from `xcrun devicectl device info details`):
+`run-probes.sh` puts the SwiftPM scratch directory or DerivedData, logs, direct probe artifacts,
+and simulator/device `.xcresult` in a unique ignored
+`artifacts/freshness/<automation-id>/<UTC-run-id>/` directory. Host and simulator runs use the
+same tool-hosted Swift-package lanes as the recorded baselines. For simulator runs, the wrapper
+builds first and injects supported shell-prefixed `PROBE_*` variables into the generated
+`.xctestrun` before launch; Xcode does not forward those variables from its own shell environment.
+Physical-device XCTest instead needs the app host generated from the committed XcodeGen spec. Use
+the device UDID from `xcrun xctrace list devices` (or the `Hardware: UDID` field from `xcrun
+devicectl device info details`):
 
 ```bash
 ./scripts/run-probes.sh device \
@@ -63,9 +67,10 @@ Environment knobs:
 - `PROBE_INSTRUMENTS_WORKLOAD=1` — unlocks the Instruments recording workload
   (`instruments.fm-workload`; see `INSTRUMENTS-RECORDING.md`). Companions:
   `PROBE_WORKLOAD_SECONDS` (default 300) and `PROBE_WORKLOAD_ATTACH_SECONDS` (default 20).
-- `PROBE_ARTIFACT_DIR=/absolute/output/path` — writes complete probe artifacts when a
-  destination can access that path. `fm.spotlight-tool-surface` always also attaches its
-  complete schema to the XCTest result, which is the reliable simulator export path.
+- `PROBE_ARTIFACT_DIR=/absolute/output/path` — writes complete probe artifacts when a destination
+  can access that path. The runner supplies its durable `ProbeArtifacts/` path automatically for
+  host and tool-hosted simulator runs. App-hosted physical-device tests cannot write to a host
+  path; `fm.spotlight-tool-surface` therefore also attaches its complete schema to the `.xcresult`.
 - `PROBE_ENABLE_ATTACHMENT=1` — retries the image-attachment probe on the macOS 27 beta-5 host or
   iOS 27 beta-5 Simulator. Both block inside image tokenization by default on the 2026-08-17
   runtime, before an async timeout can execute, so weekly runs skip this probe there.
@@ -82,8 +87,8 @@ Environment knobs:
 standalone fallback binary lives in `Workload/fmworkload.swift` (outside the package).
 
 **SIM-27 deep pass** (higher sample counts): prefix the SIM-27 command with
-`PROBE_ENUM_RUNS=100 PROBE_CONCURRENT_SESSIONS=16` — plain env prefixing reaches the
-test runner on this beta (verified 2026-07-31).
+`PROBE_ENUM_RUNS=100 PROBE_CONCURRENT_SESSIONS=16` — the wrapper transfers those values into
+the generated `.xctestrun` before starting XCTest.
 
 **Verified 2026-08-03 (host now macOS 26.6 `25G72`):** `swift test` on the host —
 46 tests, 34 skipped, 0 failures, exit 0. SIM-27 full run — 39 tests, 2 skipped (PCC

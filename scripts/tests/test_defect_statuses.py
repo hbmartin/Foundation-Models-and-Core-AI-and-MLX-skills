@@ -5,10 +5,13 @@ import io
 import json
 import os
 import pathlib
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+
+from scripts import refresh_defect_statuses as reporter
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -78,8 +81,104 @@ class DefectStatusGoldenTests(unittest.TestCase):
 
         self.assertEqual(
             result.stdout.splitlines()[0],
-            "file\tline\trepo\tnumber\tform\tclaimed_state\tclaim_date\tconfidence\tcontext",
+            "file\tline\trepo\tnumber\tform\tclaimed_state\tclaim_date\tcontext",
         )
+
+    def test_legacy_tsv_preserves_form_group_order(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = pathlib.Path(directory)
+            (checkout / "guides").mkdir()
+            (checkout / "guides" / "fixture.md").write_text(
+                "The mlx issue #1 and https://github.com/ml-explore/mlx/issues/2 are open.\n"
+            )
+            sightings = reporter.extract(checkout)
+
+        rows = list(
+            csv.DictReader(io.StringIO(reporter.sighting_tsv(sightings)), delimiter="\t")
+        )
+        self.assertEqual([row["number"] for row in rows], ["2", "1"])
+
+    def test_claim_parser_prefers_bounded_state_after_reference(self) -> None:
+        text = (
+            'mlx#3821 ("Source builds silently drop every NAX kernel", CLOSED) and its fix '
+            'PR #3824 ("Warn at configure time when NAX kernels are disabled", MERGED)'
+        )
+        start = text.index("#3824")
+
+        state, confidence, diagnostics = reporter.claim_in_clause(
+            text, start, start + len("#3824")
+        )
+
+        self.assertEqual(state, "MERGED")
+        self.assertEqual(confidence, 0.9)
+        self.assertEqual(diagnostics, [])
+
+    def test_claim_parser_does_not_reach_across_a_long_clause(self) -> None:
+        text = "merged PR #62 " + ("unrelated detail " * 10) + "issue #85"
+        start = text.index("#85")
+
+        state, confidence, diagnostics = reporter.claim_in_clause(
+            text, start, start + len("#85")
+        )
+
+        self.assertIsNone(state)
+        self.assertEqual(confidence, 1.0)
+        self.assertEqual(diagnostics, [])
+
+    def test_context_is_centered_on_each_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = pathlib.Path(directory)
+            (checkout / "guides").mkdir()
+            (checkout / "guides" / "fixture.md").write_text(
+                ("background detail " * 30) + "The mlx issue #42 remains open.\n"
+            )
+            sightings = reporter.extract(checkout)
+
+        self.assertEqual(len(sightings), 1)
+        self.assertIn("#42", sightings[0]["context"])
+        self.assertLessEqual(len(sightings[0]["context"]), 240)
+
+    def test_low_confidence_or_diagnostic_claim_is_ambiguous(self) -> None:
+        live = {"kind": "issue", "state": "OPEN", "closedAt": None}
+
+        self.assertEqual(reporter.verdict(live, ["CLOSED"], None, 0.6), "AMBIGUOUS")
+        self.assertEqual(
+            reporter.verdict(
+                live,
+                ["CLOSED"],
+                None,
+                0.9,
+                [{"code": "multiple-state-words", "message": "ambiguous"}],
+            ),
+            "AMBIGUOUS",
+        )
+
+    def test_real_corpus_pins_reference_local_claims(self) -> None:
+        sightings = reporter.extract(ROOT)
+
+        def claim(path: str, line: int, number: int) -> str | None:
+            matches = [
+                sighting["claimedState"]
+                for sighting in sightings
+                if sighting["file"] == path
+                and sighting["line"] == line
+                and sighting["number"] == number
+            ]
+            self.assertEqual(len(matches), 1, (path, line, number, matches))
+            return matches[0]
+
+        quantization = (
+            "guides/part-12-mlx-python/references/03-quantization.md"
+        )
+        fundamentals = (
+            "guides/part-12-mlx-python/references/01-core-fundamentals.md"
+        )
+        runtime = (
+            "guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md"
+        )
+        self.assertEqual(claim(quantization, 1251, 3824), "MERGED")
+        self.assertEqual(claim(fundamentals, 122, 3924), "CLOSED")
+        self.assertIsNone(claim(runtime, 3663, 85))
 
     def test_unreachable_github_is_structured_and_nonfatal(self) -> None:
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:
@@ -112,10 +211,40 @@ class DefectStatusGoldenTests(unittest.TestCase):
             )
         )
 
+    def test_changed_only_keeps_full_unreachable_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:
+            checkout = self.make_fixture_checkout(directory)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    ROOT / "scripts" / "refresh_defect_statuses.py",
+                    "--source-root",
+                    checkout,
+                    "--format",
+                    "json",
+                    "--changed-only",
+                    "--sleep-seconds",
+                    "0",
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PATH": empty_path, "SOURCE_DATE_EPOCH": "1785542400"},
+            )
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["references"], [])
+        self.assertEqual(payload["summary"]["references"], 4)
+        self.assertEqual(payload["summary"]["verdicts"]["UNREACHABLE"], 4)
+
     def test_output_is_written_as_a_complete_json_document(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             checkout = self.make_fixture_checkout(directory)
             output = checkout / "artifacts" / "defects.json"
+            ordinary = checkout / "ordinary.json"
+            ordinary.write_text("{}\n")
+            expected_mode = stat.S_IMODE(ordinary.stat().st_mode)
             result = subprocess.run(
                 [
                     sys.executable,
@@ -135,10 +264,63 @@ class DefectStatusGoldenTests(unittest.TestCase):
                 env={**os.environ, "SOURCE_DATE_EPOCH": "1785542400"},
             )
             payload = json.loads(output.read_text())
+            actual_mode = stat.S_IMODE(output.stat().st_mode)
 
         self.assertIn("Report written to", result.stdout)
         self.assertEqual(payload["schemaVersion"], 1)
         self.assertEqual(payload["summary"]["references"], 4)
+        self.assertEqual(actual_mode, expected_mode)
+
+    def test_atomic_output_preserves_existing_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = self.make_fixture_checkout(directory)
+            output = checkout / "defects.json"
+            output.write_text("old\n")
+            output.chmod(0o640)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    ROOT / "scripts" / "refresh_defect_statuses.py",
+                    "--source-root",
+                    checkout,
+                    "--extract-only",
+                    "--format",
+                    "json",
+                    "--output",
+                    output,
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o640)
+
+    def test_wrapper_resolves_relative_output_from_repository_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / "wrapper-output.json"
+            relative_output = os.path.relpath(output, ROOT)
+
+            subprocess.run(
+                [
+                    ROOT / "scripts" / "refresh-defect-statuses.sh",
+                    "--extract-only",
+                    "--format",
+                    "json",
+                    "--repo",
+                    "not/a-repo",
+                    "--output",
+                    relative_output,
+                ],
+                cwd=directory,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertTrue(output.is_file())
 
 
 if __name__ == "__main__":

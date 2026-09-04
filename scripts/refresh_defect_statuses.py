@@ -13,6 +13,7 @@ import json
 import os
 import pathlib
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -104,8 +105,15 @@ def generated_at() -> str:
 
 def atomic_text(path: pathlib.Path, contents: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        publish_mode = stat.S_IMODE(path.stat().st_mode)
+    except FileNotFoundError:
+        current_umask = os.umask(0)
+        os.umask(current_umask)
+        publish_mode = 0o666 & ~current_umask
     descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
+        os.fchmod(descriptor, publish_mode)
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write(contents)
         os.replace(temporary, path)
@@ -205,22 +213,29 @@ def clause_for_offset(text: str, offset: int) -> tuple[int, int]:
 
 
 def claim_in_clause(
-    text: str, reference_start: int
+    text: str, reference_start: int, reference_end: int
 ) -> tuple[str | None, float, list[dict[str, str]]]:
     clause_start, clause_end = clause_for_offset(text, reference_start)
-    clause = text[clause_start:clause_end]
-    relative_reference = reference_start - clause_start
-    candidates: list[tuple[int, str]] = []
-    for pattern, state in CLAIM_PATTERNS:
-        for match in pattern.finditer(clause):
-            prefix = clause[max(0, match.start() - 12) : match.start()]
-            if RE_NEGATED.search(prefix):
-                continue
-            distance = min(
-                abs(relative_reference - match.start()),
-                abs(relative_reference - match.end()),
-            )
-            candidates.append((distance, state))
+
+    def scan(segment: str, distance_from_match: Any) -> list[tuple[int, str]]:
+        found: list[tuple[int, str]] = []
+        for pattern, state in CLAIM_PATTERNS:
+            for match in pattern.finditer(segment):
+                prefix = segment[max(0, match.start() - 12) : match.start()]
+                if not RE_NEGATED.search(prefix):
+                    found.append((distance_from_match(match), state))
+        return found
+
+    # Guide prose overwhelmingly states a reference's state after it. Preserve
+    # that precedence, but keep both directions bounded inside the same clause
+    # so a status attached to a neighbouring reference cannot leak arbitrarily.
+    after_segment = text[reference_end : min(clause_end, reference_end + 80)]
+    candidates = scan(after_segment, lambda match: match.start())
+    direction = "after"
+    if not candidates:
+        before_segment = text[max(clause_start, reference_start - 40) : reference_start]
+        candidates = scan(before_segment, lambda match: len(before_segment) - match.end())
+        direction = "before"
     if not candidates:
         return None, 1.0, []
     states = {state for _, state in candidates}
@@ -230,7 +245,10 @@ def claim_in_clause(
     return chosen, 0.6, [
         {
             "code": "multiple-state-words",
-            "message": f"Clause contains multiple state words; selected nearest state {chosen}.",
+            "message": (
+                f"Bounded {direction}-reference window contains multiple state words; "
+                f"selected nearest state {chosen}."
+            ),
         }
     ]
 
@@ -292,11 +310,21 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         diagnostics,
                     )
 
-            for offset, end, repository, number, form, map_confidence, diagnostics in sorted(references):
-                claimed_state, claim_confidence, claim_diagnostics = claim_in_clause(text, offset)
+            # Keep the legacy extraction order: URLs, owner/repo refs, adjacent
+            # repo refs, then bare refs, each in regex encounter order.
+            for offset, end, repository, number, form, map_confidence, diagnostics in references:
+                claimed_state, claim_confidence, claim_diagnostics = claim_in_clause(
+                    text, offset, end
+                )
                 clause_start, clause_end = clause_for_offset(text, offset)
                 clause_dates = [date for date in dates if clause_start <= date[0] <= clause_end]
-                claim_date = nearest(clause_dates or dates, offset)
+                claim_date = nearest(clause_dates, offset)
+                context_width = 240
+                reference_width = end - offset
+                left_budget = max(0, (context_width - reference_width) // 2)
+                context_start = max(0, offset - left_budget)
+                context_end = min(len(text), context_start + context_width)
+                context_start = max(0, context_end - context_width)
                 sightings.append(
                     {
                         "id": f"s{len(sightings) + 1:04d}",
@@ -307,7 +335,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         "form": form,
                         "claimedState": claimed_state,
                         "claimDate": claim_date,
-                        "context": " ".join(text.split())[:240],
+                        "context": " ".join(text[context_start:context_end].split()),
                         "confidence": round(min(map_confidence, claim_confidence), 2),
                         "diagnostics": diagnostics + claim_diagnostics,
                     }
@@ -388,11 +416,26 @@ def lookup(repository: str, number: int) -> dict[str, Any]:
     return {"error": error or "unreachable"}
 
 
-def verdict(live: dict[str, Any] | None, claims: Sequence[str], claim_date: str | None) -> str:
+def verdict(
+    live: dict[str, Any] | None,
+    claims: Sequence[str],
+    claim_date: str | None,
+    confidence: float = 1.0,
+    diagnostics: Sequence[dict[str, str]] = (),
+) -> str:
     if live is None:
         return "AMBIGUOUS"
     if "error" in live:
         return "UNREACHABLE"
+    ambiguous_codes = {
+        "ambiguous-repository",
+        "multiple-state-words",
+        "conflicting-guide-claims",
+    }
+    if confidence < 0.75 or any(
+        diagnostic.get("code") in ambiguous_codes for diagnostic in diagnostics
+    ):
+        return "AMBIGUOUS"
     compatible = {
         "OPEN": {"OPEN"},
         "MERGED": {"MERGED", "CLOSED"},
@@ -455,7 +498,13 @@ def group_references(
         }
         if perform_lookup:
             reference["live"] = live
-            reference["verdict"] = verdict(live, claims, claim_date)
+            reference["verdict"] = verdict(
+                live,
+                claims,
+                claim_date,
+                reference["confidence"],
+                diagnostics,
+            )
         references.append(reference)
     if perform_lookup:
         references.sort(
@@ -474,9 +523,11 @@ def structured_payload(
     timestamp: str,
     repository_filter: str | None,
     extraction_only: bool,
+    summary_references: Sequence[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    summarized = references if summary_references is None else summary_references
     verdict_counts = {
-        verdict_name: sum(reference.get("verdict") == verdict_name for reference in references)
+        verdict_name: sum(reference.get("verdict") == verdict_name for reference in summarized)
         for verdict_name in VERDICT_ORDER
     }
     return {
@@ -485,7 +536,7 @@ def structured_payload(
         "mode": "extraction" if extraction_only else "live-report",
         "repositoryFilter": repository_filter,
         "summary": {
-            "references": len(references),
+            "references": len(summarized),
             "sightings": len(sightings),
             "ambiguousSightings": sum(sighting["repository"] is None for sighting in sightings),
             "verdicts": verdict_counts if not extraction_only else None,
@@ -504,7 +555,6 @@ def sighting_tsv(sightings: Sequence[dict[str, Any]]) -> str:
         "form",
         "claimedState",
         "claimDate",
-        "confidence",
         "context",
     )
     legacy_names = {
@@ -545,7 +595,10 @@ def reference_tsv(references: Sequence[dict[str, Any]]) -> str:
 
 
 def markdown_report(
-    references: Sequence[dict[str, Any]], sightings: Sequence[dict[str, Any]], timestamp: str
+    references: Sequence[dict[str, Any]],
+    sightings: Sequence[dict[str, Any]],
+    timestamp: str,
+    summary_references: Sequence[dict[str, Any]] | None = None,
 ) -> str:
     lines = [
         f"# Defect-status report — {timestamp[:10]}",
@@ -578,17 +631,18 @@ def markdown_report(
             f"{reference['sightingCount']}× {first['file']}:{first['line']} | "
             f"{reference['confidence']:.2f} | **{reference['verdict']}** |"
         )
+    summarized = references if summary_references is None else summary_references
     counts = {
-        name: sum(reference["verdict"] == name for reference in references)
+        name: sum(reference["verdict"] == name for reference in summarized)
         for name in VERDICT_ORDER
     }
     count_text = ", ".join(f"{counts[name]} {name}" for name in VERDICT_ORDER)
     lines.extend(
         (
             "",
-            f"**Summary.** {len(references)} distinct refs across {len(sightings)} sightings in guides/: "
+            f"**Summary.** {len(summarized)} distinct refs across {len(sightings)} sightings in guides/: "
             f"{count_text}. STATE-CHANGED rows require a human edit; STALE-DATE-ONLY rows only "
-            "need review of the date; AMBIGUOUS rows need an explicit repository; UNREACHABLE rows "
+            "need review of the date; AMBIGUOUS rows need citation or parser review; UNREACHABLE rows "
             "should be retried. This report never edits guides/.",
         )
     )
@@ -607,11 +661,12 @@ def render(arguments: argparse.Namespace) -> str:
         atomic_text(arguments.tsv, extraction_tsv)
         print(f"Extraction TSV written to {arguments.tsv}", file=sys.stderr)
 
-    references = group_references(
+    all_references = group_references(
         sightings,
         perform_lookup=not arguments.extract_only,
         sleep_seconds=arguments.sleep_seconds,
     )
+    references = all_references
     if arguments.changed_only and not arguments.extract_only:
         references = [
             reference for reference in references if reference["verdict"] == "STATE-CHANGED"
@@ -626,11 +681,12 @@ def render(arguments: argparse.Namespace) -> str:
             timestamp,
             arguments.repo,
             arguments.extract_only,
+            all_references,
         )
         return json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if arguments.format == "tsv":
         return reference_tsv(references)
-    return markdown_report(references, sightings, timestamp)
+    return markdown_report(references, sightings, timestamp, all_references)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

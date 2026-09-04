@@ -17,7 +17,7 @@
       "claims": ["MERGED"],
       "confidence": 0.75,
       "diagnostics": [],
-      "latestClaimDate": "2026-08-01",
+      "latestClaimDate": null,
       "number": 62,
       "ref": "ml-explore/mlx#62",
       "repository": "ml-explore/mlx",
@@ -28,7 +28,7 @@
       "claims": ["MERGED"],
       "confidence": 0.75,
       "diagnostics": [],
-      "latestClaimDate": "2026-08-01",
+      "latestClaimDate": null,
       "number": 74,
       "ref": "ml-explore/mlx#74",
       "repository": "ml-explore/mlx",
@@ -51,7 +51,7 @@
   "schemaVersion": 1,
   "sightings": [
     {
-      "claimDate": "2026-08-01",
+      "claimDate": null,
       "claimedState": "MERGED",
       "confidence": 0.75,
       "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
@@ -64,7 +64,7 @@
       "repository": "ml-explore/mlx"
     },
     {
-      "claimDate": "2026-08-01",
+      "claimDate": null,
       "claimedState": "MERGED",
       "confidence": 0.75,
       "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
