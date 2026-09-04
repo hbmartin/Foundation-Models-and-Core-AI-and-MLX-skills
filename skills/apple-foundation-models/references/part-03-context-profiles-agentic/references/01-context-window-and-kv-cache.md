@@ -121,10 +121,17 @@ transcript  =  [ the instructions entry ]  +  history (everything else)
              DynamicInstructions          historyTransform(_:)  /  @SessionProperty(\.history)
 ```
 
-> ✅ **VERIFIED** — `Transcript.history`, iOS 27.0:
+> ✅ **VERIFIED** — `Transcript.history`, iOS 27.0; ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:2695-2700`, beta 5):
 > ```swift
-> var history: ArraySlice<Transcript.Entry> { get set }
+> var history: Transcript.HistoryView { get set }
 > ```
+> ⚠️ Retyped in Xcode 27 beta 5 (noted 2026-08-23): earlier 27.0 beta interfaces declared
+> `ArraySlice<Transcript.Entry>`; beta 5 introduces the dedicated `Transcript.HistoryView`
+> collection (`27.0:2667-2694`) — same element type, its own `SubSequence`, but an opaque `Index`
+> that is **not `Int`**. What still compiles is worked through in
+> [02 §12.3](02-dynamic-profiles-and-session-state.md).
+>
 > Apple's own description: *"The transcript entries **excluding the leading instructions entry**, if
 > present."* … *"The history excludes instructions segments from `DynamicInstructions`."*
 > (`/documentation/foundationmodels/transcript/history`)
@@ -322,8 +329,19 @@ Each entry holds an ordered list of `Transcript.Segment`s.
 > `Transcript.AttachmentSegment(id:content:label:)` (iOS 27); `Transcript.CustomSegment` with an
 > associated `Content` type.
 
+> ⚠️ **Beta 5: `.custom` is not present in the SDK interface (noted 2026-08-23).** The docs table
+> above still lists four cases, but the recaptured 27.0 beta 5 interface declares exactly **three**
+> — `.text`, `.structure`, `.attachment`
+> (`FoundationModels-27.0-macos.swiftinterface:2288-2297`) — and contains **zero occurrences of
+> `CustomSegment`**. The case and its protocol were present in the 2026-07-29 beta capture; the
+> removal happened between that capture and beta 5. Not a permanent claim — the surface may return —
+> but code matching `.custom(_:)` does not compile against the beta 5 SDK.
+
 `.structure` is what a `@Generable` tool output or a guided-generation response becomes.
-`.attachment` is what an image becomes. `.custom` is the extension point for third-party providers.
+`.attachment` is what an image becomes. `.custom` **was** the documented extension point for
+third-party providers — see the note above and
+[Part 4 §13.2](../../part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
+for the provider-side status and safe default.
 
 > ⚠️ **SILENT FAILURE — anything that is not `.text` disappears when you summarise.** Apple's own
 > `foundation-models-utilities` renders a transcript to text before handing it to a summariser
@@ -588,7 +606,7 @@ device-specific report.
 > `return 4096` — the back-deployed implementation returns the constant unconditionally
 > (`FoundationModels-26.5-macos.swiftinterface:634-642`). In the **27.0 SDK** the same getter
 > becomes `if #available(iOS 27.0, macOS 27.0, …) { return _contextSize }` — a call into the
-> framework — `else { return 4096 }` (`FoundationModels-27.0-macos.swiftinterface:441-458`). Read
+> framework — `else { return 4096 }` (`FoundationModels-27.0-macos.swiftinterface:445-503`). Read
 > what that does and does not establish: on any pre-27 runtime the answer is the compiled-in
 > constant **4096, always**; on a 27 runtime the value is **dynamic**, so a device *could* report
 > something else — the plumbing the noema comment would require genuinely exists — but the
@@ -808,10 +826,10 @@ Three notes on that:
 
 > ✅ **CONFIRMED against the 27.0 beta interface (2026-07-29) — there is no way to count tokens for
 > a non-system model.** All five `tokenCount(for:)` overloads are `final` methods on
-> `SystemLanguageModel` (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:398-432`);
+> `SystemLanguageModel` (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:402-436`);
 > the `LanguageModel` protocol's complete requirement set is `capabilities` +
-> `executorConfiguration` + the `Executor` associated type (`:1440-1444`) — no `tokenCount`; and
-> `PrivateCloudComputeLanguageModel`'s surface (`:45-252`) has `contextSize` (an `async throws`
+> `executorConfiguration` + the `Executor` associated type (`:1483-1487`) — no `tokenCount`; and
+> `PrivateCloudComputeLanguageModel`'s surface (`:45-256`) has `contextSize` (an `async throws`
 > `Int` property, `:135-137`) but no `tokenCount` either. So on PCC or a bring-your-own-model
 > backend, your only token accounting is `Usage` *after* the fact (§5), or a tokeniser you own.
 > **Safe default:** meter with `SystemLanguageModel.tokenCount(for:)` even when you intend to run
@@ -2571,11 +2589,11 @@ correct-looking, and quietly makes the model do the wrong thing.
 |---|---|---|
 | `Transcript` | `struct Transcript` — Bidirectional/Mutable/RangeReplaceable Collection, `Codable` | 26.0 · watchOS 27.0 |
 | `Transcript.Entry` | 6 cases: `.instructions` `.prompt` `.response` `.reasoning` `.toolCalls` `.toolOutput` | 26.0; `.reasoning` **27.0** |
-| `Transcript.Segment` | 4 cases: `.text` `.attachment` `.structure` `.custom` | 26.0; `.attachment` **27.0** |
-| `Transcript.history` | `var history: ArraySlice<Transcript.Entry> { get set }` | **27.0** |
-| `Transcript.structuredTranscript` | `var structuredTranscript: StructuredTranscript { get }` — ✅ SDK-verified: declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; exists only where Evaluations is linked (`Evaluations-27.0-macos.swiftinterface:272-286`) | **27.0** (no Mac Catalyst) |
+| `Transcript.Segment` | `.text` `.attachment` `.structure` (beta 5, `27.0:2288-2297` — the fourth case, `.custom`, is not present in the beta 5 interface; §2.3) | 26.0; `.attachment` **27.0** |
+| `Transcript.history` | `var history: Transcript.HistoryView { get set }` (`27.0:2695-2700`; `ArraySlice<Transcript.Entry>` before beta 5) | **27.0** |
+| `Transcript.structuredTranscript` | `var structuredTranscript: StructuredTranscript { get }` — ✅ SDK-verified: declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; exists only where Evaluations is linked (`Evaluations-27.0-macos.swiftinterface:278-292`) | **27.0** (no Mac Catalyst) |
 | `SystemLanguageModel.contextSize` | `@backDeployed(before: iOS 26.4, macOS 26.4, visionOS 26.4) final var contextSize: Int` | **26.4**, back-deploys to 26.0 |
-| `SystemLanguageModel.tokenCount(for:)` | five overloads — `some PromptRepresentable` / `Instructions` / `[any Tool]` / `GenerationSchema` / `some Collection<Transcript.Entry>`, all `nonisolated(nonsending) … async throws -> Int` (✅ `FoundationModels-27.0-macos.swiftinterface:398-432`) | **26.4**, no back-deploy |
+| `SystemLanguageModel.tokenCount(for:)` | five overloads — `some PromptRepresentable` / `Instructions` / `[any Tool]` / `GenerationSchema` / `some Collection<Transcript.Entry>`, all `nonisolated(nonsending) … async throws -> Int` (✅ `FoundationModels-27.0-macos.swiftinterface:402-436`) | **26.4**, no back-deploy |
 | `PrivateCloudComputeLanguageModel.contextSize` | `var contextSize: Int { get async throws }` | **27.0**[^pcc-context-size] |
 | `LanguageModelSession.transcript` | `final var transcript: Transcript { get set }` — settable in 27 | 26.0 (get) · **27.0** (set) |
 | `LanguageModelSession.isResponding` | `final var isResponding: Bool { get }` | 26.0 |
@@ -2597,7 +2615,7 @@ correct-looking, and quietly makes the model do the wrong thing.
 > parameter, `final public func prewarm(promptPrefix: Prompt? = nil)`, and it sits in the plain
 > iOS 26.0/macOS 26.0 extension of `LanguageModelSession` in **both** captured interfaces —
 > ✅ **SDK-verified** (`FoundationModels-26.5-macos.swiftinterface:342`;
-> `FoundationModels-27.0-macos.swiftinterface:1918-1922`, where the extension is
+> `FoundationModels-27.0-macos.swiftinterface:1958-1962`, where the extension is
 > `@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0)`). No availability gate needed on
 > the label when building with a 26.4+ SDK. (Caveat kept honest: a 26.5 interface proves the
 > *26.5-SDK* view; whether the label was present in the original 26.0 SDK is not answerable from

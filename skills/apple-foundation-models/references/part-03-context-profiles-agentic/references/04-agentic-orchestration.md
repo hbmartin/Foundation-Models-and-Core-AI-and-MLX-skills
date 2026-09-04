@@ -288,7 +288,7 @@ Four API facts to bank from those 75 lines, because several contradict what the 
   The initialiser form appears in transcript reconstructions and in no compiling code we have. ✅
   verified — and as of 2026-07-29 settled against the SDK: `Profile` has exactly one initializer
   (the builder-closure form) and **no `model:` label exists in the 27.0 beta interface**
-  (`FoundationModels-27.0-macos.swiftinterface:785-798`; `.model(_:)` modifier at `:921-923`).
+  (`FoundationModels-27.0-macos.swiftinterface:830-843`; `.model(_:)` modifier at `:966-968`).
 - **`.temperature(1.0)`** takes a `Double`. **`.reasoningLevel(.deep)`** is exactly as narrated.
 - **`.historyTransform(_:)` takes `([Transcript.Entry]) -> [Transcript.Entry]`**, and a plain
   function reference is accepted. It is handed the *entry array*, not a `Transcript`.
@@ -620,7 +620,7 @@ Profile { BrainstormInstructions(orchestrator: orchestrator) }
 > code (`mlx-swift-lm`, `StructuredToolOutputSessionTests.swift:62-65`). ✅ **RESOLVED (2026-07-29):**
 > both arities exist as declared overloads — the zero-argument form forwards to the
 > `(Transcript.ToolCall)` form — and the closures are **`async throws`**
-> (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:963-969`). So the detector above
+> (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1008-1014`). So the detector above
 > may await and may throw. A community security note attributed to WWDC26 session 347 states that
 > **throwing from `onToolCall` blocks the tool from running** — the throw *does* compile, but
 > Apple's documented behaviour is that it propagates to the caller and aborts the whole turn, so
@@ -2019,7 +2019,7 @@ There is an obvious-looking alternative: use the `onToolCall` lifecycle modifier
 ✅ **RESOLVED on the signature (2026-07-29):** `onToolCall`'s closure **is** `async throws` — both
 the zero-argument and the `(Transcript.ToolCall)` overloads are declared
 `@escaping … async throws -> Void` (✅ **SDK-verified**,
-`FoundationModels-27.0-macos.swiftinterface:963-969`) — so the sketch *compiles*: you may `await
+`FoundationModels-27.0-macos.swiftinterface:1008-1014`) — so the sketch *compiles*: you may `await
 confirmWithUser(call)` and you may throw. 🔴 What remains unverified is the *effect* of the throw:
 the community note says "the tool never runs and control returns to the loop"; Apple's documented
 wording is that the error **propagates to the caller's `respond`** — turn-level abort, not a
@@ -2363,10 +2363,17 @@ model.**"* That is a routing fallback Apple explicitly recommends, and `DynamicP
 belongs — a `networkAvailable` flag in your route enum, not a `try?` at the call site.
 
 **3. Locale.** ✅ `PrivateCloudComputeLanguageModel.supportsLocale(_:)` exists and is used in shipping
-code to throw before the request (`noema-ios`, `AFMLLMClient.swift:92-95`). The on-device equivalent,
-`SystemLanguageModel.default.supportsLocale(_:)`, has an **OS 26.0** floor; it appears directly in
-the 26.0 `SystemLanguageModel` declaration, before the separate 26.4 context-introspection
-extension.[^supports-locale-floor] PCC remains 27-only because the PCC model itself is 27-only.
+code to throw before the request (`noema-ios`, `AFMLLMClient.swift:92-95` — written against the
+pre-beta-5 synchronous surface). ⚠️ **Changed in Xcode 27 beta 5 (noted 2026-08-23):** the PCC
+overload is now **`async throws`** — ✅ **SDK-verified**
+(`FoundationModels-27.0-macos.swiftinterface:149`),
+`nonisolated(nonsending) func supportsLocale(_ locale: Locale = Locale.current) async throws -> Bool`
+— and PCC's `supportedLanguages` is likewise `get async throws` (`27.0:144-146`). A bare
+`guard model.supportsLocale(...)` no longer compiles against the beta 5 SDK for PCC. The on-device
+equivalent, `SystemLanguageModel.default.supportsLocale(_:)`, is **still synchronous** (`27.0:400`)
+and has an **OS 26.0** floor; it appears directly in the 26.0 `SystemLanguageModel` declaration,
+before the separate 26.4 context-introspection extension.[^supports-locale-floor] PCC remains
+27-only because the PCC model itself is 27-only.
 
 **4. Quota.** This is the one that will actually bite a shipping app.
 
@@ -2428,22 +2435,35 @@ final class Router {
     var phase: Phase = .brainstorm
     private let server = PrivateCloudComputeLanguageModel()
 
+    // supportsLocale(_:) is async throws on PCC as of Xcode 27 beta 5 — resolve it
+    // once, outside the per-turn route computation, and cache the answer.
+    private(set) var serverSupportsLocale = false
+
+    func refreshLocaleSupport() async {
+        serverSupportsLocale = (try? await server.supportsLocale(Locale.current)) ?? false
+    }
+
     var route: Route {
         guard phase.prefersServer else { return .onDevice }
         guard case .available = server.availability else { return .onDevice }
         guard !server.quotaUsage.isLimitReached else { return .onDevice }
-        guard server.supportsLocale(Locale.current) else { return .onDevice }
+        guard serverSupportsLocale else { return .onDevice }
         return .server
     }
 }
 ```
 
-> 🟡 **RECONSTRUCTED** — the composition. Every member used is ✅ verified (`availability` and its
-> cases, `quotaUsage.isLimitReached`, `supportsLocale(_:)`); the aggregation into one computed
-> property is ours. Two cautions: this is exactly the kind of computed value a `DynamicProfile.body`
-> should *read*, and it must stay pure and cheap because `body` is re-evaluated more than once per
-> turn (§6.1). If `availability` or `quotaUsage` turn out to be expensive to read, cache them behind
-> an explicit refresh instead. 🔴 We have not measured the cost of either.
+> 🟡 **RECONSTRUCTED** — the composition. Every member used is ✅ verified — `availability` and its
+> cases and `quotaUsage.isLimitReached` are synchronous reads (✅ SDK-verified, `27.0:51-58`), and
+> `supportsLocale(_:)` is the beta-5 `async throws` surface (`27.0:149`); the aggregation is ours.
+> The async capability check is exactly why it is resolved **outside** `route`: `route` is the kind
+> of computed value a `DynamicProfile.body` should *read*, and it must stay pure and cheap because
+> `body` is re-evaluated more than once per turn (§6.1) — an `async throws` call cannot appear in
+> that path at all. Call `refreshLocaleSupport()` at setup and again on
+> `NSLocale.currentLocaleDidChangeNotification`, and treat a thrown check as "not supported": the
+> fallback direction (on-device) is the safe one. If `availability` or `quotaUsage` turn out to be
+> expensive to read, cache them behind an explicit refresh too. 🔴 We have not measured the cost of
+> either.
 
 Also — and this is free — **Xcode can simulate the quota states**, so you can test the fallback path
 without exhausting a real account:
@@ -2717,7 +2737,7 @@ to the **Evaluations** framework, whose interface was not captured (no
 recording: the shape exactly matches `GeneratedContent.Kind`, whose full case list *is*
 SDK-verified (`null` / `bool(Bool)` / `number(Double)` / `string(String)` /
 `array([GeneratedContent])` / `structure(properties:orderedKeys:)`,
-`FoundationModels-27.0-macos.swiftinterface:1333-1341`) — if the matcher's value type is that
+`FoundationModels-27.0-macos.swiftinterface:1376-1384`) — if the matcher's value type is that
 enum, the siblings exist; nothing here proves it is.
 
 And the wiring, which has one non-obvious requirement:
@@ -2888,7 +2908,7 @@ and [Part 6 · `01-foundations-and-hill-climbing.md`](https://github.com/hbmarti
 | `.toolCallingMode(_:)` | ✅ | 27.0 | `mlx-swift-lm` compiled test |
 | `.onToolCall { }` (0-arg) | ✅ | 27.0 | `mlx-swift-lm` compiled test |
 | `.onToolCall { call in }` (1-arg, `call.toolName`) | ✅ | 27.0 | Apple dynamic-profiles article |
-| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolOutput` | ✅ SDK-verified — overload pairs, `async throws` (activate/deactivate: `async`, non-throwing) | 27.0 | `FoundationModels-27.0-macos.swiftinterface:939-981` |
+| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolOutput` | ✅ SDK-verified — overload pairs, `async throws` (activate/deactivate: `async`, non-throwing) | 27.0 | `FoundationModels-27.0-macos.swiftinterface:984-1026` |
 | `@SessionPropertyEntry` (no parens) on a `var` with an initial value | ✅ | 27.0 | compiled test `:14-18` |
 | `@SessionProperty(\.keyPath)` | ✅ | 27.0 | compiled test `:51-52` |
 | `session.properties.<name>` | ✅ | 27.0 | compiled test `:120` |
@@ -2899,13 +2919,13 @@ and [Part 6 · `01-foundations-and-hill-climbing.md`](https://github.com/hbmarti
 | `LanguageModelSession(profile:)` · `(profile:history:)` | ✅ | 27.0 | 242:58; Origami `:41-47` |
 | `LanguageModelSession(model:instructions:)` | ✅ | 26.0 | Origami `TermExtractor.swift:32-39` |
 | `LanguageModelSession.ToolCallError` (`.tool`, `.underlyingError`) | ✅ | 26.0, **no watchOS** | docs |
-| `PrivateCloudComputeLanguageModel()` · `.availability` · `.quotaUsage` · `.supportsLocale(_:)` | ✅ | 27.0 | docs + shipping code |
+| `PrivateCloudComputeLanguageModel()` · `.availability` · `.quotaUsage` (sync, `27.0:51-58`) · `.supportsLocale(_:)` (**`async throws` as of beta 5**, `27.0:149` — §8.6) | ✅ SDK-verified | 27.0 | docs + shipping code (pre-beta-5 sync call sites) + beta 5 interface |
 | `Skills` · `Skill` · `SkillActivations` | ✅ | package 27.0 | `foundation-models-utilities` @ `376ca60` |
 | `TrajectoryExpectation` · `ToolExpectation` · `ToolCallEvaluator` | ✅ | Xcode 27 | Book Tracker `SearchBooks.swift` |
-| `session.transcript.structuredTranscript` | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; `StructuredTranscript` is Evaluations' type, absent from FoundationModels by design | 27.0 | Book Tracker `:525-563`; `Evaluations-27.0-macos.swiftinterface:272-286` |
-| `Profile(model:) { … }` initializer | ✅ **absent from the 27.0 beta interface** (checked 2026-07-29) — `Profile` has exactly one init, the builder-closure form | — | `FoundationModels-27.0-macos.swiftinterface:785-798` — **do not use** |
-| `DynamicProfileModifier` requirements | ✅ SDK-verified — `associatedtype Body: DynamicProfile`; `@DynamicProfileBuilder func body(content: Self.Content) -> Body`; `typealias Content = DynamicProfileModifierContent<Self>`; applied via `.modifier(_:)` | 27.0 | `FoundationModels-27.0-macos.swiftinterface:876-917` |
-| structured (`@Generable`) tool `Output` on Apple's stack | 🔴 runtime-unverified — the constraint `associatedtype Output: PromptRepresentable` is SDK-verified (`:2991`), so it compiles; every sample still returns `String` | — | documented; no sample demonstrates it |
+| `session.transcript.structuredTranscript` | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript`; `StructuredTranscript` is Evaluations' type, absent from FoundationModels by design | 27.0 | Book Tracker `:525-563`; `Evaluations-27.0-macos.swiftinterface:278-292` |
+| `Profile(model:) { … }` initializer | ✅ **absent from the 27.0 beta interface** (checked 2026-07-29) — `Profile` has exactly one init, the builder-closure form | — | `FoundationModels-27.0-macos.swiftinterface:830-843` — **do not use** |
+| `DynamicProfileModifier` requirements | ✅ SDK-verified — `associatedtype Body: DynamicProfile`; `@DynamicProfileBuilder func body(content: Self.Content) -> Body`; `typealias Content = DynamicProfileModifierContent<Self>`; applied via `.modifier(_:)` | 27.0 | `FoundationModels-27.0-macos.swiftinterface:921-962` |
+| structured (`@Generable`) tool `Output` on Apple's stack | 🔴 runtime-unverified — the constraint `associatedtype Output: PromptRepresentable` is SDK-verified (`:3055`), so it compiles; every sample still returns `String` | — | documented; no sample demonstrates it |
 
 ### 11.3 The silent failures in this guide
 

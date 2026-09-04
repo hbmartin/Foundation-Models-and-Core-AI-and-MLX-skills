@@ -3303,7 +3303,7 @@ you configured. **Avoid:** give every consumer of a shared weight identical spec
 
 ### 17.4 fp16 casting can zero an activation, and compression makes it likelier
 
-Covered at §14.4 (coreai-opt issue #7, OPEN, with maintainer answer). **Detect:** check for
+Covered at §14.4 (`apple/coreai-optimization#7`, OPEN, with maintainer answer). **Detect:** check for
 unexpected zeros in outputs after *any* change to either the compression config or the casting step.
 **Avoid:** substitute numerically stable op formulations in the PyTorch module — the sanctioned fix.
 

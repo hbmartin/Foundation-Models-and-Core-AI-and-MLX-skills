@@ -1303,11 +1303,14 @@ Three effects, in decreasing order of how often they bite:
    evaluation on the quantized base before blaming the adapter.
 
 > ⚠️ **A quantization correctness caveat you must know about if you are on M5 or A19.**
-> `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (OPEN at research time): affine
+> `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (closed completed 2026-08-26;
+> open at research time): affine
 > `gather_qmm` silently corrupts MoE output when gathered rows are `> 32768 && % 64 != 0`, and
 > separately when `K % 64 != 0` (which also hits `mxfp4`). It **cannot be reproduced on M1–M4**.
 > Fix PRs `mlx#3922` and `mlx-lm#1585` ("pad sorted gather rows to 64") were open — `mlx#3922`
-> still open on a 2026-07-31 `gh` re-check, as were issue `mlx#3856` and its sibling `mlx#3887`. Also
+> still open on a 2026-07-31 `gh` re-check, as were issue `mlx#3856` and its sibling `mlx#3887`.
+> On 2026-08-26 `mlx#3922` merged and `mlx#3856` closed completed; `mlx-lm#1585` had closed
+> unmerged on 2026-08-21, while `mlx#3887` remains open. Also
 > **mlx#3912**, "fp quantized matmul corruption when the quantized dim isn't a multiple of 32".
 > If you are fine-tuning an MoE in 4-bit on M5-generation silicon, verify your checkout includes
 > those fixes before trusting a single loss curve. These are community-reported and
@@ -1910,6 +1913,16 @@ Two further cautions from the same source, both ✅ verified there:
   ended at 1.14 GB footprint instead of 60.19 GB. It is the blunt instrument that works when
   nothing else does.
 
+**Closure context (mlx#3896 closed 2026-08-08; checked 2026-08-23):** the maintainer closed it by
+scoping the counter, not changing it — *"`get_peak_memory()` is mostly useful for measuring the
+memory consumption when ineferencing/training a single model, where cache hit rate would be close
+to 100%. For longtime and parallel model serving it is not going to accurately report the actual
+footprint, and I suggest doing manual checking with `get_active_memory() + get_cache_memory()`
+instead."* (typo in original). For this section that cuts both ways: a plain single-model
+`mlx_lm.lora` run sits inside the counter's intended scope, but the moment the process also serves,
+embeds, or churns shapes, the trainer's printed `peak_memory` stops tracking your footprint — gate
+on `active + cache` as above. No code or docs change landed at closure.
+
 ### 8.6 What OOM looks like — on a Mac, and why not on a phone
 
 **On a Mac, there are four distinct failures and they mean different things.**
@@ -1953,6 +1966,13 @@ Mitigations, in order:
 - There is **no public API to clear the compile cache**. `disable_compile()` turns compilation off
   rather than reclaiming; an internal `detail::compile_clear_cache` exists but is wired to
   interpreter exit.
+
+**Closure context (mlx#3849 closed 2026-08-05; checked 2026-08-23):** the maintainer's closing
+comment concedes the guard itself is broken — *"The code reading resource limit is bugged and we
+should probably fix it or just remove it"* — but keeps it, because exceeding it *"clearly indicates
+some fatal mistakes"* like the compile-variant accumulation above: *"So at the moment I think it is
+fine keep it be."* So as of closure there is no setter, no fix scheduled, and the `499000` ceiling
+stays; the mitigations above are the whole toolbox.
 
 **On a phone: you cannot hit any of this, because you cannot get there.**
 

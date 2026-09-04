@@ -9,11 +9,21 @@ Everything here uses tools that already exist in the repo. Nothing below edits a
 automatically — scripts report, humans (or a supervised agent session) fold results in under the
 house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
-> **Current trigger, checked 2026-08-17:** the host is on macOS 27 beta 5 build `26A5406e`, with
-> Xcode 27 beta 5 (`27A5237l`) and iOS 27 Simulator runtime `24A5408d`. The bounded default probe
-> baselines are host 46/23/0 and Simulator 39/19/0; beta-5 host-backed model calls require the
-> explicit `PROBE_ENABLE_*` overrides documented in `probes/README.md`. Next expected event:
-> Xcode 27 beta 6 or a runtime update that makes those calls cancellable again.
+Every durable run writes beneath the ignored
+`artifacts/freshness/<automation-id>/<UTC-run-id>/` tree. Set `AUTOMATION_ID` to a stable job name
+when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and probe attachments
+there; `/tmp` is only for disposable intermediates that will never be linked from a task.
+
+> **Current trigger, checked 2026-08-17 (gate redesigned 2026-08-23):** the host is on macOS 27
+> beta 5 build `26A5406e`, with Xcode 27 beta 5 (`27A5237l`) and iOS 27 Simulator runtime
+> `24A5408d`. Both builds are on the probe suite's known-broken list (model calls can block
+> non-cancellably), so the counts 46/23/0 (host) and 39/19/0 (Simulator) are what the suite
+> reports **on these builds with the build-keyed skip gate active** — not a universal healthy
+> baseline. On any other build (a macOS 26.x host, a future beta 6) the gated model probes
+> execute by default with no env var and the expected skip counts drop accordingly;
+> `PROBE_ENABLE_HOST_MODEL=1` forces the probes even on the broken builds
+> (`probes/README.md`). Next expected event: Xcode 27 beta 6 or a runtime update that makes
+> those calls cancellable again.
 
 ---
 

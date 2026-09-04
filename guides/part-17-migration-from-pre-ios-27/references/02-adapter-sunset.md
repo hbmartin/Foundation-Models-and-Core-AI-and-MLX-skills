@@ -234,8 +234,8 @@ live thread fetches, and 17 cloned repositories:
 >   `SystemLanguageModel.Adapter` and its working surface — `init(fileURL:)`, `init(name:)`,
 >   `compile()`, `compatibleAdapterIdentifiers(name:)` — as
 >   **`@available(iOS, deprecated: 26.4, obsoleted: 27.0)`** (macOS and visionOS likewise;
->   `27.0:464-506`), and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`**
->   (`27.0:387-392`). §2 unpacks what `obsoleted:` does to your build. The captured **26.5**
+>   `27.0:509-551`), and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`**
+>   (`27.0:395-400`). §2 unpacks what `obsoleted:` does to your build. The captured **26.5**
 >   interface has no deprecation on any of it (`26.5:578-671`) — the marks arrived with the 27 SDK,
 >   and they back-date the deprecation to **26.4**, the release that swapped the base model.
 >
@@ -278,7 +278,7 @@ between "you have six months" and "your next release is broken."
 | 8 | An adapter shipped in a 26.x build still works on a device running 26.x | 🟡 **RECONSTRUCTED** | Nothing withdrew it *from 26*; the statements are all "as of OS 27", and the captured **26.5 SDK interface carries no deprecation on any adapter symbol** (`26.5:578-671`, checked 2026-07-29). Runtime behaviour on 26.x is still untested by anyone in this corpus. |
 | 9 | An adapter shipped in a 26.x build still works on a device that **upgrades to 27** | 🔴 **GAP** | Nobody has published a test. See the callout below. The 27 SDK's `obsoleted: 27.0` marks (§1.4) are about *compiling*, not about what the 27 runtime does with an already-built binary. |
 | 10 | `xcrun ba-package foundation-models package` still produces a loadable pack under Xcode 27 | 🔴 **GAP** — first half now checked | ✅ The subcommand **exists** in the Xcode 27.0 beta (`27A5228h`, run 2026-07-29): `ba-package foundation-models package` is live (`ba-package` 2.0-beta), hidden from the top-level subcommand list but fully functional with `--asset-pack-id` / `--platforms` / `--adapter-path` / download-policy flags / `--output-path`. Whether the **27 runtime consumes its output** remains unverified — and the `obsoleted:` marks on the consuming API make it doubtful for 27-linked apps. |
-| 11 | ~~Building against the 27 SDK produces a compiler error or deprecation warning for adapter APIs~~ ✅ **RESOLVED 2026-07-29** | The 27.0 interface answers precisely: with a **27.0 deployment target you get a hard compile error** (`obsoleted: 27.0`); with a lower deployment target you get **deprecation warnings** (`deprecated: 26.4`) on `Adapter` and its members (`27.0:387-392, 464-506`). The `AssetError` family is deprecated but *not* obsoleted (`27.0:508-560`), so 26-era catch blocks still compile. See the revised callout below. |
+| 11 | ~~Building against the 27 SDK produces a compiler error or deprecation warning for adapter APIs~~ ✅ **RESOLVED 2026-07-29** | The 27.0 interface answers precisely: with a **27.0 deployment target you get a hard compile error** (`obsoleted: 27.0`); with a lower deployment target you get **deprecation warnings** (`deprecated: 26.4`) on `Adapter` and its members (`27.0:395-400, 509-551`). The `AssetError` family is deprecated but *not* obsoleted (`27.0:553-605`), so 26-era catch blocks still compile. See the revised callout below. |
 | 12 | `LanguageModelSession.GenerationError` is deprecated in 27.0 | ✅ **VERIFIED** | Apple Frameworks Engineer's own code comment, thread 831404. **This is a different thing from the adapter removal** — see §2.3. |
 
 ### 2.1 ⚠️ The three unknowns, and what to do about each
@@ -476,7 +476,7 @@ let localAdapter = try SystemLanguageModel.Adapter(fileURL: adapterURL)
 > The same interface also settles the type's other members: `Adapter` is a struct with
 > `creatorDefinedMetadata: [String: Any]` (`26.5:652-657`) and a `@concurrent func compile() async
 > throws` (`26.5:666`). In the **27.0** interface the initializer still appears — annotated
-> `obsoleted: 27.0` (`27.0:387-392`), which is the header-level sunset of §1.4.
+> `obsoleted: 27.0` (`27.0:395-400`), which is the header-level sunset of §1.4.
 >
 > ```swift
 > // ✅ The historical 26.x wiring, now header-confirmed. Do not write this in new code.
@@ -702,7 +702,7 @@ delivering *any* model asset feels like.
 > `.compatibleAdapterNotFound(_:)` — each carrying a one-field `Context(debugDescription: String)`,
 > the same payload poverty as the 26-era `GenerationError.Context`
 > ([17.3 §4.5](03-error-taxonomy-migration.md)). In the 27.0 interface the family survives,
-> deprecated 26.4 but **not** obsoleted (`27.0:508-560`) — so a dual-target codebase can keep these
+> deprecated 26.4 but **not** obsoleted (`27.0:553-605`) — so a dual-target codebase can keep these
 > catch arms compiling.
 
 Read that carefully, because the shape of it is what makes it expensive:
@@ -2653,14 +2653,14 @@ For this topic specifically, apply a harder standard than usual:
 
 | § | Claim | Evidence class | Source |
 |---|---|---|---|
-| 1.1 | Adapters discontinued as of OS 27 | Apple-staff forum answer ×2 **+ SDK availability annotations** | Threads 829108 (Frameworks Engineer), 831314 (Apple Designer); `FoundationModels-27.0-macos.swiftinterface:387-392, 464-506` (`deprecated: 26.4, obsoleted: 27.0`, captured 2026-07-29) |
+| 1.1 | Adapters discontinued as of OS 27 | Apple-staff forum answer ×2 **+ SDK availability annotations** | Threads 829108 (Frameworks Engineer), 831314 (Apple Designer); `FoundationModels-27.0-macos.swiftinterface:395-400, 509-551` (`deprecated: 26.4, obsoleted: 27.0`, recaptured 2026-08-20) |
 | 1.1 | Toolkit frozen at 26.0.0 | Developer quotation of Apple's version page + Apple's "I'll update the page" | Thread 831314 |
 | 1.4 | No Apple *document* announces the withdrawal (the SDK attribute now exists — see row 1.1) | **Absence across the whole corpus** — 16 transcripts, 6 doc articles, 4 forum captures, 17 repos | `notes/transcripts/fm-core.md:2068-2071, 2258` |
-| 2 | `GenerationError` deprecated in 27.0 | Apple-staff code comment + SDK interface | Thread 831404; `27.0:3466-3510` |
+| 2 | `GenerationError` deprecated in 27.0 | Apple-staff code comment + SDK interface | Thread 831404; `27.0:3530-3574` |
 | 2 | `ba-package foundation-models package` still ships in Xcode 27.0 beta | **Run directly, 2026-07-29** (`ba-package` 2.0-beta, `27A5228h`) | §2.1 |
 | 3.2 | `Adapter(name:)`, `Adapter(fileURL:)`, `compatibleAdapterIdentifiers(name:)`, `removeObsoleteAdapters()`, `compile()`, `creatorDefinedMetadata` | Apple-staff quote; developer code in an Apple-endorsed reply; **SDK interface** | Threads 829108, 823148; `FoundationModels-26.5-macos.swiftinterface:652-671` |
-| 3.2 | `SystemLanguageModel(adapter:guardrails:)` | **SDK interface** (was: negative citation only) | `26.5:585`; `27.0:387-392` |
-| 4.1 | `Adapter.AssetError`'s three cases and one-field `Context` | **SDK interface** | `26.5:676-698`; not obsoleted in 27 (`27.0:508-560`) |
+| 3.2 | `SystemLanguageModel(adapter:guardrails:)` | **SDK interface** (was: negative citation only) | `26.5:585`; `27.0:395-400` |
+| 4.1 | `Adapter.AssetError`'s three cases and one-field `Context` | **SDK interface** | `26.5:676-698`; not obsoleted in 27 (`27.0:553-605`) |
 | 3.3 | Adapters pinned to base-model version | Developer statement, uncontradicted in-thread | Thread 831314 |
 | 3.3 | AFM 3 Core / AFM 3 Core Advanced, with device list | Apple-staff accepted answer | Thread 832910 |
 | 3.4–3.5 | Entitlement, plist keys, `StoreDownloaderExtension`, packaging command, ITMS-91140 | Developer post marked "Recommended" by Apple | Thread 823148 |

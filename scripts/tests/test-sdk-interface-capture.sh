@@ -76,7 +76,41 @@ case "$*" in
     printf '%s\n' "$SDK_SHIM_ROOT/component/Metal.xctoolchain/usr/bin/coreai-build"
     ;;
   '--no-cache --find metal') printf '%s\n' "$SDK_SHIM_ROOT/component/Metal.xctoolchain/usr/bin/metal" ;;
-  '--no-cache --find fm') exit 1 ;;
+  '--no-cache --find fm')
+    [ "${SDK_SHIM_HAS_FM:-0}" -eq 1 ] || exit 1
+    printf '%s\n' "$SDK_SHIM_ROOT/fm"
+    ;;
+  *) exit 2 ;;
+esac
+SH
+
+# Styled like the real fm CLI: COMMANDS/SUBCOMMANDS drive the capture's
+# dynamic derivation, beta's help fails, and MODELS must not be treated as
+# a commands section.
+cat > "$SHIM_ROOT/fm" <<'SH'
+#!/usr/bin/env bash
+set -eu
+case "$*" in
+  '--version') printf 'fm shim 1.0\n' ;;
+  '--help')
+    printf '  \033[38;2;55;195;160m\033[1mUSAGE\033[0m\n'
+    printf '    %% fm <command>\n'
+    printf '\n'
+    printf '  \033[38;2;55;195;160m\033[1mCOMMANDS\033[0m\n'
+    printf '    \033[1malpha  \033[0mWorking command\n'
+    printf '    \033[1mbeta   \033[0mCommand whose help fails\n'
+    printf '    \033[1mgamma  \033[0mCommand with a nested subcommand\n'
+    printf '\n'
+    printf '  \033[38;2;55;195;160m\033[1mMODELS\033[0m\n'
+    printf '    \033[1msystem \033[0mNot a command; must not be captured\n'
+    ;;
+  'alpha --help') printf '  alpha help\n' ;;
+  'beta --help') exit 3 ;;
+  'gamma --help')
+    printf '  \033[38;2;55;195;160m\033[1mSUBCOMMANDS\033[0m\n'
+    printf '    \033[1mdelta  \033[0mNested subcommand\n'
+    ;;
+  'gamma delta --help') printf '  delta help\n' ;;
   *) exit 2 ;;
 esac
 SH
@@ -96,7 +130,7 @@ cat > "$SHIM_TOOLCHAIN/ToolchainInfo.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict><key>Identifier</key><string>com.example.Metal</string></dict></plist>
 PLIST
-chmod +x "$SHIM_BIN/xcodebuild" "$SHIM_BIN/xcrun" \
+chmod +x "$SHIM_BIN/xcodebuild" "$SHIM_BIN/xcrun" "$SHIM_ROOT/fm" \
   "$SHIM_TOOLCHAIN/usr/bin/coreai-build" "$SHIM_TOOLCHAIN/usr/bin/metal"
 
 SHIM_ENV=(env PATH="$SHIM_BIN:$PATH" SDK_SHIM_ROOT="$SHIM_ROOT")
@@ -115,6 +149,25 @@ selected_developer_dir='/Applications/Test-Xcode.app/Contents/Developer'
   "$DUMP" --dest "$TMP/shim-check" --check-only >/dev/null
 [ -f "$SHIM_ROOT/xcodebuild-developer-dir" ] || fail 'xcodebuild did not receive DEVELOPER_DIR'
 [ -f "$SHIM_ROOT/xcrun-developer-dir" ] || fail 'xcrun did not receive DEVELOPER_DIR'
+
+# A full shim capture must derive the fm command surface dynamically from the
+# captured help screens, keep going past a failing subcommand under set -e,
+# and never read non-command sections such as MODELS as commands.
+fm_dest="$TMP/fm-shim-capture"
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 "$DUMP" --dest "$fm_dest" >/dev/null
+fm_artifact="$fm_dest/fm-help-14.0.txt"
+[ -f "$fm_artifact" ] || fail 'shim capture produced no fm help artifact'
+grep -F -q '===== fm alpha --help =====' "$fm_artifact" || \
+  fail 'fm capture missed a listed command'
+grep -F -q '===== fm gamma delta --help =====' "$fm_artifact" || \
+  fail 'fm capture missed a nested subcommand'
+grep -F -q '##### capture error: fm beta --help exited with status 3 #####' "$fm_artifact" || \
+  fail 'a failing fm subcommand was not recorded in the artifact'
+if grep -F -q '===== fm system --help =====' "$fm_artifact"; then
+  fail 'fm capture treated a MODELS entry as a command'
+fi
+grep -F -q '"source": "xcrun/fm"' "$fm_dest/capture-manifest.json" || \
+  fail 'fm discovery provenance missing from the manifest'
 
 # --check-only must not create its destination.
 check_dest="$TMP/check-only-does-not-exist"

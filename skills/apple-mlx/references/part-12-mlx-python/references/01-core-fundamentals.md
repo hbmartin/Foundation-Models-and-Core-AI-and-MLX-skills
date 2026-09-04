@@ -427,7 +427,11 @@ allocation is where MLX programs actually die. Three community findings, all att
   GPU-dirty, still in your `phys_footprint`."* The same file's own limit check uses
   `get_active_memory() + get_cache_memory()`.
   **Actionable:** gate memory-pressure logic on `mx.get_active_memory() + mx.get_cache_memory()`.
-  In their churn test that sum matched the OS footprint to 0.2%.
+  In their churn test that sum matched the OS footprint to 0.2%. Closure context (checked
+  2026-08-23): the maintainer closed the issue confirming exactly that scoping — `get_peak_memory()`
+  is intended for measuring a *single* model's inference/training run, where cache hit rate is near
+  100%; for long-running or parallel serving he recommends the `active + cache` check himself. No
+  code or docs change landed.
 - **`mx.clear_cache()` works, but `phys_footprint` trails it by seconds.** Same thread: 0.00 GB cache
   at t+0 with 15.14 GB still in `phys_footprint`; 0.02 GB by t+4 s. Don't sample immediately and
   conclude you have a leak.
@@ -890,7 +894,7 @@ evaluation once, then read.**
 One more lazy-evaluation failure worth knowing before you write anything stateful, because it is
 subtle and it is *not* fixed by the normal training-loop `mx.eval`.
 
-*Community-measured*, mlx-lm#1332 (open at research time), DeepSeek-V4 on Apple silicon:
+*Community-measured*, mlx-lm#1332 (closed completed 2026-08-27; open at research time), DeepSeek-V4 on Apple silicon:
 `RuntimeError: [metal::malloc] Resource limit (499000) exceeded` after **~11,300 generated tokens,
 independent of prompt length**.
 
@@ -2371,6 +2375,12 @@ Here is the mechanism that makes `mx.compile` "slower than eager" and looks like
 > The failure that eventually surfaces is
 > `RuntimeError: [metal::malloc] Resource limit (499000) exceeded` — a *count* of live Metal buffers,
 > which no byte-budget knob (`set_memory_limit`, `set_cache_limit`, `set_wired_limit`) affects.
+>
+> **Closure context (checked 2026-08-23):** mlx#3849 closed with the limit deliberately kept. The
+> maintainer: *"The code reading resource limit is bugged and we should probably fix it or just
+> remove it"*, but exceeding it *"clearly indicates some fatal mistakes"* — *"So at the moment I
+> think it is fine keep it be."* No setter and no fix landed; treat hitting the ceiling as a signal
+> of variant accumulation (this section), not as a knob to raise.
 >
 > **How to detect it before it costs you a night.** MLX exposes no compile-cache statistics from
 > Python, so instrument the caller:

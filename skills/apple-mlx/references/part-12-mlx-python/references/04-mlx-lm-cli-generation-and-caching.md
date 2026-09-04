@@ -1373,7 +1373,7 @@ the one you should use.
 
 There is a second, subtler memory issue that block growth does *not* fix:
 
-> ✅ **VERIFIED** — mlx-lm#1332 (OPEN), via `notes/repos/issues-mlx-stack.md:131-139`: unbounded
+> ✅ **VERIFIED** — mlx-lm#1332 (closed completed 2026-08-27), via `notes/repos/issues-mlx-stack.md:131-139`: unbounded
 > live-buffer growth from **lazy graph retention** in caches. `RotatingKVCache._update_in_place`
 > and the `Batch*` variants chain identically via sliced functional assignment. The practical
 > consequence is that the cache's arrays can retain a graph of every update until something forces
@@ -1415,7 +1415,7 @@ rather than `min(self.offset, n)`. It exists for chunked-attention architectures
 canonical consumer.
 
 > ⚠️ **`ChunkedKVCache` and `ConcatenateKVCache` violate an assumption the server's prompt cache
-> makes.** From mlx-lm#1494 (OPEN): `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored
+> makes.** From mlx-lm#1494 (closed completed 2026-08-21): `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored
 > cache's KV corresponds exactly to its token key and (2) `is_trimmable() == True` implies
 > `trim(n)` removes exactly the suffix. **`KVCache` satisfies both; `ChunkedKVCache` and
 > `ConcatenateKVCache` do not**, and nothing verifies it at reuse time. See §9.5 — this is a
@@ -1682,7 +1682,7 @@ Four open defects in this subsystem, all community-reported, all worth knowing b
 
 | Issue | Symptom | Status |
 |---|---|---|
-| mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | OPEN; repro script in-thread |
+| mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | Closed completed 2026-08-21; repro script in-thread |
 | mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | OPEN |
 | mlx-lm#1395 | `fetch_nearest_cache` **deep-copies** the cached KV, doubling peak memory exactly when a cached conversation is reused | OPEN |
 | mlx-lm#1390 | Server aborts with a Metal `Insufficient Memory` command-buffer failure after the prompt cache grew to **23.35 GB / 26.28 GB** | OPEN |
@@ -2246,6 +2246,7 @@ decoding. Three independent reproductions on three model families found the same
 >
 > The accept/reject code was audited and found correct. The resolution is **documentation**
 > (PR #1592 adds a `Note:` to the docstring), not a code change.
+> PR #1592 closed unmerged 2026-08-21, so do not assume that note ships.
 
 **The falsifier recipe, if you suspect a real bug rather than a tie.** At the divergence index,
 replay through the plain sequential path and print both candidates' raw logits, probabilities and
@@ -2323,8 +2324,8 @@ speculation — has a proposed path through `ArraysCache`, since the proposal in
 `ArraysCache.checkpoint()/rollback()/trim()` (about 18 lines; `trim` is a no-op because the state
 is state-based, not offset-based). A Swift sibling is open as mlx-swift-lm#425 with PR #426.
 
-> 🔴 **GAP — n-gram speculation is not merged.** As of 2026-07-29 (live `gh` check), mlx-lm#1497
-> is an OPEN proposal.
+> 🔴 **GAP — n-gram speculation is not merged.** mlx-lm#1497 was open on the 2026-07-29 live
+> check and closed unmerged 2026-08-26; verify whether a replacement implementation lands.
 > **What would resolve it:** checking whether `--ngram-spec` appears in `mlx_lm.generate --help` on
 > `main`. **Safe default:** for hybrid models today, there is no speculative decoding. Plan
 > throughput around single-token decode.
@@ -2835,7 +2836,7 @@ model whose `make_cache()` already returns bounded caches — and drive your pro
 
 ### 9.5 ⚠️ SILENT FAILURE — server prompt-cache reuse returning mismatched KV
 
-> ✅ **VERIFIED** — mlx-lm#1494 (OPEN), via `notes/repos/issues-mlx-stack.md:625-629`.
+> ✅ **VERIFIED** — mlx-lm#1494 (closed completed 2026-08-21), via `notes/repos/issues-mlx-stack.md:625-629`.
 
 `LRUPromptCache.fetch_nearest_cache` rests on two assumptions:
 
@@ -2959,7 +2960,7 @@ This is §4.2's "returns `0`, not an error" made concrete. **Check the return va
 | G3 | Prompt-cache `<query>` slicing with a non-deterministic chat template | run it against a template that injects `strftime` | avoid dynamic template content in cached workflows |
 | G4 | Whether fused quantized SDPA (mlx#3026) will ever help prefill | the PR landing with a relaxed `use_fallback` gate | `--prefill-step-size 512` today |
 | G5 | Whether `tokenizer.default_chat_template` exists under transformers ≥ 5.7 | one-line `hasattr` check | do not use `--use-default-chat-template`; pass `--chat-template` |
-| G6 | N-gram speculation (#1497) and `--generation-stall-timeout` (#1598) are unmerged | check `--help` on `main` | no spec decoding for hybrids; run your own delivery watchdog |
+| G6 | N-gram speculation PR (#1497) closed unmerged 2026-08-26; verify whether another implementation landed. `--generation-stall-timeout` (#1598) remains separately tracked | check `--help` on `main` | do not assume spec decoding for hybrids; run your own delivery watchdog |
 | G7 | Whether `rich` and `regex` ship in the published PyPI wheel despite being absent from `setup.py` | `pip download mlx-lm && unzip -l` the wheel | install them explicitly |
 
 ### 10.5 Copy-paste reference

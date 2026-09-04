@@ -1048,7 +1048,7 @@ Check 3 is the one everyone hits, and it is an **open issue in Apple's repositor
 
 A diagnostic gift, and it is genuinely useful:
 
-> ✅ **VERIFIED** — issue #16 (open): `build_backend.py:99-100` concatenates two Python string
+> ✅ **VERIFIED** — `apple/python-apple-fm-sdk#16` (open): `build_backend.py:99-100` concatenates two Python string
 > literals without a space and emits **`"…Then open Xcodeat least once…"`**. Cosmetic — but
 > `Xcodeat` is a perfect **fingerprint**. If that string is in a stack trace, you are looking at
 > `apple-fm-sdk` ≤ 0.2.1's build backend, and you know exactly which check failed.
@@ -1850,7 +1850,7 @@ This was not always true, and the history is instructive:
 > *"1. `@generable()` is a factory, not a direct decorator — parentheses with description string
 > required. 2. `@dataclass` must NOT be applied — `generable()` internally applies it.
 > 3. Response parameter is `generating=`, not `response_type=`."*
-> PR #10 (merged 2026-03-08) fixed **1 and 2** — the bare form now works and explicit `@dataclass`
+> `apple/python-apple-fm-sdk#10` (merged 2026-03-08) fixed **1 and 2** — the bare form now works and explicit `@dataclass`
 > no longer breaks it, in either order:
 >
 > ```python
@@ -3123,7 +3123,7 @@ reading `__all__` and the C header, not by failing to find something in the docs
 | **`toolCallingMode`** | ❌ | Absent from `GenerationOptions`. |
 | **`session.prewarm()`** | ❌ | Not in `__all__`. So the first call pays full model-load latency, every process. |
 | **Adapters** | ❌ | Not present. (Also: custom adapters are dead in the 27 generation — Part 1.) |
-| **`LanguageModelFeedback` / `logFeedbackAttachment`** | ❌ | issue #5, **open** |
+| **`LanguageModelFeedback` / `logFeedbackAttachment`** | ❌ | `apple/python-apple-fm-sdk#5`, **open** |
 | `Response` wrapper (`.rawContent`, `.transcriptEntries`, `.usage`) | ❌ | Bare values only. §5.4 |
 | `Instructions` / `@PromptBuilder` builders | ❌ | Instructions are a plain `str`. |
 | Rich `Tool.Output` | ❌ | Tools must return `str`; anything else is `str()`-ed. |
@@ -3441,7 +3441,7 @@ throw** are the ones that cost days.
 
 | Symptom | Cause | § |
 |---|---|---|
-| `SwiftToolingError: The active developer directory is set to Command Line Tools …` | `pip install` with CLT only; needs full Xcode.app. **Open issue #6.** | §6.2 |
+| `SwiftToolingError: The active developer directory is set to Command Line Tools …` | `pip install` with CLT only; needs full Xcode.app. **Open issue `apple/python-apple-fm-sdk#6`.** | §6.2 |
 | `…Then open Xcodeat least once…` (note the missing space) | Fingerprint of `apple-fm-sdk` ≤ 0.2.1's build backend | §6.2 |
 | `macOS version {v} found, but version 26.0 or higher is required` | Build preflight, check 1 | §6.2 |
 | `ImportError: Foundation Models C bindings not found. Please ensure _foundationmodels_ctypes.py is available.` | `_ctypes_bindings.py` missing — the build did not complete. **The filename in the message is stale**; the real file is `_ctypes_bindings.py`. | §6.1 |

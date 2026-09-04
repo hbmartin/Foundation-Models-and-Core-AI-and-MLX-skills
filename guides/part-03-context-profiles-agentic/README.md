@@ -95,7 +95,7 @@ models forfeit it entirely** because a running scan cannot be rewound.
 > 🔴 **GAP** — the token cost of an image is unpublished (the "896 px" figure in circulation is a
 > developer's inference); there is no `tokenCount` for PCC or for a custom `LanguageModel` — confirmed
 > against the 27.0 beta interface on 2026-07-29: all five `tokenCount(for:)` overloads sit on
-> `SystemLanguageModel` only (`FoundationModels-27.0-macos.swiftinterface:398-432`), and neither the
+> `SystemLanguageModel` only (`FoundationModels-27.0-macos.swiftinterface:402-436`), and neither the
 > `LanguageModel` protocol nor `PrivateCloudComputeLanguageModel` declares one. (TN3193 has since been
 > read — 2026-07-27 — and settles the on-device figure at 4,096; see §3.3.)
 
@@ -121,12 +121,12 @@ spellings are corrected against Apple's shipping sample: it is `Profile { … }.
 > verbatim: each of `onPrompt`/`onResponse`/`onReasoning`/`onToolCall`/`onToolOutput` has a
 > zero-argument **and** a payload-taking overload (`Transcript.Prompt`/`.Response`/`.Reasoning`/
 > `.ToolCall`/`(ToolCall, ToolOutput)`), all `async throws`; `onActivate`/`onDeactivate` are
-> zero-argument `async` non-throwing (`FoundationModels-27.0-macos.swiftinterface:939-981`). And
+> zero-argument `async` non-throwing (`FoundationModels-27.0-macos.swiftinterface:984-1026`). And
 > `Profile` has exactly **one** initializer — the `@DynamicInstructionsBuilder` closure form
-> (`:793-794`); **no `Profile(model:)` overload exists in the 27.0 beta interface** — the guide's
+> (`:838-839`); **no `Profile(model:)` overload exists in the 27.0 beta interface** — the guide's
 > `.model(_:)` correction stands. 🔴 Still open: what `Transcript.Response.assetIDs` *means*, and
 > the runtime semantics of writing `session.properties` from outside (the setters exist:
-> `:1059-1063`).
+> `:1103-1107`).
 
 ### [3.3 — `foundation-models-utilities`: Skills and history transforms](references/03-skills-and-history-modifiers.md)
 
@@ -168,7 +168,7 @@ the fastest backend loses `@Generable` entirely.
 >
 > 🔴 **GAP** — **there is no first-party call site for `toolCallingMode` anywhere.** No Apple sample sets
 > it (the API itself is SDK-verified: one `GenerationOptions.ToolCallingMode` type shared by the
-> options field and the profile modifier, `FoundationModels-27.0-macos.swiftinterface:933,
+> options field and the profile modifier, `FoundationModels-27.0-macos.swiftinterface:978,
 > :3229-3249`). `.required` with an empty toolset produces `LanguageModelError error -1` wrapping an
 > internal `GuidedGenerationError` (FB23643759, still open) and no documented case. Nobody has
 > published a cost comparison between the two patterns, so there is no crossover point to give you.

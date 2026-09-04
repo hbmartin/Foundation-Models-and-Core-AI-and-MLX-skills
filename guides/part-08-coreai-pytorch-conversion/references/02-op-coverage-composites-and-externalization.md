@@ -2341,7 +2341,8 @@ lowering — upstream of any delegate.
 
 ### 9.1 fp16 overflow in `softplus`, `mish`, `logsumexp`, `logcumsumexp`
 
-**Status:** issue **#21** open; proposal **#5** open; implementation PR **#22** open, unmerged.
+**Status:** `apple/coreai-torch` issue **#21** open; proposal **apple/coreai-torch#5** open;
+implementation PR **apple/coreai-torch#22** open, unmerged.
 
 **Verified live.** Grep of `coreai_torch/_aten_to_core.py` and `coreai_torch/_decomp.py` at HEAD:
 **zero occurrences of `softplus`, `mish` or `logsumexp`.** They are neither in `_COMPOSITE_OPS` nor
@@ -2706,13 +2707,13 @@ Nine defects, in one table, so you can check your own model against it:
 
 | # | Defect | Wrong on | Fix status 2026-07-29 | Cheap workaround |
 |---|---|---|---|---|
-| 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | PR #22 open | Rewrite the module (§9.1) |
+| 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | PR #32 open | `a.float() / b` |
 | 3 | `cat` on packed intx ignores `dim` | every backend | PR #41 open | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | PR #45 **closed unmerged** | Reduce in fp32 |
 | 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) | issue #49 open, FB23695952 | Skip `optimize()` or reorder |
 | 6 | float→int→float cast round-trip folded to identity | every backend | issue #9 open | Avoid the round-trip idiom |
-| 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | issue #10 open | `torch.div(x*2., 2., rounding_mode="floor")` |
+| 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | issue #11 open | Float-arithmetic masks (below) |
 | 9 | Partial-rotary RoPE pairs contiguously, not half-split | every backend | models#66 open, known | Precompute `cos`/`sin` (§5.7) |
 

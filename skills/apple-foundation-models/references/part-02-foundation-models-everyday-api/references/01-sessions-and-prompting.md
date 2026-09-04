@@ -172,7 +172,7 @@ let used   = try await model.tokenCount(for: instructions)
 > func tokenCount(for transcriptEntries: some Collection<Transcript.Entry>) async throws -> Int
 > ```
 >
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:398-432`; identical set already in
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:402-436`; identical set already in
 > `FoundationModels-26.5-macos.swiftinterface:599-623`). So "entire session transcript" is spelled
 > `tokenCount(for: session.transcript)` — `Transcript` is a `Collection` of `Transcript.Entry` — and
 > tools and schemas are separately countable. There is no `Transcript`-typed overload per se and no
@@ -238,7 +238,8 @@ is additionally ✅ **VERIFIED at the call site** in compiling Apple sample code
 Note what that reconciles: the declaration types `history:` as `some Collection<Transcript.Entry>`,
 and Apple passes a **`Transcript`**. Those agree, because `Transcript` *is* a
 `RandomAccessCollection` whose `Element` is `Transcript.Entry` (see [§9.1](#91-what-changed)). You
-can hand `history:` a `Transcript`, an `ArraySlice` from `someTranscript.history`, or a plain
+can hand `history:` a `Transcript`, a `Transcript.HistoryView` from `someTranscript.history` (an
+`ArraySlice` before Xcode 27 beta 5 — see [§9.1](#91-what-changed)), or a plain
 `[Transcript.Entry]`, and all three compile. Note also the ownership shape Apple uses:
 `private lazy var` + `@ObservationIgnored`, so the profile can capture the observable model that
 lazily owns the session without a retain cycle at init time.
@@ -254,7 +255,7 @@ the next box documents.
 > concrete `model: SystemLanguageModel = .default` (✅ **SDK-verified**,
 > `FoundationModels-27.0-macos.swiftinterface:37-42`, unchanged from 26.5), **and** 27.0 adds a
 > parallel family of four generic over the protocol — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1904-1917`):
+> (`FoundationModels-27.0-macos.swiftinterface:1944-1957`):
 >
 > ```swift
 > // 27.0+ (watchOS 27.0 included, tvOS unavailable) — generic over any LanguageModel
@@ -812,11 +813,11 @@ no semantic difference visible from the call site.
 > builder accepts. `InstructionsBuilder.buildExpression` has two live overloads — `Instructions` and
 > `some InstructionsRepresentable` — plus a catch-all marked `@available(*, unavailable, message:
 > "Only 'Instructions' and 'InstructionsRepresentable' are supported.")` — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:2859-2868`). `Tool` does not conform to
+> (`FoundationModels-27.0-macos.swiftinterface:2923-2932`). `Tool` does not conform to
 > `InstructionsRepresentable` anywhere in the interface, so a bare `Tool` in a plain
 > `Instructions { }` block is a **compile error** by design. `DynamicInstructionsBuilder`, by
 > contrast, has explicit `buildExpression` overloads for a single `Tool` *and* for `[any Tool]`
-> (`:626-635`). Tools-in-builders is a `@DynamicInstructionsBuilder`-only feature, which is why
+> (`:671-680`). Tools-in-builders is a `@DynamicInstructionsBuilder`-only feature, which is why
 > every sample places them exactly where it does.
 
 ---
@@ -870,7 +871,7 @@ final func respond<Content>(to prompt: Prompt,
 final func respond(to prompt: Prompt,
                    options: GenerationOptions = GenerationOptions(),
                    contextOptions: ContextOptions = ContextOptions(),
-                   metadata: [String : any Sendable & Codable & Equatable] = [:])
+                   metadata: [String : any ConvertibleToGeneratedContent] = [:])  // beta 5 retype
   async throws -> LanguageModelSession.Response<String>
 ```
 
@@ -898,13 +899,15 @@ bias the model."* If you are migrating, that is where your flag went.
 > form carries `includeSchemaInPrompt: Bool = true`. Each output shape also has a `String`-prompt
 > `@_disfavoredOverload`. ✅ **RESOLVED (2026-07-29): the `metadata:` / `contextOptions:` family is
 > now read verbatim in the 27.0 interface** — nine `streamResponse` forms
-> (`FoundationModels-27.0-macos.swiftinterface:2022-2048`) and nine `respond` forms (`:2086-2138`),
+> (`FoundationModels-27.0-macos.swiftinterface:2064-2088`) and nine `respond` forms (`:2126-2178`),
 > mirroring the 26.x axes exactly. All are `@available(iOS 27.0, macOS 27.0, visionOS 27.0,
 > watchOS 27.0)`; each takes `options: GenerationOptions = GenerationOptions(),
-> contextOptions: ContextOptions = ContextOptions(), metadata: [String : any Sendable & Codable &
-> Equatable] = [:]`, and the `schema:`/`generating:` forms default
+> contextOptions: ContextOptions = ContextOptions(), metadata: [String : any
+> ConvertibleToGeneratedContent] = [:]` (beta 5 retyped `metadata:` from
+> `[String : any Sendable & Codable & Equatable]`, checked 2026-08-23), and the
+> `schema:`/`generating:` forms default
 > `contextOptions: ContextOptions(includeSchemaInPrompt: true)` — confirming that the
-> `includeSchemaInPrompt` knob moved into `ContextOptions` (`:3068-3072`). The `schema:` forms in
+> `includeSchemaInPrompt` knob moved into `ContextOptions` (`:3132-3136`). The `schema:` forms in
 > this family are `@_disfavoredOverload`, so an ambiguous call resolves to the 26.x declarations.
 > It still appears at no call site in any of the three 27.0 sample projects.
 
@@ -1236,8 +1239,8 @@ anyone has published.
 > 🔴 **GAP (narrowed 2026-07-29) — does `prewarm` do anything on a non-Apple backend?** The
 > protocol side is now ✅ **SDK-verified**: `LanguageModelExecutor` requires
 > `func prewarm(model: Self.Model, transcript: Transcript)`
-> (`FoundationModels-27.0-macos.swiftinterface:1673`) and the framework supplies a default
-> implementation in an extension (`:1866-1868`) — the interface does not emit its body, but Apple's
+> (`FoundationModels-27.0-macos.swiftinterface:1714`) and the framework supplies a default
+> implementation in an extension (`:1906-1908`) — the interface does not emit its body, but Apple's
 > `foundation-models-language-model-protocol` SKILL.md describes it as a no-op, and both
 > `SystemLanguageModel.Executor` and `PrivateCloudComputeLanguageModel.Executor` declare their own
 > concrete `prewarm` (`:306`, `:112`), which they would not need if the default did work. Apple's
@@ -1298,7 +1301,7 @@ enum LanguageModelSession.Error {
 ```
 
 ✅ **VERIFIED** — `/languagemodelsession/error`, and now ✅ **SDK-verified**
-(`FoundationModels-27.0-macos.swiftinterface:1986-1994`): exactly those two cases, payload-free,
+(`FoundationModels-27.0-macos.swiftinterface:2026-2034`): exactly those two cases, payload-free,
 `Equatable & Hashable`, conforming to `LocalizedError` — unlike the deprecated
 `GenerationError.concurrentRequests(_:)` they replace.
 
@@ -1351,7 +1354,7 @@ struct Transcript      // 26.0 (watchOS 27.0)
 //           Escapable, MutableCollection, RandomAccessCollection, RangeReplaceableCollection,
 //           Sendable, Sequence
 init(entries:)
-var history: ArraySlice<Transcript.Entry> { get set }        // 27.0
+var history: Transcript.HistoryView { get set }              // 27.0; ArraySlice before beta 5
 var structuredTranscript: Evaluations.StructuredTranscript { get } // 27.0; Evaluations extension
 ```
 
@@ -1359,13 +1362,22 @@ var structuredTranscript: Evaluations.StructuredTranscript { get } // 27.0; Eval
 module caveat on the last line: `structuredTranscript` is not declared by FoundationModels — the
 **Evaluations** framework adds it to `Transcript` in an extension, so the source file must
 `import Evaluations`; linking the framework alone does not put the extension into scope
-(✅ SDK-verified, `Evaluations-27.0-macos.swiftinterface:281-286`; §12).[^structured-transcript-import]
+(✅ SDK-verified, `Evaluations-27.0-macos.swiftinterface:287-292`; §12).[^structured-transcript-import]
 `MutableCollection` + `RangeReplaceableCollection` is why in-place edits, `removeAll(where:)` and
 `replaceSubrange` all work. `Codable` is why you can persist a conversation to disk and rehydrate it
 — and why `JSONEncoder().encode(session.transcript)` is the cheapest debugging aid in this stack;
 see [§2.5](#25-seeding-a-session-with-hand-authored-history). `RandomAccessCollection` with
 `Element == Transcript.Entry` is why a whole `Transcript` satisfies
 `history: some Collection<Transcript.Entry>`.
+
+> ⚠️ **`history`'s type changed in Xcode 27 beta 5 (noted 2026-08-23).** Earlier 27.0 betas declared
+> `var history: ArraySlice<Transcript.Entry>`; the beta 5 interface declares the dedicated
+> **`Transcript.HistoryView`** collection instead — ✅ **SDK-verified**
+> (`FoundationModels-27.0-macos.swiftinterface:2695-2700`; the struct at `27.0:2667-2694` is a
+> `Mutable`/`RandomAccess`/`RangeReplaceableCollection` that is its own `SubSequence`, with an
+> opaque non-`Int` `Index`). Slice-style code (`history.suffix(_:)` assigned back) still compiles;
+> integer subscripts into `history` do not. The migration detail lives in
+> [Part 17 §4.9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md).
 
 **`history` is the safe half.** ✅ **VERIFIED** — `/transcript/history`: *"The transcript entries
 **excluding the leading instructions entry**, if present. The session history provides the transcript
@@ -1517,9 +1529,9 @@ All are `Optional` and default to `nil`, i.e. "let the backend decide." The thre
 `toolCallingMode` are grep-verified **absent** from 26.5 and are 27 additions — both now
 ✅ **SDK-verified** in the 27.0 interface: `sampling` is `@available(*, deprecated, renamed:
 "samplingMode")` with `samplingMode` a back-deployed computed alias over it
-(`FoundationModels-27.0-macos.swiftinterface:3137-3141, :3165-3177`), and
-`toolCallingMode: GenerationOptions.ToolCallingMode?` is a stored 27.0 property (`:3148-3150`)
-with a 27.0 `init(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)` (`:3183`).
+(`FoundationModels-27.0-macos.swiftinterface:3201-3205, :3165-3177`), and
+`toolCallingMode: GenerationOptions.ToolCallingMode?` is a stored 27.0 property (`:3212-3214`)
+with a 27.0 `init(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)` (`:3247`).
 
 ### 10.2 `temperature`
 
@@ -1531,7 +1543,7 @@ The knob everyone reaches for first and the one Apple documents least.
 > the default when `nil`, or what happens if you pass `2.0` or a negative number.** The 27.0 beta
 > interface was checked 2026-07-29 and does not help: the declaration is still a bare
 > `public var temperature: Swift.Double?` with no range annotation
-> (`FoundationModels-27.0-macos.swiftinterface:3144`). Do not put a slider in your UI over an
+> (`FoundationModels-27.0-macos.swiftinterface:3208`). Do not put a slider in your UI over an
 > unvalidated range. **What would resolve it:** the header doc comment on
 > `/generationoptions/temperature`, or an empirical sweep on device recording which values throw.
 
@@ -1754,13 +1766,15 @@ at lines 350-358.
 `metadata` is the extension point: *"Language models that provide other kinds of usage statistics may
 encode them in metadata."* ✅ **VERIFIED**, Apple docs.
 
-> ✅ **RESOLVED (2026-07-29) — every count property is `Int`, read verbatim from the 27.0
-> interface.** `Usage.Input` is `totalTokenCount: Int, cachedTokenCount: Int`; `Usage.Output` is
-> `totalTokenCount: Int, reasoningTokenCount: Int`; `Usage.metadata` is
-> `[String : any Sendable]` (its initializer takes the narrower
+> ✅ **RESOLVED (2026-07-29; metadata retyped in beta 5, re-checked 2026-08-23) — every count
+> property is `Int`, read verbatim from the 27.0 interface.** `Usage.Input` is
+> `totalTokenCount: Int, cachedTokenCount: Int`; `Usage.Output` is
+> `totalTokenCount: Int, reasoningTokenCount: Int`; `Usage.metadata` is now
+> `[String : GeneratedContent]` (its initializer takes `[String : any
+> ConvertibleToGeneratedContent]`; through beta 4 the pair was `[String : any Sendable]` /
 > `[String : any Sendable & Codable & Equatable]`); and `Usage.totalTokenCount` is a computed `Int`
 > in its own extension — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1945-1976`). Whether the computed total is
+> (`FoundationModels-27.0-macos.swiftinterface:1985-2016`). Whether the computed total is
 > `input + output` is still not visible (the getter body is not emitted), but every operand is `Int`.
 
 ### 11.2 Where you read it
@@ -1938,11 +1952,21 @@ enum Transcript.Segment {
     case text(Transcript.TextSegment)               // "A segment containing text."
     case attachment(Transcript.AttachmentSegment)   // "A segment containing an attachment."   ← NEW in 27.0
     case structure(Transcript.StructuredSegment)    // "A segment containing structured content."
-    case custom(…)                                  // "A segment containing custom content."
+    case custom(…)                                  // "custom content." ⚠️ not in the beta 5 SDK
 }
 ```
 
 ✅ **VERIFIED** — `/transcript/segment`.
+
+> ⚠️ **Beta 5 (noted 2026-08-23): `.custom` is not present in the SDK interface.** The recaptured
+> 27.0 beta 5 interface declares exactly three `Segment` cases — `.text`, `.structure`,
+> `.attachment` (`FoundationModels-27.0-macos.swiftinterface:2288-2297`) — and contains **zero
+> occurrences of `CustomSegment`**. The case and the protocol were present in the 2026-07-29 beta
+> capture; the removal happened between that capture and beta 5, while the docs pages quoted here
+> still list four cases. The `CustomSegment` material below is retained as the documented
+> pre-beta-5 design — do not write new code against it. Provider-side status and the safe default
+> live in
+> [Part 4 §13.2](../../part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md).
 
 ```swift illustrative
 // Transcript.TextSegment
@@ -1958,15 +1982,15 @@ var content, source, schemaName
 init(id:content:label:)
 var content, label
 
-// Transcript.CustomSegment                         // 27.0
+// Transcript.CustomSegment                         // 27.0 pre-beta-5; gone in beta 5
 associatedtype Content
 var content, description, id
 ```
 
 ✅ **VERIFIED** — `/transcript/structuredsegment`, `/transcript/attachmentsegment` and the index
-entry for `CustomSegment`.
+entry for `CustomSegment` (the last now describing a surface absent from the beta 5 interface).
 
-**`CustomSegment` is a protocol, not a struct.** ✅ **VERIFIED** — Apple's
+**`CustomSegment` is a protocol, not a struct** (in its documented, pre-beta-5 form). ✅ **VERIFIED** — Apple's
 `foundation-models-language-model-protocol` SKILL.md gives the declaration:
 
 ```swift illustrative
@@ -2091,10 +2115,10 @@ at. Full treatment in [Part 6 · Evaluations](https://github.com/hbmartin/Founda
 > way XCTest does), and the "most plausibly Evaluations" inference was exactly right: it is an
 > **Evaluations type, not a FoundationModels one** — which is why it was, correctly, absent from
 > the FoundationModels interface. ✅ **SDK-verified**
-> (`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:272-286`): Evaluations declares
-> `public struct StructuredTranscript : Sendable` (`:272`) and grafts
+> (`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:278-292`): Evaluations declares
+> `public struct StructuredTranscript : Sendable` (`:278`) and grafts
 > `var structuredTranscript: StructuredTranscript { get }` onto `FoundationModels.Transcript` in an
-> extension (`:283`) — so the property only exists in source files that import Evaluations. Merely
+> extension (`:289`) — so the property only exists in source files that import Evaluations. Merely
 > linking the framework is insufficient because the declaring extension is otherwise out of scope.
 > And you *can*
 > read one yourself: it is five public vars with a fully defaulted memberwise init —
@@ -2426,9 +2450,9 @@ with every field optional (Origami, `Brainstorm/BrainstormModel.swift:103-124`: 
 `case responded(String)`). So the plain-text stream needs no `if let` and no partial type; it needs
 you to remember that assigning is correct and appending doubles your text. ✅ The *declaration* is
 now read (2026-07-29): `Snapshot` declares `public var content: Content.PartiallyGenerated`
-(✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:2151-2160` — plus 27.0-only
-`transcriptEntries` and `usage` properties), and `String`'s `Generable` conformance (`:1183-1191`)
-takes the protocol's default `typealias PartiallyGenerated = Self` (`:1140`), so
+(✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:2191-2200` — plus 27.0-only
+`transcriptEntries` and `usage` properties), and `String`'s `Generable` conformance (`:1226-1234`)
+takes the protocol's default `typealias PartiallyGenerated = Self` (`:1183`), so
 `String.PartiallyGenerated` **is** `String`.
 
 ### 13.3 A deduction worth knowing
@@ -2438,8 +2462,8 @@ takes the protocol's default `typealias PartiallyGenerated = Self` (`:1140`), so
 declarations. Taken together they imply **`String` conforms to `Generable`** — which is also why a
 bare string can be an output type at all. No longer a deduction: the conformance is read verbatim,
 `extension Swift.String : FoundationModels.Generable` — ✅ **SDK-verified**
-(`FoundationModels-27.0-macos.swiftinterface:1183-1191`), alongside `Bool`, `Int`, `Float`,
-`Double`, `Decimal`, `Never`, and conditional `Array` conformances (`:1166-1290`).
+(`FoundationModels-27.0-macos.swiftinterface:1226-1234`), alongside `Bool`, `Int`, `Float`,
+`Double`, `Decimal`, `Never`, and conditional `Array` conformances (`:1209-1333`).
 
 ---
 
@@ -2535,12 +2559,12 @@ not a condition to design UX around.
 
 `LanguageModelError`'s nine cases, with Apple's own one-liners, ✅ **VERIFIED** from
 `/languagemodelerror` and now ✅ **SDK-verified** as the complete case list
-(`FoundationModels-27.0-macos.swiftinterface:1486-1496` — exactly these nine, each carrying a
+(`FoundationModels-27.0-macos.swiftinterface:1527-1537` — exactly these nine, each carrying a
 payload struct with `debugDescription: String` and `metadata: [String : any Sendable]`, plus
 case-specific fields: `ContextSizeExceeded.contextSize/.tokenCount: Int`, `RateLimited.resetDate:
 Date?`, `UnsupportedCapability.capability`, `UnsupportedTranscriptContent.unsupportedContent:
 [Transcript.Entry]`, `UnsupportedGenerationGuide.schemaName: String?`,
-`UnsupportedLanguageOrLocale.languageCode` — `:1500-1620`):
+`UnsupportedLanguageOrLocale.languageCode` — `:1541-1661`):
 
 | Case | Description |
 |---|---|
@@ -2584,8 +2608,8 @@ Three things that will bite you:
 > ✅ **RESOLVED (2026-07-29) — `GenerationError.decodingFailure`'s successor is
 > `GeneratedContent.ParsingError`, stated by Apple in the SDK itself.** The deprecated case now
 > carries the per-case deprecation message *"Use ``GeneratedContent/ParsingError`` instead."* —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3491-3494`). The full migration
-> map is spelled out the same way, case by case (`:3470-3507`): `exceededContextWindowSize` →
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3555-3558`). The full migration
+> map is spelled out the same way, case by case (`:3534-3571`): `exceededContextWindowSize` →
 > `LanguageModelError.contextSizeExceeded`, `assetsUnavailable` →
 > `SystemLanguageModel.Error.assetsUnavailable`, `guardrailViolation` →
 > `LanguageModelError.guardrailViolation`, `unsupportedGuide` →
@@ -2595,7 +2619,7 @@ Three things that will bite you:
 > `LanguageModelSession.Error.concurrentRequests`, `refusal` → `LanguageModelError.refusal`. This
 > also confirms Origami's catch ladder was placing `GeneratedContent.ParsingError` in exactly the
 > right slot. `ParsingError` itself is a struct with `rawContent: String`,
-> `underlyingError: (any Error)?`, and `debugDescription` (`:1356-1361`). Catch both while you are
+> `underlyingError: (any Error)?`, and `debugDescription` (`:1399-1404`). Catch both while you are
 > migrating.
 
 Apple's documented recovery for `catch LanguageModelError.contextSizeExceeded(let context)` in
@@ -2687,7 +2711,7 @@ None of these gaps is filled with a guess anywhere in this guide. If you resolve
 
 [^refusal-explanation-response]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), the `String` carried by the response wrapper.
 
-[^structured-transcript-import]: Apple documents [`Transcript.structuredTranscript`](https://developer.apple.com/documentation/foundationmodels/transcript/structuredtranscript) as the structured representation used by Evaluations. The captured Xcode 27 interfaces settle declaration ownership: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:282-285` declares `extension FoundationModels.Transcript { public var structuredTranscript: Evaluations.StructuredTranscript }`, while the FoundationModels interface has no such member. Swift makes an extension's members available through the module that declares it, so each use site needs `import Evaluations`; a linker setting is not a source-level import.
+[^structured-transcript-import]: Apple documents [`Transcript.structuredTranscript`](https://developer.apple.com/documentation/foundationmodels/transcript/structuredtranscript) as the structured representation used by Evaluations. The captured Xcode 27 interfaces settle declaration ownership: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:288-291` declares `extension FoundationModels.Transcript { public var structuredTranscript: Evaluations.StructuredTranscript }`, while the FoundationModels interface has no such member. Swift makes an extension's members available through the module that declares it, so each use site needs `import Evaluations`; a linker setting is not a source-level import.
 
 ### Where to go next
 

@@ -1599,7 +1599,7 @@ This is the gap that costs you first, because it shows up the moment you write y
 > nothing to catch by type.** (Narrowed 2026-07-29.)
 >
 > The `.swiftinterface` dump this box used to ask for has been read: the Core AI module interfaces
-> were captured 2026-07-29 from the Xcode 27.0 beta (`27A5228h`) into `notes/sdk-interfaces/`.
+> were captured 2026-07-29 from the Xcode 27.0 beta (`27A5228h`; recaptured 2026-08-20, beta 5 `27A5237l`) into `notes/sdk-interfaces/`.
 > **`CoreAIRuntime` declares no public error type at all** — every `throws` in
 > `CoreAIRuntime-27.0-macos.swiftinterface` is untyped (the only typed-throws in the file are
 > generic `throws(E)` rethrow plumbing on the unsafe-view closures). The **only public error type
@@ -2351,7 +2351,7 @@ process(y.view(as: Float.self))
 > contract.
 
 **And a module-layout fact the reference pages never state**, ✅ **SDK-verified** from the interface
-dumps captured 2026-07-29 (Xcode 27.0 beta, `notes/sdk-interfaces/`): `import CoreAI` — the spelling
+dumps captured 2026-07-29, recaptured 2026-08-20 (Xcode 27.0 beta, `notes/sdk-interfaces/`): `import CoreAI` — the spelling
 every snippet in this guide uses — is an **umbrella**. The `CoreAI` module's entire interface is one
 line, `@_exported public import CoreAIDelegates` (`CoreAI-27.0-macos.swiftinterface:5`), and
 `CoreAIDelegates` (a SubFramework in the SDK) in turn `@_export`s `CoreAIAsset`, `CoreAICommon`,

@@ -509,15 +509,19 @@ These are the exact strings `mlx/ops.cpp` raises. Knowing them saves a debugging
 > | `[quantize] <mode> ... requires bits to be <4\|8> but got <b>.` | wrong bit width for a block-float mode |
 > | `[quantize] The matrix to be quantized must have at least 2 dimension` | 1-D input (note the missing "s" — that is verbatim) |
 > | `[quantize] The last dimension of the matrix needs to be divisible by <group_size>` | the alignment rule from §1.2 |
-> | `[quantize] Global scale is not supported on the Metal backend.` | `global_scale=` on Apple silicon — see §2.6 |
+> | `[quantize] Global scale is not supported on the Metal backend.` | `global_scale=` on Apple silicon, **mlx ≤ 0.32.0 only** — PR #3757 removed the throw (ships in 0.32.1, 2026-08-18); see §2.6 |
 > | `[dequantize] The matrix should be given as a uint32` | you passed the wrong array as `w` |
 
 ### 2.6 `global_scale` is CUDA/CPU only, and that has a real cost on Metal
 
-`nvfp4` supports an optional per-tensor scale on top of the per-block scale. On Metal it throws.
+`nvfp4` supports an optional per-tensor scale on top of the per-block scale. On Metal it throws on
+mlx ≤ 0.32.0; PR **#3757** (merged 2026-08-04, first shipped in **0.32.1**, released 2026-08-18)
+removed the rejection and added basic Metal support — see the closure context below. The section
+title is kept for anchor stability; read "is CUDA/CPU only" as the ≤ 0.32.0 state this section
+documents.
 
-> ✅ **VERIFIED** — the Metal backend rejects it explicitly, `mlx/backend/metal/quantized.cpp`
-> L1725-1730, quoted in `notes/repos/issues-mlx-stack.md:455-462`:
+> ✅ **VERIFIED (mlx ≤ 0.32.0)** — the Metal backend rejects it explicitly, `mlx/backend/metal/quantized.cpp`
+> L1725-1730 at that version, quoted in `notes/repos/issues-mlx-stack.md:455-462`:
 >
 > ```cpp
 > if (mode_ == QuantizationMode::Nvfp4 &&
@@ -535,11 +539,22 @@ The consequence, from the issue that tracks it (**mlx#3911, closed 2026-08-05**)
 > (unsigned UE4M3 vs signed E4M3 scales) … This blocks NVFP4 quantization for Apple Silicon users
 > running MoE models (DeepSeek-V3/V4, GLM-5.1, etc.)"
 
-**Practical rule:** if you are on Apple silicon and someone hands you an `nvfp4` checkpoint that was
-produced *with* a global scale, you cannot run it as-is, and the failure is a thrown exception
-rather than silent degradation — which is the good outcome. If you are choosing a mode for an
+**Closure context (as of 2026-08-23):** mlx#3911 closed 2026-08-05, the day after PR **#3757 "Add
+gather_qqmm"** merged (2026-08-04). The maintainer's closing comment: *"#3757 has added some basic
+support for global scale in QQMatmul, but at the moment not all fast kernels get the support and we
+are still working on improving things."* The PR's diff deletes all three Metal-side rejections —
+the `[QQMatmul]` throw quoted above plus the `[quantize]` / `[dequantize]` strings in `mlx/ops.cpp`
+(§2.5) — and routes a Metal `qqmm` with a global scale through the **`qmv` fallback** rather than a
+fast kernel (PR description: *"The implementation is bare minimum … for Metal it is `qmv`"*). The
+first release carrying it is **v0.32.1 (2026-08-18)**; the fix is *not* in the 0.32.0 wheel.
+
+**Practical rule:** on mlx ≤ 0.32.0, if you are on Apple silicon and someone hands you an `nvfp4`
+checkpoint that was produced *with* a global scale, you cannot run it as-is, and the failure is a
+thrown exception rather than silent degradation — which is the good outcome. On 0.32.1+ the same
+checkpoint *runs*, but through the `qmv` fallback path, so expect matmul throughput well below the
+fast-kernel numbers in §6 until the follow-up kernels land. If you are choosing a mode for an
 Apple-silicon target and dynamic range is your concern, `mxfp4` (E8M0 scales, which are pure
-exponents and therefore wide-range) or affine is the safer pick today.
+exponents and therefore wide-range) or affine is still the safer pick.
 
 ---
 
@@ -2033,13 +2048,13 @@ Statuses move. Check the issue before you rely on this table.
 
 | # | Defect | Issue / PR | Status 2026-08-03 | Affects |
 |---|---|---|---|---|
-| 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **OPEN**, fix PR **OPEN** | affine MoE, M5/NAX only |
+| 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **closed completed**, fix PR **merged 2026-08-26** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** | **OPEN** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
 | 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
-| 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** | **CLOSED** 2026-08-05 — but **throws**, does not corrupt | nvfp4 on Apple silicon |
+| 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** → PR **#3757** | **CLOSED** 2026-08-05; fix merged 2026-08-04, ships in **0.32.1** — on ≤ 0.32.0 it **throws**, does not corrupt | nvfp4 on Apple silicon, mlx ≤ 0.32.0 |
 
 Read the last column carefully. **Five of the seven are M5-generation-only.** On an M1 through M4
 machine most of this section is history rather than a hazard — but "most" is not "all", and the
@@ -2047,9 +2062,9 @@ machine most of this section is history rather than a hazard — but "most" is n
 
 ### 9.1 The bad one: affine `gather_qmm` leaves rows unwritten — mlx#3856
 
-**Status: issue OPEN, fix PR #3922 OPEN, as of 2026-07-29.**
+**Status: issue closed completed and fix PR #3922 merged, 2026-08-26.**
 
-> ✅ **VERIFIED** — mlx#3856 (OPEN, 9 comments), summarised at
+> ✅ **VERIFIED** — mlx#3856 (closed completed 2026-08-26; 9 comments), summarised at
 > `notes/repos/issues-mlx-stack.md:379-427`.
 >
 > **Trigger, stated precisely:** flattened gathered row count `n` with **`n > 32768` AND
@@ -2158,11 +2173,13 @@ about tile bounds, not about precision.
 > ✅ **VERIFIED** — the two fixes in flight, `notes/repos/issues-mlx-stack.md:421-423`:
 >
 > - **Downstream:** mlx-lm PR **#1585**, "switch_layers: pad sorted gather rows to a multiple of
->   64" — described as *provably output-neutral* (the unsort indexes only original rows).
+>   64" — described as *provably output-neutral* (the unsort indexes only original rows); closed
+>   unmerged 2026-08-21.
 > - **Upstream:** mlx PR **#3922**, "Fix sorted gather_qmm NAX boundary handling" — clamps the
 >   remaining row/column counts in `int` before narrowing to `short`.
 >
-> Both **OPEN** as of 2026-07-29.
+> Both were **OPEN** as of 2026-07-29; upstream #3922 merged 2026-08-26 and downstream #1585
+> closed unmerged 2026-08-21.
 
 Your options, in order of preference:
 
@@ -2312,9 +2329,13 @@ these headers — Part 11 territory — you are not, and you should assume the a
 
 ### 9.7 `nvfp4` `global_scale` on Metal — mlx#3911
 
-**Status: OPEN — but this one throws.** Covered in §2.6. It is in this table for completeness and
-as the counterexample: an unimplemented feature that raises `std::runtime_error` is *the good
-outcome*. You find out immediately. Compare with everything above it in this section.
+**Status: CLOSED 2026-08-05 — fixed by PR #3757 (merged 2026-08-04), shipped in mlx 0.32.1, as of
+2026-08-23.** Covered in §2.6, including the closure context. It stays in this table for
+completeness and as the counterexample: on ≤ 0.32.0, an unimplemented feature that raises
+`std::runtime_error` is *the good outcome* — you find out immediately. Compare with everything
+above it in this section. On 0.32.1+ the throw is gone and Metal takes the `qmv` fallback path
+instead (basic support only; the maintainer's closing comment says not all fast kernels have it
+yet).
 
 ### 9.8 Adjacent: two more silent-corruption knobs worth knowing
 
@@ -2778,7 +2799,7 @@ from §10 that this configuration warrants.
 | **MoE, top-1 / low-k** | any | **8-bit**, or 4-bit only with DWQ | 8.50 | error does not average; one expert carries the token | full §10 |
 | **MoE router / gate** | any | **8-bit, group 64** regardless of the rest | 8.50 | routing error is discrete, not smooth (this is what gpt-oss does) | included above |
 | **`lm_head`** | any | 6-bit, or the `mixed_*` recipes' "high" | 6.50 | every token passes through it | §10.2 |
-| **any** | Linux CUDA | `nvfp4` with `global_scale` | 4.50+ | the only place tensor-scale nvfp4 works today | §10.1 |
+| **any** | Linux CUDA | `nvfp4` with `global_scale` | 4.50+ | the only place tensor-scale nvfp4 has fast kernels — Metal gained fallback-speed (`qmv`) support in 0.32.1, §2.6 | §10.1 |
 | **pre-quantized `mxfp4` checkpoint** | any | leave it | 4.25 | gpt-oss ships this way; converting loses nothing and risks something | §10.1 |
 
 ### 12.2 Group size, decided separately
@@ -2801,7 +2822,7 @@ Group size is a smaller decision than bits and it has a clean rule:
 | **`affine`** | the default answer. Widest bit range (2/3/4/5/6/8), all three group sizes, the only mode the mixed-precision recipes and DWQ support, and the only mode with a bias term. |
 | **`mxfp4`** | you already have an `mxfp4` checkpoint (gpt-oss), or you want the cheapest 4-bit at 4.25 bpw, or you need to sidestep §9.1 specifically. Cannot use quant predicates or DWQ. |
 | **`mxfp8`** | you want block-float at 8 bits, typically as a DWQ *teacher* or as an activation-quantization base (`-qa` needs `mxfp8` or `nvfp4`). |
-| **`nvfp4`** | CUDA, or an incoming `compressed-tensors` / `nvfp4-pack-quantized` checkpoint. On Metal, know that `global_scale` throws (§2.6) and that its group of 16 is smaller than every kernel block constant (§9.3). |
+| **`nvfp4`** | CUDA, or an incoming `compressed-tensors` / `nvfp4-pack-quantized` checkpoint. On Metal, know that `global_scale` throws on ≤ 0.32.0 and runs only via the slow `qmv` fallback on 0.32.1+ (§2.6), and that its group of 16 is smaller than every kernel block constant (§9.3). |
 
 ### 12.4 The quick-reference card
 
@@ -2906,7 +2927,8 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > **Safe default:** 1-D `int32` `rhs_indices` of length `n`, `lhs_indices=None` — the MoE-decode
 > shape mlx-lm's `SwitchLinear` exercises.
 >
-> 🔴 **GAP 5 — whether the fixes for `mlx#3856` and `mlx#3887` have landed.**
+> 🟡 **PARTIALLY RESOLVED 2026-08-26 — `mlx#3922` merged and `mlx#3856` closed; `mlx#3887`
+> remains open.**
 > Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
 > `mlx-lm#1585` (downstream
 > padding workaround) also open. Re-checked via `gh` **2026-07-31**: issues `mlx#3856` and

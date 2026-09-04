@@ -148,7 +148,7 @@ Two consequences:
 2. Because it is back-deployed, the implementation ships in your binary, so it works on OS versions
    below 26.4 — and the interfaces now show what it returns there: the emitted fallback body
    **hardcodes `4096`** (visible verbatim in both dumps — `26.5:634-643` ends in a bare `4096`;
-   `27.0:441-447` reads `if #available(27.0) { return _contextSize } … return 4096`). So on a
+   `27.0:445-451` reads `if #available(27.0) { return _contextSize } … return 4096`). So on a
    pre-26.4 runtime you get the constant, not the device's real budget. The `<= 0`-is-unknown
    defensive check below is therefore belt-and-braces rather than load-bearing; keep it anyway —
    it is free.
@@ -599,10 +599,10 @@ The protocol text itself:
 
 > ✅ **SDK-verified** — previously reconstructed from a community read plus three independent
 > conformances; now confirmed against the captured 27.0 beta interface,
-> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface:1440-1444` and `:1668-1679`
+> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface:1483-1487` and `:1709-1720`
 > (2026-07-29). The reconstruction was right, with one member it had left implicit: the executor
 > declares `associatedtype Model : LanguageModel` explicitly. `SystemLanguageModel`'s conformance
-> is at `:291`.
+> is at `:295`.
 
 ```swift illustrative
 // Verbatim shape from the 27.0 interface (availability: iOS/macOS/visionOS/watchOS 27.0, no tvOS).
@@ -632,7 +632,7 @@ public protocol LanguageModelExecutor: Sendable {
 
 **`LanguageModelCapabilities` is load-bearing, not decorative.** Members: `.vision`,
 `.guidedGeneration`, `.reasoning`, `.toolCalling` — ✅ **SDK-verified** as the complete public set
-(`27.0:1468-1483`), with `LanguageModelCapabilities.init(_:)` current and `init(capabilities:)`
+(`27.0:1509-1524`), with `LanguageModelCapabilities.init(_:)` current and `init(capabilities:)`
 already deprecated-renamed in the same interface (`:1448-1450`). MLX's own doc comment is the
 sharpest statement of why they matter:
 
@@ -716,11 +716,12 @@ And one initializer nobody's notes had:
 
 > ✅ **VERIFIED** — the sample uses **`LanguageModelSession(profile:history:)`**, passing a
 > `Transcript`. The declared parameter is broader than the sample suggests: ✅ **SDK-verified**
-> (`27.0:871`) it is `init(profile: sending some DynamicProfile, history: some
+> (`27.0:916`) it is `init(profile: sending some DynamicProfile, history: some
 > Collection<Transcript.Entry> = [])` — a generic entry collection with an empty default, which a
-> `Transcript` satisfies because `Transcript : RandomAccessCollection` (`27.0:2201`). So
-> `LanguageModelSession(profile: p)` alone is legal, and so is passing an `ArraySlice` straight from
-> `transcript.history`. The `history:` label is new; the 26-era `transcript:` label also still
+> `Transcript` satisfies because `Transcript : RandomAccessCollection` (`27.0:2241`). So
+> `LanguageModelSession(profile: p)` alone is legal, and so is passing a `Transcript.HistoryView`
+> straight from `transcript.history` (an `ArraySlice<Transcript.Entry>` before beta 5 — see §4.9;
+> both satisfy the generic). The `history:` label is new; the 26-era `transcript:` label also still
 > appears (in the older coffee-game sample). See §7.5.
 
 **Migration impact:** additive. The thing a migrating app should notice is that Dynamic Profiles are
@@ -887,17 +888,17 @@ full configuration surface — see [guide 2.4](../../part-02-foundation-models-e
 > input tokens were read from cache, and how many of the response tokens were used for reasoning.**"*
 
 > ✅ **VERIFIED** — `/documentation/foundationmodels/…`, and now ✅ **SDK-verified**
-> (`27.0:1940-1977`), the shape:
+> (`27.0:1980-2017`, re-checked 2026-08-23), the shape:
 > ```swift
 > struct LanguageModelSession.Usage              // iOS 27
 > init(input:output:metadata:)
 > var input: Usage.Input        // .totalTokenCount, .cachedTokenCount
 > var output: Usage.Output      // .totalTokenCount, .reasoningTokenCount
-> var metadata: [String: any Sendable]
+> var metadata: [String: GeneratedContent]   // beta 5; was [String: any Sendable]
 > var totalTokenCount: Int
 > ```
 > `Response`, `ResponseStream.Snapshot` and `LanguageModelSession` all expose `.usage`
-> (`session.usage` at `27.0:1893-1896`).
+> (`session.usage` at `27.0:1933-1936`).
 > The KV-caching article gives the derived metric: *"determine your cache hit rate by dividing the
 > cached input tokens by the total input tokens."*
 
@@ -953,11 +954,18 @@ struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
 > modifier. An Apple Frameworks Engineer recommended the profile form on thread 833692
 > (*"You can use `.toolCallingMode` with `DynamicProfiles` for this."*), while developers in the wild
 > use the `GenerationOptions` form. The same-type half of this is now settled: ✅ **SDK-verified**
-> (`27.0:933`), the profile modifier takes exactly `GenerationOptions.ToolCallingMode?` — one type,
-> two surfaces. ✅ **DEVICE-RESOLVED 2026-08-20:** on iPhone 15 Pro / iOS build `24A5408d`, profile
-> `.required` + options `.disallowed` made no call, while the inverse ran the required tool loop.
-> **Per-call options win**, matching the article's general precedence rule. Still pick one surface
-> per feature unless an intentional per-turn override is clearer.
+> (`27.0:978`), the profile modifier takes exactly `GenerationOptions.ToolCallingMode?` — one type,
+> two surfaces. Which wins is settled in **one direction only**. ✅ **Device-verified 2026-08-20**
+> (iPhone 15 Pro, iOS build `24A5408d`): with the profile allowing the tool and call-site options
+> `.disallowed`, the tool was **not** called — call-site options override the profile in the
+> profile-allows → options-disallow direction. 🟡 The reverse direction
+> (profile-disallows → options-require) is **not a recorded observation**: that run threw
+> `LanguageModelError.contextSizeExceeded(4096, 4099)`, and the probe's catch path did not record
+> the `toolCalled`/`toolRan` discriminators, so "the tool loop ran" there is an inference from the
+> error fingerprint, not a measurement. The probe has been updated to record the discriminators on
+> the next device run. Until then, treat options-over-profile as confirmed for *disallowing* and
+> unproven for *requiring* — and still pick one surface per feature unless an intentional per-turn
+> override is clearer.
 
 > ⚠️ **Initializer footgun.** In the iOS 27 four-argument `GenerationOptions` initializer,
 > `toolCallingMode` has **no default value** while `samplingMode`, `temperature` and
@@ -976,18 +984,33 @@ If your 26.x app hand-rolled context compaction, this is the item that obsoletes
 > notion of **`DynamicProfiles`**… and open sourced some context management utilities similar to your
 > own!"*
 
-> ✅ **VERIFIED** — the declarations, now also ✅ **SDK-verified** (2026-07-29):
+> ✅ **VERIFIED** — the declarations, now also ✅ **SDK-verified** (beta 5 recapture):
 > ```swift
-> final var transcript: Transcript { get set }                    // settable — 27.0:1872-1878
-> var history: ArraySlice<Transcript.Entry> { get set }           // iOS 27 — 27.0:2640-2646
+> final var transcript: Transcript { get set }                    // settable — 27.0:1912-1917
+> var history: Transcript.HistoryView { get set }                 // iOS 27 — 27.0:2695-2700
 > var structuredTranscript: StructuredTranscript { get }          // iOS 27 — see below
 > ```
 > `Transcript.structuredTranscript`'s availability line notably **omits Mac Catalyst** — and the
 > interfaces explain why it is odd generally: it is **not in FoundationModels at all**. It is
 > declared in the **Evaluations** module, as an `extension FoundationModels.Transcript` returning
-> `Evaluations.StructuredTranscript` (`Evaluations-27.0-macos.swiftinterface:280-286`; grep-0 in
+> `Evaluations.StructuredTranscript` (`Evaluations-27.0-macos.swiftinterface:286-292`; grep-0 in
 > the FoundationModels dump). You need `import Evaluations` to see it, which also means it exists
 > only where the Xcode-shipped Evaluations framework does.
+
+> ⚠️ **CHANGED in Xcode 27 beta 5 (noted 2026-08-23).** In the 2026-07-29 beta capture,
+> `Transcript.history` — and the `SessionPropertyValues.history` session property with it — was typed
+> **`ArraySlice<Transcript.Entry>`**. The beta 5 interface retypes both as the new nested collection
+> **`Transcript.HistoryView`** (`27.0:2695-2700`; the session property at `27.0:1071-1076`).
+> ✅ **SDK-verified** (`27.0:2667-2694`): `HistoryView` is a `MutableCollection` +
+> `RandomAccessCollection` + `RangeReplaceableCollection` + `Sendable` struct with
+> `Element == Transcript.Entry`, and it is **its own `SubSequence`** (`27.0:2669`), so slice-shaped
+> code like `history = history.suffix(50)` still type-checks. What breaks: its `Index` is an opaque
+> `Transcript.HistoryView.Index` struct (`27.0:2703-2718`), **not `Int`** as `ArraySlice`'s was, so
+> integer subscripts (`history[0]`) no longer compile — use `first`/`last` or index arithmetic — and
+> any stored property, signature, or cast written against `ArraySlice<Transcript.Entry>` must be
+> retyped. The new type also gains `append(_:)` / `append(contentsOf:)` (`27.0:2686-2687`) and
+> array-literal construction (`27.0:2719-2724`). No 26.x code is affected — the whole surface is
+> 27-only either way.
 
 ⚠️ Mutating a transcript has a new failure mode attached to it:
 `LanguageModelSession.Error.transcriptMutationWhileResponding` — *"The session's transcript was
@@ -1022,7 +1045,7 @@ entry**, which will then be fed back to the model on the next turn. If you prese
 > a guess.
 
 ```swift illustrative
-// ✅ SDK-verified — both spellings are real and canonical (27.0:937 and 27.0:1885-1892).
+// ✅ SDK-verified — both spellings are real and canonical (27.0:982 and 27.0:1925-1932).
 // As a DynamicProfile modifier:
 Profile { … }.transcriptErrorHandlingPolicy(.preserveTranscript)
 
@@ -1033,7 +1056,7 @@ session.transcriptErrorHandlingPolicy = .preserveTranscript
 ### 4.11 ADDITIVE — `ContextOptions` and reasoning levels
 
 > ✅ **VERIFIED** — `ContextOptions`, `iOS 27.0+ Beta`; now also ✅ **SDK-verified**
-> (`27.0:3066-3082`), where both stored properties turn out to be **Optionals**:
+> (`27.0:3130-3146`), where both stored properties turn out to be **Optionals**:
 > ```swift
 > struct ContextOptions : Sendable, Equatable
 > init(includeSchemaInPrompt: Bool? = nil, reasoningLevel: ReasoningLevel? = nil)
@@ -1064,9 +1087,9 @@ don't appear in the final response content.**"*
 
 Note that `includeSchemaInPrompt` — a 26-era parameter on `respond`/`streamResponse` — now *also*
 lives on `ContextOptions`. The 27.0 interface shows the duplication plainly: the 26-era
-`includeSchemaInPrompt: Bool = true` overloads survive un-deprecated (`27.0:2063-2083`) alongside
+`includeSchemaInPrompt: Bool = true` overloads survive un-deprecated (`27.0:2103-2123`) alongside
 new `contextOptions:` overloads whose default is `ContextOptions(includeSchemaInPrompt: true)`
-(`27.0:2107-2137`) — they are **separate overload families**, so a single call cannot actually pass
+(`27.0:2129-2177`) — they are **separate overload families**, so a single call cannot actually pass
 both. ✅ **Probe-verified, 2026-07-31 — they are one knob with two spellings, and mixing them is
 harmless.** (was a 🔴 GAP; `probes/` `fm.includeSchemaInPrompt-recording`, run on the 27.0 sim
 runtime.) The legacy `includeSchemaInPrompt: false` parameter and
@@ -1148,16 +1171,21 @@ Subcommands named on screen: `fm respond`, `fm chat`, `fm schema` (and `fm schem
 "and more". `fm chat` has slash commands including `/model` (switch the live conversation to PCC)
 and `/save`. Bare `fm` prints the command list.
 
-> 🟡 **RECONSTRUCTED** — the **flag spellings**. The presenter names *"the model option"*, *"the image
-> option"*, *"the schema option"*, *"the help option"* — semantic names only. `--model` / `--image` /
-> `--schema` / `--help` are inferred from convention and are **not shown as text anywhere**.
+> ✅ **RESOLVED 2026-08-17** (was 🟡 RECONSTRUCTED) — the **flag spellings**. The presenter only ever
+> named *"the model option"*, *"the image option"*, *"the schema option"*, *"the help option"*; the
+> spellings are now captured from the tool itself, run on macOS 27 beta 5 (`26A5406e`):
+> `notes/sdk-interfaces/fm-help-27.0.txt`, including the short forms (`-m`, `-i`, `-g`, `-v`, `-h`).
 
-> 🔴 **GAP** — **`fm schema object`'s argument grammar is never shown.** It is the single largest hole
-> in the `fm` story: we know a schema with "two fields, a list of final files, and a list of draft
-> files" was constructed, and that `fm respond`'s output "contains a result in a JSON that's generated
-> by the model", but not the syntax. What would resolve it: running `fm schema object --help` on a
-> macOS 27 machine. **Safe default:** don't script against `fm` from a guide or a CI job until you've
-> run `--help` yourself on the target machine.
+> ✅ **RESOLVED 2026-08-17** (was 🔴 GAP — *"the single largest hole in the `fm` story"*) —
+> **`fm schema object`'s argument grammar, and the full subcommand list, are captured.** `/usr/bin/fm`
+> was run by this project on macOS 27 beta 5 (`26A5406e`); `fm --help` plus every revealed help page
+> is preserved as `notes/sdk-interfaces/fm-help-27.0.txt` under the SDK evidence manifest. The eight
+> top-level commands are `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`,
+> `schema`, and `serve`, and `schema object` supports boolean/double/integer/string properties,
+> nested objects, `anyOf`, arrays, descriptions, and optionality.
+> [Part 5 §3](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)
+> owns the full capture; the runtime-only residue (interactive slash commands, refusal/error exits,
+> field-level `serve` compatibility) is tracked there and in §14.8 row 7.
 
 **Migration relevance:** `fm` is the fastest way to A/B a prompt between the on-device model and PCC
 without touching your project, which makes it a useful triage tool for §6.1.
@@ -1614,7 +1642,7 @@ failures in a migrated app.
 >
 > Note these are **non-payload** cases, unlike the old `GenerationError.concurrentRequests(_:)`.
 > (✅ **SDK-verified** — both bare, `Equatable`/`Hashable`;
-> `FoundationModels-27.0-macos.swiftinterface:1986-1994`, captured 2026-07-29.)
+> `FoundationModels-27.0-macos.swiftinterface:2026-2034`, captured 2026-07-29, recaptured 2026-08-20.)
 
 `.transcriptMutationWhileResponding` is brand-new *because* the transcript became mutable (§4.9). If
 you adopt in-place compaction, you now own a concurrency invariant you didn't have before. Apple's
@@ -1743,7 +1771,7 @@ One error type became **three**, split by *what went wrong* rather than *where i
 
 > ✅ **VERIFIED** — the complete `LanguageModelError` case list, from Apple's documentation with
 > Apple's own one-liners; the nine cases are now also ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1486-1496`, captured 2026-07-29):
+> (`FoundationModels-27.0-macos.swiftinterface:1527-1537`, captured 2026-07-29, recaptured 2026-08-20):
 >
 > | Case | Description |
 > |---|---|
@@ -1805,7 +1833,7 @@ including the cases with no counterpart):
 | `.unsupportedLanguageOrLocale(_:)` | `LanguageModelError.unsupportedLanguageOrLocale(_:)` |
 | `.assetsUnavailable(_:)` | **`SystemLanguageModel.Error.assetsUnavailable(_:)`** — moved types |
 | `.concurrentRequests(_:)` | **`LanguageModelSession.Error.concurrentRequests`** — moved types, payload dropped |
-| `.decodingFailure(_:)` | **`GeneratedContent.ParsingError`** — ✅ **SDK-named**: the 27.0 interface's deprecation message on the case reads *"Use ``GeneratedContent/ParsingError`` instead."* (`27.0:3491-3494`, captured 2026-07-29). It is a struct, not an enum case, so it needs its **own** catch arm. Whether the framework actually throws it for a guided decode failure is still untested — keep a generic fallback. [17.3 §4.4](03-error-taxonomy-migration.md) has the detail. |
+| `.decodingFailure(_:)` | **`GeneratedContent.ParsingError`** — ✅ **SDK-named**: the 27.0 interface's deprecation message on the case reads *"Use ``GeneratedContent/ParsingError`` instead."* (`27.0:3555-3558`, captured 2026-07-29, recaptured 2026-08-20). It is a struct, not an enum case, so it needs its **own** catch arm. Whether the framework actually throws it for a guided decode failure is still untested — keep a generic fallback. [17.3 §4.4](03-error-taxonomy-migration.md) has the detail. |
 
 Watch the `.refusal` arity change specifically: a 26-era `catch LanguageModelSession.GenerationError
 .refusal(let refusal, _)` does not translate to the 27 case by mechanical edit.
@@ -1888,7 +1916,7 @@ code you find online may not compile.
 > `.randomTopK`/`.randomProbabilityThreshold`, which broke compilation against the newer SDK."*
 > And now ✅ **SDK-verified** — the 27.0 interface declares
 > `case randomTopK(_: Int, seed: UInt64?)` and `case randomProbabilityThreshold(_: Double,
-> seed: UInt64?)`, with no `.top` / `.nucleus` anywhere in the file (`27.0:3219-3220`).
+> seed: UInt64?)`, with no `.top` / `.nucleus` anywhere in the file (`27.0:3283-3284`).
 
 And a separate, older rename on the surrounding API:
 
@@ -1896,9 +1924,9 @@ And a separate, older rename on the surrounding API:
 > `var sampling` marked **(Deprecated)**, and `init(sampling:temperature:maximumResponseTokens:)`
 > likewise deprecated in favour of `init(samplingMode:temperature:maximumResponseTokens:)` and the
 > four-argument 27 form. ✅ **SDK-verified**, with one detail only the interface shows: `sampling` is
-> `@available(*, deprecated, renamed: "samplingMode")` (`27.0:3138-3141`) and the current
+> `@available(*, deprecated, renamed: "samplingMode")` (`27.0:3202-3205`) and the current
 > `samplingMode` is a **back-deployed computed alias that reads and writes `sampling`**
-> (`@backDeployed(before: iOS 27.0, …)`, `27.0:3165-3177`) — so the rename is source-level only and
+> (`@backDeployed(before: iOS 27.0, …)`, `27.0:3229-3241`) — so the rename is source-level only and
 > both spellings hit the same storage.
 
 ⚠️ Note the asymmetry that survives: the **factory** is `random(top:seed:)` while the **`Kind` case**
@@ -1942,8 +1970,8 @@ From the same commit, two more that change code you may have written against bet
 > interface declares `init(model: SystemLanguageModel = .default, tools: [any Tool] = [],
 > transcript: Transcript)` with no deprecation attribute (`27.0:41`), and even adds a **new**
 > generic-model sibling, `init(model: some LanguageModel, tools: [any Tool] = [], transcript:
-> Transcript)` (`27.0:1908-1911`). The 27-era additions are `init(profile:history:)` (`27.0:871`)
-> and `init(model:dynamicInstructions:history:)` (`27.0:1083`), where `history:` is a
+> Transcript)` (`27.0:1948-1951`). The 27-era additions are `init(profile:history:)` (`27.0:916`)
+> and `init(model:dynamicInstructions:history:)` (`27.0:1126`), where `history:` is a
 > `some Collection<Transcript.Entry> = []`, not a `Transcript`-only label.
 > The advice stands on style grounds: use `history:` in new 27-only code, leave `transcript:` alone
 > in code that must also build against 26 — but nothing is going away this cycle.
@@ -1965,8 +1993,8 @@ Tiny — and the deprecation warning is SDK-dependent: only a build that declare
 
 > ⚠️ **Contradiction with the captured SDK, re-checked 2026-08-17.** The beta-4
 > interface (`27A5228h`) contains only un-deprecated `resolve(in: Transcript)`
-> (`27.0:2959-2963`). The beta-5 interface (`27A5237l`) instead contains only un-deprecated
-> `resolved(in: some Sequence<Transcript.Entry>)` (`27.0:3023-3027`). Apple's current docs list
+> (`27.0:2959-2963` in that superseded capture). The beta-5 interface (`27A5237l`) instead contains only un-deprecated
+> `resolved(in: some Sequence<Transcript.Entry>)` (`27.0:3024-3027`). Apple's current docs list
 > **both**, presenting `resolve(in: Transcript)` as current and `resolved(in: Sequence)` as
 > deprecated, while the overview uses `resolve(in:)`. The interface therefore moved toward the
 > earlier documentation spelling while the documentation moved toward the earlier interface
@@ -2000,7 +2028,8 @@ exactly what Apple replaced.
 
 ## 8. WITHDRAWN
 
-One thing was withdrawn, and it was the headline extensibility story of the 2025 release.
+One thing was withdrawn at the 26→27 boundary — the headline extensibility story of the 2025
+release — and one 27-only surface has since vanished mid-beta (§8.3).
 
 ### 8.1 WITHDRAWN — custom LoRA adapters
 
@@ -2015,16 +2044,16 @@ One thing was withdrawn, and it was the headline extensibility story of the 2025
 
 Two independent Apple statements, in two different threads, from two different badges. This is not a
 rumour — and as of this revision it is also **written into the SDK**. ✅ **SDK-verified**
-(`FoundationModels-27.0-macos.swiftinterface`, captured 2026-07-29): the 27.0 interface marks
+(`FoundationModels-27.0-macos.swiftinterface`, captured 2026-07-29, recaptured 2026-08-20): the 27.0 interface marks
 `SystemLanguageModel.Adapter` and its working surface (`init(fileURL:)`, `init(name:)`,
 `compile()`, `compatibleAdapterIdentifiers(name:)`) as
-**`@available(iOS, deprecated: 26.4, obsoleted: 27.0)`** (same for macOS/visionOS; `27.0:464-506`),
-and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`** (`27.0:387-392`).
+**`@available(iOS, deprecated: 26.4, obsoleted: 27.0)`** (same for macOS/visionOS; `27.0:509-551`),
+and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`** (`27.0:395-400`).
 `obsoleted:` is stronger than deprecation: with a 27.0 deployment target the adapter code **fails to
 compile**. Note the back-dating — Apple's own annotation says adapters were *deprecated at 26.4*,
 the release that swapped the base model. For contrast, the captured **26.5** interface carries no
 deprecation on any of it (`26.5:578-671`), so the marks arrived with the 27 SDK. The `AssetError`
-family is the exception: deprecated 26.4 but **not** obsoleted (`27.0:508-560`), so a dual-target
+family is the exception: deprecated 26.4 but **not** obsoleted (`27.0:553-605`), so a dual-target
 app can still name the old error cases. [17.2](02-adapter-sunset.md) folds this into the full
 story.
 
@@ -2074,6 +2103,28 @@ The WWDC26 keynote described a second on-device model that *"lets supported prod
 generate speech"*. That capability is **not exposed to third-party developers** as of July 2026. If a
 migration plan in your organisation assumes a new TTS API, it is built on a keynote sentence, not an
 API. → [Part 16](../../part-16-adjacent-capabilities/).
+
+### 8.3 WITHDRAWN mid-beta — `Transcript.CustomSegment` and `.updateCustomSegment(_:)` (beta 5)
+
+The 27 cycle's own extension point for provider-defined transcript content did not survive the beta
+cycle. The 2026-07-29 capture of the 27.0 interface declared the `Transcript.CustomSegment`
+protocol, a `Transcript.Segment.custom(any CustomSegment)` case, and a
+`LanguageModelExecutorGenerationChannel.Response.Action.updateCustomSegment(_:)` channel action.
+
+> ✅ **SDK-verified (beta 5 recapture; noted 2026-08-23)** — the recaptured
+> `FoundationModels-27.0-macos.swiftinterface` contains **zero occurrences of `CustomSegment`**.
+> The removal happened between the 2026-07-29 capture and beta 5: `Transcript.Segment` now has
+> exactly three cases — `.text`, `.structure`, `.attachment` (`27.0:2288-2297`) — and the
+> response-action surface is `appendText` / `replaceTextSegment` / `addAttachmentSegment` /
+> `removeAttachmentSegment` / `updateMetadata` / `updateUsage` (`27.0:1857-1864`). This is a
+> statement about the beta 5 interface, not a permanent claim — the surface may return in a later
+> beta, and WWDC session 339, the provider skill, and the docs index still describe it. Provider
+> guidance and the safe default live in
+> [Part 4 §13.2](../../part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md).
+
+For a migrating team the practical impact is narrow — no 26.x code can reference the symbol (it was
+27-only from the start) — but any beta-4-era provider or transcript code built against `.custom(_:)`
+or `.updateCustomSegment(_:)` no longer compiles against the beta 5 SDK.
 
 ---
 
@@ -2428,9 +2479,9 @@ inputs · **26.4** int4/int8. No 26.2 step in the ladder; the 26.6 SDK headers a
 | Dynamic Profiles + `DynamicInstructions` | Apple's samples dropped proactive gating | `.assetsUnavailable` moved to `SystemLanguageModel.Error` | `xcrun ba-package foundation-models` |
 | Skills + history modifiers (`utilities`) | availability over-reports `.appleIntelligenceNotEnabled` (**a defect**) | `.concurrentRequests` moved to `LanguageModelSession.Error` | Adapter Training Toolkit (stops at 26.0.0) |
 | `SpotlightSearchTool` | `.permissiveContentTransformations` still doesn't cover `Generable` | `SamplingMode.top` → `.randomTopK` | `com.apple.developer.foundation-model-adapter` |
-| `OCRTool` / `BarcodeReaderTool` (**in Vision**) | `.anyOf` still doesn't constrain | `SamplingMode.nucleus` → `.randomProbabilityThreshold` | |
+| `OCRTool` / `BarcodeReaderTool` (**in Vision**) | `.anyOf` still doesn't constrain | `SamplingMode.nucleus` → `.randomProbabilityThreshold` | `Transcript.CustomSegment` + `.updateCustomSegment(_:)` — gone in **beta 5** (§8.3) |
 | `Response.usage`, `session.usage` | OS update invalidates Core AI specialization | `GenerationOptions(sampling:)` → `(samplingMode:)` | |
-| mutable `session.transcript`, `Transcript.history` | Simulator punches out to the host Mac | `LanguageModelSession(transcript:)` → `(profile:history:)` | |
+| mutable `session.transcript`, `Transcript.history` (typed `Transcript.HistoryView` as of beta 5, §4.9) | Simulator punches out to the host Mac | `LanguageModelSession(transcript:)` → `(profile:history:)` | |
 | `toolCallingMode` | | `ImageReference.resolve(in:)` → `resolved(in:)` | |
 | `TranscriptErrorHandlingPolicy` | | `.model(_:)` moved from `utilities` into the framework | |
 | `ContextOptions` / `reasoningLevel` | | `SkillActivations` lost `RandomAccessCollection` | |
@@ -2494,10 +2545,10 @@ precedence order, so you can weigh anything you want to re-verify.
 
 | Interface | Used for |
 |---|---|
-| `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface` (Xcode 27.0 beta `27A5228h`, macOS 27.0 SDK, `-user-module-version 2.0.62.1.402`) | The `LanguageModel` / `LanguageModelExecutor` protocol text (§4.3); the nine `LanguageModelError` cases (§7.1); the adapter `obsoleted: 27.0` annotations (§8.1); `Usage` (§4.7); `ContextOptions` (§4.11); the policy setter spellings (§4.10); the sampling renames at header level (§7.3); the un-deprecated `transcript:` initializer (§7.5); the `resolve(in:)` contradiction (§7.6); the `contextSize` back-deploy fallback returning 4096 (§1.1) |
+| `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface` (first read from Xcode 27.0 beta `27A5228h`, module `2.0.62.1.402`; on disk since 2026-08-20: beta 5 `27A5237l`, macOS 27.0 SDK, `-user-module-version 2.0.68.1.401`) | The `LanguageModel` / `LanguageModelExecutor` protocol text (§4.3); the nine `LanguageModelError` cases (§7.1); the adapter `obsoleted: 27.0` annotations (§8.1); `Usage` (§4.7); `ContextOptions` (§4.11); the policy setter spellings (§4.10); the sampling renames at header level (§7.3); the un-deprecated `transcript:` initializer (§7.5); the `resolve(in:)` contradiction (§7.6); the `contextSize` back-deploy fallback returning 4096 (§1.1) |
 | `notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface` (`MacOSX26.5.sdk`, module `1.5.2`) | The BEFORE side throughout; the absence of any adapter deprecation in the 26-era SDK (§8.1) |
 | `notes/sdk-interfaces/Vision-27.0-macos.swiftinterface`, `CoreSpotlight-27.0-macos.swiftinterface` | Negative results: `OCRTool` / `BarcodeReaderTool` / `SpotlightSearchTool` are **not in the main module interfaces** — they live in cross-import overlays (§4.6) |
-| `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface`, `_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface` (captured 2026-07-29, same beta) | The overlay declarations themselves: both Vision tools' config/`Arguments`/opaque `Output` and the watchOS asymmetry (§4.6, gap 2 — resolved); `SpotlightSearchTool`'s full configuration surface (§4.6) |
+| `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface`, `_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface` (captured 2026-07-29, same beta; recaptured 2026-08-20) | The overlay declarations themselves: both Vision tools' config/`Arguments`/opaque `Output` and the watchOS asymmetry (§4.6, gap 2 — resolved); `SpotlightSearchTool`'s full configuration surface (§4.6) |
 
 ### 14.4 Apple documentation pages
 
@@ -2613,12 +2664,12 @@ Collected so a future pass can close them. Each is a 🔴 **GAP** in the body wi
 | 1 | What actually differs between **AFM 3 Core** and **AFM 3 Core Advanced**, and whether any API reports the tier | An Apple doc page or a `SystemLanguageModel` property | §3.3 |
 | 2 | ~~The `Arguments` / `Output` associated types of `OCRTool` and `BarcodeReaderTool`, and the `Barcode` type~~ ✅ **RESOLVED 2026-07-29** — the `_Vision_FoundationModels` overlay interface was captured: `Arguments` is a Generable struct with no named public properties, `Output` is the opaque `some PromptRepresentable` return of `call`, and no public `Barcode` type exists | — | §4.6 |
 | 3 | Why `BarcodeReaderTool` lists watchOS and `OCRTool` does not | An Apple statement; the difference itself is verified | §4.6 |
-| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type and which wins~~ ✅ **RESOLVED** — same type (SDK, 2026-07-29); per-call options override the profile modifier (iPhone 15 Pro probe, 2026-08-20) | — | §4.8 |
-| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1885-1892, 937`). ~~Still open: the default~~ ✅ **RESOLVED, probe-verified on sim + iPhone 15 Pro** — initial value is `nil`, and `nil` behaves like `.revertTranscript` (`fm.transcript-policy-nil-default`) | — | §4.10 |
+| 4 | ~~Whether the two `toolCallingMode` surfaces are the same type~~ ✅ **RESOLVED** — same type (SDK, 2026-07-29). Which wins: options-over-profile is device-confirmed **only** in the profile-allows → options-disallow direction (iPhone 15 Pro, 2026-08-20); 🟡 the reverse (profile-disallows → options-require) is an inference from a `contextSizeExceeded` fingerprint — the probe's catch path recorded no `toolCalled`/`toolRan` discriminators | Next device run of the updated probe, which now records the discriminators | §4.8 |
+| 5 | ~~Whether the policy setter is a session property or a modifier~~ ✅ **RESOLVED 2026-07-29** — both exist (`27.0:1925-1932, 982`). ~~Still open: the default~~ ✅ **RESOLVED, probe-verified on sim + iPhone 15 Pro** — initial value is `nil`, and `nil` behaves like `.revertTranscript` (`fm.transcript-policy-nil-default`) | — | §4.10 |
 | 6 | ~~Which `includeSchemaInPrompt` wins when set both on `ContextOptions` and on `respond(…)`~~ ✅ **RESOLVED, probe-verified on sim + iPhone 15 Pro** — one knob, two spellings: both record identically; default records `Optional(true)` (`fm.includeSchemaInPrompt-recording`) | — | §4.11 |
-| 7 | `fm schema object`'s argument grammar, and the full `fm` subcommand list | `fm --help` / `fm schema object --help` on macOS 27. *(Checked 2026-07-29: no `fm` binary ships in the Xcode 27.0 beta toolchain (`27A5228h`) — consistent with it being a macOS 27 OS tool, which this macOS 26.5 machine cannot run)* | §5.2 |
+| 7 | ~~`fm schema object`'s argument grammar, and the full `fm` subcommand list~~ ✅ **RESOLVED 2026-08-17** — `/usr/bin/fm` run on macOS 27 beta 5 (`26A5406e`); the full help surface is captured as `notes/sdk-interfaces/fm-help-27.0.txt` (see [Part 5 §3](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md)). Runtime-only residue: interactive slash commands, refusal/error exits, and field-level `serve` compatibility | Focused live calls against later macOS 27 seeds | §5.2 |
 | 8 | Where the open-sourced core Foundation Models framework lives | The repository appearing | §5.5 |
-| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header names `GeneratedContent.ParsingError` (`27.0:3491-3494`); runtime throws it on truncated structured output (code 1), confirmed on sim and iPhone 15 Pro (`fm.parsingError-thrown`; see 17.3 §4.4) | — | §7.1 |
+| 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header names `GeneratedContent.ParsingError` (`27.0:3555-3558`); runtime throws it on truncated structured output (code 1), confirmed on sim and iPhone 15 Pro (`fm.parsingError-thrown`; see 17.3 §4.4) | — | §7.1 |
 | 10 | ~~Whether `LanguageModelSession(transcript:)` is formally deprecated~~ ✅ **RESOLVED 2026-07-29** — it is not; no deprecation in the 27.0 interface (`27.0:41`) | — | §7.5 |
 | 11 | The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)` — **still a live docs-vs-SDK contradiction as of beta 5**: beta 4 has only un-deprecated `resolve(in: Transcript)`, beta 5 only un-deprecated `resolved(in: Sequence)`, while current docs list both with `resolved(in:)` deprecated | A later beta's interface, or a doc revision | §7.6 |
 | 12 | Whether the Python SDK's tool calling is current (README omits it; the session claims it) | A README update, or reading `tests/test_tool.py` | §9 |

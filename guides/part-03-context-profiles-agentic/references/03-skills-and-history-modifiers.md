@@ -221,7 +221,7 @@ You cannot file one on GitHub. `README.md:12` and `CONTRIBUTING.md` both route y
 > ✅ **RESOLVED (2026-07-29) — `session.logFeedbackAttachment` is a real `LanguageModelSession`
 > method family, read from the 27.0 interface.** Three overloads, all synchronous (not `async`),
 > all `@discardableResult`, all returning **`Data`** (the JSON to attach to a Feedback report) —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3408-3450`):
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3472-3514`):
 >
 > ```swift
 > func logFeedbackAttachment(sentiment: LanguageModelFeedback.Sentiment?,
@@ -580,7 +580,7 @@ Pass `SystemLanguageModel()` unless you have measured that it is not good enough
 > ✅ **RESOLVED on the declaration (2026-07-29); the behaviour follows.** `.onPrompt`'s closure **is**
 > `async throws` — `func onPrompt(perform action: @escaping (Transcript.Prompt) async throws ->
 > Void) -> some DynamicProfile`, with a zero-argument forwarding overload — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:939-945`). Combined with Apple's documented rule
+> (`FoundationModels-27.0-macos.swiftinterface:984-990`). Combined with Apple's documented rule
 > that *"throwing an error inside a life cycle callback propagates to the caller's
 > `respond(to:options:)`"*, a failing summariser **fails the user's turn**: the error surfaces at
 > your `respond` call site. It is not swallowed. No test in the repository exercises this
@@ -1151,18 +1151,19 @@ modifiers exercise, `history` supports `lastIndex(where:)`, `prefix(upTo:)`, `su
 `[Transcript.Entry]`** (✅ `SummarizeHistory.swift:153` assigns an array literal). So it behaves as a
 `RandomAccessCollection` of `Transcript.Entry` with a settable projection.
 
-> ✅ **RESOLVED (2026-07-29) — the concrete type is `ArraySlice<Transcript.Entry>`.** The 27.0
-> interface declares `SessionPropertyValues.history: ArraySlice<Transcript.Entry>` with
-> `get`/`set`/`_modify` (✅ **SDK-verified**,
-> `FoundationModels-27.0-macos.swiftinterface:1026-1031`), backed by `Transcript.history:
-> ArraySlice<Transcript.Entry>` on the transcript itself (`:2641-2645`). Neither the mirror's
-> `[Transcript.Entry]` nor a dedicated `History` struct — it is a slice, which explains everything
-> observed: all `Collection` operations work, assignment from an array literal works (an
-> `ArraySlice` is `RangeReplaceableCollection`-assignable via the setter), and *"a window into the
-> transcript"* is literally what an `ArraySlice` is. Two consequences: `history[3]` with a raw
-> `Int` really is unsafe — a slice's indices need not start at zero; keep using
-> `history.index(_:offsetBy:)` — and `history = history.dropFirst(cut)` compiles exactly as written
-> above because an `ArraySlice`'s `SubSequence` is also `ArraySlice`.
+> ✅ **RESOLVED (2026-07-29; retyped in beta 5, re-checked 2026-08-23) — the concrete type is now
+> `Transcript.HistoryView`.** Through beta 4 the 27.0 interface declared
+> `SessionPropertyValues.history: ArraySlice<Transcript.Entry>`; the beta 5 capture retypes it as
+> the dedicated `Transcript.HistoryView` collection, still with `get`/`set`/`_modify`
+> (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1071-1076`), backed by the
+> equally retyped `Transcript.history: Transcript.HistoryView` (`:2695-2700`). `HistoryView` is a
+> `MutableCollection` + `RandomAccessCollection` + `RangeReplaceableCollection` that is **its own
+> `SubSequence`** (`:2667-2694`, `:2669`) and is `ExpressibleByArrayLiteral` (`:2719-2724`), which
+> preserves everything observed: all `Collection` operations work, assignment from an array literal
+> works, and `history = history.dropFirst(cut)` compiles exactly as written above because
+> `dropFirst` returns a `HistoryView`. One consequence is now *stronger* than the slice story:
+> `history[3]` with a raw `Int` no longer compiles at all — `HistoryView.Index` is an opaque
+> struct, not `Int` (`:2703-2718`); keep using `history.index(_:offsetBy:)`.
 
 **Do the work in `.onPrompt`, not in `body`.** The `body` of a `DynamicProfile` or a
 `DynamicProfileModifier` is a pure declarative projection — it can be evaluated more than once per
@@ -1376,9 +1377,9 @@ out of what a prompt skill *is* (§12).
 > `public struct AnyDynamicInstructions : DynamicInstructions` with
 > `public init(_ dynamicInstructions: any DynamicInstructions)`, `typealias Body = Never`, and it
 > is the registered `@_typeEraser` for the `DynamicInstructions` protocol — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:595-618`). Availability: iOS/macOS/visionOS/watchOS
+> (`FoundationModels-27.0-macos.swiftinterface:640-663`). Availability: iOS/macOS/visionOS/watchOS
 > 27.0, no tvOS. There is also an `init(erasing:)` convenience taking `some DynamicInstructions`
-> (`:606-608`) — the form `Skill.swift:183` relies on. So you *may* use it directly; the
+> (`:651-653`) — the form `Skill.swift:183` relies on. So you *may* use it directly; the
 > `@DynamicInstructionsBuilder` initializer (below) still does the erasure for you and is the
 > nicer spelling.
 
@@ -2928,7 +2929,7 @@ window (§7) · whether real models deactivate skills unprompted (§13.3) · wha
 calls a tool from a just-deactivated skill (§16). **Closed on 2026-07-29 against
 `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`:**
 `session.logFeedbackAttachment` — three synchronous `Data`-returning overloads, 26.0-era
-(§1.2, `:3408-3450`) · `.onPrompt` is `async throws`, so a failing summariser fails the turn
-(§3.4, `:939-945`) · `@SessionProperty(\.history)` projects `ArraySlice<Transcript.Entry>`
-(§9, `:1026-1031`) · `AnyDynamicInstructions` is public API, the protocol's registered type
-eraser (§11.1, `:595-618`).
+(§1.2, `:3472-3514`) · `.onPrompt` is `async throws`, so a failing summariser fails the turn
+(§3.4, `:984-990`) · `@SessionProperty(\.history)` projects `ArraySlice<Transcript.Entry>`
+(§9, `:1071-1075`) · `AnyDynamicInstructions` is public API, the protocol's registered type
+eraser (§11.1, `:640-663`).

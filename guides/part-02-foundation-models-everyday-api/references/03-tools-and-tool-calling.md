@@ -823,14 +823,14 @@ transcript is rendered to the model — belongs to
 
 > 🔴 **GAP (default *value* now ✅ probe-verified; only the `false` semantics remain) — the runtime
 > effect of `includesSchemaInInstructions: false`.** The declaration side was already settled: it is
-> a `Bool` protocol requirement (`FoundationModels-27.0-macos.swiftinterface:2996`, unchanged from
-> 26.5) with a default implementation in the `Tool` extension (`:3007-3009`), which is why every
+> a `Bool` protocol requirement (`FoundationModels-27.0-macos.swiftinterface:3060`, unchanged from
+> 26.5) with a default implementation in the `Tool` extension (`:3071-3073`), which is why every
 > sample can omit it and compile. The default *value* is now measured: ✅ **Probe-verified,
 > 2026-07-31** (`probes/` `fm.tool-schema-flag-default`) — **the default returns `true`**, on both
 > the macOS 26.5 host and the 27.0 sim runtime. What remains open is (b) what the model is told
 > about the tool when the flag is `false` — whether the tool becomes invisible or is advertised by
 > name only. (c) `ContextOptions.includeSchemaInPrompt` — a *separate* knob about the response
-> schema — is SDK-verified as a 27.0 `Bool?` on `ContextOptions` (`:3068-3072`); see 17.1 §4.11 for
+> schema — is SDK-verified as a 27.0 `Bool?` on `ContextOptions` (`:3132-3136`); see 17.1 §4.11 for
 > the probe-verified finding that its two spellings are one knob. None of the seven `Tool`
 > conformances across Origami and Book Tracker mentions the property, so Apple's own code runs on
 > the (now known) `true` default. **Do not set it to `false` speculatively to save tokens** — the
@@ -900,13 +900,21 @@ your input.
 entries.
 
 **`ToolOutput` carries `segments`, not a string.** Its payload is `[Transcript.Segment]` — `.text`,
-`.structure`, `.attachment`, or `.custom`. A tool returning a `@Generable` type lands as a
-`StructuredSegment`; a tool returning `String` lands as a `TextSegment`. `.custom` is the documented
-escape hatch for anything the framework does not model:
+`.structure`, or `.attachment` (✅ SDK-verified, beta 5:
+`FoundationModels-27.0-macos.swiftinterface:2288-2297`). A tool returning a `@Generable` type lands
+as a `StructuredSegment`; a tool returning `String` lands as a `TextSegment`. A fourth case,
+`.custom`, was the documented escape hatch for anything the framework does not model:
 
-> ✅ **VERIFIED** — Apple Frameworks Engineer, Developer Forums thread 833683: *"Yes, absolutely! You
-> can use a `CustomSegment` to provide anything back that may not be fully defined in the framework
-> currently."*
+> ✅ **VERIFIED** (the endorsement — the surface itself is gone; see below) — Apple Frameworks
+> Engineer, Developer Forums thread 833683: *"Yes, absolutely! You can use a `CustomSegment` to
+> provide anything back that may not be fully defined in the framework currently."*
+
+> ⚠️ **Not present in the 27.0 beta 5 interface (noted 2026-08-23).** The recaptured beta 5
+> interface contains **zero occurrences of `CustomSegment`**; the `.custom` case and its protocol
+> were present in the 2026-07-29 beta capture and were removed between that capture and beta 5.
+> Until the surface returns, a tool's escape hatch is a `.text` segment plus entry metadata — see
+> [Part 4 §13.2](../../part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
+> for the provider-side status and safe default.
 
 **`ToolOutput.id` is the correlation key.** The `foundation-models-utilities` ChatCompletions bridge
 serialises a `.toolOutput` entry as `role: .tool, toolCallID: toolOutput.id` — i.e. the tool-output
@@ -919,7 +927,7 @@ is the form the Evaluations framework's `ToolCallEvaluator` requires — Book Tr
 without it (✅ `BookTracker/…/SearchBooks.swift:525-563`). Both the property and its type belong to
 the **Evaluations** framework (shipped inside Xcode 27, like XCTest), not to FoundationModels —
 Evaluations grafts `structuredTranscript` onto `Transcript` in an extension. ✅ **SDK-verified**
-(`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:272-286`): `StructuredTranscript` is a
+(`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:278-292`): `StructuredTranscript` is a
 plain `Sendable` struct of five public vars — `toolCalls: [Transcript.ToolCall]`,
 `toolOutputs: [Transcript.ToolOutput]`, `instructionText: String`, `prompts: [String]`,
 `responses: [Transcript.Response]` — so you *can* walk it yourself in test code. The plain
@@ -1856,7 +1864,7 @@ struct Gated<Wrapped: Tool>: Tool where Wrapped.Output == String {
 > ✅ **RESOLVED (2026-07-29) — the exact `onToolCall` / `onToolOutput` signatures, from the 27.0
 > interface.** They are overload *pairs* on `LanguageModelSession.DynamicProfile` — a zero-argument
 > convenience that forwards to the payload-taking form — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:963-977`):
+> (`FoundationModels-27.0-macos.swiftinterface:1008-1022`):
 >
 > ```swift
 > func onToolCall(perform action: @escaping () async throws -> Void) -> some DynamicProfile
@@ -2336,7 +2344,7 @@ which some prompts combining tool calling and guided generation call tools exces
 Keep a repeated-call ceiling and run the trajectory test on every supported OS build.
 
 > ✅ **SDK-verified (2026-07-29)** — `Transcript.ToolCalls` conforms to `RandomAccessCollection`
-> with `Element == Transcript.ToolCall` (`FoundationModels-27.0-macos.swiftinterface:2484-2509`),
+> with `Element == Transcript.ToolCall` (`FoundationModels-27.0-macos.swiftinterface:2525-2550`),
 > so `.map(\.toolName)` compiles. The `session.properties.<name>` counter assertion from §7.1 is
 > ✅ verified compiled code as well.
 
@@ -2368,7 +2376,7 @@ before you write a single test. See
 | `Tool.Output` associated type (`typealias Output = String`) | 26.0 | ✅ Apple sample code · non-`String` output 🔴 GAP |
 | `Tool.Arguments` via `typealias` to an out-of-line `@Generable` type | 26.0 | ✅ Apple sample code |
 | `Tool.parameters: GenerationSchema` | 26.0 | ✅ docs + compiled source |
-| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:2996, :3007-3009`) · default value ✅ probe-verified 2026-07-31: `true` (§4.4) · `false` semantics 🔴 GAP |
+| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:3060, :3007-3009`) · default value ✅ probe-verified 2026-07-31: `true` (§4.4) · `false` semantics 🔴 GAP |
 | `Tool.SessionProperty` | **27.0** | ✅ docs |
 | `LanguageModelSession(tools:instructions:)` | 26.0 | ✅ docs |
 | `LanguageModelSession.ToolCallError` (`.tool`, `.underlyingError`) | 26.0 · **no watchOS** | ✅ docs |
@@ -2376,7 +2384,7 @@ before you write a single test. See
 | `Transcript.ToolCall(id:toolName:arguments:)` | 26.0 (`metadata:` overload 27.0) | ✅ docs |
 | `Transcript.ToolOutput(id:toolName:segments:)` | 26.0 | ✅ docs |
 | `Transcript.ToolDefinition(name:description:parameters:)` / `(tool:)` | 26.0 | ✅ docs |
-| `Transcript.structuredTranscript` (feeds `ToolCallEvaluator`) | **27.0** as used | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript` (`Evaluations-27.0-macos.swiftinterface:272-286`) |
+| `Transcript.structuredTranscript` (feeds `ToolCallEvaluator`) | **27.0** as used | ✅ SDK-verified — declared by the **Evaluations** framework (Xcode-shipped), which extends `Transcript` (`Evaluations-27.0-macos.swiftinterface:278-292`) |
 | `Transcript: Encodable` | 26.0 | ✅ Apple sample code |
 | `GenerationOptions.ToolCallingMode` (`.allowed`/`.disallowed`/`.required`, `.kind`) | **27.0** | ✅ docs + compiled source |
 | `GenerationOptions(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)` | **27.0** | ✅ docs |
@@ -2386,7 +2394,7 @@ before you write a single test. See
 | `.transcriptErrorHandlingPolicy(_:)` profile modifier | **27.0** | ✅ docs |
 | `session.transcript` — now `{ get set }` | **27.0** | ✅ docs |
 | `session.isResponding` | 26.0 | ✅ docs |
-| `.onToolCall(perform:)` / `.onToolOutput(perform:)` | **27.0** | ✅ SDK-verified — both arities each, `async throws`, payloads `Transcript.ToolCall` / `(ToolCall, ToolOutput)` (`FoundationModels-27.0-macos.swiftinterface:963-977`) |
+| `.onToolCall(perform:)` / `.onToolOutput(perform:)` | **27.0** | ✅ SDK-verified — both arities each, `async throws`, payloads `Transcript.ToolCall` / `(ToolCall, ToolOutput)` (`FoundationModels-27.0-macos.swiftinterface:1008-1022`) |
 | `@SessionPropertyEntry` / `@SessionProperty(\.…)` / `session.properties` | **27.0** | ✅ docs + compiled source |
 | `ImageReference` (image arguments in tools) | **27.0** | ✅ docs |
 | `BarcodeReaderTool` — `struct`, `_Vision_FoundationModels` overlay; `init(name:description:)` | **27.0** iOS/iPadOS/macOS/visionOS · **also watchOS** | ✅ SDK-verified (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`) — `Arguments` is `Generable`, `Output` is opaque `some PromptRepresentable` (§10) |

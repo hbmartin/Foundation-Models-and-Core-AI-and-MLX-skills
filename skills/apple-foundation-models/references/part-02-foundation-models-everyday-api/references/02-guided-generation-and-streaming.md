@@ -175,13 +175,13 @@ Practical reading of each parameter:
   leaks to a third-party server unless you override it.
 - **`representNilExplicitlyInGeneratedContent:`** — 🔴 **GAP (narrowed 2026-07-29)** on semantics;
   the declarations are now pinned. The three macro overloads and their availability are
-  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:1088-1096`):
+  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:1131-1139`):
   `@Generable(description: String? = nil)` is 26.0; `@Generable(description:
   representNilExplicitlyInGeneratedContent: Bool)` is **26.4** with *no default* — passing it is
   opting in explicitly; and the 27.0 `@Generable(name: String, description: String? = nil,
   representNilExplicitlyInGeneratedContent: Bool = false)` overload **defaults it to `false`**. The
   same flag appears as `representNilExplicitlyInGeneratedContent explicitNil: Bool` on
-  `DynamicGenerationSchema.init` (`:3098-3100`) and `GenerationSchema.init` (`:3301-3303`), both
+  `DynamicGenerationSchema.init` (`:3162-3164`) and `GenerationSchema.init` (`:3365-3367`), both
   26.4+. So the *default behaviour* is the implicit form, and the flag's internal name is
   `explicitNil` — consistent with the reading that `true` emits `"field": null` rather than
   omitting the key. What the emitted schema actually does with it is still unverified: no doc page
@@ -1501,17 +1501,17 @@ overload list: `respond(to:schema:includeSchemaInPrompt:options:)`,
 `respond(schema:includeSchemaInPrompt:options:prompt:)`,
 `respond(to:schema:options:contextOptions:metadata:)`, plus the `streamResponse` mirrors. The full
 declarations are now ✅ **SDK-verified** (26.x forms:
-`FoundationModels-27.0-macos.swiftinterface:2063-2071` for `respond`, `:2016-2018` for
+`FoundationModels-27.0-macos.swiftinterface:2103-2111` for `respond`, `:2056-2058` for
 `streamResponse`, each returning `Response<GeneratedContent>` /
 `ResponseStream<GeneratedContent>` with `includeSchemaInPrompt: Bool = true`; the 27.0
-`contextOptions:`/`metadata:` forms at `:2107-2119`, `:2033-2039`, where the flag moves into
+`contextOptions:`/`metadata:` forms at `:2147-2159`, `:2073-2079`, where the flag moves into
 `ContextOptions(includeSchemaInPrompt: true)` and the overloads are `@_disfavoredOverload`).
 
 **The return type is different.** `respond(to:generating: T.self)` gives you
 `Response<T>` whose `.content` is a `T`. `respond(to:schema:)` gives you a response whose `.content`
 is a **`GeneratedContent`** — because there is no Swift type to decode into. You read it with
 `value(_:forProperty:)`. ✅ **SDK-verified** (2026-07-29): every `schema:` overload is declared
-`-> Response<GeneratedContent>` (`FoundationModels-27.0-macos.swiftinterface:2063-2071`),
+`-> Response<GeneratedContent>` (`FoundationModels-27.0-macos.swiftinterface:2103-2111`),
 matching the Python SDK's documented split (`generating=Cls` → an instance of `Cls`; `schema=` →
 a `GeneratedContent`).
 
@@ -1651,7 +1651,7 @@ entirely** in favour of a first-class `GenerationSchema.name` property.
 site at `ChatCompletionsLanguageModel.swift:266`.
 
 The declaration is now ✅ **SDK-verified**: `public var name: String { get }`, 27.0+,
-**non-optional** (`FoundationModels-27.0-macos.swiftinterface:3255-3263`) — so every schema has
+**non-optional** (`FoundationModels-27.0-macos.swiftinterface:3319-3327`) — so every schema has
 *some* name. 🔴 **GAP:** what that `String` *is* for an anonymous or inline schema (e.g. one built
 from `DynamicGenerationSchema(name:)` versus one built from a Swift type) is still not documented
 anywhere in the corpus, and a getter body is not visible in the interface. **What would resolve
@@ -1779,9 +1779,9 @@ and your logs, and Instruments — a structured record of what the model actuall
 ✅ **RESOLVED (2026-07-29):** it *is* the named successor. The deprecated
 `GenerationError.decodingFailure(_:)` case carries the SDK's own per-case deprecation message
 *"Use ``GeneratedContent/ParsingError`` instead."* — ✅ **SDK-verified**
-(`FoundationModels-27.0-macos.swiftinterface:3491-3494`). The struct's members are also read
+(`FoundationModels-27.0-macos.swiftinterface:3555-3558`). The struct's members are also read
 verbatim there: `rawContent: String`, `underlyingError: (any Error)?`, `debugDescription: String`,
-conforming to `LocalizedError` (`:1356-1361`). While migrating, still catch
+conforming to `LocalizedError` (`:1399-1404`). While migrating, still catch
 `GeneratedContent.ParsingError` **and** keep a generic `catch` — apps built with Xcode 26 keep
 throwing the old case until rebuilt.
 
@@ -1924,7 +1924,7 @@ let final = try await stream.collect()      // the completed result
 
 `.collect()` is verified to exist with that documented meaning, and its
 declaration is ✅ **SDK-verified**: `nonisolated(nonsending) func collect() async throws ->
-sending Response<Content>` (`FoundationModels-27.0-macos.swiftinterface:2168`). Whether it may
+sending Response<Content>` (`FoundationModels-27.0-macos.swiftinterface:2208`). Whether it may
 be called after manual iteration was a 🔴 GAP; it is now measured. ✅ **Probe-verified,
 2026-07-31** (`probes/` `fm.collect-after-iteration`, run on the 27.0 sim runtime) — **calling
 `collect()` after fully iterating the stream succeeds and returns the complete response** (13
@@ -2475,7 +2475,9 @@ mistaken, or Apple's own sample carries a no-op. Shipping first-party sample cod
 developer's aside in this series' precedence order, so **do not treat "permissive guardrails are
 useless with `@Generable`" as settled fact** — the earlier editions of this guide did, and that was
 too strong. **What would resolve it:** a device test that trips a guardrail false positive on a
-`@Generable` request under both guardrail settings and compares. Until someone runs it, try it — it
+`@Generable` request under both guardrail settings and compares. The 2026-08-20 device run below
+completed but its stimulus did not reproduce the false positive, so the missing piece is now a
+prompt that reliably trips one on device. Meanwhile, try it — it
 is one initializer argument — but budget for it not helping, and do not build a schedule around it.
 Full guardrail treatment in
 [`06-availability-errors-and-guardrails.md`](06-availability-errors-and-guardrails.md).

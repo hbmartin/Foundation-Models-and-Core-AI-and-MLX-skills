@@ -1598,6 +1598,11 @@ def probe_sdpa_transient(B, n_q, n_kv, T_q, T_kv, D, dtype=mx.bfloat16):
 > in their churn test, and it is what MLX's *own* limit enforcement uses.
 > Second, `mx.clear_cache()` genuinely returns memory, but `phys_footprint` **trails the call by a
 > few seconds** — do not sample immediately and conclude there is a leak.
+> Closure context (mlx#3896 closed 2026-08-08; checked 2026-08-23): the maintainer confirmed the
+> scoping when closing — `get_peak_memory()` is meant for measuring a single model's
+> inference/training run with near-100% cache hits, and `active + cache` is his own recommendation
+> for the real footprint. A short single-workload probe like this one sits inside that intended
+> scope; a long-lived or multi-model process does not.
 
 **Technique 3 — the A/B against a known-fused shape.** Pad your head dim up to the nearest allowed
 value (§5.6) and measure. If padding *up* — strictly more arithmetic — makes it **faster**, you were

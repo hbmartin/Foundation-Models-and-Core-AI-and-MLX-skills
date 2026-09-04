@@ -989,12 +989,13 @@ VLMs, with no error.** Three linked issues document this:
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
-- **`#420` (still OPEN as of 2026-07-31)** — M-RoPE state dropped **across `ChatSession` turns**:
+- **`mlx-swift-lm#420` (closed completed 2026-08-28)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
   cache with no rope deltas and recompute positions from zero."* Fixed for Qwen3.5/3.6 by PR #399
   (**merged 2026-07-14**); PR #448 wiring Qwen2.5-VL / Qwen2-VL **merged 2026-07-30**. **Qwen3-VL
-  remains unwired** — the issue title now names Qwen2.5-VL / Qwen3-VL, and #420 itself is open.
+  remained unwired in the researched snapshot** — the issue title named Qwen2.5-VL / Qwen3-VL;
+  verify the closing implementation before removing the workaround.
 - **`mlx-swift-lm#443` (closed 2026-08-10)** — `savePromptCache` / `loadPromptCache` drop
   `LMOutput.State` entirely in the researched snapshot:
   *"The safetensors layout has no slot for it, `loadPromptCache` returns only
@@ -3530,6 +3531,10 @@ test ended at **1.14 GB**.
 > **Actionable corollary for Swift:** `Memory.snapshot()` gives you `activeMemory`, `cacheMemory`
 > and `peakMemory` separately — **gate memory-pressure logic on `activeMemory + cacheMemory`**, not
 > on `peakMemory`.
+> Closure context (mlx#3896 closed 2026-08-08; checked 2026-08-23): the maintainer closed it by
+> scoping the counter — peak memory is meant for measuring a *single* model's inference or training
+> run with near-100% cache hits; for anything long-running he recommends the `active + cache` check
+> himself. A two-model RAG app is exactly the shape that scoping excludes.
 
 **(2) Load the embedder lazily and consider unloading it.** Embedding is bursty (index once, query
 occasionally); generation is sustained. Holding a 350 MB embedder resident for the 99% of the time

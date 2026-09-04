@@ -274,9 +274,9 @@ model was involved:
 > ```
 >
 > ✅ **SDK-verified nuance:** in the shipped interface `name` is not a protocol *requirement* at all —
-> it is a computed property in an extension (`Evaluations-27.0-macos.swiftinterface:476-481`), so a
+> it is a computed property in an extension (`Evaluations-27.0-macos.swiftinterface:482-487`), so a
 > conformance never has to supply it; and the `evaluators` requirement carries the builder attribute
-> directly — `@EvaluatorsBuilder var evaluators` (`:463-473`).
+> directly — `@EvaluatorsBuilder var evaluators` (`:469-479`).
 
 `Sample`, `Subject` and `SampleLoader` are all associated types. `ModelSample` and `ModelSubject` are
 *the language-model-shaped conformances* of `SampleProtocol` / `EvaluationSubject`, not the protocol
@@ -297,7 +297,7 @@ your model, evaluators that score it, an aggregate, a threshold.
 > generic protocol requirements — your own `Sample` type, your own `Subject` type, plain `Evaluator`
 > closures — and stay away from `ModelJudgeEvaluator`, `ToolCallEvaluator` and `SampleGenerator`, all
 > three of which are constrained to `ModelSampleProtocol` (constraints ✅ SDK-verified —
-> `Evaluations-27.0-macos.swiftinterface:160,311,840`).
+> `Evaluations-27.0-macos.swiftinterface:166,311,840`).
 
 The practical consequence of taking Apple at their word here: **an Evaluations suite is a reasonable
 place to put your Core ML or MLX regression tests too.** You get the same report UI, the same
@@ -805,7 +805,7 @@ The corrected shape:
 > ✅ **SDK-verified** — both match the interface, and the interface also pins the closure type the
 > docs never printed: `Evaluator.init(_ evaluate: (Input, ModelSubject<Input.ExpectedValue>) async
 > throws -> Metric)` — sample first, subject second, returning one `Metric`
-> (`Evaluations-27.0-macos.swiftinterface:289-297`; the protocol at `:636-642`).
+> (`Evaluations-27.0-macos.swiftinterface:295-303`; the protocol at `:650-656`).
 
 If a closure is not enough — you need stored state, or you want to emit several metrics — conform
 directly:
@@ -837,10 +837,13 @@ directly:
 > static func buildOptional([any EvaluatorProtocol<Sample, Subject>]?) -> [any EvaluatorProtocol<Sample, Subject>]
 > ```
 
-> ✅ **SDK-verified — the builder has exactly those three members and no `buildEither`**
-> (`Evaluations-27.0-macos.swiftinterface:645-649`, checked 2026-07-29): `buildExpression`,
-> `buildBlock` and `buildOptional`, nothing else. Under Swift's result-builder rules that means a
-> bare `if` works and an `if/else` does not — we still have not compiled the negative case, but the
+> ✅ **SDK-verified — still no `buildEither`, so the branching rule stands**
+> (`Evaluations-27.0-macos.swiftinterface:659-666`, checked 2026-08-23): the members are
+> `buildExpression`, `buildOptional` and four pairwise `buildPartialBlock` overloads — beta 5
+> replaced the earlier capture's single variadic `buildBlock` (a source-compatible builder-protocol
+> swap; checked 2026-07-29 the list was `buildExpression`/`buildBlock`/`buildOptional`). Under
+> Swift's result-builder rules a bare `if` still works and an `if/else` still does not — we still
+> have not compiled the negative case, but the
 > member list is no longer an inference from a documentation page; it is the shipped interface.
 > **Safe default stands:** write two bare `if`s with complementary conditions rather than an
 > `if/else`, or hoist the branch outside the builder and build the evaluator list in a helper.
@@ -1045,7 +1048,7 @@ Evaluations does not have a runner. Swift Testing is the runner.
 
 > ✅ **SDK-verified — with one footnote: the library *can* drive itself.** The interface exposes
 > `Evaluation.run(info: [String : String] = [:]) async throws -> EvaluationResult`
-> (`Evaluations-27.0-macos.swiftinterface:484-488`) — presumably what the `.evaluates` trait calls
+> (`Evaluations-27.0-macos.swiftinterface:490-494`) — presumably what the `.evaluates` trait calls
 > internally, and the hook a command-line harness would use to run an evaluation outside a test.
 > No Apple sample or doc article calls it; running through the trait is what gets you the Xcode
 > report and the attachment (§11–§12). Treat `run(info:)` as the escape hatch, not the norm.
@@ -1102,8 +1105,9 @@ That is nineteen lines and there are five non-obvious things in it.
 > (`BookTags.swift:161`).
 >
 > ✅ **SDK-verified** — one declaration, not two: `static func evaluates(_ evaluation: any
-> Evaluation, info: [String : String] = [:])` (`Evaluations-27.0-macos.swiftinterface:412-414`); the
-> bare form is the defaulted `info:`.
+> Evaluation, info: [String : String] = [:], recordTranscripts: Bool = false)`
+> (`Evaluations-27.0-macos.swiftinterface:418-420`; beta 5 added the defaulted
+> `recordTranscripts:`, checked 2026-08-23); the bare form is the defaulted `info:`.
 
 ⚠️ The parameter is **`info:`**, taking `[String: String]`. Session 298 describes it as *"a notes
 dictionary"* in narration (`298:88-89`) and every reconstruction spelled it `notes:`. **It is `info:`.**
@@ -1181,10 +1185,12 @@ reconstructions of this API show — does not exist. The signature is a plain
 > ```
 >
 > ✅ **SDK-verified** — that member list matches the shipped interface
-> (`Evaluations-27.0-macos.swiftinterface:524-604`), which also fixes two details the docs left
+> (`Evaluations-27.0-macos.swiftinterface:530-610`, checked 2026-08-23) with one beta-5 delta the
+> docs page has not caught up to: `saveJSON` and `jsonData` each gained a defaulted
+> `includeTranscripts: Bool = false` parameter. The interface also fixes two details the docs left
 > loose: `saveJSON(to:)`'s parameter is labelled **`to directory:`** — it takes a directory, writes
 > a file into it, and returns the file's URL (`@discardableResult`) — and `jsonData`'s options
-> default to `[.prettyPrinted, .sortedKeys]` (`:575-604`).
+> default to `[.prettyPrinted, .sortedKeys]` (`:581-610`).
 
 `aggregateValue` takes an `AggregationOperation` and returns a `Double`. Two forms are attested in
 shipping code:
@@ -1495,7 +1501,7 @@ struct BookTagEvaluationTests {
 > ✅ **SDK-verified — `.standardDeviation(of:)` is a real case, and the case list is now closed.**
 > `AggregationOperation`'s cases are `mean(of:)`, `median(of:)`, `mode(of:)`, `minimum(of:)`,
 > `maximum(of:)`, `standardDeviation(of:)`, `variance(of:)` — each taking a `Metric` — plus
-> `custom(label:)` (`Evaluations-27.0-macos.swiftinterface:425-438`, checked 2026-07-29). The enum
+> `custom(label:)` (`Evaluations-27.0-macos.swiftinterface:431-444`, checked 2026-07-29). The enum
 > mirrors the `compute…` registration methods one-for-one, so anything you can register in
 > `aggregateMetrics(using:)` you can read back through `aggregateValue(_:)` with the matching case.
 > Only `.mean(of:)` and `.custom(label:)` appear in shipping Apple code; the rest are now verified
@@ -1805,13 +1811,15 @@ func evaluateBookTagging() async throws {
 ```
 
 > ✅ **SDK-verified signature, 🟡 unverified usage.** The exact declaration is
-> `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false) throws
-> -> URL` (`Evaluations-27.0-macos.swiftinterface:575-591`, checked 2026-07-29) — the parameter is a
+> `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false,
+> includeTranscripts: Bool = false) throws -> URL`
+> (`Evaluations-27.0-macos.swiftinterface:581-597`, checked 2026-08-23; beta 5 added the defaulted
+> `includeTranscripts:`) — the parameter is a
 > **directory**, not a file path, which is why the snippet above no longer builds a filename from
 > `evaluationID`/`resultID` by hand. The same block pins the rest of the round trip:
 > `static loadJSON(from:)`, `init(jsonData:)`, an async `static loadJSONLines(from:)`, and — easy to
 > miss because it hangs off `Collection` — `[EvaluationResult].saveJSONLines(to:includeReportMetadata:)`
-> for appending a run history as JSONL (`:592-604`). No sample calls any of them, and whether
+> for appending a run history as JSONL (`:598-610`). No sample calls any of them, and whether
 > `saveJSON`'s output matches the `.xcevalresult` shape `DatasetExtractor` parses is still unknown —
 > the `.xcevalresult` route remains the one with a compiling reference implementation.
 
@@ -2342,7 +2350,7 @@ which of your five expectations has no metric behind it.
 > Background that predicted the drop-silently arm, kept for the record: the interface pass
 > (2026-07-29) pinned `SubjectInferenceError.failed(reason: String)` and
 > `EvaluatorError.failed(evaluator:evaluatorType:reason:)`
-> (`Evaluations-27.0-macos.swiftinterface:499-521`), and `EvaluationError`'s deprecated
+> (`Evaluations-27.0-macos.swiftinterface:505-527`), and `EvaluationError`'s deprecated
 > `metricsNotFound(names:)` case carries Apple's own statement that *"missing metrics are
 > materialized as ignored columns and logged."*
 >
@@ -2680,7 +2688,7 @@ kept and marked, so you can see what moved:
    2026-07-31:** by NAME, and same-named metrics pool into one aggregate (`probes/`
    `eval.metric-identity`, 27.0 sim runtime).
 3. **`AggregationOperation`'s full case list** (§9). **Closed:** seven statistic cases plus
-   `custom(label:)`, ✅ SDK-verified (`Evaluations-27.0-macos.swiftinterface:425-438`).
+   `custom(label:)`, ✅ SDK-verified (`Evaluations-27.0-macos.swiftinterface:431-444`).
 4. **What an all-`.ignore()` metric aggregates to** (§17.5). **Closed, probe-verified 2026-07-31:**
    the `-1.0` sentinel — indistinguishable from an unregistered metric, so keep asserting row
    counts (`probes/` `eval.mean-over-all-ignored`, 27.0 sim runtime).
@@ -2689,7 +2697,8 @@ kept and marked, so you can see what moved:
    aggregate while still occupying detailed rows — the silently-improved-score hazard is reproduced
    fact (`probes/` `eval.subject-throws`, 27.0 sim runtime).
 6. **`if/else` inside the `evaluators` builder** (§6). **Effectively closed:** the interface confirms
-   `buildExpression` / `buildBlock` / `buildOptional` and nothing else (`:645-649`), so a bare `if`
+   `buildExpression` / `buildOptional` / four `buildPartialBlock` overloads — beta 5 swapped out the
+   variadic `buildBlock` — and no `buildEither` (`:659-666`), so a bare `if`
    builds and an `if/else` should not. Not compile-tested.
 7. **The Evaluations report UI beyond four narrated sentences** (§11) — no screenshots, no CI story,
    no confirmation that Compare handles more than two runs. **Open.**
@@ -2725,4 +2734,4 @@ kept and marked, so you can see what moved:
 - [`../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md`](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) — PCC as a judge or a generator, and the entitlement it needs.
 - [`../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) — what to do when Evaluations' Swift-only constraint blocks you.
 
-[^eval-structured-transcript-import]: Apple documents [`StructuredTranscript`](https://developer.apple.com/documentation/evaluations/structuredtranscript) in the Evaluations framework and uses `session.transcript.structuredTranscript` in its [language-model evaluation flow](https://developer.apple.com/documentation/evaluations/evaluating-language-model-responses). The captured Xcode 27 interface provides the ownership detail the abbreviated sample omits: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:282-285` declares the accessor in an `extension FoundationModels.Transcript`, with return type `Evaluations.StructuredTranscript`; the FoundationModels interface contains no declaration. Therefore `import Evaluations`, rather than framework linkage alone, brings the accessor into scope.
+[^eval-structured-transcript-import]: Apple documents [`StructuredTranscript`](https://developer.apple.com/documentation/evaluations/structuredtranscript) in the Evaluations framework and uses `session.transcript.structuredTranscript` in its [language-model evaluation flow](https://developer.apple.com/documentation/evaluations/evaluating-language-model-responses). The captured Xcode 27 interface provides the ownership detail the abbreviated sample omits: `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:288-291` declares the accessor in an `extension FoundationModels.Transcript`, with return type `Evaluations.StructuredTranscript`; the FoundationModels interface contains no declaration. Therefore `import Evaluations`, rather than framework linkage alone, brings the accessor into scope.

@@ -60,3 +60,36 @@ schemes:
     test:
       targets:
         - DeviceProbeTests
+      # The device-relevant PROBE_* knobs, declared HERE so `xcodegen generate`
+      # preserves them (a variable hand-added in the scheme editor is wiped on every
+      # regeneration). All disabled by default — behavior is unchanged until the
+      # operator either ticks a checkbox in the scheme editor (one-off run; the tick
+      # itself does not survive regeneration) or flips isEnabled to true here before
+      # regenerating. The PROBE_ENABLE_HOST_MODEL / _ATTACHMENT / _GENERATOR
+      # broken-build overrides are deliberately absent: that gate compiles only for
+      # macOS/simulator destinations, so they are no-ops on hardware.
+      environmentVariables:
+        - variable: PROBE_ENABLE_PCC
+          value: "1"
+          isEnabled: false
+        - variable: PROBE_AIMODEL_URL
+          value: "/absolute/host/path/to/model.aimodelc"
+          isEnabled: false
+        - variable: PROBE_ENUM_RUNS
+          value: "100"
+          isEnabled: false
+        - variable: PROBE_CONCURRENT_SESSIONS
+          value: "16"
+          isEnabled: false
+        - variable: PROBE_ARTIFACT_DIR
+          value: "/absolute/output/path"
+          isEnabled: false
+        - variable: PROBE_INSTRUMENTS_WORKLOAD
+          value: "1"
+          isEnabled: false
+        - variable: PROBE_WORKLOAD_SECONDS
+          value: "300"
+          isEnabled: false
+        - variable: PROBE_WORKLOAD_ATTACH_SECONDS
+          value: "20"
+          isEnabled: false

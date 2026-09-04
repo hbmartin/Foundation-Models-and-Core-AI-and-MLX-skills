@@ -1591,7 +1591,7 @@ invalidCompiledModel
 ```
 
 > ✅ **RESOLVED (was a GAP) — `AIModelError` is confirmed non-public, and the throws are untyped.**
-> The SDK interface dump this box used to ask for was captured 2026-07-29 (Xcode 27.0 beta,
+> The SDK interface dump this box used to ask for was captured 2026-07-29, recaptured 2026-08-20 (Xcode 27.0 beta,
 > 27A5228h; `notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
 > `AIModel.init(contentsOf:options:)` and `specialize(…)` as plain untyped `async throws`
 > (✅ **SDK-verified** — `:22-26`) and the cache methods as untyped `throws` (`:33-43`); **no
@@ -1998,7 +1998,7 @@ is a second cost after specialization, and it is a good use of the tail of the f
 > and `static func specialize(...) async throws` and **nothing else**: no `Progress`, no delegate,
 > no `AsyncSequence` of phases. Our full harvest of the 312-symbol Core AI index
 > (`notes/web/apple-docs-coreai.md:7`) found nothing of the kind, and the SDK interface dump
-> captured 2026-07-29 settles that there is no unindexed overload either — the complete public
+> captured 2026-07-29, recaptured 2026-08-20 settles that there is no unindexed overload either — the complete public
 > loading surface is four members, `bookmarkData`, `init?(resolvingBookmark:)`,
 > `init(contentsOf:options:)` and `static specialize(...)` (✅ **SDK-verified** —
 > `CoreAIDelegates-27.0-macos.swiftinterface:14-27`), and the adjacent `AIModelCache` surface
@@ -3921,7 +3921,7 @@ Every 🔴 GAP in this guide, in one place, with what would close it.
 
 ## Sources
 
-**SDK module interfaces** (captured 2026-07-29 from the Xcode 27.0 beta, 27A5228h, macOS 27.0 SDK;
+**SDK module interfaces** (captured 2026-07-29, Xcode 27A5228h; recaptured 2026-08-20, beta 5 27A5237l, macOS 27.0 SDK;
 `notes/sdk-interfaces/*-27.0-macos.swiftinterface`) — `CoreAIDelegates` (the `AIModel` loading and
 `AIModelCache` surface; closed gaps #5 and #7 and confirmed the API-absence half of #8),
 `CoreAIAsset` (`AssetError`), `CoreAIRuntime`, and the empty-in-this-beta `CoreAICache`. Plus the

@@ -1007,7 +1007,7 @@ from a cold full prefill by **0.43 max-abs**, against an **8.3e-07** decode-path
 *"At temp 0 on dense grounding prompts this can flip bbox output silently."*
 
 > ✅ **VERIFIED** — issue and PR text from the July 2026 issue-mining pass over
-> `ml-explore/mlx-swift-lm`. States re-checked via `gh` **2026-08-28**: issue #420 closed completed
+> `ml-explore/mlx-swift-lm`. States re-checked via `gh` **2026-09-04**: issue #420 closed completed
 > 2026-08-28 after PR #448 wired Qwen2.5-VL/Qwen2-VL and PR #475 wired Qwen3-VL; #443 closed
 > 2026-08-10; PR #399 merged 2026-07-14. Re-check the
 > released version you ship before relying on this.

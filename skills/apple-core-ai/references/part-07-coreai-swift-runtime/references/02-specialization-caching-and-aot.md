@@ -510,7 +510,7 @@ Two notes on that code:
 
 > ✅ **RESOLVED (was a GAP) — they throw *untyped* errors, and no public error type for
 > specialization, loading, inference or cache work exists in the macOS 27.0 beta SDK.**
-> The SDK `.swiftinterface` dump this box used to ask for was captured 2026-07-29 (Xcode 27.0
+> The SDK `.swiftinterface` dump this box used to ask for was captured 2026-07-29, recaptured 2026-08-20 (Xcode 27.0
 > beta, 27A5228h; `notes/sdk-interfaces/`). It shows: `AIModel.init(contentsOf:options:)` and
 > `specialize(…)` are plain `async throws`, `loadFunction(named:)` and every `AIModelCache` method
 > plain `throws` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:22-26, :33-43,

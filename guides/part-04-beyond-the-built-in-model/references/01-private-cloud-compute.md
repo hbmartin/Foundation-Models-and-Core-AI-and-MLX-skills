@@ -799,7 +799,7 @@ Mac Catalyst are absent from every PCC availability statement in our corpus.
 > `@available(tvOS, unavailable)` — ✅ **SDK-verified**
 > (`FoundationModels-27.0-macos.swiftinterface:43-48` and repeated on every extension). So:
 > **tvOS: unavailable, stated in the SDK.** watchOS 27.0 is *included* — notable, because
-> `SystemLanguageModel` is `watchOS, unavailable` (`:253-256`), making PCC the only Apple-hosted
+> `SystemLanguageModel` is `watchOS, unavailable` (`:257-260`), making PCC the only Apple-hosted
 > `LanguageModel` on watch. **Mac Catalyst:** there is no `macCatalyst` attribute anywhere in the
 > interface, and the module is built with `-target-variant arm64e-apple-ios27.0-macabi` (`:3`), so
 > Catalyst inherits the iOS 27.0 floor at the *declaration* level — whether the PCC service answers
@@ -1064,10 +1064,10 @@ which is a Part 4 provider-authoring concern, not a PCC concern. Two practical c
 2. ✅ **RESOLVED (2026-07-29) — `.custom(_:)`'s associated value is a `String`.** The full enum is
    read verbatim from the 27.0 interface: `case light`, `case moderate`, `case deep`,
    `case custom(Swift.String)` — ✅ **SDK-verified**
-   (`FoundationModels-27.0-macos.swiftinterface:3077-3083`; not `@frozen`, so keep the
+   (`FoundationModels-27.0-macos.swiftinterface:3141-3147`; not `@frozen`, so keep the
    `@unknown default`). Note also that both fields of `ContextOptions` are **Optional** —
    `includeSchemaInPrompt: Bool?`, `reasoningLevel: ReasoningLevel?`, `init` defaults both to `nil`
-   (`:3068-3072`). **Safe default unchanged:** do not construct `.custom` against PCC. Nothing
+   (`:3132-3136`). **Safe default unchanged:** do not construct `.custom` against PCC. Nothing
    suggests the PCC model accepts an arbitrary string, and §6.6 shows what happens when a model is
    handed a level it does not support.
 
@@ -1404,7 +1404,7 @@ reasoning modifiers to the same branch that attaches `.model(serverModel)`, neve
 > ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:96-105`). So
 > `pccModel.capabilities.contains(.reasoning)` compiles as a concrete property read; the declared
 > `Capability` statics are `.vision`, `.guidedGeneration`, `.reasoning`, `.toolCalling`
-> (`:1468-1483`). What the property *returns* on a real PCC-entitled device is still unobserved —
+> (`:1509-1524`). What the property *returns* on a real PCC-entitled device is still unobserved —
 > use it as the runtime probe, with the documented capability table (§3.2) and the typed error in
 > §9 as the cross-check.
 
@@ -1505,13 +1505,13 @@ Type notes, precisely:
 - **`Status`** has at least `.belowLimit(_:)`, whose associated value exposes `isApproachingLimit: Bool`.
   ✅ **RESOLVED (2026-07-29) — the full `Status` case list is exactly two:**
   `case belowLimit(Status.BelowLimit)` and `case limitReached(Status.LimitReached)` —
-  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:224-241`). `BelowLimit` carries
+  ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:228-245`). `BelowLimit` carries
   `isApproachingLimit: Bool`; `LimitReached` is an empty payload struct; there is no
   unknown/indeterminate case, and the enum is **not** `@frozen`. **Keep following Apple's snippet
   shape anyway** — test `isLimitReached` first, then `if case .belowLimit(let info) = status` —
   because a non-frozen enum can grow and the convenience `Bool` insulates you.
 - **`resetDate`** is `Date?` — ✅ **SDK-verified**
-  (`FoundationModels-27.0-macos.swiftinterface:211`), matching the docs' *"this value is empty when
+  (`FoundationModels-27.0-macos.swiftinterface:215`), matching the docs' *"this value is empty when
   the reset date isn't known or when the person is well below their limit."* Never render a bare
   unwrapped date.
 - **`limitIncreaseSuggestion: LimitIncreaseSuggestion?`** is optional, and its optionality is the
@@ -1914,8 +1914,8 @@ should trigger the same fallback with a different message.
 > (`NetworkFailure`/`QuotaLimitReached`/`ServiceUnavailable`, each `Sendable` with
 > `debugDescription`; `QuotaLimitReached` also carries `limitIncreaseSuggestion:` and
 > `resetDate: Date?`) — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:150-204`). So: yes, it conforms to `LocalizedError`
-> (and `CustomDebugStringConvertible`, `:160-166`); it is a **disjoint type** from
+> (`FoundationModels-27.0-macos.swiftinterface:154-208`). So: yes, it conforms to `LocalizedError`
+> (and `CustomDebugStringConvertible`, `:164-170`); it is a **disjoint type** from
 > `LanguageModelError` with no conformance or wrapping relationship visible in the interface. What
 > the interface cannot show is **runtime routing**: whether a PCC quota failure ever arrives as
 > `LanguageModelError.rateLimited` instead (both types exist and both have a quota-ish case).
@@ -2076,7 +2076,7 @@ Old → new mapping, for the ones that are not obvious
 | `unsupportedGuide` | `LanguageModelError.unsupportedGenerationGuide` |
 | `assetsUnavailable` | `SystemLanguageModel.Error.assetsUnavailable` |
 | `concurrentRequests` | `LanguageModelSession.Error.concurrentRequests` |
-| `decodingFailure` | ✅ `GeneratedContent.ParsingError` — stated by the SDK's own per-case deprecation message, *"Use ``GeneratedContent/ParsingError`` instead."* (`FoundationModels-27.0-macos.swiftinterface:3491-3494`, verified 2026-07-29) |
+| `decodingFailure` | ✅ `GeneratedContent.ParsingError` — stated by the SDK's own per-case deprecation message, *"Use ``GeneratedContent/ParsingError`` instead."* (`FoundationModels-27.0-macos.swiftinterface:3555-3558`, verified 2026-07-29) |
 
 ### 9.4 Two error codes that mean nothing and will still find you
 
