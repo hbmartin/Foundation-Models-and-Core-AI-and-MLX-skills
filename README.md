@@ -155,7 +155,8 @@ GitHub issue and pull-request states cited by the guides can be checked with:
 This command queries GitHub and requires `gh` access. Third-party repositories used during research
 are also excluded from Git; recreate the exact pinned snapshots with
 `./scripts/clone-research-repos.sh`. Treat both commands as evidence refreshes, then update guide
-claims deliberately under the conventions above.
+claims deliberately under the conventions above. With `--changed-only`, report rows are filtered
+but summary verdict counts still cover every reference, so GitHub failures remain visible.
 
 ## Repository map
 
@@ -166,10 +167,12 @@ claims deliberately under the conventions above.
 | [`notes/`](notes/) | Research synthesis, maintenance runbooks, captured SDK interfaces, and verification results. |
 | [`probes/`](probes/) | SwiftPM runtime probes that turn documented behavioral gaps into executable evidence. |
 | [`scripts/`](scripts/) | Indexing, verification, SDK capture, MkDocs, freshness, and research-mirror tooling. |
+| [`automations/`](automations/) | Validated scheduled-task contracts for daily and weekly freshness runs. |
 | [`docs/`](docs/) | Captured Apple documentation used as source material. |
 | [`forums/`](forums/) | Developer Forum source corpus. |
 | [`transcripts/`](transcripts/) | WWDC and technical-session transcripts used by the research corpus. |
 | `repos/` | Ignored, reproducible checkouts of pinned upstream research repositories. |
+| `artifacts/` | Ignored durable reports, logs, result bundles, and probe attachments from local automation runs. |
 
 ## Reading the guides
 

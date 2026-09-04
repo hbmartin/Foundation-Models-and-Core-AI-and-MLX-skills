@@ -146,7 +146,8 @@ the repo root.
   `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
 - [ ] Re-check the GitHub defect hedges (a doc refresh usually rides a beta):
   ```bash
-  ./scripts/refresh-defect-statuses.sh > /tmp/defect-report.md   # full report
+  report_dir="artifacts/freshness/beta-event/$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json"
   ./scripts/refresh-defect-statuses.sh --changed-only            # just the edits needed
   ```
   Human-review every `STATE-CHANGED` row against its cited sentence before editing. The

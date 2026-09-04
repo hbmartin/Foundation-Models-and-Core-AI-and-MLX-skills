@@ -35,29 +35,25 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
-This currently extracts 957 sightings of 322 distinct mapped issue/PR refs from the guides. After
-a few minutes of `gh` calls it prints only rows whose live state appears to disagree with the
-guide's claim. Triage each row:
+This extracts the issue/PR sightings from the guides. After a few minutes of `gh` calls it prints
+only rows whose live state appears to disagree with the guide's claim, while the summary retains
+the full verdict counts so an offline run remains visibly UNREACHABLE. Triage each row:
 
 | Verdict | What to do |
 |---|---|
 | **STATE-CHANGED** | **Human-review the cited sentence first.** If that specific reference really claims the old state, edit the hedge the same day: state + date, keep the incident narrative, close/narrow any 🔴 GAP that hinged on it, and update the in-file gap ledger. Do not edit from the verdict alone: nearby state words can leak between references. |
 | **STALE-DATE-ONLY** | Do **not** churn dates daily — refresh "as of" dates only when you touch the file for another reason, or in the weekly batch (§2). A correct claim with an old date is still correct. |
-| **AMBIGUOUS** | The ref couldn't be mapped to a repo. When you're in that file anyway, tighten the citation to the full `owner/repo#N` form so the script can track it forever after. |
+| **AMBIGUOUS** | The ref couldn't be mapped confidently or its nearby state language conflicts. Inspect the sighting and either tighten the citation to `owner/repo#N` or make the state wording reference-local. |
 | **UNREACHABLE** | Usually a miscitation (wrong repo for the number) — the 2026-07-31 run caught three this way. Verify by hand, fix the citation. |
 
 Precedent for pace: the very first scripted run caught `mlx-swift-lm#448` merging **the day
 before**. Most quiet-day changed lists should be empty or short.
 
-**Known parser limitation, 2026-08-01.** `--changed-only` produced five false `STATE-CHANGED`
-rows where the cited guide text already matched live state: `apple/coreai-models#62`, `#74`, and
-`#89` (merged); `apple/coreai-torch#7` (closed unmerged); and `ml-explore/mlx#3893` (merged).
-The failure mode is state-language leakage from another reference in the same paragraph or nearby
-OPEN wording. Until claim-context parsing and mixed-state tests are tightened, treat every
-`STATE-CHANGED` row as a review lead, not an edit instruction — and triage **per sighting**, not
-per ref: the 2026-08-03 pass found a genuinely stale sentence ("Open PR `coreai-torch#7`", part-08
-ref 01) hiding behind this same known-false-positive list. A ref on this list can still contain
-one sighting that really does claim the old state.
+**Parser guardrail, tightened 2026-09-04.** State claims are clause-scoped and bounded to 80
+characters after or 40 before a reference, with after-reference wording taking precedence.
+Ambiguous state windows no longer produce actionable verdicts, and regression tests pin real
+mixed-state corpus sightings. Still treat every `STATE-CHANGED` row as a review lead rather than
+an edit instruction: triage **per sighting**, since one ref can have both current and stale prose.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 
@@ -87,17 +83,26 @@ indexes unchanged), or re-date untouched hedges.
 
 ## 2. The weekly batch (~30 min, pick a fixed day)
 
-1. **Full defect report, not just changed:** `./scripts/refresh-defect-statuses.sh > /tmp/defects.md`
-   — skim STALE-DATE-ONLY and batch-refresh dates in files with several stale hedges; burn down a
-   few AMBIGUOUS citations.
+1. **Full defect report, not just changed:** create a unique run directory and write the report
+   atomically, then skim STALE-DATE-ONLY and batch-refresh dates in files with several stale
+   hedges; burn down a few AMBIGUOUS citations.
+   ```bash
+   run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+   report_dir="artifacts/freshness/weekly-defects/$run_id"
+   ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json"
+   ```
 2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
    framework updated underneath you):
    ```bash
-   cd probes && swift test   # host: 46 tests, 23 skipped is the 2026-08-17 macOS 27 beta-5 baseline
    DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-     xcodebuild test -scheme Probes-Package \
-       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro'
+     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh host
+   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh simulator
    ```
+   Simulator mode deliberately uses the tool-hosted `Probes-Package` scheme and pins `OS=27.0`,
+   matching the topology used to establish the baseline. It injects supported `PROBE_*` values
+   into the generated `.xctestrun`, because Xcode sanitizes its test process environment. Override
+   the destination only when intentionally establishing a new runtime baseline.
    The simulator baseline is 39 tests, 19 intentional skips, 0 failures on beta 5. The elevated
    skip count is deliberate: host-backed model calls can block before async timeouts execute.
    Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is a
@@ -121,7 +126,8 @@ export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
 ./scripts/diff-interfaces.sh                        # temp capture + one-screen drift vs HEAD
 # managed capture includes coreai-build top-level + all subcommand help surfaces
 ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification   # snippet-level drift
-cd probes && swift test && cd ..                    # re-run probes on the new runtime
+AUTOMATION_ID=beta-event ./scripts/run-probes.sh host
+AUTOMATION_ID=beta-event ./scripts/run-probes.sh simulator
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
@@ -152,11 +158,14 @@ Special case — **the day this machine gets macOS 27**: run the whole upgrade-d
 
 The daily sweep is deliberately script-shaped. Two ways to take yourself out of the loop:
 
-- **launchd/cron**: run `./scripts/refresh-defect-statuses.sh --changed-only` every morning,
-  mail/notify yourself only when the changed list is non-empty. Zero-output days cost nothing.
-- **A scheduled Claude Code agent** (`/schedule` in a session): have it run the sweep, and when
-  rows appear, draft the guide edits *as a report or branch for your review* — keeping the rule
-  that nothing lands in guides without the evidence conventions applied deliberately.
+- **launchd/cron**: run `./scripts/refresh-defect-statuses.sh --changed-only --format json
+  --output artifacts/freshness/daily-defects/<unique-run-id>/defects.json` every morning and
+  notify yourself only when the changed list is non-empty.
+- **A scheduled Codex automation**: use one of the checked-in contracts under
+  `automations/contracts/`. Validate it with `./scripts/validate-automation-contracts.py` before
+  copying its prompt and schedule into Codex. The contract keeps tracked sources read-only,
+  requires a durable artifact, and tells the automation to report a review lead instead of
+  editing guides.
 
 Whichever route: keep the human in the fold-in step. The scripts are trustworthy about *state*;
 deciding what a state change means for a guide's narrative (close the gap? keep the workaround

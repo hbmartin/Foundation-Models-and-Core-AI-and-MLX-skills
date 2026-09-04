@@ -61,5 +61,6 @@ written; operational files below are the maintained source of truth for what to 
 ## Maintenance rule
 
 Update current status in this file and the owning operational note. Regenerate verifier and index
-artifacts through their scripts. For issue/PR freshness, inspect the cited sentence before editing:
-`refresh-defect-statuses.sh` can currently leak nearby state words across references.
+artifacts through their scripts. For issue/PR freshness, inspect the cited sentence before editing;
+the reporter bounds state parsing and marks uncertain claims AMBIGUOUS, but its verdicts remain
+review leads rather than edit instructions.
