@@ -913,7 +913,7 @@ instructions entry and whatever prompt is already there. Nothing in the corpus d
 > 🔴 **GAP — what the `transcript` argument to `prewarm` actually contains.** The requirement's
 > signature is now ✅ **SDK-verified** — `func prewarm(model: Self.Model, transcript: Transcript)`,
 > concrete `Transcript`, with the default implementation in an extension
-> (`FoundationModels-27.0-macos.swiftinterface:1714, :1866-1868`) — which confirms §6.2's
+> (`FoundationModels-27.0-macos.swiftinterface:1714, :1906-1908`) — which confirms §6.2's
 > exact-signature trap from the SDK side. But the parameter's *contents* remain unobserved: it is
 > in the requirement and in all three conformances' signatures, and none of them reads it. We do not know
 > whether it is empty at the point a developer calls `session.prewarm()` before any turn, whether it

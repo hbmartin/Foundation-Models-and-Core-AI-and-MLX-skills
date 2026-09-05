@@ -316,11 +316,11 @@ final class EvaluationsProbes: XCTestCase {
     //             (consistent with retry-forever; the guide's "bound by wall-clock" advice
     //             stands verified).
     // Write-back: §3's GAP box with the outcome and invocation count.
-    // NOTE: needs a live model. On the known-broken beta-5 builds the host blocks inside
-    // generation before the timeout task can run, and the Simulator can consume nearly the
-    // full budget and poison subsequent host-backed model calls — the shared build-keyed
-    // gate skips there unless PROBE_ENABLE_GENERATOR=1. Every other build and DEVICE-27
-    // run by default.
+    // NOTE: needs a live model. Host and Simulator runs require
+    // PROBE_ENABLE_GENERATOR=1 because the beta-5 host blocks inside generation before
+    // the timeout task can run, and the Simulator can consume nearly the full budget and
+    // poison subsequent host-backed model calls. Untested future host-backed runtimes stay
+    // opt-in; DEVICE-27 runs by default after availability checking.
     func testSampleGeneratorUnreachableTarget() async throws {
         try requireOS27()
         guard #available(macOS 27.0, iOS 27.0, *) else { return }

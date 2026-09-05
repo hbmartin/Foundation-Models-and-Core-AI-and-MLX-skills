@@ -60,15 +60,22 @@ schemes:
     test:
       targets:
         - DeviceProbeTests
-      # The device-relevant PROBE_* knobs, declared HERE so `xcodegen generate`
-      # preserves them (a variable hand-added in the scheme editor is wiped on every
-      # regeneration). All disabled by default — behavior is unchanged until the
-      # operator either ticks a checkbox in the scheme editor (one-off run; the tick
-      # itself does not survive regeneration) or flips isEnabled to true here before
-      # regenerating. The PROBE_ENABLE_HOST_MODEL / _ATTACHMENT / _GENERATOR
-      # broken-build overrides are deliberately absent: that gate compiles only for
-      # macOS/simulator destinations, so they are no-ops on hardware.
+      # The PROBE_* knobs are declared HERE so `xcodegen generate` preserves them
+      # (a variable hand-added in the scheme editor is wiped on every regeneration).
+      # All are disabled by default until the operator ticks a checkbox for a one-off
+      # run or flips isEnabled to true here before regenerating. The three host-model
+      # consent variables affect Simulator runs of this project; physical devices
+      # compile out that gate.
       environmentVariables:
+        - variable: PROBE_ENABLE_HOST_MODEL
+          value: "1"
+          isEnabled: false
+        - variable: PROBE_ENABLE_ATTACHMENT
+          value: "1"
+          isEnabled: false
+        - variable: PROBE_ENABLE_GENERATOR
+          value: "1"
+          isEnabled: false
         - variable: PROBE_ENABLE_PCC
           value: "1"
           isEnabled: false

@@ -37,8 +37,8 @@ final class InstrumentsWorkloadProbes: XCTestCase {
     //      correlate timeline regions against phases.
     //
     // Knobs: PROBE_INSTRUMENTS_WORKLOAD=1 (required to run at all — and by itself
-    //        sufficient: as an explicit opt-in it also bypasses the known-broken-build
-    //        model gate, so only genuine model unavailability skips),
+    //        sufficient: as an explicit opt-in it also satisfies the host/simulator model
+    //        gate, so only genuine model unavailability skips),
     //        PROBE_WORKLOAD_SECONDS (default 300),
     //        PROBE_WORKLOAD_ATTACH_SECONDS (default 20 — countdown before inference starts,
     //        the window in which to pick the process in Instruments).
@@ -51,8 +51,8 @@ final class InstrumentsWorkloadProbes: XCTestCase {
         }
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
         // PROBE_INSTRUMENTS_WORKLOAD=1 (guaranteed set here) is already operator consent:
-        // passing it as the override knob bypasses the broken-build gate, so the documented
-        // Instruments procedure needs no extra env var even on the beta-5 builds.
+        // passing it as the override knob satisfies the host/simulator model gate, so the
+        // documented Instruments procedure needs no second consent variable.
         try skipUnlessModelAvailable(overrideKnob: "PROBE_INSTRUMENTS_WORKLOAD")
 
         let totalSeconds = Probe.envSeconds("PROBE_WORKLOAD_SECONDS", default: 300)

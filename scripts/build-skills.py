@@ -891,9 +891,10 @@ def render_api_slice(
         "skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK "
         "interfaces.**",
         "",
-        "> A `✓` means the bare symbol name appears in the corresponding captured "
-        "`.swiftinterface` (a presence check, not a signature match — the guides carry the "
-        "signature-level citations). **Blank in both columns means the spelling is not "
+        "> A `✓` means the leading type name appears in the corresponding captured "
+        "`.swiftinterface`; dotted uppercase type paths must appear as one ordered qualified or "
+        "declared path. Lowercase members are not signature-matched — the guides carry the "
+        "signature-level citations. **Blank in both columns means the spelling is not "
         "SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so "
         "does a reconstruction. A symbol absent from this page may still be covered elsewhere "
         f"in the series — the full index is at {series_url}. Sliced on {date}; regenerate with "

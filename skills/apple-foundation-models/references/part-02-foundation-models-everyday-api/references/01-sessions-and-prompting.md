@@ -1529,7 +1529,7 @@ All are `Optional` and default to `nil`, i.e. "let the backend decide." The thre
 `toolCallingMode` are grep-verified **absent** from 26.5 and are 27 additions — both now
 ✅ **SDK-verified** in the 27.0 interface: `sampling` is `@available(*, deprecated, renamed:
 "samplingMode")` with `samplingMode` a back-deployed computed alias over it
-(`FoundationModels-27.0-macos.swiftinterface:3201-3205, :3165-3177`), and
+(`FoundationModels-27.0-macos.swiftinterface:3201-3205, :3229-3240`), and
 `toolCallingMode: GenerationOptions.ToolCallingMode?` is a stored 27.0 property (`:3212-3214`)
 with a 27.0 `init(samplingMode:temperature:maximumResponseTokens:toolCallingMode:)` (`:3247`).
 

@@ -154,16 +154,25 @@ FM_PATH=''
 FM_VERSION=''
 FM_PRESENT=0
 FM_SOURCE=''
+FM_FALLBACK_PATH="${SDK_FM_FALLBACK_PATH:-/usr/bin/fm}"
+case "$FM_FALLBACK_PATH" in
+  /*) ;;
+  *) die 'SDK_FM_FALLBACK_PATH must be absolute' ;;
+esac
 # fm ships with the OS rather than Xcode, so xcrun discovery can fail even on
 # hosts that have the tool; prefer xcrun, then fall back to /usr/bin/fm, and
 # only report the tool absent when neither discovery path finds it.
 if FM_PATH="$(xcrun --no-cache --find fm 2>/dev/null)"; then
   FM_PRESENT=1
   FM_SOURCE='xcrun/fm'
-elif [ -x /usr/bin/fm ]; then
-  FM_PATH='/usr/bin/fm'
+elif [ -x "$FM_FALLBACK_PATH" ]; then
+  FM_PATH="$FM_FALLBACK_PATH"
   FM_PRESENT=1
-  FM_SOURCE='host/usr/bin/fm'
+  if [ "$FM_FALLBACK_PATH" = '/usr/bin/fm' ]; then
+    FM_SOURCE='host/usr/bin/fm'
+  else
+    FM_SOURCE='host/configured-fm-fallback'
+  fi
 else
   FM_PATH=''
 fi
@@ -384,22 +393,43 @@ fm_list_commands() {
 # Capture `fm <path> --help`, then recurse into the commands that screen lists
 # so a future seed's added or renamed subcommands are discovered instead of
 # silently missing from the artifact. A non-zero exit is recorded in the
-# artifact rather than aborting the capture mid-run; when every invocation
-# succeeds the output is byte-identical to the fixed invocation list this
-# derivation replaced.
+# artifact for a nested command rather than aborting the capture mid-run. The
+# root invocation and root command-section parse are mandatory because there is
+# no useful artifact without them. Hard invocation/fan-out limits keep malformed
+# or self-similar help trees from multiplying recursively.
+FM_HELP_MAX_INVOCATIONS=128
+FM_HELP_MAX_FANOUT=32
+FM_HELP_INVOCATIONS=0
+FM_HELP_VISITED="$TMP/fm-help-visited.txt"
+: > "$FM_HELP_VISITED"
+
 fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
   local depth="$1"
   local path="${2-}"
+  local path_key="${path:-<root>}"
   local invocation="${path:+$path }--help"
   local status=0
   local sub
   local subs=''
+  local fanout=0
+
+  if grep -F -x -q -- "$path_key" "$FM_HELP_VISITED"; then
+    return 0
+  fi
+  printf '%s\n' "$path_key" >> "$FM_HELP_VISITED"
+  FM_HELP_INVOCATIONS="$((FM_HELP_INVOCATIONS + 1))"
+  [ "$FM_HELP_INVOCATIONS" -le "$FM_HELP_MAX_INVOCATIONS" ] || \
+    die "fm help traversal exceeded maximum of $FM_HELP_MAX_INVOCATIONS invocations"
+
   printf '\n===== fm %s =====\n' "$invocation"
   # Intentional word splitting: path holds already-validated command names.
   # shellcheck disable=SC2086
   "$FM_PATH" $path --help > "$TMP/fm-help-screen.txt" || status=$?
   cat "$TMP/fm-help-screen.txt"
   if [ "$status" -ne 0 ]; then
+    if [ -z "$path" ]; then
+      die "fm --help failed with status $status"
+    fi
     printf '##### capture error: fm %s exited with status %s #####\n' \
       "$invocation" "$status"
     return 0
@@ -416,10 +446,16 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
           "$invocation" "$sub"
         ;;
       *)
+        fanout="$((fanout + 1))"
+        [ "$fanout" -le "$FM_HELP_MAX_FANOUT" ] || \
+          die "fm $invocation listed more than $FM_HELP_MAX_FANOUT commands"
         subs="${subs}${subs:+ }${sub}"
         ;;
     esac
   done < "$TMP/fm-help-commands.txt"
+  if [ -z "$path" ] && [ -z "$subs" ]; then
+    die 'fm --help contained no parseable COMMANDS or SUBCOMMANDS entries'
+  fi
   # Intentional word splitting: subs holds already-validated command names.
   # shellcheck disable=SC2086
   for sub in $subs; do

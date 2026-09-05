@@ -1225,9 +1225,9 @@ So a `GenerationOptions(toolCallingMode: .disallowed)` at the call site silently
 profile (§7) and then pass `options:` at a call site out of habit, you have disabled it. **Pick one
 surface per session and stay there.**
 
-> ✅ **DEVICE-CONFIRMED 2026-08-20** — on iPhone 15 Pro / iOS build `24A5408d`, profile
-> `.required` plus call-site `.disallowed` made no call, while profile `.disallowed` plus call-site
-> `.required` ran the tool loop until its context-size exit. Call-site options won both directions.
+> 🟠 **PARTIALLY DEVICE-CONFIRMED 2026-08-20** — on iPhone 15 Pro / iOS build `24A5408d`, profile
+> `.required` plus call-site `.disallowed` made no call. The reverse run reached a context-size exit,
+> but its old catch path recorded no tool-call discriminators; treat that direction as inference.
 
 ### 6.5 `.required` with no tools
 
@@ -2376,7 +2376,7 @@ before you write a single test. See
 | `Tool.Output` associated type (`typealias Output = String`) | 26.0 | ✅ Apple sample code · non-`String` output 🔴 GAP |
 | `Tool.Arguments` via `typealias` to an out-of-line `@Generable` type | 26.0 | ✅ Apple sample code |
 | `Tool.parameters: GenerationSchema` | 26.0 | ✅ docs + compiled source |
-| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:3060, :3007-3009`) · default value ✅ probe-verified 2026-07-31: `true` (§4.4) · `false` semantics 🔴 GAP |
+| `Tool.includesSchemaInInstructions` | 26.0 | ✅ SDK-verified requirement + default impl (`FoundationModels-27.0-macos.swiftinterface:3060, :3067-3073`) · default value ✅ probe-verified 2026-07-31: `true` (§4.4) · `false` semantics 🔴 GAP |
 | `Tool.SessionProperty` | **27.0** | ✅ docs |
 | `LanguageModelSession(tools:instructions:)` | 26.0 | ✅ docs |
 | `LanguageModelSession.ToolCallError` (`.tool`, `.underlyingError`) | 26.0 · **no watchOS** | ✅ docs |

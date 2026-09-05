@@ -372,11 +372,17 @@ class IndexToolingTests(unittest.TestCase):
             (guides / 'guide.md').write_text(
                 '`Transcript.CustomSegment` `Transcript.CustomSegment`\n'
                 '`Transcript.Entry` `Transcript.Entry`\n'
-                '`Transcript.entries(in:)` `Transcript.entries(in:)`\n',
+                '`Transcript.entries(in:)` `Transcript.entries(in:)`\n'
+                '`Tool.Arguments` `Tool.Arguments`\n',
                 encoding='utf-8',
             )
             (interfaces / 'FM-27.0-macos.swiftinterface').write_text(
-                'public struct Transcript {\n  public struct Entry {}\n}\n',
+                'public struct Transcript {\n  public struct Entry {}\n}\n'
+                'public struct CustomSegment {}\n'
+                'public protocol Tool<Arguments, Output> {\n'
+                '  associatedtype Arguments\n'
+                '  associatedtype Output\n'
+                '}\n',
                 encoding='utf-8',
             )
             result = self.run_python(EXTRACT_SYMBOLS, guides, interfaces)
@@ -384,10 +390,13 @@ class IndexToolingTests(unittest.TestCase):
             in27 = {row[0]: row[5] for row in
                     (line.split('\t') for line in result.stdout.splitlines())}
             self.assertEqual(in27['Transcript.Entry'], 'Y')
-            # parent presence must not vouch for a vanished nested type
+            # Separate top-level declarations must not vouch for a nested type.
             self.assertEqual(in27['Transcript.CustomSegment'], '')
             # lowercase members still resolve via the type component
             self.assertEqual(in27['Transcript.entries(in:)'], 'Y')
+            # Protocol associated types are declarations even without an
+            # explicit public modifier in a textual interface.
+            self.assertEqual(in27['Tool.Arguments'], 'Y')
 
     def test_symbol_extractor_breaks_equal_count_ties_by_guide_path(self):
         with tempfile.TemporaryDirectory() as directory:
