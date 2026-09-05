@@ -191,6 +191,39 @@ class IndexToolingTests(unittest.TestCase):
             self.assertIn('unterminated', result.stderr)
             self.assertIn('guide.md:3', result.stderr)
 
+    def test_semantic_id_survives_line_movement_but_hash_tracks_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text('# Section\n\n⚠️ stable warning\n', encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, guides)
+            path.write_text('# Section\n\nextra prose\n\n⚠️ stable warning\n', encoding='utf-8')
+            moved = self.run_python(EXTRACT_CALLOUTS, guides)
+            path.write_text('# Section\n\nextra prose\n\n⚠️ changed warning\n', encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, guides)
+            first_row = first.stdout.strip().split('\t')
+            moved_row = moved.stdout.strip().split('\t')
+            changed_row = changed.stdout.strip().split('\t')
+            self.assertNotEqual(first_row[1], moved_row[1])
+            self.assertEqual(first_row[6:], moved_row[6:])
+            self.assertNotEqual(moved_row[6:], changed_row[6:])
+
+    def test_duplicate_semantic_callout_requires_explicit_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text('# Section\n\n⚠️ duplicate\n\n⚠️ duplicate\n', encoding='utf-8')
+            duplicate = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(duplicate.returncode, 0)
+            self.assertIn('duplicate callout id', duplicate.stderr)
+            path.write_text(
+                '# Section\n\n⚠️ duplicate\n\n<!-- callout-id: second-duplicate -->\n⚠️ duplicate\n',
+                encoding='utf-8',
+            )
+            explicit = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(explicit.returncode, 0, explicit.stderr)
+            self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second-duplicate')
+
     def test_fenced_fake_heading_does_not_consume_slug_suffixes(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
@@ -424,6 +457,30 @@ class IndexToolingTests(unittest.TestCase):
         self.addCleanup(fixture[0].cleanup)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('do not exactly match a fresh extraction', result.stderr)
+
+    def test_v2_classification_survives_line_only_movement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides, classified, output = root / 'guides', root / 'classified', root / 'output'
+            guides.mkdir(); classified.mkdir(); output.mkdir()
+            guide = guides / 'guide.md'
+            guide.write_text('# Section\n\n> ⚠️ **A warning.** Details.\n', encoding='utf-8')
+            extracted = self.run_python(EXTRACT_CALLOUTS, guides)
+            row = extracted.stdout.strip().split('\t')
+            classification = [row[0], row[6], row[7], row[2], row[3],
+                              'caution-note', 'A warning']
+            (classified / 'root.tsv').write_text(
+                '# schema-version: 2\n' + '\t'.join(classification) + '\n', encoding='utf-8'
+            )
+            guide.write_text('# Section\n\nInserted prose.\n\n> ⚠️ **A warning.** Details.\n',
+                             encoding='utf-8')
+            moved = self.run_python(EXTRACT_CALLOUTS, guides)
+            callouts = root / 'callouts.tsv'; callouts.write_text(moved.stdout, encoding='utf-8')
+            symbols = root / 'symbols.tsv'
+            symbols.write_text('FoundationModels\tFoundationModels\t2\t1\tY\tY\tguide.md:2\n',
+                               encoding='utf-8')
+            result = self.run_python(BUILD_INDEXES, classified, callouts, symbols, guides, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == '__main__':

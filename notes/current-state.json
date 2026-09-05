@@ -1,0 +1,165 @@
+{
+  "asOf": "2026-09-05",
+  "corpus": {
+    "callouts": {
+      "concreteSilentFailures": 1426,
+      "total": 1788
+    },
+    "externalLinks": 172,
+    "generatedSkills": 10,
+    "guideMarkdownFiles": 80,
+    "parts": 17,
+    "referenceGuides": 60,
+    "symbols": 1213
+  },
+  "environment": {
+    "installed": {
+      "fm": {
+        "path": "/usr/bin/fm",
+        "version": null
+      },
+      "os": {
+        "build": "26A5406e",
+        "name": "macOS",
+        "version": "27.0"
+      },
+      "sdks": {
+        "iphoneos": {
+          "build": "24A5408c",
+          "version": "27.0"
+        },
+        "macosx": {
+          "build": "26A5406c",
+          "version": "27.0"
+        }
+      },
+      "simulatorRuntimes": [
+        {
+          "build": "23F77",
+          "name": "iOS",
+          "version": "26.5"
+        },
+        {
+          "build": "24A5390f",
+          "name": "iOS",
+          "version": "27.0"
+        },
+        {
+          "build": "24A5408d",
+          "name": "iOS",
+          "version": "27.0"
+        }
+      ],
+      "xcode": {
+        "build": "27A5237l",
+        "path": "/Applications/Xcode-beta.app/Contents/Developer",
+        "version": "27.0"
+      }
+    },
+    "latestObserved": {
+      "ios": {
+        "build": "24A5430a",
+        "released": "2026-08-31",
+        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026a",
+        "version": "27.0 beta 8"
+      },
+      "macos": {
+        "build": "26A5425a",
+        "released": "2026-08-31",
+        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026c",
+        "version": "27.0 beta 8"
+      },
+      "xcode": {
+        "build": "27A5252f",
+        "released": "2026-08-24",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27 beta 6"
+      }
+    }
+  },
+  "pendingEvent": {
+    "reasons": [
+      "Installed Xcode build 27A5237l trails observed build 27A5252f.",
+      "Installed macOS build 26A5406e trails observed build 26A5425a.",
+      "Installed iOS Simulator build 24A5408d trails observed build 24A5430a."
+    ],
+    "value": true
+  },
+  "probeBaselines": {
+    "app-hosted-ios27-beta5-simulator": {
+      "contextSize": 0,
+      "destination": "generated DeviceProbes app",
+      "device": "Simulator",
+      "exceptions": "The 2026-09-04 app-hosted pass returned 0; this now agrees with the latest tool-hosted pass but not its earlier 4096 result.",
+      "failures": 0,
+      "hostingMode": "app-hosted",
+      "osBuild": "24A5408d",
+      "osVersion": "27.0 beta 5",
+      "platform": "iOS Simulator",
+      "skipped": 19,
+      "tests": 39,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    },
+    "device-hosted-iphone15pro-ios27-beta5": {
+      "contextSize": 4096,
+      "destination": "wired physical device",
+      "device": "iPhone 15 Pro (iPhone16,1; D83AP)",
+      "exceptions": "Offline/static pass; a separate asset pass ran four tests with zero failures.",
+      "failures": 0,
+      "hostingMode": "device-hosted",
+      "osBuild": "24A5408d",
+      "osVersion": "27.0 beta 5",
+      "platform": "iOS",
+      "skipped": 4,
+      "tests": 11,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    },
+    "tool-hosted-ios27-beta5-simulator": {
+      "contextSize": 0,
+      "destination": "iPhone 17 Pro, OS=27.0",
+      "device": "Simulator",
+      "exceptions": "The 2026-09-05 tool-hosted pass returned 0, while the 2026-08-17 pass returned 4096 on the same recorded builds; treat this value as volatile. Build-keyed model skips are active.",
+      "failures": 0,
+      "hostingMode": "tool-hosted",
+      "osBuild": "24A5408d",
+      "osVersion": "27.0 beta 5",
+      "platform": "iOS Simulator",
+      "skipped": 19,
+      "tests": 39,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    },
+    "tool-hosted-macos27-beta5": {
+      "contextSize": 4096,
+      "destination": "local arm64 host",
+      "device": "Mac host",
+      "exceptions": "Reverified 2026-09-05; build-keyed model, attachment, and unreachable-generator skips are active.",
+      "failures": 0,
+      "hostingMode": "tool-hosted",
+      "osBuild": "26A5406e",
+      "osVersion": "27.0 beta 5",
+      "platform": "macOS",
+      "skipped": 23,
+      "tests": 46,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    }
+  },
+  "schemaVersion": 1,
+  "verification": {
+    "blocker": "SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.",
+    "errors": 0,
+    "lastFullRun": "2026-08-17",
+    "snippetFences": 1359,
+    "statusCounts": {
+      "ILLUSTRATIVE": 486,
+      "MIGRATION-PROVEN": 2,
+      "PRELUDE-NEEDED": 677,
+      "VERIFIED": 192,
+      "XFAIL-PROVEN": 2
+    },
+    "unclassified": 0
+  }
+}

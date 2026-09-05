@@ -289,9 +289,20 @@ forums.
 ### Measurement attribution
 
 Every number is attributed: **Apple-published**, **community-measured**, or **measured by us** —
-with hardware, OS build, Xcode version, build configuration and date. A community benchmark is
-never presented as an Apple figure. Where community numbers complicate Apple's claims, both are
-given.
+with hosting mode, hardware/device, OS and runtime build, Xcode build, destination, build
+configuration, exceptions, and date. A community benchmark is never presented as an Apple figure.
+Where community numbers complicate Apple's claims, both are given. Never carry a measured default
+between tool-hosted, app-hosted, and device-hosted processes merely because the runtime build
+matches; `contextSize` has already disproved that shortcut.
+
+### Defect state and resolution
+
+Repository state is mechanical evidence, not a resolution claim. Write “PR merged” or “issue
+closed” separately from the semantic disposition: `fixed`, `fixed-with-residual`,
+`merged-unreleased`, `closed-unfixed`, `closed-unmerged`, `superseded`, `consolidated`, or
+`unknown`. A closure without code or maintainer evidence is never described as fixed. Use
+`unknown` when the evidence does not establish what happened, and retain the workaround or hazard
+until a dated target-specific verification retires it.
 
 ### Known-bad claims
 

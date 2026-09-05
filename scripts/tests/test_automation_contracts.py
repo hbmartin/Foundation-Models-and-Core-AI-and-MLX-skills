@@ -95,6 +95,34 @@ class AutomationContractTests(unittest.TestCase):
             )
         )
 
+    def test_ready_pr_policy_rejects_wrong_roots_and_missing_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            contract = pathlib.Path(directory) / "weekly.toml"
+            contract.write_text(textwrap.dedent(
+                '''
+                version = 1
+                id = "weekly"
+                kind = "cron"
+                name = "Weekly"
+                rrule = "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0"
+                cwds = ["."]
+                prompt = """artifacts/freshness/weekly Run in a temporary worktree and open a draft pull request. Never merge. continue with the remaining independent checks."""
+                [contract]
+                schema_version = 2
+                mutation_policy = "isolated-ready-pr"
+                allowed_paths = ["notes/", ".github/"]
+                forbidden_paths = [".github/"]
+                artifact_patterns = ["artifacts/freshness/weekly/<UTC-run-id>/"]
+                required_prompt_fragments = []
+                '''
+            ).lstrip())
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        codes = {item["code"] for item in payload["diagnostics"]}
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid-ready-pr-roots", codes)
+        self.assertIn("missing-ready-pr-boundary", codes)
+
 
 if __name__ == "__main__":
     unittest.main()

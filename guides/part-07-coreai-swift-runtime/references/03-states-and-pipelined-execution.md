@@ -1972,6 +1972,7 @@ struct AsyncMutableValue {                     // a STRUCT
     init(descriptor: consuming InferenceValue.Descriptor)
     init(unsafeBuffer: consuming any MTLBuffer, byteOffset: Int = 0,
          scalarType: NDArray.ScalarType, shape: [Int], strides: [Int] = [],
+         // callout-id: async-mutable-value-no-watchos
          interleaveLayout: NDArray.InterleaveLayout? = nil)          // ⚠️ no watchOS
 
     var ndArray: NDArray? { get async throws }

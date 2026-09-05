@@ -17,10 +17,11 @@ canonical documentation in notes/snippet-verification/README.md):
     isolation:mainactor    compile with Swift 6 MainActor default isolation
     illustrative           never compiled (pseudocode, stubs, elided bodies)
     prelude:<name>         reserved; reported PRELUDE-NEEDED, not compiled
+    id:<slug>              stable identity override for duplicate fences
 
 TSV columns (tab-delimited, flatten()ed fields):
     file  line  anchor  info  status  wrap  v26  v27  vsim27  v27on26
-    vsim27on26  err_line  first_error
+    vsim27on26  err_line  first_error  snippet_id  content_hash
 
 Row status: VERIFIED XFAIL-PROVEN MIGRATION-PROVEN FAILED ILLUSTRATIVE STUB ELIDED
     COMMENT-ONLY
@@ -38,6 +39,7 @@ and recorded in the report header so every verdict reads "against <sdk build>".
 
 import argparse
 import concurrent.futures
+import csv
 import dataclasses
 import hashlib
 import os
@@ -47,6 +49,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdslug import slugify
+from stable_identity import content_hash, semantic_id
 
 WRAPPER_VERSION = 1
 
@@ -194,6 +197,7 @@ class Markers:
     isolation: str = "nonisolated"  # nonisolated | mainactor
     illustrative: bool = False
     prelude: "str | None" = None
+    identity: "str | None" = None
 
 
 @dataclasses.dataclass
@@ -335,6 +339,10 @@ def parse_markers(info):
             mk.prelude = token[len("prelude:"):]
             if not mk.prelude:
                 raise MarkerError("prelude requires a non-empty name")
+        elif token.startswith("id:"):
+            mk.identity = token[len("id:"):]
+            if not mk.identity:
+                raise MarkerError("id requires a non-empty slug")
         else:
             raise MarkerError(f"unknown marker {token!r}")
     for t in mk.compile_targets + mk.xfail_targets:
@@ -348,9 +356,44 @@ def parse_markers(info):
     if mk.prelude and (mk.compile_targets or mk.xfail_targets):
         raise MarkerError("prelude excludes compile and xfail: the fence is deferred, "
                           "not compiled against the named targets")
-    if mk.illustrative and len(seen) > 1:
+    if mk.illustrative and len(seen - {"id"}) > 1:
         raise MarkerError("illustrative excludes all other markers")
     return mk
+
+
+def semantic_fence_info(info):
+    return " ".join(token for token in info.split() if not token.startswith("id:"))
+
+
+def fence_identity(fence):
+    mk = parse_markers(fence.info)
+    semantic_info = semantic_fence_info(fence.info)
+    body = "\n".join(fence.body)
+    digest = content_hash(semantic_info, body)
+    try:
+        identity = semantic_id(
+            "snippet", fence.rel_path, fence.anchor, semantic_info, body,
+            explicit=mk.identity,
+        )
+    except ValueError as error:
+        raise MarkerError(str(error)) from error
+    return identity, digest
+
+
+def validate_fence_identities(fences):
+    seen = {}
+    for fence in fences:
+        try:
+            identity, _ = fence_identity(fence)
+        except MarkerError:
+            continue
+        key = (fence.rel_path, identity)
+        if key in seen:
+            raise SystemExit(
+                f"error: {fence.rel_path}:{fence.open_line}: duplicate snippet id "
+                f"{identity!r}; first seen at line {seen[key]}; add a unique id:<slug> marker"
+            )
+        seen[key] = fence.open_line
 
 
 def strip_swift_comments(lines):
@@ -866,6 +909,7 @@ def verify_fence(fence, toolchains, opts):
     col = {name: spec.column for name, spec in TARGETS.items()}
     try:
         mk = parse_markers(fence.info)
+        row["snippet_id"], row["content_hash"] = fence_identity(fence)
         validate_markers_against_body(mk, fence)
     except MarkerError as e:
         row["status"] = "MARKER-ERROR"
@@ -965,7 +1009,7 @@ def verify_fence(fence, toolchains, opts):
 
 TSV_COLUMNS = ["file", "line", "anchor", "info", "status", "wrap",
                "v26", "v27", "vsim27", "v27on26", "vsim27on26",
-               "err_line", "first_error"]
+               "err_line", "first_error", "snippet_id", "content_hash"]
 
 
 def write_tsv(rows, out):
@@ -977,6 +1021,53 @@ def write_tsv(rows, out):
         # rows that have no diagnostic. A dash already means “not applicable”
         # in the target columns, so use it consistently for every empty field.
         out.write("\t".join(value or "-" for value in fields) + "\n")
+
+
+def read_prior_results(path):
+    with open(path, encoding="utf-8", newline="") as source:
+        reader = csv.DictReader(source, delimiter="\t")
+        if reader.fieldnames is None or not {"snippet_id", "content_hash"}.issubset(reader.fieldnames):
+            raise SystemExit(
+                "error: --rekey-only requires v2 results with snippet_id and content_hash"
+            )
+        rows = list(reader)
+    by_id = {}
+    for number, row in enumerate(rows, 2):
+        key = (row.get("file", ""), row.get("snippet_id", ""))
+        if not key[1] or key[1] == "-":
+            continue
+        if key in by_id:
+            raise SystemExit(f"error: {path}:{number}: duplicate prior snippet id {key!r}")
+        by_id[key] = row
+    return by_id
+
+
+def rekey_rows(fences, prior_path):
+    prior = read_prior_results(prior_path)
+    rows = []
+    for fence in fences:
+        try:
+            identity, digest = fence_identity(fence)
+        except MarkerError as error:
+            row = {column: "" for column in TSV_COLUMNS}
+            row.update(file=fence.rel_path, line=str(fence.open_line), anchor=fence.anchor,
+                       info=fence.info, status="MARKER-ERROR", first_error=str(error))
+            rows.append(row)
+            continue
+        old = prior.get((fence.rel_path, identity))
+        if old and old.get("content_hash") == digest:
+            row = {column: old.get(column, "-") for column in TSV_COLUMNS}
+        else:
+            row = {column: "-" for column in TSV_COLUMNS}
+            row["status"] = "NEEDS-VERIFICATION"
+            row["first_error"] = (
+                "new or changed fence; a prior compiler verdict was not carried forward"
+            )
+        row.update(file=fence.rel_path, line=str(fence.open_line), anchor=fence.anchor,
+                   info=fence.info or "-", snippet_id=identity, content_hash=digest)
+        rows.append(row)
+    rows.sort(key=lambda row: (row["file"], int(row["line"])))
+    return rows
 
 
 def write_report(rows, toolchains, opts, out):
@@ -1226,6 +1317,8 @@ def main(argv=None):
     ap.add_argument("--timeout", type=int, default=60)
     ap.add_argument("--out", default=None,
                     help="directory for results.tsv + report.md (default: stdout TSV only)")
+    ap.add_argument("--rekey-only", metavar="PRIOR_RESULTS",
+                    help="carry v2 verdicts across line-only movement without compiling")
     ap.add_argument("--write-markers", action="store_true")
     ap.add_argument("--write-triage-markers", action="store_true",
                     help="also classify safe failed guesses as illustrative or prelude-needed")
@@ -1242,6 +1335,7 @@ def main(argv=None):
     fences, parse_errors = extract_fences(opts.guides)
     if not fences and not parse_errors:
         raise SystemExit(f"error: guides root contains no Swift fences: {opts.guides}")
+    validate_fence_identities(fences)
     if opts.changed is not None:
         if not opts.changed:
             raise SystemExit("error: --changed requires a non-empty ref")
@@ -1250,6 +1344,28 @@ def main(argv=None):
             print(f"# zero changed guide files versus {base}", file=sys.stderr)
         fences = [f for f in fences if f.rel_path in changed]
         parse_errors = [error for error in parse_errors if error[0] in changed]
+
+    if opts.rekey_only:
+        if opts.guess or opts.write_markers or opts.write_triage_markers or opts.sdks:
+            raise SystemExit("error: --rekey-only cannot be combined with compiler or marker modes")
+        if parse_errors:
+            raise SystemExit("error: --rekey-only refuses a corpus with unterminated fences")
+        rows = rekey_rows(fences, opts.rekey_only)
+        if opts.out:
+            os.makedirs(opts.out, exist_ok=True)
+            destination = os.path.join(opts.out, "results.tsv")
+            temporary = destination + f".tmp.{os.getpid()}"
+            with open(temporary, "w", encoding="utf-8") as output:
+                write_tsv(rows, output)
+            os.replace(temporary, destination)
+            print(f"# wrote {destination}; preserved report.md from the last compiler run",
+                  file=sys.stderr)
+        else:
+            write_tsv(rows, sys.stdout)
+        pending = sum(row["status"] in {"NEEDS-VERIFICATION", "MARKER-ERROR"} for row in rows)
+        print(f"# re-keyed {len(rows) - pending} fences; {pending} require verification",
+              file=sys.stderr)
+        return 1 if pending else 0
 
     # Which targets do we need? Marker-requested plus guess target.
     needed = set(opts.sdks or [])
@@ -1283,7 +1399,8 @@ def main(argv=None):
         rows.append({"file": rel, "line": str(line), "anchor": "", "info": "",
                      "status": "PARSE-ERROR", "wrap": "",
                      **{spec.column: "-" for spec in TARGETS.values()},
-                     "err_line": "", "first_error": msg, "flags": set()})
+                     "err_line": "", "first_error": msg, "snippet_id": "",
+                     "content_hash": "", "flags": set()})
 
     if opts.write_triage_markers:
         opts.write_markers = True

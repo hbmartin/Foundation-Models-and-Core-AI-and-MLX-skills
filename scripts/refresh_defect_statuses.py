@@ -73,6 +73,16 @@ VERDICT_ORDER = {
     "UNREACHABLE": 3,
     "UNCHANGED": 4,
 }
+RESOLUTION_DISPOSITIONS = (
+    "fixed",
+    "fixed-with-residual",
+    "merged-unreleased",
+    "closed-unfixed",
+    "closed-unmerged",
+    "superseded",
+    "consolidated",
+    "unknown",
+)
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -375,7 +385,10 @@ def lookup(repository: str, number: int) -> dict[str, Any]:
         return {
             "kind": "PR" if pull_request else "issue",
             "state": state,
-            "closedAt": (data.get("closed_at") or "")[:10] or None,
+            "url": data.get("html_url") or f"https://github.com/{repository}/issues/{number}",
+            "closedAt": data.get("closed_at") or None,
+            "mergedAt": pull_request.get("merged_at") or None,
+            "stateReason": reason or None,
             "reason": reason if reason not in (None, "", "completed") else None,
             "title": data.get("title") or "",
         }
@@ -392,7 +405,10 @@ def lookup(repository: str, number: int) -> dict[str, Any]:
         return {
             "kind": "issue",
             "state": data["state"],
-            "closedAt": (data.get("closedAt") or "")[:10] or None,
+            "url": f"https://github.com/{repository}/issues/{number}",
+            "closedAt": data.get("closedAt") or None,
+            "mergedAt": None,
+            "stateReason": data.get("stateReason") or None,
             "reason": data.get("stateReason") or None,
             "title": data.get("title") or "",
         }
@@ -409,11 +425,24 @@ def lookup(repository: str, number: int) -> dict[str, Any]:
         return {
             "kind": "PR",
             "state": "MERGED" if data.get("mergedAt") else data["state"],
-            "closedAt": (data.get("closedAt") or "")[:10] or None,
+            "url": f"https://github.com/{repository}/pull/{number}",
+            "closedAt": data.get("closedAt") or None,
+            "mergedAt": data.get("mergedAt") or None,
+            "stateReason": None,
             "reason": None,
             "title": data.get("title") or "",
         }
     return {"error": error or "unreachable"}
+
+
+def transition_kind(live: dict[str, Any] | None, claims: Sequence[str]) -> str:
+    if live is None or "error" in live:
+        return "UNKNOWN"
+    if not claims:
+        return f"UNCLAIMED_TO_{live['state']}"
+    if len(claims) != 1:
+        return "CONFLICTING_CLAIMS"
+    return f"{claims[0]}_TO_{live['state']}" if claims[0] != live["state"] else "UNCHANGED"
 
 
 def verdict(
@@ -495,6 +524,14 @@ def group_references(
             "sightingIds": [sighting["id"] for sighting in group],
             "confidence": min(sighting["confidence"] for sighting in group),
             "diagnostics": diagnostics,
+            "liveState": live.get("state") if live and "error" not in live else None,
+            "liveUrl": live.get("url") if live and "error" not in live else None,
+            "closureReason": live.get("stateReason") if live and "error" not in live else None,
+            "closedAt": live.get("closedAt") if live and "error" not in live else None,
+            "mergeTimestamp": live.get("mergedAt") if live and "error" not in live else None,
+            "transitionKind": transition_kind(live, claims),
+            "resolutionDisposition": "unknown",
+            "automaticFixEligible": False,
         }
         if perform_lookup:
             reference["live"] = live
@@ -531,7 +568,8 @@ def structured_payload(
         for verdict_name in VERDICT_ORDER
     }
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
+        "resolutionDispositions": list(RESOLUTION_DISPOSITIONS),
         "generatedAt": timestamp,
         "mode": "extraction" if extraction_only else "live-report",
         "repositoryFilter": repository_filter,

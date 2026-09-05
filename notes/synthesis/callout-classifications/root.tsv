@@ -1,1 +1,2 @@
-README.md	274	silent-failure-callouts	SILENT-FAILURE	caution-note	The stack's defining property: most defects do not throw — expect silence, plausible wrong numbers, and quiet degradation.
+# schema-version: 2
+README.md	callout-dff15e37f36fe5d6	4f43f7cbf79c311538aa8d3cfb7424173501a07dc5cd2129c529730993d642d4	silent-failure-callouts	SILENT-FAILURE	caution-note	The stack's defining property: most defects do not throw — expect silence, plausible wrong numbers, and quiet degradation.

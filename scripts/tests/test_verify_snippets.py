@@ -8,6 +8,7 @@ the Linux CI runner (same pattern as test_index_tooling.py).
 
 import importlib.util
 import os
+import pathlib
 import subprocess
 import sys
 import tempfile
@@ -83,6 +84,37 @@ class ExtractionTests(unittest.TestCase):
             write_guide(td, "g.md", "```swift\nlet a = 1\n```\n")
             r = run_script(["--guides", td, "--stub-compiler", "pass"])
             self.assertEqual(len(tsv_rows(r.stdout)), 1)
+
+    def test_snippet_id_survives_line_movement_and_hash_rejects_edits(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = pathlib.Path(write_guide(td, "g.md", "# T\n\n```swift compile:27\nlet a = 1\n```\n"))
+            first = run_script(["--guides", td, "--stub-compiler", "pass"])
+            first_row = tsv_rows(first.stdout)[0]
+            path.write_text("# T\n\nprose\n\n```swift compile:27\nlet a = 1\n```\n", encoding="utf-8")
+            moved = run_script(["--guides", td, "--stub-compiler", "pass"])
+            moved_row = tsv_rows(moved.stdout)[0]
+            self.assertEqual(first_row["snippet_id"], moved_row["snippet_id"])
+            self.assertEqual(first_row["content_hash"], moved_row["content_hash"])
+            path.write_text("# T\n\nprose\n\n```swift compile:27\nlet a = 2\n```\n", encoding="utf-8")
+            changed = run_script(["--guides", td, "--stub-compiler", "pass"])
+            changed_row = tsv_rows(changed.stdout)[0]
+            self.assertNotEqual(moved_row["snippet_id"], changed_row["snippet_id"])
+
+    def test_duplicate_snippet_requires_id_marker(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_guide(td, "g.md", (
+                "# T\n\n```swift illustrative\nlet a = 1\n```\n\n"
+                "```swift illustrative\nlet a = 1\n```\n"
+            ))
+            duplicate = run_script(["--guides", td, "--stub-compiler", "pass"])
+            self.assertNotEqual(duplicate.returncode, 0)
+            self.assertIn("duplicate snippet id", duplicate.stderr)
+            write_guide(td, "g.md", (
+                "# T\n\n```swift illustrative\nlet a = 1\n```\n\n"
+                "```swift illustrative id:second\nlet a = 1\n```\n"
+            ))
+            explicit = run_script(["--guides", td, "--stub-compiler", "pass"])
+            self.assertEqual(explicit.returncode, 0, explicit.stderr)
 
     def test_heading_inside_code_fence_not_an_anchor(self):
         with tempfile.TemporaryDirectory() as td:
@@ -589,6 +621,21 @@ class ReportTests(unittest.TestCase):
                 with open(os.path.join(out1, filename), "rb") as first, \
                         open(os.path.join(out8, filename), "rb") as second:
                     self.assertEqual(first.read(), second.read())
+
+    def test_rekey_only_carries_line_moves_but_rejects_changed_code(self):
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as out:
+            path = pathlib.Path(write_guide(td, "g.md", "# T\n\n```swift compile:27\nlet a = 1\n```\n"))
+            initial = run_script(["--guides", td, "--stub-compiler", "pass", "--out", out])
+            self.assertEqual(initial.returncode, 0, initial.stderr)
+            prior = os.path.join(out, "results.tsv")
+            path.write_text("# T\n\nprose\n\n```swift compile:27\nlet a = 1\n```\n", encoding="utf-8")
+            moved = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(moved.returncode, 0, moved.stderr)
+            self.assertEqual(tsv_rows(moved.stdout)[0]["status"], "VERIFIED")
+            path.write_text("# T\n\nprose\n\n```swift compile:27\nlet a = 2\n```\n", encoding="utf-8")
+            changed = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(changed.returncode, 1)
+            self.assertEqual(tsv_rows(changed.stdout)[0]["status"], "NEEDS-VERIFICATION")
 
 
 if __name__ == "__main__":

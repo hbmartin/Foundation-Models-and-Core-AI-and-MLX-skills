@@ -52,6 +52,8 @@ Start with the [freshness runbook](notes/FRESHNESS-RUNBOOK.md). It separates the
 from weekly checks and the heavier workflow triggered by a new Xcode beta, SDK, simulator runtime,
 or OS release. For a toolchain change, follow the
 [next-beta checklist](notes/NEXT-BETA-CHECKLIST.md) in order.
+Machine-readable current state is committed in [`notes/current-state.json`](notes/current-state.json);
+`scripts/current-state.py` collects observed state and verifies or regenerates its marked summaries.
 
 ### Evidence conventions
 
@@ -76,6 +78,8 @@ The repository's pure-Python checks use the standard library and run on Linux an
 
 ```bash
 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -q
+./scripts/current-state.py render --check
+./scripts/validate-automation-contracts.py
 ```
 
 This exercises the index tooling, committed-index consistency, snippet-verifier logic, and MkDocs
@@ -92,6 +96,8 @@ New silent-failure callouts require classification before regeneration; see the
 [symptom taxonomy](notes/synthesis/SYMPTOM-TAXONOMY.md). Review changes to
 [`guides/API-INDEX.md`](guides/API-INDEX.md) and
 [`guides/SILENT-FAILURES.md`](guides/SILENT-FAILURES.md) rather than editing either index by hand.
+Callout and snippet records use semantic IDs plus content hashes, so line movement does not trigger
+an ordinal re-key and edited content still fails closed.
 
 Then refresh the installable skills, which derive from the same guides:
 
@@ -157,6 +163,9 @@ are also excluded from Git; recreate the exact pinned snapshots with
 `./scripts/clone-research-repos.sh`. Treat both commands as evidence refreshes, then update guide
 claims deliberately under the conventions above. With `--changed-only`, report rows are filtered
 but summary verdict counts still cover every reference, so GitHub failures remain visible.
+The installed daily automation remains paused. The Monday weekly automation uses
+`scripts/freshness-cycle.py` to create an isolated worktree, evaluate evidence-bounded actions, and
+open at most one draft-to-ready PR; it never merges automatically.
 
 ## Repository map
 

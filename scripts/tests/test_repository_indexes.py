@@ -89,7 +89,7 @@ class RepositoryIndexTests(unittest.TestCase):
             extracted_keys = set()
             for row in extracted_callouts.stdout.splitlines():
                 fields = row.split('\t')
-                self.assertEqual(len(fields), 6)
+                self.assertEqual(len(fields), 8)
                 extracted_keys.add((fields[0], fields[2]))
             for line in (output / 'SILENT-FAILURES.md').read_text(encoding='utf-8').splitlines():
                 if not line.startswith('- ['):

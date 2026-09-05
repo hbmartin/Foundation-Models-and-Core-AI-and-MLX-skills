@@ -286,6 +286,13 @@ with that reasoning attached.
 
 ## 5. Method notes for the next editor
 
+> **Superseded 2026-09-05.** The paragraph, warning, command sequence, and hardcoded-count reminder
+> below preserve the failure mode that motivated the stable-identity migration; do not follow them
+> as current instructions. Callouts are now keyed by `(file, callout_id)` with a content hash,
+> snippets carry the equivalent stable fields, and corpus counts render from
+> `notes/current-state.json`. Use the root README and `notes/FRESHNESS-RUNBOOK.md` for the live
+> sequence. Edited semantic content still requires review or real compiler verification.
+
 **Editing a guide shifts every callout below the edit**, and `notes/synthesis/callout-classifications/*.tsv`
 are keyed on `(file, line, anchor, kind)`. `scripts/build-indexes.sh` refuses to build until they are
 re-keyed. For the manual re-keying step, match on `(file, anchor, kind)` + ordinal within the group.

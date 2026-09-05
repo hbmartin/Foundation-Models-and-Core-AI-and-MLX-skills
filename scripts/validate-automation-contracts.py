@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import sys
@@ -53,6 +54,11 @@ def parse_arguments() -> argparse.Namespace:
         type=pathlib.Path,
         help="also compare each contract with <root>/<id>/automation.toml",
     )
+    parser.add_argument(
+        "--installed",
+        action="store_true",
+        help="compare with CODEX_HOME/automations (or ~/.codex/automations)",
+    )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     return parser.parse_args()
 
@@ -88,8 +94,10 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
         diagnostics.append(
             Diagnostic(label, "filename-id-mismatch", f"filename must be {identifier}.toml")
         )
-    if data["version"] != 1 or policy.get("schema_version") != 1:
-        diagnostics.append(Diagnostic(label, "unsupported-version", "both versions must equal 1"))
+    schema_version = policy.get("schema_version")
+    if data["version"] != 1 or schema_version not in {1, 2}:
+        diagnostics.append(Diagnostic(label, "unsupported-version",
+                                      "automation version must be 1 and contract schema must be 1 or 2"))
     if data["kind"] != "cron":
         diagnostics.append(Diagnostic(label, "invalid-kind", "kind must be cron"))
     if not re.fullmatch(r"RRULE:FREQ=(?:DAILY|WEEKLY)(?:;[A-Z]+=[A-Z0-9,-]+)+", data["rrule"]):
@@ -103,12 +111,12 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
     allowed_paths = policy.get("allowed_paths")
     artifacts = policy.get("artifact_patterns")
     required_fragments = policy.get("required_prompt_fragments")
-    if mutation_policy not in {"tracked-read-only", "bounded"}:
+    if mutation_policy not in {"tracked-read-only", "bounded", "isolated-ready-pr"}:
         diagnostics.append(
             Diagnostic(
                 label,
                 "invalid-mutation-policy",
-                "mutation_policy must be tracked-read-only or bounded",
+                "mutation_policy must be tracked-read-only, bounded, or isolated-ready-pr",
             )
         )
     if not isinstance(allowed_paths, list) or not all(isinstance(item, str) for item in allowed_paths):
@@ -126,6 +134,31 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
         diagnostics.append(
             Diagnostic(label, "unbounded-mutation", "bounded contracts must name allowed paths")
         )
+    if mutation_policy == "isolated-ready-pr":
+        required_roots = {"guides/", "notes/", "probes/", "scripts/", "skills/", "automations/"}
+        if set(allowed_paths) != required_roots:
+            diagnostics.append(
+                Diagnostic(label, "invalid-ready-pr-roots",
+                           f"isolated-ready-pr allowed_paths must equal {sorted(required_roots)!r}")
+            )
+        forbidden_paths = policy.get("forbidden_paths")
+        if not isinstance(forbidden_paths, list) or not all(
+            isinstance(item, str) for item in forbidden_paths
+        ):
+            diagnostics.append(
+                Diagnostic(label, "invalid-forbidden-paths",
+                           "isolated-ready-pr contracts must name forbidden_paths")
+            )
+        required_boundaries = (
+            "temporary worktree", "draft pull request", "mark it ready", "Never merge",
+            "never rebase", "never force-push", "personal skill",
+        )
+        for fragment in required_boundaries:
+            if fragment not in prompt:
+                diagnostics.append(
+                    Diagnostic(label, "missing-ready-pr-boundary",
+                               f"prompt must contain {fragment!r}")
+                )
     for allowed_path in allowed_paths:
         if allowed_path.startswith("/") or ".." in pathlib.PurePosixPath(allowed_path).parts:
             diagnostics.append(
@@ -172,7 +205,9 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
             diagnostics.append(
                 Diagnostic(label, "noncanonical-command", f"replace stale command: {stale_command}")
             )
-    if "Do not" not in prompt or "commit" not in prompt or "push" not in prompt:
+    if mutation_policy != "isolated-ready-pr" and (
+        "Do not" not in prompt or "commit" not in prompt or "push" not in prompt
+    ):
         diagnostics.append(
             Diagnostic(label, "missing-mutation-boundary", "prompt must explicitly prohibit commits and pushes")
         )
@@ -236,10 +271,20 @@ def main() -> int:
     for identifier in sorted({item for item in identifiers if identifiers.count(item) > 1}):
         diagnostics.append(Diagnostic(str(identifier), "duplicate-id", "automation id is not unique"))
 
-    if arguments.installed_root:
+    if arguments.installed and arguments.installed_root:
+        diagnostics.append(
+            Diagnostic("arguments", "conflicting-installed-options",
+                       "use --installed or --installed-root, not both")
+        )
+    installed_root = arguments.installed_root
+    if arguments.installed and installed_root is None:
+        codex_home = os.environ.get("CODEX_HOME")
+        installed_root = pathlib.Path(codex_home).expanduser() if codex_home else pathlib.Path.home() / ".codex"
+        installed_root = installed_root / "automations"
+    if installed_root:
         for path, data in loaded:
             if not validate_contract(path, data):
-                diagnostics.extend(validate_installed(path, data, arguments.installed_root))
+                diagnostics.extend(validate_installed(path, data, installed_root))
 
     payload = {
         "schemaVersion": 1,
@@ -253,7 +298,7 @@ def main() -> int:
         for item in diagnostics:
             print(f"{item.contract}: {item.code}: {item.message}", file=sys.stderr)
     else:
-        suffix = " and installed copies" if arguments.installed_root else ""
+        suffix = " and installed copies" if installed_root else ""
         print(f"Validated {len(paths)} automation contracts{suffix}.")
     return 0 if not diagnostics else 1
 

@@ -1,35 +1,42 @@
 version = 1
 id = "weekly-corpus-freshness-batch"
 kind = "cron"
-name = "Weekly corpus freshness batch"
+name = "Weekly corpus improvement cycle"
 rrule = "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0"
 cwds = ["."]
 prompt = """
 Work in this repository. Read notes/FRESHNESS-RUNBOOK.md first and follow Section 2 as the source of truth.
 
-Create one collision-free UTC run id and set report_dir to artifacts/freshness/weekly-defects/<UTC-run-id>. Run ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json" and read that JSON report. Summarize STATE-CHANGED and UNREACHABLE items, identify files with several STALE-DATE-ONLY hedges, and list a bounded set of AMBIGUOUS citations worth fixing.
+Run ./scripts/validate-automation-contracts.py --installed first and stop on installed contract drift. Create one collision-free UTC run id, then run ./scripts/freshness-cycle.py prepare weekly --run-id "$run_id". Perform every remaining action inside the returned temporary worktree. Durable evidence belongs under artifacts/freshness/weekly-improvements/<UTC-run-id>/, and authoritative state belongs in artifacts/freshness/state/weekly-improvement.json; narrative automation memory is advisory and is never the baseline.
 
-Run the probes through the durable clean-build wrapper: AUTOMATION_ID=weekly-probes PROBE_RUN_ID="${run_id}-host" ./scripts/run-probes.sh host, then AUTOMATION_ID=weekly-probes PROBE_RUN_ID="${run_id}-simulator" ./scripts/run-probes.sh simulator. The simulator command intentionally uses the pinned iOS 27.0, tool-hosted Probes-Package lane; do not substitute the app-hosted device project or OS=latest when comparing the established baseline. The wrapper stores both runs under artifacts/freshness/weekly-probes. Compare PROBE-RESULT values with probes/README.md and report behavioral drift; do not compare hard-coded test or skip counts.
+Run ./scripts/refresh-defect-statuses.sh --format json --output "$run_root/defects.json" and ./scripts/current-state.py collect --output "$run_root/observed-state.json". Run the probes through the durable clean-build wrapper: AUTOMATION_ID=weekly-improvements PROBE_RUN_ID="${run_id}-host" PROBE_ARTIFACT_ROOT="$run_root/probe-artifacts" ./scripts/run-probes.sh host, then AUTOMATION_ID=weekly-improvements PROBE_RUN_ID="${run_id}-simulator" PROBE_ARTIFACT_ROOT="$run_root/probe-artifacts" ./scripts/run-probes.sh simulator. Compare PROBE-RESULT values only with the matching complete topology in notes/current-state.json and probes/README.md; never compare hard-coded test or skip counts or carry a measured default between hosting modes.
 
-Run ./scripts/clone-research-repos.sh to restore the pinned research mirrors under repos/. This ignored mirror refresh is the only intended filesystem mutation. Do not advance snapshots to upstream HEAD. Read notes/NEXT-BETA-CHECKLIST.md Sections 4–8 and inspect the linked watched-contradiction documentation pages for changes.
+Run ./scripts/clone-research-repos.sh to restore pinned mirrors without advancing them to upstream HEAD. Inspect the official-document watch list in notes/NEXT-BETA-CHECKLIST.md. Review Codex tasks associated with this repository and updated since the last successful run; do not review or mutate other projects. Write thread-review.json with proposed actions and evidence, and only corroborate a thread-derived action when a deterministic validator fails or the same pattern appears in at least two repository tasks. Future personal skill improvements may be proposed in the report, but the automation must never edit a personal skill.
 
-Produce a concise report with pass or fail per step, exact evidence for drift, and recommended human follow-up. Link the durable defect report and probe artifact directories. Do not edit tracked files, guides, or notes, create branches, commit, or push; do not mutate anything outside repos/ and artifacts/. If a command, GitHub query, simulator, or web check is unavailable, report the exact blocker and continue with the remaining independent checks.
+Before evaluation, make each candidate action explicit: identify its docs/code/tooling kind, set every prohibited decision flag defined by the runbook, and name canonicalSourcePaths plus generatedFromCanonicalSource=true whenever generated output is involved. Run ./scripts/freshness-cycle.py evaluate "$run_root". Automatically implement only actions marked automaticFixEligible. Changes are limited to guides/, notes/, probes/, scripts/, skills/, and automations/; generated outputs must come from canonical source edits. Every code or tooling fix needs a regression test. Do not change dependencies, .github workflows, architecture, security policy, beta baselines, interface captures, another repository, or personal skills.
+
+If eligible changes exist, commit and push the unique automation branch and open one draft pull request. Never merge it. Run all local and required remote checks; if origin/main moves, merge origin/main, never rebase and never force-push, then rerun the checks. Only mark it ready when all checks pass and GitHub reports it mergeable. Otherwise leave the draft pull request with exact blockers. Write pr.json with checksPassed and mergeable booleans, then run ./scripts/freshness-cycle.py finalize "$run_root" with the appropriate no-change, blocked, draft, or ready outcome and PR URL. If a command, GitHub query, simulator, or web check cannot run, record the exact blocker and continue with the remaining independent checks.
 """
 
 [contract]
-schema_version = 1
-mutation_policy = "bounded"
-allowed_paths = ["artifacts/", "repos/"]
+schema_version = 2
+mutation_policy = "isolated-ready-pr"
+allowed_paths = ["guides/", "notes/", "probes/", "scripts/", "skills/", "automations/"]
+forbidden_paths = [".github/", "repos/", "captures/", "personal-skills/", "dependencies/"]
 artifact_patterns = [
-  "artifacts/freshness/weekly-defects/<UTC-run-id>/defects.json",
-  "artifacts/freshness/weekly-probes/<UTC-run-id>-host/",
-  "artifacts/freshness/weekly-probes/<UTC-run-id>-simulator/",
+  "artifacts/freshness/weekly-improvements/<UTC-run-id>/",
+  "artifacts/freshness/state/weekly-improvement.json",
 ]
 required_prompt_fragments = [
+  "./scripts/validate-automation-contracts.py --installed",
+  "./scripts/freshness-cycle.py prepare weekly",
   "./scripts/refresh-defect-statuses.sh",
   "--format json",
   "--output",
+  "./scripts/current-state.py collect",
   "./scripts/run-probes.sh host",
   "./scripts/run-probes.sh simulator",
   "./scripts/clone-research-repos.sh",
+  "./scripts/freshness-cycle.py evaluate",
+  "./scripts/freshness-cycle.py finalize",
 ]
