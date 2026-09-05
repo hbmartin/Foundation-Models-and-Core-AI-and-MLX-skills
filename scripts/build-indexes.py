@@ -82,37 +82,73 @@ def tsv_rows(f):
         yield row_number, line.split('\t')
 
 def load_extracted_callouts():
-    expected = {}
+    expected_by_legacy = {}
+    expected_by_id = {}
     with open(callouts_tsv, encoding='utf-8') as f:
         for row_number, parts in tsv_rows(f):
-            if len(parts) != 6:
-                sys.exit(f"{callouts_tsv}:{row_number}: expected 6 TSV columns, got {len(parts)}")
-            file, lineno_text, anchor, kind, _title, _excerpt = parts
+            if len(parts) not in (6, 8):
+                sys.exit(
+                    f"{callouts_tsv}:{row_number}: expected 6 or 8 TSV columns, "
+                    f"got {len(parts)}"
+                )
+            file, lineno_text, anchor, kind, _title, _excerpt = parts[:6]
+            callout_id = parts[6] if len(parts) == 8 else ''
+            digest = parts[7] if len(parts) == 8 else ''
             lineno = parse_line_number(lineno_text, callouts_tsv, row_number)
             validate_guide_path(file, callouts_tsv, row_number)
             if kind not in CALLOUT_KINDS:
                 sys.exit(f"{callouts_tsv}:{row_number}: unknown callout kind: {kind!r}")
             key = (file, lineno, anchor, kind)
-            if key in expected:
+            if key in expected_by_legacy:
                 sys.exit(f"{callouts_tsv}:{row_number}: duplicate extracted callout key: {key!r}")
-            expected[key] = row_number
-    return expected
+            record = dict(file=file, line=lineno, anchor=anchor, kind=kind,
+                          callout_id=callout_id, content_hash=digest)
+            expected_by_legacy[key] = record
+            if callout_id:
+                id_key = (file, callout_id)
+                if id_key in expected_by_id:
+                    sys.exit(f"{callouts_tsv}:{row_number}: duplicate extracted callout id: {id_key!r}")
+                expected_by_id[id_key] = record
+    return expected_by_legacy, expected_by_id
 
 def load_rows():
     if not os.path.isdir(classified_dir):
         sys.exit(f"classified directory does not exist: {classified_dir}")
     rows = []
     seen = {}
+    expected_by_legacy, expected_by_id = load_extracted_callouts()
+    matched = set()
     for fn in sorted(os.listdir(classified_dir)):
         if not fn.endswith('.tsv'):
             continue
         source = os.path.join(classified_dir, fn)
+        with open(source, encoding='utf-8') as input_file:
+            raw = input_file.read()
+        schema_v2 = bool(re.search(r'^# schema-version:\s*2\s*$', raw, re.M))
         with open(source, encoding='utf-8') as f:
             for row_number, parts in tsv_rows(f):
-                if len(parts) != 6:
-                    sys.exit(f"{source}:{row_number}: expected 6 TSV columns, got {len(parts)}")
-                file, lineno_text, anchor, kind, symptom, blurb = parts
-                lineno = parse_line_number(lineno_text, source, row_number)
+                expected_columns = 7 if schema_v2 else 6
+                if len(parts) != expected_columns:
+                    sys.exit(f"{source}:{row_number}: expected {expected_columns} TSV columns, got {len(parts)}")
+                if schema_v2:
+                    file, callout_id, digest, anchor, kind, symptom, blurb = parts
+                    extracted = expected_by_id.get((file, callout_id))
+                    if extracted is None:
+                        sys.exit(f"{source}:{row_number}: stale callout id: {(file, callout_id)!r}")
+                    lineno = extracted['line']
+                    if digest != extracted['content_hash']:
+                        sys.exit(f"{source}:{row_number}: content hash changed for {callout_id!r}; re-review the classification")
+                    if anchor != extracted['anchor'] or kind != extracted['kind']:
+                        sys.exit(f"{source}:{row_number}: anchor or kind changed for {callout_id!r}; re-review the classification")
+                    canonical_key = (file, callout_id)
+                else:
+                    file, lineno_text, anchor, kind, symptom, blurb = parts
+                    lineno = parse_line_number(lineno_text, source, row_number)
+                    extracted = expected_by_legacy.get((file, lineno, anchor, kind))
+                    canonical_key = (
+                        (file, extracted['callout_id']) if extracted and extracted['callout_id']
+                        else (file, lineno, anchor, kind)
+                    )
                 validate_guide_path(file, source, row_number)
                 symptom = symptom.strip()
                 blurb = blurb.strip()
@@ -122,20 +158,22 @@ def load_rows():
                     sys.exit(f"{source}:{row_number}: unknown symptom id: {symptom!r}")
                 if not blurb:
                     sys.exit(f"{source}:{row_number}: blurb must not be empty")
-                key = (file, lineno, anchor, kind)
+                key = canonical_key
                 if key in seen:
                     old_source, old_row = seen[key]
                     sys.exit(f"{source}:{row_number}: duplicate classification key {key!r}; "
                              f"first seen at {old_source}:{old_row}")
                 seen[key] = (source, row_number)
+                matched.add(canonical_key)
                 rows.append(dict(file=file, line=lineno, anchor=anchor,
-                                 kind=kind, symptom=symptom, blurb=blurb))
+                                 kind=kind, symptom=symptom, blurb=blurb,
+                                 callout_id=(extracted or {}).get('callout_id', ''),
+                                 content_hash=(extracted or {}).get('content_hash', '')))
     if not rows:
         sys.exit(f"no classified TSV rows found in {classified_dir}")
-    expected = load_extracted_callouts()
-    actual = {(r['file'], r['line'], r['anchor'], r['kind']) for r in rows}
-    missing = sorted(set(expected) - actual)
-    stale = sorted(actual - set(expected))
+    expected = set(expected_by_id) if expected_by_id else set(expected_by_legacy)
+    missing = sorted(expected - matched)
+    stale = sorted(matched - expected)
     if missing or stale:
         def sample(values):
             return ', '.join(repr(v) for v in values[:8]) or 'none'

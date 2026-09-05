@@ -1,9 +1,12 @@
 # Next-beta checklist — run on every new Xcode 27 beta / Apple doc refresh
 
 Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
-Current baseline for "changed?" everywhere below: Xcode 27.0 beta 5 `27A5237l`, macOS 27 beta 5
-build `26A5406e`, iOS 27 SDK build `24A5408c`, and iOS 27 simulator runtime `24A5408d`; dumps are committed in
-`notes/sdk-interfaces/`. Companion docs:
+
+<!-- current-state:next-beta:start -->
+Current installed baseline: Xcode 27.0 `27A5237l`, macOS 27.0 `26A5406e`, macOS SDK `26A5406c`, iOS SDK `24A5408c`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27 beta 6 `27A5252f`, iOS 27.0 beta 8 `24A5430a`, and macOS 27.0 beta 8 `26A5425a`. Installed Xcode build 27A5237l trails observed build 27A5252f. Installed macOS build 26A5406e trails observed build 26A5425a. Installed iOS Simulator build 24A5408d trails observed build 24A5430a.
+<!-- current-state:next-beta:end -->
+
+SDK dumps are committed in `notes/sdk-interfaces/`. Companion docs:
 `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` (items that need a *running* OS 27, not just
 a toolchain — this checklist covers what a toolchain drop CAN answer).
 

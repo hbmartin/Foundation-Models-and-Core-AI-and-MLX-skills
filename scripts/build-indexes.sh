@@ -6,7 +6,7 @@
 # The default classified directory is committed at
 # notes/synthesis/callout-classifications/. An override holds one part-NN.tsv
 # per part with rows
-#   file<TAB>line<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
+#   file<TAB>callout-id<TAB>content-hash<TAB>anchor<TAB>kind<TAB>symptom-id<TAB>blurb
 # (symptom ids per notes/synthesis/SYMPTOM-TAXONOMY.md). Classification is the
 # one step that needs judgment: re-run scripts/extract-callouts.py, classify any
 # NEW rows, then invoke this. The symbol side is fully automatic.

@@ -6,7 +6,7 @@ harness, and runs `swiftc -typecheck` per requested SDK. This directory holds th
 committed latest results:
 
 - `results.tsv` — one row per fence: `file line anchor info status wrap v26 v27
-  vsim27 v27on26 vsim27on26 err_line first_error` (strict tabs,
+  vsim27 v27on26 vsim27on26 err_line first_error snippet_id content_hash` (strict tabs,
   whitespace-flattened fields).
 - `report.md` — the human report: toolchain identities (every verdict is "against
   `<sdk build>`", never "against iOS 27" in the abstract), per-guide rollup, failures
@@ -27,7 +27,7 @@ Space-separated tokens after the language word in the fence info string — invi
 rendered markdown. Unknown keys are a hard MARKER-ERROR.
 
 ```
-```swift [compile:<t>[,<t>…]] [xfail:<t>[,<t>…]] [imports:M1,M2] [defines:C1,C2] [wrap:none|body|mixed] [lang:5] [isolation:mainactor] [illustrative] [prelude:<name>]
+```swift [compile:<t>[,<t>…]] [xfail:<t>[,<t>…]] [imports:M1,M2] [defines:C1,C2] [wrap:none|body|mixed] [lang:5] [isolation:mainactor] [illustrative] [prelude:<name>] [id:<slug>]
 ```
 
 | marker | meaning |
@@ -43,6 +43,7 @@ rendered markdown. Unknown keys are a hard MARKER-ERROR.
 | `isolation:mainactor` | pass `-default-isolation MainActor`, matching Swift 6 app targets that opt into MainActor-by-default. Guess mode retries isolation diagnostics this way and records the marker only when it makes the fence compile. |
 | `illustrative` | never compiled — pseudocode, `.swiftinterface`-style stubs, elided bodies. Excludes all other markers. |
 | `prelude:<name>` | reserved (inert in v1): parser accepts it and reports PRELUDE-NEEDED without compiling — the parking place for fences that reference guide-local types, until per-part prelude files exist. |
+| `id:<slug>` | stable identity override for otherwise identical fences in one file and section. Ordinary fences derive an ID from normalized file, anchor, semantic info string, and body. |
 
 Constraint: a 26-generation target on a fence importing `CoreAI` or `Evaluations` is a
 hard MARKER-ERROR — those modules are structurally absent from the 26-generation SDKs,
@@ -83,6 +84,12 @@ The verifier fails closed before changed-file filtering when the guide root is m
 or the full corpus contains no Swift fences. Per-row results include `VERIFIED`,
 `XFAIL-PROVEN`, `MIGRATION-PROVEN`, `ILLUSTRATIVE`, `PRELUDE-NEEDED`, and the explicit
 failure/error states documented in the report; unselected target columns use `-`.
+
+`--rekey-only <prior-results.tsv>` updates lines and anchors without invoking a compiler. It carries
+a verdict only when both semantic ID and content hash match. New or edited fences become
+`NEEDS-VERIFICATION` and make the command fail; changed code is never vouched for by ordinal
+alignment. Use `python3 scripts/migrate-stable-identities.py snippets --write` only for the initial
+v1-to-v2 conversion.
 
 ## Rhythm
 

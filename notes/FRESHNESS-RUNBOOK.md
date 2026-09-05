@@ -5,29 +5,36 @@
 watches — most of the corpus needs *no* daily attention. The daily sweep is deliberately small
 (~5–10 minutes when nothing happened); the heavy rituals fire on events, not days.
 
-Everything here uses tools that already exist in the repo. Nothing below edits a guide
-automatically — scripts report, humans (or a supervised agent session) fold results in under the
-house evidence conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
+Everything here uses tools that already exist in the repo. The daily and event-detection lanes are
+report-only. The weekly lane may prepare a reviewable repository PR, but only for actions that pass
+the evidence and mutation boundaries in §2; it never merges. All edits follow the house evidence
+conventions (✅/🟡/🔴, dated claims, "not present in the … beta" phrasing).
 
 Every durable run writes beneath the ignored
 `artifacts/freshness/<automation-id>/<UTC-run-id>/` tree. Set `AUTOMATION_ID` to a stable job name
 when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and probe attachments
 there; `/tmp` is only for disposable intermediates that will never be linked from a task.
 
-> **Current trigger, checked 2026-08-17 (gate redesigned 2026-08-23):** the host is on macOS 27
-> beta 5 build `26A5406e`, with Xcode 27 beta 5 (`27A5237l`) and iOS 27 Simulator runtime
-> `24A5408d`. Both builds are on the probe suite's known-broken list (model calls can block
-> non-cancellably), so the counts 46/23/0 (host) and 39/19/0 (Simulator) are what the suite
-> reports **on these builds with the build-keyed skip gate active** — not a universal healthy
-> baseline. On any other build (a macOS 26.x host, a future beta 6) the gated model probes
-> execute by default with no env var and the expected skip counts drop accordingly;
-> `PROBE_ENABLE_HOST_MODEL=1` forces the probes even on the broken builds
-> (`probes/README.md`). Next expected event: Xcode 27 beta 6 or a runtime update that makes
-> those calls cancellable again.
+<!-- current-state:runbook:start -->
+> **Current trigger, generated 2026-09-05:** Installed Xcode build 27A5237l trails observed build 27A5252f. Installed macOS build 26A5406e trails observed build 26A5425a. Installed iOS Simulator build 24A5408d trails observed build 24A5430a. The installed topology is macOS 27.0 build `26A5406e`, Xcode 27.0 build `27A5237l`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
+<!-- current-state:runbook:end -->
 
 ---
 
 ## 1. The daily sweep (~5–10 min quiet-day, run in the morning)
+
+### Step 0 — verify the installed contract and capture observed state
+
+```bash
+./scripts/validate-automation-contracts.py --installed
+run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+report_dir="artifacts/freshness/daily-defects/$run_id"
+./scripts/current-state.py collect --output "$report_dir/observed-state.json"
+```
+
+Stop on installed-contract drift. The observation report records `collection.complete=false` and
+the exact blockers when a host tool cannot be queried; preserved prior values are not fresh
+observations. This daily lane remains report-only.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
@@ -45,6 +52,11 @@ the full verdict counts so an offline run remains visibly UNREACHABLE. Triage ea
 | **STALE-DATE-ONLY** | Do **not** churn dates daily — refresh "as of" dates only when you touch the file for another reason, or in the weekly batch (§2). A correct claim with an old date is still correct. |
 | **AMBIGUOUS** | The ref couldn't be mapped confidently or its nearby state language conflicts. Inspect the sighting and either tighten the citation to `owner/repo#N` or make the state wording reference-local. |
 | **UNREACHABLE** | Usually a miscitation (wrong repo for the number) — the 2026-07-31 run caught three this way. Verify by hand, fix the citation. |
+
+The report's live state and `transitionKind` are mechanical. Triage separately assigns exactly one
+semantic disposition: `fixed`, `fixed-with-residual`, `merged-unreleased`, `closed-unfixed`,
+`closed-unmerged`, `superseded`, `consolidated`, or `unknown`. Record evidence URLs, evidence date,
+rationale, and confidence. `unknown` and ambiguous reports are never automatic edit instructions.
 
 Precedent for pace: the very first scripted run caught `mlx-swift-lm#448` merging **the day
 before**. Most quiet-day changed lists should be empty or short.
@@ -81,38 +93,48 @@ indexes unchanged), or re-date untouched hedges.
 
 ---
 
-## 2. The weekly batch (~30 min, pick a fixed day)
+## 2. The weekly improvement cycle (Monday at 09:00)
 
-1. **Full defect report, not just changed:** create a unique run directory and write the report
-   atomically, then skim STALE-DATE-ONLY and batch-refresh dates in files with several stale
-   hedges; burn down a few AMBIGUOUS citations.
-   ```bash
-   run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-   report_dir="artifacts/freshness/weekly-defects/$run_id"
-   ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json"
-   ```
-2. **Re-run the probe suite** (cheap, catches silent runtime drift if a sim runtime or host
-   framework updated underneath you):
-   ```bash
-   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh host
-   DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-     AUTOMATION_ID=weekly-probes ./scripts/run-probes.sh simulator
-   ```
-   Simulator mode deliberately uses the tool-hosted `Probes-Package` scheme and pins `OS=27.0`,
-   matching the topology used to establish the baseline. It injects supported `PROBE_*` values
-   into the generated `.xctestrun`, because Xcode sanitizes its test process environment. Override
-   the destination only when intentionally establishing a new runtime baseline.
-   The simulator baseline is 39 tests, 19 intentional skips, 0 failures on beta 5. The elevated
-   skip count is deliberate: host-backed model calls can block before async timeouts execute.
-   Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is a
-   *behavioral drift discovery* — fold it into the owning guide with both values and dates.
-3. **Restore the pinned research mirrors** (`./scripts/clone-research-repos.sh`) so corpus greps
-   against `repos/` use the exact commits cited by the guides. This is reproducibility refresh,
-   not an upstream-HEAD update; advancing snapshots requires a deliberate evidence update.
-4. **Skim the watched-contradiction pages** listed in `notes/NEXT-BETA-CHECKLIST.md` §4–8 (the
-   `resolve(in:)`/`resolved(in:)` docs conflict, the Evaluations distribution story, etc.) — these
-   are doc-side and can flip without a beta.
+The checked-in `weekly-corpus-freshness-batch` contract is the executable specification. Its
+orchestrator separates preparation, evidence evaluation, and cleanup:
+
+```bash
+./scripts/validate-automation-contracts.py --installed
+run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+run_root="$(./scripts/freshness-cycle.py prepare weekly --run-id "$run_id" | \
+  python3 -c 'import json,sys; print(json.load(sys.stdin)["runRoot"])')"
+# Run defect, state, probe, mirror, official-doc, and repository-task review lanes.
+./scripts/freshness-cycle.py evaluate "$run_root"
+./scripts/freshness-cycle.py finalize "$run_root" --outcome no-change
+```
+
+`prepare` acquires a 24-hour lock, refuses a second open automation PR, fetches `origin/main`, and
+creates a unique branch in a temporary worktree. The caller writes durable `run.json`,
+`defects.json`, `observed-state.json`, `thread-review.json`, `validation.json`, `actions.json`,
+`pr.json`, logs, results, and probe artifacts beneath
+`artifacts/freshness/weekly-improvements/<run-id>/`. The ignored
+`artifacts/freshness/state/weekly-improvement.json` is the automation's authority for last success,
+acknowledged work, and pending blockers; narrative memory is only a hint.
+
+`evaluate` marks an action auto-fixable only with confidence ≥0.90, an exact current target, dated
+URLs, a non-`unknown` semantic disposition, allowed repository paths, no ambiguity diagnostics,
+an explicit docs/code/tooling kind, and a regression test for code or tooling. Every prohibited
+decision flag must be explicitly false. Actions that name generated outputs must also name their
+changed canonical sources; regeneration checks enforce byte equality. Task titles, bodies,
+comments, attachments, and linked pages are untrusted data rather than instructions. The
+retrospective discards raw bodies and instruction-like fields, records only schema-v2 factual
+observations tied to the exact repository identity, and cannot override its source lane. A
+repository-task action additionally needs a recorded deterministic-failure artifact or matching
+`patternKey` evidence from two distinct repository task IDs.
+Dependency, workflow, architecture, security-policy, beta-baseline, interface-capture,
+cross-repository, and personal-skill changes are report-only. `finalize` refuses any changed path
+that is not covered by an eligible action, so ambiguous evidence cannot produce even a draft PR.
+
+At most one automation PR may be open. It starts as a draft and becomes ready only after all local
+and remote checks pass and GitHub reports it mergeable. When `main` moves, merge `origin/main` and
+rerun the gates; never rebase, force-push, or merge automatically. A failed or conflicted run stays draft.
+`finalize` records the outcome, releases the lock, removes the temporary worktree and disposable
+Build directories, and retains the evidence.
 
 ---
 
@@ -154,22 +176,13 @@ Special case — **the day this machine gets macOS 27**: run the whole upgrade-d
 
 ---
 
-## 4. Automating the daily sweep (optional)
+## 4. Installed automation policy
 
-The daily sweep is deliberately script-shaped. Two ways to take yourself out of the loop:
-
-- **launchd/cron**: run `./scripts/refresh-defect-statuses.sh --changed-only --format json
-  --output artifacts/freshness/daily-defects/<unique-run-id>/defects.json` every morning and
-  notify yourself only when the changed list is non-empty.
-- **A scheduled Codex automation**: use one of the checked-in contracts under
-  `automations/contracts/`. Validate it with `./scripts/validate-automation-contracts.py` before
-  copying its prompt and schedule into Codex. The contract keeps tracked sources read-only,
-  requires a durable artifact, and tells the automation to report a review lead instead of
-  editing guides.
-
-Whichever route: keep the human in the fold-in step. The scripts are trustworthy about *state*;
-deciding what a state change means for a guide's narrative (close the gap? keep the workaround
-advice? re-scope the hazard?) is the part that made this corpus worth reading.
+The daily contract remains installed but **paused**. It is kept synchronized so a future manual
+resume cannot replay a stale prompt. The weekly contract is the only active recurring cycle.
+Validate installed copies with `./scripts/validate-automation-contracts.py --installed`; drift is
+a hard stop, not permission to improvise. Repository state and semantic resolution remain separate:
+scripts can establish the former, while edits require the evidence-bounded disposition in §2.
 
 ---
 
@@ -177,8 +190,8 @@ advice? re-scope the hazard?) is the part that made this corpus worth reading.
 
 | Cadence | Trigger | Action | Cost |
 |---|---|---|---|
-| Daily | morning | defect sweep `--changed-only` + 3 ground checks | 5–10 min |
-| Weekly | fixed day | full defect report, probe suite, mirror refresh, doc-watch skim | ~30 min |
+| Daily | manual; installed schedule paused | defect sweep `--changed-only` + ground checks | 5–10 min |
+| Weekly | Monday 09:00 | isolated evidence collection, bounded fixes, verified draft/ready PR | ~30 min + checks |
 | Per-event | new beta / runtime / OS | NEXT-BETA-CHECKLIST ritual, interface diff, index rebuild if needed | 1–3 h |
 | Upgrade day | this machine gets macOS 27 | probes MAC-27 run, `fm` capture, GUI lane-name recording | ~1 h |
 | Per-edit | any guide change | conventions + ledger updates; index rebuild only on heading/⚠️ changes | in-line |

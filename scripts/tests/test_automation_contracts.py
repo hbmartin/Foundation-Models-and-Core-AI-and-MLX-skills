@@ -95,6 +95,80 @@ class AutomationContractTests(unittest.TestCase):
             )
         )
 
+    def test_ready_pr_policy_rejects_wrong_roots_and_missing_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            contract = pathlib.Path(directory) / "weekly.toml"
+            contract.write_text(textwrap.dedent(
+                '''
+                version = 1
+                id = "weekly"
+                kind = "cron"
+                name = "Weekly"
+                rrule = "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0"
+                cwds = ["."]
+                prompt = """artifacts/freshness/weekly Run in a temporary worktree and open a draft pull request. Never merge. continue with the remaining independent checks."""
+                [contract]
+                schema_version = 2
+                mutation_policy = "isolated-ready-pr"
+                allowed_paths = ["notes/", ".github/"]
+                forbidden_paths = [1]
+                artifact_patterns = ["artifacts/freshness/weekly/<UTC-run-id>/"]
+                required_prompt_fragments = []
+                '''
+            ).lstrip())
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        codes = {item["code"] for item in payload["diagnostics"]}
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid-ready-pr-roots", codes)
+        self.assertIn("invalid-forbidden-paths", codes)
+        self.assertIn("missing-ready-pr-boundary", codes)
+
+    def test_rejects_non_numeric_schema_version_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            contract = pathlib.Path(directory) / "malformed.toml"
+            contract.write_text(textwrap.dedent(
+                '''
+                version = 1
+                id = "malformed"
+                kind = "cron"
+                name = "Malformed"
+                rrule = "RRULE:FREQ=DAILY;BYHOUR=8;BYMINUTE=0"
+                cwds = ["."]
+                prompt = """artifacts/freshness/malformed Do not commit or push; continue with the remaining independent checks."""
+                [contract]
+                schema_version = [1, 2]
+                mutation_policy = "tracked-read-only"
+                allowed_paths = ["artifacts/"]
+                artifact_patterns = ["artifacts/freshness/malformed/<UTC-run-id>/"]
+                required_prompt_fragments = []
+                '''
+            ).lstrip())
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "unsupported-version", {item["code"] for item in payload["diagnostics"]}
+        )
+
+    def test_contract_table_changes_require_a_new_prompt_fingerprint(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "daily-corpus-freshness-sweep.toml"
+            canonical = (
+                ROOT / "automations/contracts/daily-corpus-freshness-sweep.toml"
+            ).read_text()
+            path.write_text(
+                canonical.replace("schema_version = 2", "schema_version = 1", 1),
+                encoding="utf-8",
+            )
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "contract-fingerprint-mismatch",
+            {item["code"] for item in payload["diagnostics"]},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

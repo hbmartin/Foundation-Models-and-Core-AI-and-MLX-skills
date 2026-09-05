@@ -267,9 +267,50 @@ class DefectStatusGoldenTests(unittest.TestCase):
             actual_mode = stat.S_IMODE(output.stat().st_mode)
 
         self.assertIn("Report written to", result.stdout)
-        self.assertEqual(payload["schemaVersion"], 1)
+        self.assertEqual(payload["schemaVersion"], 2)
         self.assertEqual(payload["summary"]["references"], 4)
         self.assertEqual(actual_mode, expected_mode)
+
+    def test_schema_v2_separates_transition_from_resolution(self) -> None:
+        live = {
+            "kind": "PR", "state": "MERGED", "url": "https://github.com/o/r/pull/1",
+            "closedAt": "2026-09-05", "mergedAt": "2026-09-05",
+            "stateReason": None, "title": "Fix",
+        }
+        self.assertEqual(reporter.transition_kind(live, ["OPEN"]), "OPEN_TO_MERGED")
+        payload = reporter.structured_payload([], [], "2026-09-05T00:00:00Z", None,
+                                              extraction_only=True)
+        self.assertIn("unknown", payload["resolutionDispositions"])
+
+    def test_every_resolution_disposition_is_valid_and_unknown_is_report_only(self) -> None:
+        self.assertEqual(set(reporter.RESOLUTION_DISPOSITIONS), {
+            "fixed", "fixed-with-residual", "merged-unreleased", "closed-unfixed",
+            "closed-unmerged", "superseded", "consolidated", "unknown",
+        })
+        references = reporter.group_references(
+            [{
+                "repository": "owner/repository", "number": 1, "claimedState": "OPEN",
+                "claimDate": None, "id": "s0001", "confidence": 1.0, "diagnostics": [],
+            }],
+            perform_lookup=False,
+            sleep_seconds=0,
+        )
+        self.assertEqual(references[0]["resolutionDisposition"], "unknown")
+        self.assertFalse(references[0]["automaticFixEligible"])
+        self.assertEqual(references[0]["transitionKind"], "UNKNOWN")
+        self.assertIsNone(references[0]["liveState"])
+
+    def test_same_day_closure_does_not_look_newer_than_a_date_claim(self) -> None:
+        live = {
+            "kind": "issue", "state": "CLOSED",
+            "closedAt": "2026-09-05T23:59:59Z",
+        }
+        self.assertEqual(
+            reporter.verdict(live, [], "2026-09-05"), "STALE-DATE-ONLY"
+        )
+        self.assertEqual(
+            reporter.verdict(live, [], "2026-09-04"), "STATE-CHANGED"
+        )
 
     def test_atomic_output_preserves_existing_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

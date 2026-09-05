@@ -27,6 +27,18 @@ candidate answers, and what to write back for each outcome.
 | **MAC-27** | upgrade day, a Mac running macOS 27 | `./scripts/run-probes.sh host` |
 | **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Use the hosted device mode shown below; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. |
 
+## Generated baseline summary
+
+<!-- current-state:probes:start -->
+- `app-hosted-ios27-beta5-simulator` — app-hosted; iOS Simulator 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `generated DeviceProbes app`; device `Simulator`; 39 tests / 19 skipped / 0 failures; contextSize=0. The 2026-09-04 app-hosted pass returned 0; this now agrees with the latest tool-hosted pass but not its earlier 4096 result.
+- `device-hosted-iphone15pro-ios27-beta5` — device-hosted; iOS 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `wired physical device`; device `iPhone 15 Pro (iPhone16,1; D83AP)`; 11 tests / 4 skipped / 0 failures; contextSize=4096. Offline/static pass; a separate asset pass ran four tests with zero failures.
+- `tool-hosted-ios27-beta5-simulator` — tool-hosted; iOS Simulator 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `iPhone 17 Pro, OS=27.0`; device `Simulator`; 39 tests / 19 skipped / 0 failures; contextSize=0. The 2026-09-05 tool-hosted pass returned 0, while the 2026-08-17 pass returned 4096 on the same recorded builds; treat this value as volatile. Build-keyed model skips are active.
+- `tool-hosted-macos27-beta5` — tool-hosted; macOS 27.0 beta 5 (26A5406e); Xcode 27.0 beta 5 (27A5237l); destination `local arm64 host`; device `Mac host`; 46 tests / 23 skipped / 0 failures; contextSize=4096. Reverified 2026-09-05; build-keyed model, attachment, and unreachable-generator skips are active.
+<!-- current-state:probes:end -->
+
+Every result below must be interpreted against one of these complete topology tuples. A measured
+value from one hosting mode is not a default for another hosting mode, even on the same runtime.
+
 `run-probes.sh` puts the SwiftPM scratch directory or DerivedData, logs, direct probe artifacts,
 and simulator/device `.xcresult` in a unique ignored
 `artifacts/freshness/<automation-id>/<UTC-run-id>/` directory. Host and simulator runs use the
@@ -121,6 +133,13 @@ the beta-5 baseline except `fm.contextSize`: the app-hosted Simulator process re
 the earlier tool-hosted `Probes-Package` run returned **4096** on the same `24A5408d` runtime.
 Treat context size as runner-context-sensitive until a later runtime or device pass explains it.
 
+**Reverified 2026-09-05 (tool-hosted host and Simulator runners):** the host completed **46
+tests, 23 skipped, 0 failures** and returned `contextSize=4096`; the Simulator completed **39
+tests, 19 skipped, 0 failures** and returned `contextSize=0`. The latter contradicts the
+2026-08-17 tool-hosted Simulator result of 4096 despite the same recorded OS/runtime and Xcode
+builds, so hosting mode alone does not explain the value. Preserve both observations and treat the
+property as runtime evidence, never as a hardcoded platform constant.
+
 **Verified 2026-08-20 (iPhone 15 Pro `iPhone16,1` / `D83AP`, iOS 27 build `24A5408d`, wired):**
 the hosted XCTest runner launched successfully. The offline/static pass completed 11 tests with 4
 asset skips and 0 failures; a second pass with a bundled 12,288-byte portable toy `.aimodel`
@@ -141,7 +160,7 @@ knob (asset/entitlement).
 |---|---|---|---|---|
 | `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
 | `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HOST-26 · SIM-27 · DEVICE-27 | ✅ verbatim type name on every tested runtime |
-| `fm.contextSize` | 4096 vs 8192 on 27 | NEEDED item 7 · 3.1 | HOST-26 · SIM-27 · DEVICE-27 | 🟠 4096 on host, tool-hosted sim, and iPhone 15 Pro; app-hosted sim returned 0 on the same `24A5408d` runtime (2026-09-04) |
+| `fm.contextSize` | 4096 vs 8192 on 27 | NEEDED item 7 · 3.1 | HOST-26 · SIM-27 · DEVICE-27 | 🟠 4096 on host and iPhone 15 Pro; both Simulator modes most recently returned 0. Tool-hosted Simulator observations changed from 4096 (2026-08-17) to 0 (2026-09-05) on the same recorded builds. |
 | `fm.availability` | does FM work against the Simulator | 5.1 §13.4 · 17.2 | HOST-26 · SIM-27 | ✅ sim: `available`, inference runs |
 | `fm.toolCallingMode-precedence` | options vs profile modifier | 2.6 §7.4 · 17.1 §4.8 | MAC-27 / DEVICE-27 | 🟠 device confirms options `.disallowed` beats profile `.required` (tool not called); the reverse direction is NOT yet a recorded observation — the 2026-08-20 run threw `contextSizeExceeded(4096, 4099)` and the catch path recorded no toolCalled/toolRan discriminators, so "the tool loop ran" is an inference from the fingerprint. The probe now records them for the next device run |
 | `fm.includeSchemaInPrompt-recording` | legacy param vs `ContextOptions` | 17.1 §4.11 | SIM-27 · MAC-27 · DEVICE-27 | ✅ one knob, two spellings; default `true` |
@@ -257,7 +276,7 @@ Fold these into the cited guide sections; the sim rows are the iOS 27.0 Simulato
 ```
 PROBE-RESULT name=fm.tool-schema-flag-default value=true                             (26.5 host AND 27.0 sim)
 PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool definition=FetchWeatherReportTool
-PROBE-RESULT name=fm.contextSize value=4096                                          (26.5/MAC-27 host, DEVICE-27, and tool-hosted SIM-27); app-hosted SIM-27=0 on 2026-09-04
+PROBE-RESULT name=fm.contextSize value=4096                                          (26.5/MAC-27 host and DEVICE-27); app-hosted SIM-27=0 on 2026-09-04; tool-hosted SIM-27 changed from 4096 on 2026-08-17 to 0 on 2026-09-05
 PROBE-RESULT name=fm.availability value=available                                    (27.0 sim; 26.5 host: unavailable(.appleIntelligenceNotEnabled))
 PROBE-RESULT name=fm.includeSchemaInPrompt-recording value=legacyFalse=[ContextOptions(includeSchemaInPrompt: Optional(false), …)] contextOptionsFalse=[…Optional(false)…] default=[…Optional(true)…]
 PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] desc=Content contains 168918 tokens, which exceeds the maximum allowed context size of 4096.
@@ -287,9 +306,10 @@ Readings, one line each:
 - **2.3 §2** — the derived `Tool.name` is the **verbatim type name** (no lowercasing, no
   snake_case, no suffix stripping) — so `SpotlightSearchTool`'s `spotlight_search` is
   hand-declared, not derived.
-- **NEEDED item 7 / 3.1** — `contextSize` = 4096 on the 27.0 tool-hosted sim run (and the
-  overflow error text independently names 4096), while the app-hosted sim returned 0 on
-  2026-09-04. The 8192 claim now rests entirely on 27 *hardware*; keep reading the property at
+- **NEEDED item 7 / 3.1** — `contextSize` changed from 4096 on the 2026-08-17 tool-hosted
+  Simulator run to 0 on 2026-09-05 despite the same recorded builds; the app-hosted Simulator
+  also returned 0 on 2026-09-04. The device remained 4096, and the device overflow error text
+  independently names 4096. The 8192 claim remains uncorroborated; keep reading the property at
   runtime and handle a zero result defensively.
 - **17.1 §4.11** — the legacy `includeSchemaInPrompt:` parameter and
   `ContextOptions(includeSchemaInPrompt:)` are **one knob with two spellings**: both are
