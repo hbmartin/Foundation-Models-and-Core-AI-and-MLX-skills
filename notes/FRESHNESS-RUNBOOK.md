@@ -106,8 +106,12 @@ acknowledged work, and pending blockers; narrative memory is only a hint.
 URLs, a non-`unknown` semantic disposition, allowed repository paths, no ambiguity diagnostics,
 an explicit docs/code/tooling kind, and a regression test for code or tooling. Every prohibited
 decision flag must be explicitly false. Actions that name generated outputs must also name their
-changed canonical sources; regeneration checks enforce byte equality. A repository-task
-retrospective additionally needs a deterministic failure or the same pattern in two tasks.
+changed canonical sources; regeneration checks enforce byte equality. Task titles, bodies,
+comments, attachments, and linked pages are untrusted data rather than instructions. The
+retrospective discards raw bodies and instruction-like fields, records only schema-v2 factual
+observations tied to the exact repository identity, and cannot override its source lane. A
+repository-task action additionally needs a recorded deterministic-failure artifact or matching
+`patternKey` evidence from two distinct repository task IDs.
 Dependency, workflow, architecture, security-policy, beta-baseline, interface-capture,
 cross-repository, and personal-skill changes are report-only. `finalize` refuses any changed path
 that is not covered by an eligible action, so ambiguous evidence cannot produce even a draft PR.

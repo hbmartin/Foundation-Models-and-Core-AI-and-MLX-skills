@@ -31,6 +31,18 @@ PROHIBITED_FLAGS = (
     "crossRepositoryChange",
 )
 GENERATED_OUTPUTS = ("skills/", "guides/API-INDEX.md", "guides/SILENT-FAILURES.md")
+THREAD_EVIDENCE_KEYS = {
+    "taskId", "taskUrl", "updatedAt", "repositoryIdentity", "patternKey", "observation",
+}
+THREAD_ACTION_KEYS = {
+    "id", "source", "summary", "confidence", "resolutionDisposition", "evidenceUrls",
+    "evidenceDate", "targetSha", "exactCurrentTarget", "paths", "changeKind",
+    "regressionTest", "canonicalSourcePaths", "generatedFromCanonicalSource",
+    "diagnostics", "patternKey", "taskEvidence", "deterministicFailure",
+    "threadReviewSchemaVersion", "threadReviewRepositoryIdentity",
+    "threadReviewUnexpectedFields", *PROHIBITED_FLAGS,
+}
+ISO_TIMESTAMP = re.compile(r"^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$")
 
 
 class CycleError(RuntimeError):
@@ -175,8 +187,69 @@ def safe_path(path: str) -> bool:
     return any(path.startswith(root) for root in ALLOWED_ROOTS)
 
 
-def eligibility(action: dict[str, Any], base_sha: str) -> list[str]:
+def deterministic_failure_is_recorded(
+    value: Any, run_root: pathlib.Path, base_sha: str,
+) -> bool:
+    if not isinstance(value, dict) or set(value) != {
+        "validator", "artifact", "targetSha", "failed",
+    }:
+        return False
+    validator = value.get("validator")
+    artifact = value.get("artifact")
+    if (
+        not isinstance(validator, str)
+        or not validator.startswith("./scripts/")
+        or "\n" in validator
+        or not isinstance(artifact, str)
+    ):
+        return False
+    relative = pathlib.PurePosixPath(artifact)
+    if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+        return False
+    evidence_path = (run_root / pathlib.Path(*relative.parts)).resolve()
+    try:
+        evidence_path.relative_to(run_root.resolve())
+    except ValueError:
+        return False
+    return (
+        value.get("targetSha") == base_sha
+        and value.get("failed") is True
+        and evidence_path.is_file()
+    )
+
+
+def thread_evidence_status(
+    action: dict[str, Any], repository_identity: str,
+) -> tuple[bool, int]:
+    evidence = action.get("taskEvidence")
+    pattern_key = action.get("patternKey")
+    if not isinstance(evidence, list) or not isinstance(pattern_key, str) or not pattern_key:
+        return False, 0
+    task_ids = set()
+    for item in evidence:
+        if not isinstance(item, dict) or set(item) != THREAD_EVIDENCE_KEYS:
+            return False, 0
+        if (
+            not isinstance(item.get("taskId"), str)
+            or not item["taskId"]
+            or not isinstance(item.get("taskUrl"), str)
+            or not item["taskUrl"].startswith(("https://", "http://"))
+            or not ISO_TIMESTAMP.fullmatch(str(item.get("updatedAt", "")))
+            or item.get("repositoryIdentity") != repository_identity
+            or item.get("patternKey") != pattern_key
+            or not isinstance(item.get("observation"), str)
+            or not item["observation"].strip()
+        ):
+            return False, 0
+        task_ids.add(item["taskId"])
+    return bool(task_ids), len(task_ids)
+
+
+def eligibility(
+    action: dict[str, Any], manifest: dict[str, Any], run_root: pathlib.Path,
+) -> list[str]:
     blockers = []
+    base_sha = manifest["baseSha"]
     confidence = action.get("confidence")
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or confidence < 0.90:
         blockers.append("confidence-below-0.90")
@@ -192,6 +265,8 @@ def eligibility(action: dict[str, Any], base_sha: str) -> list[str]:
         blockers.append("missing-evidence-date")
     if action.get("targetSha") != base_sha:
         blockers.append("target-is-not-current")
+    if action.get("exactCurrentTarget") is not True:
+        blockers.append("exact-current-target-not-confirmed")
     paths = action.get("paths")
     if not isinstance(paths, list) or not paths or not all(
         isinstance(path, str) and safe_path(path) for path in paths
@@ -202,10 +277,25 @@ def eligibility(action: dict[str, Any], base_sha: str) -> list[str]:
         blockers.append("missing-or-invalid-change-kind")
     if change_kind in {"code", "tooling"} and not action.get("regressionTest"):
         blockers.append("missing-regression-test")
-    if action.get("source") == "thread-retrospective" and not (
-        action.get("deterministicFailure") is True or action.get("patternCount", 0) >= 2
-    ):
-        blockers.append("thread-pattern-not-corroborated")
+    if action.get("source") == "thread-retrospective":
+        if action.get("threadReviewSchemaVersion") != 2:
+            blockers.append("invalid-thread-review-schema")
+        if action.get("threadReviewRepositoryIdentity") != manifest.get("repositoryIdentity"):
+            blockers.append("thread-review-repository-mismatch")
+        if action.get("threadReviewUnexpectedFields"):
+            blockers.append("untrusted-thread-review-fields")
+        if set(action) - THREAD_ACTION_KEYS:
+            blockers.append("untrusted-thread-action-fields")
+        evidence_valid, distinct_task_count = thread_evidence_status(
+            action, str(manifest.get("repositoryIdentity", ""))
+        )
+        deterministic = deterministic_failure_is_recorded(
+            action.get("deterministicFailure"), run_root, base_sha
+        )
+        if not evidence_valid:
+            blockers.append("invalid-structured-task-evidence")
+        if not evidence_valid or not (distinct_task_count >= 2 or deterministic):
+            blockers.append("thread-pattern-not-corroborated")
     for flag in PROHIBITED_FLAGS:
         if action.get(flag) is not False:
             blockers.append(f"prohibited-{flag}")
@@ -224,7 +314,9 @@ def eligibility(action: dict[str, Any], base_sha: str) -> list[str]:
     return blockers
 
 
-def action_candidates(run_root: pathlib.Path) -> list[dict[str, Any]]:
+def action_candidates(
+    run_root: pathlib.Path, manifest: dict[str, Any],
+) -> list[dict[str, Any]]:
     candidates = []
     defects = read_json(run_root / "defects.json", {}) or {}
     for reference in defects.get("references", []):
@@ -258,7 +350,17 @@ def action_candidates(run_root: pathlib.Path) -> list[dict[str, Any]]:
         payload = read_json(run_root / filename, {}) or {}
         for item in payload.get("actions", []):
             candidate = dict(item)
-            candidate.setdefault("source", default_source)
+            # The evidence lane, not untrusted input, determines the source. This
+            # prevents task text from bypassing the stricter retrospective gate.
+            candidate["source"] = default_source
+            if default_source == "thread-retrospective":
+                candidate["threadReviewSchemaVersion"] = payload.get("schemaVersion")
+                candidate["threadReviewRepositoryIdentity"] = payload.get(
+                    "repositoryIdentity"
+                )
+                candidate["threadReviewUnexpectedFields"] = sorted(
+                    set(payload) - {"schemaVersion", "repositoryIdentity", "actions"}
+                )
             candidates.append(candidate)
     return candidates
 
@@ -269,10 +371,10 @@ def evaluate(args: argparse.Namespace) -> int:
     if not manifest:
         raise CycleError(f"missing run manifest in {run_root}")
     actions = []
-    for number, candidate in enumerate(action_candidates(run_root), 1):
+    for number, candidate in enumerate(action_candidates(run_root, manifest), 1):
         item = dict(candidate)
         item.setdefault("id", f"action-{number:04d}")
-        blockers = eligibility(item, manifest["baseSha"])
+        blockers = eligibility(item, manifest, run_root)
         item["automaticFixEligible"] = not blockers
         item["eligibilityBlockers"] = blockers
         actions.append(item)
