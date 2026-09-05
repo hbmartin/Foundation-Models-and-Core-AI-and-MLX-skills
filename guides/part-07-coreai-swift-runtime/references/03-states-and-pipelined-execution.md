@@ -1952,6 +1952,7 @@ They are asymmetric in a way the docs never explain, and the asymmetry is inform
 
 > ✅ **VERIFIED** — Apple developer documentation:
 
+<!-- callout-id: async-mutable-value-no-watchos occurrence:2 -->
 ```swift illustrative
 final class AsyncValue {                       // a CLASS, and Sendable
     init(_: CVReadOnlyPixelBuffer)
@@ -1972,7 +1973,6 @@ struct AsyncMutableValue {                     // a STRUCT
     init(descriptor: consuming InferenceValue.Descriptor)
     init(unsafeBuffer: consuming any MTLBuffer, byteOffset: Int = 0,
          scalarType: NDArray.ScalarType, shape: [Int], strides: [Int] = [],
-         // callout-id: async-mutable-value-no-watchos
          interleaveLayout: NDArray.InterleaveLayout? = nil)          // ⚠️ no watchOS
 
     var ndArray: NDArray? { get async throws }

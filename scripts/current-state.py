@@ -24,6 +24,34 @@ TARGETS = {
     "next-beta": ROOT / "notes/NEXT-BETA-CHECKLIST.md",
     "probes": ROOT / "probes/README.md",
 }
+GENERATED_CHECKS = {
+    "currentStateBlocks": (
+        "./scripts/current-state.py render --check",
+        (sys.executable, "scripts/current-state.py", "render", "--check"),
+    ),
+    "indexes": (
+        "python3 -m unittest scripts.tests.test_repository_indexes."
+        "RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
+        (
+            sys.executable,
+            "-m",
+            "unittest",
+            "scripts.tests.test_repository_indexes.RepositoryIndexTests."
+            "test_committed_indexes_match_clean_generation_and_links",
+        ),
+    ),
+    "skills": (
+        "python3 -m unittest scripts.tests.test_skills."
+        "CommittedSkillsTests.test_committed_skills_match_clean_generation",
+        (
+            sys.executable,
+            "-m",
+            "unittest",
+            "scripts.tests.test_skills.CommittedSkillsTests."
+            "test_committed_skills_match_clean_generation",
+        ),
+    ),
+}
 
 
 def require_iso_date(value: object, label: str) -> None:
@@ -93,12 +121,12 @@ def load_manifest(path: pathlib.Path) -> dict:
     }:
         raise SystemExit("error: current-state generatedOutputs has an invalid shape")
     for name, output in generated.items():
+        expected_command = GENERATED_CHECKS[name][0]
         if (
             not isinstance(output, dict)
             or set(output) != {"status", "checkedAt", "checkCommand"}
             or output["status"] not in {"current", "stale", "unknown"}
-            or not isinstance(output["checkCommand"], str)
-            or not output["checkCommand"].startswith(("./scripts/", "python3 scripts/"))
+            or output["checkCommand"] != expected_command
         ):
             raise SystemExit(f"error: generated output {name!r} has invalid status metadata")
         require_iso_date(output["checkedAt"], f"generated output {name!r} checkedAt")
@@ -108,7 +136,12 @@ def load_manifest(path: pathlib.Path) -> dict:
         environment, "installed", {"os", "xcode", "sdks", "simulatorRuntimes", "fm"}
     )
     require_object(installed, "os", {"name", "version", "build"})
-    require_object(installed, "xcode", {"path", "version", "build"})
+    installed_xcode = require_object(installed, "xcode", {"path", "version", "build"})
+    if any(
+        not isinstance(installed_xcode[field], str) or not installed_xcode[field]
+        for field in ("path", "version", "build")
+    ):
+        raise SystemExit("error: current-state installed xcode metadata is invalid")
     sdks = require_object(installed, "sdks", {"macosx", "iphoneos"})
     require_object(sdks, "macosx", {"version", "build"})
     require_object(sdks, "iphoneos", {"version", "build"})
@@ -341,15 +374,16 @@ def installed_environment(previous: dict) -> tuple[dict, list[str]]:
         if match:
             runtimes.append({"name": match.group(1), "version": match.group(2),
                              "build": match.group(3)})
-    if not runtime_output:
+    if not runtimes:
+        if runtime_output:
+            blockers.append(
+                "simulator-runtimes: output contained no recognized iOS runtimes"
+            )
         runtimes = previous["simulatorRuntimes"]
-    fm_path = shutil.which("fm") or previous["fm"]["path"]
+    discovered_fm_path = shutil.which("fm")
+    fm_path = discovered_fm_path or previous["fm"]["path"]
     fm_version = previous["fm"]["version"]
-    observed_fm = ""
-    if fm_path:
-        observed_fm = observe("fm-version", fm_path, "--version")
-        fm_version = observed_fm or fm_version
-    else:
+    if not discovered_fm_path:
         blockers.append("fm-path: executable not found")
     value = {
         "os": {"name": sw.get("ProductName", "").strip() or previous["os"]["name"],
@@ -366,10 +400,7 @@ def installed_environment(previous: dict) -> tuple[dict, list[str]]:
             "path": fm_path,
             "version": fm_version,
             "build": sw.get("BuildVersion", "").strip() or previous["fm"]["build"],
-            "exception": (
-                "fm has no independent --version option; provenance is the owning macOS build."
-                if not observed_fm else ""
-            ),
+            "exception": "fm has no independent --version option; provenance is the owning macOS build.",
         },
     }
     return value, blockers
@@ -391,6 +422,40 @@ def snippet_state(previous: dict) -> dict:
     return result
 
 
+def generated_output_state() -> tuple[dict, list[str]]:
+    checked_at = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    outputs = {}
+    blockers = []
+    for name, (display_command, command) in GENERATED_CHECKS.items():
+        _, error = run(*command)
+        outputs[name] = {
+            "status": "stale" if error else "current",
+            "checkedAt": checked_at,
+            "checkCommand": display_command,
+        }
+        if error:
+            blockers.append(f"generated-output-{name}: {error}")
+    return outputs, blockers
+
+
+def pending_reasons(installed: dict, latest: dict) -> list[str]:
+    latest_runtime = max(
+        (item for item in installed["simulatorRuntimes"] if item["name"] == "iOS"),
+        key=lambda item: item["build"],
+        default={"build": None},
+    )
+    comparisons = (
+        ("Xcode", installed["xcode"]["build"], latest["xcode"]["build"]),
+        ("macOS", installed["os"]["build"], latest["macos"]["build"]),
+        ("iOS Simulator", latest_runtime.get("build"), latest["ios"]["build"]),
+    )
+    return [
+        f"Installed {name} build {actual or 'unknown'} differs from observed build {expected}."
+        for name, actual, expected in comparisons
+        if actual != expected
+    ]
+
+
 def collect(manifest: dict) -> dict:
     value = json.loads(json.dumps(manifest))
     value["asOf"] = dt.datetime.now(dt.timezone.utc).date().isoformat()
@@ -399,6 +464,9 @@ def collect(manifest: dict) -> dict:
         manifest["environment"]["installed"]
     )
     value["environment"]["installed"] = installed
+    generated_outputs, generated_blockers = generated_output_state()
+    value["generatedOutputs"] = generated_outputs
+    blockers.extend(generated_blockers)
     value["collection"] = {
         "complete": not blockers,
         "blockers": blockers,
@@ -408,17 +476,7 @@ def collect(manifest: dict) -> dict:
     value["verification"] = snippet_state(manifest["verification"])
     installed = value["environment"]["installed"]
     latest = value["environment"]["latestObserved"]
-    latest_runtime = max(
-        (item for item in installed["simulatorRuntimes"] if item["name"] == "iOS"),
-        key=lambda item: item["build"], default={"build": None},
-    )
-    comparisons = (
-        ("Xcode", installed["xcode"]["build"], latest["xcode"]["build"]),
-        ("macOS", installed["os"]["build"], latest["macos"]["build"]),
-        ("iOS Simulator", latest_runtime.get("build"), latest["ios"]["build"]),
-    )
-    reasons = [f"Installed {name} build {actual or 'unknown'} trails observed build {expected}."
-               for name, actual, expected in comparisons if actual != expected]
+    reasons = pending_reasons(installed, latest)
     value["pendingEvent"] = {"value": bool(reasons), "reasons": reasons}
     return value
 

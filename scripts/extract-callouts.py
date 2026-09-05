@@ -49,6 +49,9 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
         i = 0
         n = len(lines)
         pending_explicit_id = [None]
+        pending_marker_line = [None]
+        pending_occurrence = [1]
+        marker_applies_in_fence = [False]
         seen_ids = {}
 
         def append_row(lineno, anchor, kind, title, raw_text, inside_fence=False,
@@ -57,10 +60,24 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             # Identity stays normalized and display text stays bounded, but the
             # review hash covers the complete callout rather than its excerpt.
             digest = content_hash(kind, title, raw_text)
+            explicit_id = None
+            if pending_explicit_id[0] is not None:
+                if inside_fence and marker_applies_in_fence[0]:
+                    if pending_occurrence[0] > 1:
+                        pending_occurrence[0] -= 1
+                    else:
+                        explicit_id = pending_explicit_id[0]
+                elif not inside_fence:
+                    if pending_occurrence[0] != 1:
+                        sys.exit(
+                            f"{path}:{pending_marker_line[0]}: occurrence is only valid "
+                            "for an in-fence callout"
+                        )
+                    explicit_id = pending_explicit_id[0]
             try:
                 callout_id = semantic_id(
                     "callout", rel, anchor, kind, title, excerpt,
-                    explicit=pending_explicit_id[0],
+                    explicit=explicit_id,
                 )
             except ValueError as error:
                 sys.exit(f"{path}:{lineno}: invalid callout-id: {error}")
@@ -68,13 +85,22 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             if prior is not None:
                 sys.exit(
                     f"{path}:{lineno}: duplicate callout id {callout_id!r}; "
-                    f"first seen at line {prior}; add a unique "
-                    f"{'// callout-id: slug' if inside_fence else '<!-- callout-id: slug -->'} "
-                    "marker before one callout"
+                    f"first seen at line {prior}; add a unique hidden "
+                    f"{'<!-- callout-id: slug occurrence:N --> marker before the fence' if inside_fence else '<!-- callout-id: slug --> marker before one callout'}"
                 )
             seen_ids[callout_id] = lineno
             rows.append((rel, lineno, anchor, kind, title, excerpt, callout_id, digest))
-            pending_explicit_id[0] = None
+            if explicit_id is not None:
+                pending_explicit_id[0] = None
+                pending_marker_line[0] = None
+                pending_occurrence[0] = 1
+                marker_applies_in_fence[0] = False
+
+        def unused_marker(lineno):
+            sys.exit(
+                f"{path}:{pending_marker_line[0]}: callout-id marker is not followed "
+                f"by its designated callout before line {lineno}"
+            )
 
         while i < n:
             line = lines[i]
@@ -82,6 +108,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             if fence_len:
                 if (fm and fm.group(1)[0] == fence_character
                         and len(fm.group(1)) >= fence_len and not fm.group(2).strip()):
+                    if pending_explicit_id[0] is not None and marker_applies_in_fence[0]:
+                        unused_marker(i + 1)
                     fence_character = ''
                     fence_len = 0
                     i += 1
@@ -90,25 +118,86 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 fence_character = fm.group(1)[0]
                 fence_len = len(fm.group(1))
                 fence_line = i + 1
+                if pending_explicit_id[0] is not None:
+                    marker_applies_in_fence[0] = True
                 i += 1
                 continue
             # Inside a fence a '#' line is code, not a heading, and never mints
             # an anchor; in-fence ⚠️ lines still extract below as INLINE,
             # anchored to the nearest real heading.
-            marker_pattern = (
-                r'^\s*//\s*callout-id:\s*([^\s]+)\s*$'
-                if fence_len
-                else r'^\s*<!--\s*callout-id:\s*([^\s]+)\s*-->\s*$'
+            if fence_len and re.match(r'^\s*//\s*callout-id:', line, re.IGNORECASE):
+                sys.exit(
+                    f"{path}:{i + 1}: callout-id metadata must not appear inside "
+                    "a published code fence; use a hidden Markdown marker before the fence"
+                )
+            identity_marker = None if fence_len else re.match(
+                r'^\s*<!--\s*callout-id:\s*([^\s]+)'
+                r'(?:\s+occurrence:(\d+))?\s*-->\s*$',
+                line,
+                re.IGNORECASE,
             )
-            identity_marker = re.match(marker_pattern, line, re.IGNORECASE)
             if identity_marker:
                 if pending_explicit_id[0] is not None:
                     sys.exit(f"{path}:{i + 1}: callout-id marker replaces an unused marker")
                 pending_explicit_id[0] = identity_marker.group(1)
+                pending_marker_line[0] = i + 1
+                pending_occurrence[0] = int(identity_marker.group(2) or "1")
+                if pending_occurrence[0] < 1:
+                    sys.exit(f"{path}:{i + 1}: callout-id occurrence must be at least 1")
                 i += 1
                 continue
-            if line.strip() and '⚠️' not in line:
-                pending_explicit_id[0] = None
+
+            if not fence_len and line.lstrip().startswith('>'):
+                # Consume from the start of the blockquote so the review hash
+                # covers context that appears before the warning line too.
+                start = i
+                block = []
+                while i < n and (lines[i].lstrip().startswith('>') or lines[i].strip() == ''):
+                    if lines[i].strip() == '' and not (
+                        i + 1 < n and lines[i + 1].lstrip().startswith('>')
+                    ):
+                        break
+                    block.append(re.sub(r'^\s*>\s?', '', lines[i]))
+                    i += 1
+                warning_indexes = [
+                    index for index, block_line in enumerate(block) if '⚠️' in block_line
+                ]
+                if not warning_indexes:
+                    if pending_explicit_id[0] is not None:
+                        unused_marker(start + 1)
+                    continue
+                if pending_explicit_id[0] is not None and pending_occurrence[0] != 1:
+                    sys.exit(
+                        f"{path}:{pending_marker_line[0]}: occurrence is only valid "
+                        "for an in-fence callout"
+                    )
+                warning_index = warning_indexes[0]
+                raw_text = ''.join(block)
+                display_text = ''.join(block[warning_index:])
+                tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', display_text)
+                title = flatten(tm.group(1), 160) if tm else ''
+                kind = (
+                    'SILENT-FAILURE'
+                    if re.search(r'SILENT FAILURE', display_text, re.I)
+                    else 'CALLOUT'
+                )
+                append_row(
+                    start + warning_index + 1,
+                    heading_anchor,
+                    kind,
+                    title,
+                    raw_text,
+                    display_text=display_text,
+                )
+                continue
+
+            if (
+                pending_explicit_id[0] is not None
+                and line.strip()
+                and '⚠️' not in line
+                and not fence_len
+            ):
+                unused_marker(i + 1)
 
             m = None if fence_len else re.match(r'^(#{1,6})\s+(.*)', line)
             if m:
@@ -123,21 +212,6 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             if '⚠️' not in line:
                 i += 1
                 continue
-            if not fence_len and line.lstrip().startswith('>'):
-                # blockquote callout: swallow the whole contiguous blockquote
-                start = i
-                block = []
-                while i < n and (lines[i].lstrip().startswith('>') or lines[i].strip() == ''):
-                    if lines[i].strip() == '' and not (i + 1 < n and lines[i + 1].lstrip().startswith('>')):
-                        break
-                    block.append(re.sub(r'^\s*>\s?', '', lines[i]))
-                    i += 1
-                text = ''.join(block)
-                tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', text)
-                title = flatten(tm.group(1), 160) if tm else ''
-                kind = 'SILENT-FAILURE' if re.search(r'SILENT FAILURE', text, re.I) else 'CALLOUT'
-                append_row(start + 1, heading_anchor, kind, title, text)
-                continue
             # inline occurrence (prose, list item, table row)
             tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', line)
             title = flatten(tm.group(1), 160) if tm else ''
@@ -149,6 +223,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 f"{path}:{fence_line}: unterminated "
                 f"{fence_character * fence_len} fence"
             )
+        if pending_explicit_id[0] is not None:
+            unused_marker(n + 1)
 
 for r in rows:
     print('\t'.join(str(field) for field in r))

@@ -654,6 +654,22 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(changed.returncode, 1)
             self.assertEqual(tsv_rows(changed.stdout)[0]["status"], "NEEDS-VERIFICATION")
 
+    def test_rekey_only_rejects_changed_mode_without_touching_results(self):
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as out:
+            write_guide(td, "g.md", "```swift compile:27\nlet a = 1\n```\n")
+            results = pathlib.Path(out) / "results.tsv"
+            results.write_text("preserve this file\n", encoding="utf-8")
+            before = results.read_bytes()
+            result = run_script([
+                "--guides", td,
+                "--rekey-only", str(results),
+                "--changed", "HEAD",
+                "--out", out,
+            ])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("--rekey-only cannot be combined", result.stderr)
+            self.assertEqual(results.read_bytes(), before)
+
     def test_rekey_only_rejects_whitespace_changes_and_preserves_marker_exit(self):
         with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as out:
             path = pathlib.Path(write_guide(

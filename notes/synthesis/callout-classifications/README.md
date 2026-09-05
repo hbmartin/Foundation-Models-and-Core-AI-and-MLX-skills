@@ -17,8 +17,9 @@ literal characters, and no field may contain a tab or newline. Do not paste csv-
 warning emitted by `scripts/extract-callouts.py`; the hash, anchor, and kind are review guards.
 Line-only movement is harmless, while changed warning text, kind, or section fails closed.
 The default ID is derived from normalized semantic content. If exact duplicates are intentional,
-place `<!-- callout-id: unique-slug -->` immediately before a Markdown callout or
-`// callout-id: unique-slug` immediately before an in-fence warning.
+place `<!-- callout-id: unique-slug -->` immediately before a Markdown callout. For the Nth warning
+inside a code fence, place `<!-- callout-id: unique-slug occurrence:N -->` immediately before the
+fence. Callout metadata must never be inserted into the reader-visible code itself.
 
 After editing a guide:
 

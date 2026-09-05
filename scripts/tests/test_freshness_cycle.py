@@ -30,6 +30,8 @@ class FreshnessCycleTests(unittest.TestCase):
         subprocess.run(["git", "-C", checkout, "config", "user.email", "test@example.com"], check=True)
         (checkout / "notes").mkdir()
         (checkout / "notes/base.md").write_text("base\n", encoding="utf-8")
+        (checkout / "automations").mkdir()
+        (checkout / "automations/contract.toml").write_text("protected\n", encoding="utf-8")
         subprocess.run(["git", "-C", checkout, "add", "."], check=True)
         subprocess.run(["git", "-C", checkout, "commit", "-m", "base"], check=True,
                        capture_output=True)
@@ -169,6 +171,43 @@ class FreshnessCycleTests(unittest.TestCase):
                 payload["summary"], {"eligible": 1, "reportOnly": 1, "total": 2}
             )
 
+    def test_evaluate_turns_malformed_thread_actions_into_report_only_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            (run_root / "thread-review.json").write_text(
+                json.dumps({"actions": [
+                    ["not", "an", "object"],
+                    {"id": "malformed-paths", "paths": 7},
+                ]}),
+                encoding="utf-8",
+            )
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["summary"], {"eligible": 0, "reportOnly": 2, "total": 2})
+        self.assertIn("ambiguous-diagnostics", payload["actions"][0]["eligibilityBlockers"])
+
+    def test_evaluate_uses_flat_live_url_when_nested_live_is_null(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            (run_root / "defects.json").write_text(json.dumps({"references": [{
+                "ref": "example",
+                "verdict": "STATE-CHANGED",
+                "live": None,
+                "liveUrl": "https://example.com/live",
+                "triage": {},
+            }]}), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["actions"][0]["evidenceUrls"], ["https://example.com/live"])
+
     def test_generated_current_state_page_requires_its_canonical_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             run_root = pathlib.Path(directory)
@@ -255,15 +294,85 @@ class FreshnessCycleTests(unittest.TestCase):
 
     def test_recorded_deterministic_failure_can_corroborate_one_task(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            validator = checkout / "scripts/current-state.py"
+            validator.parent.mkdir()
+            validator.write_text(
+                "#!/usr/bin/env python3\n"
+                "import sys\n"
+                "print('stale generated state', file=sys.stderr)\n"
+                "raise SystemExit(7)\n",
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "-C", checkout, "add", validator], check=True)
+            subprocess.run(
+                ["git", "-C", checkout, "commit", "-m", "add validator"],
+                check=True, capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-C", checkout, "push", "origin", "main"],
+                check=True, capture_output=True,
+            )
+            prepared = self.prepare(checkout, root, "run-deterministic")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            run_root = root / "artifacts/weekly-improvements/run-deterministic"
+            manifest = json.loads((run_root / "run.json").read_text())
+            repository_identity = "https://github.com/example/repository.git"
+            manifest["repositoryIdentity"] = repository_identity
+            (run_root / "run.json").write_text(json.dumps(manifest), encoding="utf-8")
+            recorded = self.command(
+                "record-failure", run_root,
+                "--validator", "./scripts/current-state.py render --check",
+                "--artifact", "results/validator.json",
+            )
+            self.assertEqual(recorded.returncode, 0, recorded.stderr)
+            action = {
+                "id": "deterministic",
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": manifest["baseSha"],
+                "exactCurrentTarget": True,
+                "paths": ["notes/example.md"],
+                "changeKind": "docs",
+                "patternKey": "stale-render",
+                "deterministicFailure": {
+                    "validator": "./scripts/current-state.py render --check",
+                    "artifact": "results/validator.json",
+                    "targetSha": manifest["baseSha"],
+                    "failed": True,
+                },
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "thread-review.json").write_text(json.dumps({
+                "schemaVersion": 2,
+                "repositoryIdentity": repository_identity,
+                "actions": [action],
+            }), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(payload["summary"]["eligible"], 1)
+
+    def test_declared_deterministic_failure_cannot_spoof_attestation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
             run_root = pathlib.Path(directory)
             repository_identity = "https://github.com/example/repository.git"
             (run_root / "run.json").write_text(json.dumps({
                 "runId": "r", "baseSha": "abc", "repositoryIdentity": repository_identity,
+                "worktree": str(ROOT),
             }), encoding="utf-8")
             (run_root / "results").mkdir()
             (run_root / "results/validator.json").write_text("{}\n", encoding="utf-8")
             action = {
-                "id": "deterministic",
+                "id": "spoofed-attestation",
                 "confidence": 0.99,
                 "resolutionDisposition": "fixed",
                 "evidenceUrls": ["https://example.com/evidence"],
@@ -273,14 +382,6 @@ class FreshnessCycleTests(unittest.TestCase):
                 "paths": ["notes/example.md"],
                 "changeKind": "docs",
                 "patternKey": "stale-render",
-                "taskEvidence": [{
-                    "taskId": "task-1",
-                    "taskUrl": "https://example.com/tasks/task-1",
-                    "updatedAt": "2026-09-05T12:00:00Z",
-                    "repositoryIdentity": repository_identity,
-                    "patternKey": "stale-render",
-                    "observation": "The generated block was stale.",
-                }],
                 "deterministicFailure": {
                     "validator": "./scripts/current-state.py render --check",
                     "artifact": "results/validator.json",
@@ -301,8 +402,12 @@ class FreshnessCycleTests(unittest.TestCase):
             }), encoding="utf-8")
             result = self.command("evaluate", run_root)
             payload = json.loads((run_root / "actions.json").read_text())
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(payload["summary"]["eligible"], 1)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(payload["summary"]["eligible"], 0)
+            self.assertIn(
+                "thread-pattern-not-corroborated",
+                payload["actions"][0]["eligibilityBlockers"],
+            )
 
     def test_ready_requires_passing_mergeable_pr_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -421,6 +526,233 @@ class FreshnessCycleTests(unittest.TestCase):
             result = self.command("finalize", run_root, "--outcome", "no-change")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("outside allowed roots", result.stderr)
+
+    def test_finalize_audits_both_sides_of_a_protected_rename(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-rename")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            subprocess.run([
+                "git", "-C", worktree, "mv",
+                "automations/contract.toml", "notes/renamed.toml",
+            ], check=True)
+            run_root = root / "artifacts/weekly-improvements/run-rename"
+            result = self.command("finalize", run_root, "--outcome", "no-change")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("automations/contract.toml", result.stderr)
+            self.assertIn("outside allowed roots", result.stderr)
+
+    def test_finalize_preserves_porcelain_prefix_for_unstaged_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-unstaged")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            run_root = root / "artifacts/weekly-improvements/run-unstaged"
+            worktree = pathlib.Path(json.loads(prepared.stdout)["worktree"])
+            (worktree / "notes/base.md").write_text("changed\n", encoding="utf-8")
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["notes/base.md"],
+            }]}), encoding="utf-8")
+            result = self.command(
+                "finalize", run_root, "--outcome", "draft",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+                "--state-path", root / "artifacts/state.json",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_nested_forbidden_components_are_not_eligible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            common = {
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "changeKind": "docs",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            paths = (
+                "notes/repos/foo.md", "scripts/.github/x.yml",
+                "skills/captures/y.md", "notes/.git/z",
+            )
+            (run_root / "validation.json").write_text(json.dumps({
+                "actions": [
+                    {**common, "id": f"nested-{index}", "paths": [path]}
+                    for index, path in enumerate(paths)
+                ],
+            }), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(all(
+                "path-outside-allowed-roots" in item["eligibilityBlockers"]
+                for item in payload["actions"]
+            ))
+
+    def test_truthy_regression_test_must_name_an_existing_test_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(json.dumps({
+                "runId": "r", "baseSha": "abc", "repository": str(ROOT),
+            }), encoding="utf-8")
+            common = {
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "paths": ["probes/example.swift"],
+                "changeKind": "tooling",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "validation.json").write_text(json.dumps({"actions": [
+                {**common, "id": "invalid", "regressionTest": True},
+                {**common, "id": "valid", "regressionTest":
+                 "scripts/tests/test_freshness_cycle.py"},
+            ]}), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "missing-or-invalid-regression-test",
+                payload["actions"][0]["eligibilityBlockers"],
+            )
+            self.assertNotIn(
+                "missing-or-invalid-regression-test",
+                payload["actions"][1]["eligibilityBlockers"],
+            )
+
+    def test_protected_control_plane_path_is_not_eligible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            action = {
+                "id": "protected",
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "paths": ["scripts/freshness-cycle.py"],
+                "changeKind": "tooling",
+                "regressionTest": "scripts/tests/test_freshness_cycle.py",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "validation.json").write_text(
+                json.dumps({"actions": [action]}), encoding="utf-8"
+            )
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("path-outside-allowed-roots", payload["actions"][0]["eligibilityBlockers"])
+
+    def test_blocked_outcome_records_violations_and_always_cleans_up(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-blocked")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / ".github/workflows").mkdir(parents=True)
+            (worktree / ".github/workflows/unsafe.yml").write_text("name: unsafe\n")
+            run_root = root / "artifacts/weekly-improvements/run-blocked"
+            state_path = root / "artifacts/state.json"
+            result = self.command(
+                "finalize", run_root, "--outcome", "blocked", "--state-path", state_path
+            )
+            state = json.loads(state_path.read_text())
+            worktree_exists = worktree.exists()
+            lock_exists = (root / "artifacts/state/weekly-improvement.lock.json").exists()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(worktree_exists)
+        self.assertFalse(lock_exists)
+        self.assertTrue(state["lastRun"]["policyViolations"])
+        self.assertEqual(state["pending"]["outcome"], "blocked")
+
+    def test_generated_outputs_are_approved_from_changed_canonical_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-generated")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / "notes/source.md").write_text("canonical source\n")
+            (worktree / "skills").mkdir()
+            (worktree / "skills/generated.md").write_text("generated output\n")
+            run_root = root / "artifacts/weekly-improvements/run-generated"
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["notes/source.md"],
+                "generatedFromCanonicalSource": True,
+                "canonicalSourcePaths": ["notes/source.md"],
+            }]}), encoding="utf-8")
+            state_path = root / "artifacts/state.json"
+            result = self.command(
+                "finalize", run_root, "--outcome", "draft",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+                "--state-path", state_path,
+            )
+            state = json.loads(state_path.read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("policyViolations", state["lastRun"])
+        self.assertTrue(state["lastRun"]["generatedOutputFailures"])
+
+    def test_ready_checks_generated_outputs_when_only_a_canonical_guide_changed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-stale-generated")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / "guides").mkdir()
+            (worktree / "guides/source.md").write_text("canonical guide\n")
+            run_root = root / "artifacts/weekly-improvements/run-stale-generated"
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["guides/source.md"],
+            }]}), encoding="utf-8")
+            (run_root / "pr.json").write_text(json.dumps({
+                "checksPassed": True,
+                "mergeable": True,
+            }), encoding="utf-8")
+            result = self.command(
+                "finalize", run_root, "--outcome", "ready",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+            )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("current generated outputs", result.stderr)
 
 
 if __name__ == "__main__":

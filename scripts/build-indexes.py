@@ -158,6 +158,11 @@ def load_rows():
                     sys.exit(f"{source}:{row_number}: unknown symptom id: {symptom!r}")
                 if not blurb:
                     sys.exit(f"{source}:{row_number}: blurb must not be empty")
+                if len(blurb) > 120:
+                    sys.exit(
+                        f"{source}:{row_number}: blurb must be at most 120 characters; "
+                        f"got {len(blurb)}"
+                    )
                 key = canonical_key
                 if key in seen:
                     old_source, old_row = seen[key]
@@ -171,7 +176,11 @@ def load_rows():
                                  content_hash=(extracted or {}).get('content_hash', '')))
     if not rows:
         sys.exit(f"no classified TSV rows found in {classified_dir}")
-    expected = set(expected_by_id) if expected_by_id else set(expected_by_legacy)
+    expected = {
+        (record['file'], record['callout_id'])
+        if record['callout_id'] else legacy_key
+        for legacy_key, record in expected_by_legacy.items()
+    }
     missing = sorted(expected - matched)
     stale = sorted(matched - expected)
     if missing or stale:

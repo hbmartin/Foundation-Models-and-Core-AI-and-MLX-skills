@@ -28,7 +28,7 @@
 - [Prompt injection never throws — a successful attack reads as a normal Response; token caps also truncate with no flag.](part-02-foundation-models-everyday-api/README.md#21--languagemodelsession-end-to-end) — 2.README 🔇
 - [SpotlightSearchTool hands the model identity attributes only — bodies never arrive and it invents them fluently.](part-02-foundation-models-everyday-api/README.md#24--local-rag-with-spotlightsearchtool-plus-ocr-and-barcodes) — 2.README 🔇
 - [EXIF-rotated camera photos load sideways and get fluent wrong answers; summarizeHistory also flattens attachments away.](part-02-foundation-models-everyday-api/README.md#25--image-input-and-what-the-model-cannot-do-with-pixels) — 2.README 🔇
-- [A successful prompt injection returns a clean Response with plausible text — no error, guardrail case, or trace shows it.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#33-the-concrete-failure) — 2.1 🔇
+- [A successful prompt injection returns a clean Response with plausible text — no error, guardrail case, or trace shows…](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#33-the-concrete-failure) — 2.1 🔇
 - [includeSchemaInPrompt:false without a full example still yields well-formed objects — field semantics quietly degrade.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#43-one-shot-prompting-with-a-generable-instance) — 2.1 🔇
 - [Schema off, no example: still structurally valid output, just worse — wrong emphasis, empty strings, grammar padding.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#102-the-precondition--and-the-silent-failure-if-you-break-it) — 2.2 🔇
 - [Contents entry: the metadata gap — the Spotlight defect where the model invents document bodies.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#contents) — 2.4
@@ -53,9 +53,9 @@
 **Part 5**
 
 - [A tool named in instructions but missing from the toolset loops the model: fluent wrong-mode output and no error.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#contents) — 5.1
-- [The canonical bug: instructions name a tool the toolset lacks; the model loops in brainstorm mode, output stays plausible.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#8-️-the-canonical-worked-bug-a-tool-named-in-prose-missing-from-the-toolset) — 5.1
+- [The canonical bug: instructions name a tool the toolset lacks; the model loops in brainstorm mode, output stays…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#8-️-the-canonical-worked-bug-a-tool-named-in-prose-missing-from-the-toolset) — 5.1
 - [Every layer behaves correctly while the user sees the wrong feature — the model can't switch modes and nothing throws.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#84-️-why-this-class-of-bug-is-the-worst-kind) — 5.1
-- [The model kept accepting input and making tool calls, never threw, and gave no signal — Apple's archetypal silent failure.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#84-️-why-this-class-of-bug-is-the-worst-kind) — 5.1 🔇
+- [The model kept accepting input and making tool calls, never threw, and gave no signal — Apple's archetypal silent…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#84-️-why-this-class-of-bug-is-the-worst-kind) — 5.1 🔇
 - [token_count([]) takes the tools path (vacuous all()) and returns the empty toolset's count, not a prompt count.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#73-context_size-and-token_count--the-264-gate) — 5.2
 - [Image input is unreliable for spatial localisation — confident answers that misplace regions (thread 838613).](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#113-image-guidance-carried-over-from-the-swift-side) — 5.2
 
@@ -96,8 +96,8 @@
 
 **Part 5**
 
-- [A turn that is only a tool call completes streamResponse with zero partials; spinner-until-first-partial UIs hang forever.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#91-the-three-from-the-session) — 5.1 🔇
-- [A tool call() that never returns leaves the Swift continuation unresumed — the session hangs forever, no timeout, no error.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#104-️-a-tool-that-never-returns-hangs-the-session-forever) — 5.2
+- [A turn that is only a tool call completes streamResponse with zero partials; spinner-until-first-partial UIs hang…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#91-the-three-from-the-session) — 5.1 🔇
+- [A tool call() that never returns leaves the Swift continuation unresumed — the session hangs forever, no timeout, no…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#104-️-a-tool-that-never-returns-hangs-the-session-forever) — 5.2
 - [pytest collects test_memory_stress.py and runs nothing — it defines no test_ functions; invoke it with python directly.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#136-how-to-know-whether-you-are-leaking) — 5.2
 
 ## Truncation & limits
@@ -146,7 +146,7 @@
 
 **Part 5**
 
-- [A schema flag that fails to apply still yields prose on stdout with exit 0; jq errors lines later, blaming the wrong stage.](part-05-prototyping-profiling-non-swift/README.md#52--the-fm-cli-and-the-foundation-models-sdk-for-python) — 5.README 🔇
+- [A schema flag that fails to apply still yields prose on stdout with exit 0; jq errors lines later, blaming the wrong…](part-05-prototyping-profiling-non-swift/README.md#52--the-fm-cli-and-the-foundation-models-sdk-for-python) — 5.README 🔇
 - [fm respond writes prose to stdout when a schema isn't applied, exit 0; jq errors later naming the wrong culprit.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#31-why-this-gap-is-worse-than-it-looks) — 5.2 🔇
 - [In the generating=Cat branch of respond, your options are dropped.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) — 5.2
 - [respond(generating:options:) silently discards options — session.py:473 calls _respond_with_schema without them.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) — 5.2 🔇
@@ -254,7 +254,7 @@
 **Part 5**
 
 - [Image support is compiled in or out by the build machine's macOS SDK; users learn only when an image prompt fails.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#64-️-the-build-machine-silently-decides-whether-images-work) — 5.2
-- [A wheel built where SDK detection returns None or <27 omits image support; nothing at runtime says so until a prompt fails.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#64-️-the-build-machine-silently-decides-whether-images-work) — 5.2 🔇
+- [A wheel built where SDK detection returns None or <27 omits image support; nothing at runtime says so until a prompt…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#64-️-the-build-machine-silently-decides-whether-images-work) — 5.2 🔇
 
 ## Performance cliffs
 
@@ -295,7 +295,7 @@
 
 **Part 5**
 
-- [TOC: memory across the Python/Swift boundary — fd leaks after ~240 image calls, retained attachments, double-free crashes.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#contents) — 5.2
+- [TOC: memory across the Python/Swift boundary — fd leaks after ~240 image calls, retained attachments, double-free…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#contents) — 5.2
 - [Native memory and fds cross the Python/Swift boundary — batches leak unless sessions are recreated and releases run.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#13-️-memory-across-the-boundary) — 5.2
 - [pip's apple-fm-sdk 0.2.1 still has the image fd leak; the fix landed 2026-07-07 on git main only — install from main.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#132-the-fd-leak-and-why-the-fix-is-not-in-any-release) — 5.2
 
@@ -307,7 +307,7 @@
 - [Assigning transcript.history mid-response compiles clean; the failure erupts as an error from an unrelated await.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#92-the-rule-only-when-isresponding--false) — 2.1 🔇
 - [Propagate .emptyTypeChoicesSchema — it catches unloaded .anyOf arrays; Apple's Skills writes try! there, which traps.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#71-generationschema--the-finished-immutable-article) — 2.2
 - [Refactor into a file importing only FoundationModels and the break reads like a missing SDK, not a missing import.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#3-the-cross-import-overlay-and-the-two-line-version) — 2.4 🔇
-- [spotlight_search never throws on malformed arguments; a code-100 JSON error rides inside the Prompt output, invisible to catch](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#4-the-trajectory-what-actually-happens-on-one-respond) — 2.4
+- [spotlight_search never throws on malformed arguments; a code-100 JSON error rides inside the Prompt output, invisible…](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#4-the-trajectory-what-actually-happens-on-one-respond) — 2.4
 - [contextSizeExceeded throws but never says what filled the window — tool result payloads are the invisible culprit.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#101-the-number-that-decides-your-architecture) — 2.4 🔇
 - [A reactive-only design missing the SystemLanguageModel.Error arm mishandles availability failures silently.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#28-proactive-gate-or-reactive-catch--apple-changed-its-mind-quietly) — 2.6
 - [Availability failures are SystemLanguageModel.Error, not LanguageModelError — ladders on the latter miss them.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#34-systemlanguagemodelerror--one-case-and-it-is-not-on-watchos) — 2.6
@@ -334,7 +334,7 @@
 - [Simulator inference runs on the host Mac's OS; version-skew errors surface as a bare -1 that reads as your bug.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#26-what-playground-will-not-tell-you--and-the-trap-under-it) — 5.1 🔇
 - [One availability branch is contaminated by a confirmed Apple bug — do not design around it.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#42-the-availability-branches-it-lets-you-reach) — 5.1
 - [availability returns .appleIntelligenceNotEnabled unless Siri is enabled, even with AI on — Apple-confirmed bug.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#42-the-availability-branches-it-lets-you-reach) — 5.1
-- [capabilities claims vision and tool calling on the 27.0 sim where both fail at runtime; it is a declaration, not a health check](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#134-a-device) — 5.1
+- [capabilities claims vision and tool calling on the 27.0 sim where both fail at runtime; it is a declaration, not a…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#134-a-device) — 5.1
 - [apple_fm_sdk.__version__ is hardcoded 0.1.0 on a 0.2.1 package; capability checks keyed on it test a constant.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#51-it-is-not-a-python-implementation-of-anything) — 5.2
 - [pytest outside the repo root fails on FileNotFoundError for fixtures — it reads like a broken install and is not.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#65-development-install) — 5.2
 - [Exceptions raised inside a tool's call() never reach your except block — they are stringified and fed to the model.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#103-️-tool-exceptions-never-reach-your-except-block) — 5.2
@@ -344,7 +344,7 @@
 
 **Part 2**
 
-- [Beta 5 retyped history from ArraySlice<Transcript.Entry> to Transcript.HistoryView — suffix trims survive, raw-Int indexing does not.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#91-what-changed) — 2.1
+- [Beta 5 retyped history from ArraySlice<Transcript.Entry> to Transcript.HistoryView — suffix trims survive, raw-Int…](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#91-what-changed) — 2.1
 - [Exhaustive Transcript.Entry switches break compiling on the 27 SDK; 'fixing' with default: silently drops new cases.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#121-six-entry-types) — 2.1 🔇
 - [The .custom segment case the docs list is not present in the beta 5 interface.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
 - [Beta 5 declares exactly three Segment cases — .custom vanished between the 2026-07-29 capture and beta 5.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
@@ -354,7 +354,7 @@
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
 - [CustomSegment and its protocol are gone from the beta 5 interface; the custom-segment path no longer compiles.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#52-the-four-tool-shaped-types) — 2.3
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
-- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at…](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 - [No source change needed — rebuilding with Xcode 27 is what silently flips which error types your catches see.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 
@@ -364,11 +364,11 @@
 - [Transcript.Entry switches exhaustive on 26 fail to compile on 27 (.reasoning) — add @unknown default deliberately.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#2-anatomy-six-entry-types-and-what-each-one-costs) — 3.1
 - [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1
-- [Until beta 5 the history property was ArraySlice<Transcript.Entry>; beta 5 introduces the dedicated HistoryView collection.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
+- [Beta 5 retyped history to Transcript.HistoryView; suffix trims survive, but Int indexing breaks.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
 - [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
-- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
+- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize…](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
 - [PCC supportsLocale/supportedLanguages became async throws in beta 5; a sync capability guard no longer compiles.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#86-pccs-operational-gates) — 3.4
 
 **Part 4**
@@ -385,7 +385,7 @@
 
 **Part 2**
 
-- [Apple's documented nested @Generable example fails macro expansion in Xcode 27 beta 27A5228h; move the nested type to file scope until fixed.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#23-the-canonical-shape) — 2.2
+- [Apple's documented nested @Generable example fails macro expansion in Xcode 27 beta 27A5228h; move the nested type to…](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#23-the-canonical-shape) — 2.2
 - [Python docstrings leak Swift #/…/# regex delimiters — working tests use bare patterns; do not copy the delimiters.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#35-a-note-on-pattern_) — 2.2
 - [Apple's ResponseStream snippet does not compile — unbalanced braces, a stray try!, and an undefined variable.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#93-responsestream-snapshot-and-response) — 2.2
 - [LanguageModelSession.Error is in docs and a forum snippet but no shipping sample — keep the arm, distrust its cases.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#111-the-three-error-ladder) — 2.2
@@ -426,15 +426,15 @@
 **Part 5**
 
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
-- [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is unverified.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
-- [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written docs.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
-- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste say otherwise.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm surface.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
+- [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
+- [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
+- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
+- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The docstring's SystemLanguageModel(temperature:top_p:) raises TypeError — sampling lives on GenerationOptions.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#72-the-constructor-use-case-and-guardrails) — 5.2
-- [test_composed_prompt_cleanup.py's docstring promises an fd-count regression test; the file has only four mocked unit tests.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#136-how-to-know-whether-you-are-leaking) — 5.2
+- [test_composed_prompt_cleanup.py's docstring promises an fd-count regression test; the file has only four mocked unit…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#136-how-to-know-whether-you-are-leaking) — 5.2
 
 ## API footguns
 
@@ -510,7 +510,7 @@
 **Part 5**
 
 - [includeSchemaInPrompt: false without a one-shot example leaves neither schema nor pattern — structured output degrades.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#91-the-three-from-the-session) — 5.1
-- [_stream_response skips the session request lock every respond path takes; a stream and respond() interleave unserialised.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#85-streaming-yields-snapshots-and-only-text) — 5.2
+- [_stream_response skips the session request lock every respond path takes; a stream and respond() interleave…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#85-streaming-yields-snapshots-and-only-text) — 5.2
 - [GuideType members are camelCase (maxItems) while factories are snake_case (max_items) — an autocomplete trap.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#92-fmguide) — 5.2
 - [Tool validation is bare asserts, disabled under python -O — a tool missing description fails later and less legibly.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#105-two-more-sharp-edges) — 5.2
 - [ImageAttachment path must be pathlib.Path; a plain str dies on path.is_file() with AttributeError, not a friendly error.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#111-the-prompt-model) — 5.2
@@ -518,7 +518,7 @@
 - [Transcript-loaded tools are historical only; forget to re-pass instances and the replayed session can never call tools.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#124-replaying-a-transcript) — 5.2
 - [Manual cleanup of native session resources crashes the interpreter — never call the internal _release() yourself.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-️-the-cleanup-that-crashes-the-interpreter) — 5.2
 - [session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-️-the-cleanup-that-crashes-the-interpreter) — 5.2
-- [except fm.FoundationModelsError misses image failures — PromptError/ImagePromptError subclass plain Exception; catch both.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#14-what-the-python-sdk-cannot-do) — 5.2
+- [except fm.FoundationModelsError misses image failures — PromptError/ImagePromptError subclass plain Exception; catch…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#14-what-the-python-sdk-cannot-do) — 5.2
 
 ## General cautions
 
@@ -577,17 +577,17 @@
 **Part 5**
 
 - [The instrument's trace file is a sensitive artefact: it captures prompt and response data in the clear.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-this-covers) — 5.1
-- [No one on this project ran Xcode 27's Instruments; four of six timeline lanes are unverified — UI claims trace to narration.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
+- [No one on this project ran Xcode 27's Instruments; four of six timeline lanes are unverified — UI claims trace to…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
 - [The code-along targets macOS Tahoe/Xcode 26 — treat its Playground UI details as 'at least true in 26', not 27.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#21-the-macro-the-canvas-and-the-refresh-button) — 5.1
 - [LanguageModelFeedback attachments carry the full session transcript — consent, no auto-upload, scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) — 5.1
 - [Recording a trace turns FM logging on; read the Record Anyway dialog before clicking.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#52-️-the-record-anyway-dialog--read-this-before-you-click) — 5.1
 - [Starting a trace enables prompt/response capture in the clear for the recording — get consent and scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#52-️-the-record-anyway-dialog--read-this-before-you-click) — 5.1
-- [The transcript-recorder JSON files contain the full transcript — apply the same consent and scrubbing rules before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#131-a-transcript-recorder) — 5.1
+- [The transcript-recorder JSON files contain the full transcript — apply the same consent and scrubbing rules before…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#131-a-transcript-recorder) — 5.1
 - [The coffee-game and SpeechAnalyzer samples are iOS 26-era harvests — do not read them as evidence of 27 behaviour.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#16-sources) — 5.1
 - [Evidence in this guide is the weakest of Parts 1-6 — read the provenance warning before trusting details.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#️-read-this-before-you-read-anything-else-the-evidence-here-is-the-weakest-in-parts-16) — 5.2
 - [The Swift/Python parity fixtures differ (Int .range vs prose-bounded nested type) — parity is schema-level only.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#99-the-parity-fixtures-the-best-translation-reference-that-exists) — 5.2
 - [Transcripts are user words: exporting them off-device is a data-collection decision — consent, redaction, retention.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#125-what-this-workflow-is-good-for) — 5.2
-- [Symptom-to-cause table of the SDK's non-throwing failures: dropped options, failed seed casts, ignored guides, hung tools.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#162-️-it-does-not-throw--the-expensive-ones) — 5.2
+- [Symptom-to-cause table of the SDK's non-throwing failures: dropped options, failed seed casts, ignored guides, hung…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#162-️-it-does-not-throw--the-expensive-ones) — 5.2
 
 ---
 

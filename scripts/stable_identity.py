@@ -24,8 +24,19 @@ def content_hash(*parts: str) -> str:
 
 def source_content_hash(*parts: str) -> str:
     """Hash source text losslessly so whitespace-only code edits require review."""
-    payload = "\x1f".join(parts)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    if all("\x1f" not in part for part in parts):
+        # Preserve existing hashes for the ordinary text domain.
+        payload = "\x1f".join(parts).encode("utf-8")
+    else:
+        # 0xff cannot occur in valid UTF-8, so this framed domain cannot alias
+        # the legacy encoding. Byte lengths make every part boundary explicit.
+        framed = bytearray(b"\xffsource-content-hash-v2\0")
+        for part in parts:
+            encoded = part.encode("utf-8")
+            framed.extend(len(encoded).to_bytes(8, "big"))
+            framed.extend(encoded)
+        payload = bytes(framed)
+    return hashlib.sha256(payload).hexdigest()
 
 
 def semantic_id(prefix: str, *parts: str, explicit: str | None = None) -> str:

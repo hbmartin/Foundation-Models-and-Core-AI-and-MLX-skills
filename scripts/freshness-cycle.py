@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -15,7 +16,12 @@ import sys
 import tempfile
 from typing import Any
 
-from automation_policy import ALLOWED_ROOTS, FORBIDDEN_PREFIXES, GENERATED_OUTPUTS
+from automation_policy import (
+    ALLOWED_ROOTS,
+    FORBIDDEN_COMPONENTS,
+    GENERATED_OUTPUTS,
+    PROTECTED_PATHS,
+)
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -42,6 +48,51 @@ THREAD_ACTION_KEYS = {
     "threadReviewUnexpectedFields", *PROHIBITED_FLAGS,
 }
 ISO_TIMESTAMP = re.compile(r"^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$")
+GENERATED_VALIDATORS = (
+    (
+        "current-state-blocks",
+        (
+            "notes/current-state.json",
+            "notes/README.md",
+            "notes/FRESHNESS-RUNBOOK.md",
+            "notes/NEXT-BETA-CHECKLIST.md",
+            "probes/README.md",
+        ),
+        (sys.executable, "scripts/current-state.py", "render", "--check"),
+    ),
+    (
+        "indexes",
+        (
+            "guides/",
+            "notes/synthesis/callout-classifications/",
+            "notes/synthesis/SYMPTOM-TAXONOMY.md",
+        ),
+        (
+            sys.executable,
+            "-m",
+            "unittest",
+            "scripts.tests.test_repository_indexes.RepositoryIndexTests."
+            "test_committed_indexes_match_clean_generation_and_links",
+        ),
+    ),
+    (
+        "skills",
+        ("guides/", "skills/"),
+        (
+            sys.executable,
+            "-m",
+            "unittest",
+            "scripts.tests.test_skills.CommittedSkillsTests."
+            "test_committed_skills_match_clean_generation",
+        ),
+    ),
+)
+DETERMINISTIC_VALIDATORS = {
+    "./scripts/current-state.py render --check": (
+        sys.executable, "scripts/current-state.py", "render", "--check",
+    ),
+}
+REGRESSION_TEST_ROOTS = ("scripts/tests/", "probes/Tests/", "tests/")
 
 
 class CycleError(RuntimeError):
@@ -78,13 +129,15 @@ def read_json(path: pathlib.Path, default: Any = None) -> Any:
         raise CycleError(f"invalid JSON at {path}: {error}") from error
 
 
-def git(repository: pathlib.Path, *arguments: str, check: bool = True) -> str:
+def git(
+    repository: pathlib.Path, *arguments: str, check: bool = True, strip: bool = True,
+) -> str:
     process = subprocess.run(["git", "-C", str(repository), *arguments], text=True,
                              capture_output=True, check=False)
     if check and process.returncode:
         raise CycleError((process.stderr or process.stdout).strip() or
                          f"git {' '.join(arguments)} failed")
-    return process.stdout.strip()
+    return process.stdout.strip() if strip else process.stdout
 
 
 def acquire_lock(lock_path: pathlib.Path, run_id: str) -> dict[str, Any]:
@@ -178,43 +231,129 @@ def prepare(args: argparse.Namespace) -> int:
     return 0
 
 
+def path_matches(path: str, pattern: str) -> bool:
+    return path.startswith(pattern) if pattern.endswith("/") else path == pattern
+
+
+def generated_output(path: str) -> bool:
+    return any(path_matches(path, pattern) for pattern in GENERATED_OUTPUTS)
+
+
 def safe_path(path: str) -> bool:
-    if not path or ".." in pathlib.PurePosixPath(path).parts:
+    parsed = pathlib.PurePosixPath(path)
+    if not path or parsed.is_absolute() or ".." in parsed.parts:
         return False
-    if any(path.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
+    if any(component in FORBIDDEN_COMPONENTS for component in parsed.parts):
+        return False
+    if any(path_matches(path, protected) for protected in PROTECTED_PATHS):
         return False
     return any(path.startswith(root) for root in ALLOWED_ROOTS)
 
 
+def artifact_path(run_root: pathlib.Path, value: Any) -> pathlib.Path | None:
+    if not isinstance(value, str):
+        return None
+    relative = pathlib.PurePosixPath(value)
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or not relative.parts
+        or relative.parts[0] != "results"
+    ):
+        return None
+    resolved = (run_root / pathlib.Path(*relative.parts)).resolve()
+    try:
+        resolved.relative_to(run_root.resolve())
+    except ValueError:
+        return None
+    return resolved
+
+
+def run_deterministic_validator(
+    manifest: dict[str, Any], validator: str,
+) -> subprocess.CompletedProcess[str] | None:
+    command = DETERMINISTIC_VALIDATORS.get(validator)
+    worktree_value = manifest.get("worktree")
+    if command is None or not isinstance(worktree_value, str):
+        return None
+    worktree = pathlib.Path(worktree_value)
+    if not worktree.is_dir():
+        return None
+    try:
+        if (
+            git(worktree, "rev-parse", "HEAD") != manifest.get("baseSha")
+            or git(worktree, "status", "--porcelain", "--untracked-files=all")
+        ):
+            return None
+    except CycleError:
+        return None
+    try:
+        return subprocess.run(
+            command, cwd=worktree, text=True, capture_output=True,
+            timeout=300, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def validation_attestation(
+    validator: str, target_sha: str, result: subprocess.CompletedProcess[str],
+) -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "validator": validator,
+        "targetSha": target_sha,
+        "exitCode": result.returncode,
+        "stdoutSha256": hashlib.sha256(result.stdout.encode("utf-8")).hexdigest(),
+        "stderrSha256": hashlib.sha256(result.stderr.encode("utf-8")).hexdigest(),
+    }
+
+
 def deterministic_failure_is_recorded(
-    value: Any, run_root: pathlib.Path, base_sha: str,
+    value: Any, run_root: pathlib.Path, manifest: dict[str, Any],
 ) -> bool:
     if not isinstance(value, dict) or set(value) != {
         "validator", "artifact", "targetSha", "failed",
     }:
         return False
     validator = value.get("validator")
-    artifact = value.get("artifact")
     if (
         not isinstance(validator, str)
-        or not validator.startswith("./scripts/")
-        or "\n" in validator
-        or not isinstance(artifact, str)
+        or validator not in DETERMINISTIC_VALIDATORS
     ):
         return False
-    relative = pathlib.PurePosixPath(artifact)
-    if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+    evidence_path = artifact_path(run_root, value.get("artifact"))
+    if evidence_path is None or not evidence_path.is_file():
         return False
-    evidence_path = (run_root / pathlib.Path(*relative.parts)).resolve()
     try:
-        evidence_path.relative_to(run_root.resolve())
-    except ValueError:
+        recorded = read_json(evidence_path)
+    except CycleError:
         return False
+    result = run_deterministic_validator(manifest, validator)
+    if result is None or result.returncode == 0:
+        return False
+    expected = validation_attestation(validator, manifest["baseSha"], result)
     return (
-        value.get("targetSha") == base_sha
+        value.get("targetSha") == manifest["baseSha"]
         and value.get("failed") is True
-        and evidence_path.is_file()
+        and recorded == expected
     )
+
+
+def regression_test_is_valid(value: Any, manifest: dict[str, Any]) -> bool:
+    if not isinstance(value, str):
+        return False
+    relative = pathlib.PurePosixPath(value)
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or not any(value.startswith(root) for root in REGRESSION_TEST_ROOTS)
+    ):
+        return False
+    root_value = manifest.get("worktree") or manifest.get("repository")
+    if not isinstance(root_value, str):
+        return False
+    return (pathlib.Path(root_value) / pathlib.Path(*relative.parts)).is_file()
 
 
 def thread_evidence_status(
@@ -274,8 +413,10 @@ def eligibility(
     change_kind = action.get("changeKind")
     if change_kind not in {"docs", "code", "tooling"}:
         blockers.append("missing-or-invalid-change-kind")
-    if change_kind in {"code", "tooling"} and not action.get("regressionTest"):
-        blockers.append("missing-regression-test")
+    if change_kind in {"code", "tooling"} and not regression_test_is_valid(
+        action.get("regressionTest"), manifest
+    ):
+        blockers.append("missing-or-invalid-regression-test")
     if action.get("source") == "thread-retrospective":
         if action.get("threadReviewSchemaVersion") != 2:
             blockers.append("invalid-thread-review-schema")
@@ -289,26 +430,31 @@ def eligibility(
             action, str(manifest.get("repositoryIdentity", ""))
         )
         deterministic = deterministic_failure_is_recorded(
-            action.get("deterministicFailure"), run_root, base_sha
+            action.get("deterministicFailure"), run_root, manifest
         )
-        if not evidence_valid:
+        if not evidence_valid and not deterministic:
             blockers.append("invalid-structured-task-evidence")
-        if not evidence_valid or not (distinct_task_count >= 2 or deterministic):
+        if distinct_task_count < 2 and not deterministic:
             blockers.append("thread-pattern-not-corroborated")
     for flag in PROHIBITED_FLAGS:
         if action.get(flag) is not False:
             blockers.append(f"prohibited-{flag}")
     generated_paths = [
-        path for path in paths or []
-        if isinstance(path, str) and path.startswith(GENERATED_OUTPUTS)
+        path for path in (paths if isinstance(paths, list) else [])
+        if isinstance(path, str) and generated_output(path)
     ]
-    if generated_paths:
+    generated_claim = (
+        bool(generated_paths)
+        or action.get("generatedFromCanonicalSource") is not None
+        or action.get("canonicalSourcePaths") is not None
+    )
+    if generated_claim:
         sources = action.get("canonicalSourcePaths")
         if action.get("generatedFromCanonicalSource") is not True or not isinstance(sources, list):
             blockers.append("generated-output-lacks-canonical-source")
         elif not sources or not all(
             isinstance(path, str) and path in paths and safe_path(path)
-            and not path.startswith(GENERATED_OUTPUTS) for path in sources
+            and not generated_output(path) for path in sources
         ):
             blockers.append("invalid-canonical-source-paths")
     if action.get("diagnostics"):
@@ -316,15 +462,60 @@ def eligibility(
     return blockers
 
 
+def malformed_candidate(source: str, filename: str, detail: str) -> dict[str, Any]:
+    return {
+        "id": f"malformed:{filename}",
+        "source": source,
+        "summary": f"Malformed {filename}",
+        "diagnostics": [{"code": "invalid-input-shape", "message": detail}],
+    }
+
+
+def evidence_payload(run_root: pathlib.Path, filename: str) -> tuple[Any, str | None]:
+    try:
+        return read_json(run_root / filename), None
+    except CycleError as error:
+        return None, str(error)
+
+
 def action_candidates(
     run_root: pathlib.Path, manifest: dict[str, Any],
 ) -> list[dict[str, Any]]:
     candidates = []
-    defects = read_json(run_root / "defects.json", {}) or {}
-    for reference in defects.get("references", []):
+    defects, defects_error = evidence_payload(run_root, "defects.json")
+    if defects_error:
+        candidates.append(malformed_candidate("defect-report", "defects.json", defects_error))
+        defects = {}
+    elif defects is None:
+        defects = {}
+    elif not isinstance(defects, dict):
+        candidates.append(malformed_candidate(
+            "defect-report", "defects.json", "top level must be an object",
+        ))
+        defects = {}
+    references = defects.get("references", [])
+    if not isinstance(references, list):
+        candidates.append(malformed_candidate(
+            "defect-report", "defects.json", "references must be an array",
+        ))
+        references = []
+    for index, reference in enumerate(references, 1):
+        if not isinstance(reference, dict):
+            candidates.append(malformed_candidate(
+                "defect-report", f"defects.json:reference-{index}",
+                "reference must be an object",
+            ))
+            continue
         if reference.get("verdict") != "STATE-CHANGED":
             continue
         triage = reference.get("triage") or {}
+        if not isinstance(triage, dict):
+            candidates.append(malformed_candidate(
+                "defect-report", f"defects.json:reference-{index}",
+                "triage must be an object",
+            ))
+            continue
+        live_url = reference.get("liveUrl")
         candidates.append({
             "id": f"defect:{reference.get('ref', '?')}",
             "source": "defect-report",
@@ -333,7 +524,7 @@ def action_candidates(
             "resolutionDisposition": triage.get("resolutionDisposition") or
                                      reference.get("resolutionDisposition") or "unknown",
             "evidenceUrls": triage.get("evidenceUrls") or
-                            [reference.get("live", {}).get("url")],
+                            ([live_url] if isinstance(live_url, str) else []),
             "evidenceDate": triage.get("evidenceDate"),
             "targetSha": triage.get("targetSha"),
             "exactCurrentTarget": triage.get("exactCurrentTarget", False),
@@ -349,8 +540,30 @@ def action_candidates(
         ("thread-review.json", "thread-retrospective"),
         ("validation.json", "deterministic-validation"),
     ):
-        payload = read_json(run_root / filename, {}) or {}
-        for item in payload.get("actions", []):
+        payload, payload_error = evidence_payload(run_root, filename)
+        if payload_error:
+            candidates.append(malformed_candidate(default_source, filename, payload_error))
+            continue
+        if payload is None:
+            continue
+        if not isinstance(payload, dict):
+            candidates.append(malformed_candidate(
+                default_source, filename, "top level must be an object",
+            ))
+            continue
+        items = payload.get("actions", [])
+        if not isinstance(items, list):
+            candidates.append(malformed_candidate(
+                default_source, filename, "actions must be an array",
+            ))
+            continue
+        for index, item in enumerate(items, 1):
+            if not isinstance(item, dict):
+                candidates.append(malformed_candidate(
+                    default_source, f"{filename}:action-{index}",
+                    "action must be an object",
+                ))
+                continue
             candidate = dict(item)
             # The evidence lane, not untrusted input, determines the source. This
             # prevents task text from bypassing the stricter retrospective gate.
@@ -395,16 +608,89 @@ def evaluate(args: argparse.Namespace) -> int:
 
 
 def changed_paths(worktree: pathlib.Path, base_sha: str) -> list[str]:
-    committed = git(worktree, "diff", "--name-only", f"{base_sha}...HEAD").splitlines()
-    working = git(worktree, "status", "--porcelain=v1", "--untracked-files=all").splitlines()
-    paths = list(committed)
-    for line in working:
-        path = line[3:]
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
-        paths.append(path)
+    paths = []
+    committed = git(
+        worktree, "diff", "--name-status", "--find-renames", "-z", f"{base_sha}...HEAD",
+        strip=False,
+    ).split("\0")
+    index = 0
+    while index < len(committed) and committed[index]:
+        status = committed[index]
+        index += 1
+        path_count = 2 if status.startswith(("R", "C")) else 1
+        paths.extend(committed[index:index + path_count])
+        index += path_count
+    working = git(
+        worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all", strip=False,
+    ).split("\0")
+    index = 0
+    while index < len(working) and working[index]:
+        entry = working[index]
+        index += 1
+        status = entry[:2]
+        paths.append(entry[3:])
+        if "R" in status or "C" in status:
+            paths.append(working[index])
+            index += 1
     disposable = ("Build/", "artifacts/", "probes/.build/")
     return sorted({path for path in paths if path and not path.startswith(disposable)})
+
+
+def eligible_actions(run_root: pathlib.Path) -> tuple[list[dict[str, Any]], str | None]:
+    try:
+        payload = read_json(run_root / "actions.json", {}) or {}
+    except CycleError as error:
+        return [], str(error)
+    if not isinstance(payload, dict) or not isinstance(payload.get("actions", []), list):
+        return [], "actions.json must contain an actions array"
+    items = payload.get("actions", [])
+    if any(not isinstance(item, dict) for item in items):
+        return [], "actions.json actions must be objects"
+    return [item for item in items if item.get("automaticFixEligible") is True], None
+
+
+def generated_source_closure(action: dict[str, Any], changed: set[str]) -> bool:
+    sources = action.get("canonicalSourcePaths")
+    return (
+        action.get("generatedFromCanonicalSource") is True
+        and isinstance(sources, list)
+        and bool(sources)
+        and all(isinstance(path, str) and path in changed for path in sources)
+    )
+
+
+def approved_changed_path(
+    path: str, actions: list[dict[str, Any]], changed: set[str],
+) -> bool:
+    if generated_output(path):
+        return any(generated_source_closure(action, changed) for action in actions)
+    return any(
+        isinstance(action.get("paths"), list) and path in action["paths"]
+        for action in actions
+    )
+
+
+def generated_validation_failures(worktree: pathlib.Path, paths: list[str]) -> list[str]:
+    failures = []
+    for name, patterns, command in GENERATED_VALIDATORS:
+        if not any(any(path_matches(path, pattern) for pattern in patterns) for path in paths):
+            continue
+        try:
+            result = subprocess.run(
+                command,
+                cwd=worktree,
+                text=True,
+                capture_output=True,
+                timeout=300,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            failures.append(f"{name}: {error}")
+            continue
+        if result.returncode:
+            detail = (result.stderr or result.stdout).strip().splitlines()
+            failures.append(f"{name}: {detail[0] if detail else f'exit {result.returncode}'}")
+    return failures
 
 
 def finalize(args: argparse.Namespace) -> int:
@@ -420,28 +706,52 @@ def finalize(args: argparse.Namespace) -> int:
         raise CycleError("active lock belongs to another run; refusing to finalize")
     paths = changed_paths(worktree, manifest["baseSha"]) if worktree.exists() else []
     unsafe = [path for path in paths if not safe_path(path)]
-    if unsafe:
-        raise CycleError(f"refusing to finalize changes outside allowed roots: {unsafe}")
     if args.outcome in {"draft", "ready"} and not args.pr_url:
         raise CycleError(f"{args.outcome} outcome requires --pr-url")
     if args.outcome == "ready":
         pr = read_json(run_root / "pr.json", {}) or {}
-        if pr.get("checksPassed") is not True or pr.get("mergeable") is not True:
+        if (
+            not isinstance(pr, dict)
+            or pr.get("checksPassed") is not True
+            or pr.get("mergeable") is not True
+        ):
             raise CycleError("ready outcome requires pr.json with checksPassed and mergeable true")
-    actions = read_json(run_root / "actions.json", {}) or {}
-    eligible = [item for item in actions.get("actions", [])
-                if item.get("automaticFixEligible") is True]
-    approved_paths = {path for item in eligible for path in item.get("paths", [])}
-    unapproved = [path for path in paths if path not in approved_paths]
+    eligible, actions_error = eligible_actions(run_root)
+    changed = set(paths)
+    unapproved = [
+        path for path in paths if not approved_changed_path(path, eligible, changed)
+    ]
+    policy_violations = []
+    if unsafe:
+        policy_violations.append(f"changes outside allowed roots: {unsafe}")
+    if actions_error:
+        policy_violations.append(actions_error)
     if unapproved:
-        raise CycleError(f"changed paths lack an eligible action: {unapproved}")
+        policy_violations.append(f"changed paths lack an eligible action: {unapproved}")
+    if policy_violations and args.outcome != "blocked":
+        raise CycleError("refusing to finalize: " + "; ".join(policy_violations))
+    if args.outcome == "no-change" and paths:
+        raise CycleError("no-change outcome requires a clean worktree")
     if args.outcome in {"draft", "ready"} and (not paths or not eligible):
         raise CycleError(f"{args.outcome} outcome requires changed paths backed by eligible actions")
+    generated_failures = (
+        generated_validation_failures(worktree, paths)
+        if worktree.exists() and args.outcome in {"draft", "ready"}
+        else []
+    )
+    if generated_failures and args.outcome == "ready":
+        raise CycleError(
+            "ready outcome requires current generated outputs: " + "; ".join(generated_failures)
+        )
     state_path = args.state_path or run_root.parents[1] / "state/weekly-improvement.json"
     state = read_json(state_path, {"schemaVersion": 1, "runs": []})
     entry = {"runId": manifest["runId"], "finishedAt": iso(), "outcome": args.outcome,
              "baseSha": manifest["baseSha"], "branch": manifest["branch"],
              "prUrl": args.pr_url, "changedPaths": paths}
+    if policy_violations:
+        entry["policyViolations"] = policy_violations
+    if generated_failures:
+        entry["generatedOutputFailures"] = generated_failures
     state.setdefault("runs", []).append(entry)
     state["runs"] = state["runs"][-20:]
     state["lastRun"] = entry
@@ -479,6 +789,27 @@ def finalize(args: argparse.Namespace) -> int:
     return 0
 
 
+def record_failure(args: argparse.Namespace) -> int:
+    run_root = args.run_root.resolve()
+    manifest = read_json(run_root / "run.json")
+    if not isinstance(manifest, dict):
+        raise CycleError(f"missing run manifest in {run_root}")
+    output = artifact_path(run_root, args.artifact)
+    if output is None:
+        raise CycleError("artifact must be a relative path under results/ inside the run root")
+    result = run_deterministic_validator(manifest, args.validator)
+    if result is None:
+        raise CycleError("validator is not allowlisted or its worktree is unavailable")
+    if result.returncode == 0:
+        raise CycleError("validator passed; there is no deterministic failure to record")
+    atomic_json(
+        output,
+        validation_attestation(args.validator, manifest["baseSha"], result),
+    )
+    print(json.dumps({"artifact": args.artifact, "exitCode": result.returncode}))
+    return 0
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -493,6 +824,12 @@ def parse_args() -> argparse.Namespace:
                                 help=argparse.SUPPRESS)
     evaluate_parser = sub.add_parser("evaluate")
     evaluate_parser.add_argument("run_root", type=pathlib.Path)
+    record_parser = sub.add_parser("record-failure")
+    record_parser.add_argument("run_root", type=pathlib.Path)
+    record_parser.add_argument(
+        "--validator", required=True, choices=tuple(DETERMINISTIC_VALIDATORS)
+    )
+    record_parser.add_argument("--artifact", required=True)
     finalize_parser = sub.add_parser("finalize")
     finalize_parser.add_argument("run_root", type=pathlib.Path)
     finalize_parser.add_argument("--outcome", required=True,
@@ -505,7 +842,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        return {"prepare": prepare, "evaluate": evaluate, "finalize": finalize}[args.command](args)
+        return {
+            "prepare": prepare,
+            "evaluate": evaluate,
+            "record-failure": record_failure,
+            "finalize": finalize,
+        }[args.command](args)
     except (CycleError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
         print(f"freshness cycle: {error}", file=sys.stderr)
         return 1

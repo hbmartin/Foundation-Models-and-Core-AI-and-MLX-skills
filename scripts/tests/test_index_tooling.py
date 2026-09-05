@@ -228,6 +228,27 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(first_row[6], changed_row[6])
             self.assertNotEqual(first_row[7], changed_row[7])
 
+    def test_blockquote_hash_covers_context_before_warning_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '# Section\n\n> first context\n> ⚠️ **Warning** — stable text\n',
+                encoding='utf-8',
+            )
+            first = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            path.write_text(
+                '# Section\n\n> changed context\n> ⚠️ **Warning** — stable text\n',
+                encoding='utf-8',
+            )
+            changed = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            first_row = first.stdout.strip().split('\t')
+            changed_row = changed.stdout.strip().split('\t')
+            self.assertEqual(first_row[5:7], changed_row[5:7])
+            self.assertNotEqual(first_row[7], changed_row[7])
+
     def test_duplicate_semantic_callout_requires_explicit_override(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
@@ -244,15 +265,61 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(explicit.returncode, 0, explicit.stderr)
             self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second-duplicate')
 
-    def test_duplicate_inside_fence_recommends_the_fenced_marker(self):
+    def test_duplicate_inside_fence_uses_hidden_occurrence_marker(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
-            (guides / 'guide.md').write_text(
+            path = guides / 'guide.md'
+            path.write_text(
                 '# Section\n\n```text\n⚠️ duplicate\n⚠️ duplicate\n```\n', encoding='utf-8'
             )
             result = self.run_python(EXTRACT_CALLOUTS, guides)
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn('// callout-id: slug', result.stderr)
+            self.assertIn('<!-- callout-id: slug occurrence:N -->', result.stderr)
+            path.write_text(
+                '# Section\n\n<!-- callout-id: second occurrence:2 -->\n'
+                '```text\n⚠️ duplicate\n⚠️ duplicate\n```\n',
+                encoding='utf-8',
+            )
+            explicit = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(explicit.returncode, 0, explicit.stderr)
+            self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second')
+
+    def test_unconsumed_and_reader_visible_callout_markers_are_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '<!-- callout-id: unused -->\nordinary prose\n', encoding='utf-8'
+            )
+            unused = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(unused.returncode, 0)
+            self.assertIn('not followed by its designated callout', unused.stderr)
+            path.write_text(
+                '```swift\n// callout-id: visible\n// ⚠️ warning\n```\n',
+                encoding='utf-8',
+            )
+            visible = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(visible.returncode, 0)
+            self.assertIn('must not appear inside a published code fence', visible.stderr)
+
+    def test_callout_marker_cannot_cross_heading_or_use_occurrence_outside_fence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '<!-- callout-id: misplaced -->\n# Heading\n\n⚠️ warning\n',
+                encoding='utf-8',
+            )
+            heading = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(heading.returncode, 0)
+            self.assertIn('not followed by its designated callout', heading.stderr)
+            path.write_text(
+                '<!-- callout-id: misplaced occurrence:2 -->\n⚠️ warning\n',
+                encoding='utf-8',
+            )
+            occurrence = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(occurrence.returncode, 0)
+            self.assertIn('occurrence is only valid for an in-fence callout', occurrence.stderr)
 
     def test_fenced_fake_heading_does_not_consume_slug_suffixes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -459,6 +526,14 @@ class IndexToolingTests(unittest.TestCase):
         rendered = (fixture[-1] / 'SILENT-FAILURES.md').read_text(encoding='utf-8')
         self.assertIn(f'[{blurb}]', rendered)
 
+    def test_blurbs_longer_than_120_characters_fail(self):
+        fixture, result = self.run_builder(
+            [['guide.md', '3', 'section', 'CALLOUT', 'caution-note', 'x' * 121]]
+        )
+        self.addCleanup(fixture[0].cleanup)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('blurb must be at most 120 characters', result.stderr)
+
     def test_unknown_symptom_fails(self):
         fixture, result = self.run_builder(
             [['guide.md', '3', 'section', 'CALLOUT', 'not-a-symptom', 'A warning']]
@@ -512,6 +587,45 @@ class IndexToolingTests(unittest.TestCase):
             symbols.write_text('FoundationModels\tFoundationModels\t2\t1\tY\tY\tguide.md:2\n',
                                encoding='utf-8')
             result = self.run_python(BUILD_INDEXES, classified, callouts, symbols, guides, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_mixed_v1_and_v2_classifications_cover_all_extracted_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides, classified, output = root / 'guides', root / 'classified', root / 'output'
+            guides.mkdir(); classified.mkdir(); output.mkdir()
+            (guides / 'a.md').write_text('# A\n\n⚠️ first\n', encoding='utf-8')
+            (guides / 'b.md').write_text('# B\n\n⚠️ second\n', encoding='utf-8')
+            extracted = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(extracted.returncode, 0, extracted.stderr)
+            rows = [line.split('\t') for line in extracted.stdout.splitlines()]
+            callouts = root / 'callouts.tsv'
+            callouts.write_text(
+                '\t'.join(rows[0]) + '\n' + '\t'.join(rows[1][:6]) + '\n',
+                encoding='utf-8',
+            )
+            (classified / 'v2.tsv').write_text(
+                '# schema-version: 2\n' + '\t'.join([
+                    rows[0][0], rows[0][6], rows[0][7], rows[0][2], rows[0][3],
+                    'caution-note', 'First warning',
+                ]) + '\n',
+                encoding='utf-8',
+            )
+            (classified / 'v1.tsv').write_text(
+                '\t'.join([
+                    rows[1][0], rows[1][1], rows[1][2], rows[1][3],
+                    'caution-note', 'Second warning',
+                ]) + '\n',
+                encoding='utf-8',
+            )
+            symbols = root / 'symbols.tsv'
+            symbols.write_text(
+                'FoundationModels\tFoundationModels\t2\t1\tY\tY\ta.md:2\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(
+                BUILD_INDEXES, classified, callouts, symbols, guides, output
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
 
 

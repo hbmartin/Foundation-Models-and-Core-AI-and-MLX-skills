@@ -1342,6 +1342,18 @@ def main(argv=None):
                     help="test-only: replace swiftc with a fixed result")
     opts = ap.parse_args(argv)
 
+    if opts.rekey_only and (
+        opts.guess
+        or opts.write_markers
+        or opts.write_triage_markers
+        or opts.sdks
+        or opts.changed is not None
+    ):
+        raise SystemExit(
+            "error: --rekey-only cannot be combined with compiler, marker, "
+            "or changed-file modes"
+        )
+
     if not os.path.isdir(opts.guides):
         raise SystemExit(f"error: guides root does not exist or is not a directory: {opts.guides}")
     fences, parse_errors = extract_fences(opts.guides)
@@ -1358,8 +1370,6 @@ def main(argv=None):
         parse_errors = [error for error in parse_errors if error[0] in changed]
 
     if opts.rekey_only:
-        if opts.guess or opts.write_markers or opts.write_triage_markers or opts.sdks:
-            raise SystemExit("error: --rekey-only cannot be combined with compiler or marker modes")
         if parse_errors:
             raise SystemExit("error: --rekey-only refuses a corpus with unterminated fences")
         rows = rekey_rows(fences, opts.rekey_only)
