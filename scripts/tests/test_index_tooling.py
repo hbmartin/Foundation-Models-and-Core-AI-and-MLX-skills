@@ -228,6 +228,27 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(first_row[6], changed_row[6])
             self.assertNotEqual(first_row[7], changed_row[7])
 
+    def test_blockquote_hash_covers_context_before_warning_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '# Section\n\n> first context\n> ⚠️ **Warning** — stable text\n',
+                encoding='utf-8',
+            )
+            first = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            path.write_text(
+                '# Section\n\n> changed context\n> ⚠️ **Warning** — stable text\n',
+                encoding='utf-8',
+            )
+            changed = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            first_row = first.stdout.strip().split('\t')
+            changed_row = changed.stdout.strip().split('\t')
+            self.assertEqual(first_row[5:7], changed_row[5:7])
+            self.assertNotEqual(first_row[7], changed_row[7])
+
     def test_duplicate_semantic_callout_requires_explicit_override(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
@@ -244,15 +265,61 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(explicit.returncode, 0, explicit.stderr)
             self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second-duplicate')
 
-    def test_duplicate_inside_fence_recommends_the_fenced_marker(self):
+    def test_duplicate_inside_fence_uses_hidden_occurrence_marker(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
-            (guides / 'guide.md').write_text(
+            path = guides / 'guide.md'
+            path.write_text(
                 '# Section\n\n```text\n⚠️ duplicate\n⚠️ duplicate\n```\n', encoding='utf-8'
             )
             result = self.run_python(EXTRACT_CALLOUTS, guides)
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn('// callout-id: slug', result.stderr)
+            self.assertIn('<!-- callout-id: slug occurrence:N -->', result.stderr)
+            path.write_text(
+                '# Section\n\n<!-- callout-id: second occurrence:2 -->\n'
+                '```text\n⚠️ duplicate\n⚠️ duplicate\n```\n',
+                encoding='utf-8',
+            )
+            explicit = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(explicit.returncode, 0, explicit.stderr)
+            self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second')
+
+    def test_unconsumed_and_reader_visible_callout_markers_are_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '<!-- callout-id: unused -->\nordinary prose\n', encoding='utf-8'
+            )
+            unused = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(unused.returncode, 0)
+            self.assertIn('not followed by its designated callout', unused.stderr)
+            path.write_text(
+                '```swift\n// callout-id: visible\n// ⚠️ warning\n```\n',
+                encoding='utf-8',
+            )
+            visible = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(visible.returncode, 0)
+            self.assertIn('must not appear inside a published code fence', visible.stderr)
+
+    def test_callout_marker_cannot_cross_heading_or_use_occurrence_outside_fence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            path.write_text(
+                '<!-- callout-id: misplaced -->\n# Heading\n\n⚠️ warning\n',
+                encoding='utf-8',
+            )
+            heading = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(heading.returncode, 0)
+            self.assertIn('not followed by its designated callout', heading.stderr)
+            path.write_text(
+                '<!-- callout-id: misplaced occurrence:2 -->\n⚠️ warning\n',
+                encoding='utf-8',
+            )
+            occurrence = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(occurrence.returncode, 0)
+            self.assertIn('occurrence is only valid for an in-fence callout', occurrence.stderr)
 
     def test_fenced_fake_heading_does_not_consume_slug_suffixes(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -140,6 +140,78 @@ class CurrentStateTests(unittest.TestCase):
         self.assertTrue(all("simulated unavailable command" in item or "fm-path" in item
                             for item in blockers))
 
+    def test_unparseable_simulator_output_preserves_prior_values_and_reports_blocker(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        previous = manifest["environment"]["installed"]
+        old_run = STATE.run
+        old_which = STATE.shutil.which
+        try:
+            def fake_run(*args, **kwargs):
+                if args[:4] == ("xcrun", "simctl", "list", "runtimes"):
+                    return "== Runtimes ==\nunrecognized runtime format", None
+                return "", "simulated unavailable command"
+
+            STATE.run = fake_run
+            STATE.shutil.which = lambda name: None
+            observed, blockers = STATE.installed_environment(previous)
+        finally:
+            STATE.run = old_run
+            STATE.shutil.which = old_which
+        self.assertEqual(observed["simulatorRuntimes"], previous["simulatorRuntimes"])
+        self.assertIn(
+            "simulator-runtimes: output contained no recognized iOS runtimes",
+            blockers,
+        )
+
+    def test_generated_output_checks_rederive_status_and_date(self) -> None:
+        outcomes = iter((("", None), ("", "stale index"), ("", None)))
+        old_run = STATE.run
+        try:
+            STATE.run = lambda *args, **kwargs: next(outcomes)
+            outputs, blockers = STATE.generated_output_state()
+        finally:
+            STATE.run = old_run
+        today = STATE.dt.datetime.now(STATE.dt.timezone.utc).date().isoformat()
+        self.assertEqual(outputs["currentStateBlocks"]["status"], "current")
+        self.assertEqual(outputs["indexes"]["status"], "stale")
+        self.assertEqual(outputs["skills"]["status"], "current")
+        self.assertTrue(all(item["checkedAt"] == today for item in outputs.values()))
+        self.assertEqual(blockers, ["generated-output-indexes: stale index"])
+
+    def test_collect_uses_fresh_generated_output_results(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        derived = json.loads(json.dumps(manifest["generatedOutputs"]))
+        derived["indexes"]["status"] = "stale"
+        old_corpus = STATE.corpus_state
+        old_environment = STATE.installed_environment
+        old_snippets = STATE.snippet_state
+        old_generated = STATE.generated_output_state
+        try:
+            STATE.corpus_state = lambda: manifest["corpus"]
+            STATE.installed_environment = lambda previous: (previous, [])
+            STATE.snippet_state = lambda previous: previous
+            STATE.generated_output_state = lambda: (
+                derived, ["generated-output-indexes: stale index"]
+            )
+            collected = STATE.collect(manifest)
+        finally:
+            STATE.corpus_state = old_corpus
+            STATE.installed_environment = old_environment
+            STATE.snippet_state = old_snippets
+            STATE.generated_output_state = old_generated
+        self.assertEqual(collected["generatedOutputs"], derived)
+        self.assertIn("generated-output-indexes: stale index", collected["collection"]["blockers"])
+
+    def test_pending_reason_does_not_claim_a_newer_installed_build_trails(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        installed = json.loads(json.dumps(manifest["environment"]["installed"]))
+        latest = manifest["environment"]["latestObserved"]
+        installed["xcode"]["build"] = "99Z999"
+        reasons = STATE.pending_reasons(installed, latest)
+        xcode_reason = next(reason for reason in reasons if "Xcode" in reason)
+        self.assertIn("differs from observed build", xcode_reason)
+        self.assertNotIn("trails", xcode_reason)
+
     def test_atomic_output_preserves_existing_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = pathlib.Path(directory) / "state.json"

@@ -30,6 +30,8 @@ class FreshnessCycleTests(unittest.TestCase):
         subprocess.run(["git", "-C", checkout, "config", "user.email", "test@example.com"], check=True)
         (checkout / "notes").mkdir()
         (checkout / "notes/base.md").write_text("base\n", encoding="utf-8")
+        (checkout / "automations").mkdir()
+        (checkout / "automations/contract.toml").write_text("protected\n", encoding="utf-8")
         subprocess.run(["git", "-C", checkout, "add", "."], check=True)
         subprocess.run(["git", "-C", checkout, "commit", "-m", "base"], check=True,
                        capture_output=True)
@@ -168,6 +170,43 @@ class FreshnessCycleTests(unittest.TestCase):
             self.assertEqual(
                 payload["summary"], {"eligible": 1, "reportOnly": 1, "total": 2}
             )
+
+    def test_evaluate_turns_malformed_thread_actions_into_report_only_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            (run_root / "thread-review.json").write_text(
+                json.dumps({"actions": [
+                    ["not", "an", "object"],
+                    {"id": "malformed-paths", "paths": 7},
+                ]}),
+                encoding="utf-8",
+            )
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["summary"], {"eligible": 0, "reportOnly": 2, "total": 2})
+        self.assertIn("ambiguous-diagnostics", payload["actions"][0]["eligibilityBlockers"])
+
+    def test_evaluate_uses_flat_live_url_when_nested_live_is_null(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            (run_root / "defects.json").write_text(json.dumps({"references": [{
+                "ref": "example",
+                "verdict": "STATE-CHANGED",
+                "live": None,
+                "liveUrl": "https://example.com/live",
+                "triage": {},
+            }]}), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["actions"][0]["evidenceUrls"], ["https://example.com/live"])
 
     def test_generated_current_state_page_requires_its_canonical_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -421,6 +460,135 @@ class FreshnessCycleTests(unittest.TestCase):
             result = self.command("finalize", run_root, "--outcome", "no-change")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("outside allowed roots", result.stderr)
+
+    def test_finalize_audits_both_sides_of_a_protected_rename(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-rename")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            subprocess.run([
+                "git", "-C", worktree, "mv",
+                "automations/contract.toml", "notes/renamed.toml",
+            ], check=True)
+            run_root = root / "artifacts/weekly-improvements/run-rename"
+            result = self.command("finalize", run_root, "--outcome", "no-change")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("automations/contract.toml", result.stderr)
+        self.assertIn("outside allowed roots", result.stderr)
+
+    def test_protected_control_plane_path_is_not_eligible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            action = {
+                "id": "protected",
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "paths": ["scripts/freshness-cycle.py"],
+                "changeKind": "tooling",
+                "regressionTest": "scripts/tests/test_freshness_cycle.py",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "validation.json").write_text(
+                json.dumps({"actions": [action]}), encoding="utf-8"
+            )
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("path-outside-allowed-roots", payload["actions"][0]["eligibilityBlockers"])
+
+    def test_blocked_outcome_records_violations_and_always_cleans_up(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-blocked")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / ".github/workflows").mkdir(parents=True)
+            (worktree / ".github/workflows/unsafe.yml").write_text("name: unsafe\n")
+            run_root = root / "artifacts/weekly-improvements/run-blocked"
+            state_path = root / "artifacts/state.json"
+            result = self.command(
+                "finalize", run_root, "--outcome", "blocked", "--state-path", state_path
+            )
+            state = json.loads(state_path.read_text())
+            worktree_exists = worktree.exists()
+            lock_exists = (root / "artifacts/state/weekly-improvement.lock.json").exists()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(worktree_exists)
+        self.assertFalse(lock_exists)
+        self.assertTrue(state["lastRun"]["policyViolations"])
+        self.assertEqual(state["pending"]["outcome"], "blocked")
+
+    def test_generated_outputs_are_approved_from_changed_canonical_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-generated")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / "notes/source.md").write_text("canonical source\n")
+            (worktree / "skills").mkdir()
+            (worktree / "skills/generated.md").write_text("generated output\n")
+            run_root = root / "artifacts/weekly-improvements/run-generated"
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["notes/source.md"],
+                "generatedFromCanonicalSource": True,
+                "canonicalSourcePaths": ["notes/source.md"],
+            }]}), encoding="utf-8")
+            state_path = root / "artifacts/state.json"
+            result = self.command(
+                "finalize", run_root, "--outcome", "draft",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+                "--state-path", state_path,
+            )
+            state = json.loads(state_path.read_text())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("policyViolations", state["lastRun"])
+        self.assertTrue(state["lastRun"]["generatedOutputFailures"])
+
+    def test_ready_checks_generated_outputs_when_only_a_canonical_guide_changed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-stale-generated")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            worktree = pathlib.Path(details["worktree"])
+            (worktree / "guides").mkdir()
+            (worktree / "guides/source.md").write_text("canonical guide\n")
+            run_root = root / "artifacts/weekly-improvements/run-stale-generated"
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["guides/source.md"],
+            }]}), encoding="utf-8")
+            (run_root / "pr.json").write_text(json.dumps({
+                "checksPassed": True,
+                "mergeable": True,
+            }), encoding="utf-8")
+            result = self.command(
+                "finalize", run_root, "--outcome", "ready",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+            )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("current generated outputs", result.stderr)
 
 
 if __name__ == "__main__":

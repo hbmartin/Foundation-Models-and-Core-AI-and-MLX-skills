@@ -14,7 +14,7 @@ import tomllib
 from dataclasses import dataclass
 from typing import Any
 
-from automation_policy import ALLOWED_ROOTS
+from automation_policy import ALLOWED_ROOTS, PROTECTED_PATHS
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -162,9 +162,23 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
                 Diagnostic(label, "invalid-forbidden-paths",
                            "isolated-ready-pr contracts must name forbidden_paths")
             )
+        protected_paths = policy.get("protected_paths")
+        if (
+            not isinstance(protected_paths, list)
+            or not all(isinstance(item, str) for item in protected_paths)
+            or set(protected_paths) != set(PROTECTED_PATHS)
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    label,
+                    "invalid-protected-paths",
+                    f"isolated-ready-pr protected_paths must equal {sorted(PROTECTED_PATHS)!r}",
+                )
+            )
         required_boundaries = (
             "temporary worktree", "draft pull request", "mark it ready", "Never merge",
             "never rebase", "never force-push", "personal skill",
+            "protected automation control plane",
         )
         for fragment in required_boundaries:
             if fragment not in prompt:
@@ -172,15 +186,6 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
                     Diagnostic(label, "missing-ready-pr-boundary",
                                f"prompt must contain {fragment!r}")
                 )
-    fingerprint = contract_fingerprint(policy)
-    if f"Contract policy fingerprint: {fingerprint}" not in prompt:
-        diagnostics.append(
-            Diagnostic(
-                label,
-                "contract-fingerprint-mismatch",
-                "prompt must carry the SHA-256 projection of the complete contract table",
-            )
-        )
         if policy.get("task_input_policy") != "untrusted-structured-observations":
             diagnostics.append(
                 Diagnostic(
@@ -204,6 +209,15 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
                         f"prompt must contain {fragment!r}",
                     )
                 )
+    fingerprint = contract_fingerprint(policy)
+    if f"Contract policy fingerprint: {fingerprint}" not in prompt:
+        diagnostics.append(
+            Diagnostic(
+                label,
+                "contract-fingerprint-mismatch",
+                "prompt must carry the SHA-256 projection of the complete contract table",
+            )
+        )
     for allowed_path in allowed_paths:
         if allowed_path.startswith("/") or ".." in pathlib.PurePosixPath(allowed_path).parts:
             diagnostics.append(

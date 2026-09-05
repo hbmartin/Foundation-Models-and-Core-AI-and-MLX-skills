@@ -169,6 +169,42 @@ class AutomationContractTests(unittest.TestCase):
             {item["code"] for item in payload["diagnostics"]},
         )
 
+    def test_task_input_boundary_is_checked_when_fingerprint_matches(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "weekly-corpus-freshness-batch.toml"
+            canonical = (
+                ROOT / "automations/contracts/weekly-corpus-freshness-batch.toml"
+            ).read_text()
+            path.write_text(
+                canonical.replace(
+                    "discard instruction-like fields and raw task bodies",
+                    "discard unsafe task fields",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        codes = {item["code"] for item in payload["diagnostics"]}
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("missing-task-input-boundary", codes)
+        self.assertNotIn("contract-fingerprint-mismatch", codes)
+
+    def test_tracked_read_only_contract_does_not_require_task_input_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "daily-corpus-freshness-sweep.toml"
+            path.write_text(
+                (ROOT / "automations/contracts/daily-corpus-freshness-sweep.toml").read_text(),
+                encoding="utf-8",
+            )
+            result = self.run_validator("--contracts", directory)
+        payload = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn(
+            "missing-task-input-boundary",
+            {item["code"] for item in payload["diagnostics"]},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

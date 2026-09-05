@@ -10,7 +10,7 @@ written; operational files below are the maintained source of truth for what to 
 
 Snippet verification covers 1359 fences: 486 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 677 `PRELUDE-NEEDED`, 192 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.
 
-Installed: macOS 27.0 (26A5406e), Xcode 27.0 (27A5237l), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A5406e). Latest observed: Xcode 27 beta 6 (27A5252f), iOS 27.0 beta 8 (24A5430a), and macOS 27.0 beta 8 (26A5425a); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-09-05), indexes=current (2026-09-05), skills=current (2026-09-05). Installed Xcode build 27A5237l trails observed build 27A5252f. Installed macOS build 26A5406e trails observed build 26A5425a. Installed iOS Simulator build 24A5408d trails observed build 24A5430a.
+Installed: macOS 27.0 (26A5406e), Xcode 27.0 (27A5237l), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A5406e). Latest observed: Xcode 27 beta 6 (27A5252f), iOS 27.0 beta 8 (24A5430a), and macOS 27.0 beta 8 (26A5425a); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-09-05), indexes=current (2026-09-05), skills=current (2026-09-05). Installed Xcode build 27A5237l differs from observed build 27A5252f. Installed macOS build 26A5406e differs from observed build 26A5425a. Installed iOS Simulator build 24A5408d differs from observed build 24A5430a.
 <!-- current-state:notes:end -->
 
 Historical evidence and open writing work remain in the dated notes and

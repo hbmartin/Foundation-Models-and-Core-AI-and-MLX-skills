@@ -19,12 +19,12 @@
       "status": "current"
     },
     "indexes": {
-      "checkCommand": "./scripts/build-indexes.sh",
+      "checkCommand": "python3 -m unittest scripts.tests.test_repository_indexes.RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
       "checkedAt": "2026-09-05",
       "status": "current"
     },
     "skills": {
-      "checkCommand": "python3 scripts/verify-skills.py --skills skills",
+      "checkCommand": "python3 -m unittest scripts.tests.test_skills.CommittedSkillsTests.test_committed_skills_match_clean_generation",
       "checkedAt": "2026-09-05",
       "status": "current"
     }
@@ -130,9 +130,9 @@
   },
   "pendingEvent": {
     "reasons": [
-      "Installed Xcode build 27A5237l trails observed build 27A5252f.",
-      "Installed macOS build 26A5406e trails observed build 26A5425a.",
-      "Installed iOS Simulator build 24A5408d trails observed build 24A5430a."
+      "Installed Xcode build 27A5237l differs from observed build 27A5252f.",
+      "Installed macOS build 26A5406e differs from observed build 26A5425a.",
+      "Installed iOS Simulator build 24A5408d differs from observed build 24A5430a."
     ],
     "value": true
   },

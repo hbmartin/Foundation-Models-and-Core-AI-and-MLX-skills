@@ -63,7 +63,7 @@
     "apple-core-ai/references/part-07-coreai-swift-runtime/README.md": "7c33f02becffc80c2d9a26a534815d81fd3d90e272ac269d3442f13d936c756a",
     "apple-core-ai/references/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md": "deb6ab5fe55fe40602144d16dcfe8a00fae08cb52c9e67d129b6ebaa55074f9d",
     "apple-core-ai/references/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md": "0ba00782e54a8a3055fbfe43127325589752b46a6dd6dd00bb3beeed9a19ef39",
-    "apple-core-ai/references/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md": "2db437a0c2dd0b57bc7f1f15fd3deb2dd85dbf25bec0420626d8196173d316ab",
+    "apple-core-ai/references/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md": "63780b362c47f77989f6fc3f99a84565b05cb567314875d3956fb51a275e0b40",
     "apple-core-ai/references/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md": "de0b911e55ddb46ae91c4e3a30ad262e029b3aefbe35eb5541b222bb44897d5f",
     "apple-core-ai/references/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md": "7b3668cd5d0328f4ebb9cb161b8788099f80e413beb236c15c1e38755fd8126f",
     "apple-core-ai/references/part-08-coreai-pytorch-conversion/README.md": "84b93eb885cf49f27e986bd63153bb4a67bfa9bc91c6480ecb65cbdcdf6ca08f",
