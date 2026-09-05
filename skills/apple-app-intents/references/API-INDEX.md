@@ -1,8 +1,8 @@
 # API & symbol index — App Intents, Siri schema domains, and Spotlight entity indexing
 
-**164 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**165 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-04; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>8 symbols</sub>
 
@@ -38,7 +38,7 @@
 | `SpeechAnalyzer` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `SpeechBundle` |  |  | [16.README](part-16-adjacent-capabilities/README.md) |
 
-## AppIntents  <sub>31 symbols</sub>
+## AppIntents  <sub>32 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -54,8 +54,9 @@
 | `AppIntents` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `AppIntentsTesting` |  |  | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `AppShortcutsProvider` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
+| `AssistantSchemas` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `DisplayRepresentation` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
-| `DisplayRepresentation.Components` | ✓ | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `DisplayRepresentation.Components` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `DisplayRepresentation.Image` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `EntityCollection` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `EntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |

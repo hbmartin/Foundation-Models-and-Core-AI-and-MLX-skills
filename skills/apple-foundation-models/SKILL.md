@@ -49,7 +49,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 |---|---|
 | [2](references/part-02-foundation-models-everyday-api/README.md) | the framework itself is **26.0** on iOS, iPadOS, Mac Catalyst, macOS and visionOS — **no watchOS until 27.0**. |
 | [3](references/part-03-context-profiles-agentic/README.md) | the conceptual material starts at **26.0** (`LanguageModelSession`, `Transcript`, `Tool` — watchOS only from 27.0), and the two introspection APIs it leans on, `SystemLanguageModel.contextSize` and `tokenCount(for:)`, are **26.4** — of which only `contextSize` back-deploys. |
-| [4](references/part-04-beyond-the-built-in-model/README.md) | everything here is **27.0 and only 27.0** — the `LanguageModel` / `LanguageModelExecutor` pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, `LanguageModelCapabilities`, `Transcript.CustomSegment`, the generation channel. |
+| [4](references/part-04-beyond-the-built-in-model/README.md) | everything here is **27.0 and only 27.0** — the `LanguageModel` / `LanguageModelExecutor` pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, `LanguageModelCapabilities`, the generation channel (and, until Xcode 27 beta 5 dropped it from the interface, `Transcript.CustomSegment` — see reference 03 §13.2). |
 | [5](references/part-05-prototyping-profiling-non-swift/README.md) | four different floors live in this part and confusing them wastes days. |
 
 ## Triage

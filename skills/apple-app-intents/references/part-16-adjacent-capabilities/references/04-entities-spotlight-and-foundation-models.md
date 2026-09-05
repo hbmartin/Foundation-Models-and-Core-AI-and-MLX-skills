@@ -16,7 +16,7 @@ is old. `CSSearchableIndex`, `CSSearchableItem`, `CSSearchableItemAttributeSet` 
 directly contradicts session 246's framing of it as new, and §9.4 covers that conflict rather than
 smoothing it over. `IndexedEntity` itself floors at **macOS 15.0 / iOS 18.0 / visionOS 2.0**, with
 watchOS and tvOS unavailable — ✅ **SDK-verified**
-(`AppIntents-27.0-macos.swiftinterface:868-869`); former gap G1, closed 2026-07-29 (§4.1, §15).
+(`AppIntents-27.0-macos.swiftinterface:2608-2609`); former gap G1, closed 2026-07-29 (§4.1, §15).
 
 **SDK-interface pass, 2026-07-29.** This guide's claims were re-checked against the SDK module
 interfaces in `notes/sdk-interfaces/` — `AppIntents` and `CoreSpotlight`, 26.5 and 27.0-beta macOS
@@ -249,7 +249,7 @@ only to schema-conforming types, and a rename of something in Core Spotlight. Al
 That is the whole answer. An "indexed entity for Apple Intelligence" is an `AppEntity` that
 conforms to `IndexedEntity` and has been passed to `indexAppEntities(_:)`.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:350-356`): the method is declared
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:361-367`): the method is declared
 `public func indexAppEntities(_ appEntities: [some IndexedEntity], priority: Int = 0) async
 throws`, in an `extension CSSearchableIndex` gated `@available(macOS 15.0, iOS 18.0, visionOS
 2.0, *)`. Note which module declares it: **AppIntents extends the Core Spotlight class** — the
@@ -773,7 +773,7 @@ one:
 > but the entity-path spellings now are.** The 27.0 interface declares, alongside
 > `indexAppEntities`: **`deleteAppEntities(identifiedBy: [Entity.ID], ofType:)`** and
 > **`deleteAppEntities(ofType:)`**, both `async throws`, macOS 15.0 / iOS 18.0 / visionOS 2.0 —
-> ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:355-356`). Those are the on-ramp B
+> ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:366-367`). Those are the on-ramp B
 > spellings. The classic `CSSearchableIndex` deletion methods for donated *items* — keyed by
 > identifier, by domain identifier, and for everything — are Objective-C API and do not appear in
 > the Swift interface captures, so no spelling is quoted for on-ramp A.
@@ -844,7 +844,7 @@ treatment of that distinction.
 > iOS 18.0 / visionOS 2.0, with watchOS and tvOS unavailable.** The `AppIntents` module interface
 > this gap asked for now exists in the corpus, and both captures agree:
 > `@available(macOS 15.0, iOS 18.0, visionOS 2.0, *) public protocol IndexedEntity : AppEntity`
-> (`AppIntents-27.0-macos.swiftinterface:868-869`;
+> (`AppIntents-27.0-macos.swiftinterface:2608-2609`;
 > `AppIntents-26.5-macos.swiftinterface:11476-11479`, where the watchOS/tvOS-unavailable lines are
 > explicit). Session 343's prior-art framing was right: it is 2024-era API. The protocol's surface
 > is small — a `var attributeSet: CSSearchableItemAttributeSet` requirement with a default
@@ -877,7 +877,7 @@ documentation gives the full signature as **`indexAppEntities(_:priority:)`**, s
 parameter has a default. ✅ **SDK-verified** — the declared signature, in full:
 
 ```swift prelude:guide-context
-// AppIntents-27.0-macos.swiftinterface:350-356 — the AppIntents module extending the
+// AppIntents-27.0-macos.swiftinterface:361-367 — the AppIntents module extending the
 // Core Spotlight class.
 @available(macOS 15.0, iOS 18.0, visionOS 2.0, *)
 extension CSSearchableIndex {
@@ -904,9 +904,9 @@ one constant.
 
 > ✅ **RESOLVED (was GAP G4, closed 2026-07-29) — with a remainder.** **`priority:` is a
 > `Swift.Int` defaulting to `0`** — the module interface this gap asked for now answers the type
-> and default (`AppIntents-27.0-macos.swiftinterface:354`). The same `priority: Int` label
+> and default (`AppIntents-27.0-macos.swiftinterface:365`). The same `priority: Int` label
 > appears on `CSSearchableItem(appEntity:priority:)` and `associateAppEntity(_:priority:)`
-> (`:358-377`). What the number *means* — scheduling, ordering, thermal deferral — is still
+> (`:369-388`). What the number *means* — scheduling, ordering, thermal deferral — is still
 > stated nowhere in the corpus, so the safe default stands: omit it, as both of Apple's call
 > sites do.
 
@@ -926,10 +926,10 @@ which Spotlight attribute.
 
 ✅ **SDK-verified** for the entity wrapper: `@Property` inside an entity is `EntityProperty`
 (`extension AppEntity { public typealias Property = EntityProperty }`,
-`AppIntents-27.0-macos.swiftinterface:406-409`), and it gains
+`AppIntents-27.0-macos.swiftinterface:417-420`), and it gains
 `init(indexingKey: PartialKeyPath<CSSearchableItemAttributeSet>)` and
 `init(customIndexingKey: CSCustomAttributeKey)` — each with and without `title:` — at
-**macOS 15.4 / iOS 18.4**, watchOS/tvOS unavailable (`:487-501`). So property-level index mapping
+**macOS 15.4 / iOS 18.4**, watchOS/tvOS unavailable (`:498-512`). So property-level index mapping
 is one dot release newer than `IndexedEntity` itself. The parameter types also settle what the
 key paths point into: `PartialKeyPath<CSSearchableItemAttributeSet>`, exactly as the examples
 assume.
@@ -1073,7 +1073,7 @@ Spotlight can ask your app to re-supply entities — after a migration, a recove
 ✅ **SDK-verified** — the 27.0 interface declares exactly those two requirements on
 `protocol IndexedEntityQuery : EntityQuery where Self.Entity : IndexedEntity`,
 `@available(macOS 27.0, iOS 27.0, visionOS 27.0, *)`
-(`AppIntents-27.0-macos.swiftinterface:2529-2533`). The 26.5 interface has no
+(`AppIntents-27.0-macos.swiftinterface:4250-4254`). The 26.5 interface has no
 `IndexedEntityQuery` at all — session 343's *"the new"* was accurate.
 
 Applied:
@@ -1953,7 +1953,7 @@ on-ramp B.
 > `init(appEntity:priority:)` (macOS 15 / iOS 18, plus 27.0 `async` variants),
 > `associateAppEntity(_:priority:)` on both `CSSearchableItem` and
 > `CSSearchableItemAttributeSet`, and a 27.0 `relatedAppEntityIdentifier: EntityIdentifier?`
-> property (`AppIntents-27.0-macos.swiftinterface:358-395`) — adjacent evidence that entities and
+> property (`AppIntents-27.0-macos.swiftinterface:369-406`) — adjacent evidence that entities and
 > items are one currency, but silent on the delegate's behaviour.
 >
 > **What is unknown:** whether the tool consults that delegate for items that arrived through
@@ -2105,7 +2105,7 @@ Confirmed shape: `protocol IntentValueQuery` with `func values(for input:) async
 — ✅ **SDK-verified**: the requirement is `func values(for input: Self.Input) async throws ->
 Self.Result` over an `Input : _IntentValue` associated type, and the protocol is
 `@available(anyAppleOS 26.0, *)`, not new this year
-(`AppIntents-27.0-macos.swiftinterface:2680-2691`). The input is a **system-provided structured
+(`AppIntents-27.0-macos.swiftinterface:4401-4412`). The input is a **system-provided structured
 search type** (`AudioSearch` and `IntentPerson` are the
 named examples, and Apple's own comment says *"other system types may be supported as input"*);
 `AudioSearch` has a `.criteria` property with at least `.searchQuery(String)`, `.unspecified`, and
@@ -2255,14 +2255,14 @@ Confirmed surface:
   **parameters** (`activityType:`). ⚠️ But see G8 below: the `.workout` situation is absent from
   the macOS 27.0 interface, so on the Mac the only spellable context is `.audio(.nowPlaying)`.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:3116-3125`, `anyAppleOS 27.0`) — all
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:4837-4846`, `anyAppleOS 27.0`) — all
 four methods above, plus one the session did not show: `removeEntities(_:) async throws`, which
 removes the given entities with no context parameter.
 
 > 🔴 **GAP (G8) — narrowed 2026-07-29, not closed.** **The full set of `AppEntityContext` domains
 > and situations.** The macOS 27.0 interface was checked: `AppEntityContext`'s only factory on
 > that surface is `static func audio(_: AudioContext)`, and `AudioContext`'s only member is
-> `.nowPlaying` (`AppIntents-27.0-macos.swiftinterface:3093-3116`). The session's
+> `.nowPlaying` (`AppIntents-27.0-macos.swiftinterface:4814-4837`). The session's
 > `.workout(activityType:)` situation is **not present in the macOS 27.0 beta interface** —
 > presumably iOS-surface, which this repo has not captured. Whether there is a context for every
 > schema domain, or only for a few, remains unknown; arbitrary contexts cannot be constructed —
@@ -2620,10 +2620,10 @@ absent.
 
 | # | Gap | Resolves with | Safe default |
 |---|---|---|---|
-| **G1** | ✅ **Resolved (SDK, 2026-07-29)** — `IndexedEntity` is **macOS 15.0 / iOS 18.0 / visionOS 2.0**, watchOS/tvOS unavailable (`AppIntents-27.0-macos.swiftinterface:868-869`; 26.5:11476-11479). §4.1 | — | `#available(iOS 18, macOS 15)` for the on-ramp; 27.0 stays the model-consumer floor |
+| **G1** | ✅ **Resolved (SDK, 2026-07-29)** — `IndexedEntity` is **macOS 15.0 / iOS 18.0 / visionOS 2.0**, watchOS/tvOS unavailable (`AppIntents-27.0-macos.swiftinterface:2608-2609`; 26.5:11476-11479). §4.1 | — | `#available(iOS 18, macOS 15)` for the on-ramp; 27.0 stays the model-consumer floor |
 | **G2** | Which App Intents domains get **semantic** search — Apple's *"depending on the App Intents domain"*. Interface checked 2026-07-29 — encodes nothing about matching behaviour | An Apple doc page or forum answer naming them; or an on-device synonym A/B test | Put synonyms in `keywords` **and** in your model instructions. Never depend on semantic matching to bridge vocabulary |
-| **G3** | The `CSSearchableIndex` deletion spelling — **item path only**; the entity-path spellings `deleteAppEntities(identifiedBy:ofType:)` / `deleteAppEntities(ofType:)` are now ✅ SDK-verified (`:355-356`). §3.6 | Any compiling call site, or the Objective-C header | For items: type `index.delete` and take Xcode's completion |
-| **G4** | ✅ **Resolved (SDK, 2026-07-29)** — `priority:` is `Int = 0` (`:354`); its *semantics* remain undocumented. §4.2 | — | Omit it; both verified Apple call sites do |
+| **G3** | The `CSSearchableIndex` deletion spelling — **item path only**; the entity-path spellings `deleteAppEntities(identifiedBy:ofType:)` / `deleteAppEntities(ofType:)` are now ✅ SDK-verified (`:366-367`). §3.6 | Any compiling call site, or the Objective-C header | For items: type `index.delete` and take Xcode's completion |
+| **G4** | ✅ **Resolved (SDK, 2026-07-29)** — `priority:` is `Int = 0` (`:365`); its *semantics* remain undocumented. §4.2 | — | Omit it; both verified Apple call sites do |
 | **G5** | **Does the hydration delegate fire for entity-indexed content, and with what identifiers?** Interfaces checked 2026-07-29: the delegate is Objective-C, invisible there; the new entity→item bridge API (§10.1) is adjacent evidence only | §10.4's test app — the highest-value experiment named in this guide | If you need model-readable bodies, donate `CSSearchableItem`s **too** (§10.3) |
 | **G6** | ✅ **Resolved (SDK, 2026-07-29)** — the overlay interface answers all of it: the six capability parameters are `Bool?`, `attributes:` is `[SearchableItemAttribute]?`, and custom keys are expressible via `SearchableItemAttribute(rawValue:)` (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:199-213`). §7.5 | — | `.focused()` remains the behavioural safe default — `.dynamic` was community-measured as prompt-sensitive |
 | **G7** | The complete `AudioSearch.criteria` case list and the full set of `IntentValueQuery` system input types. `AudioSearch` is absent from the macOS 27.0 AppIntents interface (checked 2026-07-29) | Documentation pages for both, or the iOS interface | Handle the three named cases, always add a `default:` |
@@ -2690,15 +2690,15 @@ visibly, and both are deliberate.
 |---|---|---|
 | `CSSearchableIndex`, `CSSearchableItem`, `CSSearchableItemAttributeSet`, `CSSearchableIndexDelegate` | predates 26.0 by years | long-standing Core Spotlight API |
 | `searchableItems(forIdentifiers:searchableItemsHandler:)` | **macOS 15.4+**, community-measured; new `protectionClass` overload in **27.0** | ⚠️ conflicts with session 246's "new" — §15.1 C1. Objective-C: invisible to the SDK-interface pass |
-| `IndexedEntity` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; watchOS, tvOS unavailable | ✅ SDK interface (`AppIntents-27.0-macos.swiftinterface:868-869`) — was 🔴 G1 |
-| `indexAppEntities(_:priority:)` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; `priority: Int = 0` | ✅ SDK interface (`:350-356`) |
-| `@Property(indexingKey:)` / `(customIndexingKey:)` on entities | **macOS 15.4 / iOS 18.4** | ✅ SDK interface (`:487-501`) |
+| `IndexedEntity` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; watchOS, tvOS unavailable | ✅ SDK interface (`AppIntents-27.0-macos.swiftinterface:2608-2609`) — was 🔴 G1 |
+| `indexAppEntities(_:priority:)` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; `priority: Int = 0` | ✅ SDK interface (`:361-367`) |
+| `@Property(indexingKey:)` / `(customIndexingKey:)` on entities | **macOS 15.4 / iOS 18.4** | ✅ SDK interface (`:498-512`) |
 | `IndexedEntityQuery` | **27.0** | ✅ session 343: *"the new `IndexedEntityQuery`"* + SDK interface (`:2529-2533`); absent from the 26.5 interface |
 | `SpotlightSearchTool` | **27.0** — macOS, iOS, visionOS; **watchOS and tvOS unavailable** | ✅ session 246 line 21 + SDK overlay interface (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:327-330`) — the watchOS omission is compiler-attested |
 | `SearchableItemAttribute` | **27.0**; watchOS, tvOS unavailable | ✅ session-246 sample + SDK interface (`CoreSpotlight-27.0-macos.swiftinterface:16-26`); absent from the 26.5 interface |
 | `CoreSpotlightSource`, `GuidanceProfile`, `SearchReply` | **27.0**; watchOS, tvOS unavailable | ✅ session-246 sample + SDK overlay interface (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:15-22`, `:199-213`, `:341-378`) |
-| `RelevantEntities`, `AppEntityContext` | **27.0** | ✅ session 345 + SDK interface (`AppIntents-27.0-macos.swiftinterface:3093-3125`); macOS surface lacks the `.workout` context |
-| `StringSearchCriteria` | **iOS 17.2 / macOS 14.2** | ✅ documentation page + SDK interface (`:9182-9198`) |
+| `RelevantEntities`, `AppEntityContext` | **27.0** | ✅ session 345 + SDK interface (`AppIntents-27.0-macos.swiftinterface:4814-4846`); macOS surface lacks the `.workout` context |
+| `StringSearchCriteria` | **iOS 17.2 / macOS 14.2** | ✅ documentation page + SDK interface (`:792-808`) |
 | `.system.searchInApp` (the *name*) | **27.0**; the schema itself is iOS 17 | ✅ session 343, twice + SDK interface: accessor `anyAppleOS 27.0`, deprecated `.system.search` message names it (`:13803-13826`) |
 | `SnippetIntent` | **26.0** | ✅ documentation + SDK interface, `anyAppleOS 26.0` (`:1922-1927`) — routinely mis-reported as new in 2026 |
 

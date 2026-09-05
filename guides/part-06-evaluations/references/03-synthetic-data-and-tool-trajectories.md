@@ -172,7 +172,7 @@ three parameters.
 > `where Element : ModelSampleProtocol, Element : Generable`, both as
 > `makeSamples(_ prompt: Prompt, targetCount: Int, sessionProvider: (@Sendable () ->
 > LanguageModelSession)? = nil, validator: ((Element) async throws -> Bool)? = nil) -> some
-> AsyncSequence<Element, any Error>` (`Evaluations-27.0-macos.swiftinterface:862-873`). So the
+> AsyncSequence<Element, any Error>` (`Evaluations-27.0-macos.swiftinterface:883-894`). So the
 > `for try await` shape below is right, `sessionProvider` and `validator` are optional here too,
 > and — worth noticing — **`makeSamples` has no `samplingStrategy` parameter**; that knob is
 > `SampleGenerator`-only. No sample project calls it, so usage remains unexercised even though the
@@ -230,7 +230,7 @@ not much room for that. This is the single biggest practical reason to move to d
 > ```
 >
 > ✅ **SDK-verified** — with two touch-ups from the interface
-> (`Evaluations-27.0-macos.swiftinterface:838-861`): `samplingStrategy` and `validator` are
+> (`Evaluations-27.0-macos.swiftinterface:855-882`): `samplingStrategy` and `validator` are
 > *Optionals*, and `run()` returns `some AsyncSequence<SampleType, any Error>` rather than a literal
 > `AsyncStream` — which is why the loops below are `for try await`.
 
@@ -368,7 +368,7 @@ The prompt is positional; the dataset arrives under `samples:`, not `dataset:`. 
 >
 > ✅ **SDK-verified — GAP closed, and the old inference corrected (2026-07-29).** Both overloads take
 > a **`Prompt`** first; they differ by *generic constraint*, not by prompt type
-> (`Evaluations-27.0-macos.swiftinterface:849-850`). One is
+> (`Evaluations-27.0-macos.swiftinterface:870-871`). One is
 > `init<T>(…) where SampleType == ModelSample<T>, T : Generable` — the everyday form, for
 > `ModelSample`-shaped datasets whose expected value is `@Generable` — and the other is
 > `init(…) where SampleType : Generable`, for a custom `ModelSampleProtocol` conformance that is
@@ -410,7 +410,7 @@ routes. Pick one. Doing both silently doubles your dataset.
 
 **`validator` receives the whole sample — and it is `async throws`, not a plain predicate.** The
 declared type is `(@Sendable (SampleType) async throws -> Bool)?` — ✅ SDK-verified
-(`Evaluations-27.0-macos.swiftinterface:842,849-850`), correcting this guide's earlier "synchronous,
+(`Evaluations-27.0-macos.swiftinterface:861,849-850`), correcting this guide's earlier "synchronous,
 non-throwing" description — so a validator *may* await a model call or throw. Apple's own validator
 is a synchronous, non-throwing closure, which satisfies the type; what the generator does with a
 validator that actually throws (reject the sample, or fail the run) is runtime behaviour the
@@ -725,8 +725,8 @@ and gets random behaviour.
 > }
 > ```
 >
-> (`Evaluations-27.0-macos.swiftinterface:853-856`), and the initialiser's default is
-> `samplingStrategy: … = .random()` (`:849-850`) — confirming the session's "random is the default"
+> (`Evaluations-27.0-macos.swiftinterface:874-877`), and the initialiser's default is
+> `samplingStrategy: … = .random()` (`:870-871`) — confirming the session's "random is the default"
 > from the shipped declaration rather than from an omitted argument. Two things no document
 > mentioned: the case is **`.slidingWindow`**, one word, camel-cased; and `.random` carries a
 > **`retries: Int = 5`** associated value whose semantics no source states — the name reads as "how
@@ -1490,7 +1490,7 @@ that costs ten minutes if you guess.
 
 > ✅ **SDK-verified — GAP closed (2026-07-29).** The declaration has exactly **four initialisers**,
 > and the reconciliation is "both": defaults *and* dedicated overloads
-> (`Evaluations-27.0-macos.swiftinterface:252-255`):
+> (`Evaluations-27.0-macos.swiftinterface:258-261`):
 >
 > ```swift
 > init(ordered: [ToolExpectation] = [], unordered: [ToolExpectation] = [],
@@ -1631,7 +1631,7 @@ are the interesting ones.
 > ✅ **SDK-verified** — `init(_ name: String, arguments: [ArgumentMatcher] = [])`: the default is in
 > the declaration, and `name`, `arguments` and `isAnyOrderGroup` are read-only public properties
 > (`Evaluations-27.0-macos.swiftinterface:212-239`). The `Generable` conformances are in the shipped
-> interface too — `ToolExpectation` at `:240-244`, `ArgumentMatcher` at `:207-211`.
+> interface too — `ToolExpectation` at `:240-244`, `ArgumentMatcher` at `:213-217`.
 
 The `Generable` conformance in that first line is not a curiosity; it is what §18 is built on. A type the
 model can generate is a type a `SampleGenerator` can synthesise.
@@ -1675,10 +1675,10 @@ An ordered expectation lists the calls you require. Real transcripts often conta
 > (`SearchBooks.swift:140-154`). Both compile; they encode different intentions.
 
 > ✅ **SDK-verified — the default is `true`** (`allowsAdditionalToolCalls: Bool = true`,
-> `Evaluations-27.0-macos.swiftinterface:252`, checked 2026-07-29), so an ordered expectation that
+> `Evaluations-27.0-macos.swiftinterface:258`, checked 2026-07-29), so an ordered expectation that
 > omits the parameter is *permissive*: unlisted calls are tolerated. Two adjacent facts from the
 > same declaration: the stored property behind the label is spelled **`allowsAdditionalCalls`** — no
-> "Tool" — so that is the name you read back when inspecting an expectation (`:251`); and the
+> "Tool" — so that is the name you read back when inspecting an expectation (`:257`); and the
 > parameter exists only on the `ordered:unordered:` initialiser, never alongside `disallowed:`
 > (§13.1).
 >
@@ -1736,7 +1736,7 @@ is the enum you build those assertions from, and it is bigger than the sessions 
 > | `.naturalLanguage(argumentName:criteria:)` | *"**A language model judges whether the value satisfies the criteria.** Use when correctness is subjective or hard to express with string operations, for example, validating that a query argument is 'a weather-related question'."* |
 >
 > ✅ **SDK-verified** — all nine case spellings and argument labels match the shipped interface
-> exactly (`Evaluations-27.0-macos.swiftinterface:174-206`). One typing detail the table cannot
+> exactly (`Evaluations-27.0-macos.swiftinterface:180-212`). One typing detail the table cannot
 > show: `.range`'s bounds are `minimum: Double?, maximum: Double?` — plain optional doubles, not
 > wrapped values — which is why the sample writes `minimum: 1, maximum: 3` bare (§15.2).
 
@@ -1810,10 +1810,10 @@ deterministic, free, and self-documenting. Reach for `.naturalLanguage` when the
 
 > ✅ **SDK-verified — you can choose the matching model.** `ToolCallEvaluator` has a second
 > initialiser, `init(allPass:percentagePass:argumentMatchModel: any LanguageModel)`
-> (`Evaluations-27.0-macos.swiftinterface:166`), that names the model used to judge
+> (`Evaluations-27.0-macos.swiftinterface:172`), that names the model used to judge
 > `.naturalLanguage` matchers. Neither the docs harvest nor the sample mentions it — Book Tracker
 > uses the two-parameter form, which leaves the choice to the framework. An availability quirk in
-> the same block: the *two*-parameter form is `@available(watchOS, unavailable)` (`:163-165`) while
+> the same block: the *two*-parameter form is `@available(watchOS, unavailable)` (`:169-171`) while
 > the `argumentMatchModel:` form is not, so on watchOS you apparently must name the matching model
 > explicitly.
 
@@ -1998,7 +1998,7 @@ struct SearchToolEvaluations: Evaluation {
 > and a second initialiser taking `argumentMatchModel: any LanguageModel` — the model that scores
 > `.naturalLanguage` matchers (§15.1). One quirk: the two-parameter form is
 > `@available(watchOS, unavailable)`; the `argumentMatchModel:` form is not
-> (`Evaluations-27.0-macos.swiftinterface:158-173`).
+> (`Evaluations-27.0-macos.swiftinterface:164-179`).
 
 `allPass` is strict — the whole trajectory matched or it did not. `percentagePass` is partial credit, and
 it is the one that tells you *how wrong* a failure was. A feature at 40% all-pass and 92% percentage-pass
@@ -2033,8 +2033,8 @@ evaluator the trajectory by attaching it to the subject.
 > ✅ **SDK-verified** — `ModelSubject.init(value: Value, transcript: StructuredTranscript? = nil)`;
 > the `= nil` default is exactly what makes the omission compile. The error case is real too:
 > `EvaluationError.missingTranscript(evaluatorType: String)`
-> (`Evaluations-27.0-macos.swiftinterface:620-632`, `:489-498`; `StructuredTranscript`'s five fields
-> and memberwise init at `:270-279`).
+> (`Evaluations-27.0-macos.swiftinterface:634-646`, `:495-504`; `StructuredTranscript`'s five fields
+> and memberwise init at `:276-285`).
 
 Note that `transcript:` is **optional**. It compiles when you omit it. That is the failure.
 
@@ -2130,7 +2130,7 @@ answer is the same one as §2 — generate them — and it works for a reason th
 > (`/documentation/evaluations/toolexpectation`, `…/argumentmatcher`). Apple's own note on why:
 > *"`ToolExpectation` and `ArgumentMatcher` both conform to `Generable` — which is how `.naturalLanguage`
 > matching is fed to a judge model."* ✅ **SDK-verified** — and `TrajectoryExpectation` itself is
-> `Generable` too (`Evaluations-27.0-macos.swiftinterface:265-269`), so a whole trajectory is a
+> `Generable` too (`Evaluations-27.0-macos.swiftinterface:271-275`), so a whole trajectory is a
 > generable value, not just its parts.
 
 So a language model can emit a whole sample — user prompt, expected result, *and* the trajectory of tool
@@ -2193,7 +2193,7 @@ one you registered. The third is the one that catches §18.1's invented names, a
 > ✅ **SDK-verified — GAP closed (2026-07-29): the lists are public vars.** `TrajectoryExpectation`
 > exposes `var ordered: [ToolExpectation]`, `var unordered: [ToolExpectation]`,
 > `var disallowed: [ToolExpectation]` and `var allowsAdditionalCalls: Bool` — all public, all
-> mutable (`Evaluations-27.0-macos.swiftinterface:247-251`) — so a generated expectation *can* be
+> mutable (`Evaluations-27.0-macos.swiftinterface:253-257`) — so a generated expectation *can* be
 > validated directly: walk `ordered + unordered + disallowed`, read each `ToolExpectation.name`, and
 > check it against your registered set. The reconstruction circulating from session narration,
 > `expectation.toolCalls`, is still wrong — no such member is in the Xcode 27 beta interface

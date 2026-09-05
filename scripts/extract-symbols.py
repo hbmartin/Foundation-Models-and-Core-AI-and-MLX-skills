@@ -117,9 +117,17 @@ def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
         total = sum(files.values())
         if total < 2 and len(files) < 2:
             continue  # noise floor: mentioned once in one guide
-        base = sym.lstrip('@.').split('.')[0].split('(')[0]
-        in26 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk26) else ''
-        in27 = 'Y' if base and re.search(r'\b%s\b' % re.escape(base), sdk27) else ''
+        # Presence must hold for every type-level (uppercase-initial) dotted
+        # component: `Transcript` being in a capture says nothing about a
+        # vanished `Transcript.CustomSegment`. Lowercase members fall back to
+        # the first component — member names are not reliably greppable.
+        parts = [p.split('(')[0] for p in sym.lstrip('@.').split('.')]
+        checked = [p for p in parts if p and p[0].isupper()] or parts[:1]
+        def present(text):
+            return bool(checked) and all(
+                re.search(r'\b%s\b' % re.escape(p), text) for p in checked if p)
+        in26 = 'Y' if present(sdk26) else ''
+        in27 = 'Y' if present(sdk27) else ''
         # Counts often tie at the visible cutoff. Use the guide path as an explicit
         # secondary key so selection stays stable independently of traversal order.
         top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))

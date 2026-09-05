@@ -7,7 +7,7 @@
 //             runner is a real app with a container, so Core Spotlight donation
 //             is at least attemptable there; this is what converts the old
 //             "needs a signed app container" SKIPPED row into a measurement.
-//   MAC-27 · DEVICE-27  upgrade-day / device harvests.
+//   MAC-27 · DEVICE-27  authoring-host (macOS 27 since 2026-08-17) / device harvests.
 //   HOST-26   both probes XCTSkip (the overlay surface is 27-only).
 //
 // Probes never fake a pass/fail: every step records its outcome or error

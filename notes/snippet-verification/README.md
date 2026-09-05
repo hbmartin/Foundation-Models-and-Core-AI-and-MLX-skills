@@ -13,6 +13,14 @@ committed latest results:
   with guide-line-mapped first errors, wrongness-candidates, and the UNCLASSIFIED
   backlog headline. History lives in git history.
 
+- 2026-08-23: `results.tsv` re-keyed to the current guide lines after the beta-5
+  corpus write-backs (ordinal fence alignment; no compile-marked fence body
+  changed, so every verdict carries over exactly — one fence intentionally
+  restatused `PRELUDE-NEEDED` → `ILLUSTRATIVE` with its marker). `report.md`
+  still reflects the last full run; a full re-run needs a host with both
+  Xcode 26.5 and the 27 beta installed (this host dropped Xcode 26.5 at the
+  macOS 27 beta 5 upgrade).
+
 ## The marker grammar (canonical)
 
 Space-separated tokens after the language word in the fence info string — invisible in

@@ -2,9 +2,10 @@
 // gaps in the guide series.
 //
 // Destinations (see probes/README.md):
-//   HOST-26   runs on the authoring host today (macOS 26.5, `swift test`)
-//   SIM-27    runs on the iOS 27.0 Simulator today (xcodebuild test)
-//   MAC-27    needs a Mac running macOS 27 (upgrade day)
+//   HOST-26   historical pre-upgrade lane — macOS 26.x results recorded through the
+//             2026-08-17 host upgrade (kept because harvested evidence cites it)
+//   SIM-27    runs on the iOS 27.0 Simulator (xcodebuild test)
+//   MAC-27    the authoring host since 2026-08-17 (macOS 27 beta 5, `swift test`)
 //   DEVICE-27 needs a physical device on iOS/macOS 27
 //
 // Probes never fake a pass/fail: measuring probes print PROBE-RESULT and pass.

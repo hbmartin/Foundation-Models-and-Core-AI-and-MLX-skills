@@ -27,8 +27,12 @@ a toolchain — this checklist covers what a toolchain drop CAN answer).
 > iOS-27 declarations, and both documented `SpecializationOptions` constructors reported
 > `expectFrequentReshapes=false`. A live Core AI cache pin made deletion throw and remain findable;
 > deletion succeeded after release. The default cache appeared under
-> `Library/Caches/coreai-cache`. Call-site tool mode overrode the profile in both directions;
-> throwing from `onToolCall` aborted the turn before the tool body; empty `.required` mode bridged
+> `Library/Caches/coreai-cache`. Call-site tool mode overrode the profile in the
+> profile-required + options-disallowed direction (tool not called — recorded); the reverse
+> direction threw `LanguageModelError.contextSizeExceeded(4096, 4099)` without recording the
+> toolCalled/toolRan discriminators, so it remains an inference from the error fingerprint (the
+> probe now records them for the next device run).
+> Throwing from `onToolCall` aborted the turn before the tool body; empty `.required` mode bridged
 > as typed `.unsupportedGenerationGuide` code 6 (Simulator had generic code −1). Image responses
 > worked, labels wrote through exactly, generic tools ran labeled and unlabeled, but image
 > `tokenCount(for:)` threw code −1. The beta-5 Spotlight schema artifact is now captured from the
@@ -117,18 +121,26 @@ the repo root.
 - [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
   four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
   beta-5 baselines are **46 host tests, 23 skipped, 0 failures** and **39 simulator tests,
-  19 skipped, 0 failures**. Host-backed generation is gated because some calls block
-  non-cancellably in this seed. Re-run per beta on both local destinations and once on hardware:
+  19 skipped, 0 failures** — but note those are *gated* counts: the skip gate is keyed to the
+  recorded beta-5 build identifiers (`26A5406e` host / `24A5408d` simulator runtime), so on a
+  later beta the model-backed probes execute by default and both skip counts should drop. Treat
+  the lower counts as the drift detector working, and harvest the newly executing probes'
+  `PROBE-RESULT` lines. Re-run per beta on both local destinations and once on hardware:
   ```bash
   (cd probes && swift test)
   (cd probes && DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
-    xcodebuild test -scheme Probes-Package \
+      xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
   (cd probes && xcodegen generate --spec device-project.yml && \
     xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
       -destination 'platform=iOS,id=<device-udid>' -allowProvisioningUpdates \
       DEVELOPMENT_TEAM=<your-team-id>)
   ```
+  The generated scheme's test action declares the device-relevant `PROBE_*` environment
+  variables (disabled) straight from `device-project.yml`, so the unconditional
+  `xcodegen generate` above no longer wipes them. To enable one — e.g. `PROBE_ENABLE_PCC` for
+  the manual Siri-toggle pass — tick it in the scheme editor for a one-off run (the tick itself
+  is lost on the next regeneration) or flip its `isEnabled` to `true` in the spec first.
   Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
   beta's behavioral drift. The remaining destination gaps are documented in
   `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
@@ -198,7 +210,9 @@ the binary belongs to the OS, not Xcode. The guide now uses the captured eight-c
 `guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`.
 
 - [ ] On each new macOS beta, re-run `scripts/dump-sdk-interfaces.sh` and compare the captured
-  `fm` help body; treat `/usr/bin/fm` as the authority, not `xcrun` discovery.
+  `fm` help body. The script resolves `fm` through `xcrun` and falls back to `/usr/bin/fm` on
+  its own (the binary belongs to the OS, so `xcrun --find fm` may still fail); if the capture
+  comes back empty, verify `/usr/bin/fm` by hand.
 - [ ] Recheck the still-open runtime surface: interactive slash commands, refusal/error exit
   behavior, and field-level Chat Completions compatibility.
 
@@ -239,7 +253,8 @@ Tracked at
   ```
   If both spellings appear or either gains a deprecation, update §7.6 —
   and mind the argument-type difference the guide warns about
-  (`ArraySlice<Transcript.Entry>` vs whole `Transcript`), so no mechanical rename.
+  (`some Sequence<Transcript.Entry>` — satisfied by `Transcript.HistoryView` — vs whole
+  `Transcript`), so no mechanical rename.
 
 ## 5. MetalPerformancePrimitives — availability still macro-only? conv2d still excluded?
 
@@ -284,7 +299,7 @@ Three separate hedges, all answerable from the fresh dump + one runtime probe:
   awk '/enum LanguageModelError/,/^}/' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -c 'case '
   ```
 - [ ] **`Tool.includesSchemaInInstructions` still non-inlinable?** The default body is
-  invisible in interfaces (extension at `FoundationModels` interface `:1202`; guide
+  invisible in interfaces (extension at `FoundationModels` interface `:1245`; guide
   `guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`
   §4.4, line ~815). If a beta makes it `@inlinable`, the default value becomes
   readable in the interface; the runtime probe in `probes/` has already measured the default

@@ -2,7 +2,8 @@
 
 **Version floor:** everything here is **27.0 and only 27.0** — the `LanguageModel` /
 `LanguageModelExecutor` pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`,
-`LanguageModelCapabilities`, `Transcript.CustomSegment`, the generation channel. **No tvOS anywhere in
+`LanguageModelCapabilities`, the generation channel (and, until Xcode 27 beta 5 dropped it from the
+interface, `Transcript.CustomSegment` — see reference 03 §13.2). **No tvOS anywhere in
 this part**, and **nothing back-deploys to 26.x**: on a 26 SDK the symbols do not exist, which is why
 every provider package gates with `#if canImport(FoundationModels, _version: 2)` rather than
 `@available` alone. You need the **Xcode 27 SDK**, not Xcode 26 with a 27 deployment target. The three
@@ -133,7 +134,9 @@ this question plus **two complete worked conformances you can read line by line*
 verbatim, the 40-line minimum viable conformance from Apple's own test mock, all seven request fields
 (including the three Apple's shipped executor ignores), `ContextOptions` versus `GenerationOptions`,
 two transcript translators that disagree about prior reasoning, the whole generation channel,
-authentication, and custom segments as the extension point for new modalities.
+authentication, and custom segments as the extension point for new modalities (a surface the
+Xcode 27 beta 5 interface no longer declares — §13.2 there carries the status note and safe
+default).
 
 > ⚠️ **SILENT FAILURE — `prewarm` binds a no-op.** `prewarm(model:transcript:)` ships a default no-op
 > extension, so a signature that is *almost* right compiles cleanly, becomes an ordinary method nothing

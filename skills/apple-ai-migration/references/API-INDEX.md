@@ -1,10 +1,10 @@
 # API & symbol index — Migrating an Apple AI integration from 26 to 27
 
-**401 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**408 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-04; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
-## FoundationModels  <sub>107 symbols</sub>
+## FoundationModels  <sub>110 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -20,12 +20,12 @@
 | `DynamicProfiles` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `FoundationModels` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.README](part-17-migration-from-pre-ios-27/README.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `FoundationModels.framework` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
-| `FoundationModels.LanguageModelError` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `FoundationModels.LanguageModelError` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `FoundationModels.swiftinterface` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.README](part-17-migration-from-pre-ios-27/README.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `@Generable` | ✓ | ✓ | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) +1 more |
 | `Generable` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.README](part-17-migration-from-pre-ios-27/README.md) |
 | `GeneratedContent` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
-| `GeneratedContent.ParsingError` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
+| `GeneratedContent.ParsingError` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `GenerationError` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.README](part-17-migration-from-pre-ios-27/README.md) +2 more |
 | `GenerationError.concurrentRequests(_:)` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `GenerationError.Context` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
@@ -63,19 +63,19 @@
 | `LanguageModelFeedback` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelFeedback.Issue.Category` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelSession` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) +1 more |
-| `LanguageModelSession.DynamicProfile` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
-| `LanguageModelSession.DynamicProfileBuilder` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
-| `LanguageModelSession.DynamicProfileModifier` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.DynamicProfile` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.DynamicProfileBuilder` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.DynamicProfileModifier` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelSession.Error` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelSession.Error.concurrentRequests` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `LanguageModelSession.Error.transcriptMutationWhileResponding` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelSession.GenerationError` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `LanguageModelSession.GenerationError.exceededContextWindowSize(_:)` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
-| `LanguageModelSession.Profile` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.Profile` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelSession.Response.content` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `LanguageModelSession.SessionProperty` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.SessionProperty` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `LanguageModelSession.ToolCallError` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
-| `LanguageModelSession.Usage` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `LanguageModelSession.Usage` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `MLXLanguageModel` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `MLXLanguageModel.Executor` |  |  | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `PrivateCloudComputeLanguageModel` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
@@ -86,6 +86,7 @@
 | `@SessionProperty` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `SessionPropertyKey` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `SessionPropertyValues` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `SessionPropertyValues.history` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `SystemLanguageModel` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `SystemLanguageModel.Adapter` | ✓ | ✓ | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.README](part-17-migration-from-pre-ios-27/README.md) |
 | `SystemLanguageModel.Adapter(name:)` | ✓ | ✓ | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
@@ -109,10 +110,12 @@
 | `Tool.Output` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Tool.parameters` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Transcript` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
+| `Transcript.CustomSegment` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Transcript.Entry` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `Transcript.Entry.reasoning` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `Transcript.history` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `Transcript.Segment` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `Transcript.HistoryView` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `Transcript.Segment` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `Transcript.structuredTranscript` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `TranscriptErrorHandlingPolicy` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 
@@ -146,7 +149,7 @@
 | `CoreAICommon` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `CoreAICompiler` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `CoreAIDelegates` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.README](part-17-migration-from-pre-ios-27/README.md) |
-| `CoreAIDelegates.AIModelError` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
+| `CoreAIDelegates.AIModelError` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `CoreAIRuntime` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [17.README](part-17-migration-from-pre-ios-27/README.md) |
 | `ImageDescriptor` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `InferenceFunction` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
@@ -262,7 +265,7 @@
 | `FoundationModelsIntegration` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `FoundationNetworking` |  |  | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `JSONDecoder` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
-| `Sendable` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `Sendable` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `SendableMetatype` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `String` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `Task` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
@@ -270,7 +273,7 @@
 | `URL` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `URLSession` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 
-## other  <sub>190 symbols</sub>
+## other  <sub>194 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -315,6 +318,7 @@
 | `CoreMLExportError` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `CreatorDefinedValue` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `CustomDebugStringConvertible` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `CustomSegment` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `DatasetExtractor` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `DEBUG` |  |  | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `DetectedObject.boundingBox` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
@@ -341,12 +345,13 @@
 | `FMSystemLanguageModelGetContextSize` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `GenerationOptions` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
 | `GenerationOptions.SamplingMode.Kind` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
-| `GenerationOptions.ToolCallingMode` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `GenerationOptions.ToolCallingMode` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `GenerationSchema` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `Guardrails` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Guardrails.default` | ✓ | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `GuardrailViolation` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `Hashable` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
+| `HistoryView` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `HubApi` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `HubClient` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `HubClient.default` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
@@ -356,6 +361,7 @@
 | `ImageReference` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `ImageReference.attachmentLabel` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `ImageReference.resolve(in:)` |  | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `Index` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Info.plist` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `Int` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `IntegrationTestHelpers` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
@@ -386,7 +392,7 @@
 | `ModelJudgeEvaluator` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `ModelManagerError` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `ModelManagerServices.ModelManagerError` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `MutableCollection` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `MutableCollection` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `MutableRawSpan` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `MutableView` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `MutableView.copyElements(from:)` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
@@ -414,7 +420,7 @@
 | `PurgeConditions` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `Quantizer` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `RandomAccessCollection` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
-| `RangeReplaceableCollection` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `RangeReplaceableCollection` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `RateLimited` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `RawSpan` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `RawView.init` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
@@ -443,6 +449,7 @@
 | `Statistics.cohensKappa` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `StoreDownloaderExtension` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `SubjectInferenceError` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `SubSequence` | ✓ | ✓ | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `SwiftTranscriptionSampleApp` |  |  | [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `Timeout` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `ToggleSkillTool` |  |  | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |

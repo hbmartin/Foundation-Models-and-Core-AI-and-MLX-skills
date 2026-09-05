@@ -1,8 +1,8 @@
 # API & symbol index — MLX in Python and Swift, and bridges to Core AI
 
-**334 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**334 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-08-20; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-04; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>21 symbols</sub>
 
@@ -13,7 +13,7 @@
 | `CoreAILanguageModels` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [14.README](part-14-bridges-between-stacks/README.md) |
 | `DynamicProfile` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `FoundationModels` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
-| `FoundationModels.LanguageModel` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `FoundationModels.LanguageModel` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `@Generable` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) +2 more |
 | `GeneratedContent` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `LanguageModel` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.README](part-13-mlx-swift/README.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) +2 more |
@@ -322,7 +322,7 @@
 | `QuantizedSwitchLinear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `ReasoningConfig.isSpecialToken` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `ReasoningHeuristics` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `Response.Action.updateUsage(input:output:)` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `Response.Action.updateUsage(input:output:)` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `RMSNorm` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `RotatingKVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.3](part-12-mlx-python/references/03-quantization.md) +1 more |
 | `RotatingKVCache.toQuantized()` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |

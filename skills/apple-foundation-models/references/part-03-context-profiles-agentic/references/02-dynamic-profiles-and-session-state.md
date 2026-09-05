@@ -428,10 +428,10 @@ index — which are visible inside a conforming type. It is the same ergonomic a
 > interface.** The grep this box asked for has been run.
 > `LanguageModelSession.Profile` declares exactly **one** initializer:
 > `public init(@DynamicInstructionsBuilder _ dynamicInstructions: () -> some DynamicInstructions)`
-> — ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:785-798`). The model arrives
+> — ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:830-843`). The model arrives
 > only through the modifier, which has **two** overloads —
 > `func model(_ model: any LanguageModel)` and `func model(_ model: some LanguageModel)`, both
-> `-> some DynamicProfile` (`:921-923`) — so it accepts an existential or a concrete model. Every
+> `-> some DynamicProfile` (`:966-968`) — so it accepts an existential or a concrete model. Every
 > `Profile(model:)` spelling in circulation is a reconstruction that does not compile against the
 > 27.0 beta. (Per this repo's honesty rule: this is absence from the captured beta interface, not a
 > promise about the final SDK — but the shipping sample, the docs article, and the interface now
@@ -734,7 +734,7 @@ tool mutates your state; the body re-runs at the next prompt boundary.
 > the way SwiftUI's `ForEach` does.
 
 > ✅ **RESOLVED (2026-07-29) — the initialiser list is exactly two.**
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:739-748`):
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:784-793`):
 >
 > ```swift
 > init(_ data: Data, id: KeyPath<Data.Element, ID>,
@@ -778,7 +778,7 @@ through modifiers.
 | `modifier(_:)` | "Apply a modifier to the dynamic profile." | The entry point for custom modifiers. See §10. |
 
 > ✅ **SDK-verified addendum (2026-07-29)** — the value modifiers' exact signatures, from
-> `FoundationModels-27.0-macos.swiftinterface:920-937`. Every configuration modifier takes an
+> `FoundationModels-27.0-macos.swiftinterface:965-982`. Every configuration modifier takes an
 > **Optional** and returns `some DynamicProfile`: `temperature(_: Double?)`,
 > `samplingMode(_: GenerationOptions.SamplingMode?)`, `maximumResponseTokens(_: Int?)`,
 > `reasoningLevel(_: ContextOptions.ReasoningLevel?)`,
@@ -817,13 +817,13 @@ Plus a fourth group that is not in the framework at all — the history modifier
 > ✅ **RESOLVED (2026-07-29) — there is no `.contextOptions(_:)` profile modifier in the 27.0 beta
 > interface.** The complete built-in modifier surface on
 > `LanguageModelSession.DynamicProfile` is read verbatim at
-> `FoundationModels-27.0-macos.swiftinterface:912-983`: `modifier(_:)`, `model(_:)` (×2),
+> `FoundationModels-27.0-macos.swiftinterface:957-1028`: `modifier(_:)`, `model(_:)` (×2),
 > `temperature(_:)`, `samplingMode(_:)`, `maximumResponseTokens(_:)`, `reasoningLevel(_:)`,
 > `toolCallingMode(_:)`, `historyTransform(_:)`, `transcriptErrorHandlingPolicy(_:)`, and the seven
 > lifecycle hooks — nothing else. The documentation mirror's `.contextOptions(...)` modifier does
 > not compile against this interface; per-call `contextOptions:` (`ContextOptions` itself is
-> SDK-verified at `:3068-3072`) and the `.reasoningLevel(_:)` modifier (which takes the *same*
-> `ContextOptions.ReasoningLevel?` type, `:931`) are the two real surfaces. **Use
+> SDK-verified at `:3132-3136`) and the `.reasoningLevel(_:)` modifier (which takes the *same*
+> `ContextOptions.ReasoningLevel?` type, `:976`) are the two real surfaces. **Use
 > `.reasoningLevel(_:)` on the profile, and pass `contextOptions:` at the call site if you need
 > `includeSchemaInPrompt`.**
 
@@ -1263,11 +1263,12 @@ Confirmed spellings here: `Transcript.Entry.response(_:)`,
 > ⚠️ **`assetIDs` is a required, non-optional `[String]`, and Apple's own sample passes `[""]`** — an
 > array containing one empty string. It is undocumented. Copy it; there is nothing better available.
 >
-> 🔴 **GAP (narrowed 2026-07-29) — what `assetIDs` means is still unknown, but the SDK shows its
-> trajectory.** The 27.0 interface declares `Transcript.Response` with `assetIDs: [String]` plus a
-> 27-only `metadata: [String : any Codable & Sendable & Equatable]`, and the back-deployed
-> `metadata` getter on pre-27 runtimes literally returns `["assetIDs": assetIDs]` — ✅
-> **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:2554-2586`). So in the 27 model,
+> 🔴 **GAP (narrowed 2026-07-29, re-checked 2026-08-23) — what `assetIDs` means is still
+> unknown, but the SDK shows its trajectory.** The 27.0 interface declares `Transcript.Response`
+> with `assetIDs: [String]` plus a 27-only `metadata: [String : GeneratedContent]` (beta 5 retyped
+> it from `[String : any Codable & Sendable & Equatable]`), and the back-deployed `metadata`
+> getter on pre-27 runtimes literally returns `["assetIDs": GeneratedContent(assetIDs)]` — ✅
+> **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:2595-2627`). So in the 27 model,
 > `assetIDs` is just one key of the general response-metadata bag (the 27-only initializer
 > `init(id:metadata:segments:)` drops the label entirely). Its *semantics* remain undocumented;
 > `[""]` still has no better reading than "no model produced this."
@@ -1529,7 +1530,7 @@ This is the messiest corner of the API surface, so here is exactly what is known
 > example). These are overloads, not variadic magic.
 
 > ✅ **RESOLVED (2026-07-29) — the declared signatures, read verbatim from the 27.0 interface**
-> (`FoundationModels-27.0-macos.swiftinterface:939-981`). Every transcript-event hook is an
+> (`FoundationModels-27.0-macos.swiftinterface:984-1026`). Every transcript-event hook is an
 > overload **pair** — a zero-argument convenience that forwards to the payload form — and the
 > payload types are all `Transcript` nested types:
 >
@@ -1930,7 +1931,7 @@ session, and assert on `session.properties.phase`.
 > 🔴 **GAP (narrowed 2026-07-29) — outside writes now provably *compile*; their semantics are still
 > unverified.** The interface declares `session.properties: SessionPropertyValues { get }` returning
 > a `final class` whose keyed subscript has `get`/`set`/`_modify`, and whose `history` accessor is
-> likewise settable (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1053-1063,
+> likewise settable (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1097-1107,
 > :1026-1031, :1084-1086`) — so `session.properties.phase = .done` from outside is not a compile
 > error. What no source shows is what happens next (does an in-flight turn observe it? does it race
 > the `transcriptMutationWhileResponding` guard?). **Safe default: treat it as read-only from
@@ -2018,8 +2019,9 @@ That is exactly Origami's shape: the two on-device branches carry
 >
 > 🔴 **GAP (narrowed 2026-07-29) — what happens if you write to it anyway.** One of the three
 > plausible behaviours is now eliminated: it is **not a compile error**. The interface has a single
-> `SessionPropertyValues.history` accessor with a real `set`/`_modify`
-> (`FoundationModels-27.0-macos.swiftinterface:1026-1031`) and no read-only projection type for the
+> `SessionPropertyValues.history` accessor with a real `set`
+> (`FoundationModels-27.0-macos.swiftinterface:1071-1076`; typed `Transcript.HistoryView` as of
+> beta 5 — §12.3) and no read-only projection type for the
 > `Tool`/`DynamicInstructions` contexts — so the documented read-only rule must be enforced at
 > runtime, which leaves **silent no-op or runtime trap**, and nothing in the corpus distinguishes
 > those. **Safe default: only assign to `history` from a lifecycle modifier closure** (`onPrompt`,
@@ -2031,18 +2033,26 @@ That is exactly Origami's shape: the two on-device branches carry
 
 A small but real ergonomic wrinkle that will produce a compiler error the first time you hit it:
 
-> ✅ **VERIFIED** — the built-in property is typed
+> ✅ **SDK-verified** (beta 5, `FoundationModels-27.0-macos.swiftinterface:1071-1076`) — the built-in
+> property is typed
 > ```swift
-> var history: ArraySlice<Transcript.Entry> { get set }
+> var history: Transcript.HistoryView { get set }
 > ```
 > while `historyTransform(_:)` takes and returns a plain array:
 > ```swift
 > ([Transcript.Entry]) -> [Transcript.Entry]
 > ```
+> ⚠️ Until beta 5 the property was typed `ArraySlice<Transcript.Entry>`; the beta 5 interface
+> introduced the dedicated `Transcript.HistoryView` collection (`27.0:2667-2694`) — noted
+> 2026-08-23.
 
-So `history = history.suffix(50)` type-checks (an `ArraySlice`'s `suffix` is an `ArraySlice`), while a
-`historyTransform` closure that ends in `entries.suffix(20)` does **not** — `Array.suffix` returns
-`ArraySlice`, and the closure must return `[Transcript.Entry]`. Apple's documentation example wraps it:
+So `history = history.suffix(50)` still type-checks — for a new reason: `HistoryView` is **its own
+`SubSequence`** (`27.0:2669`), so its `suffix` is a `HistoryView`, exactly as `ArraySlice.suffix` was
+an `ArraySlice` before beta 5. A `historyTransform` closure that ends in `entries.suffix(20)` still
+does **not** — `Array.suffix` returns `ArraySlice`, and the closure must return `[Transcript.Entry]`.
+One new wrinkle: `HistoryView.Index` is an opaque struct, not `Int` (`27.0:2703-2718`), so
+`history[0]` no longer compiles — use `history.first`/`history.last` or index arithmetic. Apple's
+documentation example wraps it:
 
 > ✅ **VERIFIED** — from the dynamic-sessions article:
 >
@@ -2064,10 +2074,12 @@ Note `Array(...)`. Origami's `shortHistory(_:)` is quoted in the corpus as
 as written — almost certainly a transcription that dropped the `Array(…)` wrapper during harvesting.
 **Write `Array(entries.suffix(4))`.** It is correct under either reading.
 
-The utilities package confirms the `ArraySlice`-like behaviour of the session property from the other
-direction: its modifiers call `lastIndex(where:)`, `prefix(upTo:)`, `suffix(from:)`, `suffix(_:)`,
-`count` and `last` on `history`, concatenate it with `+`, and assign a plain `[Transcript.Entry]` array
-back into it (`SummarizeHistory.swift:153`).
+The utilities package confirms the slice-like contract from the other direction (its source predates
+beta 5 and was written against the `ArraySlice` surface): its modifiers call `lastIndex(where:)`,
+`prefix(upTo:)`, `suffix(from:)`, `suffix(_:)`, `count` and `last` on `history`, concatenate it with
+`+`, and assign a plain `[Transcript.Entry]` array back into it (`SummarizeHistory.swift:153`). Every
+method in that list also exists on beta 5's `HistoryView` — its `RandomAccessCollection` +
+`RangeReplaceableCollection` conformances (`27.0:2667`) supply them.
 
 ### 12.4 A function reference is a legal transform
 
@@ -2971,17 +2983,17 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | `LanguageModelSession.Profile` (struct, `init(_:)`) | ✅ docs + Apple sample |
 | `LanguageModelSession.DynamicProfileModifier` (+ `Content`, `body(content:)`) | ✅ docs + Apple's utilities package |
 | `DynamicInstructions` (top-level protocol) | ✅ docs + Apple sample |
-| `DynamicInstructionsBuilder`, `DynamicInstructionsForEach` | ✅ docs + SDK-verified — `ForEach` has exactly two inits, `(_:id:content:)` and an `Identifiable` `(_:content:)` (`FoundationModels-27.0-macos.swiftinterface:739-748`) |
+| `DynamicInstructionsBuilder`, `DynamicInstructionsForEach` | ✅ docs + SDK-verified — `ForEach` has exactly two inits, `(_:id:content:)` and an `Identifiable` `(_:content:)` (`FoundationModels-27.0-macos.swiftinterface:784-793`) |
 | `.model(_:)` on a profile | ✅ Apple sample (moved into the framework at Xcode 27 beta 3) |
 | `.temperature(_:)` `Double` | ✅ Apple sample + docs |
 | `.reasoningLevel(_:)` — `.light` / `.moderate` / `.deep` | ✅ Apple sample (`.deep`) + docs |
 | `.samplingMode(_:)` | ✅ docs · no sample · cases renamed during beta |
 | `.maximumResponseTokens(_:)`, `.toolCallingMode(_:)`, `.transcriptErrorHandlingPolicy(_:)`, `.modifier(_:)` | ✅ docs |
 | `.historyTransform(_:)` — `([Transcript.Entry]) -> [Transcript.Entry]` | ✅ Apple sample (function reference) + docs |
-| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolCall/.onToolOutput/.onReasoning` | ✅ docs + SDK-verified — overload pairs, `async throws`, `Transcript.*` payloads; activate/deactivate zero-arg `async` non-throwing (`:939-981`) |
+| `.onActivate/.onDeactivate/.onPrompt/.onResponse/.onToolCall/.onToolOutput/.onReasoning` | ✅ docs + SDK-verified — overload pairs, `async throws`, `Transcript.*` payloads; activate/deactivate zero-arg `async` non-throwing (`:984-1026`) |
 | `SessionPropertyValues`, `SessionPropertyKey`, `@SessionPropertyEntry`, `@SessionProperty(\.…)` | ✅ docs + compiled tests |
-| `\.history` → `ArraySlice<Transcript.Entry>` `{ get set }` | ✅ docs |
-| `session.properties.<name>` | ✅ compiled test · setter SDK-verified (`:1059-1063`); write-from-outside *semantics* 🔴 GAP |
+| `\.history` → `Transcript.HistoryView` `{ get set }` (beta 5; `ArraySlice<Transcript.Entry>` in earlier 27.0 betas — §12.3) | ✅ docs + SDK-verified (`27.0:1071-1076`) |
+| `session.properties.<name>` | ✅ compiled test · setter SDK-verified (`:1103-1107`); write-from-outside *semantics* 🔴 GAP |
 | `LanguageModelSession(profile:history:)` · `init(dynamicInstructions:history:)` | ✅ docs + Apple sample |
 | `TranscriptErrorHandlingPolicy` — `.preserveTranscript` / `.revertTranscript` | ✅ docs |
 | `session.transcript` — now `{ get set }` | ✅ docs + WWDC |
@@ -2999,8 +3011,8 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 5. Every tool name you mention in instructions text must be in the tool set. Assert it in a test.
 6. `historyTransform` is **local, per-profile, lossless**. `@SessionProperty(\.history)` is **global,
    lossy, permanent**. Default to the former.
-7. `historyTransform` takes and returns `[Transcript.Entry]`; `history` is an `ArraySlice`. Wrap with
-   `Array(…)`.
+7. `historyTransform` takes and returns `[Transcript.Entry]`; `history` is a `Transcript.HistoryView`
+   (an `ArraySlice` before beta 5). Wrap with `Array(…)`.
 8. Precedence: **call site > innermost modifier > outer modifier**. Lifecycle callbacks **accumulate**
    instead of overriding.
 9. A profile switch invalidates the KV cache for the whole transcript. Switch at conversation

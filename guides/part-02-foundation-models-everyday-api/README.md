@@ -128,7 +128,7 @@ be set, with the precedence rule; transcript rollback on a thrown tool error and
 > default *value* of `includesSchemaInInstructions` (the requirement and its default implementation
 > are SDK-verified; the getter's body is not emitted). Closed by the FoundationModels capture: the
 > `onToolCall`/`onToolOutput` signatures — both arities, `async throws`,
-> `Transcript.ToolCall`/`ToolOutput` payloads (`FoundationModels-27.0-macos.swiftinterface:963-977`).
+> `Transcript.ToolCall`/`ToolOutput` payloads (`FoundationModels-27.0-macos.swiftinterface:1008-1022`).
 
 ### [2.4 — Local RAG with `SpotlightSearchTool`, plus OCR and barcodes](references/04-spotlight-rag-and-system-tools.md)
 
@@ -158,7 +158,7 @@ feature on *result coverage* rather than on how the answers read.
 > sample project closed nine gaps — the `Configuration` shape, the entitlement question, the delegate
 > signature, the `SearchReply` case list and its non-frozen-ness, and the wire name `spotlight_search`.
 > The declaration-shaped remainder is now closed too: the **`_CoreSpotlight_FoundationModels`
-> cross-import overlay interface** was captured 2026-07-29 (✅ SDK-verified —
+> cross-import overlay interface** was captured 2026-07-29, recaptured 2026-08-20 (✅ SDK-verified —
 > `notes/sdk-interfaces/_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface`), settling
 > `GuidanceProfile`'s value types, the `ContactResolver` protocol, `.files(FileSource)`, and
 > `CustomStage`'s members. What stays open is **behavioural**: none of those four appear in Apple's own

@@ -431,7 +431,7 @@ supported" branch (bad).
 > `case deviceNotEligible` and `case systemNotReady` — nothing else — ✅ **SDK-verified**
 > (`FoundationModels-27.0-macos.swiftinterface:82-90`). Neither `.appleIntelligenceNotEnabled` nor
 > `.modelNotReady` exists on the PCC enum; those belong to `SystemLanguageModel`'s three-case list
-> (`:361-370`). One caveat: unlike `Availability` itself (`@frozen`, `:73`), `UnavailableReason` is
+> (`:365-374`). One caveat: unlike `Availability` itself (`@frozen`, `:73`), `UnavailableReason` is
 > **not** `@frozen`, so keep the `case .unavailable(let other)` catch-all — Apple's own example
 > writes it, and the compiler will not warn you when a case is added.
 
@@ -648,7 +648,7 @@ Four facts fall out of twenty-five lines, and every one of them changes how you 
 > in the table above, in this order: `contextSizeExceeded`, `rateLimited`, `guardrailViolation`,
 > `refusal`, `unsupportedCapability`, `unsupportedTranscriptContent`, `unsupportedGenerationGuide`,
 > `unsupportedLanguageOrLocale`, `timeout` — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1486-1496`). The enum is still **non-frozen** (no
+> (`FoundationModels-27.0-macos.swiftinterface:1527-1537`). The enum is still **non-frozen** (no
 > `@frozen` attribute), so the ceiling can rise in a future SDK: keep the `default:` arm. The four
 > doc-page-only cases are no longer doc-page-only — all nine are read from the interface.
 
@@ -682,7 +682,7 @@ Plus, from the same file: *"Every payload struct exposes `debugDescription: Stri
 
 The header has now been read, and it agrees on every row: the payload structs and their
 case-specific fields are ✅ **SDK-verified** verbatim
-(`FoundationModels-27.0-macos.swiftinterface:1500-1620`), including the `debugDescription` +
+(`FoundationModels-27.0-macos.swiftinterface:1541-1661`), including the `debugDescription` +
 `metadata` pair on all nine. One refinement the SKILL.md could not show: `Refusal`'s *stored*
 members are just `debugDescription`/`metadata` — its `init` takes `explanation: String`
 (`:1550`) and the `explanation: Response<String> { get async throws }` accessor plus
@@ -931,10 +931,10 @@ which is the practical rule: you need this arm exactly when you call `respond(to
 > ✅ **RESOLVED (2026-07-29) — it is the formal successor, stated by Apple in the SDK.** The
 > deprecated `GenerationError.decodingFailure(_:)` case carries the per-case deprecation message
 > *"Use ``GeneratedContent/ParsingError`` instead."* — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:3491-3494`). The payload-porting caveat stands and
+> (`FoundationModels-27.0-macos.swiftinterface:3555-3558`). The payload-porting caveat stands and
 > is now precise: the old case's payload was a `GenerationError.Context` (`debugDescription` only),
 > while `ParsingError` is a struct with `rawContent: String`, `underlyingError: (any Error)?`, and
-> `debugDescription: String` (`:1356-1361`) — so a migrated arm gains the raw model output but
+> `debugDescription: String` (`:1399-1404`) — so a migrated arm gains the raw model output but
 > must be rewritten, not renamed.
 
 ### 3.7 Catch order, and the pattern-matching bug
@@ -1013,7 +1013,7 @@ an error is a string.
 > 🔴 **GAP (narrowed 2026-07-29) — `LanguageModelSession.Error` is used by no Apple sample.** The
 > type itself is no longer in any doubt: exactly two payload-free cases, `concurrentRequests` and
 > `transcriptMutationWhileResponding`, `Equatable & Hashable`, `LocalizedError` — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1986-1994`). But neither 2026 sample catches it, so
+> (`FoundationModels-27.0-macos.swiftinterface:2026-2034`). But neither 2026 sample catches it, so
 > the corpus contains no compiling code that observes one. That is weak evidence about how often it
 > fires in practice, not evidence the type is wrong. What would resolve it: any first-party or
 > shipping code that catches it. `notes/web/apple-sample-code.md:105`.
@@ -1385,7 +1385,7 @@ convenience init(useCase: SystemLanguageModel.UseCase = .general,
 > confirming it is **not** `Equatable` — exposing exactly the two `static let`s above and nothing else.
 > Both the inits and `Adapter` are 26.0-era types (relevant to Part 17's adapter framing).
 > **27.0 changes one of them (2026-07-29):** the `useCase:guardrails:` init is unchanged in the 27.0
-> interface (`FoundationModels-27.0-macos.swiftinterface:385`), but `init(adapter:guardrails:)` and
+> interface (`FoundationModels-27.0-macos.swiftinterface:389`), but `init(adapter:guardrails:)` and
 > the whole `SystemLanguageModel.Adapter` type are marked
 > `@available(iOS/macOS/visionOS, deprecated: 26.4, obsoleted: 27.0)` (`:386-392, :464-471`) —
 > BEFORE: works, 26.0–26.x · AFTER: **does not compile against the 27.0 SDK**. Custom-adapter code
@@ -1458,7 +1458,7 @@ independent confirmation that the set is complete:
 > ✅ **RESOLVED for the 27.0 beta (2026-07-29) — the set is exactly two.** The interface declares
 > `struct Guardrails` with precisely `static let default` and
 > `static let permissiveContentTransformations`, and no other member — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:331-340`). The structural caveat stands: a
+> (`FoundationModels-27.0-macos.swiftinterface:335-344`). The structural caveat stands: a
 > struct-of-statics is the shape Apple uses when it intends to grow the set, so treat "two options"
 > as *"two options as of the 27.0 betas"*, not a promise.
 
@@ -2124,15 +2124,27 @@ with `DynamicProfiles` for this."*).
 > ✅ **RESOLVED on the type question (2026-07-29): yes, one type.** The profile modifier is declared
 > `func toolCallingMode(_ toolCallingMode: GenerationOptions.ToolCallingMode?) -> some
 > DynamicProfile` — the *same* `GenerationOptions.ToolCallingMode` struct as the options field —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:933`, with the struct and its
-> `Kind` at `:3229-3249`: statics `.allowed`/`.required`/`.disallowed` over
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:978`, with the struct and its
+> `Kind` at `:3293-3313`: statics `.allowed`/`.required`/`.disallowed` over
 > `case allowed/required/disallowed`). The dynamic-profiles article's general rule says call-site
 > arguments override profile modifiers, and the runtime now confirms it.
 >
-> ✅ **DEVICE-RESOLVED 2026-08-20.** On iPhone 15 Pro / iOS build `24A5408d`, profile `.required`
-> + options `.disallowed` produced no tool call; profile `.disallowed` + options `.required` ran the
-> tool loop until `contextSizeExceeded`. **Per-call options win** in both directions. The earlier
-> simulator run pointed the same way but lacked tool-calling assets.
+> ✅ **DEVICE-CONFIRMED, one direction (2026-08-20).** On iPhone 15 Pro / iOS build `24A5408d`,
+> profile `.required` + options `.disallowed` produced no tool call — the recorded probe line reads
+> `toolCalled=false toolRan=false`. So call-site options override the profile modifier in the
+> profile-allows → options-disallow direction. The earlier simulator run pointed the same way but
+> lacked tool-calling assets.
+>
+> 🔴 **GAP — the reverse direction is an inference, not a recorded observation.**
+> **Unknown:** whether options `.required` actually overrides a profile's `.disallowed`. That run
+> threw `LanguageModelError.contextSizeExceeded(contextSize: 4096, tokenCount: 4099)`, and the
+> probe's catch path did not record the `toolCalled`/`toolRan` discriminators — "the tool loop ran
+> until overflow" is read off the error fingerprint alone.
+> **What resolves it:** the probe has been updated to record the discriminators in its catch path;
+> the next device run turns the fingerprint into an observation.
+> **Safe default:** assume call-site `.required` *can* override a profile-level `.disallowed` —
+> never rely on a profile's `.disallowed` as an enforcement boundary — while not treating the
+> override as device-verified in that direction.
 
 ### 7.5 `ToolCallError` and "Failed to parse generated content"
 
@@ -2303,14 +2315,14 @@ Details worth knowing:
 
 > ✅ **RESOLVED (2026-07-29) — `QuotaUsage.Status` has exactly two cases.**
 > `case belowLimit(Status.BelowLimit)` and `case limitReached(Status.LimitReached)` —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:224-241`). `BelowLimit` carries
-> `isApproachingLimit: Bool` (`:232-234`); `LimitReached` is an empty payload struct (`:239-240`).
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:228-245`). `BelowLimit` carries
+> `isApproachingLimit: Bool` (`:236-238`); `LimitReached` is an empty payload struct (`:243-244`).
 > There is no `.atLimit`/`.overLimit`; "at limit" *is* `.limitReached`, and `isLimitReached: Bool`
-> lives in its own extension on `QuotaUsage` (`:217-219`) — the interface does not show whether it
+> lives in its own extension on `QuotaUsage` (`:221-223`) — the interface does not show whether it
 > is derived from `status`, but the two can only disagree by framework bug. The enum is not
 > `@frozen`, so keep the default arm anyway. `QuotaUsage` itself is
 > `status` + `limitIncreaseSuggestion: LimitIncreaseSuggestion?` + `resetDate: Date?`
-> (`:208-212`), and `LimitIncreaseSuggestion`'s only member is `func show()` (`:245-252`).
+> (`:212-216`), and `LimitIncreaseSuggestion`'s only member is `func show()` (`:249-256`).
 
 > 🔴 **GAP — no numbers.** Thread 835974 ("More Detailed Quota Usage for PCC") asks for actual
 > counts or percentages so developers can build a usage meter. The API exposes only the coarse
@@ -2532,10 +2544,10 @@ try allFeedback.write(to: url)
 > Eight cases, `CaseIterable`: `.unhelpful`, `.tooVerbose`, `.didNotFollowInstructions`,
 > `.incorrect`, `.stereotypeOrBias`, `.suggestiveOrSexual`, `.vulgarOrOffensive`,
 > `.triggeredGuardrailUnexpectedly` — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:3384-3405`). So for a guardrail false positive the
+> (`FoundationModels-27.0-macos.swiftinterface:3448-3469`). So for a guardrail false positive the
 > apt category is **`.triggeredGuardrailUnexpectedly`**, not `.incorrect`. (`Sentiment` is
-> `.positive`/`.negative`/`.neutral`, `:3353-3357`; `Issue.init(category:explanation:)` at
-> `:3376`.)
+> `.positive`/`.negative`/`.neutral`, `:3417-3421`; `Issue.init(category:explanation:)` at
+> `:3440`.)
 
 Note the signature drift worth guarding against: the pinned forum post names
 `logFeedbackAttachment(sentiment:issues:desiredOutput:)`, and the docs list that plus the two
@@ -3147,7 +3159,7 @@ Listed in the arm order Apple's own sample code uses (§3.7).
 |---|---|---|---|
 | `SystemLanguageModel.Error` | 27.0+, no watchOS | 1 | On-device asset state. **Test this first** (§3.4) |
 | `LanguageModelError` | 27.0+ | 9 documented, **non-frozen** (§3.2) | The model or the request |
-| `GeneratedContent.ParsingError` | 27.0+ — ✅ SDK-verified (`FoundationModels-27.0-macos.swiftinterface:1354-1361`) | struct | Output wouldn't decode into your `Generable` (§3.6) |
+| `GeneratedContent.ParsingError` | 27.0+ — ✅ SDK-verified (`FoundationModels-27.0-macos.swiftinterface:1397-1404`) | struct | Output wouldn't decode into your `Generable` (§3.6) |
 | `LanguageModelSession.Error` | 27.0+ | 2 | **Your** misuse of the session |
 | `PrivateCloudComputeLanguageModel.Error` | 27.0+ | 3 | Quota / network / service |
 | `LanguageModelSession.ToolCallError` | 26.0+, no watchOS | struct | A tool threw; `.tool` names it |
@@ -3197,7 +3209,7 @@ Entries marked 🔴 **GAP** remain unanswered by the corpus; three rows are
 | 5.2 | 🟡 That `.permissiveContentTransformations` is inert in Apple's own Book Tracker sample is our deduction from two verified facts, not a stated one | A demonstration either way, or an Apple clarification of the docs sentence |
 | 7.1 | `com.apple.SensitiveContentAnalysisML` error 15 | Apple reply on 836285 |
 | 7.3 | `ModelManagerServices.ModelManagerError` 1046 | Apple reply, or symbol dump |
-| 7.4 | ~~Are the two `toolCallingMode` surfaces one type, and which wins?~~ **✅ RESOLVED:** same type (SDK, 2026-07-29); call-site options override profile modifiers (iPhone 15 Pro probe, 2026-08-20) | Resolved — 27.0 `.swiftinterface:933, :3229-3249` + device probe |
+| 7.4 | ~~Are the two `toolCallingMode` surfaces one type?~~ **✅ RESOLVED:** same type (SDK, 2026-07-29). Which wins: options override profile, device-confirmed **only** in the allows→disallow direction (2026-08-20, `toolCalled=false toolRan=false`); 🔴 the disallow→require direction threw `contextSizeExceeded(4096, 4099)` with the discriminators unrecorded — "options won" there is an error-fingerprint inference | Next device run — the probe now records `toolCalled`/`toolRan` in its catch path |
 | 8.2 | ~~Full `QuotaUsage.Status` case list~~ — **✅ RESOLVED 2026-07-29**: `.belowLimit(_)` / `.limitReached(_)` only | Resolved — 27.0 `.swiftinterface:224-241` |
 | 8.2 | Numeric quota values | None — Apple does not expose them (FB23378161) |
 | 9.2 | ~~Full `LanguageModelFeedback.Issue.Category` list~~ — **✅ RESOLVED 2026-07-29**: eight cases incl. `.triggeredGuardrailUnexpectedly` | Resolved — 27.0 `.swiftinterface:3384-3405` |

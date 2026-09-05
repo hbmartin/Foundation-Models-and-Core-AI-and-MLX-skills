@@ -2,9 +2,10 @@
 // behavioral gaps in the guide series.
 //
 // Destinations (see probes/README.md):
-//   HOST-26   runs on the authoring host today (macOS 26.5, `swift test`)
-//   SIM-27    runs on the iOS 27.0 Simulator today (xcodebuild test)
-//   MAC-27    needs a Mac running macOS 27 (upgrade day)
+//   HOST-26   historical pre-upgrade lane — macOS 26.x results recorded through the
+//             2026-08-17 host upgrade (kept because harvested evidence cites it)
+//   SIM-27    runs on the iOS 27.0 Simulator (xcodebuild test)
+//   MAC-27    the authoring host since 2026-08-17 (macOS 27 beta 5, `swift test`)
 //   DEVICE-27 needs a physical device on iOS/macOS 27 with Apple Intelligence
 //
 // Probes never fake a pass/fail: measuring probes print PROBE-RESULT and pass;
@@ -83,10 +84,37 @@ private struct BookTags {
 
 // MARK: - Shared helpers (internal: also used by SpotlightProbes and InstrumentsWorkloadProbes)
 
-func skipUnlessModelAvailable(file: StaticString = #filePath, line: UInt = #line) throws {
+/// Build identifiers of runtimes whose host-backed model is KNOWN broken: it reports
+/// `.available` while generation/image-tokenization calls can block non-cancellably
+/// (measured 2026-08-17; recorded in probes/README.md and notes/FRESHNESS-RUNBOOK.md).
+/// Keyed on the BUILD, not the platform, so a macOS 26.x host or a future beta 6 runs
+/// the model-backed probes by default and the per-beta drift ritual actually exercises
+/// them. The iPhone hardware runtime shares the `24A5408d` build string and works —
+/// physical devices never reach this gate (it compiles only for macOS/simulator).
+let knownBrokenModelRuntimeBuilds: [String: String] = [
+    "26A5406e": "macOS 27 beta 5 host",
+    "24A5408d": "iOS 27 beta 5 Simulator runtime",
+]
+
+/// The running OS build (e.g. "26A5406e"), parsed from
+/// `operatingSystemVersionString` — "Version 27.0 (Build 24A5408d)". In the Simulator
+/// this is the iOS runtime's build, not the host kernel's (the committed Spotlight
+/// schema artifact names carry the same parse — see SpotlightProbes).
+let currentOSBuild: String = ProcessInfo.processInfo.operatingSystemVersionString
+    .components(separatedBy: "Build ").dropFirst().first?
+    .split(separator: ")").first.map(String.init) ?? "unknown-build"
+
+/// Skip a model-backed probe on a runtime build where model calls are known to block,
+/// unless the operator opts in; then check genuine model availability. `overrideKnob`
+/// names the env var whose value "1" is that consent — a probe already gated on its own
+/// PROBE_* knob passes that knob here, so the one documented knob suffices on any build.
+/// On every build NOT on the known-broken list the probes run by default, no env var.
+func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
+                              file: StaticString = #filePath, line: UInt = #line) throws {
     #if os(macOS) || targetEnvironment(simulator)
-    guard Probe.env("PROBE_ENABLE_HOST_MODEL") == "1" else {
-        throw XCTSkip("SKIPPED: beta 5 host-backed model reports available but calls can block; set PROBE_ENABLE_HOST_MODEL=1 to retry")
+    if Probe.env(overrideKnob) != "1",
+       let brokenRuntime = knownBrokenModelRuntimeBuilds[currentOSBuild] {
+        throw XCTSkip("SKIPPED: OS build \(currentOSBuild) (\(brokenRuntime)) is on the known-broken list — the model reports available but calls can block non-cancellably; set \(overrideKnob)=1 to run anyway")
     }
     #endif
     let model = SystemLanguageModel.default
@@ -119,7 +147,7 @@ func errorFingerprint(_ error: any Error) -> String {
         if error is LanguageModelSession.Error { casts.append("LanguageModelSession.Error") }
         // Decode the concrete LanguageModelError case + payload (the enum is non-frozen,
         // hence @unknown default). Payload fields per the captured 27.0 interface
-        // (FoundationModels-27.0-macos.swiftinterface:1486-1560).
+        // (FoundationModels-27.0-macos.swiftinterface:1527-1601).
         if let lme = error as? LanguageModelError {
             switch lme {
             case .contextSizeExceeded(let p):
@@ -228,8 +256,12 @@ final class FoundationModelsProbes: XCTestCase {
 
     // MARK: fm.toolCallingMode-precedence  [MAC-27 · DEVICE-27]
     //
-    // DRIFT BASELINE: call-site options won both directions on iPhone 15 Pro / iOS
-    //      build 24A5408d (2026-08-20), matching the documented general precedence rule.
+    // DRIFT BASELINE: on iPhone 15 Pro / iOS build 24A5408d (2026-08-20), options
+    //      .disallowed beat profile .required (tool not called — recorded). The reverse
+    //      direction threw LanguageModelError.contextSizeExceeded(4096,4099) and the
+    //      then-current catch path recorded no discriminators, so "options .required won"
+    //      there is an inference from the error fingerprint, not a recorded observation;
+    //      the catch branch now records toolCalled/toolRan for the next device run.
     // Candidates: (a) per-call options win; (b) profile wins; (c) merge/other.
     // Method: profile says .required, per-call options say .disallowed (and the inverse on a
     //      fresh session); with greedy sampling, whether a toolCalls entry lands in the
@@ -261,7 +293,14 @@ final class FoundationModelsProbes: XCTestCase {
                 }
                 return "toolCalled=\(called) toolRan=\(counter.count > 0)"
             } catch {
-                return "threw \(errorFingerprint(error))"
+                // Record the discriminators even on a throw: the counter still holds
+                // whether the tool body executed before the error surfaced, and the
+                // transcript whether a toolCalls entry landed — so an error fingerprint
+                // is no longer the only evidence for "the tool loop ran".
+                let called = session.transcript.contains {
+                    if case .toolCalls = $0 { return true } else { return false }
+                }
+                return "threw toolCalled=\(called) toolRan=\(counter.count > 0) \(errorFingerprint(error))"
             }
         }
 
@@ -845,18 +884,14 @@ final class FoundationModelsProbes: XCTestCase {
     // Candidates: (1) same/different/error token cost; (2) label recorded verbatim / nil;
     //             (3) labeled-only tool run / both run. Built-in ImageReference-based tools
     //             remain a separate A/B.
-    // SIM-27 and the macOS 27 beta-5 host are skipped by default: both block inside image
-    // tokenization before an async timeout can run (Simulator logs CVPixelBufferCreate -6680,
-    // measured 2026-08-17). Set PROBE_ENABLE_ATTACHMENT=1 to retry after a runtime update.
+    // The known-broken beta-5 builds (26A5406e host / 24A5408d Simulator runtime) skip by
+    // default: both block inside image tokenization before an async timeout can run
+    // (Simulator logs CVPixelBufferCreate -6680, measured 2026-08-17). On those builds
+    // PROBE_ENABLE_ATTACHMENT=1 alone forces the run; every other build runs by default.
     // Write-back on drift: 2.5 §6.4 and 2.3's label callout, per destination.
     func testAttachmentLabelRecording() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }
-        #if os(macOS) || targetEnvironment(simulator)
-        guard Probe.env("PROBE_ENABLE_ATTACHMENT") == "1" else {
-            throw XCTSkip("SKIPPED: beta 5 host/Simulator blocks in image tokenization; set PROBE_ENABLE_ATTACHMENT=1 to retry")
-        }
-        #endif
-        try skipUnlessModelAvailable()
+        try skipUnlessModelAvailable(overrideKnob: "PROBE_ENABLE_ATTACHMENT")
 
         func solidImage(side: Int) -> CGImage? {
             let ctx = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8,

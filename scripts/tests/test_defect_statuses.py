@@ -176,9 +176,9 @@ class DefectStatusGoldenTests(unittest.TestCase):
         runtime = (
             "guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md"
         )
-        self.assertEqual(claim(quantization, 1251, 3824), "MERGED")
+        self.assertEqual(claim(quantization, 1266, 3824), "MERGED")
         self.assertEqual(claim(fundamentals, 122, 3924), "CLOSED")
-        self.assertIsNone(claim(runtime, 3663, 85))
+        self.assertIsNone(claim(runtime, 3664, 85))
 
     def test_unreachable_github_is_structured_and_nonfatal(self) -> None:
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:

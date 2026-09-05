@@ -2,8 +2,9 @@
 
 **Part 4 · Beyond the built-in model · Reference 03**
 **Version floor:** the `LanguageModel` and `LanguageModelExecutor` protocols, `LanguageModelCapabilities`,
-`LanguageModelExecutorGenerationRequest`, `LanguageModelExecutorGenerationChannel`, `ContextOptions`,
-`Transcript.CustomSegment` and `Transcript.AttachmentSegment` are **all 27.0 and only 27.0** —
+`LanguageModelExecutorGenerationRequest`, `LanguageModelExecutorGenerationChannel`, `ContextOptions`
+and `Transcript.AttachmentSegment` are **all 27.0 and only 27.0** (`Transcript.CustomSegment`
+belonged to this list until Xcode 27 beta 5 — it is **not present in the beta 5 interface**; §13.2) —
 **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0 / watchOS 27.0**. There is **no tvOS**, and
 **nothing in this guide back-deploys to 26.0, 26.1, 26.3 or 26.4**: on a 26.x SDK the symbols do not
 exist at all, which is why every provider package in the corpus guards its adapter with
@@ -606,7 +607,7 @@ protocol LanguageModelExecutor: Sendable {
 
 > ✅ **The dispute is now settled first-hand (2026-07-29): this repo holds the interface.** The
 > declarations, read verbatim from
-> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface:1438-1444` and `:1668-1678`:
+> `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface:1481-1487` and `:1709-1719`:
 >
 > ```swift
 > public protocol LanguageModel : Sendable {
@@ -1392,7 +1393,7 @@ That `schema.name` is itself new:
 >
 > 🔴 **GAP (narrowed 2026-07-29) — what `.name` returns for an anonymous or inline schema.** The
 > declaration is now pinned: `public var name: String { get }`, 27.0+, **non-optional** —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3255-3263`) — so every schema has
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3319-3327`) — so every schema has
 > *some* name and there is no `String?` edge case. What the getter *computes* for an anonymous
 > schema is still invisible (non-inlinable body) and untested. **Safe default unchanged:** if your
 > wire format requires a non-empty schema name, write
@@ -1482,10 +1483,10 @@ who may know their model responds better to one or the other — control it.
 > the declaration is settled.** `ContextOptions` is
 > `public struct ContextOptions : Sendable, Equatable` with `includeSchemaInPrompt: Bool?` and
 > `reasoningLevel: ContextOptions.ReasoningLevel?`, `init` defaulting both to `nil` —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3066-3083`). Note the **optional**
+> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:3130-3147`). Note the **optional**
 > `Bool?`: `nil` means "the developer expressed no preference", so your executor needs a
 > three-state policy, not a boolean one (the framework's own `schema:` overloads default it to
-> `ContextOptions(includeSchemaInPrompt: true)`, `:2033-2039`). `ChatCompletionsLanguageModel`
+> `ContextOptions(includeSchemaInPrompt: true)`, `:2073-2079`). `ChatCompletionsLanguageModel`
 > ignores all of `contextOptions`; MLX reads only `reasoningLevel`. **Safe default unchanged:**
 > inline schemas into prompts only when your backend cannot constrain decoding, and treat the flag
 > as advisory.
@@ -1946,6 +1947,13 @@ The peer relationship matters and Apple's Core AI adapter explains why it was de
 > | `.updateMetadata(_:)` | *"Wholesale snapshot of entry metadata. Re-emit every key on every event."* |
 > | `.updateUsage(input:output:)` | *"Cumulative running totals. Each event REPLACES prior totals (does not add). Authoritative."* |
 
+> ⚠️ **Beta 5 status (noted 2026-08-23):** the recaptured 27.0 interface confirms six of the seven —
+> `appendText` / `replaceTextSegment` / `addAttachmentSegment` / `removeAttachmentSegment` /
+> `updateMetadata` / `updateUsage` (`FoundationModels-27.0-macos.swiftinterface:1857-1864`) — but
+> **`.updateCustomSegment(_:)` is not present in the beta 5 interface**, and neither is the
+> `Transcript.CustomSegment` protocol it carried. Both were in the 2026-07-29 capture; the removal
+> happened between that capture and beta 5. See §13.2 for the status note and safe default.
+
 Note that `appendText` and `replaceTextSegment` carry a `segmentID:` in the skill's spelling, while
 every call site in shipping code omits it — `.appendText(text, tokenCount: 1)`. It therefore has a
 default. Use the two-argument form unless you are managing multiple text segments in one entry.
@@ -2277,11 +2285,12 @@ knowing before you spend a day on it.
 > Recorded as commit `1c86cc1` in `ml-explore/mlx-swift-lm`. The stated effect: *"consumer-visible
 > usage for these responses may be absent or zero."*
 
-🔴 **GAP (updated 2026-07-29) — whether this is fixed in the SDK you are building against is still
-unknown, and the interface side has not moved.** The macOS 27.0 beta interface captured on this
-machine (Xcode 27 beta, 2026-07-29) **still declares the three-parameter form** —
+🔴 **GAP (updated 2026-08-23) — whether this is fixed in the SDK you are building against is still
+unknown, and the interface side still declares the three-parameter form.** The macOS 27.0 beta 5
+interface captured on this machine (Xcode 27 beta 5, 2026-08-20) **keeps**
 `updateUsage(input:output:metadata: … = [:])` on all three `Action` types
-(`FoundationModels-27.0-macos.swiftinterface:1823, :1831, :1846`) — so the interface/dylib split
+(`FoundationModels-27.0-macos.swiftinterface:1863, :1871, :1886`; beta 5 retyped `metadata:` to
+`[String : any ConvertibleToGeneratedContent]`) — so the interface/dylib split
 the MLX comment describes cannot be ruled out from the interface alone; a `.swiftinterface` cannot
 tell you what the dylib exports. Only an `nm`/`dyld_info` dump of the shipping
 `FoundationModels.framework` binary, or a link-and-run test, settles it per SDK. **Safe default
@@ -2767,7 +2776,30 @@ Three practical rules:
 
 ### 13.2 Custom segments — the extension point for new modalities
 
-This is the most forward-looking API in the session, and the one thing in the protocol that lets a
+> 🔴 **NOT PRESENT IN THE 27.0 BETA 5 INTERFACE (noted 2026-08-23).** Everything in this section
+> describes a surface the recaptured beta 5 `FoundationModels-27.0-macos.swiftinterface` no longer
+> declares: it contains **zero occurrences of `CustomSegment`** — no `Transcript.CustomSegment`
+> protocol, no `Transcript.Segment.custom(_:)` case (`Segment` is now `.text` / `.structure` /
+> `.attachment`, `27.0:2288-2297`), and no `.updateCustomSegment(_:)` response action
+> (`Response.Action`'s statics are now `appendText` / `replaceTextSegment` / `addAttachmentSegment`
+> / `removeAttachmentSegment` / `updateMetadata` / `updateUsage`, `27.0:1857-1864`). All three were
+> in the 2026-07-29 beta capture; the removal happened between that capture and beta 5, while WWDC
+> session 339, the provider SKILL.md, and the docs index still teach the surface. **Do not build a
+> provider contract on `.updateCustomSegment(...)` against the beta 5 SDK — it does not compile.**
+> The section is retained below, re-scoped as the pre-beta-5 design, because it is the best
+> statement of the *intent* Apple has published and the surface may return in a later beta.
+>
+> 🔴 **GAP — no declared successor.** What is unknown: whether the removal is final, and what (if
+> anything) replaces provider-defined structured segments. What would resolve it: a later beta's
+> interface, or release notes. **Safe default:** ship structured payloads through the surfaces that
+> *are* in the beta 5 interface — `.updateMetadata(_:)` (now typed
+> `[String : any ConvertibleToGeneratedContent]`, `27.0:1862`) attached to a text segment, or
+> attachment segments for media (`27.0:1860-1861`) — which is also the lower-lock-in design this
+> section's own portability warning already recommended. `Transcript.Segment.structure(_:)` still
+> exists in transcripts (`27.0:2290`), but the beta 5 channel offers **no response action that
+> emits one**.
+
+This was the most forward-looking API in the session, and the one thing in the protocol that let a
 third party extend the *framework's* vocabulary rather than just consume it.
 
 > ✅ **VERIFIED** — 339:179–189: *"**Custom segments are the answer.** You'll **define a new segment
@@ -2818,7 +2850,10 @@ audience, because it is.
 Apple's complete worked example (`SKILL.md:420-446`), verbatim — a web-search results segment, which
 is exactly the server-side-tool case of §13.4:
 
-```swift prelude:guide-context
+```swift illustrative
+// ⚠️ Pre-beta-5 surface — Transcript.CustomSegment and .updateCustomSegment(_:) are
+// not present in the Xcode 27 beta 5 interface; this no longer compiles (see the
+// status note at the top of §13.2).
 public struct WebSearchResults: Transcript.CustomSegment {
   public let id: String
   public let content: [Result]
@@ -2956,12 +2991,16 @@ cumulatively.
 > attach, and the custom segments you design, server-side tools shape what apps using your package
 > can show their users.**"*
 
-`.updateCustomSegment` with a type like `WebSearchResults` from §13.2. This is what lets an app
-render a source list, a code-execution transcript, or a retrieval panel — and it is the reason custom
-segments exist at all.
+`.updateCustomSegment` with a type like `WebSearchResults` from §13.2 — which means **Level 3 has no
+compiling mechanism on the beta 5 SDK** (§13.2's status note): the action and the protocol behind it
+are not present in the beta 5 interface. This is what let an app render a source list, a
+code-execution transcript, or a retrieval panel — and it is the reason custom segments existed at
+all.
 
-Level 3 costs the portability described in §13.2. Level 1 costs the app any ability to show its work.
-Most packages should ship Level 2 by default and Level 3 behind an opt-in.
+Level 3 costs the portability described in §13.2 — and, as of beta 5, is unavailable outright; the
+nearest expressible design is Level 2 with richer metadata. Level 1 costs the app any ability to
+show its work. Most packages should ship Level 2 by default and re-evaluate Level 3 if the
+custom-segment surface returns in a later beta.
 
 ### 13.5 The disclosure recommendation, which applies to you as much as to your users
 
@@ -3113,9 +3152,9 @@ public protocol LanguageModelExecutor: Sendable {
 | `SamplingMode.kind` | `.greedy` · `.randomTopK(k, seed)` · `.randomProbabilityThreshold(p, seed)` (renamed in beta 3) |
 | `ToolCallingMode.kind` | `.allowed` · `.disallowed` · `.required`; `nil` ⇒ allowed |
 | Transcript entries | `.instructions` · `.prompt` · `.toolCalls` · `.toolOutput` · `.response` · `.reasoning` |
-| Transcript segments | `.text` · `.structure` · `.attachment` · `.custom` |
+| Transcript segments | `.text` · `.structure` · `.attachment` (`.custom` — not present in the beta 5 interface; §13.2) |
 | Channel events | `.response(entryID:action:)` · `.reasoning(entryID:action:)` · `.toolCalls(entryID:action:)` |
-| Response actions | `appendText` · `replaceTextSegment` · `updateCustomSegment` · `addAttachmentSegment` · `removeAttachmentSegment` · `updateMetadata` · `updateUsage` |
+| Response actions | `appendText` · `replaceTextSegment` · `addAttachmentSegment` · `removeAttachmentSegment` · `updateMetadata` · `updateUsage` (`updateCustomSegment` — not present in the beta 5 interface; §13.2) |
 | Reasoning actions | `appendText` · `replaceTextSegment` · `updateSignature` · `updateMetadata` · `updateUsage` |
 | ToolCalls actions | outer: `toolCall(id:name:action:)` · `removeToolCall(_:)` · `updateMetadata` · `updateUsage`; inner: `appendArguments` · `updateMetadata` |
 | `entryID` | required on `.response`/`.toolCalls` (distinct!), **optional on `.reasoning`** |

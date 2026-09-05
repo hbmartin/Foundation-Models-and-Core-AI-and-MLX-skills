@@ -1609,7 +1609,7 @@ re-specialization cost — but it is a reduction, not a removal:
 > Signature: `final func model(for modelURL: URL, options: SpecializationOptions) throws -> AIModel?`
 > — `throws` but **not** `async`, because nothing expensive happens.
 > Now also ✅ **SDK-verified** verbatim (`notes/sdk-interfaces/CoreAIDelegates-27.0-macos.swiftinterface:35-38`,
-> captured 2026-07-29 from the Xcode 27.0 beta) — and note the module: `AIModelCache` is declared in
+> captured 2026-07-29, recaptured 2026-08-20 from the Xcode 27.0 beta) — and note the module: `AIModelCache` is declared in
 > **`CoreAIDelegates`**, the SubFramework that `import CoreAI` re-exports, not in the (empty)
 > `CoreAICache` module. The `Policy` statics (`.default`, `.persistent`) and both `PurgeConditions`
 > (`.storagePressure`, `.sourceAssetChangedOrDeleted`) are in the same interface (`:47-60`), exactly

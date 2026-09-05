@@ -1,10 +1,10 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1777 of them, 1415 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1788 of them, 1426 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-08-20 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-09-04 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -17,9 +17,9 @@ Start from the symptom column that matches what you observe. Within each section
 | Symptom | Entries | What it means |
 |---|---:|---|
 | [Wrong output](#wrong-output) | 174 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
-| [Empty output / no-op](#empty-output--no-op) | 60 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
+| [Empty output / no-op](#empty-output--no-op) | 62 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
 | [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
-| [Ignored input](#ignored-input) | 114 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
+| [Ignored input](#ignored-input) | 112 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
 | [Data & artifact loss](#data--artifact-loss) | 41 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
 | [Compiles but unavailable](#compiles-but-unavailable) | 90 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
@@ -27,8 +27,8 @@ Start from the symptom column that matches what you observe. Within each section
 | [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 88 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 159 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [Version drift](#version-drift) | 98 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Docs vs reality](#docs-vs-reality) | 160 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
 | [General cautions](#general-cautions) | 362 | Warnings and considerations that are not themselves silent failures. |
 
@@ -271,9 +271,11 @@ Start from the symptom column that matches what you observe. Within each section
 - [for try await can complete with zero iterations on a tool-call-only turn — first-snapshot spinners hang, unwraps crash.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2 🔇
 - [Tool-only turns are normal in agentic sessions — zero-snapshot streams occur in routine operation; design for them.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2
 - [A turn whose entire output is a tool call streams nothing — streamResponse completes without yielding one partial.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#1-the-loop-in-apples-own-words) — 2.3 🔇
+- [Device-tested: unlabelled attachments still reach tools; the hazard is no stable identity for ImageReference lookup.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
+- [A label is identity, not a gate — unlabelled attachments still ran tools on device; omit it and lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
 
@@ -427,9 +429,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Python @fm.generable('description') stores the description and never sends it — the model never sees it.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#121-fmgenerable-and-fmguide) — 2.2
 - [Python respond(generating:) drops options= on the floor — temperature, sampling, max tokens have no effect; evals lie.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#123-️-three-python-side-silent-failures) — 2.2 🔇
 - [.anyOf on tool arguments is confirmed broken — a three-city constraint got called with 'Beijing'; validate in the tool.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#33-anyof-does-not-constrain--validate-anyway) — 2.3 🔇
-- [An unlabelled attachment is invisible to image tools — everything runs, the barcode or OCR just never reads the image.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
 - [A CustomStage conforms and is accepted, but the 27.0-beta pipeline never routes items through it — measured no-op.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#124-the-beta-era-caveat) — 2.4 🔇
-- [For any tool expected to read an image, .label(_:) is mandatory — omit it and the tool silently never sees the image.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [permissiveContentTransformations does not apply to @Generable — adopting guided output silently drops permissive mode.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#52-the-blind-spot-it-does-not-apply-to-generable) — 2.6
 
 **Part 3**
@@ -1403,11 +1403,15 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 2**
 
+- [Beta 5 retyped history from ArraySlice<Transcript.Entry> to Transcript.HistoryView — suffix trims survive, raw-Int indexing does not.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#91-what-changed) — 2.1
 - [Exhaustive Transcript.Entry switches break compiling on the 27 SDK; 'fixing' with default: silently drops new cases.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#121-six-entry-types) — 2.1 🔇
+- [The .custom segment case the docs list is not present in the beta 5 interface.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
+- [Beta 5 declares exactly three Segment cases — .custom vanished between the 2026-07-29 capture and beta 5.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
 - [Version matrix: LanguageModelSession.GenerationError is deprecated in the 27 SDK — the error surface moved.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#version-matrix) — 2.1
 - [Which error catch fires depends on the building Xcode — rebuild with 27 and GenerationError arms stop matching.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#34-what-happens-when-a-guide-is-not-supported) — 2.2
 - [The iOS 27 metadata: overloads drop includeSchemaInPrompt — the knob moved into ContextOptions.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#91-respond-vs-streamresponse-exactly) — 2.2
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
+- [CustomSegment and its protocol are gone from the beta 5 interface; the custom-segment path no longer compiles.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#52-the-four-tool-shaped-types) — 2.3
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
 - [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at runtime.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
@@ -1415,13 +1419,16 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 3**
 
+- [history is Transcript.HistoryView since beta 5 — same element type, its own SubSequence, opaque non-Int Index.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#1-the-transcript-is-the-context-window) — 3.1
 - [Transcript.Entry switches exhaustive on 26 fail to compile on 27 (.reasoning) — add @unknown default deliberately.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#2-anatomy-six-entry-types-and-what-each-one-costs) — 3.1
 - [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1
+- [Until beta 5 the history property was ArraySlice<Transcript.Entry>; beta 5 introduces the dedicated HistoryView collection.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
 - [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
 - [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize instead of hardcoding either.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
+- [PCC supportsLocale/supportedLanguages became async throws in beta 5; a sync capability guard no longer compiles.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#86-pccs-operational-gates) — 3.4
 
 **Part 4**
 
@@ -1429,6 +1436,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Beta 3 renamed SamplingMode cases (.top→.randomTopK) — beta-1 code stops compiling; topK and seeds throw here.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#26-what-crosses-the-wire-and-what-is-quietly-dropped) — 4.2
 - [Heading: the double gate, and the empty library.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#32-️-the-double-gate-and-the-empty-library) — 4.2
 - [Built against the 26 SDK, MLXFoundationModels compiles to nothing — errors say 'cannot find', never mentioning SDKs.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#32-️-the-double-gate-and-the-empty-library) — 4.2 🔇
+- [Beta 5 confirms six of the seven response actions; updateCustomSegment is not present in the recaptured interface.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#response-actions--responseentryidaction) — 4.3
+- [The custom-segment provider path is pre-beta-5 surface; CustomSegment and .updateCustomSegment are absent from beta 5.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#132-custom-segments--the-extension-point-for-new-modalities) — 4.3
 - [Beta 3 made .refusal's explanation required — the old Refusal(debugDescription:) example no longer compiles.](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#112-throwing-and-throwing-the-right-thing) — 4.4
 
 **Part 7**
@@ -1503,6 +1512,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Nothing announces itself: a rebuild changes what your catch blocks catch; conversions emit 2.2x-slower artifacts](part-17-migration-from-pre-ios-27/README.md#part-17--migration-from-pre-ios-27) — 17.README 🔇
 - [Apps built with Xcode 26 keep catching GenerationError until you rebuild with 27; catch semantics change on rebuild](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#what-changed-between-ios-26-and-ios-27-the-complete-checklist) — 17.1 🔇
 - [contextSize is a compiled-in 4096 below OS 27 and dynamic at or above it; hardcoding either number breaks on one side.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
+- [What-changed entry: beta 5 retyped Transcript.history and the history session property to Transcript.HistoryView.](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#49-additive--a-mutable-transcript-and-transcripthistory) — 17.1
 - [catch GenerationError clauses still compile after an Xcode 27 rebuild but stop firing; the catch-all absorbs them](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#71-renamed--generationerror--languagemodelerror-and-two-siblings) — 17.1 🔇
 - [A wheel built with Xcode 26 permanently lacks image support; ImagePromptError surfaces on the first image call](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#9-the-python-sdk-generation-lag) — 17.1
 - [Xcode 26 gives no build-time signal of the adapter sunset: no attested deprecation, and the packaging CLI still ships](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#the-adapter-sunset-migrating-off-custom-lora-adapters) — 17.2 🔇
@@ -1552,6 +1562,7 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 3**
 
 - [Utilities package: the README dependency line resolves to nothing and every composed example it ships is inert.](part-03-context-profiles-agentic/README.md#33--foundation-models-utilities-skills-and-history-transforms) — 3.README 🔇
+- [Docs still list four Segment cases; the beta 5 interface declares three — .custom is not present.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#23-segments-the-second-dimension) — 3.1
 - [Session 242 defers to 243 for detecting cache invalidation — 243 never mentions a cache metric; only the docs do.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#51-the-cache-hit-rate) — 3.1
 - [Profile(model:) { } appears in conference write-ups, never in Apple code — the model is applied as a modifier.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#32-the-model-is-a-modifier-not-an-initialiser-label) — 3.2
 - [Scope note: the README's '5000 tokens' summarisation trigger doesn't exist — the API threshold counts entries.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3

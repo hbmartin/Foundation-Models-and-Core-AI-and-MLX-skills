@@ -153,15 +153,26 @@ METAL_VERSION="$(printf '%s\n' "$METAL_VERSION" | sed -n '1p')"
 FM_PATH=''
 FM_VERSION=''
 FM_PRESENT=0
+FM_SOURCE=''
+# fm ships with the OS rather than Xcode, so xcrun discovery can fail even on
+# hosts that have the tool; prefer xcrun, then fall back to /usr/bin/fm, and
+# only report the tool absent when neither discovery path finds it.
 if FM_PATH="$(xcrun --no-cache --find fm 2>/dev/null)"; then
   FM_PRESENT=1
+  FM_SOURCE='xcrun/fm'
+elif [ -x /usr/bin/fm ]; then
+  FM_PATH='/usr/bin/fm'
+  FM_PRESENT=1
+  FM_SOURCE='host/usr/bin/fm'
+else
+  FM_PATH=''
+fi
+if [ "$FM_PRESENT" -eq 1 ]; then
   if FM_VERSION="$("$FM_PATH" --version 2>/dev/null)"; then
     FM_VERSION="$(printf '%s\n' "$FM_VERSION" | sed -n '1p')"
   else
     FM_VERSION=''
   fi
-else
-  FM_PATH=''
 fi
 
 HOST_ARCH="$(uname -m)"
@@ -249,7 +260,7 @@ printf 'Selected Xcode %s (%s); macOS SDK %s (%s); iPhoneOS SDK %s (%s)\n' \
 printf 'Metal Toolchain %s (%s); %s; %s\n' \
   "$TOOLCHAIN_IDENTIFIER" "$COMPONENT_BUILD" "$COREAI_BUILD_VERSION" "$METAL_VERSION"
 if [ -n "$FM_PATH" ]; then
-  printf 'Optional fm CLI: present%s\n' "${FM_VERSION:+ ($FM_VERSION)}"
+  printf 'Optional fm CLI: present%s via %s\n' "${FM_VERSION:+ ($FM_VERSION)}" "$FM_SOURCE"
 else
   printf 'Optional fm CLI: absent\n'
 fi
@@ -347,20 +358,82 @@ printf '%s\t%s\n' "$COREAI_HELP_NAME" \
   'metal-toolchain/Metal.xctoolchain/usr/bin/coreai-build' >> "$SOURCE_MAP"
 printf '  %-32s -> %s\n' 'coreai-build help' "$COREAI_HELP_NAME"
 
+# List the entry names in the COMMANDS/SUBCOMMANDS sections of one captured fm
+# help screen. Headers are ANSI-styled, and other sections (MODELS, OPTIONS,
+# EXAMPLES, ENDPOINTS) list entries with the same layout, so strip the styling
+# and only read entries while a commands section is active.
+fm_list_commands() {
+  LC_ALL=C awk -v esc="$(printf '\033')" '
+    {
+      line = $0
+      gsub(esc "\\[[0-9;]*m", "", line)
+      if (line ~ /^[[:space:]]*$/) { active = 0; next }
+      if (line ~ /^  [^ ]/) {
+        active = (line == "  COMMANDS" || line == "  SUBCOMMANDS")
+        next
+      }
+      if (active && line ~ /^    [^ ]/) {
+        sub(/^ +/, "", line)
+        sub(/[[:space:]].*/, "", line)
+        if (line != "") print line
+      }
+    }
+  ' "$1"
+}
+
+# Capture `fm <path> --help`, then recurse into the commands that screen lists
+# so a future seed's added or renamed subcommands are discovered instead of
+# silently missing from the artifact. A non-zero exit is recorded in the
+# artifact rather than aborting the capture mid-run; when every invocation
+# succeeds the output is byte-identical to the fixed invocation list this
+# derivation replaced.
+fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
+  local depth="$1"
+  local path="${2-}"
+  local invocation="${path:+$path }--help"
+  local status=0
+  local sub
+  local subs=''
+  printf '\n===== fm %s =====\n' "$invocation"
+  # Intentional word splitting: path holds already-validated command names.
+  # shellcheck disable=SC2086
+  "$FM_PATH" $path --help > "$TMP/fm-help-screen.txt" || status=$?
+  cat "$TMP/fm-help-screen.txt"
+  if [ "$status" -ne 0 ]; then
+    printf '##### capture error: fm %s exited with status %s #####\n' \
+      "$invocation" "$status"
+    return 0
+  fi
+  [ "$depth" -gt 0 ] || return 0
+  # Validate and collect the listed names before recursing: the recursion
+  # reuses the shared screen and listing files, and validated names make the
+  # deliberate word splitting above safe.
+  fm_list_commands "$TMP/fm-help-screen.txt" > "$TMP/fm-help-commands.txt"
+  while IFS= read -r sub; do
+    case "$sub" in
+      ''|*[!A-Za-z0-9_-]*)
+        printf '##### capture error: fm %s listed unparseable command name %s #####\n' \
+          "$invocation" "$sub"
+        ;;
+      *)
+        subs="${subs}${subs:+ }${sub}"
+        ;;
+    esac
+  done < "$TMP/fm-help-commands.txt"
+  # Intentional word splitting: subs holds already-validated command names.
+  # shellcheck disable=SC2086
+  for sub in $subs; do
+    fm_capture_help "$((depth - 1))" "${path:+$path }$sub"
+  done
+}
+
 if [ -n "$FM_PATH" ]; then
   FM_HELP_NAME="fm-help-${MACOS_SDK_VERSION}.txt"
   {
     printf '# fm help surface\n'
-    for args in '--help' 'available --help' 'chat --help' 'count-tokens --help' \
-      'license --help' 'quota-usage --help' 'respond --help' 'schema --help' \
-      'schema object --help' 'serve --help'; do
-      printf '\n===== fm %s =====\n' "$args"
-      # Intentional word splitting: args is a fixed list above, never user input.
-      # shellcheck disable=SC2086
-      "$FM_PATH" $args
-    done
+    fm_capture_help 3
   } > "$CAPTURE_DIR/$FM_HELP_NAME"
-  printf '%s\t%s\n' "$FM_HELP_NAME" 'xcrun/fm' >> "$SOURCE_MAP"
+  printf '%s\t%s\n' "$FM_HELP_NAME" "$FM_SOURCE" >> "$SOURCE_MAP"
   printf '  %-32s -> %s\n' 'fm help' "$FM_HELP_NAME"
 fi
 
@@ -393,6 +466,7 @@ export SDK_COREAI_VERSION="$COREAI_BUILD_VERSION"
 export SDK_METAL_VERSION="$METAL_VERSION"
 export SDK_FM_PRESENT="$FM_PRESENT"
 export SDK_FM_VERSION="$FM_VERSION"
+export SDK_FM_SOURCE="$FM_SOURCE"
 export SDK_ABSENT_FRAMEWORKS="$ABSENT_FRAMEWORKS"
 
 python3 - "$DEST" "$CAPTURE_DIR" "$SOURCE_MAP" "$MERGED_MANIFEST" > "$ADDITIONS" <<'PY'
@@ -481,7 +555,8 @@ current_metadata = {
         "metal_path": "Metal.xctoolchain/usr/bin/metal",
     },
     "optional_tools": {
-        "fm": ({"present": True, "version": os.environ["SDK_FM_VERSION"] or None}
+        "fm": ({"present": True, "version": os.environ["SDK_FM_VERSION"] or None,
+                "source": os.environ["SDK_FM_SOURCE"]}
                if os.environ["SDK_FM_PRESENT"] == "1" else {"present": False})
     },
     "absent_or_non_swift_frameworks": [

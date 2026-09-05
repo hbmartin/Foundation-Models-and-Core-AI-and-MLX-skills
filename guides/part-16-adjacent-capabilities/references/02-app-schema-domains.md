@@ -152,7 +152,7 @@ been resolved:
 - **`ValueRepresentation` vs `IntentValueRepresentation` — resolved by the SDK pass.** They are
   the same type: `extension AppEntity { public typealias ValueRepresentation =
   IntentValueRepresentation }` — ✅ **SDK-verified**
-  (`AppIntents-27.0-macos.swiftinterface:889-894`). §13.1 has the details, including why each
+  (`AppIntents-27.0-macos.swiftinterface:2629-2634`). §13.1 has the details, including why each
   session used the spelling it did.
 - **Release-year labels.** See the version-floor box above.
 
@@ -377,9 +377,9 @@ Apple Intelligence"* page and the app-schema-domains index page.
 
 ✅ **SDK-verified** — all three macros are declared in the 27.0 interface, each
 `@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)`:
-`macro AppIntent<T>(schema:)` (`AppIntents-27.0-macos.swiftinterface:10963`),
-`macro AppEntity<T>(schema:)` (`:9059`), `macro AppEnum<T>(schema:)` (`:8915`). The `schema:`
-argument resolves through an `AppSchema` namespace (`:8883`) that exists **only in the 27.0 SDK**
+`macro AppIntent<T>(schema:)` (`AppIntents-27.0-macos.swiftinterface:10944`),
+`macro AppEntity<T>(schema:)` (`:10769`), `macro AppEnum<T>(schema:)` (`:10625`). The `schema:`
+argument resolves through an `AppSchema` namespace (`:10593`) that exists **only in the 27.0 SDK**
 — the 26.5 interface spells the same schemas through an `AssistantSchemas` namespace, which the
 27.0 interface marks deprecated throughout. Same schemas, new front door; the macro spellings you
 write are unchanged.
@@ -833,7 +833,7 @@ app, there is very little reason not to.
 *Entities:* `alarm`, `stopwatch`, `timer`
 *Enums:* `alarmTriggerState`, `stopwatchState`, `timerState`
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:12047-12200`) — and this is the largest
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:12013-12166`) — and this is the largest
 single correction the SDK pass makes to the docs-derived map. The domain pages gave `.clock` ten
 verbs over two nouns; the interface adds a complete **stopwatch lifecycle** — four verbs, a
 `stopwatch` entity and a `stopwatchState` enum — that appears on no documentation page in our
@@ -919,9 +919,9 @@ part. The one-line version, because it belongs in any map of this territory:
 *Enums:* `category`
 
 ✅ **SDK-verified**, with two facts the domain page misses: the enum `category` exists — and has
-existed since the iOS 18-era surface (`AppIntents-27.0-macos.swiftinterface:12908-12917`) — and
+existed since the iOS 18-era surface (`AppIntents-27.0-macos.swiftinterface:12879-12888`) — and
 `openDraft`, `openMessage` and the `thread` entity are `anyAppleOS 27.0` additions to an otherwise
-iOS 18-era domain (`:12813-12825`).
+iOS 18-era domain (`:12784-12796`).
 
 **The reference model for what "complete" schema coverage looks like.** A clean two-phase CRUD
 design: six verbs for the draft lifecycle, six for the message lifecycle, and the entity set covers
@@ -1117,7 +1117,7 @@ thing to say, and where getting it wrong is silent.
 > search actions and content"* applicable to any app category that handles searching or opening
 > content.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:13791-13826`) — and the doc-page lag
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:13762-13797`) — and the doc-page lag
 noted in §8.2 is now resolved from the SDK side: the interface declares all three, with `open` and
 `searchInApp` on an `anyAppleOS 27.0` extension and the deprecated `search` on the iOS 18-era one.
 The docs pass counted two because the domain page had not caught up.
@@ -1167,7 +1167,7 @@ Put `.system.open` at the top of your adoption checklist regardless of what else
 version note from the SDK pass: the `.system.open` dot-syntax accessor is `anyAppleOS 27.0` in the
 interface — the 26.5 interface's `.system` domain has only `search` — so writing it takes the
 Xcode 27 SDK even though the underlying open-intent machinery is older
-(✅ `AppIntents-27.0-macos.swiftinterface:13812-13826`).
+(✅ `AppIntents-27.0-macos.swiftinterface:13783-13797`).
 
 **`.system.search`** is the other half, and it is where the story gets interesting enough to
 deserve its own section. It is deprecated *as a name*, not as a capability — it was **renamed** to
@@ -1255,7 +1255,7 @@ tells you how Apple thinks about document apps.
 `relativeWordSpacingChange`, `theme`
 
 **Ten enums for nine intents — the largest enum set of any domain in the map** (✅ SDK-verified,
-`AppIntents-27.0-macos.swiftinterface:13551-13605`; the docs pass counted twelve, but its own name
+`AppIntents-27.0-macos.swiftinterface:13522-13576`; the docs pass counted twelve, but its own name
 list — reproduced above — always had ten, and ten is what the interface declares). Look at
 the names: `relativeFontChange`, `relativeLineSpacingChange`, `relativeWordSpacingChange`,
 `relativeCharacterSpacingChange`. Four separate closed vocabularies for "a bit bigger" / "a bit
@@ -1305,9 +1305,9 @@ path modelled explicitly.
 `openSlide`, `setSlideTitle`, `startPlayback`, `stopPlayback`, `update`
 *Entities:* `document`, `slide`, `template`
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:16486-16565`). The docs pass counted
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:16457-16536`). The docs pass counted
 fourteen: `addVideoToSlide` — underlying name `AddVideoToPresentationSlideIntent` — is declared in
-the interface (`:16534`), and was already present in the 26.5 SDK
+the interface (`:16505`), and was already present in the 26.5 SDK
 (`AppIntents-26.5-macos.swiftinterface:5851`).
 
 ---
@@ -1545,14 +1545,19 @@ different domains.
 | `.journal.search` | `journal` | Shortcuts | Spotlight / `IndexedEntity`; `.system.searchInApp` |
 | `.books.playAudiobook` | `books` | Shortcuts | `.audio.playAudio` — ✅ SDK deprecation message |
 
-✅ **VERIFIED (docs)** for the deprecation marks themselves, and — as of 2026-07-29 — ✅
-**SDK-verified** for the whole replacement column: the 27.0 interface attaches a message to each
-deprecated accessor. `.system.search` says *"Use .system.searchInApp instead)"*
-(`AppIntents-27.0-macos.swiftinterface:13805`); the `books`, `browser`, `journal` and `photos`
-`search` schemas all say *"Use .system.search instead)"* — pointing, with a straight face, at the
-schema that is itself deprecated, so the working chain is `search` → `.system.search` →
-`.system.searchInApp`; and `.books.playAudiobook` says *"Use .audio.playAudio instead)"*,
-confirming what this guide previously carried as a 🟡 inference.
+✅ **VERIFIED (docs)** for the deprecation marks themselves, and — as of 2026-08-23, against the
+beta 5 recapture — ✅ **SDK-verified** for the whole replacement column: the 27.0 interface
+attaches a message to each deprecated accessor. `.system.search` says *"Use .system.searchInApp
+instead"* (`AppIntents-27.0-macos.swiftinterface:13776`), and beta 5 re-pointed the `photos`,
+`browser`, `journal` and `books` `search` schemas at the terminal replacement directly — all four
+now say *"Use .system.searchInApp instead"* (`AppIntents-27.0-macos.swiftinterface:11518`,
+`:12421`, `:13332`, `:13412`), collapsing the two-hop chain (`search` → `.system.search` →
+`.system.searchInApp`) the beta 4 capture documented; only the legacy `AssistantSchemas` `search`
+accessors still point, with a straight face, at the deprecated `.system.search` (`:14307` et al.).
+`.books.playAudiobook` says *"Use .audio.playAudio instead"*
+(`AppIntents-27.0-macos.swiftinterface:13418`), confirming what this guide previously carried as a
+🟡 inference. (Beta 5 also modernized the attribute form to `@available(anyAppleOS, deprecated:
+27.0, …)` and dropped the stray `)` the beta 4 messages carried.)
 
 Note also `.photos.search`, marked deprecated in the `.photos` enumeration (§5.1) — a sixth
 instance of the same pattern.
@@ -1651,12 +1656,12 @@ This one has unusually good evidence for a 2026 API name, so it is worth showing
 asked for now exists, and it settles the spelling outright. The 27.0 interface declares, on
 `extension AppSchema.SystemIntent` at `@available(anyAppleOS 27.0, *)`, the accessor
 `var searchInApp` — underlying intent name `SystemSearchInAppIntent` — alongside `var open`
-(`AppIntents-27.0-macos.swiftinterface:13812-13826`). The deprecated `var search` — underlying
+(`AppIntents-27.0-macos.swiftinterface:13783-13797`). The deprecated `var search` — underlying
 name `ShowInAppSearchResultsIntent` — carries the SDK's own message: *"Use .system.searchInApp
-instead)"* (`:13803-13811`). That is the rename, stated by the compiler. The 26.5 interface has
+instead)"* (`:13774-13782`). That is the rename, stated by the compiler. The 26.5 interface has
 only `search` (`AppIntents-26.5-macos.swiftinterface:5574-5582`), so the `searchInApp` *name*
 requires the Xcode 27 SDK — while the underlying `ShowInAppSearchResultsIntent` protocol is
-macOS 14.2 / iOS 17.2 (`AppIntents-27.0-macos.swiftinterface:9199-9200`), which squares with "the
+macOS 14.2 / iOS 17.2 (`AppIntents-27.0-macos.swiftinterface:809-810`), which squares with "the
 iOS 17 search schema, renamed" exactly. The fallback advice stands: on an older SDK, write the
 deprecated `.system.search`; it is the same schema.
 
@@ -1761,7 +1766,7 @@ struct SearchTrailLogIntent {
 Three implementation notes on that listing:
 
 - **`criteria.term`** — ✅ **VERIFIED (docs)**: *"The string value used for matching items in the
-  application."* — and now ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:9182-9198`):
+  application."* — and now ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:792-808`):
   `public var term: String`, `init(term:)`, conformances `SearchCriteria`, `Sendable`, `Equatable`
   and `Hashable`, availability `macOS 14.2 / iOS 17.2 / watchOS 10.2 / tvOS 17.2` — the exact
   floor the docs page gave.
@@ -1922,12 +1927,12 @@ wrong one is one of the most common causes of "Siri can't find my stuff."
 **VERIFIED (Apple code sample)** for `EntityStringQuery` and `IntentValueQuery` shapes below; ✅
 **VERIFIED (transcript, 344)** for `EnumerableEntityQuery`. As of 2026-07-29 all of them are also
 ✅ **SDK-verified**, with availability floors the docs pass could not supply
-(`AppIntents-27.0-macos.swiftinterface`): `EntityQuery` macOS 13 / iOS 16 (`:2479`);
-`EntityStringQuery` macOS 13 / iOS 16 (`:2508`); `EnumerableEntityQuery` macOS 14 / iOS 17
-(`:2512`); `IndexedEntityQuery` macOS 27 / iOS 27 / visionOS 27 (`:2530`); and `IntentValueQuery`
-at **`anyAppleOS 26.0`** — it is not new this year (`:2681`). A sixth, `UniqueAppEntityQuery`,
+(`AppIntents-27.0-macos.swiftinterface`): `EntityQuery` macOS 13 / iOS 16 (`:4200`);
+`EntityStringQuery` macOS 13 / iOS 16 (`:4229`); `EnumerableEntityQuery` macOS 14 / iOS 17
+(`:4233`); `IndexedEntityQuery` macOS 27 / iOS 27 / visionOS 27 (`:4251`); and `IntentValueQuery`
+at **`anyAppleOS 26.0`** — it is not new this year (`:4402`). A sixth, `UniqueAppEntityQuery`,
 exists for singleton entities and predates this release — ✅ SDK-verified at macOS 15 / iOS 18,
-requirement `func uniqueEntity() async throws` (`:986-989`).
+requirement `func uniqueEntity() async throws` (`:2726-2729`).
 
 ### 10.2 `EntityQuery` versus `EnumerableEntityQuery` — a clean rule
 
@@ -2075,7 +2080,7 @@ struct ContactEntityQuery: IntentValueQuery {
 `values(for:)` is generic over the input type and **that type may itself be a collection** — ✅
 **SDK-verified**: the protocol's requirement is `func values(for input: Self.Input) async throws
 -> Self.Result` over an `Input : _IntentValue` associated type
-(`AppIntents-27.0-macos.swiftinterface:2680-2691`), so any conforming input type, scalar or
+(`AppIntents-27.0-macos.swiftinterface:4401-4412`), so any conforming input type, scalar or
 collection, is admissible.
 
 ⚠️ **One doc-vs-SDK conflict inside session 240's sample.** Apple's published code maps
@@ -2112,7 +2117,7 @@ Not a query protocol, but the decision that determines whether you need one at a
 **The decision rule, distilled: is this thing ever the *target* of a lookup, or is it only ever
 reached *through* a parent?** Only-through-a-parent means `TransientAppEntity`.
 
-✅ **SDK-verified** shape (`AppIntents-27.0-macos.swiftinterface:948-963`): `protocol
+✅ **SDK-verified** shape (`AppIntents-27.0-macos.swiftinterface:2688-2703`): `protocol
 TransientAppEntity : AppEntity { init() }`, macOS 13.0 / iOS 16.0 — old API, not 2026 surface —
 with a default `id: UUID` and a synthesized default query, which is the "no query to write"
 promise made literal.
@@ -2181,7 +2186,7 @@ struct AddToPlaylistIntent {
 - **`full:`** must be **self-sufficient audio**. Someone with AirPods in and a phone in their
   pocket hears only this. "Added" is a failure; "Added Aurora to the Late Nights mix tape" is not.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:2726-2733`):
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:4447-4454`):
 `IntentDialog(full:supporting:)` is macOS 13.0 / iOS 16.0, with `(full:systemImageName:)` and
 `(full:supporting:systemImageName:)` overloads at macOS 14.2 / iOS 17.2. The two-string split is
 not new API — just newly explained.
@@ -2235,7 +2240,7 @@ Apple's own restraint advice, which belongs next to the API rather than in a des
 people to **choose from a list of items**, or ask for a **confirmation**, check out the sample app
 and documentation to learn about other kinds of dialog requests"* — and left the symbols unnamed,
 which this guide previously carried as a 🔴 GAP. The 27.0 interface declares all three on
-`IntentParameter`, macOS 13.0 / iOS 16.0 (`AppIntents-27.0-macos.swiftinterface:2646-2648`):
+`IntentParameter`, macOS 13.0 / iOS 16.0 (`AppIntents-27.0-macos.swiftinterface:4367-4369`):
 
 ```swift prelude:guide-context
 final public func requestValue(_ dialog: IntentDialog? = nil) async throws -> Value.ValueType
@@ -2280,7 +2285,7 @@ struct SongEntity {
 `DisplayRepresentation(title:subtitle:image:)` — the title is a `LocalizedStringResource`-style
 interpolation; subtitle and image are the enrichment. Session 344's calendar variant uses
 `DisplayRepresentation(title:image:)` with an SF Symbol — the same initializer with `subtitle:`
-defaulted. ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:2104-2119`): the overload
+defaulted. ✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:3844-3859`): the overload
 set is `init(title:subtitle:image:)` (macOS 13 / iOS 16, subtitle and image defaulted),
 `init(title:subtitle:image:synonyms:)` (macOS 14 / iOS 17), and a 27.0 overload taking an async
 image closure. `image:` is a nested `DisplayRepresentation.Image`, built with `init(named:)`,
@@ -2301,8 +2306,8 @@ protocol SnippetIntent : AppIntent where Self.PerformResult : ShowsSnippetView
 ```
 
 ✅ **SDK-verified** — the interface carries the identical declaration at
-`@available(anyAppleOS 26.0, *)` (`AppIntents-27.0-macos.swiftinterface:1922-1927`), plus a
-`static func reload()` and the `EmptySnippetIntent` default type (`:1928-1949`). The 26.0 floor is
+`@available(anyAppleOS 26.0, *)` (`AppIntents-27.0-macos.swiftinterface:3662-3667`), plus a
+`static func reload()` and the `EmptySnippetIntent` default type (`:3668-3689`). The 26.0 floor is
 compiler-attested, not just documented.
 
 It is **prior art that the 2026 Siri work builds on**, not part of this release. If you are writing
@@ -2484,7 +2489,7 @@ struct EventEntity: OwnershipProvidingEntity {
 - **`EntityOwnership`** members named in Apple's own code comment: **`.shared`**, **`.public`**,
   **`.unknown`**
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:8941-8958`, `anyAppleOS 27.0`):
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:10651-10668`, `anyAppleOS 27.0`):
 `protocol OwnershipProvidingEntity : AppEntity` with exactly that requirement. One shape
 correction to the sample's comment: `EntityOwnership` is an **`OptionSet`**, not an enum — static
 members `.unknown`, `.shared` and `.public` — and **no `.private` member exists in the 27.0
@@ -2536,10 +2541,10 @@ applies whether or not you ever adopt a schema.
 despite the first two appearing on the App Intents updates page. The SDK pass now supplies the
 first two's shapes, which is enough to plan against but no substitute for usage guidance —
 ✅ **SDK-verified**: `UndoableIntent : SystemIntent` with a `@MainActor var undoManager:
-UndoManager?`, `anyAppleOS 26.0` (`AppIntents-27.0-macos.swiftinterface:1967-1976`); and
+UndoManager?`, `anyAppleOS 26.0` (`AppIntents-27.0-macos.swiftinterface:3707-3716`); and
 `IntentModes`, an `OptionSet` — `.background`, `.foreground`, `.foreground(.immediate)` /
 `(.deferred)` / `(.dynamic)` — consumed by `static var supportedModes` on `AppIntent`,
-`anyAppleOS 26.0` (`:1366-1367`, `:1510-1537`). 🔴 **GAP:** neither has session coverage or a
+`anyAppleOS 26.0` (`:3106-3107`, `:3250-3277`). 🔴 **GAP:** neither has session coverage or a
 usage example in our corpus, and `SnippetIntent` aside (§11.4), the *semantics* remain
 undocumented here. **Safe default:** the shapes above are compiler-truth; do not design around
 them from the shape alone.
@@ -2645,7 +2650,7 @@ samples**, so neither is a transcription artifact.
 answer is (b), an alias:
 
 ```swift illustrative
-// ✅ SDK-verified (AppIntents-27.0-macos.swiftinterface:889-910)
+// ✅ SDK-verified (AppIntents-27.0-macos.swiftinterface:2629-2650)
 extension AppEntity {
     public typealias ValueRepresentation = IntentValueRepresentation
 }
@@ -2730,7 +2735,7 @@ try await RelevantEntities.shared.removeAllEntities()
 - `RelevantEntities.shared` — a singleton.
 - `updateEntities(_:for:)`, `removeAllEntities(for:)`, `removeEntities(_:from:)`,
   `removeAllEntities()` — all `async throws`. ✅ **SDK-verified**
-  (`AppIntents-27.0-macos.swiftinterface:3116-3125`, `anyAppleOS 27.0`), plus a fifth method the
+  (`AppIntents-27.0-macos.swiftinterface:4837-4846`, `anyAppleOS 27.0`), plus a fifth method the
   session did not show: `removeEntities(_:) async throws`, no context parameter.
 - **`AppEntityContext`** — an opaque `Hashable` struct with domain-scoped factory methods. One
   concrete path verified from the session: `AppEntityContext.audio(.workout(activityType:
@@ -2746,7 +2751,7 @@ does not throw; it just leaves stale suggestions in other apps' UI indefinitely.
 🔴 **GAP — the full `AppEntityContext` inventory — narrowed but not closed.** The 27.0 macOS
 interface was checked on 2026-07-29: `AppEntityContext`'s only factory on that surface is
 `static func audio(_: AudioContext)`, and `AudioContext`'s only member is `.nowPlaying`
-(`AppIntents-27.0-macos.swiftinterface:3093-3116`). The session's `.workout(activityType:)`
+(`AppIntents-27.0-macos.swiftinterface:4814-4837`). The session's `.workout(activityType:)`
 situation is **not present in the macOS 27.0 beta interface** — presumably an iOS-surface case
 this repo has not captured. What would resolve it: the iOS interface, or the `AppEntityContext`
 documentation page. **Safe default:** rely on Xcode completion at the call site; do not invent a
@@ -2809,7 +2814,7 @@ struct TagPhotosIntent: AppIntent {
 **Confirmed API:** `EntityCollection<E>`, generic over the entity type, with an **`.identifiers`**
 property. It is a drop-in replacement for `[E]` as a `@Parameter` type.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:8563-8607`, `anyAppleOS 27.0`):
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:10284-10328`, `anyAppleOS 27.0`):
 `struct EntityCollection<Entity: AppEntity>` with `var identifiers: [Entity.ID]`,
 `init(identifiers: [Entity.ID] = [])`, `init(entities: [Entity])`, `count` / `isEmpty`,
 `append` / `remove` / `contains` for both identifiers and entities, and a `Collection` conformance
@@ -2863,7 +2868,7 @@ so it cannot be trivially `Hashable`; hence a separate caseless mirror. If you w
 `[TravelGalleryContent: DisplayRepresentation]` it will not compile, and the reason will not be
 obvious.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:3438`, `:1976-1996`): the macro attaches
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:5159`, `:3716-3736`): the macro attaches
 conformance to `AppUnionValue` (`anyAppleOS 27.0`), whose requirements are exactly the two statics
 above — and `Cases` is a real associated type, constrained to `AppUnionValueCasesProviding :
 AppEnum`, which confirms the caseless-mirror reading: the dictionary key type is `Self.Cases`, and
@@ -2924,7 +2929,7 @@ struct PhotoEntity: AppEntity, SyncableEntity {
 - Division of labour, verbatim: *"**On-device, your code uses the local ID. And across devices, the
   system uses the stable one.**"*
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:911-947`, `anyAppleOS 27.0`):
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:2651-2687`, `anyAppleOS 27.0`):
 `protocol SyncableEntity : AppEntity` is an **empty marker** — it *declares*, literally — and
 `struct SyncableEntityIdentifier<LocalID, StableID>` (the SDK's generic parameter names) requires
 both to be `EntityIdentifierConvertible & Sendable`, stores `local` / `stable` as optionals, and
@@ -2950,10 +2955,10 @@ Two types named explicitly: **`Duration`** and **`PersonNameComponents`**.
 
 ✅ **SDK-verified — with an availability surprise.** The interface conforms both to the
 intent-value machinery at `@available(anyAppleOS 26.0, *)`, not 27.0: `Duration : _IntentValue,
-DisplayRepresentable` (`AppIntents-27.0-macos.swiftinterface:3353-3357`) and `PersonNameComponents
-: _IntentValue, DisplayRepresentable` (`:3369-3373`). Session 345 presents them as part of this
+DisplayRepresentable` (`AppIntents-27.0-macos.swiftinterface:5074-5078`) and `PersonNameComponents
+: _IntentValue, DisplayRepresentable` (`:5090-5094`). Session 345 presents them as part of this
 year's extension; the SDK dates the conformances to 26.0. And one member of "and more" is
-findable: `Calendar.RecurrenceRule : IntentValueConvertible` at `anyAppleOS 27.0` (`:3350-3352`)
+findable: `Calendar.RecurrenceRule : IntentValueConvertible` at `anyAppleOS 27.0` (`:5071-5073`)
 — the Foundation type §5.1's `.calendar.event` uses.
 
 🔴 **GAP:** the rest of "and more" was not enumerated — the 27.0 interface was checked on
@@ -3012,16 +3017,16 @@ struct UploadPhotoIntent: LongRunningIntent, CancellableIntent {
 
 **Confirmed API:**
 - protocol **`LongRunningIntent`** — ✅ **SDK-verified**: `protocol LongRunningIntent :
-  ProgressReportingIntent`, `anyAppleOS 27.0` (`AppIntents-27.0-macos.swiftinterface:1861-1864`).
+  ProgressReportingIntent`, `anyAppleOS 27.0` (`AppIntents-27.0-macos.swiftinterface:3601-3604`).
   It refines `ProgressReportingIntent` — macOS 14 / iOS 17, itself refining `AppIntent` and
-  supplying the implicit `progress: Foundation.Progress` member (`:1885-1894`) — so the
+  supplying the implicit `progress: Foundation.Progress` member (`:3625-3634`) — so the
   narration's *"because it builds on `ProgressReportingIntent`"* is literal, and this guide's
   earlier 🟡 "appears to refine `AppIntent`" is superseded.
 - protocol **`CancellableIntent`** with an **`onCancel`** handler, supplied here as the trailing
-  closure of `performBackgroundTask`. ✅ **SDK-verified** at `anyAppleOS 26.4` (`:1629-1636`),
+  closure of `performBackgroundTask`. ✅ **SDK-verified** at `anyAppleOS 26.4` (`:3369-3376`),
   along with a standalone `withIntentCancellationHandler(operation:onCancel:isolation:)`.
 - **`performBackgroundTask { … } onCancel: { reason in … }`** — `async throws`, generic over the
-  body's return type. ✅ **SDK-verified** (`:1865-1871`): `performBackgroundTask<T>(options:
+  body's return type. ✅ **SDK-verified** (`:3605-3611`): `performBackgroundTask<T>(options:
   LongRunningTaskOptions = [], operation:) async throws -> T`, with the `onCancel:` overload gated
   `where Self : CancellableIntent` — which is why the sample conforms to both protocols.
 - **`progress`** — an implicit member with `totalUnitCount` / `completedUnitCount` as `Int64`,
@@ -3046,7 +3051,7 @@ It is the **liveness signal**. An intent that adopts `LongRunningIntent` and nev
 Three causes named: **user-initiated, system timeout, resource reclamation.** ✅ **SDK-verified —
 the type this guide could not previously place in a signature is `IntentCancellationReason`**: a
 `Sendable`, `Equatable` struct at `anyAppleOS 26.4`, and it is exactly what the `onCancel:`
-handler receives (`AppIntents-27.0-macos.swiftinterface:1637-1649`, `:1870`). Its visible members
+handler receives (`AppIntents-27.0-macos.swiftinterface:3377-3389`, `:3610`). Its visible members
 are **`.timeout`** and **`.userCancelled`** — two, not three: the interface has no distinct
 member for resource reclamation, which presumably surfaces as `.timeout` or a non-public value.
 (This closes former register entry G9's naming half; the reclamation mapping stays open.)
@@ -3065,7 +3070,7 @@ This is a supported path to running **on-device inference from a background App 
 to anyone wiring Foundation Models, Core AI or MLX behind a Shortcut. The SDK now supplies the
 request side: ✅ **SDK-verified**, GPU access is asked for as an option flag —
 `performBackgroundTask(options: [.requiresGPU]) { … }`, via `LongRunningTaskOptions`
-(`AppIntents-27.0-macos.swiftinterface:1872-1884`). Two gates remain underspecified: "supported
+(`AppIntents-27.0-macos.swiftinterface:3612-3624`). Two gates remain underspecified: "supported
 devices" (unnamed) and the GPU-access entitlement (🔴 **GAP** — the name is not given in the
 session and appears nowhere in the 27.0 interface, checked 2026-07-29; the forum corpus records
 `continued-processing.gpu` as an existing background-GPU entitlement, from a developer post rather
@@ -3111,13 +3116,13 @@ struct TagPhotosIntent: AppIntent {
 **Confirmed API — with the real type name, from the SDK:**
 - `static var allowedExecutionTargets: ExecutionTargets` — ✅ **SDK-verified**, declared on
   `AppIntent` **and on `EntityQuery`** (your queries can be pinned too), both `anyAppleOS 27.0`
-  (`AppIntents-27.0-macos.swiftinterface:1371-1372`, `:2484-2485`).
+  (`AppIntents-27.0-macos.swiftinterface:3111-3112`, `:4205-4206`).
 - **`ExecutionTargets`** is a genuine **`OptionSet`** — ✅ SDK-verified — and its real name is
-  **`IntentExecutionTargets`** (`:1830-1857`); `ExecutionTargets` is a typealias for it scoped
-  inside `AppIntent` (`:1380-1382`), which is why the sample's spelling compiles inside an intent
+  **`IntentExecutionTargets`** (`:3570-3597`); `ExecutionTargets` is a typealias for it scoped
+  inside `AppIntent` (`:3120-3122`), which is why the sample's spelling compiles inside an intent
   and why diagnostics will say `IntentExecutionTargets`.
 - Members confirmed: **`.main`**, **`.appIntentsExtension`**, **`.widgetKitExtension`** — plus a
-  **`.default`** the session did not mention (`:1834-1845`).
+  **`.default`** the session did not mention (`:3574-3585`).
 
 > ✅ **VERIFIED (transcript, WWDC26 345)** — *"With `ExecutionTargets`, you **override the system's
 > heuristics** and control exactly which process handles your intent."*
@@ -3196,7 +3201,7 @@ you must leave it alone**.
 
 **Confirmed API:** `$parameter.valueState`, an enum with **`.set(T?)`** and **`.unset`**.
 
-✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:2630-2640`):
+✅ **SDK-verified** (`AppIntents-27.0-macos.swiftinterface:4351-4361`):
 `IntentParameter.ValueState` is `case unset` / `case set(Value)` — for an optional parameter
 `Value` *is* the optional, which is what makes `.set(nil)` expressible — and the extension
 declaring it is `@available(macOS 15.2, iOS 18.2, watchOS 11.2, tvOS 18.2, visionOS 2.2, *)`. The
@@ -3411,7 +3416,7 @@ The machinery to prevent leakage does exist, and it is documented:
   your domain errors to something presentable
 
 ✅ **VERIFIED (docs)** for the symbol names, from the framework's Errors topic — and ✅
-**SDK-verified** for the load-bearing ones (`AppIntents-27.0-macos.swiftinterface:1565-1600`):
+**SDK-verified** for the load-bearing ones (`AppIntents-27.0-macos.swiftinterface:3305-3340`):
 `AppIntentError.init(description:)`, `init(predefinedError:description:)` and two
 `init(wrapping:)` overloads are all `anyAppleOS 27.0`, as is `protocol
 CustomAppIntentErrorConvertible { var appIntentError: AppIntentError { get } }`;
@@ -3502,18 +3507,18 @@ does not settle the remaining rows; where it narrows one, the row says so.
 | G1 | **Exact tier semantics.** What capability does each of the three domain tiers actually confer? Inferred from grouping labels; never stated in prose. (§4) | A docs page or session statement defining tier reach; or empirical testing of an un-app-qualified Siri request against a Shortcuts-tier schema. Interface checked 2026-07-29 — encodes membership, not tier capability | If the feature must work through Siri without the user naming your app, require a **primary**-tier domain |
 | G2 | **Per-schema required-property tables.** Verified for `.photos.asset` and `.photos.openAsset` only; ~180 schemas unenumerated. (§3.2) | The per-schema doc pages under `/documentation/appintents/appschema/<domain>intent/<name>`. Interface checked 2026-07-29 — schemas are opaque string accessors there; not settled | Do not design a data model around a schema you have not scaffolded in Xcode with `<domain>_` |
 | G3 | **The schema co-requisite graph.** Exactly one pair demonstrated: `.messages.sendMessage ⇒ .messages.draftMessage`. (§3.3) | Adopting each schema in a scratch project and reading the build errors. Interface checked 2026-07-29 — co-requisites are not encoded there | Budget for "commit" verbs dragging in "prepare" siblings; plan adoption in pairs |
-| G4 | ✅ **Resolved (SDK, 2026-07-29).** Same type: `ValueRepresentation` is an `AppEntity`-scoped typealias for `IntentValueRepresentation`, `anyAppleOS 26.4` (`AppIntents-27.0-macos.swiftinterface:889-894`). §13.1 | — | Port code freely between the spellings; the short one resolves in `AppEntity` scope |
-| G5 | ✅ **Resolved (SDK, 2026-07-29).** `.system.searchInApp` is declared at `anyAppleOS 27.0`, underlying name `SystemSearchInAppIntent`; the deprecated `.system.search` carries the SDK message *"Use .system.searchInApp instead"* (`:13803-13826`). §8.2 | — | On pre-27 SDKs, the deprecated `.system.search` is the same schema |
+| G4 | ✅ **Resolved (SDK, 2026-07-29).** Same type: `ValueRepresentation` is an `AppEntity`-scoped typealias for `IntentValueRepresentation`, `anyAppleOS 26.4` (`AppIntents-27.0-macos.swiftinterface:2629-2634`). §13.1 | — | Port code freely between the spellings; the short one resolves in `AppEntity` scope |
+| G5 | ✅ **Resolved (SDK, 2026-07-29).** `.system.searchInApp` is declared at `anyAppleOS 27.0`, underlying name `SystemSearchInAppIntent`; the deprecated `.system.search` carries the SDK message *"Use .system.searchInApp instead"* (`:13774-13797`). §8.2 | — | On pre-27 SDKs, the deprecated `.system.search` is the same schema |
 | G6 | **`AppEntityContext`'s full domain/situation inventory.** Narrowed 2026-07-29: the macOS 27.0 interface spells only `.audio(.nowPlaying)`; the session's `.workout(activityType:)` is absent from the macOS surface. (§13.2) | The iOS interface, or the `AppEntityContext` docs page | Rely on Xcode completion; do not invent a context path |
 | G7 | **`IntentValueQuery` input types** — Apple's comment says "and other system types may be supported"; and the full `AudioSearch` criteria list. `AudioSearch` is absent from the macOS 27.0 interface entirely (checked 2026-07-29). (§10.5) | The `IntentValueQuery` and `AudioSearch` docs pages, or the iOS interface | Implement against the type the schema snippet gives you; `switch` exhaustively |
 | G8 | **`.visualIntelligence` input types.** Docs say the query "receives Visual Intelligence types" without naming them. Interface checked 2026-07-29 — only the schema accessor is visible; not settled. (§5.2) | The `.visualIntelligence` domain page symbol table | Write the query against whatever the snippet scaffolds |
-| G9 | ✅ **Resolved (SDK, 2026-07-29), naming half.** The type is `IntentCancellationReason`, `anyAppleOS 26.4`, members `.timeout` / `.userCancelled` (`:1637-1649`). No distinct member for resource reclamation — that mapping stays open. §13.7 | — | `switch` non-exhaustively; treat unknown values as cleanup-and-exit |
-| G10 | **The background-GPU entitlement name** for `LongRunningIntent`. Session 345 says "add GPU access to your app's entitlement" without naming it. The *request* side is now SDK-verified — `LongRunningTaskOptions.requiresGPU` (`:1876`) — but the entitlement name appears nowhere in the interface (checked 2026-07-29). (§13.7) | Apple's entitlements documentation | `continued-processing.gpu` is a **developer-reported** existing background-GPU entitlement (forum corpus) — a lead, not the answer |
+| G9 | ✅ **Resolved (SDK, 2026-07-29), naming half.** The type is `IntentCancellationReason`, `anyAppleOS 26.4`, members `.timeout` / `.userCancelled` (`:3377-3389`). No distinct member for resource reclamation — that mapping stays open. §13.7 | — | `switch` non-exhaustively; treat unknown values as cleanup-and-exit |
+| G10 | **The background-GPU entitlement name** for `LongRunningIntent`. Session 345 says "add GPU access to your app's entitlement" without naming it. The *request* side is now SDK-verified — `LongRunningTaskOptions.requiresGPU` (`:3616`) — but the entitlement name appears nowhere in the interface (checked 2026-07-29). (§13.7) | Apple's entitlements documentation | `continued-processing.gpu` is a **developer-reported** existing background-GPU entitlement (forum corpus) — a lead, not the answer |
 | G11 | **Consequence of `TransientAppEntity` on annotation surfaces** — compile error, runtime assertion, or silent no-op? (§14.4) | Trying it | Assume silent; decide transient-vs-persistent with the system-integration question explicit |
 | G12 | **Consequence of `LongRunningIntent` without progress** — killed, throttled, or merely progress-less? (§14.6) | Testing a long intent that never updates progress | Always report progress |
 | G13 | **Donation throttle threshold, window, and scope.** No number, no error, no API. (§14.2) | Apple documentation; none found | Donate only completed, user-initiated UI actions |
 | G14 | **Deprecated-schema removal timeline.** Nothing in our sources says when or whether deprecated schemas stop compiling. (§7) | Release notes | Migrate at leisure; do not assume two more OS majors |
-| G15 | ✅ **Resolved (SDK, 2026-07-29).** The other kinds are `requestDisambiguation(among:dialog:)` and `requestConfirmation(for:dialog:)`, on `IntentParameter` since macOS 13 / iOS 16 (`:2646-2648`). §11.2 | — | — |
+| G15 | ✅ **Resolved (SDK, 2026-07-29).** The other kinds are `requestDisambiguation(among:dialog:)` and `requestConfirmation(for:dialog:)`, on `IntentParameter` since macOS 13 / iOS 16 (`:4367-4369`). §11.2 | — | — |
 | G16 | **`UndoableIntent` and `IntentModes` semantics.** Shapes now SDK-verified (§13 preamble): both `anyAppleOS 26.0`; `UndoableIntent : SystemIntent` with `undoManager`; `IntentModes` an OptionSet with `.background` / `.foreground(...)`. Still in no session and no usage example. (§13) | Their docs pages | Do not design around them from shape alone |
 | G17 | ✅ **Resolved (SDK, 2026-07-29).** `EntityOwnership` is an `OptionSet` with `.unknown` / `.shared` / `.public` and **no `.private` member** (`:8941-8947`). "Private" is the implicit non-adoption default. §12.2 | — | Use `.unknown` as the spelling for "cannot say" |
 | G18 | **Which domains get semantic (vs merely lexical) Spotlight search.** Session 343 says it is *"depending on the App Intents domain"* and does not say which. (§10) | Apple documentation; none found | Do not promise semantic matching for an uncovered domain; verify empirically at testing stage 3 |

@@ -1532,7 +1532,7 @@ produces. What matters *here* is the runtime consequence:
 > the macOS 27.0 beta SDK.**
 >
 > The interface dump settles both halves (✅ **SDK-verified** —
-> `CoreAIRuntime-27.0-macos.swiftinterface`, captured 2026-07-29):
+> `CoreAIRuntime-27.0-macos.swiftinterface`, captured 2026-07-29, recaptured 2026-08-20):
 >
 > - `view(as:)` requires `T : BitwiseCopyable` (`:591-599`), and the module declares **no element
 >   type** for `int4`, `uint3`, `float8e4m3fn` or `float8e8m0fn` — no Core AI `Int4` or
@@ -2357,7 +2357,8 @@ shape is stable across iterations, and (c) you were going to copy the output som
 the shape changes every call, you are re-allocating regardless and the parameter buys you nothing
 but the §9.4 trap.
 
-> ⚠️ There is a real counter-case in Apple's own tree. PR #85 (**OPEN, marked "do not merge"**)
+> ⚠️ There is a real counter-case in Apple's own tree. PR #85 (**closed unmerged 2026-08-23;
+> previously marked "do not merge"**)
 > observes: *"if we don't use the pre-allocated output view flow, it'll return an `NDArray` backed
 > by the constant directly without making a copy"* — the author flagged a **performance regression**
 > from pre-allocating. So for outputs that alias a model constant (an embedding table, say), letting
@@ -3615,7 +3616,7 @@ struct AssetError: Error, LocalizedError               // ⚠️ ASSET operation
 
 ### 16.1 What was read for this guide
 
-**SDK module interfaces** (captured 2026-07-29 from the Xcode 27.0 beta, 27A5228h, macOS 27.0 SDK —
+**SDK module interfaces** (captured 2026-07-29, Xcode 27A5228h; recaptured 2026-08-20, beta 5 27A5237l, macOS 27.0 SDK —
 now the strongest evidence class in this guide, stronger than doc pages): the shipped
 `.swiftinterface` files for `CoreAI` (a one-line umbrella re-exporting `CoreAIDelegates`),
 `CoreAIDelegates` (which re-exports `CoreAIAsset`, `CoreAICommon`, `CoreAICompiler`,

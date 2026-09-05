@@ -28,8 +28,9 @@ returns the graft boundary (`ca60290`), not the introducing commit.
 
 **So: pin `mlx==0.32.*` and `mlx-lm==0.31.3`, read the shipped `mlx/version.h` rather than trusting any date
 including these guides', and re-run your own numerics after every bump.** Not boilerplate — **three NAX
-correctness fix PRs opened in the 72 hours before 2026-07-27** (PRs #3912, #3922 still open and #3924 closed
-unmerged 2026-08-02, per a 2026-08-03 `gh` re-check — so none is in MLX checkout `973e27f`), one a *missing
+correctness fix PRs opened in the 72 hours before 2026-07-27** (on the 2026-08-03 re-check, #3912/#3922
+were open and #3924 was closed unmerged; #3922 later merged **2026-08-26**, but none is in MLX checkout
+`973e27f`), one a *missing
 `else`* in `tile_matmad_nax` that compiles odd tile shapes to nothing and produces garbage. Second version axis:
 **PyPI mlx-lm 0.31.3 is dated 2026-04-22 and `main` has moved substantially past it**, so several fixes here are
 unreleased — and **0.31.0 was pulled from practical use** for a `BatchKVCache` cross-contamination bug.
@@ -126,7 +127,8 @@ are worth multiples rather than percentages, the four learned-quantization pipel
 defaults, and a pre-ship verification recipe.
 
 > ⚠️ **SILENT FAILURE — §9 is why this guide exists.** Seven quantized-matmul defects with status as of
-> 2026-07-29; **five are M5-generation-only**. The worst (mlx#3856, issue and fix PR both OPEN) is an `int16`
+> 2026-07-29; **five are M5-generation-only**. The worst (mlx#3856, closed completed after fix PR
+> mlx#3922 merged 2026-08-26) is an `int16`
 > overflow in affine `gather_qmm`: when the flattened gathered row count exceeds 32768 and is not a multiple of
 > 64, output rows are **never written** and read back whatever the recycled `MTLBuffer` last held — *"sometimes
 > coincidentally plausible."* No exception, no NaN, no suspicious magnitude; the model just generates fluent
@@ -153,7 +155,8 @@ disk, quantized KV (which can *increase* peak memory), speculative decoding and 
 > settings change quality by three mechanisms, including `generate_step` defaulting `quantized_kv_start=0` while
 > every CLI defaults to `5000`; four sampler parameters that read as configured and do nothing; kwargs dropped
 > by `stream_generate`; server prompt-cache reuse returning **mismatched KV** for `ChunkedKVCache` models and
-> propagating it (mlx-lm#1494, OPEN — run `--prompt-cache-size 1` on Llama 4 until it lands); and §9.6, the
+> propagating it (mlx-lm#1494, administratively closed without a fix 2026-08-21; retain `--prompt-cache-size 1` on affected
+> releases); and §9.6, the
 > Swift port's worse variants.
 
 ### [12.5 — `mlx_lm.server`, local agents, and distributed inference over Thunderbolt](references/05-serving-and-distributed.md)
