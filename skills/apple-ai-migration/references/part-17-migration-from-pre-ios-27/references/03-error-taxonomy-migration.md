@@ -354,7 +354,7 @@ static let revertTranscript               // "Revert the transcript back to the 
 > certainly what you want, and it is worth checking which one your session actually has.
 >
 > The declaration site is no longer a mystery. ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:1925-1932, 937, 2752-2757`): the setter has **two**
+> (`FoundationModels-27.0-macos.swiftinterface:1925-1932, 982, 2823-2828`): the setter has **two**
 > spellings, both real —
 >
 > ```swift
@@ -722,8 +722,8 @@ annotated *(Deprecated)*) corroborates the same nine names. **This is now the au
 side of the migration.**
 
 > **The table is now symmetric — both columns are SDK-interface-verified.** The 27.0 beta
-> `FoundationModels.swiftinterface` has now been read (captured 2026-07-29, recaptured 2026-08-20 from the Xcode 27.0 beta,
-> macOS 27.0 SDK, module 2.0.62.1.402; recaptured 2026-08-20, beta 5 module 2.0.68.1.401), and it settles the AFTER side to the same standard as the
+> `FoundationModels.swiftinterface` has now been read (captured 2026-07-29 from Xcode build `27A5228h`,
+> module 2.0.62.1.402; recaptured 2026-08-20 from beta 5 build `27A5237l`, module 2.0.68.1.401), and it settles the AFTER side to the same standard as the
 > BEFORE side: `LanguageModelError` and its nine cases are declared at
 > `FoundationModels-27.0-macos.swiftinterface:1527-1537`, `SystemLanguageModel.Error.assetsUnavailable`
 > at `:616-622`, `LanguageModelSession.Error` at `:2026-2034`, and `GeneratedContent.ParsingError`
@@ -1295,7 +1295,7 @@ do {
    see *why* it did not parse. ✅ **SDK-verified** — `rawContent` is a stored `public var` of type
    `String` (`27.0:1400`), so `error.rawContent` compiles; the guide previously carried this as
    reconstructed from the initializer label. Log `underlyingError` too — the interface reveals the
-   struct carries one (`:1358`), and it is where a wrapped decoding error will be.
+   struct carries one (`:1401`), and it is where a wrapped decoding error will be.
 
 Related, and worth knowing about even though it is not the same thing: the **`SpotlightSearchTool`**
 schema mismatch surfaces as a `LanguageModelSession.ToolCallError` whose underlying error message is
@@ -1930,7 +1930,7 @@ not optional advice.
 The `Refusal` payload is the one that grew a real API, and it has a sharp edge.
 
 ```swift illustrative
-// LanguageModelError.Refusal — ✅ SDK-verified, 27.0:1582-1592 and :1637-1645
+// LanguageModelError.Refusal — ✅ SDK-verified, 27.0:1582-1592 and :1680-1688
 var explanation: LanguageModelSession.Response<String> { get async throws }
 var explanationStream: LanguageModelSession.ResponseStream<String> { get }
 init(explanation: String, debugDescription: String, metadata: [String: any Sendable] = [:])

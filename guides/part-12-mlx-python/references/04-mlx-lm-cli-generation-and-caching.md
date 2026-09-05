@@ -1677,7 +1677,7 @@ a thinking tail (it looks back up to 11 tokens for a `think_start`) — with `se
 `["system", "user", "assistant"]`, and stores each boundary's KV under the corresponding
 `cache_type`. That is what makes the type-ordered eviction meaningful.
 
-Four open defects in this subsystem, all community-reported, all worth knowing before you tune
+Three open defects and one administratively closed defect, all community-reported, are worth knowing before you tune
 `--prompt-cache-size` upward:
 
 | Issue | Symptom | Status |

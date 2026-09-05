@@ -2705,11 +2705,11 @@ In descending order of weight, matching the series convention:
 
 ### 13.3 Freshness
 
-Everything here reflects the corpus as of **2026-07-27**, against **iOS/macOS 27 betas** (beta 4 was
-current; the macOS 27 codename appearing in forum posts is "Golden Gate"), with an SDK-evidence pass
-on **2026-07-29**: the 26.5 and 27.0 beta `FoundationModels.swiftinterface` dumps were read (closing
-§1.4's missing-attribute bullet and §2's rows 10-first-half and 11), and
-`ba-package foundation-models package` was run directly from the Xcode 27.0 beta (`27A5228h`).
+The initial pass reflects the corpus as of **2026-07-27**, when beta 4 was current (and forum posts
+called macOS 27 "Golden Gate"), plus an SDK-evidence pass on **2026-07-29** from Xcode build
+`27A5228h`: the 26.5 and 27.0 `FoundationModels.swiftinterface` dumps closed §1.4's missing-attribute
+bullet and §2's rows 10-first-half and 11, and `ba-package foundation-models package` was run.
+The interface evidence was recaptured **2026-08-20** from beta 5 build `27A5237l`.
 Three things in particular will change and should be re-checked before you act on them:
 
 - Whether Apple has updated the Adapter Training Toolkit page (they said they would).

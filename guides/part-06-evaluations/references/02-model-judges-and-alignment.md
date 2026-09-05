@@ -985,7 +985,7 @@ expected value lives. The second is discarded at both call sites in the archive.
 > ✅ **SDK-verified — GAP closed (2026-07-29).** The second parameter is the model's output value,
 > typed **`Input.ExpectedValue`** — the full closure type is
 > `(Input, Input.ExpectedValue) async throws -> [String : String]`
-> (`Evaluations-27.0-macos.swiftinterface:355`). For `ModelSample<BookTags>` the discarded `_` is
+> (`Evaluations-27.0-macos.swiftinterface:361`). For `ModelSample<BookTags>` the discarded `_` is
 > therefore the generated `BookTags` — the same value `evaluationTarget` receives — not a
 > `ModelSubject`, as previously guessed. Discarding it stays reasonable: the framework already shows
 > the judge the output, and repeating it in a reference section would duplicate it in the prompt.

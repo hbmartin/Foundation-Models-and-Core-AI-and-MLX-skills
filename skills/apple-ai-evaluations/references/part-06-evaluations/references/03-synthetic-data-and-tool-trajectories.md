@@ -410,7 +410,7 @@ routes. Pick one. Doing both silently doubles your dataset.
 
 **`validator` receives the whole sample — and it is `async throws`, not a plain predicate.** The
 declared type is `(@Sendable (SampleType) async throws -> Bool)?` — ✅ SDK-verified
-(`Evaluations-27.0-macos.swiftinterface:861,849-850`), correcting this guide's earlier "synchronous,
+(`Evaluations-27.0-macos.swiftinterface:861,870-871`), correcting this guide's earlier "synchronous,
 non-throwing" description — so a validator *may* await a model call or throw. Apple's own validator
 is a synchronous, non-throwing closure, which satisfies the type; what the generator does with a
 validator that actually throws (reject the sample, or fail the run) is runtime behaviour the
@@ -2388,9 +2388,9 @@ where each spelling comes from, because that is what tells you how much to trust
 | Symbol / spelling | Evidence |
 |---|---|
 | `actor SampleGenerator<SampleType> where SampleType : ModelSampleProtocol` | ✅ docs |
-| `SampleGenerator(_:samples:targetCount:sessionProvider:samplingStrategy:validator:)` — two overloads, differing by generic constraint (`ModelSample<T>` vs a custom `Generable` sample type), both `Prompt`-first | ✅ SDK-verified (`swiftinterface:849-850`) |
+| `SampleGenerator(_:samples:targetCount:sessionProvider:samplingStrategy:validator:)` — two overloads, differing by generic constraint (`ModelSample<T>` vs a custom `Generable` sample type), both `Prompt`-first | ✅ SDK-verified (`swiftinterface:870-871`) |
 | `SampleGenerator<ModelSample<T>>(_ prompt: Prompt, samples:targetCount:sessionProvider:validator:)` | ✅ Apple sample code (`BookSampleGenerator/main.swift:13-74`) |
-| `sessionProvider: (@Sendable () -> LanguageModelSession)? = nil` (a factory; may be invoked more than once) | ✅ SDK-verified (`swiftinterface:849-850`) + sample code + session 299 |
+| `sessionProvider: (@Sendable () -> LanguageModelSession)? = nil` (a factory; may be invoked more than once) | ✅ SDK-verified (`swiftinterface:870-871`) + sample code + session 299 |
 | `validator: ((S) async throws -> Bool)? = nil` — may await and throw; the sample's is sync | ✅ SDK-verified (`swiftinterface:842`) + sample code |
 | `generator.run()` — async sequence of **valid** samples only | ✅ sample code |
 | `await generator.samples` — initial **and** generated | ✅ docs + sample code |

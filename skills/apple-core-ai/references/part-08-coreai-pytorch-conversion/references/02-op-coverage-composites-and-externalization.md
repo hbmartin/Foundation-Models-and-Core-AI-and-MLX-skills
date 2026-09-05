@@ -2708,14 +2708,14 @@ Nine defects, in one table, so you can check your own model against it:
 | # | Defect | Wrong on | Fix status 2026-07-29 | Cheap workaround |
 |---|---|---|---|---|
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
-| 2 | Integer true-divide truncates | **every** backend | PR #32 open | `a.float() / b` |
-| 3 | `cat` on packed intx ignores `dim` | every backend | PR #41 open | `cat` before packing |
-| 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | PR #45 **closed unmerged** | Reduce in fp32 |
-| 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) | issue #49 open, FB23695952 | Skip `optimize()` or reorder |
-| 6 | float→int→float cast round-trip folded to identity | every backend | issue #9 open | Avoid the round-trip idiom |
+| 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
+| 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` open | `cat` before packing |
+| 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
+| 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) | `apple/coreai-torch#49` open, FB23695952 | Skip `optimize()` or reorder |
+| 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 | 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
-| 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | issue #11 open | Float-arithmetic masks (below) |
-| 9 | Partial-rotary RoPE pairs contiguously, not half-split | every backend | models#66 open, known | Precompute `cos`/`sin` (§5.7) |
+| 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
+| 9 | Partial-rotary RoPE pairs contiguously, not half-split | every backend | `apple/coreai-models#66` open, known | Precompute `cos`/`sin` (§5.7) |
 
 Two workarounds from that table are worth spelling out because they are non-obvious.
 

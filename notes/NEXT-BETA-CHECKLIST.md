@@ -305,7 +305,7 @@ Three separate hedges, all answerable from the fresh dump + one runtime probe:
   awk '/enum LanguageModelError/,/^}/' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -c 'case '
   ```
 - [ ] **`Tool.includesSchemaInInstructions` still non-inlinable?** The default body is
-  invisible in interfaces (extension at `FoundationModels` interface `:1245`; guide
+  invisible in interfaces (extension at `FoundationModels` interface `:3067-3073`; guide
   `guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`
   §4.4, line ~815). If a beta makes it `@inlinable`, the default value becomes
   readable in the interface; the runtime probe in `probes/` has already measured the default

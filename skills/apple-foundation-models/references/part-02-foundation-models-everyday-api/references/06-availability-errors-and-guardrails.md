@@ -3168,8 +3168,8 @@ Listed in the arm order Apple's own sample code uses (§3.7).
 Five of `LanguageModelError`'s nine cases — `.timeout`, `.guardrailViolation`, `.refusal`,
 `.contextSizeExceeded`, `.unsupportedLanguageOrLocale` — are confirmed by two independent Apple
 sample archives (§3.2). As of 2026-07-29 all nine are ✅ SDK-verified as the complete list in the
-27.0 beta interface (`:1486-1496`), and the case counts in the table above are read from the same
-capture (`SystemLanguageModel.Error`: 1, `:571-576` · `LanguageModelSession.Error`: 2, `:1986-1994`
+27.0 beta interface (`:1527-1537`), and the case counts in the table above are read from the same
+capture (`SystemLanguageModel.Error`: 1, `:616-622` · `LanguageModelSession.Error`: 2, `:2026-2034`
 · `PrivateCloudComputeLanguageModel.Error`: 3, `:151-158`).
 
 ### 11.3 Feedback numbers cited in this guide
@@ -3199,20 +3199,20 @@ Entries marked 🔴 **GAP** remain unanswered by the corpus; three rows are
 | 2.3 | Is `.appleIntelligenceNotEnabled` genuinely Siri-toggle-coupled? | Apple reply on 835211, or a non-beta reproduction |
 | 2.4 | No API exposes AFM 3 Core vs Core Advanced | SDK header, or an Apple answer |
 | 2.6 | ~~Full PCC `UnavailableReason` case list~~ — **✅ RESOLVED 2026-07-29**: exactly `.deviceNotEligible` + `.systemNotReady` | Resolved — 27.0 `.swiftinterface:82-90` |
-| 3.2 | ~~`LanguageModelError`'s full case list~~ — **✅ RESOLVED 2026-07-29**: exactly the nine documented cases (still non-frozen — keep `default:`) | Resolved — 27.0 `.swiftinterface:1486-1496` |
-| 3.6 | ~~Is `GeneratedContent.ParsingError` the *formal* successor to `decodingFailure`?~~ — **✅ RESOLVED 2026-07-29**: yes, per the SDK's own deprecation message; payloads do *not* correspond field-for-field | Resolved — 27.0 `.swiftinterface:3491-3494` |
+| 3.2 | ~~`LanguageModelError`'s full case list~~ — **✅ RESOLVED 2026-07-29**: exactly the nine documented cases (still non-frozen — keep `default:`) | Resolved — 27.0 `.swiftinterface:1527-1537` |
+| 3.6 | ~~Is `GeneratedContent.ParsingError` the *formal* successor to `decodingFailure`?~~ — **✅ RESOLVED 2026-07-29**: yes, per the SDK's own deprecation message; payloads do *not* correspond field-for-field | Resolved — 27.0 `.swiftinterface:3555-3558` |
 | 3.7 | `LanguageModelSession.Error` is caught by no Apple sample | Any compiling code that observes one |
 | 4.5 | Exact enum case behind thread 836673 | Debugger capture from a reproduction |
 | 4.5 | What "May contain sensitive content" maps to | Full `NSError` chain from a reproduction |
 | 4.5 | Whether refusal traffic actually rose in 27 | Apple statement or before/after data |
-| 5.1 | ~~Is the `Guardrails` set really just two?~~ — **✅ RESOLVED for the 27.0 beta**: yes, `default` + `permissiveContentTransformations` | Resolved — 27.0 `.swiftinterface:331-340` |
+| 5.1 | ~~Is the `Guardrails` set really just two?~~ — **✅ RESOLVED for the 27.0 beta**: yes, `default` + `permissiveContentTransformations` | Resolved — 27.0 `.swiftinterface:335-344` |
 | 5.2 | 🟡 That `.permissiveContentTransformations` is inert in Apple's own Book Tracker sample is our deduction from two verified facts, not a stated one | A demonstration either way, or an Apple clarification of the docs sentence |
 | 7.1 | `com.apple.SensitiveContentAnalysisML` error 15 | Apple reply on 836285 |
 | 7.3 | `ModelManagerServices.ModelManagerError` 1046 | Apple reply, or symbol dump |
 | 7.4 | ~~Are the two `toolCallingMode` surfaces one type?~~ **✅ RESOLVED:** same type (SDK, 2026-07-29). Which wins: options override profile, device-confirmed **only** in the allows→disallow direction (2026-08-20, `toolCalled=false toolRan=false`); 🔴 the disallow→require direction threw `contextSizeExceeded(4096, 4099)` with the discriminators unrecorded — "options won" there is an error-fingerprint inference | Next device run — the probe now records `toolCalled`/`toolRan` in its catch path |
-| 8.2 | ~~Full `QuotaUsage.Status` case list~~ — **✅ RESOLVED 2026-07-29**: `.belowLimit(_)` / `.limitReached(_)` only | Resolved — 27.0 `.swiftinterface:224-241` |
+| 8.2 | ~~Full `QuotaUsage.Status` case list~~ — **✅ RESOLVED 2026-07-29**: `.belowLimit(_)` / `.limitReached(_)` only | Resolved — 27.0 `.swiftinterface:228-245` |
 | 8.2 | Numeric quota values | None — Apple does not expose them (FB23378161) |
-| 9.2 | ~~Full `LanguageModelFeedback.Issue.Category` list~~ — **✅ RESOLVED 2026-07-29**: eight cases incl. `.triggeredGuardrailUnexpectedly` | Resolved — 27.0 `.swiftinterface:3384-3405` |
+| 9.2 | ~~Full `LanguageModelFeedback.Issue.Category` list~~ — **✅ RESOLVED 2026-07-29**: eight cases incl. `.triggeredGuardrailUnexpectedly` | Resolved — 27.0 `.swiftinterface:3448-3469` |
 
 [^refusal-api]: Apple, [`LanguageModelError.Refusal.explanation`](https://developer.apple.com/documentation/foundationmodels/languagemodelerror/refusal/explanation) (`get async throws`) and [`LanguageModelSession.Response.content`](https://developer.apple.com/documentation/foundationmodels/languagemodelsession/response/content), which contains the generated `String`.
 

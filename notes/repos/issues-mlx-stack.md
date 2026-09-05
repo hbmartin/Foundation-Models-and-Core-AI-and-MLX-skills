@@ -1042,7 +1042,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 | **#3768** | `[WIP] [CUDA] fsdp` (merged 2026-07-21). |
 
 ### mlx core (open, notable)
-`#3922` sorted gather_qmm NAX boundary fix; `#3918/#3919/#3920` the mlx-swift-lm perf batch; `#3894` TF32 docs; `#3899/#3900/#3901` **JACCL** (optional coordinator, ring refactor + threads for multiple rings, scatter-reduce) by angeloskath; `#3923` BitLinear (BitNet b1.58 QAT layer); `#3927` `mlx.special` (erf, erfc, i0, gammaln, digamma); `#3928` restore type stubs in frontend wheels (issue **#3916**: *"0.32.0 wheels ship `py.typed` but no `.pyi` stubs — breaks type checking of `mlx.core` downstream"*); `#3912` fp quantized matmul corruption when the quantized dim isn't a multiple of 32; `#3913` faster logsumexp for short rows.
+`#3918/#3919/#3920` the mlx-swift-lm perf batch; `#3899/#3900/#3901` **JACCL** (optional coordinator, ring refactor + threads for multiple rings, scatter-reduce) by angeloskath; `#3923` BitLinear (BitNet b1.58 QAT layer); `#3927` `mlx.special` (erf, erfc, i0, gammaln, digamma); `#3928` restore type stubs in frontend wheels (issue **#3916**: *"0.32.0 wheels ship `py.typed` but no `.pyi` stubs — breaks type checking of `mlx.core` downstream"*); `#3912` fp quantized matmul corruption when the quantized dim isn't a multiple of 32; `#3913` faster logsumexp for short rows.
 
 ### Distributed (a whole open cluster of instability)
 `#3910` JACCL `MeshImpl::recv` spins forever on peer loss (silent hang, no timeout); `#3876` CUDA distributed all_sum barrier hangs in `cu::AtomicEvent::wait` on Blackwell; `#3862` distributed ring `SocketThread` dies silently on transient connection reset → all ranks wedge in `Event::wait`; `#3777` JACCL segfaults in `ibv_reg_mr` (null PD) when RDMA absent; `#3755` ring and jaccl both fail to connect (errno 60/65) on a 4-node M3 Ultra cluster; `#3830` Metal fence handoff deadlocks under `MLX_METAL_FAST_SYNCH=1` (orphaned `fence_wait` kernel locks the GPU until reboot) and hits the **~5 s GPU watchdog** when unset (`kIOGPUCommandBufferCallbackErrorTimeout` at ~7.3k tokens). PR `#3933` "Fix crashes in the ring and jaccl distributed backends" is open.
@@ -1082,7 +1082,7 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 11. **Batch-vs-single bit equivalence is not achievable on M5/gen-17.** Don't assert `rtol=1e-5`.
 12. **Speculative decoding at temp=0 is lossless in exact arithmetic only.** bf16 exact ties break differently between batched verify and sequential decode.
 13. **Affine-quantized MoE on M5/NAX corrupts silently** when gathered rows `> 32768 && % 64 != 0` (and separately when `K % 64 != 0`, which also hits mxfp4). Cannot reproduce on M1–M4.
-14. **NVFP4 tensor-scale (`global_scale`) is not implemented on Metal** and throws.
+14. **NVFP4 tensor-scale throws on Metal through 0.32.0; 0.32.1+ runs via a `qmv` fallback, while fast-kernel support remains incomplete.**
 15. **`--kv-bits` costs decode speed and (today) *raises* prefill peak memory.** It is a capacity lever. Mitigate the peak with a smaller `prefill_step_size`.
 16. **`quantized_kv_start` defaults to 0 in the library and 5000 in the CLI.** Always pass it.
 17. **`RotatingKVCache.to_quantized()` raises**; `hasattr` guards don't help; `keep>0` will still raise after PR #1584.
@@ -1122,8 +1122,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 - Full triage list of 80 most-recent issues (open + closed)
 
 ### `ml-explore/mlx` PRs
-- Merged: #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
-- Open: #3922, #3918/#3919/#3920, #3894, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
+- Merged: #3922, #3894, #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
+- Open: #3918/#3919/#3920, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
 
 ### `ml-explore/mlx-lm` issues
 - #1438 (body + all 32 comments incl. the consolidated v1.5.1 findings summary)

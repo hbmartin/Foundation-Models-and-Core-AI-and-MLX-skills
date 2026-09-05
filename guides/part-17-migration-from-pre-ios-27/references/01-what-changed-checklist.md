@@ -898,7 +898,7 @@ full configuration surface — see [guide 2.4](../../part-02-foundation-models-e
 > var totalTokenCount: Int
 > ```
 > `Response`, `ResponseStream.Snapshot` and `LanguageModelSession` all expose `.usage`
-> (`session.usage` at `27.0:1933-1936`).
+> (`session.usage` at `27.0:1936-1938`).
 > The KV-caching article gives the derived metric: *"determine your cache hit rate by dividing the
 > cached input tokens by the total input tokens."*
 

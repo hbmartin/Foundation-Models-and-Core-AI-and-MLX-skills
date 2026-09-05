@@ -276,8 +276,8 @@ who actually ships diffusion.
 
 ## Sources for this part
 
-Strongest first. **SDK module interfaces, read on disk** (captured 2026-07-29, recaptured 2026-08-20 from the Xcode 27.0
-beta 27A5228h; recaptured 2026-08-20, beta 5 27A5237l, macOS 27.0 SDK; stored in `notes/sdk-interfaces/`): `CoreAI` (umbrella),
+Strongest first. **SDK module interfaces, read on disk** (captured 2026-07-29 from Xcode build `27A5228h`;
+recaptured 2026-08-20 from beta 5 build `27A5237l`, macOS 27.0 SDK; stored in `notes/sdk-interfaces/`): `CoreAI` (umbrella),
 `CoreAIDelegates` (the loading/caching/options surface and the re-exports), `CoreAIRuntime`
 (1,428 lines), `CoreAIAsset`, and the empty-in-this-beta `CoreAICache`/`CoreAICommon`/
 `CoreAICompiler` — the evidence class that finally closed the error-type gap and confirmed every
@@ -286,8 +286,8 @@ the three LLM engines and the VLM engine, `ModelStructure.swift` (the structure�
 strongest guidance on `SpecializationOptions` anywhere), the bundle readers, `NDArray+Helpers.swift`,
 `ImagePreprocessor.swift`, the two xgrammar wrappers, `CoreAILanguageModel.swift`, the four Python bundle
 writers, `Package.swift`/`Package.resolved` and the agent skills in `skills/` — plus merged PRs **#62,
-\#74, #89**, PR **#85** (**closed unmerged 2026-08-23**) and issues **#5, #55** (**closed completed
-2026-08-27 after the beta-6 SIGSEGV disappeared; silent GPU fallback remained**), **#58, #112**,
+\#74, #89**, PR **#85** (**closed unmerged 2026-08-23**), issue **#5** (**closed completed
+2026-09-02**), issue **#55** (**closed completed 2026-08-27; silent GPU fallback remained**), **#58, #112**,
 each documenting a real failure; and
 `apple/coreai-torch` v0.4.1 (`converter.py`, `_utils.py`, `tests/test_stateful.py`, the notebooks, and
 the release note that gates 0.4.0 assets). **Apple documentation**, harvested 2026-07-27 via `sosumi.ai`

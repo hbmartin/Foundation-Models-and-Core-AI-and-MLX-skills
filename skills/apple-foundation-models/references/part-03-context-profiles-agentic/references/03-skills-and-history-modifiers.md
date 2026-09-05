@@ -2900,8 +2900,8 @@ token-usage and duration lanes (`243:93`, `243:130`).
 
 **Apple documentation mirrors** (`AppleFoundationModels/` doc set): `DynamicSessions.md` — the six
 lifecycle modifiers verbatim (`:92-101`) and the `@SessionProperty(\.history)` type annotation
-(`:118-119` — its `[Transcript.Entry]` annotation is now known to be wrong: the projected type is
-`ArraySlice<Transcript.Entry>`, §9) ·
+(`:118-119` — its `[Transcript.Entry]` annotation is now known to be wrong: beta 5 projects
+`Transcript.HistoryView`, §9) ·
 `OptimizingKV.md` — append-preserves / rewrite-invalidates (`:28`, `:32`), profile switch as full
 prefix change (`:100`), the cache-hit metric (`:171`) · `RuntimePerformance.md:27`.
 
@@ -2930,6 +2930,6 @@ calls a tool from a just-deactivated skill (§16). **Closed on 2026-07-29 agains
 `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`:**
 `session.logFeedbackAttachment` — three synchronous `Data`-returning overloads, 26.0-era
 (§1.2, `:3472-3514`) · `.onPrompt` is `async throws`, so a failing summariser fails the turn
-(§3.4, `:984-990`) · `@SessionProperty(\.history)` projects `ArraySlice<Transcript.Entry>`
-(§9, `:1071-1075`) · `AnyDynamicInstructions` is public API, the protocol's registered type
+(§3.4, `:984-990`) · `@SessionProperty(\.history)` projects `Transcript.HistoryView`
+(§9, `:1071-1076`) · `AnyDynamicInstructions` is public API, the protocol's registered type
 eraser (§11.1, `:640-663`).

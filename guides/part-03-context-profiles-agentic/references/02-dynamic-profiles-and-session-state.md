@@ -1932,7 +1932,7 @@ session, and assert on `session.properties.phase`.
 > unverified.** The interface declares `session.properties: SessionPropertyValues { get }` returning
 > a `final class` whose keyed subscript has `get`/`set`/`_modify`, and whose `history` accessor is
 > likewise settable (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1097-1107,
-> :1026-1031, :1084-1086`) — so `session.properties.phase = .done` from outside is not a compile
+> :1071-1076, :1129-1131`) — so `session.properties.phase = .done` from outside is not a compile
 > error. What no source shows is what happens next (does an in-flight turn observe it? does it race
 > the `transcriptMutationWhileResponding` guard?). **Safe default: treat it as read-only from
 > outside the session** and do all writes from a profile, modifier, or tool, where the behaviour is
@@ -1947,7 +1947,7 @@ session, and assert on `session.properties.phase`.
 | `DynamicProfileModifier.body(content:)` | ✅ | ⚠️ same purity rule — write in the hook it installs | Apple's utilities package |
 | `Tool.call(arguments:)` | ✅ | ✅ | Apple docs |
 | `DynamicInstructions` body | ✅ | ⚠️ purity; and see the read-only rule in §12.2 | Apple docs |
-| Outside, via `session.properties` | ✅ | ⚠️ setter exists (SDK-verified `:1059-1063`); runtime semantics 🔴 GAP | compiled test + 27.0 interface |
+| Outside, via `session.properties` | ✅ | ⚠️ setter exists (SDK-verified `:1103-1107`); runtime semantics 🔴 GAP | compiled test + 27.0 interface |
 
 ---
 
