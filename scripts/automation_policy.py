@@ -2,7 +2,13 @@
 """Shared repository mutation boundaries for automation tooling."""
 
 ALLOWED_ROOTS = ("guides/", "notes/", "probes/", "skills/")
-FORBIDDEN_PREFIXES = (".github/", ".git/", "repos/", "captures/", "/")
+FORBIDDEN_PREFIXES = (
+    ".github/", ".git/", "repos/", "captures/", "personal-skills/",
+    "dependencies/", "/",
+)
+FORBIDDEN_COMPONENTS = frozenset(
+    prefix.rstrip("/") for prefix in FORBIDDEN_PREFIXES if prefix != "/"
+)
 PROTECTED_PATHS = (
     "automations/",
     "scripts/",

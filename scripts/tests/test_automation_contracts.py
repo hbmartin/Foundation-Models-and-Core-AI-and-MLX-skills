@@ -1,16 +1,30 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import pathlib
+import re
 import subprocess
 import tempfile
 import textwrap
+import tomllib
 import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 VALIDATOR = ROOT / "scripts" / "validate-automation-contracts.py"
+
+
+def refresh_fingerprint(text: str) -> str:
+    policy = tomllib.loads(text)["contract"]
+    payload = json.dumps(policy, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    fingerprint = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return re.sub(
+        r"Contract policy fingerprint: [0-9a-f]{64}",
+        f"Contract policy fingerprint: {fingerprint}",
+        text,
+    )
 
 
 class AutomationContractTests(unittest.TestCase):
@@ -95,34 +109,25 @@ class AutomationContractTests(unittest.TestCase):
             )
         )
 
-    def test_ready_pr_policy_rejects_wrong_roots_and_missing_boundaries(self) -> None:
+    def test_ready_pr_policy_isolates_wrong_roots_and_forbidden_path_shape(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            contract = pathlib.Path(directory) / "weekly.toml"
-            contract.write_text(textwrap.dedent(
-                '''
-                version = 1
-                id = "weekly"
-                kind = "cron"
-                name = "Weekly"
-                rrule = "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0"
-                cwds = ["."]
-                prompt = """artifacts/freshness/weekly Run in a temporary worktree and open a draft pull request. Never merge. continue with the remaining independent checks."""
-                [contract]
-                schema_version = 2
-                mutation_policy = "isolated-ready-pr"
-                allowed_paths = ["notes/", ".github/"]
-                forbidden_paths = [1]
-                artifact_patterns = ["artifacts/freshness/weekly/<UTC-run-id>/"]
-                required_prompt_fragments = []
-                '''
-            ).lstrip())
+            contract = pathlib.Path(directory) / "weekly-corpus-freshness-batch.toml"
+            canonical = (
+                ROOT / "automations/contracts/weekly-corpus-freshness-batch.toml"
+            ).read_text(encoding="utf-8")
+            modified = canonical.replace(
+                'allowed_paths = ["guides/", "notes/", "probes/", "skills/"]',
+                'allowed_paths = ["notes/", ".github/"]',
+            ).replace(
+                'forbidden_paths = [".github/", "repos/", "captures/", "personal-skills/", "dependencies/"]',
+                'forbidden_paths = [1]',
+            )
+            contract.write_text(refresh_fingerprint(modified), encoding="utf-8")
             result = self.run_validator("--contracts", directory)
         payload = json.loads(result.stdout)
         codes = {item["code"] for item in payload["diagnostics"]}
         self.assertEqual(result.returncode, 1)
-        self.assertIn("invalid-ready-pr-roots", codes)
-        self.assertIn("invalid-forbidden-paths", codes)
-        self.assertIn("missing-ready-pr-boundary", codes)
+        self.assertEqual(codes, {"invalid-ready-pr-roots", "invalid-forbidden-paths"})
 
     def test_rejects_non_numeric_schema_version_without_crashing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

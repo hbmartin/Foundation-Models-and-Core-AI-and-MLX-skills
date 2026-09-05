@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -97,6 +98,19 @@ class CurrentStateTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("ISO date", result.stderr)
 
+    def test_manifest_rejects_non_string_installed_xcode_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "state.json"
+            payload = json.loads((ROOT / "notes/current-state.json").read_text())
+            payload["environment"]["installed"]["xcode"]["build"] = 12345
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            result = subprocess.run(
+                [SCRIPT, "--manifest", path, "render", "--check"],
+                cwd=ROOT, text=True, capture_output=True, check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("installed xcode metadata is invalid", result.stderr)
+
     def test_render_detects_stale_generated_block(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
         with tempfile.TemporaryDirectory() as directory:
@@ -131,7 +145,8 @@ class CurrentStateTests(unittest.TestCase):
         try:
             STATE.run = lambda *args, **kwargs: ("", "simulated unavailable command")
             STATE.shutil.which = lambda name: None
-            observed, blockers = STATE.installed_environment(previous)
+            with mock.patch.dict(STATE.os.environ, {"DEVELOPER_DIR": ""}):
+                observed, blockers = STATE.installed_environment(previous)
         finally:
             STATE.run = old_run
             STATE.shutil.which = old_which
@@ -139,6 +154,25 @@ class CurrentStateTests(unittest.TestCase):
         self.assertTrue(blockers)
         self.assertTrue(all("simulated unavailable command" in item or "fm-path" in item
                             for item in blockers))
+
+    def test_installed_environment_does_not_probe_unsupported_fm_version_flag(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        previous = manifest["environment"]["installed"]
+        calls = []
+
+        def fake_run(*args, **kwargs):
+            calls.append(args)
+            return "", "simulated unavailable command"
+
+        with (
+            mock.patch.object(STATE, "run", side_effect=fake_run),
+            mock.patch.object(STATE.shutil, "which", return_value="/usr/bin/fm"),
+            mock.patch.dict(STATE.os.environ, {"DEVELOPER_DIR": ""}),
+        ):
+            observed, blockers = STATE.installed_environment(previous)
+        self.assertNotIn(("/usr/bin/fm", "--version"), calls)
+        self.assertEqual(observed["fm"]["path"], "/usr/bin/fm")
+        self.assertFalse(any(item.startswith("fm-version:") for item in blockers))
 
     def test_unparseable_simulator_output_preserves_prior_values_and_reports_blocker(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")

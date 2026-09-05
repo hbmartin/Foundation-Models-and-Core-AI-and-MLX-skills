@@ -136,7 +136,12 @@ def load_manifest(path: pathlib.Path) -> dict:
         environment, "installed", {"os", "xcode", "sdks", "simulatorRuntimes", "fm"}
     )
     require_object(installed, "os", {"name", "version", "build"})
-    require_object(installed, "xcode", {"path", "version", "build"})
+    installed_xcode = require_object(installed, "xcode", {"path", "version", "build"})
+    if any(
+        not isinstance(installed_xcode[field], str) or not installed_xcode[field]
+        for field in ("path", "version", "build")
+    ):
+        raise SystemExit("error: current-state installed xcode metadata is invalid")
     sdks = require_object(installed, "sdks", {"macosx", "iphoneos"})
     require_object(sdks, "macosx", {"version", "build"})
     require_object(sdks, "iphoneos", {"version", "build"})
@@ -375,13 +380,10 @@ def installed_environment(previous: dict) -> tuple[dict, list[str]]:
                 "simulator-runtimes: output contained no recognized iOS runtimes"
             )
         runtimes = previous["simulatorRuntimes"]
-    fm_path = shutil.which("fm") or previous["fm"]["path"]
+    discovered_fm_path = shutil.which("fm")
+    fm_path = discovered_fm_path or previous["fm"]["path"]
     fm_version = previous["fm"]["version"]
-    observed_fm = ""
-    if fm_path:
-        observed_fm = observe("fm-version", fm_path, "--version")
-        fm_version = observed_fm or fm_version
-    else:
+    if not discovered_fm_path:
         blockers.append("fm-path: executable not found")
     value = {
         "os": {"name": sw.get("ProductName", "").strip() or previous["os"]["name"],
@@ -398,10 +400,7 @@ def installed_environment(previous: dict) -> tuple[dict, list[str]]:
             "path": fm_path,
             "version": fm_version,
             "build": sw.get("BuildVersion", "").strip() or previous["fm"]["build"],
-            "exception": (
-                "fm has no independent --version option; provenance is the owning macOS build."
-                if not observed_fm else ""
-            ),
+            "exception": "fm has no independent --version option; provenance is the owning macOS build.",
         },
     }
     return value, blockers

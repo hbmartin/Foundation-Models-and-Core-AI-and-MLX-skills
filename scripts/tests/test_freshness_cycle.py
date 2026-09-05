@@ -294,15 +294,85 @@ class FreshnessCycleTests(unittest.TestCase):
 
     def test_recorded_deterministic_failure_can_corroborate_one_task(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            validator = checkout / "scripts/current-state.py"
+            validator.parent.mkdir()
+            validator.write_text(
+                "#!/usr/bin/env python3\n"
+                "import sys\n"
+                "print('stale generated state', file=sys.stderr)\n"
+                "raise SystemExit(7)\n",
+                encoding="utf-8",
+            )
+            subprocess.run(["git", "-C", checkout, "add", validator], check=True)
+            subprocess.run(
+                ["git", "-C", checkout, "commit", "-m", "add validator"],
+                check=True, capture_output=True,
+            )
+            subprocess.run(
+                ["git", "-C", checkout, "push", "origin", "main"],
+                check=True, capture_output=True,
+            )
+            prepared = self.prepare(checkout, root, "run-deterministic")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            run_root = root / "artifacts/weekly-improvements/run-deterministic"
+            manifest = json.loads((run_root / "run.json").read_text())
+            repository_identity = "https://github.com/example/repository.git"
+            manifest["repositoryIdentity"] = repository_identity
+            (run_root / "run.json").write_text(json.dumps(manifest), encoding="utf-8")
+            recorded = self.command(
+                "record-failure", run_root,
+                "--validator", "./scripts/current-state.py render --check",
+                "--artifact", "results/validator.json",
+            )
+            self.assertEqual(recorded.returncode, 0, recorded.stderr)
+            action = {
+                "id": "deterministic",
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": manifest["baseSha"],
+                "exactCurrentTarget": True,
+                "paths": ["notes/example.md"],
+                "changeKind": "docs",
+                "patternKey": "stale-render",
+                "deterministicFailure": {
+                    "validator": "./scripts/current-state.py render --check",
+                    "artifact": "results/validator.json",
+                    "targetSha": manifest["baseSha"],
+                    "failed": True,
+                },
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "thread-review.json").write_text(json.dumps({
+                "schemaVersion": 2,
+                "repositoryIdentity": repository_identity,
+                "actions": [action],
+            }), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(payload["summary"]["eligible"], 1)
+
+    def test_declared_deterministic_failure_cannot_spoof_attestation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
             run_root = pathlib.Path(directory)
             repository_identity = "https://github.com/example/repository.git"
             (run_root / "run.json").write_text(json.dumps({
                 "runId": "r", "baseSha": "abc", "repositoryIdentity": repository_identity,
+                "worktree": str(ROOT),
             }), encoding="utf-8")
             (run_root / "results").mkdir()
             (run_root / "results/validator.json").write_text("{}\n", encoding="utf-8")
             action = {
-                "id": "deterministic",
+                "id": "spoofed-attestation",
                 "confidence": 0.99,
                 "resolutionDisposition": "fixed",
                 "evidenceUrls": ["https://example.com/evidence"],
@@ -312,14 +382,6 @@ class FreshnessCycleTests(unittest.TestCase):
                 "paths": ["notes/example.md"],
                 "changeKind": "docs",
                 "patternKey": "stale-render",
-                "taskEvidence": [{
-                    "taskId": "task-1",
-                    "taskUrl": "https://example.com/tasks/task-1",
-                    "updatedAt": "2026-09-05T12:00:00Z",
-                    "repositoryIdentity": repository_identity,
-                    "patternKey": "stale-render",
-                    "observation": "The generated block was stale.",
-                }],
                 "deterministicFailure": {
                     "validator": "./scripts/current-state.py render --check",
                     "artifact": "results/validator.json",
@@ -340,8 +402,12 @@ class FreshnessCycleTests(unittest.TestCase):
             }), encoding="utf-8")
             result = self.command("evaluate", run_root)
             payload = json.loads((run_root / "actions.json").read_text())
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(payload["summary"]["eligible"], 1)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(payload["summary"]["eligible"], 0)
+            self.assertIn(
+                "thread-pattern-not-corroborated",
+                payload["actions"][0]["eligibilityBlockers"],
+            )
 
     def test_ready_requires_passing_mergeable_pr_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -475,9 +541,107 @@ class FreshnessCycleTests(unittest.TestCase):
             ], check=True)
             run_root = root / "artifacts/weekly-improvements/run-rename"
             result = self.command("finalize", run_root, "--outcome", "no-change")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("automations/contract.toml", result.stderr)
-        self.assertIn("outside allowed roots", result.stderr)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("automations/contract.toml", result.stderr)
+            self.assertIn("outside allowed roots", result.stderr)
+
+    def test_finalize_preserves_porcelain_prefix_for_unstaged_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-unstaged")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            run_root = root / "artifacts/weekly-improvements/run-unstaged"
+            worktree = pathlib.Path(json.loads(prepared.stdout)["worktree"])
+            (worktree / "notes/base.md").write_text("changed\n", encoding="utf-8")
+            (run_root / "actions.json").write_text(json.dumps({"actions": [{
+                "automaticFixEligible": True,
+                "paths": ["notes/base.md"],
+            }]}), encoding="utf-8")
+            result = self.command(
+                "finalize", run_root, "--outcome", "draft",
+                "--pr-url", "https://github.com/example/repo/pull/1",
+                "--state-path", root / "artifacts/state.json",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_nested_forbidden_components_are_not_eligible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            common = {
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "changeKind": "docs",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            paths = (
+                "notes/repos/foo.md", "scripts/.github/x.yml",
+                "skills/captures/y.md", "notes/.git/z",
+            )
+            (run_root / "validation.json").write_text(json.dumps({
+                "actions": [
+                    {**common, "id": f"nested-{index}", "paths": [path]}
+                    for index, path in enumerate(paths)
+                ],
+            }), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(all(
+                "path-outside-allowed-roots" in item["eligibilityBlockers"]
+                for item in payload["actions"]
+            ))
+
+    def test_truthy_regression_test_must_name_an_existing_test_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(json.dumps({
+                "runId": "r", "baseSha": "abc", "repository": str(ROOT),
+            }), encoding="utf-8")
+            common = {
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "paths": ["probes/example.swift"],
+                "changeKind": "tooling",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "validation.json").write_text(json.dumps({"actions": [
+                {**common, "id": "invalid", "regressionTest": True},
+                {**common, "id": "valid", "regressionTest":
+                 "scripts/tests/test_freshness_cycle.py"},
+            ]}), encoding="utf-8")
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "missing-or-invalid-regression-test",
+                payload["actions"][0]["eligibilityBlockers"],
+            )
+            self.assertNotIn(
+                "missing-or-invalid-regression-test",
+                payload["actions"][1]["eligibilityBlockers"],
+            )
 
     def test_protected_control_plane_path_is_not_eligible(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

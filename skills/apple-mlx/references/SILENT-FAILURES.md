@@ -188,7 +188,7 @@
 
 **Part 14**
 
-- [Guided generation needs logits and the GPU-pipelined fast path never exposes them — fastest backend, no structured output](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#123-one-more-consideration-is-core-ai-even-the-right-destination) — 14.1
+- [Guided generation needs logits and the GPU-pipelined fast path never exposes them — fastest backend, no structured…](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#123-one-more-consideration-is-core-ai-even-the-right-destination) — 14.1
 
 ## Performance cliffs
 
@@ -302,10 +302,10 @@
 **Part 14**
 
 - [TOC: asset-generation coverage is not numerical parity — a bundle that generates is not one that computes correctly](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#contents) — 14.1
-- [Conversion succeeds while silently listing unresolved tensors in metadata['unresolved_extra_inputs'] — read it every time](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#51-the-minimal-working-example) — 14.1
+- [Conversion succeeds while silently listing unresolved tensors in metadata['unresolved_extra_inputs'] — read it every…](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#51-the-minimal-working-example) — 14.1
 - [Generated assets are not numerical parity — tolerances compare against MLX's own capture, never a Core AI execution](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#6-️-asset-generation-coverage-is-not-numerical-parity) — 14.1
 - [match_by_order=True pairs outputs positionally — a shifted output order gives a green comparison of the wrong tensors](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#62-what-is-tested-and-what-is-not) — 14.1
-- [--runtime-backend auto silently picks Swift on Darwin unless a Python-only flag flips it — runs measure different backends](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#83-the-build-recipe-and-the-auto-selection-trap) — 14.1
+- [--runtime-backend auto silently picks Swift on Darwin unless a Python-only flag flips it — runs measure different…](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#83-the-build-recipe-and-the-auto-selection-trap) — 14.1
 - [Every Core AI test in the repo passes without running — green because skipped, not because it works](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#98-️-silent-failure-every-core-ai-test-in-this-repo-passes-without-running) — 14.1
 - [Code comment: check metadata['unresolved_extra_inputs'] after every conversion — success ≠ all inputs resolved](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#132-mlx2coreai-python-api) — 14.1
 
@@ -390,7 +390,7 @@
 
 - [skipSpecialTokens defaults to false — decoded text keeps special tokens unless you opt out](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#32-style-1--implement-the-protocols) — 13.1
 - [SendableBox.consume() fatalErrors on a second call — a one-shot type that crashes instead of erroring](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#53-mlxarray-is-not-sendable) — 13.1
-- [Backgrounding with GPU work in flight aborts the process via an uncatchable Metal handler — cancel and await on scenePhase](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#56-cancellation--and-the-ios-crash-it-prevents) — 13.1
+- [GPU work active during backgrounding triggers an uncatchable Metal abort; cancel and await it on scenePhase.](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#56-cancellation--and-the-ios-crash-it-prevents) — 13.1
 - [NSCache eviction isn't coordinated with MLX, and Apple's snippet re-stomps the process-wide cacheLimit on every load](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#84-model-caching-across-a-picker) — 13.1
 - [ChatSession is not thread-safe — the source says one task at a time; concurrent use corrupts state unguarded](part-13-mlx-swift/references/02-generation-tools-and-caching.md#22-chatsession--the-layer-you-should-start-at) — 13.2
 - [MLXArray is not Sendable — perform callers must eval() before returning values out or they race the stream](part-13-mlx-swift/references/02-generation-tools-and-caching.md#23-modelcontainergenerate-and-the-free-function) — 13.2

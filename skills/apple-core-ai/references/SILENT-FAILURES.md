@@ -39,7 +39,7 @@
 - [Omit image_mean/image_std and you silently get CLIP's — Qwen3-VL-class models produce degraded captions, not an error](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#26-the-language-block-and-a-discrepancy-worth-knowing) — 7.4
 - [Inputs and states bind positionally, not by name — a graph declared in another order loads, runs, and produces garbage](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#53-coreaisequentialengine--dynamic-cpu-side-sampling-logits-available) — 7.4
 - [Fixed bug: pipelined sampling shared one execution descriptor across steps, corrupting text at temperature > 0](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#54-coreaipipelinedengine--gpu-on-device-sampling-no-logits) — 7.4 🔇
-- [Substring tensor-role discovery picks the first ambiguous match and can wire the wrong intermediate without a missing-name error](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#42-multi-function-backend) — 7.5 🔇
+- [Substring tensor-role discovery picks the first ambiguous match and can wire the wrong intermediate without a…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#42-multi-function-backend) — 7.5 🔇
 
 **Part 8**
 
@@ -48,7 +48,7 @@
 - [optimize() is not always semantics-preserving — a deleted expand_dims changes results while shapes still validate](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) — 8.1
 - [Distance matrices, Gram matrices and contrastive forms are exposed — gate optimize=True vs False on real inputs](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) — 8.1 🔇
 - [State ordering is an assumption — same-shape buffers like k_cache/v_cache can swap slots and every check still passes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1
-- [k_cache and v_cache can swap positions across a PyTorch upgrade — Swift binds key to the value slot and output is garbage](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1 🔇
+- [k_cache and v_cache can swap positions across a PyTorch upgrade — Swift binds key to the value slot and output is…](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1 🔇
 - [NDArray.from_descriptor only sizes the buffer — on Linux, buffer-state reads return garbage on the first call](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#94-the-runtime-state-protocol-and-its-own-footgun) — 8.1
 - [Seventeen open defects across the repos produce plausible, correct-shaped output with no diagnostic — four still unfixed](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#1-four-ways-a-conversion-fails) — 8.2 🔇
 - [SDPA has two conversion routes with one name — their attribute schemas and mask conventions differ](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#55-️-sdpa-two-paths-one-name-different-attributes) — 8.2
@@ -73,7 +73,7 @@
 - [axis=-1 normalized off by one — per-channel scales landed one dim early with no shape error when sizes match (fixed #24)](part-09-coreai-compression-numerics/references/01-quantization.md#85-graph-mode-prepare-step-by-step) — 9.1 🔇
 - [Pool/flatten share one FakeQuantize between input and output — a per-channel scale can land on the wrong axis](part-09-coreai-compression-numerics/references/01-quantization.md#96-️-shared-observers-and-the-per-channel-activation-constraint) — 9.1
 - [KV-cache quant ops must commute with quantize/dequantize — point it at arithmetic and the export succeeds, wrongly](part-09-coreai-compression-numerics/references/01-quantization.md#12-kv-cache-quantization-graph-mode-only) — 9.1
-- [The casting pass changes user input/output dtypes in place — feeding fp32 afterwards presents as garbage, not a type error](part-09-coreai-compression-numerics/references/01-quantization.md#143-the-ordering-rule-compress-first-cast-second) — 9.1
+- [The casting pass changes user input/output dtypes in place — feeding fp32 afterwards presents as garbage, not a type…](part-09-coreai-compression-numerics/references/01-quantization.md#143-the-ordering-rule-compress-first-cast-second) — 9.1
 - [fp16 casting does not guard activation overflow, and compression makes previously-safe values overflow](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1
 - [fp16-cast models can emit zeros where stable ops yield large finite values — activation overflow is unguarded (#7, open)](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1 🔇
 - [ChannelStructured(axis=-1) prunes the wrong channels — per-channel L1 norms collapse to a scalar (PR #45 open)](part-09-coreai-compression-numerics/references/01-quantization.md#176-a-negative-axis-used-to-land-on-the-wrong-dimension) — 9.1 🔇
@@ -111,7 +111,7 @@
 - [Outputs you pre-allocate views for are updated in place and omitted from the returned Outputs — lookups come back nil](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#94-️-silent-failure-outputs-you-pre-allocate-disappear-from-outputs) — 7.1
 - [An output with a provided view is updated in place and not included in returned Outputs — reading it there finds nothing](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#94-️-silent-failure-outputs-you-pre-allocate-disappear-from-outputs) — 7.1 🔇
 - [vocabType defaults differ (.raw vs .byteLevel) — the mismatch over-constrains the grammar and generation yields nothing](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#75-️-a-second-quieter-trap-the-vocabtype-default-mismatch) — 7.4
-- [Detector postprocessing returns an empty array for malformed output ranks and lengths, indistinguishable from a valid no-object scene](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) — 7.5 🔇
+- [Detector postprocessing returns an empty array for malformed output ranks and lengths, indistinguishable from a valid…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#5-object-detection-one-raw-asset-one-real-warmup) — 7.5 🔇
 
 **Part 10**
 
@@ -138,9 +138,9 @@
 - [Unmatched ExternalizeSpec warns, never raises — a typo ships a slower model; assert on composite_declaration in the IR](part-08-coreai-pytorch-conversion/README.md#82--when-an-op-will-not-convert-coverage-composite-ops-custom-lowerings-externalization) — 8.README 🔇
 - [ExternalizeSpec target_class must be RMSNormImpl — pointing at the RMSNorm wrapper silently matches nothing](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#53-why-the-second-form-exists-externalization) — 8.1
 - [clone()/contiguous() lower to identity — barrier-by-clone silently does nothing against the buffer-clobber bug (#11)](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#26-the-three-op-groups-worth-knowing-by-name) — 8.2
-- [A typo in composite_attrs or target_class is a UserWarning, not an error — filtered warnings ship a slower model silently](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#54-module-class-composites-the-three-step-pattern) — 8.2 🔇
+- [A typo in composite_attrs or target_class is a UserWarning, not an error — filtered warnings ship a slower model…](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#54-module-class-composites-the-three-step-pattern) — 8.2 🔇
 - [Externalize RMSNormImpl, not RMSNorm — the wrapper class silently matches no submodule](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#56-️-rmsnormimpl-not-rmsnorm) — 8.2
-- [Externalization's four silent failures — unmatched specs and attr typos warn or say nothing and quietly drop the composite](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#87-️-the-four-silent-failures-in-externalization) — 8.2
+- [Externalization's four silent failures — unmatched specs and attr typos warn or say nothing and quietly drop the…](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#87-️-the-four-silent-failures-in-externalization) — 8.2
 - [torch.cond branch subgraphs never receive your registered custom lowerings — a pinned strict-xfail converter bug](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#123-the-known-converter-bug-custom-kernels-inside-torchcond) — 8.3
 
 **Part 9**
@@ -148,10 +148,10 @@
 - [A block size the weight isn't divisible by yields only a warning and an uncompressed layer](part-09-coreai-compression-numerics/references/01-quantization.md#what-this-covers) — 9.1
 - [module_type_configs keyed by the string 'torch.nn.Linear' silently matches nothing — use the class object](part-09-coreai-compression-numerics/references/01-quantization.md#52-module_type_configs--fully-qualified-class-names-only) — 9.1
 - [A block size your weight isn't divisible by leaves the layer uncompressed, with only a log line](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1
-- [Block-size mismatch is caught internally and swallowed — the fake-quantize disables itself and the layer ships uncompressed](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1 🔇
+- [Block-size mismatch is caught internally and swallowed — the fake-quantize disables itself and the layer ships…](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1 🔇
 - [Open bug follows: shared weights blend two configs — dtype from one, QAT schedule from the other](part-09-coreai-compression-numerics/references/01-quantization.md#115-per-module-schedules-and-the-two-conflict-rules) — 9.1
 - [A shared weight takes dtype from one config and fake-quant schedule from another — issue #41, open, no warning](part-09-coreai-compression-numerics/references/01-quantization.md#115-per-module-schedules-and-the-two-conflict-rules) — 9.1 🔇
-- [Diffusion path swallows quantization failures with a warning — you can ship a full-precision model believing it compressed](part-09-coreai-compression-numerics/references/01-quantization.md#172-diffusion-quantization-failures-are-swallowed-with-a-warning) — 9.1 🔇
+- [Diffusion path swallows quantization failures with a warning — you can ship a full-precision model believing it…](part-09-coreai-compression-numerics/references/01-quantization.md#172-diffusion-quantization-failures-are-swallowed-with-a-warning) — 9.1 🔇
 - [shape[axis] % group_size must be 0 — a non-dividing group size leaves the layer unpalettized with only a warning](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#42-scheme-2--scalar-palettization-per-grouped-channel) — 9.2
 - [Realized sparsity rounds down — an unreachable channel target can round to zero pruning](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#114-️-realized-sparsity-rounds-down-and-it-can-round-to-zero) — 9.2
 - [floor(8 channels x 0.1) = 0: the layer is untouched, no warning — your '10% sparse' model is 0% sparse in narrow layers](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#114-️-realized-sparsity-rounds-down-and-it-can-round-to-zero) — 9.2 🔇
@@ -183,7 +183,7 @@
 - [Noema tracks fedTokens and prefix-checks before reuse — anything else risks decoding against another conversation's KV](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#84-️-silent-failure--the-state-you-forgot-to-reset-between-conversations) — 7.3
 - [The ANE in-graph KV-write crash corrupts the compile cache — later loads fail ENOENT until you delete cache entries](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-symptom) — 7.3
 - [Two models built from the same URL and settings share one engine and KV cache — the second session resets the first](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#43-modelresources--lazy-loading-shared-engines-borrow-safe-unload) — 7.4
-- [Diffusion filename fallback can select a stale component when old and new exports coexist; ship an explicit schema-0.2 assets map](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#21-the-assets-map-is-operational-not-descriptive) — 7.5 🔇
+- [Diffusion filename fallback can select a stale component when old and new exports coexist; ship an explicit schema-0.2…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#21-the-assets-map-is-operational-not-descriptive) — 7.5 🔇
 
 **Part 10**
 
@@ -221,7 +221,7 @@
 - [The second async-value initializer is likewise absent on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-two-async-value-types) — 7.3
 - [AsyncValue's NDArray initializer is unavailable on watchOS](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-two-async-value-types) — 7.3
 - [Grammar-constrained decoding needs logits — @Generable and forcedContinuation are unavailable on the GPU-pipelined path](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#technique-2--the-next-token-stays-on-the-gpu) — 7.3
-- [Missing tokenizer/ falls back to a HuggingFace Hub fetch — instant on your Mac's cache, a network request on user devices](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#27-languagebundle-the-strict-loader) — 7.4 🔇
+- [Missing tokenizer/ falls back to a HuggingFace Hub fetch — instant on your Mac's cache, a network request on user…](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#27-languagebundle-the-strict-loader) — 7.4 🔇
 - [Guided generation and the fastest engine are mutually exclusive — the pipelined path exposes no logits](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#78-️-the-architectural-constraint-guided-generation-and-the-fastest-engine-are-mutually-exclusive) — 7.4
 
 **Part 8**
@@ -244,12 +244,12 @@
 **Part 7**
 
 - [Hello-world NDArray(shape:scalarType:) can mismatch the specialized layout: a silent layout copy on every inference](part-07-coreai-swift-runtime/README.md#71--aimodel-inferencefunction-ndarray-and-the-memory-model) — 7.README 🔇
-- [Holding states in a dictionary you also read leaves NDArray non-unique — COW copies the whole KV cache every decode token](part-07-coreai-swift-runtime/README.md#73--states-as-kv-cache-and-pipelined-execution) — 7.README 🔇
-- [Segmentation re-encodes unchanged images and lazy diffusion reloads components; malformed detector shapes look like a valid empty scene](part-07-coreai-swift-runtime/README.md#75--non-llm-engines-bundles-function-structure-warmup-specialization-and-caching) — 7.README
+- [Holding states in a dictionary you also read leaves NDArray non-unique — COW copies the whole KV cache every decode…](part-07-coreai-swift-runtime/README.md#73--states-as-kv-cache-and-pipelined-execution) — 7.README 🔇
+- [Segmentation re-encodes unchanged images and lazy diffusion reloads components; malformed detector shapes look like a…](part-07-coreai-swift-runtime/README.md#75--non-llm-engines-bundles-function-structure-warmup-specialization-and-caching) — 7.README
 - [Summary with includingStatistics:true is considerably slower on large models — pass false for structure probes](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#11-there-is-a-sixth-type-and-it-is-the-one-people-miss) — 7.1
 - [AOT compilation does not remove on-device specialization; specialize() controls when it runs, not how much work it does](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#21-the-one-place-aimodel-and-aimodelc-differ-at-the-call-site-nowhere) — 7.1
 - [Probing the cache with .default then loading with .gpu options misses the cache: the key includes SpecializationOptions](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#33-the-load-ladder-in-the-order-you-should-write-it) — 7.1
-- [CoreAISegmentationEngine re-runs image_encode on every segment() call — the 76% speedup needs caller-side feature caching](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#43-functionnames-and-the-multi-function-model--a-bigger-deal-than-it-looks) — 7.1
+- [CoreAISegmentationEngine re-runs image_encode on every segment() call — the 76% speedup needs caller-side feature…](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#43-functionnames-and-the-multi-function-model--a-bigger-deal-than-it-looks) — 7.1
 - [The layout-conversion copy: a default-allocated tensor gets converted on every inference with no observable symptom](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#️-silent-failure-the-layout-conversion-copy) — 7.1
 - [Contiguous row-major NDArray vs specialized layout: the framework copies your tensor every inference, forever, silently](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#️-silent-failure-the-layout-conversion-copy) — 7.1 🔇
 - [Pre-allocating an output view forces a copy for constant-backed outputs the framework would otherwise return zero-copy](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#112-pre-allocated-outputs-the-outputviews-parameter) — 7.1
@@ -268,11 +268,11 @@
 - [Models carrying recurrent extra states reject trimKVCache — hybrid/SSM architectures cannot prefix-reuse across turns](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#️-the-constraint-that-changes-model-selection) — 7.3
 - [trimKVCache guards on extraStates.isEmpty — graphs with SSM/conv states return -1 and pay full re-prefill every turn](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#️-the-constraint-that-changes-model-selection) — 7.3
 - [Intervals look fine but memcpy dominates the Time Profiler: the copy-on-write KV trap of §8.1](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#reading-a-states-problem) — 7.3
-- [swift run defaults to Debug, where -Onone per-element closures make resets take seconds — build release for any benchmark](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#34-the-six-cli-tools-and-what-each-is-actually-for) — 7.4
+- [swift run defaults to Debug, where -Onone per-element closures make resets take seconds — build release for any…](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#34-the-six-cli-tools-and-what-each-is-actually-for) — 7.4
 - [The structure probe swallows errors and defaults to .dynamic — an ANE-meant model silently gets GPU specialization](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#42-preparedmodel--the-two-phase-load-that-picks-your-compute-unit) — 7.4
 - [Prefix reuse needs byte-identical re-renders — unsorted tool-call dict keys collapse the LCP and silently re-prefill](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#66-what-it-is-worth) — 7.4
-- [A failed structure summary silently defaults to dynamic GPU specialization options before the loaded functions reveal the real structure](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) — 7.5
-- [ImageSegmenter re-runs image_encode for every prompt; same-image feature reuse requires an application-owned intermediate cache](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#43-the-advertised-reuse-is-not-implemented-by-the-high-level-api) — 7.5
+- [A failed structure summary silently defaults to dynamic GPU specialization options before the loaded functions reveal…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#3-preparedmodel-inspect-before-specializing) — 7.5
+- [ImageSegmenter re-runs image_encode for every prompt; same-image feature reuse requires an application-owned…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#43-the-advertised-reuse-is-not-implemented-by-the-high-level-api) — 7.5
 - [Lazy diffusion unloading saves residency but repeated requests reload every component and repay stage-load latency](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#63-eager-residency-versus-lazy-stage-residency) — 7.5
 
 **Part 8**
@@ -361,7 +361,7 @@
 - [64-bit types are narrowed on the way in: int64 to int32 and fp64 to fp32, silently](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-️-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [The converter narrows int64/fp64 to 32-bit silently — NDArray has 64-bit ScalarTypes the converter never produces](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#35-️-64-bit-types-are-narrowed-on-the-way-in) — 9.3
 - [MLX's own caveat: mxfp8 results differ on <1% of elements and can exceed 1 ULP for small values; nvfp4 matches exactly](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#63-python-signatures) — 9.3
-- [MLX float32 matmuls silently run at TF32 on the NAX path — the warn-once PR (#3883) was closed unmerged, so nothing announces it](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#65-the-four-gates-on-mlxs-accelerated-quantized-path) — 9.3
+- [MLX float32 matmuls silently run at TF32 on the NAX path — the warn-once PR (#3883) was closed unmerged, so nothing…](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#65-the-four-gates-on-mlxs-accelerated-quantized-path) — 9.3
 - [Failure #12: MLX fp32 matmul at default env runs TF32 relaxed precision — set MLX_ENABLE_TF32=0 and diff](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) — 9.3
 - [Failure #15: int64 index tensors are narrowed to int32 — values above INT32_MAX overflow, mostly unclamped](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#71-the-lookup-table) — 9.3
 
@@ -373,13 +373,13 @@
 - [A failed AOT load surfaces as 'CoreAIDelegates.AIModelError error 3', re-mapped downstream — the raw code names no cause](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#131-the-answer-stated-precisely) — 7.1
 - [Instruments and the debug gauge swap the Load/Specialization colours — colour intuition from one misreads the other](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#what-the-stall-looks-like-in-the-tools) — 7.2
 - [The gauge's Open-in-Debugger/Export options don't work for events recorded before its report was open — open it first](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#what-the-stall-looks-like-in-the-tools) — 7.2
-- [ANECCompile() FAILED in the console during specialization is not necessarily an error — don't kill the run on first sight](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#preferring-a-unit-is-a-preference-not-a-lock) — 7.2
+- [ANECCompile() FAILED in the console during specialization is not necessarily an error — don't kill the run on first…](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#preferring-a-unit-is-a-preference-not-a-lock) — 7.2
 - [A successful compile proves nothing about the architecture — the device is the only validator](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#️-silent-failure--a-successful-compile-proves-nothing-about-the-architecture) — 7.2
 - [coreai-build compile exits 0 for any requested arch — the device, not the exit code, validates the choice](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#️-silent-failure--a-successful-compile-proves-nothing-about-the-architecture) — 7.2 🔇
 - [std::bad_alloc from a Core AI load on iOS is almost always jetsam — check Console.app and the memory entitlement first](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#143-aot-does-not-fix-memory) — 7.2
 - [Metal Toolchain missing: model builds fail with a Metal-compiler error that doesn't point at Core AI](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#152-️-the-metal-toolchain-is-not-installed-by-default) — 7.2
 - [The number-one first-contact failure: the missing-toolchain build error blames Metal, and fresh CI runners lack it too](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#152-️-the-metal-toolchain-is-not-installed-by-default) — 7.2
-- [Without export-time debug metadata the Source Viewer shows no mapping to your Python — set the env vars before converting](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#debugging-state-numerics-not-state-timing) — 7.3
+- [Without export-time debug metadata the Source Viewer shows no mapping to your Python — set the env vars before…](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#debugging-state-numerics-not-state-timing) — 7.3
 - [CoreAILanguageModel.init never calls verify() — a missing asset surfaces later as a raw Core AI error, not missingAsset](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#22-the-common-envelope-modelbundle) — 7.4
 - [metadata.json's compression field records the requested compression, not what was actually applied to the weights](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#211-️-silent-failure--compression-records-the-request-not-the-result) — 7.4
 - [Bundle-format table: compression is the request (§2.11) — nothing validates it against the shipped weights](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#212-bundle-format-quick-reference) — 7.4
@@ -390,7 +390,7 @@
 - [inspect succeeding is not evidence the asset will compile or load on-device (see the version gate)](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#115-structural-checks-that-need-no-inference) — 8.1
 - [Without ENABLE_DEBUG_INFO=1, metadata is silently absent — the Debugger's navigator and source viewer just come up empty](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#125-️-preview-only-environment-variables) — 8.1 🔇
 - [Validation is ATen-only: custom torch.library ops pass silently, then to_coreai() fails with a different error](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#34-what-the-validator-deliberately-ignores) — 8.2
-- [Externalized bodies are decomposed with a table you didn't choose — clean validation, then a confusing unsupported-op error](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#83-the-five-phase-pipeline-and-why-it-matters-for-debugging) — 8.2
+- [Externalized bodies are decomposed with a table you didn't choose — clean validation, then a confusing unsupported-op…](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#83-the-five-phase-pipeline-and-why-it-matters-for-debugging) — 8.2
 - [Set USE_LOCAL_COREAI and ENABLE_DEBUG_INFO before conversion or profiles simply lack module/source attribution](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#26-get-a-profile-first) — 8.3
 - [Without __HAVE_TENSOR__ the whole MPP header expands to nothing — just a 'no member named matmul2d' error far downstream](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#115-two-open-questions-at-this-boundary) — 8.3 🔇
 - [A bad kernel body is not a conversion error — it fails only at function bind, without any compiler diagnostic](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#124-️-the-one-that-gets-everybody-a-bad-kernel-body-is-not-a-conversion-error) — 8.3
@@ -427,8 +427,8 @@
 
 - [The artifact is not a function of the recipe — the exporting machine's OS changes what you ship](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#163-️-the-artifact-is-not-a-function-of-the-recipe) — 7.2
 - [Same command, same weights: artifacts exported on different host OSes differ ~2x in throughput and memory on-device](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#163-️-the-artifact-is-not-a-function-of-the-recipe) — 7.2 🔇
-- [Commit 102f832 renamed CoreAIRunner(from:) to init(bundle:) and the metrics setters — week-old snippets no longer compile](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#41-coreairunner--bundle-in-engine-out) — 7.4
-- [Same recipe and wheels export a 2.2x faster artifact on macOS 26 than on the 27 beta — quantized-Linear lowering regressed](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#59-what-the-engines-actually-measure) — 7.4
+- [Commit 102f832 renamed CoreAIRunner(from:) to init(bundle:) and the metrics setters — week-old snippets no longer…](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#41-coreairunner--bundle-in-engine-out) — 7.4
+- [Same recipe and wheels export a 2.2x faster artifact on macOS 26 than on the 27 beta — quantized-Linear lowering…](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#59-what-the-engines-actually-measure) — 7.4
 - [HEAD renamed LanguageModelCapabilities(capabilities:) to an unlabelled init — conformances against older SDKs break](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#82-capabilities-are-auto-detected-from-the-tokenizer) — 7.4
 
 **Part 8**
@@ -452,7 +452,7 @@
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
-- [coreai-models moved six commits past the pin; VLM bundles lost the .llmasset extension and the KV-cache primitives were rewritten.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [After the pin, coreai-models dropped .llmasset and rewrote KV-cache primitives; pinned examples no longer match HEAD.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 ## Docs vs reality
 
@@ -490,10 +490,10 @@
 
 - [The session transcript's claim about EAGER mode does not match the shipped behavior — a discrepancy worth knowing](part-09-coreai-compression-numerics/references/01-quantization.md#33-the-transcripts-one-liner-and-the-correction) — 9.1
 - [Talk says 4-bit on the two encoders; the shipped recipe is asymmetric — image w4/gs32, text w6/gs8](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
-- [Talk says per-channel scales; the shipping recipe sets enable_per_channel_scale=False and uses grouped-channel granularity](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
+- [Talk says per-channel scales; the shipping recipe sets enable_per_channel_scale=False and uses grouped-channel…](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
 - [Return value vs in-place mutation: Apple's own docs give both readings of the casting passes](part-09-coreai-compression-numerics/references/01-quantization.md#142-️-return-value-vs-in-place-mutation--a-documented-conflict) — 9.1
 - [One doc says the casting passes mutate in place and return nothing; the signatures return ExportedProgram — a conflict](part-09-coreai-compression-numerics/references/01-quantization.md#142-️-return-value-vs-in-place-mutation--a-documented-conflict) — 9.1
-- [Framework page lists seven platforms; every symbol page's platform array omits macOS and Catalyst — a docs-generation bug](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#31-the-full-enum-grouped) — 9.3
+- [Framework page lists seven platforms; every symbol page's platform array omits macOS and Catalyst — a docs-generation…](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#31-the-full-enum-grouped) — 9.3
 - [Session 325 narration says per-channel scales; shipped code sets enable_per_channel_scale=False — both readings are live](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#42-️-silent-failure--a-bare-python-float-literal-can-move-an-op-to-the-gpu) — 9.3
 
 **Part 10**
@@ -509,7 +509,7 @@
 - [Community audit counts 21 export recipes vs this guide's table; likely timing - run --list rather than trusting either.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#21-what-is-in-the-catalog) — 10.3
 - [coreai.llm.eval is declared in project.scripts but unconditionally errors with 'Evaluation support is coming soon'.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#26-three-gotchas-in-the-easy-road) — 10.3
 - [This contradicts WWDC26 325:241's 'with per-channel scales'; the shipped code sets it False and wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#77-the-exploration-loop-if-you-need-one) — 10.3
-- [coreai-build is not in the Xcode 27.0 beta app bundle — it ships in the Metal Toolchain component (resolved 2026-07-31); CI without that component sees only the aimodelc stub.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#102-the-compile-command) — 10.3
+- [coreai-build ships in the Metal Toolchain, not Xcode's app bundle; CI with only aimodelc cannot invoke it.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#102-the-compile-command) — 10.3
 - [COREAI_CHUNK_THRESHOLD is a memory dial and Apple's hint points the wrong way on a high-RAM Mac.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#143-️-coreai_chunk_threshold-is-a-memory-dial-and-apples-hint-is-backwards-on-a-big-mac) — 10.3
 - [Session 325:241's 'per-channel scales' conflicts with the shipped recipe; the shipped code wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#182-apple-spoken) — 10.3
 
@@ -545,7 +545,7 @@
 - [autoDetectVariant calls preconditionFailure on an unrecognized bundle — it crashes rather than throwing](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#52-the-three-variants-and-how-one-is-chosen) — 7.4
 - [Engine variant is a String?, not an enum — the Variant type is private, so typos cannot be caught at compile time](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#58-choosing-an-engine-the-decision-table) — 7.4
 - [rollback() is @discardableResult and fallible; over-budget calls return false and silently leave grammar state unmoved.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
-- [fillBitmask(into:) states its buffer-size contract only in a doc comment; an undersized pointer writes out of bounds unchecked.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
+- [fillBitmask(into:) states its buffer-size contract only in a doc comment; an undersized pointer writes out of bounds…](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going) — 7.4
 - [Sampling applies minP before topP before topK — not the order most stacks use, so identical settings sample differently](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [SamplingConfiguration.init preconditions, not throws — a topP of 0 from a config or slider crashes the app](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#91-samplingconfiguration--the-declarative-half) — 7.4
 - [DecodingType has exactly one case (.vanilla) — the factory and builder cannot select any custom decoding strategy](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#93-what-bring-your-own-sampling-strategy-actually-means) — 7.4
@@ -558,7 +558,7 @@
 - [torch.export.default_decompositions() makes conversion fail — only Apple's get_decomp_table() works](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#33-️-the-get_decomp_table-trap--using-the-wrong-table-makes-conversion-fail) — 8.2
 - [The default torch decomposition table yields unsupported ops — conversion fails; use get_decomp_table() instead](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#33-️-the-get_decomp_table-trap--using-the-wrong-table-makes-conversion-fail) — 8.2 🔇
 - [gather_mm indices must be unsigned ints while torch.topk returns int64 — PyTorch won't complain about the mismatch](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#61-gather_mm-is-mixture-of-experts-expert-dispatch) — 8.2
-- [Lowering overrides are per-converter-instance and invisible in output — a shared converter object carries hidden semantics](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#73-allow_overridetrue--replacing-a-built-in) — 8.2 🔇
+- [Lowering overrides are per-converter-instance and invisible in output — a shared converter object carries hidden…](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#73-allow_overridetrue--replacing-a-built-in) — 8.2 🔇
 - [Registration ordering matters, and the rule is subtler than 'always register first'](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#75-️-registration-ordering--the-rule-is-subtler-than-always-first) — 8.2
 - [Composite input_names are parameters and buffers first, then forward args — not your forward signature order](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#84-requirements-for-composite-op-modules) — 8.2
 - [Template substitution is textual — every occurrence of TYPE is replaced, including comments, strings, and MY_TYPE](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#101-template_dtypes) — 8.3
@@ -567,11 +567,11 @@
 
 **Part 9**
 
-- [GRAPH and EAGER are separate implementations with different configs and bugs — not guaranteed to produce equivalent models](part-09-coreai-compression-numerics/README.md#91--coreai-opt-quantization-configs-graph-vs-eager-calibration-and-qat) — 9.README 🔇
+- [GRAPH and EAGER are separate implementations with different configs and bugs — not guaranteed to produce equivalent…](part-09-coreai-compression-numerics/README.md#91--coreai-opt-quantization-configs-graph-vs-eager-calibration-and-qat) — 9.README 🔇
 - [A field set to None is not the same as omitting it — the two spell different quantization configs](part-09-coreai-compression-numerics/references/01-quantization.md#43-️-none-is-not-the-same-as-omitting-the-field) — 9.1
 - [Graph and eager modes do not produce equivalent quantized models — switching modes changes numerics](part-09-coreai-compression-numerics/references/01-quantization.md#83-️-the-two-modes-do-not-produce-equivalent-models) — 9.1
 - [Graph mode overrides six ops' qschemes for backend correctness — eager mode performs none of these adjustments](part-09-coreai-compression-numerics/references/01-quantization.md#95-the-six-ops-whose-qscheme-the-framework-overrides) — 9.1
-- [palettize_weights' lut_dtype is positional #2 with no default — docs pass it as a keyword, hiding the trap; XOR rules apply](part-09-coreai-compression-numerics/references/01-quantization.md#151-the-api) — 9.1
+- [palettize_weights' lut_dtype is positional #2 with no default — docs pass it as a keyword, hiding the trap; XOR rules…](part-09-coreai-compression-numerics/references/01-quantization.md#151-the-api) — 9.1
 - [PerTensorGranularity exists twice with the same spelling in different modules — importing the wrong one misconfigures](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#32-granularity--two-classes-not-three) — 9.2
 - [lut_dtype is positional #2 with no default — pass positionally and your n_bits lands in the lut_dtype slot](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#121-palettize_weights) — 9.2
 - [uv run implicitly syncs and can clobber group-pinned venv packages — Apple's own AGENTS.md says always pass --no-sync](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#181-the-four-mnist-notebooks) — 9.2
@@ -603,8 +603,8 @@
 - [Community swift-lm defines rich typed asset errors (shape/dtype/state mismatches) the Apple runtime does not give you](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#134-what-the-rest-of-the-stack-throws-for-contrast) — 7.1
 - [Core AI has zero Apple sample-code projects (0 of 312 symbols) — evidence is doc prose and shipped repos only](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#specialization-the-model-cache-and-ahead-of-time-compilation) — 7.2
 - [specialize() and init have no progress, stages, or cancellation contract — your Preparing UI must be indeterminate](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#where-to-actually-call-it) — 7.2
-- [Compile-time figures are single-author beta measurements — trust the shape (jetsam can kill compilation), not the minutes](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#143-aot-does-not-fix-memory) — 7.2
-- [Throughput figures here are one community author plus one shipping app, self-declared uncontrolled — attribute accordingly](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#162-community-measured) — 7.2
+- [Compile-time figures are single-author beta measurements — trust the shape (jetsam can kill compilation), not the…](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#143-aot-does-not-fix-memory) — 7.2
+- [Throughput figures here are one community author plus one shipping app, self-declared uncontrolled — attribute…](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#162-community-measured) — 7.2
 - [Verified absences: /documentation/updates/coreai 404s and the Updates hub carries no Core AI entries](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#primary--apple-documentation-strongest-doc-class-evidence-there-is-no-sample-code) — 7.2
 - [Whole block is community-measured on beta software under uncontrolled conditions — cited because nothing else exists](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#community--valuable-uniquely-detailed-and-not-apple) — 7.2
 - [Part-wide evidence weighting: zero Apple sample code — claims rest on docs, shipped repos, and attributed community work](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#states-as-kv-cache-and-pipelined-execution) — 7.3

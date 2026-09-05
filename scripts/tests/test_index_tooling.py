@@ -526,6 +526,14 @@ class IndexToolingTests(unittest.TestCase):
         rendered = (fixture[-1] / 'SILENT-FAILURES.md').read_text(encoding='utf-8')
         self.assertIn(f'[{blurb}]', rendered)
 
+    def test_blurbs_longer_than_120_characters_fail(self):
+        fixture, result = self.run_builder(
+            [['guide.md', '3', 'section', 'CALLOUT', 'caution-note', 'x' * 121]]
+        )
+        self.addCleanup(fixture[0].cleanup)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('blurb must be at most 120 characters', result.stderr)
+
     def test_unknown_symptom_fails(self):
         fixture, result = self.run_builder(
             [['guide.md', '3', 'section', 'CALLOUT', 'not-a-symptom', 'A warning']]
@@ -579,6 +587,45 @@ class IndexToolingTests(unittest.TestCase):
             symbols.write_text('FoundationModels\tFoundationModels\t2\t1\tY\tY\tguide.md:2\n',
                                encoding='utf-8')
             result = self.run_python(BUILD_INDEXES, classified, callouts, symbols, guides, output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_mixed_v1_and_v2_classifications_cover_all_extracted_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides, classified, output = root / 'guides', root / 'classified', root / 'output'
+            guides.mkdir(); classified.mkdir(); output.mkdir()
+            (guides / 'a.md').write_text('# A\n\n⚠️ first\n', encoding='utf-8')
+            (guides / 'b.md').write_text('# B\n\n⚠️ second\n', encoding='utf-8')
+            extracted = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(extracted.returncode, 0, extracted.stderr)
+            rows = [line.split('\t') for line in extracted.stdout.splitlines()]
+            callouts = root / 'callouts.tsv'
+            callouts.write_text(
+                '\t'.join(rows[0]) + '\n' + '\t'.join(rows[1][:6]) + '\n',
+                encoding='utf-8',
+            )
+            (classified / 'v2.tsv').write_text(
+                '# schema-version: 2\n' + '\t'.join([
+                    rows[0][0], rows[0][6], rows[0][7], rows[0][2], rows[0][3],
+                    'caution-note', 'First warning',
+                ]) + '\n',
+                encoding='utf-8',
+            )
+            (classified / 'v1.tsv').write_text(
+                '\t'.join([
+                    rows[1][0], rows[1][1], rows[1][2], rows[1][3],
+                    'caution-note', 'Second warning',
+                ]) + '\n',
+                encoding='utf-8',
+            )
+            symbols = root / 'symbols.tsv'
+            symbols.write_text(
+                'FoundationModels\tFoundationModels\t2\t1\tY\tY\ta.md:2\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(
+                BUILD_INDEXES, classified, callouts, symbols, guides, output
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
 
 
