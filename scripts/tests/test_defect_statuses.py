@@ -300,6 +300,18 @@ class DefectStatusGoldenTests(unittest.TestCase):
         self.assertEqual(references[0]["transitionKind"], "UNKNOWN")
         self.assertIsNone(references[0]["liveState"])
 
+    def test_same_day_closure_does_not_look_newer_than_a_date_claim(self) -> None:
+        live = {
+            "kind": "issue", "state": "CLOSED",
+            "closedAt": "2026-09-05T23:59:59Z",
+        }
+        self.assertEqual(
+            reporter.verdict(live, [], "2026-09-05"), "STALE-DATE-ONLY"
+        )
+        self.assertEqual(
+            reporter.verdict(live, [], "2026-09-04"), "STATE-CHANGED"
+        )
+
     def test_atomic_output_preserves_existing_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             checkout = self.make_fixture_checkout(directory)

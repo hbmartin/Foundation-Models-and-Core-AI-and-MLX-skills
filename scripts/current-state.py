@@ -26,6 +26,15 @@ TARGETS = {
 }
 
 
+def require_iso_date(value: object, label: str) -> None:
+    if not isinstance(value, str) or not re.fullmatch(r"20\d\d-\d\d-\d\d", value):
+        raise SystemExit(f"error: {label} must be an ISO date")
+    try:
+        dt.date.fromisoformat(value)
+    except ValueError as error:
+        raise SystemExit(f"error: {label} must be an ISO date: {error}") from error
+
+
 def atomic_text(path: pathlib.Path, contents: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     existing_mode = path.stat().st_mode if path.exists() else None
@@ -46,12 +55,15 @@ def load_manifest(path: pathlib.Path) -> dict:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise SystemExit(f"error: cannot read current-state manifest: {error}")
-    required = {"schemaVersion", "asOf", "corpus", "environment", "pendingEvent",
-                "probeBaselines", "verification"}
-    if value.get("schemaVersion") != 1 or not required.issubset(value):
+    required = {"schemaVersion", "asOf", "corpus", "generatedOutputs", "environment",
+                "pendingEvent", "probeBaselines", "verification"}
+    if (
+        not isinstance(value, dict)
+        or value.get("schemaVersion") != 1
+        or not required.issubset(value)
+    ):
         raise SystemExit("error: current-state manifest is not schema version 1")
-    if not re.fullmatch(r"20\d\d-\d\d-\d\d", str(value["asOf"])):
-        raise SystemExit("error: current-state asOf must be an ISO date")
+    require_iso_date(value["asOf"], "current-state asOf")
 
     def require_object(container: dict, key: str, fields: set[str]) -> dict:
         item = container.get(key)
@@ -75,6 +87,22 @@ def load_manifest(path: pathlib.Path) -> dict:
     if any(isinstance(count, bool) or not isinstance(count, int) or count < 0 for count in counts):
         raise SystemExit("error: current-state corpus counts must be non-negative integers")
 
+    generated = value["generatedOutputs"]
+    if not isinstance(generated, dict) or set(generated) != {
+        "currentStateBlocks", "indexes", "skills",
+    }:
+        raise SystemExit("error: current-state generatedOutputs has an invalid shape")
+    for name, output in generated.items():
+        if (
+            not isinstance(output, dict)
+            or set(output) != {"status", "checkedAt", "checkCommand"}
+            or output["status"] not in {"current", "stale", "unknown"}
+            or not isinstance(output["checkCommand"], str)
+            or not output["checkCommand"].startswith(("./scripts/", "python3 scripts/"))
+        ):
+            raise SystemExit(f"error: generated output {name!r} has invalid status metadata")
+        require_iso_date(output["checkedAt"], f"generated output {name!r} checkedAt")
+
     environment = require_object(value, "environment", {"installed", "latestObserved"})
     installed = require_object(
         environment, "installed", {"os", "xcode", "sdks", "simulatorRuntimes", "fm"}
@@ -84,20 +112,81 @@ def load_manifest(path: pathlib.Path) -> dict:
     sdks = require_object(installed, "sdks", {"macosx", "iphoneos"})
     require_object(sdks, "macosx", {"version", "build"})
     require_object(sdks, "iphoneos", {"version", "build"})
-    require_object(installed, "fm", {"path", "version"})
+    installed_fm = require_object(
+        installed, "fm", {"path", "version", "build", "exception"}
+    )
+    if (
+        not isinstance(installed_fm["path"], str)
+        or not installed_fm["path"]
+        or not isinstance(installed_fm["build"], str)
+        or not installed_fm["build"]
+        or installed_fm["version"] is not None
+        and (not isinstance(installed_fm["version"], str) or not installed_fm["version"])
+        or not isinstance(installed_fm["exception"], str)
+        or installed_fm["version"] is None and not installed_fm["exception"]
+    ):
+        raise SystemExit("error: current-state installed fm metadata is invalid")
     runtimes = installed["simulatorRuntimes"]
     if not isinstance(runtimes, list) or any(
         not isinstance(item, dict) or not {"name", "version", "build"}.issubset(item)
         for item in runtimes
     ):
         raise SystemExit("error: current-state simulatorRuntimes must be a runtime array")
-    latest = require_object(environment, "latestObserved", {"xcode", "ios", "macos"})
+    latest = require_object(
+        environment, "latestObserved",
+        {"xcode", "ios", "macos", "sdks", "simulatorRuntimes", "fm"},
+    )
     for name in ("xcode", "ios", "macos"):
         release = require_object(latest, name, {"version", "build", "released", "sourceUrl"})
-        if not re.fullmatch(r"20\d\d-\d\d-\d\d", str(release["released"])) or not str(
-            release["sourceUrl"]
-        ).startswith(("https://", "http://")):
+        require_iso_date(
+            release["released"], f"current-state latestObserved {name!r} release date"
+        )
+        if not str(release["sourceUrl"]).startswith(("https://", "http://")):
             raise SystemExit(f"error: current-state latestObserved {name!r} lacks dated source evidence")
+    latest_sdks = require_object(latest, "sdks", {"macosx", "iphoneos"})
+    for name in ("macosx", "iphoneos"):
+        sdk_release = require_object(
+            latest_sdks, name,
+            {"version", "build", "released", "sourceUrl", "exception"},
+        )
+        require_iso_date(
+            sdk_release["released"], f"current-state latestObserved SDK {name!r} release date"
+        )
+        if (
+            not isinstance(sdk_release["version"], str)
+            or not sdk_release["version"]
+            or sdk_release["build"] is not None
+            and (not isinstance(sdk_release["build"], str) or not sdk_release["build"])
+            or not isinstance(sdk_release["exception"], str)
+            or sdk_release["build"] is None and not sdk_release["exception"]
+            or not str(sdk_release["sourceUrl"]).startswith(("https://", "http://"))
+        ):
+            raise SystemExit(f"error: current-state latestObserved SDK {name!r} is invalid")
+    runtime_releases = latest["simulatorRuntimes"]
+    if not isinstance(runtime_releases, list) or not runtime_releases:
+        raise SystemExit("error: current-state latestObserved simulatorRuntimes must not be empty")
+    for release in runtime_releases:
+        if not isinstance(release, dict) or not {
+            "name", "version", "build", "released", "sourceUrl",
+        }.issubset(release):
+            raise SystemExit("error: current-state latestObserved runtime is invalid")
+        require_iso_date(release["released"], "current-state latestObserved runtime release date")
+        if not str(release["sourceUrl"]).startswith(("https://", "http://")):
+            raise SystemExit("error: current-state latestObserved runtime lacks source evidence")
+    latest_fm = require_object(
+        latest, "fm", {"version", "build", "released", "sourceUrl", "exception"}
+    )
+    require_iso_date(latest_fm["released"], "current-state latestObserved fm release date")
+    if (
+        latest_fm["version"] is not None
+        and (not isinstance(latest_fm["version"], str) or not latest_fm["version"])
+        or not isinstance(latest_fm["build"], str)
+        or not latest_fm["build"]
+        or not isinstance(latest_fm["exception"], str)
+        or latest_fm["version"] is None and not latest_fm["exception"]
+        or not str(latest_fm["sourceUrl"]).startswith(("https://", "http://"))
+    ):
+        raise SystemExit("error: current-state latestObserved fm is invalid")
 
     pending = require_object(value, "pendingEvent", {"value", "reasons"})
     if not isinstance(pending["value"], bool) or not isinstance(pending["reasons"], list) or not all(
@@ -137,20 +226,42 @@ def load_manifest(path: pathlib.Path) -> dict:
         raise SystemExit("error: current-state verification totals must be non-negative integers")
     if sum(status_counts.values()) != verification["snippetFences"]:
         raise SystemExit("error: current-state snippet status counts do not equal snippetFences")
-    if not isinstance(verification["blocker"], str) or not re.fullmatch(
-        r"20\d\d-\d\d-\d\d", str(verification["lastFullRun"])
-    ):
-        raise SystemExit("error: current-state verification must include blocker text and an ISO date")
+    if not isinstance(verification["blocker"], str):
+        raise SystemExit("error: current-state verification must include blocker text")
+    require_iso_date(
+        verification["lastFullRun"], "current-state verification lastFullRun"
+    )
+    if "collection" in value:
+        collection = require_object(
+            value, "collection", {"complete", "blockers", "observedAt"}
+        )
+        if (
+            not isinstance(collection["complete"], bool)
+            or not isinstance(collection["blockers"], list)
+            or not all(isinstance(item, str) and item for item in collection["blockers"])
+            or collection["complete"] != (not collection["blockers"])
+            or not isinstance(collection["observedAt"], str)
+        ):
+            raise SystemExit("error: current-state collection status is invalid")
+        try:
+            dt.datetime.fromisoformat(collection["observedAt"].replace("Z", "+00:00"))
+        except ValueError as error:
+            raise SystemExit(
+                f"error: current-state collection observedAt is invalid: {error}"
+            ) from error
     return value
 
 
-def run(*command: str, env: dict | None = None) -> str:
+def run(*command: str, env: dict | None = None) -> tuple[str, str | None]:
     try:
         result = subprocess.run(command, cwd=ROOT, env=env, text=True,
                                 capture_output=True, timeout=30, check=False)
-    except (OSError, subprocess.TimeoutExpired):
-        return ""
-    return result.stdout.strip() if result.returncode == 0 else ""
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return "", str(error)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip().splitlines()
+        return "", detail[0] if detail else f"exit {result.returncode}"
+    return result.stdout.strip(), None
 
 
 def is_tracked(path: pathlib.Path) -> bool:
@@ -192,38 +303,76 @@ def corpus_state() -> dict:
     }
 
 
-def installed_environment(previous: dict) -> dict:
+def installed_environment(previous: dict) -> tuple[dict, list[str]]:
+    blockers = []
+
+    def observe(label: str, *command: str, env: dict | None = None) -> str:
+        output, error = run(*command, env=env)
+        if error:
+            blockers.append(f"{label}: {error}")
+        return output
+
+    sw_output = observe("operating-system", "sw_vers")
     sw = dict(
-        line.split(":", 1) for line in run("sw_vers").splitlines() if ":" in line
+        line.split(":", 1) for line in sw_output.splitlines() if ":" in line
     )
     xcode_path = os.environ.get("DEVELOPER_DIR") or previous["xcode"]["path"]
     env = {**os.environ, "DEVELOPER_DIR": xcode_path}
-    xcode_lines = run("xcodebuild", "-version", env=env).splitlines()
+    xcode_lines = observe("xcode", "xcodebuild", "-version", env=env).splitlines()
 
     def sdk(name: str) -> dict:
+        prior = previous["sdks"][name]
         return {
-            "version": run("xcrun", "--sdk", name, "--show-sdk-version", env=env) or None,
-            "build": run("xcrun", "--sdk", name, "--show-sdk-build-version", env=env) or None,
+            "version": observe(
+                f"{name}-version", "xcrun", "--sdk", name, "--show-sdk-version", env=env
+            ) or prior["version"],
+            "build": observe(
+                f"{name}-build", "xcrun", "--sdk", name,
+                "--show-sdk-build-version", env=env
+            ) or prior["build"],
         }
 
     runtimes = []
-    for line in run("xcrun", "simctl", "list", "runtimes", env=env).splitlines():
+    runtime_output = observe(
+        "simulator-runtimes", "xcrun", "simctl", "list", "runtimes", env=env
+    )
+    for line in runtime_output.splitlines():
         match = re.match(r"(iOS) ([0-9.]+) \([0-9.]+ - ([^)]+)\)", line.strip())
         if match:
             runtimes.append({"name": match.group(1), "version": match.group(2),
                              "build": match.group(3)})
-    return {
-        "os": {"name": sw.get("ProductName", "").strip() or None,
-               "version": sw.get("ProductVersion", "").strip() or None,
-               "build": sw.get("BuildVersion", "").strip() or None},
+    if not runtime_output:
+        runtimes = previous["simulatorRuntimes"]
+    fm_path = shutil.which("fm") or previous["fm"]["path"]
+    fm_version = previous["fm"]["version"]
+    observed_fm = ""
+    if fm_path:
+        observed_fm = observe("fm-version", fm_path, "--version")
+        fm_version = observed_fm or fm_version
+    else:
+        blockers.append("fm-path: executable not found")
+    value = {
+        "os": {"name": sw.get("ProductName", "").strip() or previous["os"]["name"],
+               "version": sw.get("ProductVersion", "").strip() or previous["os"]["version"],
+               "build": sw.get("BuildVersion", "").strip() or previous["os"]["build"]},
         "xcode": {"path": xcode_path,
-                  "version": xcode_lines[0].removeprefix("Xcode ") if xcode_lines else None,
+                  "version": xcode_lines[0].removeprefix("Xcode ") if xcode_lines
+                  else previous["xcode"]["version"],
                   "build": xcode_lines[1].removeprefix("Build version ")
-                  if len(xcode_lines) > 1 else None},
+                  if len(xcode_lines) > 1 else previous["xcode"]["build"]},
         "sdks": {"macosx": sdk("macosx"), "iphoneos": sdk("iphoneos")},
         "simulatorRuntimes": runtimes,
-        "fm": {"path": shutil.which("fm"), "version": None},
+        "fm": {
+            "path": fm_path,
+            "version": fm_version,
+            "build": sw.get("BuildVersion", "").strip() or previous["fm"]["build"],
+            "exception": (
+                "fm has no independent --version option; provenance is the owning macOS build."
+                if not observed_fm else ""
+            ),
+        },
     }
+    return value, blockers
 
 
 def snippet_state(previous: dict) -> dict:
@@ -246,9 +395,16 @@ def collect(manifest: dict) -> dict:
     value = json.loads(json.dumps(manifest))
     value["asOf"] = dt.datetime.now(dt.timezone.utc).date().isoformat()
     value["corpus"] = corpus_state()
-    value["environment"]["installed"] = installed_environment(
+    installed, blockers = installed_environment(
         manifest["environment"]["installed"]
     )
+    value["environment"]["installed"] = installed
+    value["collection"] = {
+        "complete": not blockers,
+        "blockers": blockers,
+        "observedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+        .replace("+00:00", "Z"),
+    }
     value["verification"] = snippet_state(manifest["verification"])
     installed = value["environment"]["installed"]
     latest = value["environment"]["latestObserved"]
@@ -281,6 +437,7 @@ def render_blocks(state: dict) -> dict[str, str]:
     installed = state["environment"]["installed"]
     latest = state["environment"]["latestObserved"]
     verification = state["verification"]
+    generated = state["generatedOutputs"]
     statuses = ", ".join(f"{count} `{name}`" for name, count in verification["statusCounts"].items())
     reasons = " ".join(state["pendingEvent"]["reasons"]) or "No release-event refresh is pending."
     ios_runtimes = [item for item in installed["simulatorRuntimes"] if item["name"] == "iOS"]
@@ -289,6 +446,13 @@ def render_blocks(state: dict) -> dict[str, str]:
     )["build"]
     baselines = "\n".join(topology_line(key, value)
                           for key, value in state["probeBaselines"].items())
+    output_status = ", ".join(
+        f"{name}={details['status']} ({details['checkedAt']})"
+        for name, details in generated.items()
+    )
+    fm_version = installed["fm"]["version"] or (
+        f"no independent version; macOS build {installed['fm']['build']}"
+    )
     return {
         "notes": (
             f"**As of {state['asOf']}**, the corpus has {corpus['referenceGuides']} reference guides "
@@ -299,9 +463,11 @@ def render_blocks(state: dict) -> dict[str, str]:
             f"Blocker: {verification['blocker']}\n\n"
             f"Installed: macOS {installed['os']['version']} ({installed['os']['build']}), "
             f"Xcode {installed['xcode']['version']} ({installed['xcode']['build']}), and `fm` at "
-            f"`{installed['fm']['path']}`. Latest observed: Xcode {latest['xcode']['version']} "
+            f"`{installed['fm']['path']}` ({fm_version}). Latest observed: Xcode {latest['xcode']['version']} "
             f"({latest['xcode']['build']}), iOS {latest['ios']['version']} ({latest['ios']['build']}), "
-            f"and macOS {latest['macos']['version']} ({latest['macos']['build']}). {reasons}"
+            f"and macOS {latest['macos']['version']} ({latest['macos']['build']}); SDK and runtime "
+            f"versions are recorded separately in the manifest, and `fm` has no independent version "
+            f"surface. Generated outputs: {output_status}. {reasons}"
         ),
         "runbook": (
             f"> **Current trigger, generated {state['asOf']}:** {reasons} The installed topology is "

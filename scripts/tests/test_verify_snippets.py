@@ -100,6 +100,23 @@ class ExtractionTests(unittest.TestCase):
             changed_row = tsv_rows(changed.stdout)[0]
             self.assertNotEqual(moved_row["snippet_id"], changed_row["snippet_id"])
 
+    def test_snippet_hash_preserves_source_whitespace(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = pathlib.Path(write_guide(
+                td, "g.md", '# T\n\n```swift compile:27\nlet value = "a b"\n```\n'
+            ))
+            first = run_script(["--guides", td, "--stub-compiler", "pass"])
+            self.assertEqual(first.returncode, 0, first.stderr)
+            first_row = tsv_rows(first.stdout)[0]
+            path.write_text(
+                '# T\n\n```swift compile:27\nlet value = "a  b"\n```\n', encoding="utf-8"
+            )
+            changed = run_script(["--guides", td, "--stub-compiler", "pass"])
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            changed_row = tsv_rows(changed.stdout)[0]
+            self.assertEqual(first_row["snippet_id"], changed_row["snippet_id"])
+            self.assertNotEqual(first_row["content_hash"], changed_row["content_hash"])
+
     def test_duplicate_snippet_requires_id_marker(self):
         with tempfile.TemporaryDirectory() as td:
             write_guide(td, "g.md", (
@@ -636,6 +653,46 @@ class ReportTests(unittest.TestCase):
             changed = run_script(["--guides", td, "--rekey-only", prior])
             self.assertEqual(changed.returncode, 1)
             self.assertEqual(tsv_rows(changed.stdout)[0]["status"], "NEEDS-VERIFICATION")
+
+    def test_rekey_only_rejects_whitespace_changes_and_preserves_marker_exit(self):
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as out:
+            path = pathlib.Path(write_guide(
+                td, "g.md", '# T\n\n```swift compile:27\nlet value = "a b"\n```\n'
+            ))
+            initial = run_script(["--guides", td, "--stub-compiler", "pass", "--out", out])
+            self.assertEqual(initial.returncode, 0, initial.stderr)
+            prior = os.path.join(out, "results.tsv")
+            path.write_text(
+                '# T\n\n```swift compile:27\nlet value = "a  b"\n```\n', encoding="utf-8"
+            )
+            changed = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(changed.returncode, 1, changed.stderr)
+            self.assertEqual(tsv_rows(changed.stdout)[0]["status"], "NEEDS-VERIFICATION")
+            path.write_text(
+                '# T\n\n```swift compile:27 id:bad/id\nlet value = "a b"\n```\n',
+                encoding="utf-8",
+            )
+            invalid = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(invalid.returncode, 2, invalid.stderr)
+            self.assertEqual(tsv_rows(invalid.stdout)[0]["status"], "MARKER-ERROR")
+
+    def test_rekey_only_reads_literal_quotes_and_rejects_ragged_tsv(self):
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as out:
+            write_guide(td, "g.md", "# T\n\n```swift compile:27\nlet a = 1\n```\n")
+            initial = run_script(["--guides", td, "--stub-compiler", "pass", "--out", out])
+            self.assertEqual(initial.returncode, 0, initial.stderr)
+            prior = pathlib.Path(out) / "results.tsv"
+            lines = prior.read_text(encoding="utf-8").splitlines()
+            fields = lines[1].split("\t")
+            fields[12] = '"literal diagnostic'
+            prior.write_text(lines[0] + "\n" + "\t".join(fields) + "\n", encoding="utf-8")
+            result = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(tsv_rows(result.stdout)[0]["first_error"], '"literal diagnostic')
+            prior.write_text(lines[0] + "\nragged\n", encoding="utf-8")
+            ragged = run_script(["--guides", td, "--rekey-only", prior])
+            self.assertEqual(ragged.returncode, 1)
+            self.assertIn("expected 15 TSV columns", ragged.stderr)
 
 
 if __name__ == "__main__":

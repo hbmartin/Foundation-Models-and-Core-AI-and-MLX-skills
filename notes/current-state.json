@@ -12,9 +12,28 @@
     "referenceGuides": 60,
     "symbols": 1213
   },
+  "generatedOutputs": {
+    "currentStateBlocks": {
+      "checkCommand": "./scripts/current-state.py render --check",
+      "checkedAt": "2026-09-05",
+      "status": "current"
+    },
+    "indexes": {
+      "checkCommand": "./scripts/build-indexes.sh",
+      "checkedAt": "2026-09-05",
+      "status": "current"
+    },
+    "skills": {
+      "checkCommand": "python3 scripts/verify-skills.py --skills skills",
+      "checkedAt": "2026-09-05",
+      "status": "current"
+    }
+  },
   "environment": {
     "installed": {
       "fm": {
+        "build": "26A5406e",
+        "exception": "fm has no independent --version option; provenance is the owning macOS build.",
         "path": "/usr/bin/fm",
         "version": null
       },
@@ -63,12 +82,44 @@
         "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026a",
         "version": "27.0 beta 8"
       },
+      "fm": {
+        "build": "26A5425a",
+        "exception": "fm has no independent --version option; the latest observation is bounded by the owning macOS release.",
+        "released": "2026-08-31",
+        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026c",
+        "version": null
+      },
       "macos": {
         "build": "26A5425a",
         "released": "2026-08-31",
         "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026c",
         "version": "27.0 beta 8"
       },
+      "sdks": {
+        "iphoneos": {
+          "build": null,
+          "exception": "Apple's public compatibility table identifies iOS 27 SDK but does not publish its internal build.",
+          "released": "2026-08-24",
+          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
+          "version": "27.0"
+        },
+        "macosx": {
+          "build": null,
+          "exception": "Apple's public compatibility table identifies macOS 27 SDK but does not publish its internal build.",
+          "released": "2026-08-24",
+          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
+          "version": "27.0"
+        }
+      },
+      "simulatorRuntimes": [
+        {
+          "build": "24A5430a",
+          "name": "iOS",
+          "released": "2026-08-31",
+          "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026a",
+          "version": "27.0 beta 8"
+        }
+      ],
       "xcode": {
         "build": "27A5252f",
         "released": "2026-08-24",

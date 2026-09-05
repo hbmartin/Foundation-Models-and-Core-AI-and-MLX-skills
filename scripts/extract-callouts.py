@@ -51,8 +51,12 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
         pending_explicit_id = [None]
         seen_ids = {}
 
-        def append_row(lineno, anchor, kind, title, excerpt):
-            digest = content_hash(kind, title, excerpt)
+        def append_row(lineno, anchor, kind, title, raw_text, inside_fence=False,
+                       display_text=None):
+            excerpt = flatten(raw_text if display_text is None else display_text)
+            # Identity stays normalized and display text stays bounded, but the
+            # review hash covers the complete callout rather than its excerpt.
+            digest = content_hash(kind, title, raw_text)
             try:
                 callout_id = semantic_id(
                     "callout", rel, anchor, kind, title, excerpt,
@@ -65,7 +69,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 sys.exit(
                     f"{path}:{lineno}: duplicate callout id {callout_id!r}; "
                     f"first seen at line {prior}; add a unique "
-                    "<!-- callout-id: slug --> marker before one callout"
+                    f"{'// callout-id: slug' if inside_fence else '<!-- callout-id: slug -->'} "
+                    "marker before one callout"
                 )
             seen_ids[callout_id] = lineno
             rows.append((rel, lineno, anchor, kind, title, excerpt, callout_id, digest))
@@ -111,7 +116,8 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 heading_anchor = unique_slug(slugify(heading), used_slugs, next_suffix)
                 if '⚠️' in line:
                     title = flatten(re.sub(r'^#+\s*', '', line))
-                    append_row(i + 1, heading_anchor, 'HEADING', title, '')
+                    append_row(i + 1, heading_anchor, 'HEADING', title, line,
+                               display_text='')
                 i += 1
                 continue
             if '⚠️' not in line:
@@ -130,12 +136,13 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', text)
                 title = flatten(tm.group(1), 160) if tm else ''
                 kind = 'SILENT-FAILURE' if re.search(r'SILENT FAILURE', text, re.I) else 'CALLOUT'
-                append_row(start + 1, heading_anchor, kind, title, flatten(text))
+                append_row(start + 1, heading_anchor, kind, title, text)
                 continue
             # inline occurrence (prose, list item, table row)
             tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', line)
             title = flatten(tm.group(1), 160) if tm else ''
-            append_row(i + 1, heading_anchor, 'INLINE', title, flatten(line))
+            append_row(i + 1, heading_anchor, 'INLINE', title, line,
+                       inside_fence=bool(fence_len))
             i += 1
         if fence_len:
             sys.exit(

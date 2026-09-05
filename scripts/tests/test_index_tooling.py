@@ -197,16 +197,36 @@ class IndexToolingTests(unittest.TestCase):
             path = guides / 'guide.md'
             path.write_text('# Section\n\n⚠️ stable warning\n', encoding='utf-8')
             first = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(first.returncode, 0, first.stderr)
             path.write_text('# Section\n\nextra prose\n\n⚠️ stable warning\n', encoding='utf-8')
             moved = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(moved.returncode, 0, moved.stderr)
             path.write_text('# Section\n\nextra prose\n\n⚠️ changed warning\n', encoding='utf-8')
             changed = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
             first_row = first.stdout.strip().split('\t')
             moved_row = moved.stdout.strip().split('\t')
             changed_row = changed.stdout.strip().split('\t')
             self.assertNotEqual(first_row[1], moved_row[1])
             self.assertEqual(first_row[6:], moved_row[6:])
             self.assertNotEqual(moved_row[6:], changed_row[6:])
+
+    def test_callout_hash_covers_text_beyond_the_display_excerpt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            path = guides / 'guide.md'
+            prefix = '⚠️ ' + ('x' * 450)
+            path.write_text(f'# Section\n\n{prefix} first\n', encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            path.write_text(f'# Section\n\n{prefix} second\n', encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            first_row = first.stdout.strip().split('\t')
+            changed_row = changed.stdout.strip().split('\t')
+            self.assertEqual(first_row[5], changed_row[5])
+            self.assertEqual(first_row[6], changed_row[6])
+            self.assertNotEqual(first_row[7], changed_row[7])
 
     def test_duplicate_semantic_callout_requires_explicit_override(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -223,6 +243,16 @@ class IndexToolingTests(unittest.TestCase):
             explicit = self.run_python(EXTRACT_CALLOUTS, guides)
             self.assertEqual(explicit.returncode, 0, explicit.stderr)
             self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second-duplicate')
+
+    def test_duplicate_inside_fence_recommends_the_fenced_marker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / 'guide.md').write_text(
+                '# Section\n\n```text\n⚠️ duplicate\n⚠️ duplicate\n```\n', encoding='utf-8'
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('// callout-id: slug', result.stderr)
 
     def test_fenced_fake_heading_does_not_consume_slug_suffixes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -466,6 +496,7 @@ class IndexToolingTests(unittest.TestCase):
             guide = guides / 'guide.md'
             guide.write_text('# Section\n\n> ⚠️ **A warning.** Details.\n', encoding='utf-8')
             extracted = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(extracted.returncode, 0, extracted.stderr)
             row = extracted.stdout.strip().split('\t')
             classification = [row[0], row[6], row[7], row[2], row[3],
                               'caution-note', 'A warning']
@@ -475,6 +506,7 @@ class IndexToolingTests(unittest.TestCase):
             guide.write_text('# Section\n\nInserted prose.\n\n> ⚠️ **A warning.** Details.\n',
                              encoding='utf-8')
             moved = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(moved.returncode, 0, moved.stderr)
             callouts = root / 'callouts.tsv'; callouts.write_text(moved.stdout, encoding='utf-8')
             symbols = root / 'symbols.tsv'
             symbols.write_text('FoundationModels\tFoundationModels\t2\t1\tY\tY\tguide.md:2\n',

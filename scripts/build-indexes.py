@@ -87,7 +87,10 @@ def load_extracted_callouts():
     with open(callouts_tsv, encoding='utf-8') as f:
         for row_number, parts in tsv_rows(f):
             if len(parts) not in (6, 8):
-                sys.exit(f"{callouts_tsv}:{row_number}: expected 8 TSV columns, got {len(parts)}")
+                sys.exit(
+                    f"{callouts_tsv}:{row_number}: expected 6 or 8 TSV columns, "
+                    f"got {len(parts)}"
+                )
             file, lineno_text, anchor, kind, _title, _excerpt = parts[:6]
             callout_id = parts[6] if len(parts) == 8 else ''
             digest = parts[7] if len(parts) == 8 else ''
@@ -119,7 +122,8 @@ def load_rows():
         if not fn.endswith('.tsv'):
             continue
         source = os.path.join(classified_dir, fn)
-        raw = open(source, encoding='utf-8').read()
+        with open(source, encoding='utf-8') as input_file:
+            raw = input_file.read()
         schema_v2 = bool(re.search(r'^# schema-version:\s*2\s*$', raw, re.M))
         with open(source, encoding='utf-8') as f:
             for row_number, parts in tsv_rows(f):

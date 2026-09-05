@@ -476,7 +476,7 @@ def verdict(
         live["state"] != "OPEN"
         and claim_date
         and live.get("closedAt")
-        and live["closedAt"] > claim_date
+        and live["closedAt"][:10] > claim_date
     ):
         return "STATE-CHANGED"
     return "STALE-DATE-ONLY" if claim_date else "UNCHANGED"

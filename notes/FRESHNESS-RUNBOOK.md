@@ -23,6 +23,19 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 
 ## 1. The daily sweep (~5–10 min quiet-day, run in the morning)
 
+### Step 0 — verify the installed contract and capture observed state
+
+```bash
+./scripts/validate-automation-contracts.py --installed
+run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+report_dir="artifacts/freshness/daily-defects/$run_id"
+./scripts/current-state.py collect --output "$report_dir/observed-state.json"
+```
+
+Stop on installed-contract drift. The observation report records `collection.complete=false` and
+the exact blockers when a host tool cannot be queried; preserved prior values are not fresh
+observations. This daily lane remains report-only.
+
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
 ```bash
@@ -88,7 +101,8 @@ orchestrator separates preparation, evidence evaluation, and cleanup:
 ```bash
 ./scripts/validate-automation-contracts.py --installed
 run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-./scripts/freshness-cycle.py prepare weekly --run-id "$run_id"
+run_root="$(./scripts/freshness-cycle.py prepare weekly --run-id "$run_id" | \
+  python3 -c 'import json,sys; print(json.load(sys.stdin)["runRoot"])')"
 # Run defect, state, probe, mirror, official-doc, and repository-task review lanes.
 ./scripts/freshness-cycle.py evaluate "$run_root"
 ./scripts/freshness-cycle.py finalize "$run_root" --outcome no-change

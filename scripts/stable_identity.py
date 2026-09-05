@@ -17,7 +17,14 @@ def normalize(value: str) -> str:
 
 
 def content_hash(*parts: str) -> str:
+    """Hash normalized prose or identity metadata."""
     payload = "\x1f".join(normalize(part) for part in parts)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def source_content_hash(*parts: str) -> str:
+    """Hash source text losslessly so whitespace-only code edits require review."""
+    payload = "\x1f".join(parts)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 

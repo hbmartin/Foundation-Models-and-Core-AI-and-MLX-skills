@@ -15,12 +15,12 @@ import sys
 import tempfile
 from typing import Any
 
+from automation_policy import ALLOWED_ROOTS, FORBIDDEN_PREFIXES, GENERATED_OUTPUTS
+
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_ARTIFACT_ROOT = ROOT / "artifacts/freshness"
 SAFE_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$")
-ALLOWED_ROOTS = ("guides/", "notes/", "probes/", "scripts/", "skills/", "automations/")
-FORBIDDEN_PREFIXES = (".github/", ".git/", "repos/", "captures/", "/")
 DISPOSITIONS = {
     "fixed", "fixed-with-residual", "merged-unreleased", "closed-unfixed",
     "closed-unmerged", "superseded", "consolidated", "unknown",
@@ -30,7 +30,6 @@ PROHIBITED_FLAGS = (
     "betaBaselinePromotion", "interfaceCapturePromotion", "personalSkillChange",
     "crossRepositoryChange",
 )
-GENERATED_OUTPUTS = ("skills/", "guides/API-INDEX.md", "guides/SILENT-FAILURES.md")
 THREAD_EVIDENCE_KEYS = {
     "taskId", "taskUrl", "updatedAt", "repositoryIdentity", "patternKey", "observation",
 }
@@ -299,7 +298,10 @@ def eligibility(
     for flag in PROHIBITED_FLAGS:
         if action.get(flag) is not False:
             blockers.append(f"prohibited-{flag}")
-    generated_paths = [path for path in paths or [] if path.startswith(GENERATED_OUTPUTS)]
+    generated_paths = [
+        path for path in paths or []
+        if isinstance(path, str) and path.startswith(GENERATED_OUTPUTS)
+    ]
     if generated_paths:
         sources = action.get("canonicalSourcePaths")
         if action.get("generatedFromCanonicalSource") is not True or not isinstance(sources, list):
@@ -443,18 +445,34 @@ def finalize(args: argparse.Namespace) -> int:
     state.setdefault("runs", []).append(entry)
     state["runs"] = state["runs"][-20:]
     state["lastRun"] = entry
-    if args.outcome in {"no-change", "ready"}:
-        state["lastSuccessfulRun"] = entry
-    state["pending"] = None if args.outcome in {"no-change", "ready"} else entry
+    successful = args.outcome in {"no-change", "ready"}
+    # Record the accepted outcome before cleanup, but do not call it successful
+    # until the worktree and disposable products are actually gone.
+    state["pending"] = {**entry, "cleanupPending": True}
+    atomic_json(state_path, state)
+    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"],
+                    prUrl=args.pr_url)
+    atomic_json(run_root / "run.json", manifest)
     if worktree.exists():
-        for build in worktree.rglob("Build"):
-            if build.is_dir():
-                shutil.rmtree(build)
-        git(repository, "worktree", "remove", "--force", str(worktree))
+        try:
+            for build in worktree.rglob("Build"):
+                if build.is_dir():
+                    shutil.rmtree(build)
+            git(repository, "worktree", "remove", "--force", str(worktree))
+        except (OSError, CycleError) as error:
+            state["pending"] = {**entry, "cleanupPending": True, "cleanupError": str(error)}
+            atomic_json(state_path, state)
+            manifest.update(status="cleanup-failed", cleanupError=str(error))
+            atomic_json(run_root / "run.json", manifest)
+            raise
     if args.outcome in {"no-change", "blocked"}:
         git(repository, "branch", "-D", manifest["branch"], check=False)
+    if successful:
+        state["lastSuccessfulRun"] = entry
+    state["pending"] = None if successful else entry
     atomic_json(state_path, state)
-    manifest.update(status=args.outcome, finishedAt=entry["finishedAt"], prUrl=args.pr_url)
+    manifest.update(status=args.outcome)
+    manifest.pop("cleanupError", None)
     atomic_json(run_root / "run.json", manifest)
     lock_path.unlink(missing_ok=True)
     print(json.dumps(entry, sort_keys=True))

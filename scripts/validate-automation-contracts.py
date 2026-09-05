@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -12,6 +13,8 @@ import sys
 import tomllib
 from dataclasses import dataclass
 from typing import Any
+
+from automation_policy import ALLOWED_ROOTS
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -34,6 +37,11 @@ REQUIRED_TOP_LEVEL = {
     "cwds": list,
     "contract": dict,
 }
+
+
+def contract_fingerprint(policy: dict[str, Any]) -> str:
+    payload = json.dumps(policy, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -95,7 +103,12 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
             Diagnostic(label, "filename-id-mismatch", f"filename must be {identifier}.toml")
         )
     schema_version = policy.get("schema_version")
-    if data["version"] != 1 or schema_version not in {1, 2}:
+    if (
+        data["version"] != 1
+        or isinstance(schema_version, bool)
+        or not isinstance(schema_version, int)
+        or schema_version not in {1, 2}
+    ):
         diagnostics.append(Diagnostic(label, "unsupported-version",
                                       "automation version must be 1 and contract schema must be 1 or 2"))
     if data["kind"] != "cron":
@@ -135,7 +148,7 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
             Diagnostic(label, "unbounded-mutation", "bounded contracts must name allowed paths")
         )
     if mutation_policy == "isolated-ready-pr":
-        required_roots = {"guides/", "notes/", "probes/", "scripts/", "skills/", "automations/"}
+        required_roots = set(ALLOWED_ROOTS)
         if set(allowed_paths) != required_roots:
             diagnostics.append(
                 Diagnostic(label, "invalid-ready-pr-roots",
@@ -159,6 +172,15 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
                     Diagnostic(label, "missing-ready-pr-boundary",
                                f"prompt must contain {fragment!r}")
                 )
+    fingerprint = contract_fingerprint(policy)
+    if f"Contract policy fingerprint: {fingerprint}" not in prompt:
+        diagnostics.append(
+            Diagnostic(
+                label,
+                "contract-fingerprint-mismatch",
+                "prompt must carry the SHA-256 projection of the complete contract table",
+            )
+        )
         if policy.get("task_input_policy") != "untrusted-structured-observations":
             diagnostics.append(
                 Diagnostic(

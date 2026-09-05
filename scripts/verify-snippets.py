@@ -39,7 +39,6 @@ and recorded in the report header so every verdict reads "against <sdk build>".
 
 import argparse
 import concurrent.futures
-import csv
 import dataclasses
 import hashlib
 import os
@@ -49,7 +48,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdslug import slugify
-from stable_identity import content_hash, semantic_id
+from stable_identity import semantic_id, source_content_hash
 
 WRAPPER_VERSION = 1
 
@@ -369,7 +368,7 @@ def fence_identity(fence):
     mk = parse_markers(fence.info)
     semantic_info = semantic_fence_info(fence.info)
     body = "\n".join(fence.body)
-    digest = content_hash(semantic_info, body)
+    digest = source_content_hash(semantic_info, body)
     try:
         identity = semantic_id(
             "snippet", fence.rel_path, fence.anchor, semantic_info, body,
@@ -1024,13 +1023,26 @@ def write_tsv(rows, out):
 
 
 def read_prior_results(path):
-    with open(path, encoding="utf-8", newline="") as source:
-        reader = csv.DictReader(source, delimiter="\t")
-        if reader.fieldnames is None or not {"snippet_id", "content_hash"}.issubset(reader.fieldnames):
+    if not path or not os.path.isfile(path):
+        raise SystemExit(f"error: --rekey-only prior results do not exist: {path!r}")
+    with open(path, encoding="utf-8") as source:
+        lines = source.read().splitlines()
+        if not lines:
+            raise SystemExit("error: --rekey-only requires a TSV header")
+        fieldnames = lines[0].split("\t")
+        if not {"snippet_id", "content_hash"}.issubset(fieldnames):
             raise SystemExit(
                 "error: --rekey-only requires v2 results with snippet_id and content_hash"
             )
-        rows = list(reader)
+        rows = []
+        for number, line in enumerate(lines[1:], 2):
+            fields = line.split("\t")
+            if len(fields) != len(fieldnames):
+                raise SystemExit(
+                    f"error: {path}:{number}: expected {len(fieldnames)} TSV columns, "
+                    f"got {len(fields)}"
+                )
+            rows.append(dict(zip(fieldnames, fields)))
     by_id = {}
     for number, row in enumerate(rows, 2):
         key = (row.get("file", ""), row.get("snippet_id", ""))
@@ -1362,10 +1374,12 @@ def main(argv=None):
                   file=sys.stderr)
         else:
             write_tsv(rows, sys.stdout)
-        pending = sum(row["status"] in {"NEEDS-VERIFICATION", "MARKER-ERROR"} for row in rows)
-        print(f"# re-keyed {len(rows) - pending} fences; {pending} require verification",
+        marker_errors = sum(row["status"] == "MARKER-ERROR" for row in rows)
+        pending = sum(row["status"] == "NEEDS-VERIFICATION" for row in rows)
+        blocked = marker_errors + pending
+        print(f"# re-keyed {len(rows) - blocked} fences; {blocked} require verification",
               file=sys.stderr)
-        return 1 if pending else 0
+        return 2 if marker_errors else 1 if pending else 0
 
     # Which targets do we need? Marker-requested plus guess target.
     needed = set(opts.sdks or [])

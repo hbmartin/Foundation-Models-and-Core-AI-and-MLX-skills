@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import csv
+import importlib.util
 import os
 import pathlib
 import subprocess
@@ -13,6 +13,30 @@ import tempfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def snippet_identities() -> dict[tuple[str, str, str], tuple[str, str]]:
+    script = ROOT / "scripts/verify-snippets.py"
+    spec = importlib.util.spec_from_file_location("verify_snippets_migration", script)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"cannot load snippet extractor: {script}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    fences, parse_errors = module.extract_fences(str(ROOT / "guides"))
+    if parse_errors:
+        raise SystemExit(f"snippet extraction failed: {parse_errors[0]}")
+    module.validate_fence_identities(fences)
+    identities = {}
+    for fence in fences:
+        try:
+            identity = module.fence_identity(fence)
+        except module.MarkerError as error:
+            raise SystemExit(
+                f"{fence.rel_path}:{fence.open_line}: invalid snippet marker: {error}"
+            ) from error
+        identities[(fence.rel_path, str(fence.open_line), fence.anchor)] = identity
+    return identities
 
 
 def atomic_write(path: pathlib.Path, text: str) -> None:
@@ -28,7 +52,7 @@ def atomic_write(path: pathlib.Path, text: str) -> None:
 
 def command_rows(command: list[str]) -> list[list[str]]:
     process = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
-    if process.returncode not in (0, 1):
+    if process.returncode != 0:
         raise SystemExit(process.stderr.strip() or f"command failed: {' '.join(command)}")
     # Repository TSVs deliberately use literal quotes rather than CSV quoting.
     return [line.split("\t") for line in process.stdout.splitlines()]
@@ -41,7 +65,7 @@ def migrate_callouts(classified_dir: pathlib.Path, write: bool) -> int:
         (row[0], row[1], row[2], row[3]): (row[6], row[7])
         for row in extracted if len(row) == 8
     }
-    changed = 0
+    rendered_files = []
     for path in sorted(classified_dir.glob("*.tsv")):
         text = path.read_text(encoding="utf-8")
         if "# schema-version: 2" in text.splitlines()[:3]:
@@ -63,34 +87,39 @@ def migrate_callouts(classified_dir: pathlib.Path, write: bool) -> int:
             callout_id, digest = identity
             output.append("\t".join((row[0], callout_id, digest, row[2], row[3], row[4], row[5])))
         rendered = "\n".join(output) + "\n"
+        rendered_files.append((path, rendered))
+    # Validate and render the complete set before replacing any file. A bad
+    # later row can therefore never leave a mixed v1/v2 classification tree.
+    for path, rendered in rendered_files:
         if write:
             atomic_write(path, rendered)
         else:
-            print(f"would migrate {path.relative_to(ROOT)}")
-        changed += 1
-    return changed
+            try:
+                display = path.relative_to(ROOT)
+            except ValueError:
+                display = path
+            print(f"would migrate {display}")
+    return len(rendered_files)
 
 
 def migrate_snippets(results: pathlib.Path, write: bool) -> int:
-    rows = command_rows([
-        sys.executable, str(ROOT / "scripts/verify-snippets.py"),
-        "--guides", str(ROOT / "guides"), "--stub-compiler", "pass",
-    ])
-    if not rows:
-        raise SystemExit("snippet extractor produced no rows")
-    current = {
-        (row[0], row[1], row[2]): (row[-2], row[-1])
-        for row in rows[1:] if len(row) == 15
-    }
-    with results.open(encoding="utf-8", newline="") as source:
-        reader = csv.DictReader(source, delimiter="\t")
-        if reader.fieldnames is None:
+    current = snippet_identities()
+    with results.open(encoding="utf-8") as source:
+        lines = source.read().splitlines()
+        if not lines:
             raise SystemExit(f"{results}: missing header")
-        if {"snippet_id", "content_hash"}.issubset(reader.fieldnames):
+        old_fields = lines[0].split("\t")
+        if {"snippet_id", "content_hash"}.issubset(old_fields):
             return 0
-        old_fields = list(reader.fieldnames)
         migrated = []
-        for number, row in enumerate(reader, 2):
+        for number, line in enumerate(lines[1:], 2):
+            fields = line.split("\t")
+            if len(fields) != len(old_fields):
+                raise SystemExit(
+                    f"{results}:{number}: expected {len(old_fields)} TSV columns, "
+                    f"got {len(fields)}"
+                )
+            row = dict(zip(old_fields, fields))
             key = (row["file"], row["line"], row["anchor"])
             identity = current.get(key)
             if identity is None:
@@ -108,7 +137,11 @@ def migrate_snippets(results: pathlib.Path, write: bool) -> int:
     if write:
         atomic_write(results, rendered)
     else:
-        print(f"would migrate {results.relative_to(ROOT)}")
+        try:
+            display = results.relative_to(ROOT)
+        except ValueError:
+            display = results
+        print(f"would migrate {display}")
     return 1
 
 
@@ -121,6 +154,13 @@ def main() -> int:
     parser.add_argument("--results", type=pathlib.Path,
                         default=ROOT / "notes/snippet-verification/results.tsv")
     args = parser.parse_args()
+    args.classified_dir = (
+        args.classified_dir if args.classified_dir.is_absolute()
+        else ROOT / args.classified_dir
+    ).resolve()
+    args.results = (
+        args.results if args.results.is_absolute() else ROOT / args.results
+    ).resolve()
     changed = 0
     if args.mode in ("callouts", "all"):
         changed += migrate_callouts(args.classified_dir, args.write)

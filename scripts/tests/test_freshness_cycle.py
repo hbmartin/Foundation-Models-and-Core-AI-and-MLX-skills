@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -163,8 +164,44 @@ class FreshnessCycleTests(unittest.TestCase):
             ]}), encoding="utf-8")
             result = self.command("evaluate", run_root)
             payload = json.loads((run_root / "actions.json").read_text())
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(payload["summary"], {"eligible": 1, "reportOnly": 1, "total": 2})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                payload["summary"], {"eligible": 1, "reportOnly": 1, "total": 2}
+            )
+
+    def test_generated_current_state_page_requires_its_canonical_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = pathlib.Path(directory)
+            (run_root / "run.json").write_text(
+                json.dumps({"runId": "r", "baseSha": "abc"}), encoding="utf-8"
+            )
+            action = {
+                "id": "generated-without-source",
+                "confidence": 0.99,
+                "resolutionDisposition": "fixed",
+                "evidenceUrls": ["https://example.com/evidence"],
+                "evidenceDate": "2026-09-05",
+                "targetSha": "abc",
+                "exactCurrentTarget": True,
+                "paths": ["notes/README.md"],
+                "changeKind": "docs",
+                **{flag: False for flag in (
+                    "dependencyChange", "workflowChange", "architectureChange",
+                    "securityPolicyChange", "betaBaselinePromotion",
+                    "interfaceCapturePromotion", "personalSkillChange",
+                    "crossRepositoryChange",
+                )},
+            }
+            (run_root / "validation.json").write_text(
+                json.dumps({"actions": [action]}), encoding="utf-8"
+            )
+            result = self.command("evaluate", run_root)
+            payload = json.loads((run_root / "actions.json").read_text())
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "generated-output-lacks-canonical-source",
+                payload["actions"][0]["eligibilityBlockers"],
+            )
 
     def test_thread_input_cannot_spoof_lane_or_use_instruction_fields(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -307,6 +344,46 @@ class FreshnessCycleTests(unittest.TestCase):
             state = json.loads((root / "artifacts/state.json").read_text())
             self.assertEqual(state["pending"]["outcome"], "draft")
             self.assertTrue((run_root / "pr.json").exists())
+
+    def test_cleanup_failure_is_recorded_and_keeps_the_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            checkout = self.repository(root)
+            prepared = self.prepare(checkout, root, "run-cleanup-failure")
+            self.assertEqual(prepared.returncode, 0, prepared.stderr)
+            details = json.loads(prepared.stdout)
+            run_root = root / "artifacts/weekly-improvements/run-cleanup-failure"
+            real_git = shutil.which("git")
+            self.assertIsNotNone(real_git)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_git = fake_bin / "git"
+            fake_git.write_text(
+                "#!/bin/sh\n"
+                "if [ \"$3\" = worktree ] && [ \"$4\" = remove ]; then\n"
+                "  echo simulated cleanup failure >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                f"exec {real_git} \"$@\"\n",
+                encoding="utf-8",
+            )
+            fake_git.chmod(0o755)
+            env = {**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            state_path = root / "artifacts/state.json"
+            result = self.command(
+                "finalize", run_root, "--outcome", "no-change",
+                "--state-path", state_path, env=env,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            state = json.loads(state_path.read_text())
+            manifest = json.loads((run_root / "run.json").read_text())
+            self.assertTrue(state["pending"]["cleanupPending"])
+            self.assertIn("simulated cleanup failure", state["pending"]["cleanupError"])
+            self.assertEqual(manifest["status"], "cleanup-failed")
+            self.assertTrue(pathlib.Path(details["worktree"]).exists())
+            self.assertTrue(
+                (root / "artifacts/state/weekly-improvement.lock.json").exists()
+            )
 
     def test_ambiguous_evidence_cannot_back_a_draft(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

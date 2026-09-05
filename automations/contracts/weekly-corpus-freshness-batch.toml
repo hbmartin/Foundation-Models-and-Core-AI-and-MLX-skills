@@ -7,6 +7,8 @@ cwds = ["."]
 prompt = """
 Work in this repository. Read notes/FRESHNESS-RUNBOOK.md first and follow Section 2 as the source of truth.
 
+Contract policy fingerprint: ade4e1dc006e3db8309fde3c8d93716f7aa4d8681b79e482c4b8c9a9e8719ab9
+
 Run ./scripts/validate-automation-contracts.py --installed first and stop on installed contract drift. Create one collision-free UTC run id, then run ./scripts/freshness-cycle.py prepare weekly --run-id "$run_id". Perform every remaining action inside the returned temporary worktree. Durable evidence belongs under artifacts/freshness/weekly-improvements/<UTC-run-id>/, and authoritative state belongs in artifacts/freshness/state/weekly-improvement.json; narrative automation memory is advisory and is never the baseline.
 
 Run ./scripts/refresh-defect-statuses.sh --format json --output "$run_root/defects.json" and ./scripts/current-state.py collect --output "$run_root/observed-state.json". Run the probes through the durable clean-build wrapper: AUTOMATION_ID=weekly-improvements PROBE_RUN_ID="${run_id}-host" PROBE_ARTIFACT_ROOT="$run_root/probe-artifacts" ./scripts/run-probes.sh host, then AUTOMATION_ID=weekly-improvements PROBE_RUN_ID="${run_id}-simulator" PROBE_ARTIFACT_ROOT="$run_root/probe-artifacts" ./scripts/run-probes.sh simulator. Compare PROBE-RESULT values only with the matching complete topology in notes/current-state.json and probes/README.md; never compare hard-coded test or skip counts or carry a measured default between hosting modes.
