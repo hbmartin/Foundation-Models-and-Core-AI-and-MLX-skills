@@ -2932,9 +2932,10 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
 > `mlx-lm#1585` (downstream
 > padding workaround) also open. A **2026-07-31** re-check still found all three open; that is now
-> historical. On **2026-08-26**, #3922 merged with a focused regression test and #3856 closed.
+> historical. On **2026-08-26**, `mlx#3922` merged with a focused regression test and `mlx#3856`
+> closed.
 > The latest release, v0.32.2 (2026-08-25), predates that merge, so no tagged release contains it as
-> of 2026-09-05; #3887 remains open.
+> of 2026-09-05; `mlx#3887` remains open.
 > **Resolution:** pin `d73eb752` or later, or wait for the next release; keep tracking #3887.
 > **Safe default:** preserve native 64-alignment and keep the gathered-row workaround on ≤0.32.2
 > while needed, but re-measure and remove padding after a fix; both forms of padding consume memory

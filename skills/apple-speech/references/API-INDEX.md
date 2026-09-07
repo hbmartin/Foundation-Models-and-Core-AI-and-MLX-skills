@@ -2,7 +2,7 @@
 
 **113 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must appear as one ordered qualified or declared path. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-05; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must appear as one ordered qualified or declared path. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>7 symbols</sub>
 

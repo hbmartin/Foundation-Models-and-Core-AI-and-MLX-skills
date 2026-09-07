@@ -1,10 +1,10 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1788 of them, 1426 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1787 of them, 1425 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-09-05 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-09-07 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -28,7 +28,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
 | [Version drift](#version-drift) | 98 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 160 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [Docs vs reality](#docs-vs-reality) | 159 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
 | [General cautions](#general-cautions) | 362 | Warnings and considerations that are not themselves silent failures. |
 
@@ -1738,7 +1738,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Utilities package traps: from: 1.0.0 never resolves, SkillActivations lost its collection shape, API is experimental](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#45-additive--skills-and-history-modifiers-the-utilities-package) — 17.1
 - [Evaluations ships no agreement statistic; the sample's Statistics.cohensKappa is 72 lines of hand-rolled Swift](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#51-additive--the-evaluations-framework-xcode-27) — 17.1
 - [.coreaimodel, .aiasset and a coreai-torch convert CLI are fabrications; real forms are .aimodel/.aimodelc directories](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
-- [Beta 4, beta 5, and current docs expose conflicting ImageReference resolve/resolved spellings and argument types…](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#76-contradicted--imagereferenceresolvein-vs-resolvedin) — 17.1
 - [The apple-intelligence/private-cloud-compute documentation path 404s; use the shorter private-cloud-compute URL](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#144-apple-documentation-pages) — 17.1
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
 - ['8K context on iOS 27' is an uncorroborated third-party comment; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4

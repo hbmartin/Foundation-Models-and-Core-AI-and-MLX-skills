@@ -243,12 +243,14 @@ Xcode fallback in that order, so a move shows up as a changed path in its output
   ls "/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/Library/Frameworks" | grep -i evaluations
   ```
 
-## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — live docs-vs-SDK contradiction
+## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — current docs now agree with beta 5
 
 The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 instead has
 **only** un-deprecated `resolved(in: some Sequence<Transcript.Entry>)`. A live-docs re-check on
-2026-08-17 lists both, presents `resolved(in:)` as deprecated, and uses `resolve(in:)` in the
-`ImageReference` overview. Neither captured beta matches that documented two-member surface.
+2026-09-07 now lists only the sequence spelling and uses `resolved(in: history)` in the
+`ImageReference` overview, matching beta 5. A documentation changes view still exposes the
+whole-`Transcript` spelling as a deprecated historical overload, but the default current symbol
+page no longer has a two-member contradiction.
 Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
 §7.6 (line ~1959).
@@ -257,7 +259,7 @@ Tracked at
   ```bash
   grep -n 'func resolved\?(in' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface
   ```
-  If both spellings appear or either gains a deprecation, update §7.6 —
+  If both spellings reappear or the sequence spelling gains a deprecation, update §7.6 —
   and mind the argument-type difference the guide warns about
   (`some Sequence<Transcript.Entry>` — satisfied by `Transcript.HistoryView` — vs whole
   `Transcript`), so no mechanical rename.

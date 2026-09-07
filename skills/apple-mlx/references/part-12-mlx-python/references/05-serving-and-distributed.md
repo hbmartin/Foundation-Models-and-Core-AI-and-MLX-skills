@@ -1645,10 +1645,12 @@ server when you are not using it, or accept it. There is no flag.
 
 - **mlx-lm#1505** — *"any uncaught exception in `_generate` leaves HTTP threads serving while every
   completion hangs forever."* Same external symptom as #1493, different cause.
-- **mlx-lm#1472** — the generation thread dies with `TypeError ('NoneType' object is not
-  iterable)` when a batch **mixes requests with and without logits processors**; the server then
-  hangs forever. This one is directly agent-relevant: a fan-out where some subagents set
-  `repetition_penalty` and others do not is exactly that mix.
+- **mlx-lm#1472 (closed 2026-09-04; fix merged but unreleased)** — the generation thread dies with
+  `TypeError ('NoneType' object is not iterable)` when a batch **mixes requests with and without
+  logits processors**; the server then hangs forever. [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826)
+  makes the invalid per-sequence state unrepresentable and adds a mixed-batch regression test.
+  Affected releases still need the guard or a watchdog. This one is directly agent-relevant: a
+  fan-out where some subagents set `repetition_penalty` and others do not is exactly that mix.
 - **mlx-lm#1435** — a uniform **+55–77 ms TTFT regression** on 0.31.3 vs 0.27.1 on M3 Ultra, with
   decode flat (±1.5%) and the penalty **independent of model size** (Qwen3-0.6B and gpt-oss-20b
   both pay it) → constant per-call setup cost. Hypothesised cause: the `wired_limit` context
