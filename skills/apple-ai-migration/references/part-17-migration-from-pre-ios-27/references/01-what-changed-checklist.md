@@ -1984,22 +1984,23 @@ Also new and easy to miss when constructing a transcript by hand:
 > `Encodable`, so `JSONEncoder().encode(session.transcript)` works and is the cheapest possible
 > migration-era diagnostic.
 
-### 7.6 CONTRADICTED — `ImageReference.resolve(in:)` vs `resolved(in:)`
+### 7.6 RESOLVED — `ImageReference.resolve(in:)` vs `resolved(in:)`
 
 Tiny — and the deprecation warning is SDK-dependent: only a build that declares it will warn.
 
 > ✅ **VERIFIED** — the documentation harvest (2026-07-27) presents `func resolved(in:) ->
 > Transcript.ImageAttachment?` as current and `func resolve(in:)` as **(Deprecated)**.
 
-> ⚠️ **Contradiction with the captured SDK, re-checked 2026-08-17.** The beta-4
-> interface (`27A5228h`) contains only un-deprecated `resolve(in: Transcript)`
-> (`27.0:2959-2963` in that superseded capture). The beta-5 interface (`27A5237l`) instead contains only un-deprecated
-> `resolved(in: some Sequence<Transcript.Entry>)` (`27.0:3024-3027`). Apple's current docs list
-> **both**, presenting `resolve(in: Transcript)` as current and `resolved(in: Sequence)` as
-> deprecated, while the overview uses `resolve(in:)`. The interface therefore moved toward the
-> earlier documentation spelling while the documentation moved toward the earlier interface
-> spelling; neither beta matches today's two-member documented surface. **Do not mechanically
-> rename**: use the spelling and argument type that the selected SDK actually declares.
+> ✅ **RESOLVED 2026-09-07 — current docs now match beta 5.** The beta-4 interface
+> (`27A5228h`) contains only un-deprecated `resolve(in: Transcript)`
+> (`27.0:2959-2963` in that superseded capture). The beta-5 interface (`27A5237l`) instead contains
+> only un-deprecated `resolved(in: some Sequence<Transcript.Entry>)` (`27.0:3024-3027`). Apple's
+> current [`ImageReference`](https://developer.apple.com/documentation/foundationmodels/imagereference)
+> page now lists only the sequence spelling and uses `resolved(in: history)` in its overview,
+> matching beta 5. A documentation changes view still exposes the deprecated whole-`Transcript`
+> overload as historical API, but it is no longer part of the default current surface. **Do not
+> mechanically rename across toolchains**: beta 4 still requires the older spelling and argument
+> type.
 
 ### 7.7 SUPERSEDED — hand-rolled context management
 
@@ -2671,7 +2672,7 @@ Collected so a future pass can close them. Each is a 🔴 **GAP** in the body wi
 | 8 | Where the open-sourced core Foundation Models framework lives | The repository appearing | §5.5 |
 | 9 | ~~The successor to `GenerationError.decodingFailure`~~ ✅ **RESOLVED 2026-07-29** — the header names `GeneratedContent.ParsingError` (`27.0:3555-3558`); runtime throws it on truncated structured output (code 1), confirmed on sim and iPhone 15 Pro (`fm.parsingError-thrown`; see 17.3 §4.4) | — | §7.1 |
 | 10 | ~~Whether `LanguageModelSession(transcript:)` is formally deprecated~~ ✅ **RESOLVED 2026-07-29** — it is not; no deprecation in the 27.0 interface (`27.0:41`) | — | §7.5 |
-| 11 | The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)` — **still a live docs-vs-SDK contradiction as of beta 5**: beta 4 has only un-deprecated `resolve(in: Transcript)`, beta 5 only un-deprecated `resolved(in: Sequence)`, while current docs list both with `resolved(in:)` deprecated | A later beta's interface, or a doc revision | §7.6 |
+| 11 | ~~The exact declarations of `ImageReference.resolve(in:)` vs `resolved(in:)`~~ ✅ **RESOLVED 2026-09-07** — current docs and beta 5 agree on `resolved(in: some Sequence<Transcript.Entry>)`; beta 4's `resolve(in: Transcript)` remains a historical toolchain difference | — | §7.6 |
 | 12 | Whether the Python SDK's tool calling is current (README omits it; the session claims it) | A README update, or reading `tests/test_tool.py` | §9 |
 | 13 | Current beta status of the watchOS `CoreImage` break, the `SkillActivation` Xcode 26 failure, PCC-in-Simulator, and the `updateUsage` symbol mismatch | Re-running each reproduction on the current beta | §10.2 |
 | 14 | Whether the Siri-availability coupling is fixed | A release note, or the symptom disappearing | §6.5 |

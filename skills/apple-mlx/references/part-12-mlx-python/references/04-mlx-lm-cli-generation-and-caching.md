@@ -2588,7 +2588,7 @@ whole server, and nothing in the response tells them so.
 | Issue | Symptom |
 |---|---|
 | mlx-lm 0.31.0 | **yanked in practice** for `BatchKVCache` cross-contamination — output from one sequence leaking into another |
-| mlx-lm#1472 (OPEN) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; server then hangs forever |
+| mlx-lm#1472 (MERGED-UNRELEASED 2026-09-04) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826) fixes the wedge by normalizing per-sequence samplers and processors, but affected releases still need the guard or a watchdog |
 | mlx-lm#1493 (OPEN) | Server **livelock**: the batch keeps stepping and delivers zero chunks. `is_alive()` stays true; a naive per-iteration heartbeat would also tick |
 | mlx-lm#1500 (OPEN) | Idle server pins a core at 100% — the worker thread busy-polls with `get_nowait()` |
 
