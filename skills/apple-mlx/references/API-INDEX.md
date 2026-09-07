@@ -2,7 +2,7 @@
 
 **334 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the bare symbol name appears in the corresponding captured `.swiftinterface` (a presence check, not a signature match — the guides carry the signature-level citations). **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-05; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must appear as one ordered qualified or declared path. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-05; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>21 symbols</sub>
 
@@ -210,7 +210,7 @@
 | `GenerateParameters.sampler()` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `Generation` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `GenerationOptions` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `GenerationOptions.SamplingMode.Kind` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `GenerationOptions.SamplingMode.Kind` |  | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `GenerationPowerPolicy` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `GenerationResponse` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `GenerationSchema` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
@@ -328,7 +328,7 @@
 | `RotatingKVCache.toQuantized()` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
 | `RotatingQuantizedKVCache` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) |
 | `SamplingConfiguration` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
-| `SamplingMode.Kind` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `SamplingMode.Kind` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `Select` |  |  | [12.1](part-12-mlx-python/references/01-core-fundamentals.md), [12.2](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md) |
 | `Sequence` | ✓ | ✓ | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `SerialAccessContainer` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |

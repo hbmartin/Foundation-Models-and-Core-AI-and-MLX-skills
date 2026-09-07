@@ -630,7 +630,7 @@ protocol LanguageModelExecutor: Sendable {
 > `respond` requirement (the skill omitted it — both spellings still compile as witnesses, since
 > the module enables `NonisolatedNonsendingByDefault`, interface line 3); the skill was right that
 > `associatedtype Model : LanguageModel` is explicit; `init(configuration:)` **is `throws`**; and
-> the default `prewarm` implementation exists in an extension (`:1866-1868` — body not emitted;
+> the default `prewarm` implementation exists in an extension (`:1907` — body not emitted;
 > the skill documents it as a no-op). Both protocols are
 > `@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)`, tvOS unavailable.
 

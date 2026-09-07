@@ -1658,7 +1658,7 @@ asked for now exists, and it settles the spelling outright. The 27.0 interface d
 `var searchInApp` — underlying intent name `SystemSearchInAppIntent` — alongside `var open`
 (`AppIntents-27.0-macos.swiftinterface:13783-13797`). The deprecated `var search` — underlying
 name `ShowInAppSearchResultsIntent` — carries the SDK's own message: *"Use .system.searchInApp
-instead)"* (`:13774-13782`). That is the rename, stated by the compiler. The 26.5 interface has
+instead"* (`:13774-13782`). That is the rename, stated by the compiler. The 26.5 interface has
 only `search` (`AppIntents-26.5-macos.swiftinterface:5574-5582`), so the `searchInApp` *name*
 requires the Xcode 27 SDK — while the underlying `ShowInAppSearchResultsIntent` protocol is
 macOS 14.2 / iOS 17.2 (`AppIntents-27.0-macos.swiftinterface:809-810`), which squares with "the

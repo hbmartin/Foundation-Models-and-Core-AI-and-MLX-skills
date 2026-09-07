@@ -124,14 +124,15 @@ the repo root.
 - [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
   four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
   beta-5 baselines are **46 host tests, 23 skipped, 0 failures** and **39 simulator tests,
-  19 skipped, 0 failures** — but note those are *gated* counts: the skip gate is keyed to the
-  recorded beta-5 build identifiers (`26A5406e` host / `24A5408d` simulator runtime), so on a
-  later beta the model-backed probes execute by default and both skip counts should drop. Treat
-  the lower counts as the drift detector working, and harvest the newly executing probes'
-  `PROBE-RESULT` lines. Re-run per beta on both local destinations and once on hardware:
+  19 skipped, 0 failures** — but note those are *gated* counts. Model-backed host and Simulator
+  probes never infer safety from an unfamiliar build identifier: run the bounded default first,
+  then explicitly enable each model-probe family when you are prepared to terminate a stuck test
+  process and harvest its `PROBE-RESULT` lines. Re-run per beta on both local destinations and once
+  on hardware:
   ```bash
   (cd probes && swift test)
-  (cd probes && DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+  (cd probes && xcodegen generate --spec device-project.yml && \
+      DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
       xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
   (cd probes && xcodegen generate --spec device-project.yml && \
@@ -139,11 +140,13 @@ the repo root.
       -destination 'platform=iOS,id=<device-udid>' -allowProvisioningUpdates \
       DEVELOPMENT_TEAM=<your-team-id>)
   ```
-  The generated scheme's test action declares the device-relevant `PROBE_*` environment
-  variables (disabled) straight from `device-project.yml`, so the unconditional
-  `xcodegen generate` above no longer wipes them. To enable one — e.g. `PROBE_ENABLE_PCC` for
-  the manual Siri-toggle pass — tick it in the scheme editor for a one-off run (the tick itself
-  is lost on the next regeneration) or flip its `isEnabled` to `true` in the spec first.
+  The generated scheme's test action declares the relevant `PROBE_*` environment variables
+  (disabled) straight from `device-project.yml`, so the unconditional `xcodegen generate` above
+  no longer wipes them. Before the deliberate host-backed-model pass, enable
+  `PROBE_ENABLE_HOST_MODEL`, `PROBE_ENABLE_ATTACHMENT`, and `PROBE_ENABLE_GENERATOR`; enable
+  `PROBE_ENABLE_PCC` for the manual Siri-toggle pass. Tick a variable in the scheme editor for a
+  one-off run (the tick itself is lost on the next regeneration) or flip its `isEnabled` to `true`
+  in the spec before regenerating.
   Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
   beta's behavioral drift. The remaining destination gaps are documented in
   `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
@@ -302,7 +305,7 @@ Three separate hedges, all answerable from the fresh dump + one runtime probe:
   awk '/enum LanguageModelError/,/^}/' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -c 'case '
   ```
 - [ ] **`Tool.includesSchemaInInstructions` still non-inlinable?** The default body is
-  invisible in interfaces (extension at `FoundationModels` interface `:1245`; guide
+  invisible in interfaces (extension at `FoundationModels` interface `:3067-3073`; guide
   `guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`
   §4.4, line ~815). If a beta makes it `@inlinable`, the default value becomes
   readable in the interface; the runtime probe in `probes/` has already measured the default

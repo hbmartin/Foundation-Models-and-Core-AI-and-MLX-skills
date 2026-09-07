@@ -90,14 +90,29 @@ SH
 cat > "$SHIM_ROOT/fm" <<'SH'
 #!/usr/bin/env bash
 set -eu
+if [ "${SDK_SHIM_FM_ROOT_FAILURE:-0}" -eq 1 ] && [ "$*" = '--help' ]; then
+  exit 9
+fi
+if [ "${SDK_SHIM_FM_FANOUT:-0}" -eq 1 ] && [[ "$*" == *--help ]]; then
+  printf '  COMMANDS\n'
+  for command in one two three four five six seven eight; do
+    printf '    %s  Repeated command\n' "$command"
+  done
+  exit 0
+fi
 case "$*" in
   '--version') printf 'fm shim 1.0\n' ;;
   '--help')
     printf '  \033[38;2;55;195;160m\033[1mUSAGE\033[0m\n'
     printf '    %% fm <command>\n'
     printf '\n'
-    printf '  \033[38;2;55;195;160m\033[1mCOMMANDS\033[0m\n'
+    if [ "${SDK_SHIM_FM_HEADER_DRIFT:-0}" -eq 1 ]; then
+      printf '  \033[38;2;55;195;160m\033[1mCOMMAND LIST\033[0m\n'
+    else
+      printf '  \033[38;2;55;195;160m\033[1mCOMMANDS\033[0m\n'
+    fi
     printf '    \033[1malpha  \033[0mWorking command\n'
+    printf '    \033[1malpha  \033[0mDuplicate entry\n'
     printf '    \033[1mbeta   \033[0mCommand whose help fails\n'
     printf '    \033[1mgamma  \033[0mCommand with a nested subcommand\n'
     printf '\n'
@@ -161,6 +176,8 @@ grep -F -q '===== fm alpha --help =====' "$fm_artifact" || \
   fail 'fm capture missed a listed command'
 grep -F -q '===== fm gamma delta --help =====' "$fm_artifact" || \
   fail 'fm capture missed a nested subcommand'
+[ "$(grep -F -c '===== fm alpha --help =====' "$fm_artifact")" -eq 1 ] || \
+  fail 'fm capture revisited a duplicate command path'
 grep -F -q '##### capture error: fm beta --help exited with status 3 #####' "$fm_artifact" || \
   fail 'a failing fm subcommand was not recorded in the artifact'
 if grep -F -q '===== fm system --help =====' "$fm_artifact"; then
@@ -168,6 +185,26 @@ if grep -F -q '===== fm system --help =====' "$fm_artifact"; then
 fi
 grep -F -q '"source": "xcrun/fm"' "$fm_dest/capture-manifest.json" || \
   fail 'fm discovery provenance missing from the manifest'
+
+# Force xcrun discovery to miss and use a controlled fallback path. Production
+# defaults this override to /usr/bin/fm; the injectable path keeps the test
+# hermetic while exercising the same branch and provenance handling.
+fm_fallback_dest="$TMP/fm-fallback-capture"
+"${SHIM_ENV[@]}" SDK_FM_FALLBACK_PATH="$SHIM_ROOT/fm" \
+  "$DUMP" --dest "$fm_fallback_dest" >/dev/null
+grep -F -q '"source": "host/configured-fm-fallback"' \
+  "$fm_fallback_dest/capture-manifest.json" || \
+  fail 'fm fallback provenance missing from the manifest'
+
+expect_failure 'fm --help failed with status 9' "${SHIM_ENV[@]}" \
+  SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_ROOT_FAILURE=1 \
+  "$DUMP" --dest "$TMP/fm-root-failure"
+expect_failure 'fm --help contained no parseable COMMANDS or SUBCOMMANDS entries' \
+  "${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_HEADER_DRIFT=1 \
+  "$DUMP" --dest "$TMP/fm-header-drift"
+expect_failure 'fm help traversal exceeded maximum' "${SHIM_ENV[@]}" \
+  SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_FANOUT=1 \
+  "$DUMP" --dest "$TMP/fm-fanout"
 
 # --check-only must not create its destination.
 check_dest="$TMP/check-only-does-not-exist"
@@ -207,9 +244,9 @@ expect_failure 'manifest hash mismatch for Fake-27.0-macos.swiftinterface' \
 
 # A second capture from the same selected build must be byte-idempotent.
 capture_dest="$TMP/capture"
-"$DUMP" --dest "$capture_dest" >/dev/null
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 "$DUMP" --dest "$capture_dest" >/dev/null
 before="$(shasum -a 256 "$capture_dest/capture-manifest.json" | awk '{print $1}')"
-"$DUMP" --dest "$capture_dest" >/dev/null
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 "$DUMP" --dest "$capture_dest" >/dev/null
 after="$(shasum -a 256 "$capture_dest/capture-manifest.json" | awk '{print $1}')"
 [ "$before" = "$after" ] || fail 'same-build recapture changed the manifest'
 
@@ -224,7 +261,8 @@ manifest["captures"][0]["capture_id"] = "fixture-different-build"
 manifest["captures"][0]["xcode"]["build"] = "DIFFERENT-BUILD"
 path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 PY
-expect_failure 'refusing cross-build replacement' "$DUMP" --dest "$capture_dest"
+expect_failure 'refusing cross-build replacement' "${SHIM_ENV[@]}" \
+  SDK_SHIM_HAS_FM=1 "$DUMP" --dest "$capture_dest"
 
 # Scripted evidence must not leak local user or volume roots.
 if grep -R -E -q '/Users/|/Volumes/' "$TMP/capture"; then

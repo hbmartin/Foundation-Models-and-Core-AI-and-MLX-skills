@@ -6,6 +6,7 @@ wrapper synthesis, guess mode, xfail semantics, and --write-markers testable on
 the Linux CI runner (same pattern as test_index_tooling.py).
 """
 
+import csv
 import importlib.util
 import os
 import pathlib
@@ -16,6 +17,7 @@ import unittest
 from unittest import mock
 
 SCRIPTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(SCRIPTS_DIR)
 SCRIPT = os.path.join(SCRIPTS_DIR, "verify-snippets.py")
 
 
@@ -191,6 +193,25 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(VS.slugify(r"\[label](target)"), "labeltarget")
         self.assertEqual(VS.slugify(r"\`[label](target)\`"), "label")
         self.assertEqual(VS.slugify(r"`\_[label](target)`"), "_labeltarget")
+
+
+class CommittedResultsTests(unittest.TestCase):
+    def test_results_keys_match_current_swift_fences(self):
+        guides = os.path.join(REPO_ROOT, "guides")
+        results = os.path.join(REPO_ROOT, "notes", "snippet-verification",
+                               "results.tsv")
+        fences, errors = VS.extract_fences(guides)
+        self.assertEqual(errors, [])
+        expected = [
+            (fence.rel_path, str(fence.open_line), fence.anchor, fence.info)
+            for fence in fences
+        ]
+        with open(results, encoding="utf-8", newline="") as handle:
+            rows = list(csv.reader(handle, delimiter="\t"))
+        self.assertGreater(len(rows), 1)
+        self.assertEqual(rows[0][:4], ["file", "line", "anchor", "info"])
+        actual = [tuple(row[:4]) for row in rows[1:]]
+        self.assertEqual(actual, expected)
 
 
 class MarkerTests(unittest.TestCase):

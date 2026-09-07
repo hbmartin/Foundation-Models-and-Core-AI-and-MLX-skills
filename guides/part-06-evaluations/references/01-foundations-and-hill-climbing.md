@@ -2702,8 +2702,8 @@ kept and marked, so you can see what moved:
    builds and an `if/else` should not. Not compile-tested.
 7. **The Evaluations report UI beyond four narrated sentences** (§11) — no screenshots, no CI story,
    no confirmation that Compare handles more than two runs. **Open.**
-8. **`EvaluationResult.saveJSON(to:includeReportMetadata:)`'s exact signature** (§12). **Closed:** it
-   takes a *directory* and returns the written file's URL, ✅ SDK-verified (`:575-591`). Whether its
+8. **`EvaluationResult.saveJSON(to:includeReportMetadata:includeTranscripts:)`'s exact signature** (§12). **Closed:** it
+   takes a *directory* and returns the written file's URL, ✅ SDK-verified (`:581-597`). Whether its
    output matches the `.xcevalresult` shape is still open.
 9. **`ScoreDimension.scale` cases other than `.numeric`** — `.passFail(passDescription:failDescription:)`
    and `.custom(_:)` signatures are now ✅ SDK-verified (`:382-388`), but no sample exercises them;

@@ -1591,8 +1591,8 @@ invalidCompiledModel
 ```
 
 > ✅ **RESOLVED (was a GAP) — `AIModelError` is confirmed non-public, and the throws are untyped.**
-> The SDK interface dump this box used to ask for was captured 2026-07-29, recaptured 2026-08-20 (Xcode 27.0 beta,
-> 27A5228h; `notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
+> The SDK interface dump was captured 2026-07-29 from Xcode build `27A5228h` and recaptured
+> 2026-08-20 from beta 5 build `27A5237l` (`notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
 > `AIModel.init(contentsOf:options:)` and `specialize(…)` as plain untyped `async throws`
 > (✅ **SDK-verified** — `:22-26`) and the cache methods as untyped `throws` (`:33-43`); **no
 > `AIModelError` appears anywhere in the public interface** — it is internal, surfacing only via

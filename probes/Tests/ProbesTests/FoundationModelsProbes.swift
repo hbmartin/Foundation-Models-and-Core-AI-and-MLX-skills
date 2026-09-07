@@ -87,9 +87,9 @@ private struct BookTags {
 /// Build identifiers of runtimes whose host-backed model is KNOWN broken: it reports
 /// `.available` while generation/image-tokenization calls can block non-cancellably
 /// (measured 2026-08-17; recorded in probes/README.md and notes/FRESHNESS-RUNBOOK.md).
-/// Keyed on the BUILD, not the platform, so a macOS 26.x host or a future beta 6 runs
-/// the model-backed probes by default and the per-beta drift ritual actually exercises
-/// them. The iPhone hardware runtime shares the `24A5408d` build string and works —
+/// These identifiers improve the skip diagnostic only. Every macOS/Simulator model call
+/// remains opt-in because an untested future build may retain the same non-cancellable
+/// failure. The iPhone hardware runtime shares the `24A5408d` build string and works —
 /// physical devices never reach this gate (it compiles only for macOS/simulator).
 let knownBrokenModelRuntimeBuilds: [String: String] = [
     "26A5406e": "macOS 27 beta 5 host",
@@ -99,28 +99,37 @@ let knownBrokenModelRuntimeBuilds: [String: String] = [
 /// The running OS build (e.g. "26A5406e"), parsed from
 /// `operatingSystemVersionString` — "Version 27.0 (Build 24A5408d)". In the Simulator
 /// this is the iOS runtime's build, not the host kernel's (the committed Spotlight
-/// schema artifact names carry the same parse — see SpotlightProbes).
-let currentOSBuild: String = ProcessInfo.processInfo.operatingSystemVersionString
-    .components(separatedBy: "Build ").dropFirst().first?
-    .split(separator: ")").first.map(String.init) ?? "unknown-build"
+/// schema artifact names carry the same parse — see SpotlightProbes). A format miss is
+/// represented as nil; it must never turn an unknown runtime into implicit consent.
+let currentOSBuild: String? = {
+    guard let suffix = ProcessInfo.processInfo.operatingSystemVersionString
+        .components(separatedBy: "Build ").dropFirst().first,
+          let token = suffix.split(separator: ")").first,
+          !token.isEmpty else {
+        return nil
+    }
+    return String(token)
+}()
 
-/// Skip a model-backed probe on a runtime build where model calls are known to block,
-/// unless the operator opts in; then check genuine model availability. `overrideKnob`
-/// names the env var whose value "1" is that consent — a probe already gated on its own
-/// PROBE_* knob passes that knob here, so the one documented knob suffices on any build.
-/// On every build NOT on the known-broken list the probes run by default, no env var.
+/// Skip every host-backed model probe unless the operator explicitly opts in, then check
+/// genuine model availability. `overrideKnob` names the env var whose value "1" is that
+/// consent — a probe already gated on its own PROBE_* knob passes that knob here, so the
+/// one documented knob suffices. Physical-device probes run after availability checking
+/// without this host/simulator gate.
 func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
                               file: StaticString = #filePath, line: UInt = #line) throws {
-    #if os(macOS) || targetEnvironment(simulator)
-    if Probe.env(overrideKnob) != "1",
-       let brokenRuntime = knownBrokenModelRuntimeBuilds[currentOSBuild] {
-        throw XCTSkip("SKIPPED: OS build \(currentOSBuild) (\(brokenRuntime)) is on the known-broken list — the model reports available but calls can block non-cancellably; set \(overrideKnob)=1 to run anyway")
-    }
-    #endif
     let model = SystemLanguageModel.default
     guard model.isAvailable else {
         throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")
     }
+    #if os(macOS) || targetEnvironment(simulator)
+    guard Probe.env(overrideKnob) == "1" else {
+        let build = currentOSBuild ?? "unparsed"
+        let detail = currentOSBuild.flatMap { knownBrokenModelRuntimeBuilds[$0] }
+            .map { "known broken: \($0)" } ?? "runtime safety unverified"
+        throw XCTSkip("SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build \(build) (\(detail)); set \(overrideKnob)=1 to run")
+    }
+    #endif
 }
 
 func entrySummary(_ transcript: Transcript) -> String {
@@ -884,10 +893,10 @@ final class FoundationModelsProbes: XCTestCase {
     // Candidates: (1) same/different/error token cost; (2) label recorded verbatim / nil;
     //             (3) labeled-only tool run / both run. Built-in ImageReference-based tools
     //             remain a separate A/B.
-    // The known-broken beta-5 builds (26A5406e host / 24A5408d Simulator runtime) skip by
-    // default: both block inside image tokenization before an async timeout can run
-    // (Simulator logs CVPixelBufferCreate -6680, measured 2026-08-17). On those builds
-    // PROBE_ENABLE_ATTACHMENT=1 alone forces the run; every other build runs by default.
+    // Host and Simulator runs require PROBE_ENABLE_ATTACHMENT=1. The beta-5 builds
+    // (26A5406e host / 24A5408d Simulator runtime) are known to block inside image
+    // tokenization before an async timeout can run (Simulator logs CVPixelBufferCreate
+    // -6680, measured 2026-08-17); future host-backed runtimes stay opt-in until tested.
     // Write-back on drift: 2.5 §6.4 and 2.3's label callout, per destination.
     func testAttachmentLabelRecording() async throws {
         guard #available(macOS 27.0, iOS 27.0, *) else { throw XCTSkip("SKIPPED: needs OS 27") }

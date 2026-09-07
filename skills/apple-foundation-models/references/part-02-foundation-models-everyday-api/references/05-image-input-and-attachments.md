@@ -527,7 +527,7 @@ longer inferred:
 > defaulting to `nil`.** Every `Attachment` image init is declared `orientation:
 > ImageIO.CGImagePropertyOrientation? = nil` — ✅ **SDK-verified**
 > (`FoundationModels-27.0-macos.swiftinterface:2856-2860`), and the same signature appears on all
-> four `Transcript.ImageAttachment` inits (`:2369-2372`), whose stored property is a non-optional
+> four `Transcript.ImageAttachment` inits (`:2410-2413`), whose stored property is a non-optional
 > `var orientation: CGImagePropertyOrientation { get }` (`:2407-2409`). So the standard
 > EXIF-orientation enum it is; `nil` means "the framework was told nothing."
 

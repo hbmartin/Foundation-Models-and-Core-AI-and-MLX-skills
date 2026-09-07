@@ -2761,11 +2761,11 @@ line-numbered citations.
 | 8 | ~~Swift cancellation semantics of a stream broken out of early, and whether a partial entry lands~~ — **✅ RESOLVED on sim + iPhone 15 Pro:** partial `.response` lands and `isResponding` remains `true` (§9.7; `fm.stream-early-break`) | Resolved by runtime probe |
 | 9 | ~~`ContextOptions`' exact initializer labels (iOS 27)~~ — **✅ RESOLVED**: `init(includeSchemaInPrompt: Bool? = nil, reasoningLevel: ContextOptions.ReasoningLevel? = nil)`, both properties optional-typed | Resolved — 27.0 `.swiftinterface:3068-3072` |
 | 10 | What `GenerationSchema.name` returns for an anonymous/inline schema — the declaration (`var name: String`, non-optional, 27.0) is now SDK-verified (§7.6) | The `generationschema/name` doc page, or a `print` |
-| 11 | ~~Whether `GeneratedContent.ParsingError` is *specifically* the successor to `GenerationError.decodingFailure`~~ — **✅ RESOLVED**: the SDK's own deprecation message names it (§8.3) | Resolved — 27.0 `.swiftinterface:3491-3494` |
+| 11 | ~~Whether `GeneratedContent.ParsingError` is *specifically* the successor to `GenerationError.decodingFailure`~~ — **✅ RESOLVED**: the SDK's own deprecation message names it (§8.3) | Resolved — 27.0 `.swiftinterface:3555-3558` |
 | 12 | The declared signature of the description-less `@Guide(_ guides:)` overload — the three `@Guide` macro declarations in the interface all carry `description:` first (`@Guide(description: String? = nil, _ guides: GenerationGuide<T>...)`, `:1099-1105`), so the "description-less" call form works because `description:` has a default | The macro's doc page |
 | 13 | Whether `.permissiveContentTransformations` affects a `@Generable` request. Simulator blocked both settings; iPhone 15 Pro succeeded under both, so neither run isolated the knob (§11.3) | A device prompt that reliably trips a guardrail false positive, under both settings |
 | 14 | Whether a tool-only turn is the *only* cause of a zero-snapshot stream — Apple's comment says "for example" (§9.6) | An instrumented empty-response or guardrailed request on device |
-| 15 | Whether `LanguageModelSession.Error` is real in practice — its two cases are SDK-verified (`:1986-1994`), but it is used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
+| 15 | Whether `LanguageModelSession.Error` is real in practice — its two cases are SDK-verified (`:2026-2034`), but it is used by no shipping sample (§11.1) | A device repro of `.concurrentRequests` printing the concrete type |
 
 Closed since the first edition, and recorded here so nobody re-opens them: whether `count(_:)` has
 both `Int` and `ClosedRange<Int>` overloads (yes — §3.2), whether a description-less `@Guide` is

@@ -2,7 +2,8 @@
 """Extract API-ish symbols from backticked code spans in the guides.
 
 Output TSV: symbol<TAB>framework-guess<TAB>total-mentions<TAB>n-guides<TAB>sdk26<TAB>sdk27<TAB>guides
-  sdk26/sdk27: Y if the bare symbol name appears in any captured 26.x / 27.0 swiftinterface.
+  sdk26/sdk27: Y if the leading type appears and every dotted uppercase type component
+  belongs to one ordered declared/qualified path in a captured swiftinterface.
   guides: semicolon list of "path:count", highest count first, capped at GUIDE_CAP.
 
 Importable as well as runnable: scripts/build-skills.py calls collect_symbol_counts()
@@ -25,6 +26,17 @@ SPAN = re.compile(r'`([^`\n]{2,90})`')
 # Accept: TypeName, TypeName.member, method(with:labels:), @Macro, .enumCase, snake_case CLI names kept out.
 SYM = re.compile(r'^@?[A-Z][A-Za-z0-9]*(\.[A-Za-z0-9_]+(\(\s*[a-z_:\s]*\))?)*$'
                  r'|^@[A-Z][A-Za-z0-9]*$')
+TYPE_NAME = re.compile(r'\b[A-Z][A-Za-z0-9_]*\b')
+QUALIFIED_TYPE_PATH = re.compile(
+    r'\b_?[A-Z][A-Za-z0-9_]*(?:(?:::|\.)_?[A-Z][A-Za-z0-9_]*)+'
+)
+TYPE_DECLARATION = re.compile(
+    r'\b(struct|class|enum|protocol|typealias|associatedtype)\s+'
+    r'([A-Z][A-Za-z0-9_]*)\b'
+)
+EXTENSION_DECLARATION = re.compile(
+    r'\bextension\s+(_?[A-Z][A-Za-z0-9_]*(?:(?:::|\.)_?[A-Z][A-Za-z0-9_]*)*)'
+)
 
 def norm(s):
     s = s.strip()
@@ -91,18 +103,104 @@ def collect_symbol_counts(root):
     return counts
 
 
+class SDKPresence:
+    """Precomputed interface token and ordered type-path presence.
+
+    A token set preserves the intentionally coarse behavior for a bare type or a
+    lowercase member spelling. Dotted uppercase spellings use an ordered path set,
+    built from declarations and qualified references, so unrelated top-level names
+    cannot vouch for a nested type.
+    """
+
+    def __init__(self, sources=()):
+        self.names = set()
+        self.type_paths = set()
+        for module, text in sources:
+            self.names.update(TYPE_NAME.findall(text))
+            self._index_qualified_references(module, text)
+            self._index_declarations(module, text)
+
+    @staticmethod
+    def _parts(spelling):
+        return [part for part in re.split(r'::|\.', spelling) if part]
+
+    @staticmethod
+    def _without_repeated_module(parts, module):
+        if not module:
+            return parts
+        return [part for index, part in enumerate(parts)
+                if part != module or index == 0]
+
+    def _record_path(self, parts):
+        parts = tuple(part for part in parts if part and part[0].isupper())
+        # Suffixes are useful because a module (and occasionally an enclosing
+        # compatibility namespace) can be omitted at a Swift call site. Every
+        # recorded suffix still comes from one contiguous qualified/type path.
+        for start in range(max(0, len(parts) - 1)):
+            suffix = parts[start:]
+            if len(suffix) >= 2:
+                self.type_paths.add(suffix)
+
+    def _index_qualified_references(self, module, text):
+        for match in QUALIFIED_TYPE_PATH.finditer(text):
+            parts = self._without_repeated_module(self._parts(match.group()), module)
+            self._record_path(parts)
+
+    def _index_declarations(self, module, text):
+        depth = 0
+        # Each item is (minimum brace depth while active, path without module).
+        contexts = []
+        for line in text.splitlines():
+            while contexts and depth < contexts[-1][0]:
+                contexts.pop()
+
+            extension = EXTENSION_DECLARATION.search(line)
+            declaration = TYPE_DECLARATION.search(line)
+            opens_block = '{' in line
+            if extension and opens_block:
+                parts = self._without_repeated_module(
+                    self._parts(extension.group(1)), module)
+                if module and parts and parts[0] == module:
+                    parts = parts[1:]
+                self._record_path(([module] if module else []) + parts)
+                contexts.append((depth + 1, parts))
+            elif declaration:
+                kind, name = declaration.groups()
+                parent = contexts[-1][1] if contexts else []
+                path = [*parent, name]
+                self._record_path(([module] if module else []) + path)
+                self._record_path(path)
+                if opens_block and kind not in ('typealias', 'associatedtype'):
+                    contexts.append((depth + 1, path))
+
+            depth += line.count('{') - line.count('}')
+            while contexts and depth < contexts[-1][0]:
+                contexts.pop()
+
+    def contains(self, symbol):
+        parts = [part.split('(')[0]
+                 for part in symbol.lstrip('@.').split('.')]
+        checked = [part for part in parts if part and part[0].isupper()] or parts[:1]
+        if len(checked) == 1:
+            return bool(checked) and checked[0] in self.names
+        return tuple(checked) in self.type_paths
+
+
 def sdk_presence(iface_dir):
-    """(text of every captured 26.x interface, text of every 27.x interface)."""
-    def iface_text(pattern):
-        buf = []
+    """Precomputed presence indexes for captured 26.x and 27.x interfaces."""
+    def iface_index(pattern):
+        sources = []
         if not os.path.isdir(iface_dir):
-            return ''
-        for fn in os.listdir(iface_dir):
-            if pattern in fn and fn.endswith('.swiftinterface'):
-                with open(os.path.join(iface_dir, fn), encoding='utf-8') as handle:
-                    buf.append(handle.read())
-        return '\n'.join(buf)
-    return iface_text('-26.'), iface_text('-27.')
+            return SDKPresence()
+        for fn in sorted(os.listdir(iface_dir)):
+            if pattern not in fn or not fn.endswith('.swiftinterface'):
+                continue
+            module_match = re.match(r'(.+)-(?:26|27)\.', fn)
+            module = module_match.group(1) if module_match else None
+            with open(os.path.join(iface_dir, fn), encoding='utf-8') as handle:
+                sources.append((module, handle.read()))
+        return SDKPresence(sources)
+    return iface_index('-26.'), iface_index('-27.')
 
 
 def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
@@ -112,22 +210,15 @@ def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
     per skill must start from the same symbol set the series index uses, or it
     produces a different index rather than a subset of one.
     """
+    sdk26 = sdk26 if isinstance(sdk26, SDKPresence) else SDKPresence([(None, sdk26)])
+    sdk27 = sdk27 if isinstance(sdk27, SDKPresence) else SDKPresence([(None, sdk27)])
     out = []
     for sym, files in counts.items():
         total = sum(files.values())
         if total < 2 and len(files) < 2:
             continue  # noise floor: mentioned once in one guide
-        # Presence must hold for every type-level (uppercase-initial) dotted
-        # component: `Transcript` being in a capture says nothing about a
-        # vanished `Transcript.CustomSegment`. Lowercase members fall back to
-        # the first component — member names are not reliably greppable.
-        parts = [p.split('(')[0] for p in sym.lstrip('@.').split('.')]
-        checked = [p for p in parts if p and p[0].isupper()] or parts[:1]
-        def present(text):
-            return bool(checked) and all(
-                re.search(r'\b%s\b' % re.escape(p), text) for p in checked if p)
-        in26 = 'Y' if present(sdk26) else ''
-        in27 = 'Y' if present(sdk27) else ''
+        in26 = 'Y' if sdk26.contains(sym) else ''
+        in27 = 'Y' if sdk27.contains(sym) else ''
         # Counts often tie at the visible cutoff. Use the guide path as an explicit
         # secondary key so selection stays stable independently of traversal order.
         top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))

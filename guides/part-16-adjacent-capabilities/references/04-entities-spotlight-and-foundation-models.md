@@ -2693,7 +2693,7 @@ visibly, and both are deliberate.
 | `IndexedEntity` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; watchOS, tvOS unavailable | ✅ SDK interface (`AppIntents-27.0-macos.swiftinterface:2608-2609`) — was 🔴 G1 |
 | `indexAppEntities(_:priority:)` | **macOS 15.0 / iOS 18.0 / visionOS 2.0**; `priority: Int = 0` | ✅ SDK interface (`:361-367`) |
 | `@Property(indexingKey:)` / `(customIndexingKey:)` on entities | **macOS 15.4 / iOS 18.4** | ✅ SDK interface (`:498-512`) |
-| `IndexedEntityQuery` | **27.0** | ✅ session 343: *"the new `IndexedEntityQuery`"* + SDK interface (`:2529-2533`); absent from the 26.5 interface |
+| `IndexedEntityQuery` | **27.0** | ✅ session 343: *"the new `IndexedEntityQuery`"* + SDK interface (`:4250-4254`); absent from the 26.5 interface |
 | `SpotlightSearchTool` | **27.0** — macOS, iOS, visionOS; **watchOS and tvOS unavailable** | ✅ session 246 line 21 + SDK overlay interface (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:327-330`) — the watchOS omission is compiler-attested |
 | `SearchableItemAttribute` | **27.0**; watchOS, tvOS unavailable | ✅ session-246 sample + SDK interface (`CoreSpotlight-27.0-macos.swiftinterface:16-26`); absent from the 26.5 interface |
 | `CoreSpotlightSource`, `GuidanceProfile`, `SearchReply` | **27.0**; watchOS, tvOS unavailable | ✅ session-246 sample + SDK overlay interface (`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface:15-22`, `:199-213`, `:341-378`) |

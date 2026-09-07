@@ -90,16 +90,17 @@ Environment knobs:
   can access that path. The runner supplies its durable `ProbeArtifacts/` path automatically for
   host and tool-hosted simulator runs. App-hosted physical-device tests cannot write to a host
   path; `fm.spotlight-tool-surface` therefore also attaches its complete schema to the `.xcresult`.
-- `PROBE_ENABLE_ATTACHMENT=1` — retries the image-attachment probe on the macOS 27 beta-5 host or
-  iOS 27 beta-5 Simulator. Both block inside image tokenization by default on the 2026-08-17
-  runtime, before an async timeout can execute, so weekly runs skip this probe there.
-- `PROBE_ENABLE_GENERATOR=1` — retries the unreachable-target `SampleGenerator` probe on the
-  macOS 27 beta-5 host or Simulator. The host call blocks non-cancellably; Simulator can consume
+- `PROBE_ENABLE_ATTACHMENT=1` — opts the macOS host or iOS Simulator into the image-attachment
+  probe. Both beta-5 runtimes block inside image tokenization before an async timeout can execute;
+  future host-backed runtimes remain opt-in until tested.
+- `PROBE_ENABLE_GENERATOR=1` — opts the macOS host or Simulator into the unreachable-target
+  `SampleGenerator` probe. The beta-5 host call blocks non-cancellably; Simulator can consume
   nearly the full timeout and poison subsequent host-backed model calls. Physical devices remain
-  enabled by default.
-- `PROBE_ENABLE_HOST_MODEL=1` — retries model-dependent Foundation Models probes on the macOS 27
-  beta-5 host or Simulator. The host-backed runtime reports `.available`, but generation calls can
-  block before test timeouts execute; offline/static probes remain enabled without this override.
+  enabled by default after availability checking.
+- `PROBE_ENABLE_HOST_MODEL=1` — opts the macOS host or Simulator into the remaining model-dependent
+  Foundation Models probes. Host-backed generation calls have blocked before test timeouts execute,
+  so an unrecognized or newly released runtime is never treated as implicitly safe. Offline/static
+  probes and physical-device model probes remain enabled without this override.
 
 **Instruments lane-name capture** (the one manual GUI session): `INSTRUMENTS-RECORDING.md`
 — workload command, attach procedure, transcription checklist, write-back list. A
@@ -120,10 +121,9 @@ host run is **46 tests, 23 skipped, 0 failures**; the iOS 27 Simulator (`24A5408
 **39 tests, 19 skipped, 0 failures**, `TEST SUCCEEDED`. Beta 5 reports its host-backed model
 available while some generation and image-tokenization calls block non-cancellably. The default
 suite therefore skips model-dependent, attachment, and unreachable-generator probes on host-backed
-destinations **while they remain on these two builds** — the gate is keyed to the recorded build
-identifiers, so a runtime update re-enables those probes by default and the counts above describe
-gated beta-5 runs only; the three `PROBE_ENABLE_*` overrides force earlier retries (e.g. after a
-service restart on the same build). Offline/static `PROBE-RESULT` values remained stable except that Spotlight's unpublished
+destinations unless the corresponding `PROBE_ENABLE_*` variable is explicitly set. Known-broken
+build identifiers improve the skip diagnostic, but new runtimes also remain opt-in until an operator
+chooses a bounded probe run. Offline/static `PROBE-RESULT` values remained stable except that Spotlight's unpublished
 schema grew from 83,494 to 83,570 characters. Simulator donation and cleanup still work; on the
 host, both fail because the Spotlight helper is unavailable (`CSIndexErrorDomain -1003`).
 

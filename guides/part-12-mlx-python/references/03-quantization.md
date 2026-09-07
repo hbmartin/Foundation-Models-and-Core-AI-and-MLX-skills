@@ -2183,7 +2183,7 @@ about tile bounds, not about precision.
 
 Your options, in order of preference:
 
-1. **Pin an mlx version that contains the fix, once one exists.** Watch #3922.
+1. **Pin merge commit `d73eb752` or later on mlx main.** Released v0.32.2 predates the #3922 fix.
 2. **Pad your gathered rows to a multiple of 64 yourself.** This is what mlx-lm PR #1585 does, and
    the reasoning that makes it safe is worth understanding: you append dummy rows to reach the
    alignment, run the gather, and then unsort using indices that only reference the original rows.
@@ -2223,8 +2223,8 @@ It also gives §6.1's alignment gate a second, sharper reason to exist. Recall t
 > attribution to a specific line as provisional.
 
 **Practical rule that covers both 9.1 and 9.2:** for any quantized MoE you intend to run on
-M5-class hardware, **prefer an already-aligned `K % 64 == 0` shape** and pad gathered rows to a
-multiple of 64. Those conditions together sidestep both open bugs regardless of mode. If the model's
+M5-class hardware, **prefer an already-aligned `K % 64 == 0` shape** and, on releases through 0.32.2,
+pad gathered rows to a multiple of 64. Those conditions sidestep both defect triggers. If the model's
 native K is not aligned, padding is a correctness workaround with memory and compute cost — measure
 it rather than describing it as a free conversion setting.[^k64-tradeoff]
 
@@ -2382,11 +2382,11 @@ hunting.
 
 ### 9.9 The one-paragraph summary you can act on
 
-If you run **quantized MoE models on M5-generation hardware** on mlx 0.32.x, you are exposed to two
-open, independent, silent corruption bugs (#3856, #3887), and the corruption presents as *plausible
-wrong output*, not as an error. Prefer models whose native K is already 64-aligned; otherwise choose
-explicitly between a pinned fixed revision, a safe fallback, or measured padding. Pad gathered rows
-to a multiple of 64 while the row-tail bug remains open, and verify with §10 before every release.
+If you run **quantized MoE models on M5-generation hardware** on a release through mlx 0.32.2, you
+are exposed to two independent silent-corruption defects (#3856, #3887), and the result is *plausible
+wrong output*, not an error. Main after `d73eb752` fixes #3856; #3887 remains open. Prefer a native
+`K % 64 == 0`; otherwise choose a fixed revision, safe fallback, or measured padding. On released
+builds, pad gathered rows to 64, and verify with §10 before every release.
 If you run **dense quantized models on M1–M4**, essentially none of this section applies to you
 today. Everyone should pin their mlx version, because the fixes and the regressions are landing in
 the same weeks.[^k64-tradeoff]
@@ -2795,7 +2795,7 @@ from §10 that this configuration warrants.
 | **≥ 35B dense** | Mac (lots of RAM) | `affine` 4-bit group 64 | 4.50 | bandwidth-bound; smaller wins | §10.1 + `mlx_lm.evaluate` |
 | **≥ 35B dense** | Mac (tight RAM) | `mixed_3_6` after **DWQ** | ~3.4 | 3-bit round-to-nearest is not shippable; DWQ makes it | full §10 + `mlx_lm.evaluate` |
 | **MoE, top-k ≥ 4** | Mac (M1–M4) | `affine` 4-bit group 64 | 4.50 | error averages ~/√k across experts | §10.1 + §10.3 |
-| **MoE, top-k ≥ 4** | Mac (**M5-gen**) | `affine` 4-bit + **pad gathered rows to 64** + `K % 64 == 0` | 4.50 | ⚠️ §9.1 and §9.2 are both open here | **§10.3 mandatory** + §10.4 |
+| **MoE, top-k ≥ 4** | Mac (**M5-gen**) | `affine` 4-bit + **pad gathered rows to 64** + `K % 64 == 0` | 4.50 | ⚠️ §9.1 is fixed on main but unreleased; §9.2 remains open | **§10.3 mandatory** + §10.4 |
 | **MoE, top-1 / low-k** | any | **8-bit**, or 4-bit only with DWQ | 8.50 | error does not average; one expert carries the token | full §10 |
 | **MoE router / gate** | any | **8-bit, group 64** regardless of the rest | 8.50 | routing error is discrete, not smooth (this is what gpt-oss does) | included above |
 | **`lm_head`** | any | 6-bit, or the `mixed_*` recipes' "high" | 6.50 | every token passes through it | §10.2 |
@@ -2849,12 +2849,12 @@ LADDER       M = 1        qmv
              M = ~10..32  qmm, FLAT -- M=10 costs what M=32 costs. Batch up.
              2-bit loses its speed advantage at M >= 3.
 
-OPEN BUGS    #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
-                    -> UNWRITTEN ROWS, recycled memory, no error
-             #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
+FIXED MAIN   #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
+                    -> fixed by #3922 (`d73eb752`); v0.32.2 predates the merge
+OPEN BUGS    #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
              #3912  fp quantized matmul, quantized dim % 32 != 0
              #3924  tile_matmad_nax missing else, odd tile shapes
-             (all OPEN as of 2026-07-29; #3854 nvfp4 split-K is MERGED)
+             (#3887/#3912/#3924 OPEN; #3854 nvfp4 split-K is MERGED)
 
 MITIGATION   Prefer native K % 64 == 0; otherwise pin a fixed revision, use a
              safe fallback, or measure padding. Pad gathered rows to 64 while
@@ -2931,12 +2931,12 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > remains open.**
 > Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
 > `mlx-lm#1585` (downstream
-> padding workaround) also open. Re-checked via `gh` **2026-07-31**: issues `mlx#3856` and
-> `mlx#3887` and fix
-> PR `mlx#3922` are **all still open** — nothing has landed. This guide cannot tell you their state on
-> the day you read it.
-> **Resolution:** check the issues.
-> **Safe default:** assume open. Preserve native 64-alignment and keep the gathered-row workaround
+> padding workaround) also open. A **2026-07-31** re-check still found all three open; that is now
+> historical. On **2026-08-26**, #3922 merged with a focused regression test and #3856 closed.
+> The latest release, v0.32.2 (2026-08-25), predates that merge, so no tagged release contains it as
+> of 2026-09-05; #3887 remains open.
+> **Resolution:** pin `d73eb752` or later, or wait for the next release; keep tracking #3887.
+> **Safe default:** preserve native 64-alignment and keep the gathered-row workaround on ≤0.32.2
 > while needed, but re-measure and remove padding after a fix; both forms of padding consume memory
 > and compute even when the underlying bug is gone.
 >
@@ -2963,7 +2963,7 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > buffer of the right size class into the recycle pool depends on allocator internals; the only
 > supporting facts are the reuse window `[size, size + 2·page_size)` and the fact that
 > `mx.clear_cache()` drains the pool.
-> **Resolution:** the upstream regression test for #3922, once written.
+> **Resolution:** upstream PR #3922 now includes the focused regression in `python/tests/test_quantized.py`.
 > **Safe default:** treat a zero result from §10.4 as inconclusive and fall back to §10.3, which
 > makes no allocator assumptions.
 
