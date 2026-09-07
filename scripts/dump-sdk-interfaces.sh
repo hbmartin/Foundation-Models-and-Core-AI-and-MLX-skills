@@ -394,9 +394,10 @@ fm_list_commands() {
 # so a future seed's added or renamed subcommands are discovered instead of
 # silently missing from the artifact. A non-zero exit is recorded in the
 # artifact for a nested command rather than aborting the capture mid-run. The
-# root invocation and root command-section parse are mandatory because there is
-# no useful artifact without them. Hard invocation/fan-out limits keep malformed
-# or self-similar help trees from multiplying recursively.
+# root invocation is mandatory, while root command-section parse drift is
+# recorded in the optional fm artifact without discarding the SDK interfaces
+# already captured. Hard invocation/fan-out limits keep malformed or
+# self-similar help trees from multiplying recursively.
 FM_HELP_MAX_INVOCATIONS=128
 FM_HELP_MAX_FANOUT=32
 FM_HELP_INVOCATIONS=0
@@ -454,7 +455,9 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
     esac
   done < "$TMP/fm-help-commands.txt"
   if [ -z "$path" ] && [ -z "$subs" ]; then
-    die 'fm --help contained no parseable COMMANDS or SUBCOMMANDS entries'
+    printf '%s\n' \
+      '##### capture error: fm --help contained no parseable COMMANDS or SUBCOMMANDS entries #####'
+    return 0
   fi
   # Intentional word splitting: subs holds already-validated command names.
   # shellcheck disable=SC2086
