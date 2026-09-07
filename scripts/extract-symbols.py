@@ -133,13 +133,13 @@ class SDKPresence:
 
     def _record_path(self, parts):
         parts = tuple(part for part in parts if part and part[0].isupper())
-        # Suffixes are useful because a module (and occasionally an enclosing
-        # compatibility namespace) can be omitted at a Swift call site. Every
-        # recorded suffix still comes from one contiguous qualified/type path.
+        # Record every contiguous path of two or more components. Suffixes are
+        # useful because a module (and occasionally an enclosing compatibility
+        # namespace) can be omitted at a Swift call site; prefixes are required
+        # because a longer qualified reference also proves its enclosing path.
         for start in range(max(0, len(parts) - 1)):
-            suffix = parts[start:]
-            if len(suffix) >= 2:
-                self.type_paths.add(suffix)
+            for end in range(start + 2, len(parts) + 1):
+                self.type_paths.add(parts[start:end])
 
     def _index_qualified_references(self, module, text):
         for match in QUALIFIED_TYPE_PATH.finditer(text):

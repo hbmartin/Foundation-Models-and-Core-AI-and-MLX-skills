@@ -1100,6 +1100,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 29. **macOS `F_NOCACHE` does not evict resident pages** — a classic A/B benchmarking trap on Apple SSDs.
 30. **On Apple Silicon, "size the cache as big as fits" is wrong** — the OS page cache reserve is tens of GB and over-sizing collapses throughput.
 
+**Later state update (recorded 2026-09-05):** `ml-explore/mlx` PRs #3922 and #3894 subsequently merged.
+
 ---
 
 ## Source inventory (everything actually read this session)
@@ -1122,8 +1124,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 - Full triage list of 80 most-recent issues (open + closed)
 
 ### `ml-explore/mlx` PRs
-- Merged: #3922, #3894, #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
-- Open: #3918/#3919/#3920, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
+- Merged: #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
+- Open: #3922, #3918/#3919/#3920, #3894, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
 
 ### `ml-explore/mlx-lm` issues
 - #1438 (body + all 32 comments incl. the consolidated v1.5.1 findings summary)

@@ -1932,7 +1932,7 @@ session, and assert on `session.properties.phase`.
 > unverified.** The interface declares `session.properties: SessionPropertyValues { get }` returning
 > a `final class` whose keyed subscript has `get`/`set`/`_modify`, and whose `history` accessor is
 > likewise settable (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1097-1107,
-> :1071-1076, :1129-1131`) — so `session.properties.phase = .done` from outside is not a compile
+> :1071-1076, :1127-1129`) — so `session.properties.phase = .done` from outside is not a compile
 > error. What no source shows is what happens next (does an in-flight turn observe it? does it race
 > the `transcriptMutationWhileResponding` guard?). **Safe default: treat it as read-only from
 > outside the session** and do all writes from a profile, modifier, or tool, where the behaviour is
@@ -3052,7 +3052,7 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | 2 | `Profile(model:) { }` (reconstructions, one doc mirror) vs `Profile { }.model(_:)` (Apple sample + docs) | **Sample wins, now SDK-confirmed** — `Profile` has exactly one init, the builder-closure form; no `model:` label exists in the 27.0 beta interface (`:785-798`, checked 2026-07-29). |
 | 3 | `.temperature(1)` (WWDC narration) vs `.temperature(1.0)` (sample + docs) | **`Double`.** |
 | 4 | "Beta (iOS 26.0+)" on one doc mirror of the dynamic-sessions article vs 27.0 everywhere else | **27.0.** The mirror is wrong. |
-| 5 | `reasoningLevel` as a profile modifier vs `ContextOptions(reasoningLevel:)` per call | **Both exist** — and both take the same `ContextOptions.ReasoningLevel?` type (`:931`, `:3068-3072`). A profile-level `.contextOptions(_:)` modifier **does not exist** in the 27.0 beta interface (checked 2026-07-29). |
+| 5 | `reasoningLevel` as a profile modifier vs `ContextOptions(reasoningLevel:)` per call | **Both exist** — and both take the same `ContextOptions.ReasoningLevel?` type (`:976`, `:3132-3135`). A profile-level `.contextOptions(_:)` modifier **does not exist** in the 27.0 beta interface (checked 2026-07-29). |
 | 6 | `ToolCallMode` (a documentation page title) vs `GenerationOptions.ToolCallingMode` (compiled code) | **`ToolCallingMode`.** |
 | 7 | `@SessionPropertyEntry()` (one doc mirror) vs `@SessionPropertyEntry` (compiled code) | **No parentheses.** |
 | 8 | The demo app's modes: brainstorm/planning/reviewing (session 242) vs `.brainstorm`/`.tutorial`/`.term` (the shipping sample) vs brainstorm/tutorial (session 243) | **The sample.** Three inconsistent tellings of one demo; do not present any WWDC mapping of mode → model as a recommendation. |

@@ -2706,7 +2706,7 @@ kept and marked, so you can see what moved:
    takes a *directory* and returns the written file's URL, ✅ SDK-verified (`:581-597`). Whether its
    output matches the `.xcevalresult` shape is still open.
 9. **`ScoreDimension.scale` cases other than `.numeric`** — `.passFail(passDescription:failDescription:)`
-   and `.custom(_:)` signatures are now ✅ SDK-verified (`:382-388`), but no sample exercises them;
+   and `.custom(_:)` signatures are now ✅ SDK-verified (`:392-393`), but no sample exercises them;
    every dimension in Book Tracker is a 4-point numeric scale. **Usage still unproven.**
 10. **`ModelJudgePrompt.reference`'s second closure parameter.** **Closed:** it is the model's output
     value, typed `Input.ExpectedValue` — the full closure type is
