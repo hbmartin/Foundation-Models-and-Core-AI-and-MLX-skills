@@ -96,6 +96,14 @@ def validate_contract(path: pathlib.Path, data: dict[str, Any]) -> list[Diagnost
     identifier = data["id"]
     prompt = data["prompt"]
     policy = data["contract"]
+    if prompt.endswith("\n"):
+        diagnostics.append(
+            Diagnostic(
+                label,
+                "noncanonical-prompt-whitespace",
+                "prompt must not end with a newline because the automation app trims it",
+            )
+        )
     if not SAFE_IDENTIFIER.fullmatch(identifier):
         diagnostics.append(Diagnostic(label, "invalid-id", f"invalid id: {identifier!r}"))
     if path.stem != identifier:

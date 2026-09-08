@@ -47,7 +47,7 @@
 - [TOC: the register of quantized-matmul corruption bugs.](part-12-mlx-python/references/03-quantization.md#contents) — 12.3
 - [Seven quantized-matmul defects, five exclusive to M5-generation hardware; the register with statuses.](part-12-mlx-python/references/03-quantization.md#9-️-the-corruption-bugs) — 12.3
 - [gather_qmm's unwritten rows aren't zeros: they hold recycled MTLBuffer contents, sometimes coincidentally plausible.](part-12-mlx-python/references/03-quantization.md#91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856) — 12.3 🔇
-- [Decision-table flag: M5 MoE with affine 4-bit sits on two open corruption bugs; pad gathered rows to 64, keep K%64==0.](part-12-mlx-python/references/03-quantization.md#121-the-decision-in-one-table) — 12.3
+- [Decision-table flag: M5 affine MoE has one unreleased fix and one open bug; pad rows and keep K%64==0.](part-12-mlx-python/references/03-quantization.md#121-the-decision-in-one-table) — 12.3
 - [Training data renders under enable_thinking auto-defaults; serving with another template quietly degrades the adapter.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#25-️-silent-failure--the-chat-template-that-trained-your-adapter-is-not-the-one-serving-it) — 12.6
 - [On M5/A19, affine gather_qmm silently corrupts MoE output (mlx#3856) for big row counts or K%64!=0; M1-M4 unaffected.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#53-what-qlora-costs-you) — 12.6
 

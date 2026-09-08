@@ -373,7 +373,8 @@ class IndexToolingTests(unittest.TestCase):
                 '`Transcript.CustomSegment` `Transcript.CustomSegment`\n'
                 '`Transcript.Entry` `Transcript.Entry`\n'
                 '`Transcript.entries(in:)` `Transcript.entries(in:)`\n'
-                '`Tool.Arguments` `Tool.Arguments`\n',
+                '`Tool.Arguments` `Tool.Arguments`\n'
+                '`Outer.Inner` `Outer.Inner`\n',
                 encoding='utf-8',
             )
             (interfaces / 'FM-27.0-macos.swiftinterface').write_text(
@@ -382,7 +383,8 @@ class IndexToolingTests(unittest.TestCase):
                 'public protocol Tool<Arguments, Output> {\n'
                 '  associatedtype Arguments\n'
                 '  associatedtype Output\n'
-                '}\n',
+                '}\n'
+                'public var leaf: Outer.Inner.Leaf\n',
                 encoding='utf-8',
             )
             result = self.run_python(EXTRACT_SYMBOLS, guides, interfaces)
@@ -397,6 +399,8 @@ class IndexToolingTests(unittest.TestCase):
             # Protocol associated types are declarations even without an
             # explicit public modifier in a textual interface.
             self.assertEqual(in27['Tool.Arguments'], 'Y')
+            # A longer qualified reference proves each enclosing prefix.
+            self.assertEqual(in27['Outer.Inner'], 'Y')
 
     def test_symbol_extractor_breaks_equal_count_ties_by_guide_path(self):
         with tempfile.TemporaryDirectory() as directory:

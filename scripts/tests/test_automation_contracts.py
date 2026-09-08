@@ -109,6 +109,29 @@ class AutomationContractTests(unittest.TestCase):
             )
         )
 
+    def test_rejects_prompt_trailing_newline_trimmed_by_app(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "daily-corpus-freshness-sweep.toml"
+            canonical = (
+                ROOT / "automations/contracts/daily-corpus-freshness-sweep.toml"
+            ).read_text(encoding="utf-8")
+            path.write_text(
+                canonical.replace(
+                    "continue with the remaining independent checks.\"\"\"",
+                    "continue with the remaining independent checks.\n\"\"\"",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = self.run_validator("--contracts", directory)
+
+        payload = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "noncanonical-prompt-whitespace",
+            {item["code"] for item in payload["diagnostics"]},
+        )
+
     def test_ready_pr_policy_isolates_wrong_roots_and_forbidden_path_shape(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             contract = pathlib.Path(directory) / "weekly-corpus-freshness-batch.toml"

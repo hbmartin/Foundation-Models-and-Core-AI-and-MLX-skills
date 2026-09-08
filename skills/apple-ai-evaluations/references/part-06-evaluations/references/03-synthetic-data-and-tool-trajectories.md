@@ -2391,7 +2391,7 @@ where each spelling comes from, because that is what tells you how much to trust
 | `SampleGenerator(_:samples:targetCount:sessionProvider:samplingStrategy:validator:)` — two overloads, differing by generic constraint (`ModelSample<T>` vs a custom `Generable` sample type), both `Prompt`-first | ✅ SDK-verified (`swiftinterface:870-871`) |
 | `SampleGenerator<ModelSample<T>>(_ prompt: Prompt, samples:targetCount:sessionProvider:validator:)` | ✅ Apple sample code (`BookSampleGenerator/main.swift:13-74`) |
 | `sessionProvider: (@Sendable () -> LanguageModelSession)? = nil` (a factory; may be invoked more than once) | ✅ SDK-verified (`swiftinterface:870-871`) + sample code + session 299 |
-| `validator: ((S) async throws -> Bool)? = nil` — may await and throw; the sample's is sync | ✅ SDK-verified (`swiftinterface:842`) + sample code |
+| `validator: ((S) async throws -> Bool)? = nil` — may await and throw; the sample's is sync | ✅ SDK-verified (`swiftinterface:861-862, :870-871`) + sample code |
 | `generator.run()` — async sequence of **valid** samples only | ✅ sample code |
 | `await generator.samples` — initial **and** generated | ✅ docs + sample code |
 | `await generator.invalidSamples` — validator rejects | ✅ docs + sample code |

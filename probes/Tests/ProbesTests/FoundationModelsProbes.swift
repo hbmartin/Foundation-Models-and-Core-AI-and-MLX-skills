@@ -118,10 +118,6 @@ let currentOSBuild: String? = {
 /// without this host/simulator gate.
 func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
                               file: StaticString = #filePath, line: UInt = #line) throws {
-    let model = SystemLanguageModel.default
-    guard model.isAvailable else {
-        throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")
-    }
     #if os(macOS) || targetEnvironment(simulator)
     guard Probe.env(overrideKnob) == "1" else {
         let build = currentOSBuild ?? "unparsed"
@@ -130,6 +126,10 @@ func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
         throw XCTSkip("SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build \(build) (\(detail)); set \(overrideKnob)=1 to run")
     }
     #endif
+    let model = SystemLanguageModel.default
+    guard model.isAvailable else {
+        throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")
+    }
 }
 
 func entrySummary(_ transcript: Transcript) -> String {

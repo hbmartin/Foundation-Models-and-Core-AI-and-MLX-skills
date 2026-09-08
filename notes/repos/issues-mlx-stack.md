@@ -677,7 +677,11 @@ def get_next_request():
 ### 6.5 Other server threads
 
 - **mlx-lm#1505 (OPEN)** — "any uncaught exception in `_generate` leaves HTTP threads serving while every completion hangs forever."
-- **mlx-lm#1472 (OPEN)** — generation thread dies with `TypeError ('NoneType' object is not iterable)` when a batch mixes requests **with and without logits processors**; server then hangs forever.
+- **mlx-lm#1472 (closed 2026-09-04; fix merged but unreleased)** — generation thread dies with
+  `TypeError ('NoneType' object is not iterable)` when a batch mixes requests **with and without
+  logits processors**; server then hangs forever. PR **#1826** normalizes per-sequence samplers and
+  processors and adds a mixed-batch regression test; affected releases still need the guard or a
+  watchdog.
 - **mlx-lm#1435 (OPEN)** — **uniform +55–77 ms TTFT regression** on 0.31.3 vs 0.27.1 on M3 Ultra, decode flat (±1.5%), independent of model size (Qwen3-0.6B and gpt-oss-20b both pay ~+55–77 ms) → constant per-call setup. Hypothesis: `with wired_limit(model, [generation_stream]):` + `mx.new_thread_local_stream(...)` now entered on **every** generation call.
 - **mlx-lm#1425 (OPEN)** — Qwen3.5-35B-A3B-8bit decode −7.4% / −7.9% on 0.31.3 vs 0.31.0 (M3 Ultra 256 GB); sweeps of `prefill_step`, `completion_batch` did not recover it.
 - **mlx#3727 (CLOSED)** — Regression 0.31.1→0.31.2: *"stream created in main thread is unusable from a worker thread — `There is no Stream(gpu, 0) in current thread` (breaks mlx_lm threaded server)."* Related merged fix: mlx-lm PR **#1090** "Thread local generation stream", and mlx PR **#3828** "Fix captured random state in compile."
@@ -1100,6 +1104,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 29. **macOS `F_NOCACHE` does not evict resident pages** — a classic A/B benchmarking trap on Apple SSDs.
 30. **On Apple Silicon, "size the cache as big as fits" is wrong** — the OS page cache reserve is tens of GB and over-sizing collapses throughput.
 
+**Later state update (recorded 2026-09-05):** `ml-explore/mlx` PRs #3922 and #3894 subsequently merged.
+
 ---
 
 ## Source inventory (everything actually read this session)
@@ -1122,8 +1128,8 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 - Full triage list of 80 most-recent issues (open + closed)
 
 ### `ml-explore/mlx` PRs
-- Merged: #3922, #3894, #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
-- Open: #3918/#3919/#3920, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
+- Merged: #3888, #3764, #3854, #3875, #3828, #3882, #3872, #3728, #3723, #3843 (full bodies); #3869, #3824, #3804, #3806, #3809, #3775, #3783, #3768, #3816 (titles)
+- Open: #3922, #3918/#3919/#3920, #3894, #3899/#3900/#3901, #3923, #3927, #3928, #3912, #3913, #3933 (titles)
 
 ### `ml-explore/mlx-lm` issues
 - #1438 (body + all 32 comments incl. the consolidated v1.5.1 findings summary)

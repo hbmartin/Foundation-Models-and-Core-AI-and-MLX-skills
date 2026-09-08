@@ -2654,7 +2654,7 @@ line-numbered citations.
 | 13 | How many concurrent sessions the OS permits | Controlled on-device experiment |
 | 14 | ~~`GenerationError.decodingFailure`'s successor~~ — **✅ RESOLVED**: `GeneratedContent.ParsingError`, per the SDK's own deprecation message ([§14](#14-errors-the-three-type-taxonomy)) | Resolved — 27.0 `.swiftinterface:3555-3558` |
 | 15 | Whether `Content.PartiallyGenerated` array elements are `Identifiable` (for `ForEach`) | Compile the §13 example |
-| 16 | What `Transcript.Response.assetIDs` *means*, and what `[""]` signifies — Apple's own code passes it and nothing explains it; the 27.0 interface adds only that `Response.metadata` back-deploys as `["assetIDs": assetIDs]` (`:2572-2580`) | The `Transcript.Response` symbol page, or a header comment |
+| 16 | What `Transcript.Response.assetIDs` *means*, and what `[""]` signifies — Apple's own code passes it and nothing explains it; the 27.0 interface adds only that `Response.metadata` back-deploys as `["assetIDs": assetIDs]` (`:2613-2619`) | The `Transcript.Response` symbol page, or a header comment |
 | 17 | Whether `SystemLanguageModel(guardrails: .permissiveContentTransformations)` applies to structured output — a forum answer says no, Book Tracker uses it on a `@Generable` session | An empirical A/B on device against a known-refused prompt |
 
 None of these gaps is filled with a guess anywhere in this guide. If you resolve one against a real

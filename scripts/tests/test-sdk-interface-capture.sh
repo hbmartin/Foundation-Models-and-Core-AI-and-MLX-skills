@@ -199,9 +199,15 @@ grep -F -q '"source": "host/configured-fm-fallback"' \
 expect_failure 'fm --help failed with status 9' "${SHIM_ENV[@]}" \
   SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_ROOT_FAILURE=1 \
   "$DUMP" --dest "$TMP/fm-root-failure"
-expect_failure 'fm --help contained no parseable COMMANDS or SUBCOMMANDS entries' \
-  "${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_HEADER_DRIFT=1 \
-  "$DUMP" --dest "$TMP/fm-header-drift"
+fm_header_drift_dest="$TMP/fm-header-drift"
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_HEADER_DRIFT=1 \
+  "$DUMP" --dest "$fm_header_drift_dest" >/dev/null
+grep -F -q \
+  '##### capture error: fm --help contained no parseable COMMANDS or SUBCOMMANDS entries #####' \
+  "$fm_header_drift_dest/fm-help-14.0.txt" || \
+  fail 'fm header drift was not recorded in the optional artifact'
+[ -f "$fm_header_drift_dest/capture-manifest.json" ] || \
+  fail 'fm header drift discarded the completed SDK capture'
 expect_failure 'fm help traversal exceeded maximum' "${SHIM_ENV[@]}" \
   SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_FANOUT=1 \
   "$DUMP" --dest "$TMP/fm-fanout"
