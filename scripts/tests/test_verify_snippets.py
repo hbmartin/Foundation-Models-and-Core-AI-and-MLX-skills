@@ -50,18 +50,6 @@ def tsv_rows(stdout):
     return [dict(zip(header, l.split("\t"))) for l in lines[1:]]
 
 
-def literal_tsv_rows(text):
-    """Parse the repository's tab-only TSV format; quotes have no syntax."""
-    rows = [line.split("\t") for line in text.splitlines()]
-    if not rows:
-        return rows
-    width = len(rows[0])
-    for number, row in enumerate(rows[1:], 2):
-        if len(row) != width:
-            raise ValueError(f"line {number}: expected {width} TSV columns, got {len(row)}")
-    return rows
-
-
 class ExtractionTests(unittest.TestCase):
     def test_missing_and_empty_guides_roots_fail_fast(self):
         with tempfile.TemporaryDirectory() as td:
@@ -217,18 +205,13 @@ class CommittedResultsTests(unittest.TestCase):
             (fence.rel_path, str(fence.open_line), fence.anchor, fence.info)
             for fence in fences
         ]
-        with open(results, encoding="utf-8") as handle:
-            rows = literal_tsv_rows(handle.read())
-        self.assertGreater(len(rows), 1)
-        self.assertEqual(rows[0][:4], ["file", "line", "anchor", "info"])
-        actual = [tuple(row[:4]) for row in rows[1:]]
+        rows = list(VS.read_prior_results(results).values())
+        self.assertGreater(len(rows), 0)
+        actual = [
+            (row["file"], row["line"], row["anchor"], row["info"])
+            for row in rows
+        ]
         self.assertEqual(actual, expected)
-
-    def test_results_parser_preserves_literal_quotes_and_rejects_ragged_rows(self):
-        text = 'file\tline\tanchor\tinfo\ng.md\t1\tanchor\t"illustrative"\n'
-        self.assertEqual(literal_tsv_rows(text)[1][3], '"illustrative"')
-        with self.assertRaisesRegex(ValueError, "expected 4 TSV columns, got 2"):
-            literal_tsv_rows("file\tline\tanchor\tinfo\ng.md\t1\n")
 
 
 class MarkerTests(unittest.TestCase):

@@ -2232,7 +2232,7 @@ A recurring bug report: speculative decoding at `temp=0` produces different text
 decoding. Three independent reproductions on three model families found the same signature.
 
 > ✅ **VERIFIED** — mlx-lm#1470 (OPEN, 7 comments) → PR #1592, via
-> `notes/repos/issues-mlx-stack.md:683-696`:
+> `notes/repos/issues-mlx-stack.md:693-704`:
 > - Qwen3-4B / 0.6B: `mx.eval(l1376 == l1887)` → `True` — **tokens 1376 and 1887 are an exact
 >   bit-level tie at 38.0 in bfloat16.**
 > - Qwen3-32B-4bit + 0.6B-4bit: both candidates logit `33.75`, softmax `0.3828`, `logit_gap` exactly
@@ -2280,7 +2280,7 @@ mainstream path and what the mlx-lm CLI expects.
 `mlx-community/gemma-4-E2B-it-assistant-bf16` (78 MB), `-E4B-` (78.8 MB), `-26B-A4B-` (~400 MB),
 `-31B-` (~500 MB), with `"model_type": "gemma4_assistant"`.
 
-> ✅ **VERIFIED** — sizes and config keys from `notes/repos/issues-mlx-stack.md:978`, tracking
+> ✅ **VERIFIED** — sizes and config keys from `notes/repos/issues-mlx-stack.md:988`, tracking
 > mlx-swift-lm#279. **Measured ~62% draft acceptance** on predictable text with a 12B target plus
 > the assistant drafter — community-measured.
 >
@@ -2592,7 +2592,8 @@ whole server, and nothing in the response tells them so.
 | mlx-lm#1493 (OPEN) | Server **livelock**: the batch keeps stepping and delivers zero chunks. `is_alive()` stays true; a naive per-iteration heartbeat would also tick |
 | mlx-lm#1500 (OPEN) | Idle server pins a core at 100% — the worker thread busy-polls with `get_nowait()` |
 
-> ✅ **VERIFIED** — issue numbers and symptoms from `notes/repos/issues-mlx-stack.md:646-676`.
+> ✅ **VERIFIED** — release history at `notes/repos/issues-mlx-stack.md:22`; issue numbers,
+> symptoms, and #1472 resolution at `notes/repos/issues-mlx-stack.md:652-684`.
 
 The livelock one deserves a paragraph because the diagnosis is instructive. py-spy plus `sample`
 over six minutes showed the loop alternating between the forward call and the eval sync with live
@@ -2889,7 +2890,7 @@ without thinking and you get exactly this bug.
 
 **`trimPromptCache`'s return value discarded during speculative rewind.**
 
-> ✅ **VERIFIED** — mlx-swift-lm, via `notes/repos/issues-mlx-stack.md:937`:
+> ✅ **VERIFIED** — mlx-swift-lm, via `notes/repos/issues-mlx-stack.md:947`:
 > `SpeculativeTokenIterator.speculateRound()` rewinds rejected drafts with
 > `trimPromptCache(mainCache, numTokens: numDraft - accepted)` **and discards the result**.
 > `trimPromptCache` guards on `canTrimPromptCache`, so **once one sliding layer wraps, the whole

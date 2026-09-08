@@ -1104,8 +1104,6 @@ Fixes: attend each `cuSeqlens` segment independently with **no mask** (mathemati
 29. **macOS `F_NOCACHE` does not evict resident pages** — a classic A/B benchmarking trap on Apple SSDs.
 30. **On Apple Silicon, "size the cache as big as fits" is wrong** — the OS page cache reserve is tens of GB and over-sizing collapses throughput.
 
-**Later state update (recorded 2026-09-05):** `ml-explore/mlx` PRs #3922 and #3894 subsequently merged.
-
 ---
 
 ## Source inventory (everything actually read this session)

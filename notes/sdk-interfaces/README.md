@@ -97,7 +97,8 @@ includes:
 - host OS version/build and architecture, but no host or developer-directory path;
 - Metal Toolchain component build, `ToolchainInfo.plist` identifier, sanitized tool paths, and tool
   version strings;
-- whether optional `fm` was present;
+- whether optional `fm` was present and, for new scripted captures, whether recursive help capture
+  was `complete` or `partial`, with stable issue codes for incomplete paths;
 - frameworks that were absent or did not publish a Swift interface; and
 - per-file kind, stable filename, normalized SDK/platform/toolchain-relative source, byte size,
   line count, capture time, and SHA-256 digest.
@@ -112,6 +113,11 @@ A filename may be owned by exactly one capture record. The script refuses these 
 
 These are intentional stops. Do not bypass them by deleting the manifest or editing a hash to make
 the check green; investigate the provenance change first.
+
+An unrecognized root `fm --help` command header does not discard otherwise valid SDK interfaces.
+The dump records a marker in the optional help artifact, writes `optional_tools.fm.help_capture` as
+`partial`, and emits a warning. `diff-interfaces.sh` still reports the usable interface drift, then
+exits nonzero so automation cannot mistake incomplete CLI evidence for a complete capture.
 
 ## Recovering from an interrupted capture
 

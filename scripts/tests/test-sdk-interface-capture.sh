@@ -120,7 +120,13 @@ case "$*" in
     printf '    \033[1msystem \033[0mNot a command; must not be captured\n'
     ;;
   'alpha --help') printf '  alpha help\n' ;;
-  'beta --help') exit 3 ;;
+  'beta --help')
+    if [ "${SDK_SHIM_FM_BETA_SUCCESS:-0}" -eq 1 ]; then
+      printf '  beta help\n'
+    else
+      exit 3
+    fi
+    ;;
   'gamma --help')
     printf '  \033[38;2;55;195;160m\033[1mSUBCOMMANDS\033[0m\n'
     printf '    \033[1mdelta  \033[0mNested subcommand\n'
@@ -185,6 +191,16 @@ if grep -F -q '===== fm system --help =====' "$fm_artifact"; then
 fi
 grep -F -q '"source": "xcrun/fm"' "$fm_dest/capture-manifest.json" || \
   fail 'fm discovery provenance missing from the manifest'
+grep -F -q '"status": "partial"' "$fm_dest/capture-manifest.json" || \
+  fail 'failing nested fm help was not reflected in manifest status'
+grep -F -q '"subcommand-help-failed"' "$fm_dest/capture-manifest.json" || \
+  fail 'failing nested fm help did not record a stable manifest issue'
+
+fm_complete_dest="$TMP/fm-complete-capture"
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_BETA_SUCCESS=1 \
+  "$DUMP" --dest "$fm_complete_dest" >/dev/null
+grep -F -q '"status": "complete"' "$fm_complete_dest/capture-manifest.json" || \
+  fail 'complete fm help capture was not reflected in manifest status'
 
 # Force xcrun discovery to miss and use a controlled fallback path. Production
 # defaults this override to /usr/bin/fm; the injectable path keeps the test
@@ -201,13 +217,21 @@ expect_failure 'fm --help failed with status 9' "${SHIM_ENV[@]}" \
   "$DUMP" --dest "$TMP/fm-root-failure"
 fm_header_drift_dest="$TMP/fm-header-drift"
 "${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_HEADER_DRIFT=1 \
-  "$DUMP" --dest "$fm_header_drift_dest" >/dev/null
+  "$DUMP" --dest "$fm_header_drift_dest" >"$TMP/fm-header-drift.stdout" \
+  2>"$TMP/fm-header-drift.stderr"
 grep -F -q \
   '##### capture error: fm --help contained no parseable COMMANDS or SUBCOMMANDS entries #####' \
   "$fm_header_drift_dest/fm-help-14.0.txt" || \
   fail 'fm header drift was not recorded in the optional artifact'
 [ -f "$fm_header_drift_dest/capture-manifest.json" ] || \
   fail 'fm header drift discarded the completed SDK capture'
+grep -F -q '"status": "partial"' "$fm_header_drift_dest/capture-manifest.json" || \
+  fail 'fm header drift was not reflected in manifest status'
+grep -F -q '"root-command-list-unparseable"' \
+  "$fm_header_drift_dest/capture-manifest.json" || \
+  fail 'fm header drift did not record a stable manifest issue'
+grep -F -q 'warning: optional fm help capture is partial' "$TMP/fm-header-drift.stderr" || \
+  fail 'fm header drift did not emit a visible warning'
 expect_failure 'fm help traversal exceeded maximum' "${SHIM_ENV[@]}" \
   SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_FANOUT=1 \
   "$DUMP" --dest "$TMP/fm-fanout"

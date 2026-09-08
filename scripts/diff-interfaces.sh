@@ -149,14 +149,19 @@ git -C "$REPO_ROOT" rev-parse --verify "$AGAINST^{commit}" >/dev/null 2>&1 || \
 FRESH_DIR="$TMP/fresh"
 "$CAPTURE_SCRIPT" --dest "$FRESH_DIR"
 
-read -r SDK_VERSION XCODE_BUILD <<EOF
+read -r SDK_VERSION XCODE_BUILD FM_HELP_STATUS <<EOF
 $(python3 - "$FRESH_DIR/capture-manifest.json" <<'PY'
 import json
 import pathlib
 import sys
 manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 capture = manifest["captures"][-1]
-print(capture["sdks"]["macosx"]["version"], capture["xcode"]["build"])
+fm = capture.get("optional_tools", {}).get("fm", {})
+if not fm.get("present"):
+    help_status = "not-present"
+else:
+    help_status = fm.get("help_capture", {}).get("status", "unknown")
+print(capture["sdks"]["macosx"]["version"], capture["xcode"]["build"], help_status)
 PY
 )
 EOF
@@ -221,3 +226,6 @@ fi
 printf '\nTracked evidence was not modified. To retain this candidate, run:\n'
 printf '  ./scripts/dump-sdk-interfaces.sh --dest <empty-candidate-directory>\n'
 printf 'Promotion is a reviewed file-and-manifest change; see notes/sdk-interfaces/README.md.\n'
+if [ "$FM_HELP_STATUS" != 'complete' ] && [ "$FM_HELP_STATUS" != 'not-present' ]; then
+  die 'temporary capture contains partial optional fm help; interface results above remain usable, but CLI evidence is incomplete'
+fi

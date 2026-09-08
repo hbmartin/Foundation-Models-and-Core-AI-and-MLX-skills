@@ -302,8 +302,10 @@ out.append("# API & symbol index\n")
 out.append(f"**{len(keep)} symbols referenced across the series, by framework — with where each "
            "is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**\n")
 out.append("> `26.5` / `27.0` = the leading type name appears in the corresponding captured "
-           "`.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must appear "
-           "as one ordered qualified or declared path. Lowercase members are not signature-matched "
+           "`.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one "
+           "contiguous subpath of a qualified or declared type chain. A longer chain may prove "
+           "any contiguous type subpath, but `::` module qualifiers never become nested types. "
+           "Lowercase members are not signature-matched "
            "— the guides carry signature-level citations. Package types (MLX, "
            "`ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. "
            f"Generated {TODAY}; regenerate rather than hand-edit.\n")

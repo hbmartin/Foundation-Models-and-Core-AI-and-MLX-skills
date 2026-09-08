@@ -154,6 +154,8 @@ FM_PATH=''
 FM_VERSION=''
 FM_PRESENT=0
 FM_SOURCE=''
+FM_HELP_STATUS='not-present'
+FM_HELP_ISSUES=''
 FM_FALLBACK_PATH="${SDK_FM_FALLBACK_PATH:-/usr/bin/fm}"
 case "$FM_FALLBACK_PATH" in
   /*) ;;
@@ -226,6 +228,21 @@ if manifest.get("schema_version") != 1 or not isinstance(manifest.get("captures"
 
 managed = {}
 for capture in manifest["captures"]:
+    fm = capture.get("optional_tools", {}).get("fm", {})
+    help_capture = fm.get("help_capture") if isinstance(fm, dict) else None
+    if help_capture is not None:
+        if not isinstance(help_capture, dict):
+            raise SystemExit("error: fm help_capture must be an object")
+        status = help_capture.get("status")
+        issues = help_capture.get("issues")
+        if status not in {"complete", "partial"}:
+            raise SystemExit("error: fm help_capture status must be complete or partial")
+        if not isinstance(issues, list) or not all(isinstance(item, str) and item for item in issues):
+            raise SystemExit("error: fm help_capture issues must be non-empty strings")
+        if status == "complete" and issues:
+            raise SystemExit("error: complete fm help_capture cannot record issues")
+        if status == "partial" and not issues:
+            raise SystemExit("error: partial fm help_capture must record at least one issue")
     for entry in capture.get("files", []):
         name = entry.get("path")
         digest = entry.get("sha256")
@@ -404,6 +421,14 @@ FM_HELP_INVOCATIONS=0
 FM_HELP_VISITED="$TMP/fm-help-visited.txt"
 : > "$FM_HELP_VISITED"
 
+record_fm_help_issue() { # $1 = stable machine-readable issue code
+  case ",$FM_HELP_ISSUES," in
+    *",$1,"*) ;;
+    *) FM_HELP_ISSUES="${FM_HELP_ISSUES}${FM_HELP_ISSUES:+,}$1" ;;
+  esac
+  FM_HELP_STATUS='partial'
+}
+
 fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
   local depth="$1"
   local path="${2-}"
@@ -431,6 +456,7 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
     if [ -z "$path" ]; then
       die "fm --help failed with status $status"
     fi
+    record_fm_help_issue 'subcommand-help-failed'
     printf '##### capture error: fm %s exited with status %s #####\n' \
       "$invocation" "$status"
     return 0
@@ -443,6 +469,7 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
   while IFS= read -r sub; do
     case "$sub" in
       ''|*[!A-Za-z0-9_-]*)
+        record_fm_help_issue 'unparseable-command-name'
         printf '##### capture error: fm %s listed unparseable command name %s #####\n' \
           "$invocation" "$sub"
         ;;
@@ -455,6 +482,7 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
     esac
   done < "$TMP/fm-help-commands.txt"
   if [ -z "$path" ] && [ -z "$subs" ]; then
+    record_fm_help_issue 'root-command-list-unparseable'
     printf '%s\n' \
       '##### capture error: fm --help contained no parseable COMMANDS or SUBCOMMANDS entries #####'
     return 0
@@ -467,6 +495,7 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
 }
 
 if [ -n "$FM_PATH" ]; then
+  FM_HELP_STATUS='complete'
   FM_HELP_NAME="fm-help-${MACOS_SDK_VERSION}.txt"
   {
     printf '# fm help surface\n'
@@ -506,6 +535,8 @@ export SDK_METAL_VERSION="$METAL_VERSION"
 export SDK_FM_PRESENT="$FM_PRESENT"
 export SDK_FM_VERSION="$FM_VERSION"
 export SDK_FM_SOURCE="$FM_SOURCE"
+export SDK_FM_HELP_STATUS="$FM_HELP_STATUS"
+export SDK_FM_HELP_ISSUES="$FM_HELP_ISSUES"
 export SDK_ABSENT_FRAMEWORKS="$ABSENT_FRAMEWORKS"
 
 python3 - "$DEST" "$CAPTURE_DIR" "$SOURCE_MAP" "$MERGED_MANIFEST" > "$ADDITIONS" <<'PY'
@@ -594,9 +625,17 @@ current_metadata = {
         "metal_path": "Metal.xctoolchain/usr/bin/metal",
     },
     "optional_tools": {
-        "fm": ({"present": True, "version": os.environ["SDK_FM_VERSION"] or None,
-                "source": os.environ["SDK_FM_SOURCE"]}
-               if os.environ["SDK_FM_PRESENT"] == "1" else {"present": False})
+        "fm": ({
+            "present": True,
+            "version": os.environ["SDK_FM_VERSION"] or None,
+            "source": os.environ["SDK_FM_SOURCE"],
+            "help_capture": {
+                "status": os.environ["SDK_FM_HELP_STATUS"],
+                "issues": [
+                    item for item in os.environ["SDK_FM_HELP_ISSUES"].split(",") if item
+                ],
+            },
+        } if os.environ["SDK_FM_PRESENT"] == "1" else {"present": False})
     },
     "absent_or_non_swift_frameworks": [
         item for item in os.environ["SDK_ABSENT_FRAMEWORKS"].split(",") if item
@@ -699,4 +738,9 @@ if [ -s "$ADDITIONS" ] && { [ ! -f "$DEST/capture-manifest.json" ] || \
 fi
 
 ADDED_COUNT="$(wc -l < "$ADDITIONS" | tr -d ' ')"
-printf '\nCapture verified: %s new artifact(s); manifest: capture-manifest.json\n' "$ADDED_COUNT"
+if [ "$FM_HELP_STATUS" = 'partial' ]; then
+  printf 'warning: optional fm help capture is partial (%s); inspect capture-manifest.json and the fm help artifact\n' \
+    "$FM_HELP_ISSUES" >&2
+fi
+printf '\nCapture completed: %s new artifact(s); manifest: capture-manifest.json; fm help: %s\n' \
+  "$ADDED_COUNT" "$FM_HELP_STATUS"
