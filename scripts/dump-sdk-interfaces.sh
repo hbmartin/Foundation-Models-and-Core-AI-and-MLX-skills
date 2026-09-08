@@ -165,6 +165,12 @@ esac
 # hosts that have the tool; prefer xcrun, then fall back to /usr/bin/fm, and
 # only report the tool absent when neither discovery path finds it.
 if FM_PATH="$(xcrun --no-cache --find fm 2>/dev/null)"; then
+  [ -n "$FM_PATH" ] || die 'xcrun reported fm without a path'
+  case "$FM_PATH" in
+    /*) ;;
+    *) die 'xcrun reported a non-absolute fm path' ;;
+  esac
+  [ -x "$FM_PATH" ] || die 'xcrun reported an fm path that is not executable'
   FM_PRESENT=1
   FM_SOURCE='xcrun/fm'
 elif [ -x "$FM_FALLBACK_PATH" ]; then
@@ -223,13 +229,21 @@ try:
     manifest = json.loads(manifest_text)
 except (OSError, json.JSONDecodeError) as exc:
     raise SystemExit(f"error: invalid capture-manifest.json: {exc}")
-if manifest.get("schema_version") != 1 or not isinstance(manifest.get("captures"), list):
+if (not isinstance(manifest, dict) or manifest.get("schema_version") != 1
+        or not isinstance(manifest.get("captures"), list)):
     raise SystemExit("error: unsupported capture-manifest.json schema")
 
 managed = {}
-for capture in manifest["captures"]:
-    fm = capture.get("optional_tools", {}).get("fm", {})
-    help_capture = fm.get("help_capture") if isinstance(fm, dict) else None
+for capture_number, capture in enumerate(manifest["captures"], 1):
+    if not isinstance(capture, dict):
+        raise SystemExit(f"error: manifest capture {capture_number} must be an object")
+    optional_tools = capture.get("optional_tools", {})
+    if not isinstance(optional_tools, dict):
+        raise SystemExit(f"error: manifest capture {capture_number} optional_tools must be an object")
+    fm = optional_tools.get("fm", {})
+    if not isinstance(fm, dict):
+        raise SystemExit(f"error: manifest capture {capture_number} fm metadata must be an object")
+    help_capture = fm.get("help_capture")
     if help_capture is not None:
         if not isinstance(help_capture, dict):
             raise SystemExit("error: fm help_capture must be an object")
@@ -237,13 +251,20 @@ for capture in manifest["captures"]:
         issues = help_capture.get("issues")
         if status not in {"complete", "partial"}:
             raise SystemExit("error: fm help_capture status must be complete or partial")
-        if not isinstance(issues, list) or not all(isinstance(item, str) and item for item in issues):
-            raise SystemExit("error: fm help_capture issues must be non-empty strings")
+        if not isinstance(issues, list):
+            raise SystemExit("error: fm help_capture issues must be a list")
+        if not all(isinstance(item, str) and item for item in issues):
+            raise SystemExit("error: fm help_capture issues must contain only non-empty strings")
         if status == "complete" and issues:
             raise SystemExit("error: complete fm help_capture cannot record issues")
         if status == "partial" and not issues:
             raise SystemExit("error: partial fm help_capture must record at least one issue")
-    for entry in capture.get("files", []):
+    files = capture.get("files", [])
+    if not isinstance(files, list):
+        raise SystemExit(f"error: manifest capture {capture_number} files must be a list")
+    for entry in files:
+        if not isinstance(entry, dict):
+            raise SystemExit(f"error: manifest capture {capture_number} file entries must be objects")
         name = entry.get("path")
         digest = entry.get("sha256")
         source = entry.get("source")
@@ -461,7 +482,6 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
       "$invocation" "$status"
     return 0
   fi
-  [ "$depth" -gt 0 ] || return 0
   # Validate and collect the listed names before recursing: the recursion
   # reuses the shared screen and listing files, and validated names make the
   # deliberate word splitting above safe.
@@ -485,6 +505,14 @@ fm_capture_help() { # $1 = remaining recursion budget; $2 = subcommand words
     record_fm_help_issue 'root-command-list-unparseable'
     printf '%s\n' \
       '##### capture error: fm --help contained no parseable COMMANDS or SUBCOMMANDS entries #####'
+    return 0
+  fi
+  if [ "$depth" -le 0 ]; then
+    if [ -n "$subs" ]; then
+      record_fm_help_issue 'recursion-depth-exhausted'
+      printf '##### capture error: fm %s listed deeper subcommands after the recursion limit #####\n' \
+        "$invocation"
+    fi
     return 0
   fi
   # Intentional word splitting: subs holds already-validated command names.

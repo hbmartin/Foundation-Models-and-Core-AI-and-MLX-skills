@@ -564,7 +564,7 @@ Qwen3-32B-4bit, group_size 64, int8 KV vs fp16, paired runs (mlx-lm#1573, cross-
 
 Quality is genuinely clean and **improves with context**.
 
-### 5.3 `quantized_kv_start` library default is 0 but the CLI default is 5000 — mlx-lm#1566 (OPEN)
+### 5.3 `quantized_kv_start` library default is 0 but the CLI default is 5000 — mlx-lm#1566 (closed 2026-08-03; superseded by #1651, no fix merged)
 
 `generate_step()` and `speculative_generate_step()` in `mlx_lm/generate.py` both default `quantized_kv_start=0`. The CLIs (`mlx_lm.generate`, `mlx_lm.cache_prompt`) default `--quantized-kv-start` to `DEFAULT_QUANTIZED_KV_START = 5000`. **A library caller that passes `kv_bits=` without `quantized_kv_start=` quantizes from token 0 and eats the full cost.**
 

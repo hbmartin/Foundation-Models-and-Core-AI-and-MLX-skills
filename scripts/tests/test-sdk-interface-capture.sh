@@ -78,7 +78,9 @@ case "$*" in
   '--no-cache --find metal') printf '%s\n' "$SDK_SHIM_ROOT/component/Metal.xctoolchain/usr/bin/metal" ;;
   '--no-cache --find fm')
     [ "${SDK_SHIM_HAS_FM:-0}" -eq 1 ] || exit 1
-    printf '%s\n' "$SDK_SHIM_ROOT/fm"
+    if [ "${SDK_SHIM_EMPTY_FM_PATH:-0}" -eq 0 ]; then
+      printf '%s\n' "$SDK_SHIM_ROOT/fm"
+    fi
     ;;
   *) exit 2 ;;
 esac
@@ -131,7 +133,18 @@ case "$*" in
     printf '  \033[38;2;55;195;160m\033[1mSUBCOMMANDS\033[0m\n'
     printf '    \033[1mdelta  \033[0mNested subcommand\n'
     ;;
-  'gamma delta --help') printf '  delta help\n' ;;
+  'gamma delta --help')
+    if [ "${SDK_SHIM_FM_DEPTH_EXHAUSTION:-0}" -eq 1 ]; then
+      printf '  SUBCOMMANDS\n'
+      printf '    epsilon  Deeper nested subcommand\n'
+    else
+      printf '  delta help\n'
+    fi
+    ;;
+  'gamma delta epsilon --help')
+    printf '  SUBCOMMANDS\n'
+    printf '    zeta  Command beyond the recursion limit\n'
+    ;;
   *) exit 2 ;;
 esac
 SH
@@ -163,6 +176,9 @@ expect_failure 'coreai-build is missing' "${SHIM_ENV[@]}" \
   SDK_SHIM_MISSING_COREAI=1 "$DUMP" --dest "$TMP/no-coreai" --check-only
 expect_failure 'component identifier does not match ToolchainInfo.plist' "${SHIM_ENV[@]}" \
   SDK_SHIM_COMPONENT_IDENTIFIER=com.example.OldMetal "$DUMP" --dest "$TMP/old-component" --check-only
+expect_failure 'xcrun reported fm without a path' "${SHIM_ENV[@]}" \
+  SDK_SHIM_HAS_FM=1 SDK_SHIM_EMPTY_FM_PATH=1 \
+  "$DUMP" --dest "$TMP/empty-fm-path" --check-only
 
 selected_developer_dir='/Applications/Test-Xcode.app/Contents/Developer'
 "${SHIM_ENV[@]}" DEVELOPER_DIR="$selected_developer_dir" \
@@ -201,6 +217,25 @@ fm_complete_dest="$TMP/fm-complete-capture"
   "$DUMP" --dest "$fm_complete_dest" >/dev/null
 grep -F -q '"status": "complete"' "$fm_complete_dest/capture-manifest.json" || \
   fail 'complete fm help capture was not reflected in manifest status'
+grep -F -q '===== fm gamma delta --help =====' "$fm_complete_dest/fm-help-14.0.txt" || \
+  fail 'complete fm help capture did not visit a representative leaf command'
+[ "$(grep -F -c -- '--help =====' "$fm_complete_dest/fm-help-14.0.txt")" -eq 5 ] || \
+  fail 'complete fm help capture visited an unexpected number of command paths'
+
+fm_depth_dest="$TMP/fm-depth-capture"
+"${SHIM_ENV[@]}" SDK_SHIM_HAS_FM=1 SDK_SHIM_FM_BETA_SUCCESS=1 \
+  SDK_SHIM_FM_DEPTH_EXHAUSTION=1 "$DUMP" --dest "$fm_depth_dest" >/dev/null
+grep -F -q '"status": "partial"' "$fm_depth_dest/capture-manifest.json" || \
+  fail 'fm recursion-depth exhaustion was not reflected in manifest status'
+grep -F -q '"recursion-depth-exhausted"' "$fm_depth_dest/capture-manifest.json" || \
+  fail 'fm recursion-depth exhaustion did not record a stable manifest issue'
+grep -F -q 'listed deeper subcommands after the recursion limit' \
+  "$fm_depth_dest/fm-help-14.0.txt" || \
+  fail 'fm recursion-depth exhaustion was not recorded in the help artifact'
+if grep -F -q '===== fm gamma delta epsilon zeta --help =====' \
+  "$fm_depth_dest/fm-help-14.0.txt"; then
+  fail 'fm help capture recursed beyond its configured depth limit'
+fi
 
 # Force xcrun discovery to miss and use a controlled fallback path. Production
 # defaults this override to /usr/bin/fm; the injectable path keeps the test
@@ -247,6 +282,39 @@ mkdir -p "$unmanaged_dest"
 printf 'unmanaged\n' > "$unmanaged_dest/Fake-27.0-macos.swiftinterface"
 expect_failure 'destination contains unmanaged capture artifacts' \
   "$DUMP" --dest "$unmanaged_dest" --check-only
+
+# Malformed optional-tool metadata must fail with a clean diagnostic rather
+# than leaking an AttributeError traceback from the embedded validator.
+malformed_tools_dest="$TMP/malformed-optional-tools"
+mkdir -p "$malformed_tools_dest"
+python3 - "$malformed_tools_dest/capture-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+pathlib.Path(sys.argv[1]).write_text(json.dumps({
+    "schema_version": 1,
+    "captures": [{"optional_tools": None, "files": []}],
+}) + "\n", encoding="utf-8")
+PY
+expect_failure 'optional_tools must be an object' \
+  "$DUMP" --dest "$malformed_tools_dest" --check-only
+
+missing_issues_dest="$TMP/missing-help-issues"
+mkdir -p "$missing_issues_dest"
+python3 - "$missing_issues_dest/capture-manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+pathlib.Path(sys.argv[1]).write_text(json.dumps({
+    "schema_version": 1,
+    "captures": [{
+        "optional_tools": {"fm": {"help_capture": {"status": "complete"}}},
+        "files": [],
+    }],
+}) + "\n", encoding="utf-8")
+PY
+expect_failure 'fm help_capture issues must be a list' \
+  "$DUMP" --dest "$missing_issues_dest" --check-only
 
 # A managed file whose bytes differ from its digest is rejected.
 mismatch_dest="$TMP/hash-mismatch"

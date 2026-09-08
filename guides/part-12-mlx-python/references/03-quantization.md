@@ -2723,7 +2723,7 @@ to where the real coverage lives.
 **1. It costs decode speed and, today, *raises* prefill peak memory.**
 
 > ✅ **VERIFIED** — mlx-lm#1587 (OPEN, 11 comments), reported on Llama-3.2-3B-Instruct-4bit,
-> **M4 Max 128 GB, macOS 27.0**, `notes/repos/issues-mlx-stack.md:492-499`:
+> **M4 Max 128 GB, macOS 27.0**, `notes/repos/issues-mlx-stack.md:498-505`:
 >
 > | context | case | peak MLX memory | decode speed |
 > |---|---|---:|---:|
@@ -2738,7 +2738,7 @@ to where the real coverage lives.
 
 The conclusion from that thread is worth memorising:
 
-> ✅ **VERIFIED**, `notes/repos/issues-mlx-stack.md:557`: *"on a 4-bit dense model KV is only ~19%
+> ✅ **VERIFIED**, `notes/repos/issues-mlx-stack.md:563`: *"on a 4-bit dense model KV is only ~19%
 > of decode-step bytes — weights dominate, so halving KV bandwidth cannot pay for the
 > compose/dequant overhead. So `--kv-bits 8` is a **capacity** tool (roughly half the KV bytes →
 > longer context or more cache slots in the same RAM), bought at a few percent of decode speed. It
@@ -2746,7 +2746,7 @@ The conclusion from that thread is worth memorising:
 
 **2. The library default and the CLI default disagree.**
 
-> ✅ **VERIFIED** — mlx-lm#1566 (closed 2026-08-03, no fix merged), `notes/repos/issues-mlx-stack.md:561-563`:
+> ✅ **VERIFIED** — mlx-lm#1566 (closed 2026-08-03, no fix merged), `notes/repos/issues-mlx-stack.md:567-569`:
 > `generate_step()` and `speculative_generate_step()` both default `quantized_kv_start=0`, while
 > the CLIs default `--quantized-kv-start` to `DEFAULT_QUANTIZED_KV_START = 5000`.
 > **A library caller that passes `kv_bits=` without `quantized_kv_start=` quantizes from token 0
@@ -2754,7 +2754,7 @@ The conclusion from that thread is worth memorising:
 
 **3. `RotatingKVCache` cannot be quantized — and `hasattr` will not save you.**
 
-> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:574-590`:
+> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:580-596`:
 > ```python
 > def to_quantized(self, group_size: int = 64, bits: int = 4) -> QuantizedKVCache:
 >     raise NotImplementedError("RotatingKVCache Quantization NYI")
@@ -2765,7 +2765,7 @@ The conclusion from that thread is worth memorising:
 
 **4. gpt-oss plus a quantized KV cache is a silent client timeout.**
 
-> ✅ **VERIFIED** — mlx-lm#1438, quoted at `notes/repos/issues-mlx-stack.md:619`: *"gpt-oss uses
+> ✅ **VERIFIED** — mlx-lm#1438, quoted at `notes/repos/issues-mlx-stack.md:625`: *"gpt-oss uses
 > attention sinks, and a quantized KV cache raises `'Quantized SDPA does not support attention
 > sinks'` from the generation thread. The thread dies, the request never returns, and the client
 > sits until its own timeout, so it presents as a network timeout during prefill rather than as an

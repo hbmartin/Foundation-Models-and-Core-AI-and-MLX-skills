@@ -25,6 +25,11 @@ die() {
   exit 1
 }
 
+incomplete_evidence() {
+  printf 'incomplete: %s\n' "$*" >&2
+  exit 2
+}
+
 need_value() {
   [ "$#" -ge 2 ] && [ -n "$2" ] || die "$1 needs a value"
 }
@@ -226,6 +231,7 @@ fi
 printf '\nTracked evidence was not modified. To retain this candidate, run:\n'
 printf '  ./scripts/dump-sdk-interfaces.sh --dest <empty-candidate-directory>\n'
 printf 'Promotion is a reviewed file-and-manifest change; see notes/sdk-interfaces/README.md.\n'
-if [ "$FM_HELP_STATUS" != 'complete' ] && [ "$FM_HELP_STATUS" != 'not-present' ]; then
-  die 'temporary capture contains partial optional fm help; interface results above remain usable, but CLI evidence is incomplete'
+if [ -z "$FRAMEWORK" ] && [ "$FM_HELP_STATUS" != 'complete' ] && \
+    [ "$FM_HELP_STATUS" != 'not-present' ]; then
+  incomplete_evidence 'temporary capture contains partial optional fm help; interface results above remain usable, but CLI evidence is incomplete'
 fi

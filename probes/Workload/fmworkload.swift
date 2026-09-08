@@ -13,7 +13,8 @@
 //   xcrun -sdk iphonesimulator swiftc -target arm64-apple-ios27.0-simulator \
 //       -parse-as-library -O ../Sources/ProbeSupport/ProbeSupport.swift \
 //       fmworkload.swift -o fmworkload
-//   xcrun simctl spawn booted ./fmworkload
+//   SIMCTL_CHILD_PROBE_INSTRUMENTS_WORKLOAD=1 \
+//     xcrun simctl spawn booted ./fmworkload
 //
 // The first run doubles as a probe: whether Foundation Models resolves model
 // assets in a bare spawned process (no app container) is unmeasured. If the
@@ -44,6 +45,10 @@ struct FMWorkload {
 
         let info = ProcessInfo.processInfo
         narrate("attach-target process=\(info.processName) pid=\(info.processIdentifier)")
+        guard Probe.env("PROBE_INSTRUMENTS_WORKLOAD") == "1" else {
+            narrate("SKIPPED: set PROBE_INSTRUMENTS_WORKLOAD=1 before accessing the host-backed model")
+            return
+        }
         let model = SystemLanguageModel.default
         narrate("availability=\(model.isAvailable ? "available" : "unavailable") detail=\(String(describing: model.availability))")
         guard model.isAvailable else {
