@@ -3049,7 +3049,7 @@ Everything in the table is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0
 | # | Conflict | Ruling |
 |---|---|---|
 | 1 | `var body: some LanguageModelSession.DynamicProfile` (docs, WWDC, doc mirrors) vs `some DynamicProfile` (Apple sample) | **Both compile.** Use the short form inside a conforming type, the long form in a free extension. Earlier "naming corrections" that mandated the long form everywhere were half wrong. |
-| 2 | `Profile(model:) { }` (reconstructions, one doc mirror) vs `Profile { }.model(_:)` (Apple sample + docs) | **Sample wins, now SDK-confirmed** — `Profile` has exactly one init, the builder-closure form; no `model:` label exists in the 27.0 beta interface (`:785-798`, checked 2026-07-29). |
+| 2 | `Profile(model:) { }` (reconstructions, one doc mirror) vs `Profile { }.model(_:)` (Apple sample + docs) | **Sample wins, now SDK-confirmed** — `Profile` has exactly one init, the builder-closure form; no `model:` label exists in the 27.0 beta interface (`:830-843`, checked 2026-09-08). |
 | 3 | `.temperature(1)` (WWDC narration) vs `.temperature(1.0)` (sample + docs) | **`Double`.** |
 | 4 | "Beta (iOS 26.0+)" on one doc mirror of the dynamic-sessions article vs 27.0 everywhere else | **27.0.** The mirror is wrong. |
 | 5 | `reasoningLevel` as a profile modifier vs `ContextOptions(reasoningLevel:)` per call | **Both exist** — and both take the same `ContextOptions.ReasoningLevel?` type (`:976`, `:3132-3135`). A profile-level `.contextOptions(_:)` modifier **does not exist** in the 27.0 beta interface (checked 2026-07-29). |

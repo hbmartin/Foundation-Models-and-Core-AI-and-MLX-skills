@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import pathlib
 import plistlib
+import re
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +11,9 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "scripts" / "run-probes.sh"
+FOUNDATION_MODELS_PROBES = (
+    ROOT / "probes" / "Tests" / "ProbesTests" / "FoundationModelsProbes.swift"
+)
 
 
 class ProbeRunnerTests(unittest.TestCase):
@@ -235,6 +239,31 @@ fi
         self.assertIn(
             'ln -s "$repo_root/probes/DeviceProbeAssets" "$project_dir/DeviceProbeAssets"',
             source,
+        )
+
+    def test_every_default_model_access_is_preceded_by_explicit_consent(self) -> None:
+        source = FOUNDATION_MODELS_PROBES.read_text(encoding="utf-8")
+        test_methods = re.split(r"(?=^    func test)", source, flags=re.MULTILINE)[1:]
+
+        unchecked = []
+        for method in test_methods:
+            access = method.find("SystemLanguageModel.default")
+            if access < 0:
+                continue
+            consent = [
+                position
+                for spelling in (
+                    "try skipUnlessHostModelAccessAllowed(",
+                    "try skipUnlessModelAvailable(",
+                )
+                if 0 <= (position := method.find(spelling)) < access
+            ]
+            if not consent:
+                name = method.split("(", 1)[0].removeprefix("    func ")
+                unchecked.append(name)
+
+        self.assertEqual(
+            unchecked, [], f"default model access without consent: {unchecked}"
         )
 
 

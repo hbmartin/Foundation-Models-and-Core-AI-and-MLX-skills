@@ -1015,7 +1015,7 @@ from a cold full prefill by **0.43 max-abs**, against an **8.3e-07** decode-path
 > **Safe default for VLMs today:** if you are doing multi-turn grounding (bounding boxes,
 > coordinates, "the thing on the left"), verify that your released version contains the #448/#475
 > family wiring and #443 fix before restoring a saved KV cache; otherwise prefer re-prefilling.
-> Qwen3-VL warm reuse specifically depends on the session-layer `PreparedInputSplitting` path added by that wiring.
+> Qwen3-VL warm reuse therefore inherits that released-version gate end to end.
 > Text-only
 > models are unaffected — they carry no state in `LMOutput.State`.
 

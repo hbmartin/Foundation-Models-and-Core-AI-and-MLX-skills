@@ -3,7 +3,9 @@
 
 Output TSV: symbol<TAB>framework-guess<TAB>total-mentions<TAB>n-guides<TAB>sdk26<TAB>sdk27<TAB>guides
   sdk26/sdk27: Y if the leading type appears and every dotted uppercase type component
-  belongs to one ordered declared/qualified path in a captured swiftinterface.
+  is one contiguous subpath of a declared/qualified type chain in a captured swiftinterface.
+  A longer chain may prove any contiguous type subpath; `::` module qualifiers may appear only at
+  the start of a recorded path and are never treated as nested type components.
   guides: semicolon list of "path:count", highest count first, capped at GUIDE_CAP.
 
 Importable as well as runnable: scripts/build-skills.py calls collect_symbol_counts()
@@ -107,9 +109,11 @@ class SDKPresence:
     """Precomputed interface token and ordered type-path presence.
 
     A token set preserves the intentionally coarse behavior for a bare type or a
-    lowercase member spelling. Dotted uppercase spellings use an ordered path set,
-    built from declarations and qualified references, so unrelated top-level names
-    cannot vouch for a nested type.
+    lowercase member spelling. Dotted uppercase spellings must be a contiguous subpath
+    of one declaration or qualified reference. Module-qualified interface spellings such
+    as ``Module::Outer.Module::Inner`` are normalized to ``Outer.Inner`` while retaining
+    ``Module.Outer.Inner``; a module qualifier in the middle starts a new chain instead
+    of becoming a fake nested type.
     """
 
     def __init__(self, sources=()):
@@ -117,19 +121,41 @@ class SDKPresence:
         self.type_paths = set()
         for module, text in sources:
             self.names.update(TYPE_NAME.findall(text))
-            self._index_qualified_references(module, text)
+            self._index_qualified_references(text)
             self._index_declarations(module, text)
 
     @staticmethod
-    def _parts(spelling):
-        return [part for part in re.split(r'::|\.', spelling) if part]
+    def _qualified_type_chains(spelling):
+        """Return ``(module, type-components)`` chains without crossing modules.
 
-    @staticmethod
-    def _without_repeated_module(parts, module):
-        if not module:
-            return parts
-        return [part for index, part in enumerate(parts)
-                if part != module or index == 0]
+        Swift interfaces repeat a module qualifier before nested components, for
+        example ``CoreAI::Value.CoreAI::Descriptor``. Equal qualifiers belong to
+        one type chain. A qualifier introduced after an unqualified path, or a
+        different qualifier, starts a new chain.
+        """
+        chains = []
+        active_module = None
+        active_parts = []
+        for atom in spelling.split('.'):
+            qualified = atom.split('::')
+            if len(qualified) == 1:
+                active_parts.append(atom)
+                continue
+            if len(qualified) != 2 or not all(qualified):
+                if active_parts:
+                    chains.append((active_module, active_parts))
+                active_module = None
+                active_parts = []
+                continue
+            next_module, name = qualified
+            if active_parts and active_module != next_module:
+                chains.append((active_module, active_parts))
+                active_parts = []
+            active_module = next_module
+            active_parts.append(name)
+        if active_parts:
+            chains.append((active_module, active_parts))
+        return chains
 
     def _record_path(self, parts):
         parts = tuple(part for part in parts if part and part[0].isupper())
@@ -141,10 +167,17 @@ class SDKPresence:
             for end in range(start + 2, len(parts) + 1):
                 self.type_paths.add(parts[start:end])
 
-    def _index_qualified_references(self, module, text):
-        for match in QUALIFIED_TYPE_PATH.finditer(text):
-            parts = self._without_repeated_module(self._parts(match.group()), module)
+    def _record_qualified_spelling(self, spelling):
+        for module, parts in self._qualified_type_chains(spelling):
             self._record_path(parts)
+            if module:
+                # A dotted guide spelling may explicitly name its module, but a
+                # module token is valid only as the leading component.
+                self._record_path([module, *parts])
+
+    def _index_qualified_references(self, text):
+        for match in QUALIFIED_TYPE_PATH.finditer(text):
+            self._record_qualified_spelling(match.group())
 
     def _index_declarations(self, module, text):
         depth = 0
@@ -158,11 +191,11 @@ class SDKPresence:
             declaration = TYPE_DECLARATION.search(line)
             opens_block = '{' in line
             if extension and opens_block:
-                parts = self._without_repeated_module(
-                    self._parts(extension.group(1)), module)
-                if module and parts and parts[0] == module:
-                    parts = parts[1:]
-                self._record_path(([module] if module else []) + parts)
+                chains = self._qualified_type_chains(extension.group(1))
+                extension_module, parts = chains[-1] if chains else (None, [])
+                self._record_path(parts)
+                path_module = extension_module or module
+                self._record_path(([path_module] if path_module else []) + parts)
                 contexts.append((depth + 1, parts))
             elif declaration:
                 kind, name = declaration.groups()

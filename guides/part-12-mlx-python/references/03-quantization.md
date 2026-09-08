@@ -1266,7 +1266,7 @@ own alignment bugs (§9.1, §9.2) separate from the dense ones.
 > `MACOSX_DEPLOYMENT_TARGET < 26.2` — no configure-time warning", CLOSED) and its fix PR **#3824**
 > ("Warn at configure time when NAX kernels are disabled", MERGED) exist because people shipped
 > builds like this.
-> ✅ VERIFIED, `notes/repos/issues-mlx-stack.md:1011`.
+> ✅ VERIFIED, `notes/repos/issues-mlx-stack.md:1021`.
 >
 > **Detection.** Measure, do not assume. §6.5 gives a probe.
 
@@ -1285,7 +1285,7 @@ i.e. your batch × sequence length.
 
 And `qmv_wide` itself:
 
-> ✅ **VERIFIED** — mlx PR **#3764** (MERGED), `notes/repos/issues-mlx-stack.md:1022`:
+> ✅ **VERIFIED** — mlx PR **#3764** (MERGED), `notes/repos/issues-mlx-stack.md:1032`:
 > "`qmv_wide` — small-batch quantized matvec for **M ∈ [2, vector_limit)**; dequantizes each weight
 > group once and reuses across the tile ('adapted from llama.cpp's `kernel_mul_mv_ext`'). Covers
 > **affine, nvfp4, mxfp4, mxfp8**, all dtypes, batched weights. **fp modes on all GPU generations;
@@ -1527,13 +1527,13 @@ row count `n = tokens × top_k` rather than `tokens` — a fact that turns out t
 
 Two operational facts about MoE weight loading, both of which bite before you ever reach a kernel:
 
-> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:761`: "**`mlx_lm.load` with default
+> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:771`: "**`mlx_lm.load` with default
 > `lazy=False` calls `mx.eval(model.parameters())`**, which materializes the full stacked
 > `(num_experts, ...)` expert table at load time — an **18.2 GB spike on Qwen3.6-35B-A3B-4bit**
 > *before a single token*. Use `load(lazy=True)` and drop the full-table references before anything
 > forces their eval."
 >
-> ✅ **VERIFIED** — same source, `notes/repos/issues-mlx-stack.md:759`: "**A prefix slice of an
+> ✅ **VERIFIED** — same source, `notes/repos/issues-mlx-stack.md:769`: "**A prefix slice of an
 > `mx.array` is a view that pins the whole parent buffer**, so slicing does not actually free the
 > rest of the table."
 
@@ -2265,7 +2265,7 @@ its *shape* — a mode-specific block-size assumption — is the kind of defect 
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1994`: PR **3912**, 2026-07-24, OPEN:
 > *"Fix fp quantized matmul corruption when the quantized dim is not a multiple of 32"*. Also
-> listed among open mlx PRs at `notes/repos/issues-mlx-stack.md:1039`.
+> listed among open mlx PRs at `notes/repos/issues-mlx-stack.md:1049`.
 
 Same family, third alignment constant. Note that 32 is the block size of `mxfp4` and `mxfp8`, so
 this is the fp modes' analogue of §9.2.
@@ -2291,7 +2291,7 @@ this is the fp modes' analogue of §9.2.
 
 **Status: MERGED.**
 
-> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:1033`: PR **#3804** "Fix fp quantized matvec
+> ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:1043`: PR **#3804** "Fix fp quantized matvec
 > for output dim < 8 (issue **#3762**: `fp_qmv_impl` used the raw scale byte instead of
 > `dequantize_scale` → **wrong mxfp4 matvec for `out_vec_size < 8`**)."
 
@@ -2688,7 +2688,7 @@ print("Any nonzero row count means the kernel did not write those rows.")
 > MLX has no documented API for writing a sentinel into a specific output allocation, and whether
 > `mx.full` + `del` reliably places a buffer of the right size class into the recycle pool depends
 > on allocator internals. Two facts make it plausible: the buffer cache's reuse window is
-> `[size, size + 2·page_size)` (`notes/repos/issues-mlx-stack.md:1071`), and `mx.clear_cache()`
+> `[size, size + 2·page_size)` (`notes/repos/issues-mlx-stack.md:1081`), and `mx.clear_cache()`
 > drains that pool — which is why the code above deliberately does *not* call it.
 > **If the row count comes back 0 on a configuration you believe is affected, do not conclude you
 > are safe** — fall back to check 3, which needs no allocator assumptions at all.
