@@ -114,9 +114,7 @@ let currentOSBuild: String? = {
 /// Skip every host-backed model probe unless the operator explicitly opts in. This gate must run
 /// before even reading `SystemLanguageModel.default`: availability and capability access are part
 /// of the host-backed model surface whose behavior is unverified on a new runtime.
-func skipUnlessHostModelAccessAllowed(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
-                                      file: StaticString = #filePath,
-                                      line: UInt = #line) throws {
+func skipUnlessHostModelAccessAllowed(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL") throws {
     #if os(macOS) || targetEnvironment(simulator)
     guard Probe.env(overrideKnob) == "1" else {
         let build = currentOSBuild ?? "unparsed"
@@ -130,9 +128,8 @@ func skipUnlessHostModelAccessAllowed(overrideKnob: String = "PROBE_ENABLE_HOST_
 /// Apply the consent gate, then check genuine model availability. A probe already gated on its own
 /// PROBE_* knob passes that knob here, so the one documented knob suffices. Physical-device probes
 /// proceed directly to availability checking.
-func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL",
-                              file: StaticString = #filePath, line: UInt = #line) throws {
-    try skipUnlessHostModelAccessAllowed(overrideKnob: overrideKnob, file: file, line: line)
+func skipUnlessModelAvailable(overrideKnob: String = "PROBE_ENABLE_HOST_MODEL") throws {
+    try skipUnlessHostModelAccessAllowed(overrideKnob: overrideKnob)
     let model = SystemLanguageModel.default
     guard model.isAvailable else {
         throw XCTSkip("SystemLanguageModel unavailable on this destination: \(model.availability)")

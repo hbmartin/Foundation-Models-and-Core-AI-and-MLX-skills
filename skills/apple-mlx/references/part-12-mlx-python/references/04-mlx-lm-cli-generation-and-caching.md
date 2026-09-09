@@ -1688,7 +1688,7 @@ Three open defects and one administratively closed defect, all community-reporte
 | mlx-lm#1390 | Server aborts with a Metal `Insufficient Memory` command-buffer failure after the prompt cache grew to **23.35 GB / 26.28 GB** | OPEN |
 
 > ✅ **VERIFIED** — issue numbers, quoted symptoms and status from
-> `notes/repos/issues-mlx-stack.md:625-644` and `:145-146`. Reported configuration for #1390:
+> `notes/repos/issues-mlx-stack.md:631-650` and `:145-146`. Reported configuration for #1390:
 > Qwen3.5-4B-8bit on 48 GB, macOS 27.0 (build 26A5353q), Python 3.14.6, mlx-lm 0.31.3,
 > huggingface_hub 1.18.0. Community-measured.
 
@@ -1808,7 +1808,7 @@ This is the finding that changes how you should use the flag, and it is one of t
 investigations in the mlx-lm tracker.
 
 > ✅ **VERIFIED, community-measured** — mlx-lm#1587 (OPEN, 11 comments), via
-> `notes/repos/issues-mlx-stack.md:490-535`. Reported on **Llama-3.2-3B-Instruct-4bit, M4 Max
+> `notes/repos/issues-mlx-stack.md:496-541`. Reported on **Llama-3.2-3B-Instruct-4bit, M4 Max
 > 128 GB, macOS 27.0**:
 
 | Context | Case | Peak MLX memory | Decode speed |
@@ -2034,7 +2034,7 @@ Three things fall out that match every measurement in our corpus:
 
 Community measurement that shows term 2 biting hard:
 
-> ✅ **VERIFIED, community-measured** — `notes/repos/issues-mlx-stack.md:479`: at verify width
+> ✅ **VERIFIED, community-measured** — `notes/repos/issues-mlx-stack.md:480`: at verify width
 > **M=3**, 2-bit and 8-bit weights cost the *same absolute time* (0.221 vs 0.224 ms). **This kills
 > 2-bit's speculative-decoding value**, because verify width is `num_draft_tokens + 1` = 2–6. The
 > same source reports a measured speculative speedup of **1.2× on a 2-bit 27B versus 1.6–2.1× on
@@ -2837,7 +2837,7 @@ model whose `make_cache()` already returns bounded caches — and drive your pro
 
 ### 9.5 ⚠️ SILENT FAILURE — server prompt-cache reuse returning mismatched KV
 
-> ✅ **VERIFIED** — mlx-lm#1494 (administratively closed without a fix 2026-08-21), via `notes/repos/issues-mlx-stack.md:625-629`.
+> ✅ **VERIFIED** — mlx-lm#1494 (administratively closed without a fix 2026-08-21), via `notes/repos/issues-mlx-stack.md:631-635`.
 
 `LRUPromptCache.fetch_nearest_cache` rests on two assumptions:
 

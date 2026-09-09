@@ -96,10 +96,12 @@ xcrun -sdk iphonesimulator swiftc -target arm64-apple-ios27.0-simulator \
     fmworkload.swift -o fmworkload
 SIMCTL_CHILD_PROBE_WORKLOAD_SECONDS=600 \
 SIMCTL_CHILD_PROBE_WORKLOAD_ATTACH_SECONDS=20 \
+SIMCTL_CHILD_PROBE_INSTRUMENTS_WORKLOAD=1 \
   xcrun simctl spawn booted ./fmworkload
 ```
 
-Attach Instruments to the `fmworkload` process; same transcription list. The 2026-08-01 smoke run
+`PROBE_INSTRUMENTS_WORKLOAD=1` is explicit consent to read the host-backed default model. Attach
+Instruments to the `fmworkload` process; same transcription list. The 2026-08-01 smoke run
 on the iOS 27 simulator resolved the model as available and confirmed that the workload window
 starts only after the attach countdown, then stops without starting another phase after its
 deadline. Recheck the printed availability line on later runtimes.

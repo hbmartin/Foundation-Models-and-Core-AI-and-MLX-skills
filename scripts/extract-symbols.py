@@ -181,7 +181,9 @@ class SDKPresence:
 
     def _index_declarations(self, module, text):
         depth = 0
-        # Each item is (minimum brace depth while active, path without module).
+        # Each item is (minimum brace depth while active, owning module,
+        # path without module). Extensions can target a foreign module, so the
+        # file's module is not sufficient provenance for nested declarations.
         contexts = []
         for line in text.splitlines():
             while contexts and depth < contexts[-1][0]:
@@ -193,18 +195,24 @@ class SDKPresence:
             if extension and opens_block:
                 chains = self._qualified_type_chains(extension.group(1))
                 extension_module, parts = chains[-1] if chains else (None, [])
+                # Older textual interfaces can repeat the file module with a
+                # dot (``Module.Type``). Strip only that known module: a dotted
+                # ``Outer.Inner`` may instead be a genuine nested type.
+                if extension_module is None and module and parts and parts[0] == module:
+                    extension_module, parts = module, parts[1:]
                 self._record_path(parts)
                 path_module = extension_module or module
                 self._record_path(([path_module] if path_module else []) + parts)
-                contexts.append((depth + 1, parts))
+                contexts.append((depth + 1, path_module, parts))
             elif declaration:
                 kind, name = declaration.groups()
-                parent = contexts[-1][1] if contexts else []
+                path_module = contexts[-1][1] if contexts else module
+                parent = contexts[-1][2] if contexts else []
                 path = [*parent, name]
-                self._record_path(([module] if module else []) + path)
+                self._record_path(([path_module] if path_module else []) + path)
                 self._record_path(path)
                 if opens_block and kind not in ('typealias', 'associatedtype'):
-                    contexts.append((depth + 1, path))
+                    contexts.append((depth + 1, path_module, path))
 
             depth += line.count('{') - line.count('}')
             while contexts and depth < contexts[-1][0]:

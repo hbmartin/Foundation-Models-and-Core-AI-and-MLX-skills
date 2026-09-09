@@ -205,8 +205,24 @@ class CommittedResultsTests(unittest.TestCase):
             (fence.rel_path, str(fence.open_line), fence.anchor, fence.info)
             for fence in fences
         ]
-        rows = list(VS.read_prior_results(results).values())
+        lines = pathlib.Path(results).read_text(encoding="utf-8").splitlines()
+        self.assertGreater(len(lines), 1)
+        header = lines[0].split("\t")
+        self.assertEqual(header, VS.TSV_COLUMNS)
+        rows = []
+        for line_number, line in enumerate(lines[1:], 2):
+            fields = line.split("\t")
+            self.assertEqual(
+                len(fields),
+                len(header),
+                f"results.tsv line {line_number} has a ragged row",
+            )
+            rows.append(dict(zip(header, fields)))
         self.assertGreater(len(rows), 0)
+        self.assertTrue(
+            all(row["snippet_id"] not in ("", "-") for row in rows),
+            "committed results contain an empty or placeholder snippet_id",
+        )
         actual = [
             (row["file"], row["line"], row["anchor"], row["info"])
             for row in rows

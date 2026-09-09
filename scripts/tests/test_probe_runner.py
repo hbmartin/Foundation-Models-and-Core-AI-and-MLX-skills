@@ -11,9 +11,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "scripts" / "run-probes.sh"
-FOUNDATION_MODELS_PROBES = (
-    ROOT / "probes" / "Tests" / "ProbesTests" / "FoundationModelsProbes.swift"
-)
+PROBES_ROOT = ROOT / "probes"
 
 
 class ProbeRunnerTests(unittest.TestCase):
@@ -242,25 +240,45 @@ fi
         )
 
     def test_every_default_model_access_is_preceded_by_explicit_consent(self) -> None:
-        source = FOUNDATION_MODELS_PROBES.read_text(encoding="utf-8")
-        test_methods = re.split(r"(?=^    func test)", source, flags=re.MULTILINE)[1:]
-
         unchecked = []
-        for method in test_methods:
-            access = method.find("SystemLanguageModel.default")
-            if access < 0:
-                continue
-            consent = [
-                position
-                for spelling in (
-                    "try skipUnlessHostModelAccessAllowed(",
-                    "try skipUnlessModelAvailable(",
+        consent_spellings = (
+            "try skipUnlessHostModelAccessAllowed(",
+            "try skipUnlessModelAvailable(",
+            'guard Probe.env("PROBE_INSTRUMENTS_WORKLOAD") == "1"',
+        )
+
+        for path in sorted(PROBES_ROOT.rglob("*.swift")):
+            source = path.read_text(encoding="utf-8")
+            function_starts = [
+                (match.start(), len(match.group("indent").expandtabs(4)))
+                for match in re.finditer(
+                    r"^(?P<indent>[ \t]*)(?:static[ \t]+)?func[ \t]+",
+                    source,
+                    re.MULTILINE,
                 )
-                if 0 <= (position := method.find(spelling)) < access
             ]
-            if not consent:
-                name = method.split("(", 1)[0].removeprefix("    func ")
-                unchecked.append(name)
+            for access in re.finditer(r"SystemLanguageModel\.default", source):
+                line_start = source.rfind("\n", 0, access.start()) + 1
+                line_end = source.find("\n", access.end())
+                if line_end < 0:
+                    line_end = len(source)
+                if source[line_start:line_end].lstrip().startswith("//"):
+                    continue
+
+                access_indent = len(
+                    re.match(r"[ \t]*", source[line_start:access.start()])
+                    .group(0)
+                    .expandtabs(4)
+                )
+                enclosing = [
+                    start
+                    for start, indent in function_starts
+                    if start < access.start() and indent < access_indent
+                ]
+                prefix = source[max(enclosing):access.start()] if enclosing else ""
+                if not any(spelling in prefix for spelling in consent_spellings):
+                    line_number = source.count("\n", 0, access.start()) + 1
+                    unchecked.append(f"{path.relative_to(ROOT)}:{line_number}")
 
         self.assertEqual(
             unchecked, [], f"default model access without consent: {unchecked}"

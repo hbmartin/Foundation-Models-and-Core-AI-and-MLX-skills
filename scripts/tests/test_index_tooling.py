@@ -426,6 +426,35 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(in27['Container.ForeignModule'], '')
             self.assertEqual(in27['InferenceValue.ViewRepresentable'], 'Y')
 
+    def test_extension_paths_keep_the_declaring_module(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides, interfaces = root / 'guides', root / 'interfaces'
+            guides.mkdir()
+            interfaces.mkdir()
+            (guides / 'guide.md').write_text(
+                '`Consumer.Consumer` `Consumer.Consumer`\n'
+                '`Consumer.Widget` `Consumer.Widget`\n'
+                '`Swift.String.IntentInputOptions` `Swift.String.IntentInputOptions`\n'
+                '`Consumer.String.IntentInputOptions` `Consumer.String.IntentInputOptions`\n',
+                encoding='utf-8',
+            )
+            (interfaces / 'Consumer-27.0-macos.swiftinterface').write_text(
+                'extension Consumer.Widget {}\n'
+                'extension Swift::String {\n'
+                '  public struct IntentInputOptions {}\n'
+                '}\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_SYMBOLS, guides, interfaces)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            in27 = {row[0]: row[5] for row in
+                    (line.split('\t') for line in result.stdout.splitlines())}
+            self.assertEqual(in27['Consumer.Consumer'], '')
+            self.assertEqual(in27['Consumer.Widget'], 'Y')
+            self.assertEqual(in27['Swift.String.IntentInputOptions'], 'Y')
+            self.assertEqual(in27['Consumer.String.IntentInputOptions'], '')
+
     def test_symbol_extractor_breaks_equal_count_ties_by_guide_path(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -117,7 +117,9 @@ the check green; investigate the provenance change first.
 An unrecognized root `fm --help` command header does not discard otherwise valid SDK interfaces.
 The dump records a marker in the optional help artifact, writes `optional_tools.fm.help_capture` as
 `partial`, and emits a warning. `diff-interfaces.sh` still reports the usable interface drift, then
-exits nonzero so automation cannot mistake incomplete CLI evidence for a complete capture.
+exits 2 in its full-surface mode so automation cannot mistake incomplete CLI evidence for a complete
+capture. A scoped `--framework` run does not compare CLI help and therefore does not fail for an
+unrelated partial `fm` help capture; operational failures continue to exit 1.
 
 ## Recovering from an interrupted capture
 
