@@ -2,7 +2,7 @@
 
 **1787 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-14. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -194,7 +194,7 @@
 - [gather_qmm's unwritten rows aren't zeros: they hold recycled MTLBuffer contents, sometimes coincidentally plausible.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md#91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856) — 12.3 🔇
 - [Decision-table flag: M5 affine MoE has one unreleased fix and one open bug; pad rows and keep K%64==0.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/03-quantization.md#121-the-decision-in-one-table) — 12.3
 - [Training data renders under enable_thinking auto-defaults; serving with another template quietly degrades the adapter.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#25-️-silent-failure--the-chat-template-that-trained-your-adapter-is-not-the-one-serving-it) — 12.6
-- [On M5/A19, affine gather_qmm silently corrupts MoE output (mlx#3856) for big row counts or K%64!=0; M1-M4 unaffected.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#53-what-qlora-costs-you) — 12.6
+- [M5/A19 gather_qmm corruption in mlx#3856/#3887 affects big rows or ragged K through 0.32.2; #3922 fixes main.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#53-what-qlora-costs-you) — 12.6
 
 **Part 13**
 
@@ -1910,7 +1910,7 @@
 - [stopStrings nil falls back to extraEOSTokens — nil and empty array behave differently](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#63-stop-tokens-four-sources-one-of-which-overwrites-the-others) — 13.2
 - [A bare-id load bypasses the registry — no extraEOSTokens or curated defaults; same model, different behavior](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#63-stop-tokens-four-sources-one-of-which-overwrites-the-others) — 13.2
 - [gemma's exact-equality rule misses family variants — they fall through to the .json default](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) — 13.2
-- [toolCallFormat matches 'gemma' by exact equality while every other family uses hasPrefix](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) — 13.2
+- [Older toolCallFormat versions matched 'gemma' exactly, so Gemma 4 fell through and emitted tool calls as text.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#75-detection-toolcallformatinfer-rule-by-rule) — 13.2
 - [Mixing ToolCallProcessor's two APIs on one instance corrupts its streaming state machine — the source forbids it](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#76-toolcallprocessor--the-streaming-state-machine) — 13.2
 - [A protocol-extension-only ropeOffset would be statically shadowed — subclass overrides silently ignored via existentials](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#81-the-protocol) — 13.2
 - [newCache derives cache count from kvHeads.count — an unassigned empty array builds zero caches and crashes](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md#84-where-the-cache-actually-gets-created) — 13.2

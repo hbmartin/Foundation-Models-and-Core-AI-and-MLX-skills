@@ -3216,7 +3216,7 @@ No number in this guide is presented as an Apple figure unless the row above say
 | Apple's skill labels the ANE embedding table "externalized"; the detailed reference describes a **separate export with its own entrypoint** | **Detailed reference wins.** Two mechanisms, one word — the guide names both and points each intent at the right API. §8.6 |
 | WWDC26 325 says composites are "pre-packaged fast kernels" with no measured benefit; no A/B exists anywhere | Kept as mechanism, declared as a GAP on magnitude. §8.6 |
 | Session 325 frames the multi-entrypoint split as a latency trick; the optional `coreai-models` loader also maps recognized structures to its ANE preference | Package policy, not a Core AI framework contract; deferred to Parts 7 and 10. §8.6[^sample-routing-policy] |
-| `coreai-torch`#8 is still OPEN but a contributor states it is fixed on main since #13 | Not relied on in this guide either way |
+| `coreai-torch`#8 was closed completed on 2026-09-14 after the fix merged in #13; a maintainer reconfirmed all four float-`arange` forms on coreai-torch 0.4.2 | Not relied on in this guide either way |
 
 ### Declared gaps — nothing is guessed inside these
 

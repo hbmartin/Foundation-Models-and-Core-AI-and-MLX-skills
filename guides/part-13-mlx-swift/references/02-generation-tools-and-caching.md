@@ -2229,23 +2229,23 @@ other shape produces:
 - and **the tool-call text intact, inline, in the `.chunk` stream** — so it appears in your UI as
   the assistant reciting a function call at the user.
 
-There is no error. There is no warning. Your tool loop simply never fires.
+On affected releases there is no error or warning; the tool loop simply never fires.
 
 > ✅ **VERIFIED** — this exact failure is documented end-to-end in `mlx-swift-lm#259` for Gemma 4:
 > *"Net: `stopReason == .stop`, `toolCalls == []`, tool-call text intact in the prose."*
 
-⚠️ **Note the `gemma` row uses exact equality where every other family uses `hasPrefix`.** Issue
-`mlx-swift-lm#259` names this as one of two root causes for Gemma 4 tool calls never being extracted,
-because Gemma 4's `model_type` is `"gemma4"`, not `"gemma"`.
+⚠️ **Older releases used exact equality for the `gemma` row where other families used
+`hasPrefix`.** Issue `mlx-swift-lm#259` identified this as one of two root causes for Gemma 4 tool
+calls not being extracted, because Gemma 4's `model_type` is `"gemma4"`, not `"gemma"`.
 
-> **Status, and a discrepancy you should know about.** Issue `mlx-swift-lm#259` is recorded as **OPEN** in the
-> July 2026 issue-mining pass. But the source read at HEAD `3cbf928` shows a **`.gemma4` case with
-> the correct `<|tool_call>` / `<tool_call|>` tags and a `prefix gemma4 ⇒ .gemma4` rule** — i.e.
-> both root causes named in `mlx-swift-lm#259` appear to be addressed in the code, while the issue remains
-> open. The most likely explanation is that the issue predates the fix and was never closed.
-> **Status as of 2026-07-29: code appears fixed at HEAD; issue still open (re-checked via `gh`;
-> 3 comments, last activity 2026-07-10); not independently
-> re-tested by this guide.** Do not rely on either state — run the check in §7.8.
+> ✅ **FIXED — issue `mlx-swift-lm#259` closed completed on 2026-09-14.** PR #183 had already
+> added the `.gemma4` inference case and current tags on 2026-05-22. PR #548 added bounded
+> cross-dialect recovery and merged immediately before the issue closed.
+> The source at `3cbf928` already showed the direct `.gemma4` path, but the later recovery fix makes
+> the closure broader than the July source inspection.
+> Keep the §7.8 check for apps pinned to an older release.
+> Retain it as a regression test when changing templates
+> or parsers.
 
 The registry presets set the format explicitly where inference cannot:
 
