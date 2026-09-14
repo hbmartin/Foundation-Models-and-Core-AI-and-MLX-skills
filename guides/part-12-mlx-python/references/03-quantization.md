@@ -2049,7 +2049,7 @@ Statuses move. Check the issue before you rely on this table.
 | # | Defect | Issue / PR | Status 2026-08-03 | Affects |
 |---|---|---|---|---|
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **closed completed**, fix PR **merged 2026-08-26** | affine MoE, M5/NAX only |
-| 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** | **OPEN** | affine **and mxfp4** MoE, M5/NAX only |
+| 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** → PR **#3922** | issue **closed completed 2026-09-07**, fix PR **merged 2026-08-26** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
 | 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
@@ -2197,7 +2197,7 @@ Your options, in order of preference:
 
 ### 9.2 The second, independent gather defect — mlx#3887
 
-**Status: OPEN as of 2026-07-29.**
+**Status: FIXED ON MAIN by PR #3922 (`d73eb752`); issue closed completed 2026-09-07.**
 
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:429-431`: "`gather_qmm` sorted-rhs path
 > corrupt for **`K % 64 != 0`** on M5/NAX: `!align_K` tail bounds the load with `BK` instead of the
@@ -2384,9 +2384,10 @@ hunting.
 
 If you run **quantized MoE models on M5-generation hardware** on a release through mlx 0.32.2, you
 are exposed to two independent silent-corruption defects (#3856, #3887), and the result is *plausible
-wrong output*, not an error. Main after `d73eb752` fixes #3856; #3887 remains open. Prefer a native
-`K % 64 == 0`; otherwise choose a fixed revision, safe fallback, or measured padding. On released
-builds, pad gathered rows to 64, and verify with §10 before every release.
+wrong output*, not an error. Main after `d73eb752` fixes both defects; releases through 0.32.2
+predate that merge. Prefer a native `K % 64 == 0`; otherwise choose a fixed revision, safe fallback,
+or measured padding. On affected released builds, pad gathered rows to 64, and verify with §10
+before every release.
 If you run **dense quantized models on M1–M4**, essentially none of this section applies to you
 today. Everyone should pin their mlx version, because the fixes and the regressions are landing in
 the same weeks.[^k64-tradeoff]
@@ -2850,11 +2851,11 @@ LADDER       M = 1        qmv
              2-bit loses its speed advantage at M >= 3.
 
 FIXED MAIN   #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
-                    -> fixed by #3922 (`d73eb752`); v0.32.2 predates the merge
-OPEN BUGS    #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
-             #3912  fp quantized matmul, quantized dim % 32 != 0
+             #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
+                    -> both fixed by #3922 (`d73eb752`); v0.32.2 predates the merge
+OPEN BUGS    #3912  fp quantized matmul, quantized dim % 32 != 0
              #3924  tile_matmad_nax missing else, odd tile shapes
-             (#3887/#3912/#3924 OPEN; #3854 nvfp4 split-K is MERGED)
+             (#3912/#3924 OPEN; #3854 nvfp4 split-K is MERGED)
 
 MITIGATION   Prefer native K % 64 == 0; otherwise pin a fixed revision, use a
              safe fallback, or measure padding. Pad gathered rows to 64 while
@@ -2927,16 +2928,15 @@ Things this guide could not verify, what would resolve them, and what to do mean
 > **Safe default:** 1-D `int32` `rhs_indices` of length `n`, `lhs_indices=None` — the MoE-decode
 > shape mlx-lm's `SwitchLinear` exercises.
 >
-> 🟡 **PARTIALLY RESOLVED 2026-08-26 — `mlx#3922` merged and `mlx#3856` closed; `mlx#3887`
-> remains open.**
+> ✅ **RESOLVED ON MAIN — `mlx#3922` merged 2026-08-26; `mlx#3856` and `mlx#3887` are closed.**
 > Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
 > `mlx-lm#1585` (downstream
 > padding workaround) also open. A **2026-07-31** re-check still found all three open; that is now
 > historical. On **2026-08-26**, `mlx#3922` merged with a focused regression test and `mlx#3856`
 > closed.
-> The latest release, v0.32.2 (2026-08-25), predates that merge, so no tagged release contains it as
-> of 2026-09-05; `mlx#3887` remains open.
-> **Resolution:** pin `d73eb752` or later, or wait for the next release; keep tracking #3887.
+> Release v0.32.2 (2026-08-25) predates that merge. On 2026-09-07, `mlx#3887` closed completed
+> after maintainers confirmed #3922 covers its reported affine and MXFP ragged-K cases.
+> **Resolution:** pin `d73eb752` or later, or use a release that contains that commit.
 > **Safe default:** preserve native 64-alignment and keep the gathered-row workaround on ≤0.32.2
 > while needed, but re-measure and remove padding after a fix; both forms of padding consume memory
 > and compute even when the underlying bug is gone.

@@ -1310,7 +1310,8 @@ Three effects, in decreasing order of how often they bite:
 > Fix PRs `mlx#3922` and `mlx-lm#1585` ("pad sorted gather rows to 64") were open — `mlx#3922`
 > still open on a 2026-07-31 `gh` re-check, as were issue `mlx#3856` and its sibling `mlx#3887`.
 > On 2026-08-26 `mlx#3922` merged and `mlx#3856` closed completed; `mlx-lm#1585` had closed
-> unmerged on 2026-08-21, while `mlx#3887` remains open. Also
+> unmerged on 2026-08-21. `mlx#3887` closed completed on 2026-09-07 after maintainers confirmed
+> #3922 covers its reported affine and MXFP ragged-K cases. Also
 > **mlx#3912**, "fp quantized matmul corruption when the quantized dim isn't a multiple of 32".
 > If you are fine-tuning an MoE in 4-bit on M5-generation silicon, verify your checkout includes
 > those fixes before trusting a single loss curve. These are community-reported and
