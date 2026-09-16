@@ -7,6 +7,9 @@ from the preceding platform generation.
 
 The Markdown under [`guides/`](guides/) is the canonical published corpus. Generated indexes and
 the MkDocs site are derived from it; edit the guide sources, not generated documentation output.
+The numbered part series feeds the installable Agent Skills. The focused pages under
+[`guides/workflows/`](guides/workflows/) are website-only deployment guides and are deliberately
+excluded from skill generation.
 
 ## Using the guides with a coding agent
 
@@ -171,7 +174,7 @@ open at most one draft-to-ready PR; it never merges automatically.
 
 | Path | Purpose |
 |---|---|
-| [`guides/`](guides/) | Canonical 17-part guide series, reference guides, and generated cross-cutting indexes. |
+| [`guides/`](guides/) | Canonical 17-part guide series, website-only deployment workflows, and generated cross-cutting indexes. |
 | [`skills/`](skills/) | Generated, installable agent skills derived from `guides/`. Edit the guides, not these. |
 | [`notes/`](notes/) | Research synthesis, maintenance runbooks, captured SDK interfaces, and verification results. |
 | [`probes/`](probes/) | SwiftPM runtime probes that turn documented behavioral gaps into executable evidence. |
@@ -189,4 +192,5 @@ The [guide-series overview](guides/README.md) is the reader entry point and owns
 17-part table of contents. Start with [Part 1: Orientation and gating](guides/part-01-orientation-and-gating/)
 for the stack map and platform gates. Use the [API and symbol index](guides/API-INDEX.md) to find
 coverage by identifier, or the [silent-failure index](guides/SILENT-FAILURES.md) to troubleshoot by
-observed symptom.
+observed symptom. For the cloud-to-device path, read
+[Remote GPU training to an iOS app](guides/workflows/remote-training-to-ios.md).

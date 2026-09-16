@@ -225,7 +225,9 @@ class CompileResult:
 
 def iter_guide_files(root):
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames.sort()
+        # Website-only deployment workflows deliberately sit outside the
+        # versioned SDK snippet corpus and its committed results ledger.
+        dirnames[:] = sorted(name for name in dirnames if name != "workflows")
         for fn in sorted(filenames):
             if not fn.endswith(".md") or fn in GENERATED_PAGES:
                 continue

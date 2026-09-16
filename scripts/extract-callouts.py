@@ -18,6 +18,7 @@ from mdslug import slugify, unique_slug
 from stable_identity import content_hash, semantic_id
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
+SITE_ONLY_DIRECTORIES = {'workflows'}
 
 # CommonMark-ish fence delimiter: up to 3 leading spaces, then 3+ backticks or
 # tildes. A backtick opener's info string may not contain a backtick; a closer
@@ -32,7 +33,11 @@ def flatten(text, limit=400):
 
 rows = []
 for dirpath, dirnames, filenames in os.walk(ROOT):
-    dirnames.sort()
+    # Site-only deployment workflows are published by MkDocs but are not part
+    # of the generated Agent Skill failure index.
+    dirnames[:] = sorted(
+        name for name in dirnames if name not in SITE_ONLY_DIRECTORIES
+    )
     for fn in sorted(filenames):
         if not fn.endswith('.md') or fn in ('SILENT-FAILURES.md', 'API-INDEX.md'):
             continue  # never index the generated index pages themselves

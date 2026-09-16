@@ -914,6 +914,12 @@ class CommittedSkillsTests(unittest.TestCase):
                 f"{page.relative}: guide cards do not match its references/ directory",
             )
 
+    def test_site_only_workflows_do_not_become_skill_pages(self):
+        workflow = GUIDES / "workflows" / "remote-training-to-ios.md"
+        self.assertTrue(workflow.is_file())
+        discovered = {page.source for page in builder.discover_pages(GUIDES)}
+        self.assertNotIn(workflow.resolve(), discovered)
+
     def test_no_skill_cites_a_guide_it_does_not_own(self):
         # Three skills share part 16, so filtering by part rather than by guide
         # would point a reader at deep guides missing from their section map.
