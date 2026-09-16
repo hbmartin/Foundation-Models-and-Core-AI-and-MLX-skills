@@ -151,12 +151,17 @@ reproducible release recipe.
 # ///
 
 import argparse
+import importlib.metadata
 import json
 import platform
+import subprocess
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
+from typing import Any
 
 import torch
 from datasets import load_dataset
+from huggingface_hub import HfApi
 from peft import LoraConfig, PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.trainer_utils import get_last_checkpoint
@@ -170,16 +175,69 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--dataset-id", required=True)
     parser.add_argument("--dataset-revision", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument(
+        "--environment-id",
+        required=True,
+        help="Immutable container digest or SHA-256 of the dependency lock",
+    )
     parser.add_argument("--adapter-repo")
     parser.add_argument("--merged-repo")
     parser.add_argument("--max-steps", type=int, default=300)
     return parser.parse_args()
 
 
+def json_ready(value: Any) -> Any:
+    """Convert config values such as enums, paths, and sets to stable JSON."""
+    if is_dataclass(value):
+        return json_ready(asdict(value))
+    if isinstance(value, dict):
+        return {str(key): json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_ready(item) for item in value]
+    if isinstance(value, set):
+        return sorted((json_ready(item) for item in value), key=str)
+    if isinstance(value, Path):
+        return str(value)
+    if hasattr(value, "value"):
+        return json_ready(value.value)
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def installed_versions() -> dict[str, str]:
+    names = (
+        "datasets",
+        "huggingface-hub",
+        "peft",
+        "safetensors",
+        "torch",
+        "transformers",
+        "trl",
+    )
+    return {name: importlib.metadata.version(name) for name in names}
+
+
+def cuda_driver_version() -> str:
+    result = subprocess.run(
+        [
+            "nvidia-smi",
+            "--query-gpu=driver_version",
+            "--format=csv,noheader",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip().splitlines()[0]
+
+
 def main() -> None:
     args = arguments()
     if not torch.cuda.is_available():
         raise RuntimeError("This recipe expects an NVIDIA CUDA worker")
+    driver_version = cuda_driver_version()
+    package_versions = installed_versions()
 
     run_dir = Path(args.output_dir)
     checkpoint_dir = run_dir / "checkpoints"
@@ -230,10 +288,15 @@ def main() -> None:
             "dtype": "bfloat16",
             "trust_remote_code": False,
         },
-        push_to_hub=bool(args.adapter_repo),
-        hub_model_id=args.adapter_repo,
-        hub_private_repo=True,
-        hub_strategy="checkpoint",
+        push_to_hub=False,
+    )
+    lora = LoraConfig(
+        task_type="CAUSAL_LM",
+        r=16,
+        lora_alpha=32,
+        lora_dropout=0.05,
+        bias="none",
+        target_modules="all-linear",
     )
 
     trainer = SFTTrainer(
@@ -242,23 +305,29 @@ def main() -> None:
         train_dataset=split["train"],
         eval_dataset=split["test"],
         processing_class=tokenizer,
-        peft_config=LoraConfig(
-            task_type="CAUSAL_LM",
-            r=16,
-            lora_alpha=32,
-            lora_dropout=0.05,
-            bias="none",
-            target_modules="all-linear",
-        ),
+        peft_config=lora,
     )
 
     resume = get_last_checkpoint(str(checkpoint_dir))
     trainer.train(resume_from_checkpoint=resume)
     metrics = trainer.evaluate()
+    (run_dir / "eval.json").write_text(
+        json.dumps(metrics, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     trainer.save_model(str(adapter_dir))
     tokenizer.save_pretrained(adapter_dir)
+
+    api = HfApi()
+    adapter_commit_sha = None
     if args.adapter_repo:
-        trainer.push_to_hub(commit_message="Final LoRA adapter and training metadata")
+        api.create_repo(args.adapter_repo, private=True, exist_ok=True)
+        adapter_commit = api.upload_folder(
+            repo_id=args.adapter_repo,
+            folder_path=adapter_dir,
+            commit_message="Final LoRA adapter",
+        )
+        adapter_commit_sha = adapter_commit.oid
 
     # Produce the portable handoff. PEFT adapter checkpoints do not contain the
     # base weights, so MLX/Core AI should consume this merged directory instead.
@@ -278,9 +347,16 @@ def main() -> None:
         max_shard_size="4GB",
     )
     tokenizer.save_pretrained(merged_dir)
+
+    merged_commit_sha = None
     if args.merged_repo:
-        merged.push_to_hub(args.merged_repo, private=True, safe_serialization=True)
-        tokenizer.push_to_hub(args.merged_repo, private=True)
+        api.create_repo(args.merged_repo, private=True, exist_ok=True)
+        merged_commit = api.upload_folder(
+            repo_id=args.merged_repo,
+            folder_path=merged_dir,
+            commit_message="Merged portable checkpoint",
+        )
+        merged_commit_sha = merged_commit.oid
 
     manifest = {
         "base_model": args.base_model,
@@ -288,16 +364,34 @@ def main() -> None:
         "dataset_id": args.dataset_id,
         "dataset_revision": args.dataset_revision,
         "dataset_fingerprint": dataset._fingerprint,
-        "seed": 42,
-        "max_steps": args.max_steps,
+        "train_fingerprint": split["train"]._fingerprint,
+        "eval_fingerprint": split["test"]._fingerprint,
+        "command_arguments": vars(args),
+        "environment_id": args.environment_id,
+        "packages": package_versions,
         "python": platform.python_version(),
+        "platform": platform.platform(),
         "torch": torch.__version__,
-        "cuda": torch.version.cuda,
+        "cuda_toolkit": torch.version.cuda,
+        "cuda_driver": driver_version,
         "gpu": torch.cuda.get_device_name(0),
+        "precision": "bfloat16",
+        "sft_config": training.to_dict(),
+        "lora_config": lora.to_dict(),
+        "hub_artifacts": {
+            "adapter": {
+                "repo": args.adapter_repo,
+                "commit_sha": adapter_commit_sha,
+            },
+            "merged": {
+                "repo": args.merged_repo,
+                "commit_sha": merged_commit_sha,
+            },
+        },
         "eval": metrics,
     }
     (run_dir / "run-manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        json.dumps(json_ready(manifest), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -310,6 +404,12 @@ The [PEFT checkpoint documentation](https://huggingface.co/docs/peft/main/develo
 is explicit that an adapter checkpoint contains only adapter parameters. `merge_and_unload()` is
 the step that creates an ordinary model again. Preserve **both** artifacts: the adapter for future
 training and the merged model for conversion.
+
+The two `upload_folder()` calls deliberately upload each artifact directory in one Hub commit, so
+their returned `CommitInfo.oid` values identify the exact adapter and merged weights. The local
+manifest also retains the resolved package versions, effective SFT and LoRA configs, CUDA driver,
+environment identity, dataset fingerprints, and evaluation. If you omit the repository arguments,
+the commit fields remain `null` and the durable output volume is the only artifact copy.
 
 If the selected GPU does not support BF16, change both `bf16=True` and the two BF16 dtypes to FP16.
 Do not silently let the model load in FP32: it can double memory and change the hardware size you
@@ -337,6 +437,7 @@ job = run_uv_job(
         "--dataset-id", "<ORG>/<DATASET>",
         "--dataset-revision", "<DATASET_COMMIT_SHA>",
         "--output-dir", "/outputs/qwen3-ios-v1",
+        "--environment-id", "<LOCK_SHA256_OR_IMAGE_DIGEST>",
         "--adapter-repo", "<ORG>/qwen3-ios-v1-adapter",
         "--merged-repo", "<ORG>/qwen3-ios-v1-hf",
         "--max-steps", "20",  # smoke test first
@@ -405,6 +506,7 @@ def train() -> None:
             "--dataset-id", "<ORG>/<DATASET>",
             "--dataset-revision", "<DATASET_COMMIT_SHA>",
             "--output-dir", "/outputs/qwen3-ios-v1",
+            "--environment-id", "<LOCK_SHA256_OR_IMAGE_DIGEST>",
             "--adapter-repo", "<ORG>/qwen3-ios-v1-adapter",
             "--merged-repo", "<ORG>/qwen3-ios-v1-hf",
             "--max-steps", "20",
@@ -437,7 +539,8 @@ For Runpod or a comparable GPU VM:
 1. Start from a pinned PyTorch CUDA image.
 2. Attach persistent storage at `/workspace`.
 3. Put the script and dataset access credentials in the pod through a secret mechanism.
-4. Run the same command with `--output-dir /workspace/outputs/qwen3-ios-v1`.
+4. Run the same command with `--output-dir /workspace/outputs/qwen3-ios-v1` and
+   `--environment-id` set to the pinned image digest or dependency-lock SHA-256.
 5. Upload the merged model to the Hub or object storage before deleting the pod.
 6. Stop or terminate the compute as soon as the upload and checksums complete.
 
