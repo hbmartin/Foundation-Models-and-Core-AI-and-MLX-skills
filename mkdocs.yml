@@ -83,6 +83,8 @@ extra:
   header_links:
     - title: Guides
       url: .
+    - title: Remote training
+      url: workflows/remote-training-to-ios/
     - title: API Index
       url: API-INDEX/
     - title: Silent Failures

@@ -86,6 +86,15 @@ class ExtractionTests(unittest.TestCase):
             r = run_script(["--guides", td, "--stub-compiler", "pass"])
             self.assertEqual(len(tsv_rows(r.stdout)), 1)
 
+    def test_site_only_workflows_are_skipped(self):
+        with tempfile.TemporaryDirectory() as td:
+            write_guide(td, "workflows/site-only.md", "```swift\nlet ignored = 1\n```\n")
+            write_guide(td, "part-01-test/README.md", "```swift\nlet kept = 1\n```\n")
+            r = run_script(["--guides", td, "--stub-compiler", "pass"])
+            rows = tsv_rows(r.stdout)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["file"], "part-01-test/README.md")
+
     def test_snippet_id_survives_line_movement_and_hash_rejects_edits(self):
         with tempfile.TemporaryDirectory() as td:
             path = pathlib.Path(write_guide(td, "g.md", "# T\n\n```swift compile:27\nlet a = 1\n```\n"))

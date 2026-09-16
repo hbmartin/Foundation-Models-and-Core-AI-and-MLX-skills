@@ -22,6 +22,7 @@ from mdlinks import iter_lines
 # from this cap, so changing it changes that page; callers who need the full
 # association set pass cap=None to symbol_rows().
 GUIDE_CAP = 12
+SITE_ONLY_DIRECTORIES = {'workflows'}
 
 # A symbol is: a CamelCase identifier, optionally dotted / parenthesised, found in `code`.
 SPAN = re.compile(r'`([^`\n]{2,90})`')
@@ -75,7 +76,11 @@ def collect_symbol_counts(root):
     """symbol -> {guide-relative path: mention count}, uncapped and unfiltered."""
     counts = defaultdict(lambda: defaultdict(int))
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames.sort()
+        # Site-only deployment workflows are intentionally outside the Agent
+        # Skill corpus and its generated symbol index.
+        dirnames[:] = sorted(
+            name for name in dirnames if name not in SITE_ONLY_DIRECTORIES
+        )
         for fn in sorted(filenames):
             # Never scan the generated index pages: the symbol index would index
             # itself, inflating every count on each regeneration.

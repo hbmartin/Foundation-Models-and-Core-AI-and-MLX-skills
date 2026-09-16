@@ -21,6 +21,7 @@ except ModuleNotFoundError:  # MkDocs can load a hook with scripts/ on sys.path.
 
 PART_DIRECTORY = re.compile(r"part-(?P<number>\d{2})-[a-z0-9-]+$")
 REFERENCE_FILE = re.compile(r"(?P<number>\d{2})-[a-z0-9-]+\.md$")
+WORKFLOWS_DIRECTORY = "workflows"
 HEADING_ONE = re.compile(r"^#\s+(.+?)\s*$")
 MARKDOWN_LINK = re.compile(r"\[([^]]+)\]\(([^)]*)\)")
 CODE_SPAN = re.compile(r"(?<!`)`+([^`]+?)`+(?!`)")
@@ -134,22 +135,40 @@ def build_navigation(docs_dir: Path) -> list[dict[str, Any]]:
             )
         parts.append({first_title(overview): children})
 
+    workflows_directory = docs_dir / WORKFLOWS_DIRECTORY
+    workflow_pages = (
+        sorted(path for path in workflows_directory.rglob("*.md") if path.is_file())
+        if workflows_directory.is_dir()
+        else []
+    )
+    workflows: list[dict[str, str]] = []
+    for workflow in workflow_pages:
+        included.add(workflow.resolve())
+        workflows.append(
+            {first_title(workflow): workflow.relative_to(docs_dir).as_posix()}
+        )
+
     all_markdown = {path.resolve() for path in docs_dir.rglob("*.md")}
     unexpected = sorted(all_markdown - included)
     if unexpected:
         relative = unexpected[0].relative_to(docs_dir).as_posix()
         raise ValueError(f"unrecognized guide page is missing from navigation: {relative}")
 
-    return [
+    navigation: list[dict[str, Any]] = [
         {"Overview": "README.md"},
         {"Parts": parts},
+    ]
+    if workflows:
+        navigation.append({"Deployment workflows": workflows})
+    navigation.append(
         {
             "Cross-cutting indexes": [
                 {first_title(api_index): "API-INDEX.md"},
                 {first_title(failure_index): "SILENT-FAILURES.md"},
             ]
-        },
-    ]
+        }
+    )
+    return navigation
 
 
 def split_destination(inner: str) -> tuple[str, str] | None:

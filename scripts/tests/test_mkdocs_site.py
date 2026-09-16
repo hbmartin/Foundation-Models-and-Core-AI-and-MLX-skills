@@ -38,12 +38,13 @@ class MkDocsHookTests(unittest.TestCase):
             path.relative_to(docs_dir).as_posix() for path in docs_dir.rglob("*.md")
         )
 
-        self.assertEqual(80, len(paths))
+        self.assertEqual(81, len(paths))
         self.assertEqual(source_paths, sorted(paths))
         self.assertEqual(len(paths), len(set(paths)))
         self.assertEqual("Overview", next(iter(navigation[0])))
         self.assertEqual("Parts", next(iter(navigation[1])))
-        self.assertEqual("Cross-cutting indexes", next(iter(navigation[2])))
+        self.assertEqual("Deployment workflows", next(iter(navigation[2])))
+        self.assertEqual("Cross-cutting indexes", next(iter(navigation[3])))
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")
@@ -58,6 +59,10 @@ class MkDocsHookTests(unittest.TestCase):
 
         collect(navigation)
         self.assertIn("The Tool protocol, calling modes, and the required-mode loop", titles)
+        self.assertIn(
+            "Remote GPU training to an iOS app: hosted CUDA, MLX, and Core AI",
+            titles,
+        )
         self.assertNotIn("The `Tool` protocol, calling modes, and the required-mode loop", titles)
 
     def test_normalizes_verifier_metadata_on_swift_fences(self):
