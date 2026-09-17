@@ -13,9 +13,11 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
-mkdir -p repos
-cd repos
+repository_root="$(cd "$(dirname "$0")/.." && pwd)"
+repos_root="${RESEARCH_REPOS_ROOT:-$repository_root/repos}"
+remote_base="${RESEARCH_REPOS_REMOTE_BASE:-https://github.com}"
+mkdir -p "$repos_root"
+cd "$repos_root"
 
 # Repository and exact research snapshot. Keep full SHAs so abbreviated-object
 # ambiguity can never change what this script checks out.
@@ -37,37 +39,78 @@ REPOS=(
   "lucasnewman/mlx2coreai 059c9f365c9f48dc7d238cc37b0e30eb9d47fdbe"
 )
 
-for entry in "${REPOS[@]}"; do
+if [ -n "${RESEARCH_REPOS_ENTRIES:-}" ]; then
+  REPOS=()
+  while IFS= read -r entry; do
+    [ -n "$entry" ] && REPOS+=("$entry")
+  done <<<"$RESEARCH_REPOS_ENTRIES"
+fi
+
+clone_repository() {
+  local entry="$1"
+  local slug expected_sha dir remote actual_remote actual_sha
+
   read -r slug expected_sha <<<"$entry"
   dir="${slug//\//__}"
-  remote="https://github.com/$slug"
+  remote="${remote_base%/}/$slug"
   actual_remote=""
 
   if [ ! -d "$dir/.git" ]; then
     echo "== $slug -> $dir"
-    mkdir -p "$dir"
-    git -C "$dir" init --quiet
-    git -C "$dir" remote add origin "$remote"
+    if ! mkdir -p "$dir" \
+      || ! git -C "$dir" init --quiet \
+      || ! git -C "$dir" remote add origin "$remote"; then
+      echo "!! FAILED: $slug could not initialize its checkout" >&2
+      return 1
+    fi
   else
-    actual_remote="$(git -C "$dir" remote get-url origin)"
+    if ! actual_remote="$(git -C "$dir" remote get-url origin)"; then
+      echo "!! FAILED: $slug has no readable origin" >&2
+      return 1
+    fi
     actual_remote="${actual_remote%.git}"
     if [ "$actual_remote" != "$remote" ]; then
       echo "!! REFUSING: $dir has an unexpected origin" >&2
-      exit 1
+      return 1
     fi
   fi
 
   if ! git -C "$dir" cat-file -e "$expected_sha^{commit}" 2>/dev/null; then
-    git -C "$dir" fetch --depth 1 origin "$expected_sha"
+    if ! git -C "$dir" fetch --depth 1 origin "$expected_sha"; then
+      echo "!! FAILED: $slug could not fetch $expected_sha" >&2
+      return 1
+    fi
   fi
-  git -C "$dir" checkout --quiet --detach "$expected_sha"
+  if ! git -C "$dir" checkout --quiet --detach "$expected_sha"; then
+    echo "!! FAILED: $slug could not check out $expected_sha" >&2
+    return 1
+  fi
 
-  actual_sha="$(git -C "$dir" rev-parse HEAD)"
+  if ! actual_sha="$(git -C "$dir" rev-parse HEAD)"; then
+    echo "!! FAILED: $slug could not resolve HEAD" >&2
+    return 1
+  fi
   if [ "$actual_sha" != "$expected_sha" ]; then
     echo "!! FAILED: $slug expected $expected_sha, got $actual_sha" >&2
-    exit 1
+    return 1
   fi
   echo "== $slug pinned at $actual_sha"
+}
+
+failures=()
+for entry in "${REPOS[@]}"; do
+  slug="${entry%% *}"
+  if ! clone_repository "$entry"; then
+    failures+=("$slug")
+  fi
 done
+
+if [ "${#failures[@]}" -ne 0 ]; then
+  echo "Completed with ${#failures[@]} research repository failure(s):" >&2
+  for slug in "${failures[@]}"; do
+    echo "  - $slug" >&2
+  done
+  exit 1
+fi
 
 echo "Done. All research repositories match their recorded commits."

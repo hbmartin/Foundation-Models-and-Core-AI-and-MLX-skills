@@ -2,7 +2,7 @@
 
 **173 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-16. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-17. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -192,7 +192,7 @@
 - [.coreaimodel, .aiasset and a coreai-torch convert CLI are fabrications; real forms are .aimodel/.aimodelc directories](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
 - [The apple-intelligence/private-cloud-compute documentation path 404s; use the shorter private-cloud-compute URL](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#144-apple-documentation-pages) — 17.1
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
-- ['8K context on iOS 27' is an uncorroborated third-party comment; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
+- ['8K context on iOS 27' is retired third-party provenance; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
 - [No .coreaimodel, .aiasset or coreai-torch convert exist; real spellings are .aimodel/.aimodelc, both directories](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#27-mlmodel--mlmodelc--aimodel--aimodelc--and-both-are-directories) — 17.5
 - [upgrade.md tells you to import MLXLMHuggingFace or MLXEmbeddersHuggingFace; neither module exists in the package](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
 - [The migration doc's own Breaking Changes fix is stale: grep confirms neither named HuggingFace module exists](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6 🔇

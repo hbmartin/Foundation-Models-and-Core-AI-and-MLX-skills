@@ -236,6 +236,15 @@ class CurrentStateTests(unittest.TestCase):
         self.assertEqual(collected["generatedOutputs"], derived)
         self.assertIn("generated-output-indexes: stale index", collected["collection"]["blockers"])
 
+    def test_snippet_collection_preserves_last_attested_full_run(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        previous = manifest["verification"]
+
+        observed = STATE.snippet_state(previous)
+
+        self.assertEqual(observed["lastFullRun"], previous["lastFullRun"])
+        self.assertNotEqual(observed["lastFullRun"], manifest["asOf"])
+
     def test_pending_reason_does_not_claim_a_newer_installed_build_trails(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
         installed = json.loads(json.dumps(manifest["environment"]["installed"]))

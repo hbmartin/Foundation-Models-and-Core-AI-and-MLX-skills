@@ -237,7 +237,7 @@
   "verification": {
     "blocker": "SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.",
     "errors": 0,
-    "lastFullRun": "2026-09-16",
+    "lastFullRun": "2026-08-17",
     "snippetFences": 1359,
     "statusCounts": {
       "ILLUSTRATIVE": 486,

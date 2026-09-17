@@ -3028,7 +3028,8 @@ for the two worked traces, which exist nowhere else.
 | Gauge colours vs Instruments colours (Load/Specialization swapped) | **Both are correct**, quoted verbatim from their own articles; treated as a silent-failure hazard rather than an error. §3.4 |
 | Apple's PSNR bars vs the community's token-exactness gate for LLMs | Not a conflict — different failure classes. Both taught; §10.6 explains why PSNR alone is insufficient for autoregressive decoding. |
 
-**Not used as evidence:** the third-party `DebuggingAndProfiling.md` mirror in the `noema-ios`
+**Not used as evidence:** the third-party `DebuggingAndProfiling.md` mirror preserved in the
+[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)
 repository. It restates Apple's collection article and its "memory bandwidth / queue depth / cache
 hit-miss" capture list and "Common Issues" table are uncorroborated anywhere else in the corpus and
 may be machine-generated. Nothing in this guide rests on it.

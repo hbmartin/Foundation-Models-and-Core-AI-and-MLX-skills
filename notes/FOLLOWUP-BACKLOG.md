@@ -19,7 +19,7 @@ Recorded so nobody re-does it. Detail in
 | Closed | Where |
 |---|---|
 | `fm` CLI surface raised from "no attested flags" to 🟠 seven subcommands + four flag spellings + the `schema object` builder grammar | `part-05` ref 02 §2.1–2.4, §2.6, §3, §17.5 |
-| `contextSize` 4096 recorded as Apple's documented iOS 27 platform value (Group Lab 8121 written Q&A); alleged device-specific 8192 result retained as uncorroborated; shared input+output budget documented | `part-17` ref 01 §1.1, `part-03` ref 01 §3.3, `part-01` ref 01 §3.1 |
+| `contextSize` 4096 recorded as Apple's documented iOS 27 platform value (Group Lab 8121 written Q&A); alleged device-specific 8192 result retired as unreproduced historical provenance; shared input+output budget documented | `part-17` ref 01 §1.1, `part-03` ref 01 §3.3, `part-01` ref 01 §3.1 |
 | Gap **G6** — `withTaskCancellationShield` is SE-0504 (Swift 6.4 stdlib), needs Apple OS 27 runtime support, and does not back-deploy; compatibility helper renamed to stop it shadowing | `part-16` ref 01 §9.4 |
 | `ConstrainedGenerationSession` rollback / jump-forward / bitmask-fill; `--clear-coreai-cache`; upstream drift incl. the `.llmasset` rename | `part-07` refs 04 §7.3.1 and 02 §7.1, `part-10` ref 03 §18.1 |
 | Third-party MLX training layer mapped; the three fine-tuning 🔴 checked against named project documentation | `part-12` ref 06 §13 |

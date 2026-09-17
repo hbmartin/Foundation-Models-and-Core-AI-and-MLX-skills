@@ -2,7 +2,7 @@
 
 **397 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-16. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-17. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -368,7 +368,7 @@
 - [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
-- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize…](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
+- [Apple documents 4096 as the iOS 27 platform value; a retired unreproduced report claimed 8K — still read contextSize…](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
 - [PCC supportsLocale/supportedLanguages became async throws in beta 5; a sync capability guard no longer compiles.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#86-pccs-operational-gates) — 3.4
 
 **Part 4**
@@ -393,7 +393,7 @@
 - [Python docstrings leak Swift #/…/# regex delimiters — working tests use bare patterns; do not copy the delimiters.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#35-a-note-on-pattern_) — 2.2
 - [Apple's ResponseStream snippet does not compile — unbalanced braces, a stray try!, and an undefined variable.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#93-responsestream-snapshot-and-response) — 2.2
 - [LanguageModelSession.Error is in docs and a forum snippet but no shipping sample — keep the arm, distrust its cases.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#111-the-three-error-ladder) — 2.2
-- [A vendored Apple article writes Attachment(image:)/label: — both spellings wrong per the SDK symbol page.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#31-the-two-initializers) — 2.5
+- [A historical Apple-article mirror writes Attachment(image:)/label: — both spellings wrong per the SDK symbol page.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#31-the-two-initializers) — 2.5
 - [Apple's article writes GenerationOptions(samplingMode:); Apple's code and the Python SDK write sampling: — unresolved.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#81-classification-with-greedy-sampling) — 2.5
 - [Three names circulate for the availability-testing menu — trust the docs' spelling over transcripts.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#27-testing-availability-without-a-drawer-full-of-devices) — 2.6
 
@@ -436,7 +436,7 @@
 - [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
-- [The Python SDK exposes no 27-era surface: no PCC (none planned — shell out to fm), no reasoning, no attachments.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
+- [The Python SDK lacks PCC, reasoning, and attachments; stable fm no longer supplies the beta PCC route.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The docstring's SystemLanguageModel(temperature:top_p:) raises TypeError — sampling lives on GenerationOptions.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#72-the-constructor-use-case-and-guardrails) — 5.2
 - [test_composed_prompt_cleanup.py's docstring promises an fd-count regression test; the file has only four mocked unit…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#136-how-to-know-whether-you-are-leaking) — 5.2
 

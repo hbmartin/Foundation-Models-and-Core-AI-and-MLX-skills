@@ -234,7 +234,8 @@ paraphrase of Apple's multimodal article writes it as `Attachment(image: image)`
 match the symbol page and does not match Apple's shipping sample code.
 
 > ⚠️ **API-spelling conflict, resolved.** A local mirror of Apple's *"Analyzing images with
-> multimodal prompting"* article (the copy vendored into the community `noema-ios` repo as
+> multimodal prompting"* article (the copy preserved from the community app in the
+> [frozen Noema research note](../../../notes/repos/noema-ios.md) as
 > `DocumentationforAPIs&SDKs/AppleFoundationModels/MultimodalPrompting.md`) renders the calls as
 > `Attachment(image: image)` and `Attachment(image: supplyPhoto, label: "supplies")`. Both are
 > **wrong**. The symbol page declares `init(_:orientation:)` and a separate `label(_:)` method, and
@@ -320,7 +321,8 @@ let stream = session.streamResponse(to: prompt)
 ```
 
 That is the idiomatic pattern for "N images plus surrounding text, where N is dynamic": build
-`[Prompt]`, splice. A shipping third-party app (`noema-ios`) reaches the same shape with a `for`
+`[Prompt]`, splice. A shipping third-party app preserved in the
+[frozen Noema research note](../../../notes/repos/noema-ios.md) reaches the same shape with a `for`
 loop directly inside the builder:
 
 ```swift prelude:guide-context
@@ -454,7 +456,8 @@ Two numbers circulate. Neither is Apple's, and you should treat them accordingly
   Apple-confirmed**. It is plausible — 896 is a common ViT input edge, and Apple's own Core AI
   `ImagePreprocessor.gemma3` preset is `896×896` — but plausible is not verified, and the two facts
   are about different model families.
-- **~576 tokens per image.** Source: the shipping community app `noema-ios`, which hardcodes
+- **~576 tokens per image.** Historical source: the shipping community app preserved in the
+  [frozen Noema research note](../../../notes/repos/noema-ios.md), which hardcodes
   `ImagePromptBudgetEstimator.promptTokensPerImage = 576` for its context meter, across *all* of its
   backends (llama.cpp, MLX, Core ML, Core AI and Foundation Models). It is a **generic VLM working
   figure, not an AFM measurement** — 576 is what you get from a 24×24 patch grid, e.g. 336 px at
@@ -842,8 +845,8 @@ Two caveats on the recommended form, both worth knowing before you build on it:
 > **Runtime boundary, updated 2026-09-16:** on stable macOS 27 (`26A428`) and iPhone 15 Pro /
 > iOS 27 build `24A435`, ordinary labeled and unlabeled image responses succeeded and transcript
 > write-through remained exact: `label:nil` versus `.label("probe-img")`. In both destinations a
-> required generic `EchoTool` reached `toolRan=true` but the enclosing turn timed out. That is a
-> drift from the 2026-08-20 beta-5 device run, where both generic tool turns completed. It does not
+> required generic `EchoTool` reached `toolRan=true` but the enclosing turn timed out. That matches
+> the 2026-08-20 beta-5 device run; it is a reverified limitation, not runtime drift. It does not
 > make labels the cause: both labeled and unlabeled cases behave alike. The probes did not exercise `BarcodeReaderTool`,
 > `OCRTool`, or an `ImageReference` argument, so keep labels mandatory for those identity-dependent
 > paths and regression-test the specific built-in tool you ship.
@@ -1877,7 +1880,7 @@ Models on macOS* (the `fm` CLI image option, the Python SDK) · **319** *Private
 text-and-images demo behind §10.4's settled support claim) · **339** *Bring an LLM provider to the Foundation Models
 framework* (capabilities and routing).
 
-**Community** — `frozen Noema 3.5 snapshot` (a shipping multi-backend app: the `for`-loop prompt builder,
+**Community** — [frozen Noema 3.5 snapshot](../../../notes/repos/noema-ios.md) (a shipping multi-backend app: the `for`-loop prompt builder,
 the `promptTokensPerImage = 576` constant, `GenerationOptions(sampling:)`). Marked as community
 throughout; none of its numbers are Apple's.
 

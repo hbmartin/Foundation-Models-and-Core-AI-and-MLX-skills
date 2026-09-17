@@ -1211,7 +1211,8 @@ write `prediction.view()` with no argument: `T` is inferred from the call site.
 > ⚠️ **Do not assume shape-based allocation zero-initializes storage.** Six allocation rounds on
 > stable macOS 27 and six on iPhone 15 Pro / iOS build `24A435` happened to read all zeroes, but the
 > API does not promise initialization and the probe cannot prove it. Explicitly write every input
-> and state element whose value matters.
+> and state element whose value matters. [Guide 7.3 §8.3](03-states-and-pipelined-execution.md#83-️-silent-failure--uninitialised-state-storage)
+> owns the full evidence history and safe default.
 
 `init(descriptor:)` is the one you will use in production, because it is how you get the
 framework's preferred layout (§11.1) — and it comes with the most consequential doc note in the

@@ -395,10 +395,12 @@ Sources: `transcripts/fm-core.md`, `web/apple-docs-fm-evals-speech.md`, `forums/
 
 The non-Swift on-ramp, taught with its real limits. The Python SDK compiles Swift at install time and
 hard-requires full Xcode; it targets the 26-generation API; and Apple has stated on the record that
-**PCC will not be added to it** — you reach PCC via the `fm` CLI or `fm serve`.
+**PCC will not be added to it**. Beta-era `fm` exposed a PCC route, but stable macOS 27 does not
+advertise one; [guide 5.2 §3](../../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27)
+is the canonical surface comparison.
 
-Sections: `fm respond` / `fm chat` / `fm schema` and the slash commands · `fm serve` as a
-Chat-Completions endpoint (and therefore as a PCC bridge) · shell-scripting structured JSON out of
+Sections: the stable `fm` commands and beta-only slash commands · `fm serve` as a
+Chat-Completions endpoint and its historical beta PCC route · shell-scripting structured JSON out of
 `fm respond --schema` · `pip install apple-fm-sdk`: the custom PEP 517 backend, the five preflight
 checks, the Xcode.app-not-CLT requirement, and the `FM_HAS_MACOS_27_SDK` feature gate ·
 Swift↔Python API mapping table · `@fm.generable` / `fm.guide` and the guide/type compatibility matrix ·

@@ -747,9 +747,9 @@ The tool is `SWIFT_ACTIVE_COMPILATION_CONDITIONS` with a **build-setting conditi
 
 ### 5.1 The pattern, from a shipping app
 
-🧑‍💻 **COMMUNITY — `frozen Noema 3.5 snapshot`** (Noema 3.5, MIT). This is a shipping multi-backend
+🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)** (Noema 3.5, MIT). This is a shipping multi-backend
 on-device LLM app that targets iOS 18–27, macOS 26/27 and visionOS 26/27 simultaneously, so it has
-had to solve this problem for real. ✅ VERIFIED from the local clone —
+had to solve this problem for real. ✅ VERIFIED from the retained research snapshot —
 `Noema.xcodeproj/project.pbxproj`, lines ~1391-1395 and ~1456-1460 (the Debug and Release
 configurations of the app target):
 
@@ -1412,7 +1412,7 @@ this is a runtime concern and belongs nowhere near an `#if`.
 ### 10.2 PCC quota state
 
 Private Cloud Compute has a per-user daily quota, and its state is a pure runtime question. 🧑‍💻
-**COMMUNITY — `frozen Noema 3.5 snapshot`**, ✅ VERIFIED from the clone,
+**COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)**, ✅ VERIFIED from the retained research note,
 `Noema/AppleFoundationModelAvailability.swift`, showing the full three-layer gate around a purely
 runtime probe:
 
@@ -1552,8 +1552,8 @@ style switch and you sweep these into it, your Xcode 26 build loses context intr
 — and you will not notice, because the Xcode 27 build works fine and that is the one you develop
 against.
 
-🧑‍💻 **COMMUNITY — `frozen Noema 3.5 snapshot`** hit this and left a comment about it. ✅ VERIFIED from
-the clone, `Noema/AFMLLMClient.swift:133-146`:
+🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)** hit this and left a comment about it. ✅ VERIFIED from
+the retained research note, `Noema/AFMLLMClient.swift:133-146`:
 
 ```swift illustrative
     /// The on-device context is selected by the installed system model. iOS 26
@@ -1586,7 +1586,8 @@ form is a latent runtime crash on a 26.2 device.
 > ⚠️ **Do not take the "8K on iOS 27" claim in that comment as fact.** ✅ Apple's **TN3193** states
 > the on-device context window plainly as **4096 tokens per `LanguageModelSession`**. The 8192
 > figure originates in this third-party app's source comment describing what device probing
-> returned, and **is not corroborated by Apple anywhere**. The standing advice — which both sources
+> returned. It had no device/build/date, never reproduced, and is now **retired historical
+> provenance rather than a competing baseline**. The standing advice — which both sources
 > agree on — is: **read `contextSize` at run time; hardcode neither number.** The code above does
 > exactly that, with 4096 as a fallback only when the property returns `<= 0`.
 > [Part 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/README.md) owns the context-window story.
@@ -2962,9 +2963,9 @@ current `.github/` tree.
 - **Any claim about the 27 SDK measured on this machine.** Every 📏 measurement in this guide is a
   **26.5 SDK** measurement, stated as such. The machine that produced them is macOS 26.5.2 (25F84) /
   Xcode 26.6 (17F113), 2026-07-28.
-- **A reconciliation of the 4096-vs-8192 context-window numbers.** Apple's TN3193 says 4096; a
-  third-party app's source comment reports 8192 from device probing. Both are quoted where they
-  appear; [Part 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/README.md) owns the question. Read `contextSize`.
+- **A reconciliation of the retired 4096-vs-8192 context-window conflict.** Apple's TN3193 says
+  4096; the unreproduced third-party 8192 comment remains only as historical provenance.
+  [Part 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/README.md) owns the resolution. Read `contextSize`.
 
 ---
 
@@ -3001,10 +3002,10 @@ to Siri toggle, unanswered).
 iOS 26.4 context APIs), session 246 (`SpotlightSearchTool` and the `_CoreSpotlight_FoundationModels`
 overlay), sessions 319 / 339 (`ContextOptions`, PCC).
 
-**Community, attributed:** `frozen Noema 3.5 snapshot` (Noema 3.5, MIT) — the
+**Community, attributed:** [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md) (Noema 3.5, MIT) — the
 `SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=…27.*]` pattern, the three-layer gate, the `Any`-erased
 stored properties, the two-case error enum, the 26.4 over-gating comment, and the
-`ci_pre_xcodebuild.sh` `.swiftinterface` workaround. All read from a local clone; never presented as
+`ci_pre_xcodebuild.sh` `.swiftinterface` workaround. All preserved in the retained research note; never presented as
 Apple statements.
 
 [^supports-locale-floor]: The authoritative Xcode 26.5 interface places [`SystemLanguageModel.supportsLocale(_:)`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/sdk-interfaces/FoundationModels-26.5-macos.swiftinterface#L572-L591) in the OS 26.0 declaration; the following extension is the distinct OS 26.4 context-introspection surface.

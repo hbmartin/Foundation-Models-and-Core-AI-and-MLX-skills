@@ -25,6 +25,7 @@ candidate answers, and what to write back for each outcome.
 | **HOST / MAC-27** | today's host, stable macOS 27 | `./scripts/run-probes.sh host` |
 | **SIM-27** | pinned iOS 27.0 Simulator on today's host | `./scripts/run-probes.sh simulator` (override with `--destination` or `PROBE_SIMULATOR_DESTINATION`) |
 | **DEVICE-27** | physical iPhone/iPad on 27 with Apple Intelligence | Use the hosted device mode shown below; a bare Swift-package test bundle is tool-hosted and Xcode refuses it on hardware. |
+| **HISTORICAL HOST-26** | archived macOS 26.x observations retained below for before/after comparisons; not a current runnable lane | Select an archived macOS 26/Xcode 26 topology before treating it as runnable. |
 
 ## Generated baseline summary
 
@@ -157,11 +158,12 @@ iOS 27 build `24A435` passed 46 tests with 2 intentional skips and 0 failures in
 That device build does not equal Apple's public-final `24A437`, and the selected Xcode/SDK remains
 beta 5, so this is a mixed-toolchain observation rather than a coherent public-final baseline.
 
-Important drift: call-site tool options beat profile modifiers in both directions; throwing from
-`onToolCall` aborts and reverts the whole turn; a large overflow returned typed after 92.7 seconds
-on Mac but timed out at 120 seconds on device; required image-tool turns timed out after
-`toolRan=true`; and the impossible `SampleGenerator` case used three provider sessions and logged
-17 rejects. See `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md` for the integrated report.
+Important September observations: a large overflow returned typed after 92.7 seconds on Mac but
+timed out at 120 seconds on device, and the impossible `SampleGenerator` case used three provider
+sessions and logged 17 rejects. Three other results reverified the 2026-08-20 device behavior rather
+than drifting: call-site tool options beat profile modifiers in both directions, throwing from
+`onToolCall` aborts and reverts the whole turn, and required image-tool turns timed out after
+`toolRan=true`. See `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md` for the integrated report.
 
 ## Probe inventory
 
@@ -172,10 +174,10 @@ knob (asset/entitlement).
 
 | Probe id | Gap | Guide § | Destination | Status |
 |---|---|---|---|---|
-| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
-| `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HOST-26 · SIM-27 · DEVICE-27 | ✅ verbatim type name on every tested runtime |
-| `fm.contextSize` | 4096 vs 8192 on 27 | NEEDED item 7 · 3.1 | HOST-26 · SIM-27 · DEVICE-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; 🟠 4096 on host and iPhone 15 Pro; both Simulator modes most recently returned 0. Tool-hosted Simulator observations changed from 4096 (2026-08-17) to 0 (2026-09-05) on the same recorded builds. |
-| `fm.availability` | does FM work against the Simulator | 5.1 §13.4 · 17.2 | HOST-26 · SIM-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; ✅ sim: `available`, inference runs |
+| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HISTORICAL HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
+| `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HISTORICAL HOST-26 · SIM-27 · DEVICE-27 | ✅ verbatim type name on every tested runtime |
+| `fm.contextSize` | 4096 vs retired 8192 claim on 27 | NEEDED item 7 · 3.1 | HISTORICAL HOST-26 · SIM-27 · DEVICE-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; 🟠 4096 on host and iPhone 15 Pro; both Simulator modes most recently returned 0. Tool-hosted Simulator observations changed from 4096 (2026-08-17) to 0 (2026-09-05) on the same recorded builds. |
+| `fm.availability` | does FM work against the Simulator | 5.1 §13.4 · 17.2 | HISTORICAL HOST-26 · SIM-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; ✅ sim: `available`, inference runs |
 | `fm.toolCallingMode-precedence` | options vs profile modifier | 2.6 §7.4 · 17.1 §4.8 | MAC-27 / DEVICE-27 | ✅ both directions confirmed on Mac/device: call-site options win; required direction ran the tool then ended in `contextSizeExceeded(4096,4099)` |
 | `fm.includeSchemaInPrompt-recording` | legacy param vs `ContextOptions` | 17.1 §4.11 | SIM-27 · MAC-27 · DEVICE-27 | ✅ one knob, two spellings; default `true` |
 | `fm.error-domain-context-overflow` | error type/domain table row | 17.3 §6.3 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 typed `LanguageModelError.contextSizeExceeded`, code 0 on sim/Mac; the large device probe timed out at 120 s before throwing |
@@ -203,7 +205,7 @@ knob (asset/entitlement).
 | `eval.disallowed-arguments-narrowing` | do `disallowed` matchers narrow | 6.3 | SIM-27 · MAC-27 | ✅ YES, arguments narrow |
 | `eval.allowsAdditionalCalls-false` | semantics of `false` | 6.3 ledger | SIM-27 · MAC-27 | ✅ enforced; extra call fails `allPass` |
 | `eval.generator-unreachable-target` | unreachable `targetCount` behavior | 6.3 §3, §5 | SIM-27 · MAC-27 · DEVICE-27 | ✅ finishes short; stable Mac/device produced 0 with 3 provider invocations and 17 invalid samples |
-| `speech.assetInventory-status-order` | `Status` `Comparable` ordering per OS generation | 16.1 §5.2 · G2 · NEXT-BETA §7 | HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ **ordering DIFFERS** — 26: `unsupported<supported<downloading<installed`; 27 sim + device: `unsupported<downloading<supported<installed` (`<` is synthesized) |
+| `speech.assetInventory-status-order` | `Status` `Comparable` ordering per OS generation | 16.1 §5.2 · G2 · NEXT-BETA §7 | HISTORICAL HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ **ordering DIFFERS** — 26: `unsupported<supported<downloading<installed`; 27 sim + device: `unsupported<downloading<supported<installed` (`<` is synthesized) |
 | `fm.capabilities` | does `capabilities` reflect per-destination reality | 5.1 §13.4 | SIM-27 · MAC-27 · DEVICE-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; 🟠 sim + device claim vision/tool-calling/guided-generation and no reasoning; attachment device probe hit tokenizer failures, so treat as declaration |
 | `fm.attachment-label-recording` | `.label(_:)` token cost / transcript write-through / tool no-op | 2.5 §6.4 · 2.3 | MAC-27 · DEVICE-27 | 🟠 Mac/device: token count errors; responses work; labels write through exactly; generic tool runs labeled and unlabeled, then required loop times out |
 | `fm.stream-zero-partials-tool-turn` | tool-only turn yields zero partials? | 2.1 §6.4 · 2.2 §9.6 · SILENT-FAILURES | MAC-27 · DEVICE-27 | 🟠 device tool ran, but required loop ended in `contextSizeExceeded` before proving zero-partial completion |
@@ -293,7 +295,7 @@ PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool def
 PROBE-RESULT name=fm.contextSize value=4096                                          (26.5/MAC-27 host and DEVICE-27); app-hosted SIM-27=0 on 2026-09-04; tool-hosted SIM-27 changed from 4096 on 2026-08-17 to 0 on 2026-09-05
 PROBE-RESULT name=fm.availability value=available                                    (27.0 sim; 26.5 host: unavailable(.appleIntelligenceNotEnabled))
 PROBE-RESULT name=fm.includeSchemaInPrompt-recording value=legacyFalse=[ContextOptions(includeSchemaInPrompt: Optional(false), …)] contextOptionsFalse=[…Optional(false)…] default=[…Optional(true)…]
-PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] desc=Content contains 168918 tokens, which exceeds the maximum allowed context size of 4096.
+PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] fmcase=contextSizeExceeded(contextSize:4096,tokenCount:168951) desc=Content contains 168951 tokens, which exceeds the maximum allowed context size of 4096. os=27.0.0 platform=macOS
 PROBE-RESULT name=fm.parsingError-thrown value=threw detail=type=ParsingError domain=FoundationModels.GeneratedContent.ParsingError code=1 casts=[GeneratedContent.ParsingError] desc=GeneratedContent does not contain a property 'summary'.
 PROBE-RESULT name=fm.stream-early-break value=partialsSeen=2 entries=[prompt,response] isResponding=true followUp=not-attempted
 PROBE-RESULT name=fm.collect-after-iteration value=collect-succeeded detail=iterations=13 contentChars=51
@@ -323,7 +325,7 @@ Readings, one line each:
 - **NEEDED item 7 / 3.1** — `contextSize` changed from 4096 on the 2026-08-17 tool-hosted
   Simulator run to 0 on 2026-09-05 despite the same recorded builds; the app-hosted Simulator
   also returned 0 on 2026-09-04. The device remained 4096, and the device overflow error text
-  independently names 4096. The 8192 claim remains uncorroborated; keep reading the property at
+  independently names 4096. The unreproduced 8192 comment is retired historical provenance; keep reading the property at
   runtime and handle a zero result defensively.
 - **17.1 §4.11** — the legacy `includeSchemaInPrompt:` parameter and
   `ContextOptions(includeSchemaInPrompt:)` are **one knob with two spellings**: both are
@@ -380,7 +382,7 @@ Readings, one line each:
 Same runtimes as above (26.5.2 host · iOS 27.0 sim 24A5390f). Verbatim lines, trimmed:
 
 ```
-PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,supported,downloading,installed]   (HOST-26)
+PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,supported,downloading,installed]   (HISTORICAL HOST-26)
 PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed]   (SIM-27)
 PROBE-RESULT name=fm.capabilities value=vision=true toolCalling=true guidedGeneration=true reasoning=false detail=availability=available   (SIM-27)
 PROBE-RESULT name=fm.attachment-label-recording value=unlabeledTokens=error(FoundationModels.LanguageModelError:-1) labeledTokens=error(…:-1) unlabeledRespond=threw(-1) segments=[no-prompt-entry] labeledRespond=threw(-1) segments=[no-prompt-entry] unlabeledTool=threw(1026) toolRan=false labeledTool=threw(1026) toolRan=false

@@ -847,7 +847,8 @@ One editorial note on the first four rows, because Apple changed its own advice:
 
 > ✅ **VERIFIED** — Apple's *Analyzing the runtime performance of your Foundation Models app* article
 > gives it as three steps ending in **"Click the Record Trace button"**. (Read via a local mirror of that
-> page, `repos/noemaai-labs__noema-ios/DocumentationforAPIs&SDKs/AppleFoundationModels/RuntimePerformance.md:15-19`;
+> page, preserved in the [frozen Noema research note](../../../notes/repos/noema-ios.md)
+> from `DocumentationforAPIs&SDKs/AppleFoundationModels/RuntimePerformance.md:15-19`;
 > the mirror condenses Apple's prose rather than copying it byte for byte, so treat the button label as
 > approximately-quoted. The canonical page is
 > `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`.)
@@ -2140,8 +2141,8 @@ WWDC25 leftovers** and are not cited anywhere in this guide as 2026 evidence.
 **Apple documentation.**
 
 - *Analyzing the runtime performance of your Foundation Models app* — the instrument's written companion;
-  token metrics, cache hit rate, tool-call duration, inspector contents. Read via the local mirror
-  `repos/noemaai-labs__noema-ios/DocumentationforAPIs&SDKs/AppleFoundationModels/RuntimePerformance.md`,
+  token metrics, cache hit rate, tool-call duration, inspector contents. Read via the historical
+  mirror recorded in the [frozen Noema research note](../../../notes/repos/noema-ios.md),
   which **condenses** Apple's prose; quoted as substance, not as exact sentences.
 - *Managing the context window* — 4,096 tokens, what consumes them, the four-step Instruments workflow,
   the prompt-shortening rules, the unencrypted-recording warning.
