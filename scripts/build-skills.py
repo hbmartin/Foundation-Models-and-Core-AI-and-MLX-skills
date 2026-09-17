@@ -50,6 +50,7 @@ from mdlinks import (  # noqa: E402  (path set above so the sibling modules reso
     SCHEME,
     InlineScanner,
     github_url,
+    is_site_only_guide,
     is_within,
     iter_lines,
     page_target,
@@ -77,7 +78,6 @@ extract_symbols = _load_sibling("extract_symbols", "extract-symbols.py")
 
 PART_README = re.compile(r"^part-(\d{2})-[^/]+/README\.md$")
 REFERENCE = re.compile(r"^part-(\d{2})-[^/]+/references/(\d{2})-[^/]+\.md$")
-SITE_ONLY_PREFIXES = ("workflows/",)
 PART_TITLE = re.compile(r"^#\s+Part\s+(\d+)\s+—\s+(.+?)\s*$")
 BOLD_LABEL = re.compile(r"^\*\*([A-Z][^:*]*):\*\*")
 GUIDE_CARD = re.compile(r"^###\s+\[(\d+)\.(\d+)\s+—\s+(.+?)\]\(([^)]+)\)\s*$")
@@ -305,7 +305,7 @@ def discover_pages(source_root: Path) -> list[GuidePage]:
         # Deployment workflows are published by MkDocs but deliberately do not
         # become Agent Skill references. Keep this boundary explicit so adding
         # a site-only guide cannot silently enlarge an installed skill.
-        if relative.startswith(SITE_ONLY_PREFIXES):
+        if is_site_only_guide(relative):
             continue
         title = first_title(source.read_text(encoding="utf-8"), source)
         part_match = PART_README.fullmatch(relative)

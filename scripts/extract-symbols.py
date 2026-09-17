@@ -16,14 +16,12 @@ over, because that page shows only the first 4 of a list already capped here.
 import os, re, sys
 from collections import defaultdict
 
-from mdlinks import iter_lines
+from mdlinks import is_site_only_guide, iter_lines
 
 # Guides shown per symbol in the TSV. The committed API-INDEX.md is generated
 # from this cap, so changing it changes that page; callers who need the full
 # association set pass cap=None to symbol_rows().
 GUIDE_CAP = 12
-SITE_ONLY_DIRECTORIES = {'workflows'}
-
 # A symbol is: a CamelCase identifier, optionally dotted / parenthesised, found in `code`.
 SPAN = re.compile(r'`([^`\n]{2,90})`')
 # Accept: TypeName, TypeName.member, method(with:labels:), @Macro, .enumCase, snake_case CLI names kept out.
@@ -76,11 +74,7 @@ def collect_symbol_counts(root):
     """symbol -> {guide-relative path: mention count}, uncapped and unfiltered."""
     counts = defaultdict(lambda: defaultdict(int))
     for dirpath, dirnames, filenames in os.walk(root):
-        # Site-only deployment workflows are intentionally outside the Agent
-        # Skill corpus and its generated symbol index.
-        dirnames[:] = sorted(
-            name for name in dirnames if name not in SITE_ONLY_DIRECTORIES
-        )
+        dirnames.sort()
         for fn in sorted(filenames):
             # Never scan the generated index pages: the symbol index would index
             # itself, inflating every count on each regeneration.
@@ -88,6 +82,8 @@ def collect_symbol_counts(root):
                 continue
             path = os.path.join(dirpath, fn)
             rel = os.path.relpath(path, root)
+            if is_site_only_guide(rel):
+                continue
             with open(path, encoding='utf-8') as handle:
                 text = handle.read()
             # Scan prose lines only. Backticks inside fenced examples are source

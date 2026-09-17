@@ -36,6 +36,13 @@ from urllib.parse import quote
 # content must use this one or it will edit quoted source code.
 FENCE = re.compile(r"^(?: {0,3}>[ \t]?)* {0,3}(`{3,}|~{3,})")
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+SITE_ONLY_GUIDE_PREFIXES = ("workflows/",)
+
+
+def is_site_only_guide(relative_path: str | Path) -> bool:
+    """Return whether a guides-relative Markdown path is website-only."""
+    relative = Path(relative_path).as_posix()
+    return relative.startswith(SITE_ONLY_GUIDE_PREFIXES)
 
 
 def sha256(path: Path) -> str:

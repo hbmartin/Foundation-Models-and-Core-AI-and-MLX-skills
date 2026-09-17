@@ -1,3 +1,4 @@
+import re
 import sys
 import tempfile
 import unittest
@@ -38,13 +39,15 @@ class MkDocsHookTests(unittest.TestCase):
             path.relative_to(docs_dir).as_posix() for path in docs_dir.rglob("*.md")
         )
 
-        self.assertEqual(81, len(paths))
+        self.assertEqual(82, len(paths))
         self.assertEqual(source_paths, sorted(paths))
         self.assertEqual(len(paths), len(set(paths)))
         self.assertEqual("Overview", next(iter(navigation[0])))
         self.assertEqual("Parts", next(iter(navigation[1])))
         self.assertEqual("Deployment workflows", next(iter(navigation[2])))
         self.assertEqual("Cross-cutting indexes", next(iter(navigation[3])))
+        self.assertEqual(1, paths.count("workflows/README.md"))
+        self.assertEqual(1, paths.count("workflows/remote-training-to-ios.md"))
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")
@@ -64,6 +67,64 @@ class MkDocsHookTests(unittest.TestCase):
             titles,
         )
         self.assertNotIn("The `Tool` protocol, calling modes, and the required-mode loop", titles)
+
+    def test_workflow_pages_carry_evidence_markers(self):
+        workflows = REPOSITORY_ROOT / "guides" / "workflows"
+        markers = ("✅ **VERIFIED**", "🟡 **RECONSTRUCTED**", "🔴 **GAP")
+        pages = sorted(path for path in workflows.glob("*.md") if path.name != "README.md")
+
+        self.assertTrue(pages)
+        for page in pages:
+            contents = page.read_text(encoding="utf-8")
+            self.assertTrue(
+                any(marker in contents for marker in markers),
+                f"{page.relative_to(REPOSITORY_ROOT)} lacks an evidence-state marker",
+            )
+
+    def test_remote_training_python_fences_parse(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
+
+        self.assertTrue(blocks)
+        for index, block in enumerate(blocks, start=1):
+            compile(block, f"{workflow} Python fence {index}", "exec")
+
+    def test_remote_training_publication_contract(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        python_blocks = re.findall(
+            r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S
+        )
+        trainer = next(block for block in python_blocks if "def main()" in block)
+        smoke_launches = [block for block in python_blocks if '"--max-steps", "20"' in block]
+
+        self.assertEqual(2, len(smoke_launches))
+        for launch in smoke_launches:
+            self.assertIn('"--save-steps", "10"', launch)
+            self.assertIn('"--eval-steps", "10"', launch)
+
+        first_upload = trainer.index("api.upload_folder(")
+        self.assertLess(trainer.index("write_json(manifest_path, manifest)"), first_upload)
+        self.assertLess(trainer.index("shutil.copy2(manifest_path"), first_upload)
+        self.assertLess(trainer.index("shutil.copy2(eval_path"), first_upload)
+        self.assertLess(trainer.index("write_json(publication_path, publication)"), first_upload)
+
+        self.assertNotIn("coreai.llm.export ../artifacts", contents)
+        self.assertEqual(
+            2,
+            contents.count("coreai.llm.export <ORG>/qwen3-ios-v1-hf"),
+        )
+
+    def test_global_header_targets_workflows_landing_page(self):
+        config = (REPOSITORY_ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+        header_entry = re.search(
+            r"^[ ]{4}- title: Workflows\n[ ]{6}url: workflows/$",
+            config,
+            re.M,
+        )
+        self.assertIsNotNone(header_entry)
+        self.assertEqual(1, config.count("- title: Workflows\n"))
 
     def test_normalizes_verifier_metadata_on_swift_fences(self):
         markdown = (

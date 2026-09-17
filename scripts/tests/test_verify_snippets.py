@@ -90,10 +90,21 @@ class ExtractionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             write_guide(td, "workflows/site-only.md", "```swift\nlet ignored = 1\n```\n")
             write_guide(td, "part-01-test/README.md", "```swift\nlet kept = 1\n```\n")
+            write_guide(
+                td,
+                "part-01-test/references/workflows/nested.md",
+                "```swift\nlet nested = 1\n```\n",
+            )
             r = run_script(["--guides", td, "--stub-compiler", "pass"])
             rows = tsv_rows(r.stdout)
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]["file"], "part-01-test/README.md")
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(
+                {row["file"] for row in rows},
+                {
+                    "part-01-test/README.md",
+                    "part-01-test/references/workflows/nested.md",
+                },
+            )
 
     def test_snippet_id_survives_line_movement_and_hash_rejects_edits(self):
         with tempfile.TemporaryDirectory() as td:

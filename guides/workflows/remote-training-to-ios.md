@@ -4,6 +4,18 @@
 worked causal-language-model LoRA path; the artifact boundary and service advice also apply to
 vision, audio, and embedding models, but their exporters and iOS runners differ.
 
+## Evidence and version floor
+
+This workflow targets the package and service behavior available on 2026-09-16 and the iOS 27 /
+Xcode 27 Core AI generation. Non-obvious API claims use the corpus-wide evidence states:
+
+- ✅ **VERIFIED** — confirmed in current upstream documentation or source linked beside the claim;
+- 🟡 **RECONSTRUCTED** — the route is supported, but the exact end-to-end composition is this
+  guide's;
+- 🔴 **GAP** — the current public interface cannot satisfy part of the desired contract.
+
+Recheck service pricing, GPU inventory, and moving package versions immediately before a run.
+
 ## The short answer
 
 Yes. Train or fine-tune on an online NVIDIA GPU, preserve a portable Hugging Face/PyTorch
@@ -66,6 +78,10 @@ Prices, available GPU names, quotas, and regions change frequently. Query them i
 a run. For example, Hugging Face exposes `hf jobs hardware`, Modal links its live pricing from the
 GPU guide, and Runpod exposes current inventory in its console and CLI.
 
+✅ **VERIFIED** — the service capabilities in the table are linked to each provider's current
+documentation. The recommendation below is 🟡 **RECONSTRUCTED** from those capabilities and this
+workflow's requirement to retain portable weights.
+
 ### The practical recommendation
 
 - Start with **Hugging Face Jobs** if the dataset and output already live on the Hub.
@@ -85,14 +101,19 @@ Before renting a GPU, make one run directory mean the same thing everywhere:
 /outputs/<run-id>/
   checkpoints/                 # optimizer + scheduler state; resumable
   adapter/                     # LoRA adapter, before merge
+    run-manifest.json
+    eval.json
   merged/                      # portable release candidate
     config.json
     generation_config.json     # when the base model supplies one
     tokenizer.json             # or the model's equivalent tokenizer files
     tokenizer_config.json
     model-*.safetensors
+    run-manifest.json
+    eval.json
   run-manifest.json
   eval.json
+  publication-receipt.json     # Hub repo IDs + returned commit SHAs
 ```
 
 Record these values in `run-manifest.json`:
@@ -101,7 +122,8 @@ Record these values in `run-manifest.json`:
 - dataset ID, revision, split, and a post-processing fingerprint;
 - exact dependency lock or container digest;
 - GPU model, CUDA version, driver, precision, seed, and training arguments;
-- adapter and merged-repository commit SHAs;
+- intended adapter and merged-repository IDs in the manifest;
+- returned adapter and merged-repository commit SHAs in `publication-receipt.json`;
 - the evaluation suite and its result;
 - later, the MLX version or Core AI/Xcode version used to derive the shipping artifact.
 
@@ -154,6 +176,7 @@ import argparse
 import importlib.metadata
 import json
 import platform
+import shutil
 import subprocess
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
@@ -183,6 +206,9 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--adapter-repo")
     parser.add_argument("--merged-repo")
     parser.add_argument("--max-steps", type=int, default=300)
+    parser.add_argument("--save-steps", type=int, default=50)
+    parser.add_argument("--eval-steps", type=int, default=50)
+    parser.add_argument("--precision", choices=("bf16", "fp16"), default="bf16")
     return parser.parse_args()
 
 
@@ -232,6 +258,13 @@ def cuda_driver_version() -> str:
     return result.stdout.strip().splitlines()[0]
 
 
+def write_json(path: Path, value: Any) -> None:
+    path.write_text(
+        json.dumps(json_ready(value), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     args = arguments()
     if not torch.cuda.is_available():
@@ -254,6 +287,16 @@ def main() -> None:
     if not required.issubset(dataset.column_names):
         raise ValueError(f"dataset must contain {sorted(required)}")
     split = dataset.train_test_split(test_size=0.05, seed=42)
+    # Validate the datasets implementation detail before paid training begins.
+    dataset_fingerprints = {
+        "source": dataset._fingerprint,
+        "train": split["train"]._fingerprint,
+        "eval": split["test"]._fingerprint,
+    }
+
+    use_bf16 = args.precision == "bf16"
+    torch_dtype = torch.bfloat16 if use_bf16 else torch.float16
+    dtype_name = "bfloat16" if use_bf16 else "float16"
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.base_model,
@@ -274,18 +317,19 @@ def main() -> None:
         gradient_checkpointing=True,
         learning_rate=2e-4,
         warmup_steps=10,
-        bf16=True,
+        bf16=use_bf16,
+        fp16=not use_bf16,
         logging_steps=10,
         eval_strategy="steps",
-        eval_steps=50,
+        eval_steps=args.eval_steps,
         save_strategy="steps",
-        save_steps=50,
+        save_steps=args.save_steps,
         save_total_limit=2,
         report_to="none",
         seed=42,
         model_init_kwargs={
             "revision": args.base_revision,
-            "dtype": "bfloat16",
+            "dtype": dtype_name,
             "trust_remote_code": False,
         },
         push_to_hub=False,
@@ -311,23 +355,10 @@ def main() -> None:
     resume = get_last_checkpoint(str(checkpoint_dir))
     trainer.train(resume_from_checkpoint=resume)
     metrics = trainer.evaluate()
-    (run_dir / "eval.json").write_text(
-        json.dumps(metrics, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    eval_path = run_dir / "eval.json"
+    write_json(eval_path, metrics)
     trainer.save_model(str(adapter_dir))
     tokenizer.save_pretrained(adapter_dir)
-
-    api = HfApi()
-    adapter_commit_sha = None
-    if args.adapter_repo:
-        api.create_repo(args.adapter_repo, private=True, exist_ok=True)
-        adapter_commit = api.upload_folder(
-            repo_id=args.adapter_repo,
-            folder_path=adapter_dir,
-            commit_message="Final LoRA adapter",
-        )
-        adapter_commit_sha = adapter_commit.oid
 
     # Produce the portable handoff. PEFT adapter checkpoints do not contain the
     # base weights, so MLX/Core AI should consume this merged directory instead.
@@ -336,7 +367,7 @@ def main() -> None:
     base = AutoModelForCausalLM.from_pretrained(
         args.base_model,
         revision=args.base_revision,
-        dtype=torch.bfloat16,
+        dtype=torch_dtype,
         trust_remote_code=False,
     )
     adapted = PeftModel.from_pretrained(base, adapter_dir)
@@ -348,24 +379,12 @@ def main() -> None:
     )
     tokenizer.save_pretrained(merged_dir)
 
-    merged_commit_sha = None
-    if args.merged_repo:
-        api.create_repo(args.merged_repo, private=True, exist_ok=True)
-        merged_commit = api.upload_folder(
-            repo_id=args.merged_repo,
-            folder_path=merged_dir,
-            commit_message="Merged portable checkpoint",
-        )
-        merged_commit_sha = merged_commit.oid
-
     manifest = {
         "base_model": args.base_model,
         "base_revision": args.base_revision,
         "dataset_id": args.dataset_id,
         "dataset_revision": args.dataset_revision,
-        "dataset_fingerprint": dataset._fingerprint,
-        "train_fingerprint": split["train"]._fingerprint,
-        "eval_fingerprint": split["test"]._fingerprint,
+        "dataset_fingerprints": dataset_fingerprints,
         "command_arguments": vars(args),
         "environment_id": args.environment_id,
         "packages": package_versions,
@@ -375,25 +394,50 @@ def main() -> None:
         "cuda_toolkit": torch.version.cuda,
         "cuda_driver": driver_version,
         "gpu": torch.cuda.get_device_name(0),
-        "precision": "bfloat16",
+        "precision": dtype_name,
         "sft_config": training.to_dict(),
         "lora_config": lora.to_dict(),
-        "hub_artifacts": {
-            "adapter": {
-                "repo": args.adapter_repo,
-                "commit_sha": adapter_commit_sha,
-            },
-            "merged": {
-                "repo": args.merged_repo,
-                "commit_sha": merged_commit_sha,
-            },
+        "hub_destinations": {
+            "adapter": args.adapter_repo,
+            "merged": args.merged_repo,
         },
         "eval": metrics,
     }
-    (run_dir / "run-manifest.json").write_text(
-        json.dumps(json_ready(manifest), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    manifest_path = run_dir / "run-manifest.json"
+    write_json(manifest_path, manifest)
+    for artifact_dir in (adapter_dir, merged_dir):
+        shutil.copy2(manifest_path, artifact_dir / manifest_path.name)
+        shutil.copy2(eval_path, artifact_dir / eval_path.name)
+
+    # The published manifest cannot contain the SHA of the commit that contains
+    # itself. Keep immutable publication receipts beside the local run instead.
+    publication_path = run_dir / "publication-receipt.json"
+    publication = {
+        "adapter": {"repo": args.adapter_repo, "commit_sha": None},
+        "merged": {"repo": args.merged_repo, "commit_sha": None},
+    }
+    write_json(publication_path, publication)
+
+    api = HfApi()
+    if args.adapter_repo:
+        api.create_repo(args.adapter_repo, private=True, exist_ok=True)
+        adapter_commit = api.upload_folder(
+            repo_id=args.adapter_repo,
+            folder_path=adapter_dir,
+            commit_message="Final LoRA adapter with run manifest",
+        )
+        publication["adapter"]["commit_sha"] = adapter_commit.oid
+        write_json(publication_path, publication)
+
+    if args.merged_repo:
+        api.create_repo(args.merged_repo, private=True, exist_ok=True)
+        merged_commit = api.upload_folder(
+            repo_id=args.merged_repo,
+            folder_path=merged_dir,
+            commit_message="Merged portable checkpoint with run manifest",
+        )
+        publication["merged"]["commit_sha"] = merged_commit.oid
+        write_json(publication_path, publication)
 
 
 if __name__ == "__main__":
@@ -405,15 +449,16 @@ is explicit that an adapter checkpoint contains only adapter parameters. `merge_
 the step that creates an ordinary model again. Preserve **both** artifacts: the adapter for future
 training and the merged model for conversion.
 
-The two `upload_folder()` calls deliberately upload each artifact directory in one Hub commit, so
-their returned `CommitInfo.oid` values identify the exact adapter and merged weights. The local
-manifest also retains the resolved package versions, effective SFT and LoRA configs, CUDA driver,
-environment identity, dataset fingerprints, and evaluation. If you omit the repository arguments,
-the commit fields remain `null` and the durable output volume is the only artifact copy.
+✅ **VERIFIED** — the [Hub upload API](https://huggingface.co/docs/huggingface_hub/guides/upload)
+returns `CommitInfo` for each folder upload. Each published folder contains its weights,
+`run-manifest.json`, and `eval.json` in one commit. The separate local
+`publication-receipt.json` records each returned `CommitInfo.oid`; it starts with `null` commit
+fields and is rewritten after every successful upload, so a later failure still leaves a partial
+receipt. If you omit the repository arguments, the durable output volume is the only artifact copy.
 
-If the selected GPU does not support BF16, change both `bf16=True` and the two BF16 dtypes to FP16.
-Do not silently let the model load in FP32: it can double memory and change the hardware size you
-think the run requires.
+If the selected GPU does not support BF16, pass `--precision fp16`. The one option controls both
+trainer flags, both model-loading dtypes, and the manifest value. Do not silently let the model load
+in FP32: it can double memory and change the hardware size you think the run requires.
 
 ### 3.2 Launch it on Hugging Face Jobs
 
@@ -441,6 +486,8 @@ job = run_uv_job(
         "--adapter-repo", "<ORG>/qwen3-ios-v1-adapter",
         "--merged-repo", "<ORG>/qwen3-ios-v1-hf",
         "--max-steps", "20",  # smoke test first
+        "--save-steps", "10",
+        "--eval-steps", "10",
     ],
     flavor="a10g-large",
     timeout="4h",
@@ -458,7 +505,7 @@ hf jobs logs <JOB_ID>
 hf jobs wait <JOB_ID>
 ```
 
-The official Jobs guide documents writable bucket mounts for checkpoints, local-directory sync,
+✅ **VERIFIED** — the official Jobs guide documents writable bucket mounts for checkpoints, local-directory sync,
 encrypted secrets, status, metrics, cancellation, and timeout behavior. Keep the Hub repositories
 private until license, data, and evaluation review is complete.
 
@@ -510,6 +557,8 @@ def train() -> None:
             "--adapter-repo", "<ORG>/qwen3-ios-v1-adapter",
             "--merged-repo", "<ORG>/qwen3-ios-v1-hf",
             "--max-steps", "20",
+            "--save-steps", "10",
+            "--eval-steps", "10",
         ],
         check=True,
     )
@@ -527,9 +576,11 @@ Create a Modal Secret named `huggingface` containing `HF_TOKEN`, then run:
 modal run --detach modal_train.py
 ```
 
-The [Modal Volumes guide](https://modal.com/docs/guide/volumes) describes the checkpoint pattern and
-commit/reload semantics. Modal also recommends checkpointing and reentrant jobs even when the
-planned run is shorter than its maximum timeout; see its
+✅ **VERIFIED** — the [Modal Volumes guide](https://modal.com/docs/guide/volumes) says attached
+Volumes commit in the background every few seconds and take a final snapshot on container shutdown.
+The explicit `checkpoints.commit()` above makes the successful return boundary visible; it is not
+the only point at which checkpoint files become durable. Modal also recommends checkpointing and
+reentrant jobs even when the planned run is shorter than its maximum timeout; see its
 [long-training example](https://modal.com/docs/examples/long-training).
 
 ### 3.4 Run it on a GPU pod
@@ -569,7 +620,7 @@ logical directories and manifest instead of rewriting the trainer around a provi
 
 ## 4. Alternative: train MLX directly on hosted NVIDIA GPUs
 
-MLX 0.32.2 documents an official Linux CUDA wheel:
+✅ **VERIFIED** — MLX 0.32.2 documents an official Linux CUDA wheel:
 
 ```bash
 pip install "mlx[cuda12]" "mlx-lm[train]"
@@ -584,7 +635,7 @@ Then the same style of job can run:
 
 ```bash
 mlx_lm.lora \
-  --model meta-llama/Llama-3.2-3B-Instruct \
+  --model Qwen/Qwen3-0.6B \
   --data <ORG>/<DATASET> \
   --train \
   --mask-prompt \
@@ -592,15 +643,26 @@ mlx_lm.lora \
   --adapter-path /outputs/mlx-run/adapters
 
 mlx_lm.fuse \
-  --model meta-llama/Llama-3.2-3B-Instruct \
+  --model Qwen/Qwen3-0.6B \
   --adapter-path /outputs/mlx-run/adapters \
   --save-path /outputs/mlx-run/fused
+
+mlx_lm.generate \
+  --model /outputs/mlx-run/fused \
+  --prompt "Give the fixed smoke-test answer."
+
+hf upload <ORG>/qwen3-ios-v1-mlx-fused /outputs/mlx-run/fused .
 ```
 
 The [MLX CUDA announcement](https://github.com/ml-explore/mlx/discussions/2422) explicitly
 demonstrated `mlx_lm.lora` on CUDA, and the current
 [mlx-lm LoRA guide](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/LORA.md) documents local
 and Hub datasets, prompt masking, resume, evaluation, and fusion.
+
+This route already produces an MLX-format fused model. Record the commit returned by `hf upload`,
+skip the conversion commands in §5, and continue at §5.1 with
+`<ORG>/qwen3-ios-v1-mlx-fused` and that commit SHA. It is a separate MLX-only branch, not an input
+to the Core AI export in §6.
 
 Use this route when all of the following are true:
 
@@ -627,6 +689,11 @@ hf download <ORG>/qwen3-ios-v1-hf \
 python3 -m venv .venv-mlx
 .venv-mlx/bin/pip install "mlx-lm==<VALIDATED_VERSION>"
 
+test ! -e artifacts/qwen3-ios-v1-mlx-4bit || {
+  echo "mlx_lm.convert requires a new --mlx-path; choose a fresh destination" >&2
+  exit 1
+}
+
 .venv-mlx/bin/mlx_lm.convert \
   --model artifacts/qwen3-ios-v1-hf \
   --mlx-path artifacts/qwen3-ios-v1-mlx-4bit \
@@ -644,6 +711,9 @@ hf upload <ORG>/qwen3-ios-v1-mlx-4bit \
 
 Do not copy only the `safetensors` shards. The tokenizer, model config, chat template, special-token
 configuration, and quantization metadata are part of the runtime contract.
+
+✅ **VERIFIED** — current `mlx_lm.convert` rejects an existing `--mlx-path` and exposes no
+`--force` or overwrite flag. The preflight fails safely instead of deleting an earlier conversion.
 
 ### 5.1 Load the result with MLX Swift
 
@@ -695,6 +765,11 @@ for try await delta in session.streamResponse(
 }
 ```
 
+✅ **VERIFIED** — `ModelConfiguration(id:revision:)` is declared in
+[`ModelConfiguration.swift`](https://github.com/ml-explore/mlx-swift-lm/blob/3cbf928b5eb24190e8952725699ae6a3bb02824d/Libraries/MLXLMCommon/ModelConfiguration.swift),
+and the revision flows to the package's downloader. The fence remains illustrative because the
+repository's SDK-only snippet verifier does not resolve third-party Swift packages.
+
 This macro-based downloader is the shortest proof of life. A shipping app generally needs its own
 background/resumable download policy, checksum verification, cellular policy, and local
 `ModelConfiguration(directory:)`. The full implementation choices are in
@@ -704,7 +779,13 @@ background/resumable download policy, checksum verification, cellular policy, an
 ## 6. Export the merged checkpoint for Core AI on iOS
 
 Core AI is a different branch from the same master checkpoint. Do not convert the quantized MLX
-artifact into Core AI. Start again from `artifacts/qwen3-ios-v1-hf`.
+artifact into Core AI. The current export CLI requires a registry short-name or a Hugging Face
+model ID, so use the merged repository rather than the local directory downloaded in §5.
+
+🔴 **GAP — no immutable revision input.** The current `coreai.llm.export` positional accepts neither
+a local model directory nor a separate Hub revision. `<ORG>/qwen3-ios-v1-hf` therefore resolves the
+repository's current default branch, not `<MERGED_MODEL_COMMIT_SHA>`. Keep that repository unchanged
+during export and record this limitation; that operational rule is not equivalent to a revision pin.
 
 Use macOS 27, Xcode 27, and the separately installed Metal Toolchain. Clone Apple's recipe
 repository rather than relying on a wheel when using its source-tree compression YAMLs:
@@ -716,7 +797,7 @@ cd coreai-models
 uv sync
 
 # Seconds-to-minutes smoke export before the full graph.
-uv run coreai.llm.export ../artifacts/qwen3-ios-v1-hf \
+uv run coreai.llm.export <ORG>/qwen3-ios-v1-hf \
   --platform iOS \
   --experimental \
   --compute-precision float16 \
@@ -725,7 +806,7 @@ uv run coreai.llm.export ../artifacts/qwen3-ios-v1-hf \
   --output-dir ../artifacts/coreai-smoke
 
 # Full iOS/ANE-oriented export using Apple's Qwen3 0.6B mixed recipe.
-uv run coreai.llm.export ../artifacts/qwen3-ios-v1-hf \
+uv run coreai.llm.export <ORG>/qwen3-ios-v1-hf \
   --platform iOS \
   --experimental \
   --compute-precision float16 \
@@ -734,7 +815,9 @@ uv run coreai.llm.export ../artifacts/qwen3-ios-v1-hf \
   --output-dir ../artifacts/coreai-ios
 ```
 
-Why `--experimental`? The fine-tuned repository has a new ID, so it is not an exact registry preset
+✅ **VERIFIED** — Apple's exporter help and source accept a registry short-name or Hugging Face ID;
+`--experimental` permits a Hub model without a registry preset when compute precision is explicit.
+The fine-tuned repository has a new ID, so it is not an exact registry preset
 even though its architecture remains Qwen3. The command still needs to recognize the architecture;
 changing model code or tensor names during training can make export fail.
 
@@ -852,7 +935,8 @@ that an artifact was written, not that it retained the fine-tune.
 - [ ] Resume was tested after a deliberate interruption.
 - [ ] The LoRA adapter and merged HF checkpoint are both preserved.
 - [ ] Tokenizer, chat template, special tokens, config, and generation config accompany the weights.
-- [ ] `run-manifest.json` records environment, arguments, revisions, and evaluation results.
+- [ ] `run-manifest.json` records environment, arguments, input revisions, and evaluation results.
+- [ ] `publication-receipt.json` records every returned artifact commit SHA.
 - [ ] A short end-to-end smoke run reached a physical iPhone before the full training run.
 - [ ] MLX and Core AI artifacts were derived independently from the same merged HF revision.
 - [ ] Quantized candidates passed the same evaluation suite as the merged checkpoint.

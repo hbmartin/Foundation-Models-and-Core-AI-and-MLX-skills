@@ -47,6 +47,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mdlinks import is_site_only_guide
 from mdslug import slugify
 from stable_identity import semantic_id, source_content_hash
 
@@ -225,13 +226,14 @@ class CompileResult:
 
 def iter_guide_files(root):
     for dirpath, dirnames, filenames in os.walk(root):
-        # Website-only deployment workflows deliberately sit outside the
-        # versioned SDK snippet corpus and its committed results ledger.
-        dirnames[:] = sorted(name for name in dirnames if name != "workflows")
+        dirnames.sort()
         for fn in sorted(filenames):
             if not fn.endswith(".md") or fn in GENERATED_PAGES:
                 continue
-            yield os.path.join(dirpath, fn)
+            path = os.path.join(dirpath, fn)
+            if is_site_only_guide(os.path.relpath(path, root)):
+                continue
+            yield path
 
 
 def extract_fences(root):
