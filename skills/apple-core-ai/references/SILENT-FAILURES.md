@@ -1,12 +1,12 @@
 # Silent-failure index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**528 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**529 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-14. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-16. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 68 |
+| [Wrong output](#wrong-output) | 69 |
 | [Empty output / no-op](#empty-output--no-op) | 5 |
 | [Truncation & limits](#truncation--limits) | 2 |
 | [Ignored input](#ignored-input) | 37 |
@@ -26,6 +26,7 @@
 
 **Part 7**
 
+- [Observed zero storage is not an initialization contract; explicitly write every NDArray element that matters.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#73-creating-an-ndarray) — 7.1
 - [Indexing by hand while ignoring interleaveLayout reads the wrong elements — the strides are block strides for that axis](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#78-strides-and-interleavelayout) — 7.1
 - [Assuming the output dtype from the input descriptor misreads bytes — outputs can be a different scalar type](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-️-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
 - [Output scalarType can differ from the input's — inspecting the array itself is the only safe way to decode it](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-️-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
@@ -261,7 +262,7 @@
 - [Incident-grade community finding: the reshape hint can destroy AOT benefits — see the fixed-shape measurement below](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-dynamic-cache-alternative-and-its-own-cost) — 7.3
 - [Community-measured: expectFrequentReshapes on a fixed-shape graph kills the AOT bundle — set it only on the dynamic path](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-dynamic-cache-alternative-and-its-own-cost) — 7.3
 - [Copy-on-write copies the entire KV cache every decode step when the state buffer isn't uniquely referenced](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
-- [Noema parks a placeholder in state slots during a step so the working buffer is uniquely owned — no per-token COW copy](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
+- [The frozen Noema snapshot parks placeholders so working state stays uniquely owned — no per-token COW copy.](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
 - [Encode-once reuse requires caller-side caching — CoreAISegmentationEngine re-runs image_encode every call, no cache API](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#where-this-pays-off-outside-a-decode-loop) — 7.3
 - ['MLX 2x faster' measured a hand-rolled per-token loop — Apple's pipelined engine runs the same weights ~3.5x faster](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#what-the-35-figure-actually-measures) — 7.3
 - [Pipelined engine overshoots EOS into device KV — cross-turn reuse is impossible and TTFT is history/decodeRate](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-one-place-pipelining-is-a-liability) — 7.3

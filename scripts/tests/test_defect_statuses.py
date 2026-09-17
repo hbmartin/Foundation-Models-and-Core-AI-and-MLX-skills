@@ -178,7 +178,7 @@ class DefectStatusGoldenTests(unittest.TestCase):
         )
         self.assertEqual(claim(quantization, 1266, 3824), "MERGED")
         self.assertEqual(claim(fundamentals, 122, 3924), "CLOSED")
-        self.assertIsNone(claim(runtime, 3664, 85))
+        self.assertIsNone(claim(runtime, 3669, 85))
 
     def test_unreachable_github_is_structured_and_nonfatal(self) -> None:
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:

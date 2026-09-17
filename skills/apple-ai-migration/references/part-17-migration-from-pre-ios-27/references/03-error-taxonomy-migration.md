@@ -1186,7 +1186,7 @@ identity disagree — a value one check claims and another misses. The plausible
 error whose domain is `FoundationModels.LanguageModelError` and whose `userInfo` carries
 `NSMultipleUnderlyingErrorsKey` containing a `ModelManagerServices.ModelManagerError`.
 
-✅ **Probe-verified on Simulator (2026-07-31) and iPhone 15 Pro (2026-08-20).** The same semantic
+✅ **Probe-verified on Simulator (2026-07-31), beta-5 hardware (2026-08-20), and stable-era Mac/device lanes (2026-09-16).** The same semantic
 failure can bridge differently by destination/build:
 
 | Failure mode | Dynamic type | NSError domain / code | Casts to |
@@ -1196,10 +1196,17 @@ failure can bridge differently by destination/build:
 | `.required` with empty toolset (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **6** | `LanguageModelError.unsupportedGenerationGuide` |
 | `am_ET` prompt (sim) | **nothing thrown** | — | — (⚠️ silent success) |
 | `am_ET` prompt (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **2** | `.guardrailViolation`, **not** `.unsupportedLanguageOrLocale` |
+| Context overflow (stable macOS 27) | `LanguageModelError` after 92.7 s | `FoundationModels.LanguageModelError` / 0 | `.contextSizeExceeded(4096,4099)` |
+| Context overflow (device, `24A435`) | probe deadline at 120 s | — | no thrown value observed before deadline |
+| `am_ET` prompt (stable Mac + device `24A435`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **2** | `.guardrailViolation`, again **not** `.unsupportedLanguageOrLocale` |
 
 ⚠️ `am_ET` is rejected by `supportsLocale(_:)`, yet neither destination produced
 `.unsupportedLanguageOrLocale`: Simulator answered, while the device's particular prompt tripped a
 guardrail. A locale gate must therefore be **your** `supportsLocale` check, not a `catch` arm.
+
+The stable-era rows add a latency rule: a typed error may arrive too late for product UX, and the
+same semantic failure may not arrive before a device deadline. Put a wall-clock deadline outside
+the typed catch ladder.
 
 The empty-tool rows prove why a robust ladder needs both typed arms and terminal NSError logging:
 the Simulator value bypasses a typed catch, while the hardware value enters
@@ -3432,10 +3439,10 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 ---
 
-*Guide last revised 2026-07-29, against Xcode 27 / OS 27 beta-era sources — including, as of this
-revision, the compiler-emitted `FoundationModels.swiftinterface` from **both** sides of the
+*Guide last revised 2026-09-16, against Xcode 27 beta-5 interfaces plus stable macOS 27 and
+physical iOS 27 runtime probes — including the compiler-emitted `FoundationModels.swiftinterface` from **both** sides of the
 migration (26.5 and the 27.0 beta), which closed four of this guide's thirteen ledger gaps
 outright, narrowed two more to their behavioural halves, and made §4's mapping table symmetric. Every Foundation Models symbol above carries an evidence marker;
 where a marker says 🔴 GAP, nobody in this corpus has run the thing, and the guide says so rather
-than guessing. Nothing here has been validated against a release build of iOS 27 — because as of
-this revision there isn't one.*
+than guessing. The physical device ran build `24A435`, which does not match Apple's public-final
+`24A437`; it is therefore a stable-era runtime observation, not a public-final-device baseline.*

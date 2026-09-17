@@ -1,8 +1,8 @@
 # API & symbol index — Migrating an Apple AI integration from 26 to 27
 
-**408 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**407 symbols, of 1212 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-14; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-16; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>110 symbols</sub>
 
@@ -273,7 +273,7 @@
 | `URL` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `URLSession` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 
-## other  <sub>194 symbols</sub>
+## other  <sub>193 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -390,7 +390,6 @@
 | `ModelDelivery` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `ModelFactory._loadContainer` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `ModelJudgeEvaluator` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `ModelManagerError` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `ModelManagerServices.ModelManagerError` |  |  | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `MutableCollection` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `MutableRawSpan` |  | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |

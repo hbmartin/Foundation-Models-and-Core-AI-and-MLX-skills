@@ -1080,7 +1080,7 @@ sample):
 ```
 
 A shipping third-party iOS app makes the opposite, and better, choice — **community-measured,
-from a deep read of `noemaai-labs/noema-ios` (Noema 3.5), which stores models under `Documents`**:
+from a deep read of `frozen Noema 3.5 snapshot` (Noema 3.5), which stores models under `Documents`**:
 
 ```swift illustrative
 static func baseDir(for format: ModelFormat, modelID: String) -> URL {
@@ -3790,7 +3790,7 @@ evidence class.
 - `notes/repos/mlx-swift-examples.md` — 3,348 lines; `ml-explore/mlx-swift-examples` at HEAD
   `378f244` (*"MLXChatExample: fix VLM image handling on iOS (PhotosPicker, EXIF, empty assistant
   trim) (#472)"*, 2026-06-16). Source of every sample-app listing in §4, §6, §7 and §8.
-- `notes/repos/noema-ios.md` — 2,217 lines; `noemaai-labs/noema-ios` (Noema 3.5), a shipping
+- `notes/repos/noema-ios.md` — 2,217 lines; `frozen Noema 3.5 snapshot` (Noema 3.5), a shipping
   third-party iOS app. **All material from this source is labelled community-measured in the text.**
   Source of §6.7–§6.9, §8.2's isolation pattern, §9.5's SDK-keyed conditions.
 - `notes/repos/issues-mlx-stack.md` — 1,183 lines; a GitHub issue/PR mining pass over `mlx`,

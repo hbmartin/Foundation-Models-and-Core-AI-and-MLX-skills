@@ -2508,7 +2508,7 @@ FB23092325) · 812501 and 811620 (`.anyOf`, `parameters` computed once) · 83253
 FB23643759) · 836673 (`LanguageModelError` refusals) · 833683 (`CustomSegment`).
 
 **Community, explicitly attributed as such:** `john-rocky/coreai-model-zoo` knowledge notes (body
-re-evaluation count, baton-pass reliability on third-party providers) · `noemaai-labs/noema-ios`
+re-evaluation count, baton-pass reliability on third-party providers) · `frozen Noema 3.5 snapshot`
 (tool-output injection guidance, real-world FM adapter code). Nothing from these sources is presented as
 an Apple claim.
 

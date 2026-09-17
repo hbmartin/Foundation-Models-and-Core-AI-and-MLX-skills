@@ -592,14 +592,10 @@ device-specific report.
     per answer. Cite as Apple's paraphrase of the panel, never as an engineer's spoken words.
     Analysis: `notes/web/2026-08-02-harvest/wwdc2026-8121-ml-ai-group-lab.md`.
 
-> 📎 **Footnote — the 8192 source comment, demoted.** One third-party app carries a comment claiming a
-> device probe returns 8K on iOS 27 (`noemaai-labs/noema-ios`, `Noema/AFMLLMClient.swift:133-146`:
-> *"iOS 26 reports 4K while the iOS 27 model reports 8K"*). **No Apple source corroborates it** — not
-> the docs, not the WWDC tables, and not TN3193, which had every reason to mention a larger window and
-> does not. It is a developer's comment with no stated device, OS build or date, and this guide treats
-> it as a footnote rather than a rival figure. It is recorded here only because it is the sole
-> published claim that any device reports something other than 4096, and because **the defensive shape
-> of its code is still the right one** — see §3.4.
+> 📎 **Retired community claim.** A frozen Noema 3.5 snapshot once carried an uninstrumented comment
+> claiming 8K on iOS 27. The upstream is now unavailable, the claim had no device/build/date, and it
+> has not reproduced in any project-run simulator, Mac, or physical-device lane. It remains historical
+> provenance only, not a competing baseline. The useful lesson survives: read the dynamic property.
 
 > ✅ **New SDK evidence (2026-07-29), and it cuts both ways.** The captured interfaces expose
 > `contextSize`'s inlinable getter body. In the **26.5 SDK** it is a hardcoded
@@ -614,14 +610,15 @@ device-specific report.
 > other than 4096. TN3193's number stands as the documented expectation; §3.4's read-don't-hardcode
 > rule is now visibly what the SDK itself is built for.
 
-> ✅ **Probe-verified on simulator and hardware.** On 2026-07-31, `probes/` `fm.contextSize`
+> ✅ **Probe-verified on simulator, Mac, and hardware.** On 2026-07-31, `probes/` `fm.contextSize`
 > measured **4096** on the macOS 26.5 host and iOS 27 simulator, where the dynamic `_contextSize`
 > path is live. The simulator's context-overflow error independently reads *"…exceeds the maximum
 > allowed context size of 4096"* (`fm.error-domain-context-overflow`). On **2026-08-20**, the same
 > probe measured **4096 on a physical iPhone 15 Pro** (`iPhone16,1`, iOS 27.0 beta-5 build
 > `24A5408d`, Xcode `27A5237l`). The project now has a real 27-hardware answer and it still does
-> not corroborate the lone 8192 source comment. This closes the hardware residual for that device;
-> it does not turn 4096 into a value applications should hardcode.
+> not corroborate the old 8192 source comment. On 2026-09-16, stable macOS 27 (`26A428`) and an
+> iPhone 15 Pro on iOS 27 build `24A435` again returned **4096**. The phone build is not Apple's
+> public-final `24A437`, so record it separately; the result still does not make 4096 safe to hardcode.
 
 **Why this does not make the number safe to hardcode.** Apple's 26.4 announcement said the point of
 these APIs is *"to adapt your app to the hardware it's running on"* (session 241, `241:L14-19`);
@@ -993,6 +990,10 @@ The 2026 release reshuffled the error types. For context overflow specifically:
 > not a contradiction: which one your code catches is decided by the Xcode you build with. Cite both
 > spellings side by side until your minimum is 27. Full before→after mapping for the whole taxonomy:
 > [`../../part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md).
+
+> ⚠️ **Latency boundary, 2026-09-16.** A deliberately large overflow returned typed
+> `contextSizeExceeded` on the Mac only after 92.7 seconds; the physical-device equivalent hit the
+> probe's 120-second deadline instead. Catch the typed error **and** enforce an outer product deadline.
 
 > ⚠️ **SILENT FAILURE — a rebuild changes which `catch` clause fires.** The mapping is
 > `exceededContextWindowSize` → `contextSizeExceeded`, and the two are *different types*. A codebase
@@ -2627,7 +2628,6 @@ correct-looking, and quietly makes the model do the wrong thing.
 | Number | Value | Source class | Caveats |
 |---|---|---|---|
 | On-device context | **4,096 tokens per session** | **Apple-published** — **TN3193**, context-window article, PCC table, WWDC26 319, forum 790736 (DTS) | settled; read `contextSize` anyway |
-| On-device context, claimed iOS 27 probe | **8192** | **community, uncorroborated** — `noema-ios`, `AFMLLMClient.swift:133-135` source comment | footnote only; no device, OS build or date, and no Apple source repeats it |
 | PCC context | **32K / 32,000 tokens** | **Apple-published** — PCC article + WWDC26 241 (`241:L31`) + 319 | — |
 | Token ≈ characters (Latin) | **3–4 chars** | **Apple-published** — context-window article | — |
 | Token ≈ characters (CJK/Vietnamese) | **1 char** | **Apple-published** — same | budget 3–4× for these locales |
@@ -2758,8 +2758,8 @@ rebuild — see the silent-failure box in §6.1.
 - `john-rocky/coreai-model-zoo`, `knowledge/dynamic-profiles-local-models.md` and
   `knowledge/agentic-security-checklist.md` — body re-evaluation count, model-switch costs,
   `historyTransform` timing.
-- `noemaai-labs/noema-ios`, `Noema/AFMLLMClient.swift:133-146` — the uncorroborated 8192 claim (§3.3
-  footnote, not a rival to Apple's 4096) and the defensive
+- Frozen Noema 3.5 snapshot, `Noema/AFMLLMClient.swift:133-146` — the retired 8192 claim (§3.3
+  historical footnote, not a rival to Apple's 4096) and the defensive
   `contextSize` reader.
 
 ### 14.2 Conflicts, and how this guide ruled

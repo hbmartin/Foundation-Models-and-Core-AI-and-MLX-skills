@@ -622,9 +622,10 @@ Profile { BrainstormInstructions(orchestrator: orchestrator) }
 > `(Transcript.ToolCall)` form — and the closures are **`async throws`**
 > (✅ **SDK-verified**, `FoundationModels-27.0-macos.swiftinterface:1008-1014`). So the detector above
 > may await and may throw. A community security note attributed to WWDC26 session 347 states that
-> **throwing from `onToolCall` blocks the tool from running** — the throw *does* compile, but
-> Apple's documented behaviour is that it propagates to the caller and aborts the whole turn, so
-> verify on device before relying on it as a per-call veto.
+> **throwing from `onToolCall` blocks the tool from running.** This is now runtime-verified on
+> stable macOS 27 and iPhone 15 Pro / iOS build `24A435`: the tool body did not run, `respond`
+> threw `ToolCallError`, and the default transcript reverted to `[instructions]`. Treat the hook as
+> a turn-abort veto, not as a way to return control to the model's loop.
 
 The structural fix is one `enum ToolNames` read by both the conformance and the instructions string,
 as in §2.4. It cannot catch a tool you forgot to put in the array — detector 1 can, and it is four
@@ -645,10 +646,11 @@ different trust boundary.
 Three concrete obligations when the baton crosses a model boundary:
 
 **1. Fit the receiving model's window.** On-device is small. Apple's docs and WWDC26 session 319 both
-give **4K on-device / 32K PCC** (✅ both sources agree exactly). A shipping third-party app's source
-comment reports probing `SystemLanguageModel.default.contextSize` and getting **8192 on iOS 27**
-where iOS 26 reported 4096 (community, `noema-ios`, `AFMLLMClient.swift:133-135`) — so **read
-`contextSize`, do not hardcode either number.** Origami's answer is the smallest possible
+give **4K on-device / 32K PCC** (✅ both sources agree exactly). Project probes returned **4096** on
+the beta-5 physical device and again on stable macOS 27 plus iPhone 15 Pro / iOS build `24A435`.
+The old 8192 community comment came from a now-retired upstream snapshot and was never reproduced.
+Still **read `contextSize`; do not hardcode it**, because the 27 getter is dynamic and model changes
+move the same transcript between different budgets. Origami's answer is the smallest possible
 `historyTransform`:
 
 ```swift compile:27 imports:FoundationModels
@@ -1266,6 +1268,11 @@ Apple's own Frameworks Engineer recommends the modifier form for strict retrieva
 >    declaration overrides a dynamic profile.*
 > 3. ***Dynamic profile modifiers** — Act as defaults that apply to all subprofiles unless the
 >    modifier is overridden by a subprofile."*
+
+> ✅ **RUNTIME-CONFIRMED, 2026-09-16.** Stable macOS 27 and the physical iPhone confirmed both
+> directions: profile-required plus call-site-disallowed produced `toolCalled=false` and
+> `toolRan=false`; profile-disallowed plus call-site-required ran the tool and then ended with
+> `contextSizeExceeded(4096,4099)`. The call-site value wins exactly as the article states.
 
 > ⚠️ **SILENT FAILURE — a call-site `options:` silently disables your loop exit.** If you have built
 > the `.required` exit into your profile (§6.2) and then pass
@@ -2020,16 +2027,13 @@ There is an obvious-looking alternative: use the `onToolCall` lifecycle modifier
 the zero-argument and the `(Transcript.ToolCall)` overloads are declared
 `@escaping … async throws -> Void` (✅ **SDK-verified**,
 `FoundationModels-27.0-macos.swiftinterface:1008-1014`) — so the sketch *compiles*: you may `await
-confirmWithUser(call)` and you may throw. 🔴 What remains unverified is the *effect* of the throw:
-the community note says "the tool never runs and control returns to the loop"; Apple's documented
-wording is that the error **propagates to the caller's `respond`** — turn-level abort, not a
-per-call veto. A device test is still the only way to observe which transcript state results.
-That test exists as `probes/` `fm.onToolCall-throw-effect`, but the 2026-07-31 run confirmed the
-27.0 sim runtime **cannot decide it** — the sim lacks tool-calling assets, so `respond` threw
-`ModelManagerError` before any tool call was emitted (`toolRan=false`). This one genuinely waits
-for MAC-27 or DEVICE-27.
+confirmWithUser(call)` and you may throw. The effect is now measured: on 2026-09-16 the Mac and
+physical-device probes both observed that the tool body did not run, `respond` threw
+`ToolCallError`, and the default transcript reverted to its instructions entry. The earlier
+community phrase "returns to the loop" is wrong for these runtimes. This is a **turn-level abort**,
+not an in-loop denial that lets the model choose another action.
 
-Even if it works exactly as sketched, **Origami's shape is better for user-facing consent**, for three
+**Origami's shape is better for user-facing consent**, for three
 reasons that hold regardless:
 
 1. **It does not hold the tool-calling loop open across human latency.** A user may take thirty
@@ -3034,7 +3038,7 @@ Extracted from the archives obtained via Apple's tutorials JSON API.
   `engine.supportsLogits`), `knowledge/agentic-security-checklist.md` (the `onToolCall` chokepoint
   sketch attributed to WWDC26 347, and the `historyTransform` spotlighting/redaction guidance),
   `knowledge/evaluations-framework.md` (`disallowed` as an injection gate).
-- `noemaai-labs/noema-ios` — the Apple Foundation Models documentation mirror used to cross-check
+- `frozen Noema 3.5 snapshot` — the Apple Foundation Models documentation mirror used to cross-check
   242, and `AFMLLMClient.swift` / `AppleFoundationModelAvailability.swift` for the `contextSize`
   8K observation and the availability/quota switch shapes.
 

@@ -720,10 +720,10 @@ func enableFeature(_ feature: Feature, progress: @MainActor (Double, String) -> 
 > necessarily indeterminate. Design the copy accordingly — *"This happens once, and can take a few
 > minutes for large models"* is honest; a progress bar that sits at 50% for three minutes is not.
 >
-> 🔴 **GAP:** whether cancelling the enclosing `Task` actually stops specialization, and what state
-> the cache is left in if it does, is **undocumented and untested by anyone in this corpus.**
-> **What would resolve it:** a device test that starts `specialize` on a large model, cancels after
-> ten seconds, and then checks `cache.model(for:options:)` and on-disk size.
+> 🟡 **INCONCLUSIVE PROBE, updated 2026-09-16:** cancellation remains undocumented. On both the
+> stable Mac and iPhone 15 Pro, the test reported `completed` after about 10 seconds and a cache
+> entry remained. The fixture completed before cancellation could establish whether useful work
+> stops. A larger model that remains in flight after the cancellation request is still required.
 > **Safe default meanwhile:** treat specialization as uncancellable. Do not tie it to a view's
 > lifetime, do not start it in `.task { }` on a screen the user can swipe away, and if the user
 > backs out, let it finish — the entry it produces is exactly what you want next time.
@@ -847,6 +847,8 @@ letting the user discover it by tapping the feature.
 > tiny 12,288-byte portable model grew `Library/Caches` by 24,576 bytes, left
 > `Library/Application Support` unchanged, and created `Library/Caches/coreai-cache`. That is one
 > beta/device/model observation, not a storage contract or a general 2× ratio.
+> The 2026-09-16 stable-Mac and iOS build `24A435` lanes reproduced the 12,288 → 24,576-byte
+> observation, but it remains fixture-specific rather than a sizing formula.
 > **Safe default:** treat cache size as *approximately the size of the specialized
 > artifact*, which community measurements put in the same order of magnitude as the source asset —
 > a 1.9 GB `.aimodelc` and a 3 GB `.aimodelc` both appear in the corpus with device-side load
@@ -925,7 +927,7 @@ happens when you delete an entry that a live `AIModel` is still using?
 Those cannot both be true. On the tested beta, the runtime breaks the tie in favor of the reference
 pages:
 
-> ✅ **RESOLVED ON DEVICE FOR BUILD `24A5408d`.** A probe specialized and loaded a toy model,
+> ✅ **RESOLVED ON DEVICE FOR BUILD `24A5408d`, reverified 2026-09-16 on Mac and iOS build `24A435`.** A probe specialized and loaded a toy model,
 > retained the live `AIModel`, and called `deleteEntries(for:)`. The call threw
 > `AIModelCacheError.failedToPurge("Deletion could not be completed, assets still in use")`; the
 > entry remained findable. After releasing the model, the same delete succeeded. The observed
@@ -2745,9 +2747,9 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 | # | Gap | What would resolve it | Section |
 |---|---|---|---|
 | 1 | ~~The error type thrown by `AIModel.init`, `loadFunction`, `run`, and the cache `delete*` methods~~ **CLOSED 2026-07-29 by the SDK interface dump: untyped throws; `AssetError` is the only public error type in the beta SDK** | — | §3 |
-| 2 | ~~Deletion while an `AIModel` is live: throws (reference) or defers (article)?~~ **CLOSED 2026-08-20 on iPhone 15 Pro / iOS build `24A5408d`: throws while referenced, remains findable, succeeds after release** | Re-run on later betas to detect drift | §7 |
-| 3 | Cancellation semantics of `specialize` / `init(contentsOf:)` | Cancel a `Task` mid-specialization and inspect the cache | §5 |
-| 4 | **Cache location/size is undocumented; narrowed on device to `Library/Caches/coreai-cache` for the default cache (12,288-byte toy produced 24,576-byte growth)** | Repeat across realistic models/devices; a public size/enumeration API | §6 |
+| 2 | ~~Deletion while an `AIModel` is live: throws (reference) or defers (article)?~~ **CLOSED and reverified 2026-09-16 on stable Mac and iOS build `24A435`: throws while referenced, remains findable, succeeds after release** | Re-run on later releases to detect drift | §7 |
+| 3 | Cancellation semantics of `specialize` / `init(contentsOf:)` — current fixture completed after ~10 s and left a cache entry on Mac/device, so the result is inconclusive | Cancel a genuinely long-running specialization and inspect the cache | §5 |
+| 4 | **Cache location/size is undocumented; Mac/device lanes reproduced `Library/Caches/coreai-cache` and 12,288-byte source → 24,576-byte growth** | Repeat across realistic models/devices; a public size/enumeration API | §6 |
 | 5 | The exact composition of `.default` / `.persistent` in terms of `PurgeConditions` | Printing the raw values, or Apple documenting them | §6 |
 | 6 | Whether the `AIModel` returned by `specialize(…, cache: groupCache)` is backed by the group entry (**default-cache equivalent closed: identical 181-byte bookmarks**) | Repeat the bookmark comparison in an entitled app-group target | §8 |
 | 7 | **`expectFrequentReshapes`: semantics, cache-key participation, and interaction with `--expect-frequent-reshapes`** — spelling is SDK-verified; `.default` and `.cpuOnly` both measured `false` on an iPhone 15 Pro, 2026-08-20 | A controlled static/dynamic A/B; Apple documentation for the semantic contract | §11 |
@@ -2771,8 +2773,9 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 
 ---
 
-*Guide last revised 2026-07-27, against Xcode 27 / OS 27 beta-era sources. Every Core AI symbol in
-this guide is Beta. Re-verify signatures against the shipping SDK before relying on them.*
+*Guide last revised 2026-09-16, against the captured Xcode 27 beta-5 interface plus stable macOS 27
+and iOS build `24A435` runtime probes. The selected SDK is still beta-era; re-verify signatures
+against a coherent shipping Xcode before relying on them.*
 
 [^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates 35 cases:
     [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).

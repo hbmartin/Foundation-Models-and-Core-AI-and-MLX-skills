@@ -129,8 +129,8 @@ five-rung recovery ladder for wedged loads.
 > `SIGSEGV` inside the Metal compiler with no message (§11). And **`coreai-build compile` exits 0 for
 > architectures the device will reject**; only a device load validates the choice (§13).
 >
-> ✅ **DEVICE-RESOLVED 2026-08-20 — the reference pages describe the tested runtime (§7).** On an
-> iPhone 15 Pro running iOS 27 build `24A5408d`, deleting an entry retained by a live `AIModel`
+> ✅ **REVERIFIED 2026-09-16 — the reference pages describe the tested runtime (§7).** On the
+> beta-5 device, stable macOS 27, and iPhone 15 Pro running iOS 27 build `24A435`, deleting an entry retained by a live `AIModel`
 > threw, left the entry findable, and succeeded after release; the article's silent-deferral wording
 > did not match this run. The guide retains release-delete-verify code and notes that the observed
 > error type is non-public. The full `coreai-build` CLI surface, open
@@ -138,8 +138,8 @@ five-rung recovery ladder for wedged loads.
 > component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app itself — which is
 > why the 2026-07-29 check found it absent — and its full `--help` is captured in
 > `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt` (§13). Still open: cancellation semantics
-> for a specialization large enough to remain in flight when cancellation arrives; the 12 KB device
-> fixture completed before it could exercise that branch.
+> for a specialization large enough to remain in flight when cancellation arrives; the current
+> Mac/device fixture completed after about 10 seconds and left a cache entry, so it remains inconclusive.
 
 ### [7.3 — States as KV cache, and pipelined execution](references/03-states-and-pipelined-execution.md)
 
@@ -299,7 +299,7 @@ AOT-compiling, debugging, gauging and profiling. **WWDC26 transcripts:** 324 *"M
 point of use and never presented as Apple figures: `john-rocky`'s Core AI model zoo and fork (the
 194-second cold load, the AOT A/B, the `expectFrequentReshapes` SIGSEGV, the MPSGraph KV-write isolation,
 the prefix-reuse speedups — single-author, beta-era, self-declared uncontrolled conditions),
-`noemaai-labs/noema-ios` (the copy-on-write trap, shape bucketing, host-cache detection),
+`frozen Noema 3.5 snapshot` (the copy-on-write trap, shape bucketing, host-cache detection),
 `1amageek/swift-lm` and `lucasnewman/mlx2coreai` (two independent integrations corroborating the LLM
 state contract), and `ml-explore/mlx-swift-lm` for the xgrammar namespace-collision comment. **Apple
 published no latency figure for anything in this part** beyond one ~800 ms screenshot.

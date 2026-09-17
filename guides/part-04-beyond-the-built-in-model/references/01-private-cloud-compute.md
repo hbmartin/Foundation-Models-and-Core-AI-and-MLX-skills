@@ -2673,7 +2673,7 @@ initializer's typing (§4.2), `Profile(model:)` vs `.model(_:)` (§4.4) — this
 
 Always attributed as such in the text, never presented as an Apple figure.
 
-- `noemaai-labs/noema-ios` — a shipping app with PCC integration: `AFMLLMClient.swift` (the
+- `frozen Noema 3.5 snapshot` — a shipping app with PCC integration: `AFMLLMClient.swift` (the
   `contextSize` 8K observation, the `supportsLocale` guard, the platform list drift),
   `AppleFoundationModelAvailability.swift` (the collapsed availability+quota enum),
   `AppleFoundationModelRegistry.swift` (`privateCloudContextLimit = 32_768`), and four `.entitlements`

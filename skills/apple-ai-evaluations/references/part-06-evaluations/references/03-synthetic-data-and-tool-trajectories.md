@@ -277,10 +277,12 @@ let targetCount = seeds.count + newSamplesWanted   // 100
 > generator gives up after its internal retry budget and finishes short.** (was a 🔴 GAP; `probes/`
 > `eval.generator-unreachable-target`, run on the 27.0 sim runtime.) The exact experiment was run —
 > a validator returning `false` unconditionally against a positive `targetCount` — and the run
-> `finished(produced=0)`: no error, no hang, `sessionProviderInvocations=1`. The rejected attempts
-> ARE observable: `invalidSamples` came back 4–5 across runs, **matching the documented
-> `.random(retries: 5)` default sampling strategy** — the retry budget is the sampling strategy's
-> retry count. So the under-delivery failure mode above extends all the way down: an impossible
+> `finished(produced=0)`: no error and no hang. On stable macOS 27 and the physical iPhone run on
+> 2026-09-16, the same impossible-validator case again produced zero, but invoked the provider
+> **three** times and recorded **17** invalid samples. The earlier simulator recorded one provider
+> invocation and 4–5 rejects. Therefore neither invocation count nor observed reject count is a
+> portable restatement of `.random(retries: 5)`; both are runtime-dependent diagnostics. The
+> under-delivery failure mode above extends all the way down: an impossible
 > validator produces an empty dataset *silently*, but `invalidSamples` tells you rejects happened.
 >
 > **Safe defaults, updated:** still treat generation runs as wall-clock-bounded and drive them from
@@ -2543,7 +2545,7 @@ discipline, and the tool-as-hill-climb move · **319** — the on-device/PCC com
 per-user quota, and the "< 2M downloads" eligibility statement.
 
 **Corroborating shipping code, community-attributed:** entitlement plists and PCC availability/quota
-handling in a third-party app (`noemaai-labs/noema-ios`), used only to confirm that the documented quota
+handling in a third-party app (`frozen Noema 3.5 snapshot`), used only to confirm that the documented quota
 API is what real code calls. Nothing from that source is presented as an Apple claim.
 
 **Precedence used throughout, and where it changed an answer.** For *signatures*, the shipped

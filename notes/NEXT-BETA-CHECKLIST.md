@@ -3,7 +3,7 @@
 Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
 
 <!-- current-state:next-beta:start -->
-Current installed baseline: Xcode 27.0 `27A5237l`, macOS 27.0 `26A5406e`, macOS SDK `26A5406c`, iOS SDK `24A5408c`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27 beta 6 `27A5252f`, iOS 27.0 beta 8 `24A5430a`, and macOS 27.0 beta 8 `26A5425a`. Installed Xcode build 27A5237l differs from observed build 27A5252f. Installed macOS build 26A5406e differs from observed build 26A5425a. Installed iOS Simulator build 24A5408d differs from observed build 24A5430a.
+Current installed baseline: Xcode 27.0 `27A5237l`, macOS 27.0 `26A428`, macOS SDK `26A5406c`, iOS SDK `24A5408c`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 beta `27B5019j`, iOS 27.2 beta `24B5084k`, and macOS 27.2 beta `26B5086k`. Installed Xcode build 27A5237l differs from observed build 27B5019j. Installed macOS build 26A428 differs from observed build 26B5086k. Installed iOS Simulator build 24A5408d differs from observed build 24B5084k.
 <!-- current-state:next-beta:end -->
 
 SDK dumps are committed in `notes/sdk-interfaces/`. Companion docs:
@@ -40,6 +40,16 @@ a toolchain — this checklist covers what a toolchain drop CAN answer).
 > worked, labels wrote through exactly, generic tools ran labeled and unlabeled, but image
 > `tokenCount(for:)` threw code −1. The beta-5 Spotlight schema artifact is now captured from the
 > device result. See `probes/README.md` for exact output and remaining inconclusive branches.
+
+> **Event log, 2026-09-16:** stable macOS 27 (`26A428`) completed the local lanes while Xcode,
+> SDKs, and Simulator remained beta 5. The safe Mac surface passed 44/44 executed probes across
+> bounded lanes; the iPhone 15 Pro on iOS build `24A435` passed 46 tests with 2 intentional skips
+> and 0 failures. Call-site tool mode now has direct two-direction proof, `onToolCall` throwing is
+> confirmed as a turn abort/revert, image-tool turns time out after the tool runs, and the device
+> overflow probe timed out where Mac returned typed after 92.7 seconds. Stable `/usr/bin/fm`
+> removed beta-5 `quota-usage` and `--model pcc` and exposes only `system`. The daily job completed;
+> weekly was blocked solely by the unavailable Noema mirror, which has now been removed from the
+> clone inventory. Full promoted evidence: `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
 
 Every item is independent; check them off per beta. Commands are copy-pasteable from
 the repo root.

@@ -1,44 +1,44 @@
 {
-  "asOf": "2026-09-05",
+  "asOf": "2026-09-16",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1426,
-      "total": 1788
+      "concreteSilentFailures": 1428,
+      "total": 1790
     },
-    "externalLinks": 172,
+    "externalLinks": 192,
     "generatedSkills": 10,
-    "guideMarkdownFiles": 80,
+    "guideMarkdownFiles": 81,
     "parts": 17,
     "referenceGuides": 60,
-    "symbols": 1213
+    "symbols": 1212
   },
   "generatedOutputs": {
     "currentStateBlocks": {
       "checkCommand": "./scripts/current-state.py render --check",
-      "checkedAt": "2026-09-05",
+      "checkedAt": "2026-09-16",
       "status": "current"
     },
     "indexes": {
       "checkCommand": "python3 -m unittest scripts.tests.test_repository_indexes.RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
-      "checkedAt": "2026-09-05",
+      "checkedAt": "2026-09-16",
       "status": "current"
     },
     "skills": {
       "checkCommand": "python3 -m unittest scripts.tests.test_skills.CommittedSkillsTests.test_committed_skills_match_clean_generation",
-      "checkedAt": "2026-09-05",
+      "checkedAt": "2026-09-16",
       "status": "current"
     }
   },
   "environment": {
     "installed": {
       "fm": {
-        "build": "26A5406e",
+        "build": "26A428",
         "exception": "fm has no independent --version option; provenance is the owning macOS build.",
         "path": "/usr/bin/fm",
         "version": null
       },
       "os": {
-        "build": "26A5406e",
+        "build": "26A428",
         "name": "macOS",
         "version": "27.0"
       },
@@ -53,6 +53,11 @@
         }
       },
       "simulatorRuntimes": [
+        {
+          "build": "22G86",
+          "name": "iOS",
+          "version": "18.6"
+        },
         {
           "build": "23F77",
           "name": "iOS",
@@ -77,23 +82,23 @@
     },
     "latestObserved": {
       "ios": {
-        "build": "24A5430a",
-        "released": "2026-08-31",
-        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026a",
-        "version": "27.0 beta 8"
+        "build": "24B5084k",
+        "released": "2026-09-16",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27.2 beta"
       },
       "fm": {
-        "build": "26A5425a",
+        "build": "26B5086k",
         "exception": "fm has no independent --version option; the latest observation is bounded by the owning macOS release.",
-        "released": "2026-08-31",
-        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026c",
+        "released": "2026-09-16",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
         "version": null
       },
       "macos": {
-        "build": "26A5425a",
-        "released": "2026-08-31",
-        "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026c",
-        "version": "27.0 beta 8"
+        "build": "26B5086k",
+        "released": "2026-09-16",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27.2 beta"
       },
       "sdks": {
         "iphoneos": {
@@ -113,30 +118,45 @@
       },
       "simulatorRuntimes": [
         {
-          "build": "24A5430a",
+          "build": "24B5084k",
           "name": "iOS",
-          "released": "2026-08-31",
-          "sourceUrl": "https://developer.apple.com/news/releases/?id=08312026a",
-          "version": "27.0 beta 8"
+          "released": "2026-09-16",
+          "sourceUrl": "https://developer.apple.com/news/releases/",
+          "version": "27.2 beta"
         }
       ],
       "xcode": {
-        "build": "27A5252f",
-        "released": "2026-08-24",
+        "build": "27B5019j",
+        "released": "2026-09-16",
         "sourceUrl": "https://developer.apple.com/news/releases/",
-        "version": "27 beta 6"
+        "version": "27.2 beta"
       }
     }
   },
   "pendingEvent": {
     "reasons": [
-      "Installed Xcode build 27A5237l differs from observed build 27A5252f.",
-      "Installed macOS build 26A5406e differs from observed build 26A5425a.",
-      "Installed iOS Simulator build 24A5408d differs from observed build 24A5430a."
+      "Installed Xcode build 27A5237l differs from observed build 27B5019j.",
+      "Installed macOS build 26A428 differs from observed build 26B5086k.",
+      "Installed iOS Simulator build 24A5408d differs from observed build 24B5084k."
     ],
     "value": true
   },
   "probeBaselines": {
+    "device-hosted-iphone15pro-ios27-24A435": {
+      "contextSize": 4096,
+      "destination": "wired physical device",
+      "device": "iPhone 15 Pro (D83AP; h16p)",
+      "exceptions": "46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.",
+      "failures": 0,
+      "hostingMode": "device-hosted",
+      "osBuild": "24A435",
+      "osVersion": "27.0",
+      "platform": "iOS",
+      "skipped": 2,
+      "tests": 46,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    },
     "app-hosted-ios27-beta5-simulator": {
       "contextSize": 0,
       "destination": "generated DeviceProbes app",
@@ -196,13 +216,28 @@
       "tests": 46,
       "xcodeBuild": "27A5237l",
       "xcodeVersion": "27.0 beta 5"
+    },
+    "tool-hosted-macos27-stable": {
+      "contextSize": 4096,
+      "destination": "local arm64 host",
+      "device": "Mac host",
+      "exceptions": "Default lane: 46 tests, 26 skips, 0 failures. Across bounded opt-in lanes, 44 of 46 safe tests ran and passed; PCC and interactive Instruments were intentionally excluded. Selected Xcode remains beta 5.",
+      "failures": 0,
+      "hostingMode": "tool-hosted",
+      "osBuild": "26A428",
+      "osVersion": "27.0",
+      "platform": "macOS",
+      "skipped": 26,
+      "tests": 46,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
     }
   },
   "schemaVersion": 1,
   "verification": {
     "blocker": "SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.",
     "errors": 0,
-    "lastFullRun": "2026-08-17",
+    "lastFullRun": "2026-09-16",
     "snippetFences": 1359,
     "statusCounts": {
       "ILLUSTRATIVE": 486,

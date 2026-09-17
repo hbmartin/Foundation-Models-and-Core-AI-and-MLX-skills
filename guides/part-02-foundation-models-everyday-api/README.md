@@ -181,12 +181,13 @@ regression head's output, and Apple's own answer on the forums is a redirect to 
 > Related: `summarizeHistory` flattens attachments away, after which the model answers about images it
 > can no longer see, from its own earlier description of them.
 >
-> 🟡 **DEVICE-NARROWED GAP** — Apple has published **no** per-image token cost, formula, or resize
-> policy. On iPhone 15 Pro / iOS build `24A5408d`, `tokenCount(for:)` returned 6 for text alone but
+> 🟡 **MAC-AND-DEVICE-NARROWED GAP** — Apple has published **no** per-image token cost, formula, or resize
+> policy. On stable macOS 27 and iPhone 15 Pro / iOS build `24A435`, `tokenCount(for:)` returned 6 for text alone but
 > threw `LanguageModelError -1` for all six image sizes tested, even though `respond` accepted the
 > generated image. Read `response.usage` and measure successful turns; do not use image
-> `tokenCount(for:)` as a preflight on this seed. The same run confirmed labels write through to the
-> transcript and that an unlabeled image does **not** universally suppress generic tool invocation.
+> `tokenCount(for:)` as a preflight on these builds. Both destinations confirmed exact label
+> write-through; required labeled and unlabeled image-tool turns reached `toolRan=true` and then
+> timed out. The 2026-08 beta-5 device run had completed those generic tool turns, so this is runtime drift.
 
 ### [2.6 — The complete failure taxonomy: availability, errors, guardrails and refusals](references/06-availability-errors-and-guardrails.md)
 

@@ -1,8 +1,8 @@
 # API & symbol index — Foundation Models: the on-device LLM API
 
-**532 symbols, of 1213 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**531 symbols, of 1212 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-14; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-09-16; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>153 symbols</sub>
 
@@ -115,7 +115,7 @@
 | `SystemLanguageModel.contextSize` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) +1 more |
 | `SystemLanguageModel.default` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md) +2 more |
 | `SystemLanguageModel.default.availability` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md) +2 more |
-| `SystemLanguageModel.default.contextSize` | ✓ | ✓ | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |
+| `SystemLanguageModel.default.contextSize` | ✓ | ✓ | [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |
 | `SystemLanguageModel.default.supportsLocale(_:)` | ✓ | ✓ | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md) |
 | `SystemLanguageModel.Error` |  | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) +7 more |
 | `SystemLanguageModel.Error.assetsUnavailable` |  | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |
@@ -278,7 +278,7 @@
 | `URLSession` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md), [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md) +1 more |
 | `UUID` | ✓ | ✓ | [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) |
 
-## other  <sub>308 symbols</sub>
+## other  <sub>307 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -449,7 +449,6 @@
 | `ModelFactoryError.noModelFactoryAvailable` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `ModelJudgeEvaluator` |  | ✓ | [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |
 | `ModelJudgePrompt` |  | ✓ | [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) |
-| `ModelManagerError` |  |  | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md) |
 | `ModelManagerServices.ModelManagerError` |  |  | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md) |
 | `ModelRegistry` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `ModelResources.shared(for:)` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
@@ -551,7 +550,7 @@
 | `TokenizerInfoCache` |  |  | [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md) |
 | `Tokenizers` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `ToolCall` | ✓ | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md) |
-| `ToolCallError` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
+| `ToolCallError` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
 | `ToolCallEvaluator` |  | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) |
 | `ToolCallFormat` |  |  | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `ToolCallFormat.generateToolCallID()` |  |  | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md) |

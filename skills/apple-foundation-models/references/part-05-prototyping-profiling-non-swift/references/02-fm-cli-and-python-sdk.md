@@ -31,16 +31,19 @@ corpus:
 | Half of the guide | Evidence class | Grade |
 |---|---|---|
 | **Python SDK** | The **actual Apple-authored repository, cloned and read file by file** — 15 Python modules, an 1,831-line Swift shim, a 146-line C header, 17 test files, the Sphinx docs, plus the full GitHub issue and PR history. | **Strong.** Comparable to reading a header. Better than a transcript. |
-| **`fm` CLI** | Apple narration and engineer statements, third-party beta reports, and a **project-run capture of top-level plus every subcommand help page on macOS 27 beta 5** (`26A5406e`, captured 2026-08-17). | **Strong for the command grammar.** Runtime semantics still need focused calls. |
+| **`fm` CLI** | Apple narration and engineer statements, a full project-run beta-5 help capture, and a second project-run comparison against stable macOS 27 (`26A428`, 2026-09-16). | **Strong for beta-versus-stable command grammar.** Runtime semantics still need focused calls. |
 
 So the two halves are written differently on purpose. The Python sections carry file-and-line
 citations and describe bugs down to the assignment that causes them. The `fm` sections tell you
 what the tool *does*, tell you what third parties report typing — marked 🟠, never ✅ — and hand
 you an exact procedure for finding out in ninety seconds on a real Mac.
 
-If you take one instruction from this guide: **match scripts to the captured beta's help surface
-and re-check it on later seeds.** The canonical beta-5 capture is
-`notes/sdk-interfaces/fm-help-27.0.txt`; the remaining gaps concern runtime behavior, not spelling.
+If you take one instruction from this guide: **match scripts to the running OS's help surface.**
+The canonical file `notes/sdk-interfaces/fm-help-27.0.txt` is a beta-5 capture, not a stable
+contract. On stable macOS 27 (`26A428`), the project measured seven commands: `available`, `chat`,
+`count-tokens`, `license`, `respond`, `schema`, and `serve`. `quota-usage`, the `pcc` model choice,
+and `--model pcc` disappeared; only `system` is advertised. The exact stable comparison is recorded
+in `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
 
 ---
 
@@ -148,7 +151,7 @@ changes when the user updates macOS, exactly as a Swift app's does.
 | Try a prompt in ten seconds, no project | `fm respond` | No build step at all. macOS 27 only. |
 | Feel out a model's behaviour conversationally | `fm chat` | Interactive, has a model switch. macOS 27 only. |
 | Glue a model into a shell script, cron job, Makefile | `fm respond` + a schema | Structured JSON on stdout. macOS 27 only. |
-| Reach **Private Cloud Compute** from a non-Swift program | `fm` (CLI or `fm serve`) | **The only sanctioned non-Swift PCC path** — §2.6. |
+| Reach **Private Cloud Compute** from a non-Swift program | No stable macOS 27 CLI path is currently advertised | Beta-5 `fm` exposed PCC, but stable build `26A428` exposes only `system`. Use Swift's PCC surface or verify a later `fm --help` before designing around non-Swift PCC. |
 | Batch-evaluate a Swift feature's prompts over a dataset | Python SDK | pandas, notebooks, no rebuild loop. |
 | Analyse transcripts your shipping Swift app produced | Python SDK | §12. This is its stated purpose. |
 | Ship a production Python service | **Neither** | Both are alpha/preinstalled developer tooling; the SDK's own classifier says `Development Status :: 3 - Alpha`. |
@@ -452,6 +455,13 @@ case study.
 ---
 
 ## 3. ✅ The `fm` help surface, captured on macOS 27
+
+> ⚠️ **STABLE DRIFT, verified 2026-09-16.** The capture below remains valuable beta evidence, but
+> stable macOS 27 build `26A428` has **seven**, not eight, top-level commands: `available`, `chat`,
+> `count-tokens`, `license`, `respond`, `schema`, and `serve`. Stable help removed
+> `quota-usage`, advertises only the `system` model, and no longer accepts the beta-documented
+> `--model pcc` choice. Do not copy beta PCC commands into stable automation. This describes the
+> public CLI surface only; it does not claim the Foundation Models PCC API was removed.
 
 > ✅ **RESOLVED 2026-08-17 on macOS 27 beta 5 (`26A5406e`).** `/usr/bin/fm` was run by this
 > project. `fm --help` plus every revealed help page is captured in
@@ -3591,18 +3601,18 @@ async def batch(prompts, instructions, chunk=100):
 | Installed at `/usr/bin/fm` | ✅ project-verified 2026-08-17 on macOS 27 beta 5 |
 | `fm respond`, `fm chat`, `fm schema`, `fm schema object` | ✅ verified (spoken names) |
 | `fm serve` → Chat Completions endpoint | ✅ verified (Apple member, GitHub); subcommand corroborated in a `--help` paste |
-| Full subcommand list | ✅ project-verified: **eight**; `count-tokens` and `license` correct the earlier report |
-| `available`, `quota-usage`, `count-tokens`, `license` exist | ✅ project-verified 2026-08-17 |
+| Full subcommand list | ✅ stable project verification: **seven**; beta 5 had eight |
+| `available`, `count-tokens`, `license` exist | ✅ stable project-verified 2026-09-16; beta-only `quota-usage` is absent |
 | `respond` flags and short forms | ✅ fully captured, including `-m`, `-i`, `-g`, `-v`, `-h` |
 | `fm schema object` grammar | ✅ fully captured for this seed: scalar, nested object, `anyOf`, array, description, optional |
 | `/model`, `/save` in `fm chat` | ✅ verified |
 | Other slash commands | 🔴 **unknown** (and do not borrow `fmx`'s — §3 item 4) |
-| Default model = on-device; PCC opt-in and quota-limited | ✅ verified |
+| Default model = on-device | ✅ stable help advertises only `system`; PCC was a beta-5 CLI option and is absent on stable build `26A428` |
 | Structured output arrives as JSON on stdout | ✅ verified |
 | `fm serve` transport and advertised endpoints | ✅ TCP host/port or Unix socket; health, models, chat completions. Authentication and field-level compatibility remain untested. |
 | Exit codes, stderr discipline, streaming | 🔴 **unknown** |
 | Behaviour when Apple Intelligence is disabled | 🔴 **unknown** |
-| **Resolution** | Managed beta-5 capture: `notes/sdk-interfaces/fm-help-27.0.txt`. |
+| **Resolution** | Managed beta-5 capture: `notes/sdk-interfaces/fm-help-27.0.txt`; stable drift: `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`. |
 
 ### 17.6 Five rules that prevent most of the pain
 

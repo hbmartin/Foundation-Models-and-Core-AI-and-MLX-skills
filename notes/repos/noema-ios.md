@@ -1,7 +1,15 @@
 # Repo deep-dive: `noemaai-labs/noema-ios` (Noema 3.5)
 
-**Local path:** `/Volumes/ExtStor/FM and MLX and CoreAI/repos/noemaai-labs__noema-ios`
-**License:** MIT. **Upstream:** `https://github.com/armin976/Noema` (README clone instructions), org repo `noemaai-labs/noema-ios`.
+> **Frozen historical evidence — upstream retired.** The pinned GitHub mirror stopped resolving by
+> 2026-09-16 and has been removed from `scripts/clone-research-repos.sh`. This note is retained as a
+> point-in-time research snapshot of commit `8366103f`; it is not refreshed by the daily or weekly
+> jobs and must not be treated as evidence of current upstream behavior. Claims derived from it
+> remain community evidence at the recorded commit unless a current source independently confirms
+> them.
+
+**Historical local path:** `/Volumes/ExtStor/FM and MLX and CoreAI/repos/noemaai-labs__noema-ios`
+**License at capture:** MIT. **Upstream status:** unavailable as of 2026-09-16; the captured README
+previously pointed at `https://github.com/armin976/Noema`.
 **Git history:** squashed public snapshots only (9 commits). HEAD = `8366103 Update README to remove RevenueCat section`; the substantive one is `df38c23 Update repository to reflect Noema 3.5 release code (#14)`. There is **no useful incremental commit history** — do not expect `git log` archaeology to work here.
 
 **Why this repo matters for the 2026 Apple AI stack:** it is a *shipping* multi-backend on-device LLM app that targets **iOS 18–27, macOS 26/27, visionOS 26/27**, and simultaneously integrates:

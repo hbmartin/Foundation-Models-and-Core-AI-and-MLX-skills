@@ -1815,12 +1815,13 @@ Collected here so downstream readers and agents do not mistake absence for nonex
 > tok/s figure measured against the system model by a third party is estimated (one harness uses
 > `utf8.count / 4` and states ±20%).
 
-> 🔴 **GAP — the `fm` CLI's actual flags.**
-> Two independent community sources and two WWDC sessions confirm `fm` ships preinstalled with macOS
-> 27 and has `fm respond`, `fm chat`, `fm schema`, a `--model` option to switch to PCC, plus
-> `--image` and `--schema`, and slash commands `/model` and `/save` inside `fm chat`. Beyond that we
-> have nothing: no full subcommand list, no grammar for `fm schema object`, no other slash commands.
-> **Nobody in this project has run `fm --help` on a macOS 27 machine.** **Resolution:** exactly that.
+> ✅ **MEASURED — and the beta/stable surfaces differ.** The project captured every help page on
+> macOS 27 beta 5, then compared it with stable macOS 27 build `26A428` on 2026-09-16. Stable has
+> seven commands (`available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, `serve`),
+> removes beta-5 `quota-usage`, and advertises only the `system` model; beta's `--model pcc` is gone.
+> `--image`, `--label`, `--schema`, and the structured-schema grammar remain available. Interactive
+> slash commands and field-level `serve` compatibility are still runtime gaps. See Part 5 §3 and
+> `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
 
 > 🔴 **GAP — whether the macOS 26→27 export-lowering regression is fixed.** See §6.5.
 
@@ -1860,7 +1861,8 @@ Two more honest notes about this guide's own sourcing:
 
 ---
 
-*Last structural update: 2026-07-27. Written against iOS 27 / macOS 27 / Xcode 27 betas. Every
+*Last structural update: 2026-09-16. Written against iOS 27 / macOS 27, with beta-5 SDK evidence
+and stable host/device runtime validation kept distinct. Every
 measured number in §6 is community-measured on beta operating systems and should be re-verified
 before it is quoted.*
 

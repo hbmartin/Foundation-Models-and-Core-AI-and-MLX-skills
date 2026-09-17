@@ -1575,7 +1575,7 @@ This is the worst one, because everything works. The output is right, the API is
 warning is emitted, and you simply run several times slower than you should for reasons that do not
 appear in any profile you would think to take.
 
-> ⚠️ **Community-measured** — `noemaai-labs/noema-ios` (a shipping multi-backend on-device LLM app,
+> ⚠️ **Community-measured** — `frozen Noema 3.5 snapshot` (a shipping multi-backend on-device LLM app,
 > iOS 18–27 / macOS 26–27 / visionOS 26–27), `Noema/CoreAILLMClient.swift`. Source comment quoted
 > exactly:
 >
@@ -3225,7 +3225,7 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 | `apple/coreai-models` — `CoreAISequentialEngine.swift`, `CoreAIPipelinedEngine.swift`, `InferenceEngine.swift`, `ModelStructure.swift`, `NDArray+Helpers.swift`, `SpeechModel.swift`, `export/macos.py`, `export/ios.py`, `export/_constants.py`, `primitives/macos/cache.py`, `skills/model-authoring/` | the canonical `states:` call site; the LLM I/O contract; `KVCacheStrategy`; `pipelineDepth`, `PipelineGate`, buffer rotation, the completion sentinel; the ANE-vs-GPU KV conventions table; the logits-memory arithmetic; the `-Onone` zeroing measurement | **Apple shipping source** + **Apple agent skill** |
 | `lucasnewman/mlx2coreai` (MIT, HEAD `059c9f3`, June 2026) | an independent reproduction of Apple's LLM state contract; `_offset_from_position_ids`; `write_state` / `_mark_mutable_buffers`; the complete Swift stateful runner; the Python-bindings gap | **community, third-party** |
 | `john-rocky/coreai-models` fork + `coreai-model-zoo` | `trimKVCache` and prefix reuse; the MPSGraph in-graph KV-write incident (FB23024751 / issue #5) and both workarounds; the 3.5× baseline correction; the M4 Max and iPhone 17 Pro benchmark tables | **community, single-author, self-declared uncontrolled benchmarks** |
-| `noemaai-labs/noema-ios` (MIT) | the copy-on-write state trap and the placeholder fix; `fedTokens`; prefill shape bucketing; host-cache detection; the pipelined cross-turn-reuse limitation; the Debug-build slowdown | **community, shipping app** |
+| `frozen Noema 3.5 snapshot` (MIT) | the copy-on-write state trap and the placeholder fix; `fedTokens`; prefill shape bucketing; host-cache detection; the pipelined cross-turn-reuse limitation; the Debug-build slowdown | **community, shipping app** |
 
 ### Standing gaps declared in this guide
 

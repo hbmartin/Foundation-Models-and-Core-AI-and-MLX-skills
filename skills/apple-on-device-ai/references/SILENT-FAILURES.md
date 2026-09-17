@@ -1,12 +1,12 @@
 # Silent-failure index — Apple on-device AI: choosing a stack and getting the gates right
 
-**1787 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**1790 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-14. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-16. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 174 |
+| [Wrong output](#wrong-output) | 175 |
 | [Empty output / no-op](#empty-output--no-op) | 62 |
 | [Truncation & limits](#truncation--limits) | 28 |
 | [Ignored input](#ignored-input) | 112 |
@@ -17,7 +17,7 @@
 | [Resource growth](#resource-growth) | 41 |
 | [Precision loss](#precision-loss) | 18 |
 | [Misleading signals](#misleading-signals) | 157 |
-| [Version drift](#version-drift) | 98 |
+| [Version drift](#version-drift) | 100 |
 | [Docs vs reality](#docs-vs-reality) | 159 |
 | [API footguns](#api-footguns) | 259 |
 | [General cautions](#general-cautions) | 362 |
@@ -68,6 +68,7 @@
 
 **Part 7**
 
+- [Observed zero storage is not an initialization contract; explicitly write every NDArray element that matters.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#73-creating-an-ndarray) — 7.1
 - [Indexing by hand while ignoring interleaveLayout reads the wrong elements — the strides are block strides for that axis](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#78-strides-and-interleavelayout) — 7.1
 - [Assuming the output dtype from the input descriptor misreads bytes — outputs can be a different scalar type](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-️-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
 - [Output scalarType can differ from the input's — inspecting the array itself is the only safe way to decode it](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#710-️-silent-failure-assuming-the-output-dtype-from-the-input-descriptor) — 7.1
@@ -257,7 +258,7 @@
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
-- [A label is identity, not a gate — unlabelled attachments still ran tools on device; omit it and lookups resolve to nil.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
+- [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
 
@@ -883,7 +884,7 @@
 - [Incident-grade community finding: the reshape hint can destroy AOT benefits — see the fixed-shape measurement below](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-dynamic-cache-alternative-and-its-own-cost) — 7.3
 - [Community-measured: expectFrequentReshapes on a fixed-shape graph kills the AOT bundle — set it only on the dynamic path](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-dynamic-cache-alternative-and-its-own-cost) — 7.3
 - [Copy-on-write copies the entire KV cache every decode step when the state buffer isn't uniquely referenced](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
-- [Noema parks a placeholder in state slots during a step so the working buffer is uniquely owned — no per-token COW copy](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
+- [The frozen Noema snapshot parks placeholders so working state stays uniquely owned — no per-token COW copy.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#81-️-silent-failure--copy-on-write-copies-your-entire-kv-cache-every-step) — 7.3
 - [Encode-once reuse requires caller-side caching — CoreAISegmentationEngine re-runs image_encode every call, no cache API](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#where-this-pays-off-outside-a-decode-loop) — 7.3
 - ['MLX 2x faster' measured a hand-rolled per-token loop — Apple's pipelined engine runs the same weights ~3.5x faster](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#what-the-35-figure-actually-measures) — 7.3
 - [Pipelined engine overshoots EOS into device KV — cross-turn reuse is impossible and TTFT is history/decodeRate](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#the-one-place-pipelining-is-a-liability) — 7.3
@@ -1355,7 +1356,7 @@
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
 - [CustomSegment and its protocol are gone from the beta 5 interface; the custom-segment path no longer compiles.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#52-the-four-tool-shaped-types) — 2.3
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
-- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
+- [The retired 8K comment never reproduced; read contextSize because 27 is dynamic and Simulator can return zero.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 - [No source change needed — rebuilding with Xcode 27 is what silently flips which error types your catches see.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 
@@ -1381,6 +1382,10 @@
 - [Beta 5 confirms six of the seven response actions; updateCustomSegment is not present in the recaptured interface.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#response-actions--responseentryidaction) — 4.3
 - [The custom-segment provider path is pre-beta-5 surface; CustomSegment and .updateCustomSegment are absent from beta 5.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#132-custom-segments--the-extension-point-for-new-modalities) — 4.3
 - [Beta 3 made .refusal's explanation required — the old Refusal(debugDescription:) example no longer compiles.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#112-throwing-and-throwing-the-right-thing) — 4.4
+
+**Part 5**
+
+- [Stable fm removes beta quota/PCC syntax and exposes seven commands; check deployment-OS help before scripting.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 
 **Part 7**
 
@@ -1455,6 +1460,7 @@
 - [Apps built with Xcode 26 keep catching GenerationError until you rebuild with 27; catch semantics change on rebuild](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#what-changed-between-ios-26-and-ios-27-the-complete-checklist) — 17.1 🔇
 - [contextSize is a compiled-in 4096 below OS 27 and dynamic at or above it; hardcoding either number breaks on one side.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#11-the-floor-that-is-easy-to-miss-contextsize-is-back-deployed) — 17.1
 - [What-changed entry: beta 5 retyped Transcript.history and the history session property to Transcript.HistoryView.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#49-additive--a-mutable-transcript-and-transcripthistory) — 17.1
+- [Stable fm removes beta quota/PCC syntax; re-check deployment-OS help before migration automation.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#52-additive--the-fm-command-line-tool-macos-27) — 17.1
 - [catch GenerationError clauses still compile after an Xcode 27 rebuild but stop firing; the catch-all absorbs them](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#71-renamed--generationerror--languagemodelerror-and-two-siblings) — 17.1 🔇
 - [A wheel built with Xcode 26 permanently lacks image support; ImagePromptError surfaces on the first image call](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#9-the-python-sdk-generation-lag) — 17.1
 - [Xcode 26 gives no build-time signal of the adapter sunset: no attested deprecation, and the packaging CLI still ships](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#the-adapter-sunset-migrating-off-custom-lora-adapters) — 17.2 🔇

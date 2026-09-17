@@ -53,7 +53,7 @@ at least measure. This one you can only evaluate.
 | If your situation is… | Read | Why |
 |---|---|---|
 | "I keep hitting `contextSizeExceeded`" | [3.1 §6–§7](references/01-context-window-and-kv-cache.md#6-overflow-contextsizeexceeded-and-the-pattern-people-hand-rolled) | The four levers, Apple's documented recovery, and the 26.0-only rebuild path |
-| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md#3-reading-the-budget-contextsize-and-the-4096-token-window) | Read `contextSize` at runtime. The macOS host and physical device returned 4,096, while both Simulator hosting modes most recently returned 0. The tool-hosted Simulator had returned 4,096 earlier on the same recorded builds, so treat even a topology-keyed value as observed rather than universal; the 8,192 report remains uncorroborated. |
+| "I hardcoded 4096" | [3.1 §3](references/01-context-window-and-kv-cache.md#3-reading-the-budget-contextsize-and-the-4096-token-window) | Read `contextSize` at runtime. Stable macOS 27 and both project-run physical-device baselines returned 4,096, while Simulator hosting has also returned 0. The retired 8,192 community comment never reproduced; treat every value as runtime observation, not a constant. |
 | "Time-to-first-token climbs turn over turn, prompt size flat" | [3.1 §8](references/01-context-window-and-kv-cache.md#8-the-kv-cache-is-a-prefix) | Something is invalidating your prefix. §8.10's expensive list is the checklist |
 | "I need to know what a turn actually cost" | [3.1 §5](references/01-context-window-and-kv-cache.md#5-counting-after-you-spend-usage-and-the-cache-hit-rate) | `Usage`, `cachedTokenCount`, and the cache-hit-rate formula |
 | "I'm choosing a model for a multi-turn chat" | [3.1 §10](references/01-context-window-and-kv-cache.md#10-️-the-model-selection-consequence-architectures-that-cannot-prefix-cache) | Linear-attention hybrids **cannot prefix-cache at all**. This outranks parameter count |
@@ -244,8 +244,8 @@ staff answers: **833642** (4K, no version pinning), **835927** (the 26→27 cont
 **833626** (profile switching and context reconciliation), **833706** (`summarizeHistory` condenses
 everything), **833692** (`.toolCallingMode` for strict RAG), **837226** ("Tool Choice requires tools"),
 **835974** (coarse PCC quota), **790736** and **817502** (the 26-era overflow idiom). Community sources —
-`john-rocky/coreai-model-zoo`, `john-rocky/coreai-models` and `noemaai-labs/noema-ios` — supply the
-prefix-reuse and model-switch measurements, the body-re-evaluation count and the 8192 `contextSize` probe,
+`john-rocky/coreai-model-zoo`, `john-rocky/coreai-models` and the frozen Noema 3.5 snapshot — supply the
+prefix-reuse and model-switch measurements, the body-re-evaluation count and a retired 8192 `contextSize` comment,
 and are attributed as community-measured at every point of use, never as Apple figures. WWDC26 session
 **347** is *not* in the corpus; every claim traced to it is marked secondary and unverified.
 
