@@ -1187,8 +1187,15 @@ and `/save`. Bare `fm` prints the command list.
 > owns the full capture; the runtime-only residue (interactive slash commands, refusal/error exits,
 > field-level `serve` compatibility) is tracked there and in §14.8 row 7.
 
-**Migration relevance:** `fm` is the fastest way to A/B a prompt between the on-device model and PCC
-without touching your project, which makes it a useful triage tool for §6.1.
+> ⚠️ **STABLE-SURFACE UPDATE, 2026-09-16.** Stable macOS 27 build `26A428` has seven commands:
+> `available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, and `serve`. It removes
+> beta-5 `quota-usage` and advertises only the `system` model; `--model pcc` is no longer a valid
+> stable recommendation. Keep the beta capture as historical evidence and re-run `fm --help` on
+> the deployment OS before using it in migration automation.
+
+**Migration relevance:** stable `fm` is the fastest way to exercise the on-device system model
+without touching your project. Use Swift for PCC comparison unless a later stable CLI advertises
+that model again.
 
 ### 5.3 ADDITIVE — `ChatCompletionsLanguageModel` turns your existing stack into a backend
 

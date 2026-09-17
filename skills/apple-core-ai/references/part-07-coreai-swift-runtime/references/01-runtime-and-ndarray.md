@@ -1208,6 +1208,11 @@ write `prediction.view()` with no argument: `T` is inferred from the call site.
 >   the `NDArray.ScalarType` enum"*, and *"The ndArray will be stored in row-major order and the
 >   scalars will be assigned in row-major order."*
 
+> ⚠️ **Do not assume shape-based allocation zero-initializes storage.** Six allocation rounds on
+> stable macOS 27 and six on iPhone 15 Pro / iOS build `24A435` happened to read all zeroes, but the
+> API does not promise initialization and the probe cannot prove it. Explicitly write every input
+> and state element whose value matters.
+
 `init(descriptor:)` is the one you will use in production, because it is how you get the
 framework's preferred layout (§11.1) — and it comes with the most consequential doc note in the
 whole type:

@@ -34,7 +34,6 @@ REPOS=(
   "ml-explore/mlx-swift-lm 3cbf928b5eb24190e8952725699ae6a3bb02824d"
   "ml-explore/mlx-swift-examples 378f2449c257788c5067b9f8b086731d76b39b33"
   "1amageek/swift-lm db7a8022c91857a0a1e7893101871872403ed190"
-  "noemaai-labs/noema-ios 8366103f7bc8d9ed083680c6079af3f2ca7d2f89"
   "lucasnewman/mlx2coreai 059c9f365c9f48dc7d238cc37b0e30eb9d47fdbe"
 )
 

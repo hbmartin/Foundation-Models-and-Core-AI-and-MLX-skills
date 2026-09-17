@@ -839,11 +839,12 @@ Two caveats on the recommended form, both worth knowing before you build on it:
 > `.label(_:)` supplies the handle returned by `ImageReference.attachmentLabel` and consumed by
 > `resolved(in:)`; an absent or hallucinated handle makes lookup return `nil`.
 >
-> **Device boundary, 2026-08-20:** on iPhone 15 Pro / iOS build `24A5408d`, both labeled and
-> unlabeled attachments caused a required generic `EchoTool` to run, directly disproving the old
-> blanket claim that an unlabeled attachment prevents *every* tool invocation. The same probe
-> confirmed transcript write-through: the unlabeled prompt recorded `label:nil`, while
-> `.label("probe-img")` recorded that exact string. It did not exercise `BarcodeReaderTool`,
+> **Runtime boundary, updated 2026-09-16:** on stable macOS 27 (`26A428`) and iPhone 15 Pro /
+> iOS 27 build `24A435`, ordinary labeled and unlabeled image responses succeeded and transcript
+> write-through remained exact: `label:nil` versus `.label("probe-img")`. In both destinations a
+> required generic `EchoTool` reached `toolRan=true` but the enclosing turn timed out. That is a
+> drift from the 2026-08-20 beta-5 device run, where both generic tool turns completed. It does not
+> make labels the cause: both labeled and unlabeled cases behave alike. The probes did not exercise `BarcodeReaderTool`,
 > `OCRTool`, or an `ImageReference` argument, so keep labels mandatory for those identity-dependent
 > paths and regression-test the specific built-in tool you ship.
 >
@@ -1743,20 +1744,20 @@ use case you'd want:
 > *"I have some pictures with random names like this one, `IMG_1234`. Let me just ask `fm` to
 > **generate a file name based on the content inside the image**."*
 
-> 🟡 **RECONSTRUCTED — flag spellings.** Session 334 names *"the **image** option … to include an
-> image in your prompt"*, alongside "the model option", "the schema option" and "the help option".
-> Only the *semantic* names were spoken; no flag was ever shown as text. `--image` is the obvious
-> long form and the one this series uses, but **nobody in this corpus has run `fm respond --help` on
-> macOS 27**. Confirm on your own machine before scripting against it.
+> ✅ **MEASURED — stable macOS 27.** The project ran the CLI help comparison on build `26A428`.
+> `fm respond` exposes `--image` and `--label`; stable help advertises only the `system` model and
+> no longer exposes beta-5 `--model pcc`. Re-check help on the deployment OS because this surface
+> changed between beta 5 and the public release.
 
 ```bash
-# 🟡 RECONSTRUCTED — verify with `fm respond --help` on macOS 27
+# ✅ stable macOS 27 help-verified; quote paths in production scripts
 fm respond --image ~/Pictures/IMG_1234.heic \
   "Suggest a descriptive filename for this photo. Reply with the filename only."
 ```
 
-The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schema object`) and the
-`/model` and `/save` slash commands inside `fm chat` **are** attested verbatim.
+The subcommand names themselves (`fm respond`, `fm chat`, `fm schema`, `fm schema object`) are
+stable-help verified. `/model` and `/save` remain beta-era interactive evidence; because stable
+help no longer advertises PCC, do not assume `/model` retains the beta behavior.
 
 ---
 
@@ -1876,7 +1877,7 @@ Models on macOS* (the `fm` CLI image option, the Python SDK) · **319** *Private
 text-and-images demo behind §10.4's settled support claim) · **339** *Bring an LLM provider to the Foundation Models
 framework* (capabilities and routing).
 
-**Community** — `noemaai-labs/noema-ios` (a shipping multi-backend app: the `for`-loop prompt builder,
+**Community** — `frozen Noema 3.5 snapshot` (a shipping multi-backend app: the `for`-loop prompt builder,
 the `promptTokensPerImage = 576` constant, `GenerationOptions(sampling:)`). Marked as community
 throughout; none of its numbers are Apple's.
 

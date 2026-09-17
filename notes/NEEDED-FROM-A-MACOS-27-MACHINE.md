@@ -1,9 +1,10 @@
 # What still requires macOS 27, Instruments UI, or a physical OS-27 device
 
-**Status checked 2026-08-20.** **Xcode 27.0 beta 5 (`27A5237l`)**, its optional Metal Toolchain,
-the **iOS 27.0 beta 5 simulator (`24A5408d`)**, and macOS 27 beta 5 (`26A5406e`) are installed.
-An attached iPhone 15 Pro (`iPhone16,1`, `D83AP`) running iOS 27 build `24A5408d` completed the
-physical-device probes. `scripts/dump-sdk-interfaces.sh` has captured the 27.0
+**Status checked 2026-09-16.** The host now runs stable macOS 27 (`26A428`), while **Xcode 27.0
+beta 5 (`27A5237l`)**, its optional Metal Toolchain, and the **iOS 27.0 beta 5 simulator
+(`24A5408d`)** remain selected. An attached iPhone 15 Pro (`D83AP`, `h16p`) running iOS 27 build
+`24A435` completed 46 tests with 2 intentional skips and 0 failures. That build differs from the
+public iOS 27 build `24A437`; keep it as a distinct observed baseline. `scripts/dump-sdk-interfaces.sh` has captured the 27.0
 interface set into `notes/sdk-interfaces/` — including the Core AI SubFrameworks umbrella
 (`CoreAIRuntime`, `CoreAIAsset`, `CoreAIDelegates`), the cross-import overlays
 (`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
@@ -20,16 +21,19 @@ GAPs are executable XCTest probes; see `probes/README.md` for per-destination co
 
 ---
 
-## 1. The `fm` CLI — ✅ RESOLVED 2026-08-17 on macOS 27 beta 5
+## 1. The `fm` CLI — ✅ RESOLVED, with stable drift measured 2026-09-16
 
 The project ran `/usr/bin/fm` on macOS 27 beta 5 (`26A5406e`) and captured top-level plus every
 revealed subcommand help page in `notes/sdk-interfaces/fm-help-27.0.txt`. The live surface has
 eight commands: `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`, `schema`,
 and `serve`. This corrects the third-party `token-count` spelling and adds the previously unreported
-`license` command. `fm --version` is unsupported. The managed capture includes all short/long flags,
+`license` command. **On stable macOS 27 build `26A428`, the surface has seven commands:**
+`available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, `serve`. Stable removes
+`quota-usage`, advertises only `system`, and no longer accepts beta's `--model pcc` choice.
+`fm --version` is unsupported. The managed beta capture includes all short/long flags,
 the complete `schema object` property grammar, and `serve` transports/endpoints.
 
-Runtime-only questions remain in the guide: interactive slash commands beyond Apple's demonstrated
+Runtime-only questions remain in the guide: stable interactive slash commands, refusal/error exit behavior,
 `/model` and `/save`, refusal/error exit behavior, and field-level Chat Completions compatibility.
 
 ### Historical pre-capture record
@@ -175,7 +179,7 @@ Part 11.
 
 ---
 
-## 7. Two device tests — ✅ RESOLVED 2026-08-20
+## 7. Device tests — ✅ RESOLVED and reverified 2026-09-16
 
 - **`AIModelCache` deletion semantics.** On iPhone 15 Pro / iOS build `24A5408d`, deleting while a
   live `AIModel` retained the entry threw
@@ -196,6 +200,12 @@ Part 11.
   The physical result closes the device-specific residual for this hardware/build and leaves the
   third-party 8192 report uncorroborated. Continue re-running on later seeds because the OS-27 API
   remains dynamic.
+
+The 2026-09-16 iOS build `24A435` run again returned 4096 and reverified cache deletion, cache
+growth, specialization identity, attachment labels, and tool-call behavior. It also closed the
+reverse tool-mode precedence direction. Remaining original work is still the manual Instruments
+recording; cancellation with a genuinely slow Core AI asset and public-final iOS `24A437` are new
+follow-up boundaries, not regressions of the original checklist.
 
 ---
 

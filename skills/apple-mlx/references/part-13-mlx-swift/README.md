@@ -255,7 +255,7 @@ and `mlx-swift-examples`: issues `#217`, `#259`, `#312`, `#406`, `#419`, `#420`,
 `#464`, with maintainer (`davidkoski`) replies quoted and attributed. **Apple Developer Forums**
 threads 836264 (an Apple Engineer/DTS naming PR #334) and 831197. **WWDC26 session 339**, used for
 intent and treated as weaker than source everywhere the two disagree. **Community sources, labelled
-as such at every point of use and never presented as Apple figures:** `noemaai-labs/noema-ios`, a
+as such at every point of use and never presented as Apple figures:** `frozen Noema 3.5 snapshot`, a
 shipping third-party iOS app, for the memory governor, the `phys_footprint` shim and the pressure
 ladder; the cross-repo issue-mining pass for the VLM prefill numbers (48 GB M4 Pro) and the SDK-drift
 accounts. **Nothing in this part was benchmarked by us** — every performance figure is attributed to

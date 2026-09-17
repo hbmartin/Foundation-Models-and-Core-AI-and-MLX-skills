@@ -6,11 +6,11 @@ written; operational files below are the maintained source of truth for what to 
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-09-05**, the corpus has 60 reference guides in 17 parts, 1788 classified callouts (1426 concrete silent failures), 1213 indexed symbols, and 10 generated skills.
+**As of 2026-09-16**, the corpus has 60 reference guides in 17 parts, 1790 classified callouts (1428 concrete silent failures), 1212 indexed symbols, and 10 generated skills.
 
 Snippet verification covers 1359 fences: 486 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 677 `PRELUDE-NEEDED`, 192 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.
 
-Installed: macOS 27.0 (26A5406e), Xcode 27.0 (27A5237l), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A5406e). Latest observed: Xcode 27 beta 6 (27A5252f), iOS 27.0 beta 8 (24A5430a), and macOS 27.0 beta 8 (26A5425a); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-09-05), indexes=current (2026-09-05), skills=current (2026-09-05). Installed Xcode build 27A5237l differs from observed build 27A5252f. Installed macOS build 26A5406e differs from observed build 26A5425a. Installed iOS Simulator build 24A5408d differs from observed build 24A5430a.
+Installed: macOS 27.0 (26A428), Xcode 27.0 (27A5237l), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A428). Latest observed: Xcode 27.2 beta (27B5019j), iOS 27.2 beta (24B5084k), and macOS 27.2 beta (26B5086k); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-09-16), indexes=current (2026-09-16), skills=current (2026-09-16). Installed Xcode build 27A5237l differs from observed build 27B5019j. Installed macOS build 26A428 differs from observed build 26B5086k. Installed iOS Simulator build 24A5408d differs from observed build 24B5084k.
 <!-- current-state:notes:end -->
 
 Historical evidence and open writing work remain in the dated notes and
@@ -25,6 +25,7 @@ Historical evidence and open writing work remain in the dated notes and
 | [`FRESHNESS-RUNBOOK.md`](FRESHNESS-RUNBOOK.md) | Daily, weekly, and release-event evidence refreshes; includes the known defect-state parser false positives. |
 | [`NEXT-BETA-CHECKLIST.md`](NEXT-BETA-CHECKLIST.md) | Exact Xcode/SDK/interface/snippet/probe ritual for a new beta or host update. |
 | [`NEEDED-FROM-A-MACOS-27-MACHINE.md`](NEEDED-FROM-A-MACOS-27-MACHINE.md) | The sole remaining original machine-dependent item (manual Instruments UI) and the closed-run record. |
+| [`PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`](PLATFORM-UPGRADE-VALIDATION-2026-09-16.md) | Promoted Mac/device findings, environment identity, freshness-job outcome, and remaining boundaries from the macOS/iOS upgrade run. |
 | [`FOLLOWUP-BACKLOG.md`](FOLLOWUP-BACKLOG.md) | Open writing work carried forward from the 2026-08-02 harvest — evidence already on disk, guides not yet updated. Preserves the now-superseded ordinal re-keying trap as history. |
 | [`snippet-verification/README.md`](snippet-verification/README.md) | Canonical marker grammar and verifier CLI behavior. |
 | [`snippet-verification/report.md`](snippet-verification/report.md) | Latest exact toolchain identities and per-guide verification totals. |

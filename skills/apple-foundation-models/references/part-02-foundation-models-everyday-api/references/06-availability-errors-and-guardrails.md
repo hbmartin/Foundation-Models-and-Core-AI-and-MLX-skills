@@ -243,13 +243,12 @@ A user whose *Siri* language is unsupported cannot, no matter what their system 
 > ✅ **VERIFIED** — `/documentation/foundationmodels/managing-the-context-window`: *"Apple's
 > on-device foundation model has a context window of 4096 tokens per session."*
 >
-> ⚠️ **But** shipping third-party code (`noemaai-labs/noema-ios`, `AFMLLMClient.swift:133-135`)
-> carries this comment: *"The on-device context is selected by the installed system model. **iOS 26
-> reports 4K while the iOS 27 model reports 8K.** `contextSize` is available in the Xcode 26.4+ SDK,
-> so it must not be hidden behind the Xcode 27 gate."* That is a **community measurement**, not an
-> Apple figure. Apple's written Group Lab 8121 summary now documents **4096** as the iOS 27 platform
-> value, so the alleged device-specific 8192 result remains uncorroborated rather than an equal
-> platform figure. The app hardcodes `4096` only as a fallback when `contextSize` returns `<= 0`.
+> ⚠️ **Historical counterexample, now retired.** A frozen Noema 3.5 snapshot carried an
+> uninstrumented comment claiming 8K on iOS 27. Its upstream is unavailable, and the claim did not
+> reproduce on project-run simulator, stable macOS 27, beta-5 iPhone, or iPhone build `24A435`:
+> the valid Mac/device observations were **4096**. Apple's Group Lab 8121 summary also documents
+> 4096 as the iOS 27 platform value. Retain only the defensive lesson: the runtime property is
+> dynamic, Simulator has also returned 0, and `4096` is a fallback for an invalid read—not policy.
 
 If you hardcode 4096 and the device reports 8192, you will chop your own transcripts in half and
 never see an error. If you hardcode 4096 and a future device reports less, you will get
@@ -2283,7 +2282,7 @@ if let suggestion = model.quotaUsage.limitIncreaseSuggestion {
 Independent confirmation of the same shape from a shipping third-party app, including the
 `@unknown default` arm Apple's snippet omits:
 
-> ✅ **VERIFIED (shipping source)** — `noemaai-labs/noema-ios`,
+> ✅ **VERIFIED (shipping source)** — `frozen Noema 3.5 snapshot`,
 > `AppleFoundationModelAvailability.swift:163-186`:
 > ```swift
 > let model = PrivateCloudComputeLanguageModel()

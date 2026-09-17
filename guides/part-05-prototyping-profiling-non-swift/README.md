@@ -115,24 +115,20 @@ Apple's official bug-reporting channel for the model itself.
 
 Two products, two floors, and — unusually — two opposite evidence classes, which the guide flags in its
 own opening. The `fm` half covers what is genuinely attested: preinstalled on macOS 27, `respond` /
-`chat` / `schema` / `schema object` "and more", `/model` and `/save` inside `fm chat`, an on-device
-default with PCC opt-in and metered, and `fm serve` — which no WWDC session mentions and which an Apple
-engineer described in a GitHub issue as serving the model "as a Chat Completions endpoint", making it
-the only sanctioned non-Swift route to Private Cloud Compute. The Python half is the strongest evidence
+`chat` / `schema` / `schema object` "and more", `/model` and `/save` inside beta `fm chat`, and
+`fm serve` — which no WWDC session mentions and which an Apple engineer described in a GitHub issue
+as serving the model "as a Chat Completions endpoint". Stable macOS 27 no longer advertises the beta
+PCC model choice, so Swift is the documented PCC route until a later CLI says otherwise. The Python half is the strongest evidence
 in Parts 1–6: `apple/python-apple-fm-sdk` cloned and read at HEAD, a three-layer ctypes/C/Swift sandwich
 over the real framework, covering installation, availability as a `(bool, reason)` tuple, `respond()`'s
 five dispatch paths, snapshot streaming, `@fm.generable`, the raw JSON-Schema path that consumes a schema
 your Swift app exported verbatim, tools, images, memory, and the session-334 evaluation pipeline.
 
-> 🔴 **GAP — nobody has run `fm --help`.** Every option in the sessions was named *semantically* ("the
-> model option", "the image option"); not one spelling was ever shown as text. `fm schema object`'s
-> argument grammar — the biggest single hole — is entirely unknown, as are exit codes, stderr discipline
-> and streaming behaviour. The guide therefore tells you what `fm` *does*, refuses to tell you what to
-> type, puts every invocation behind a wrapper function, and hands you seven `--help` commands that close
-> the whole gap in ninety seconds on a real Mac. One route is now eliminated (checked 2026-07-29):
-> `fm` is **not in the Xcode 27.0 beta toolchain** — `xcrun --find fm` fails and `Xcode-beta.app`
-> contains no `fm` binary on a macOS 26.5 host — so the ninety seconds require a machine actually
-> running macOS 27, exactly as Apple's "pre-installed with macOS 27" framing implies (guide 5.2 §3).
+> ✅ **MEASURED — including stable drift.** The project captured every beta-5 help page and compared
+> it with stable macOS 27 build `26A428` on 2026-09-16. Stable has seven commands and only the
+> `system` model; beta-5 `quota-usage` and `--model pcc` disappeared. The schema grammar and public
+> flags are known. Exit codes, stderr discipline, interactive slash commands, and streaming behavior
+> remain runtime gaps. The guide therefore separates stable recommendations from historical beta syntax.
 >
 > ⚠️ **SILENT FAILURE — a shell pipeline cannot tell "the model declined" from "the model answered in
 > prose".** If a schema flag does not apply — wrong spelling, malformed schema, an OS that ignored it —

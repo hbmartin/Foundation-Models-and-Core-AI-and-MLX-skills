@@ -263,7 +263,7 @@ FB23837262); plus 835974 (FB23378161, quota granularity) with no Apple reply. **
 339 — the provider session, and the source for the executor store, teardown, `prewarm`, diffing,
 approximate-or-throw and custom segments — plus 319 (PCC), 326 (Core AI behind the session), 241 and
 246. **Community sources** — `john-rocky`'s `coreai-model-zoo` and its `coreai-models` fork, and
-`noemaai-labs/noema-ios` — supply every latency number here, attributed as community-measured at each
+`frozen Noema 3.5 snapshot` — supply every latency number here, attributed as community-measured at each
 point of use with hardware and OS given where the source gave them. **Apple published no latency figure
 for any of this.**
 

@@ -13,7 +13,7 @@ Repos in scope:
 | `apple/python-apple-fm-sdk` | 2026-02-25 | 1,200 | Apache-2.0 | open (17) | open (18) |
 | `apple/dnikit` | 2023-04-29 | 79 | Apache-2.0 | open (3) | open (4) |
 | `1amageek/swift-lm` | 2026-03-08 | 9 | none declared | 1 issue | 0 PRs |
-| `noemaai-labs/noema-ios` | 2025-09-08 | 27 | MIT | 13 | 14 |
+| Frozen Noema 3.5 snapshot | 2025-09-08 | 27 | MIT | 13 | 14 — historical; upstream unavailable 2026-09-16 |
 | `lucasnewman/mlx2coreai` | 2026-06-08 | 3 | MIT | **0 issues, 0 PRs** | — |
 | `john-rocky/coreai-model-zoo` | 2026-06-10 | 362 | "Other" | 5 | 10 |
 | `john-rocky/coreai-models` | 2026-06-13 | 2 | BSD-3 | **issues disabled** | — |
@@ -1483,7 +1483,10 @@ Multimodal capability introspection: `configuration.inputCapabilities`,
 
 ---
 
-# PART 6 — `noemaai-labs/noema-ios` (a shipping app that uses AFM + Core AI + PCC)
+# PART 6 — Frozen Noema 3.5 snapshot (historical shipping app using AFM + Core AI + PCC)
+
+> The upstream mirror stopped resolving and was removed from the clone inventory on 2026-09-16.
+> This section records the previously captured repository and issue state; it is not freshness-checked.
 
 The most useful "what a real shipping app actually does" source in this set. 599 Swift files.
 PR #14 (merged 2026-07-24) republished the whole thing as "Noema 3.5" (+248,522/−177,669).
@@ -1972,7 +1975,7 @@ Maintainer @davidkoski (COLLABORATOR) on merge:
 - `gh api .../commits/e956e56` (message + file list)
 - `README.md` (read in full, ~400 lines)
 
-**noemaai-labs/noema-ios**
+**Frozen Noema 3.5 snapshot (upstream unavailable since 2026-09-16)**
 - `gh repo view`, issue list, PR list
 - Issues #5, #10, #11, #12, #13 (bodies + comments); PR #14 (body)
 - `gh api .../git/trees/main?recursive=1` (filtered)

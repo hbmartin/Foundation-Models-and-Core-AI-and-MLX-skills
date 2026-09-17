@@ -16,7 +16,7 @@ when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and
 there; `/tmp` is only for disposable intermediates that will never be linked from a task.
 
 <!-- current-state:runbook:start -->
-> **Current trigger, generated 2026-09-05:** Installed Xcode build 27A5237l differs from observed build 27A5252f. Installed macOS build 26A5406e differs from observed build 26A5425a. Installed iOS Simulator build 24A5408d differs from observed build 24A5430a. The installed topology is macOS 27.0 build `26A5406e`, Xcode 27.0 build `27A5237l`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
+> **Current trigger, generated 2026-09-16:** Installed Xcode build 27A5237l differs from observed build 27B5019j. Installed macOS build 26A428 differs from observed build 26B5086k. Installed iOS Simulator build 24A5408d differs from observed build 24B5084k. The installed topology is macOS 27.0 build `26A428`, Xcode 27.0 build `27A5237l`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
 <!-- current-state:runbook:end -->
 
 ---

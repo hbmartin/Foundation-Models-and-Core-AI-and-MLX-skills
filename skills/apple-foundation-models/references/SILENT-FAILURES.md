@@ -1,8 +1,8 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**396 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**397 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-14. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-16. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -16,7 +16,7 @@
 | [Performance cliffs](#performance-cliffs) | 14 |
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
-| [Version drift](#version-drift) | 30 |
+| [Version drift](#version-drift) | 31 |
 | [Docs vs reality](#docs-vs-reality) | 41 |
 | [API footguns](#api-footguns) | 70 |
 | [General cautions](#general-cautions) | 55 |
@@ -73,7 +73,7 @@
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
-- [A label is identity, not a gate — unlabelled attachments still ran tools on device; omit it and lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
+- [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
 
@@ -354,7 +354,7 @@
 - [Exhaustive Transcript.Entry/Segment switches from iOS 26 fail to compile on 27 — .reasoning and .attachment are new.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#51-the-entry-cases) — 2.3 🔇
 - [CustomSegment and its protocol are gone from the beta 5 interface; the custom-segment path no longer compiles.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#52-the-four-tool-shaped-types) — 2.3
 - [The 27 SDK adds .attachment segments — code with a default: clause silently routes image segments to 'unknown, ignore'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#74-the-migration-footgun) — 2.5
-- [Apple documents 4096 as the iOS 27 platform value; one uncorroborated device report claims 8K — probe contextSize at…](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
+- [The retired 8K comment never reproduced; read contextSize because 27 is dynamic and Simulator can return zero.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#22-which-availability-api-answers-which-question) — 2.6
 - [The 26.5 GenerationError cases are the before side of the rename — never cite them as the 27 error surface.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 - [No source change needed — rebuilding with Xcode 27 is what silently flips which error types your catches see.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#31-the-migration-fact-that-outranks-everything-else-in-this-guide) — 2.6
 
@@ -380,6 +380,10 @@
 - [Beta 5 confirms six of the seven response actions; updateCustomSegment is not present in the recaptured interface.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#response-actions--responseentryidaction) — 4.3
 - [The custom-segment provider path is pre-beta-5 surface; CustomSegment and .updateCustomSegment are absent from beta 5.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#132-custom-segments--the-extension-point-for-new-modalities) — 4.3
 - [Beta 3 made .refusal's explanation required — the old Refusal(debugDescription:) example no longer compiles.](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#112-throwing-and-throwing-the-right-thing) — 4.4
+
+**Part 5**
+
+- [Stable fm removes beta quota/PCC syntax and exposes seven commands; check deployment-OS help before scripting.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 
 ## Docs vs reality
 

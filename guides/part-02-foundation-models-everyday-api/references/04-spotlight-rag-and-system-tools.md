@@ -505,6 +505,12 @@ Two facts fall out of that trace that are not in the session:
   The whole schema drift is one clarified description: `from` now says to omit it on the entry
   query stage and set it only when consuming a prior stage.
 
+**Host/device split, 2026-09-16.** The schema remained exactly 83,570 characters on the upgraded
+stable-macOS run. Spotlight donation and cleanup succeeded in the simulator and on the iPhone 15
+Pro, but the local Mac host threw `CSIndexErrorDomain -1003` because its helper application was
+unavailable. Treat host donation as an environment preflight, not proof that the schema or the
+system tool is invalid; retain a device lane for the shipping behavior.
+
 > ⚠️ **Probe-measured 2026-07-31 — direct programmatic `call(arguments:)` is a dead end in this
 > beta, and it fails *in-band*, not by throwing.** From the SIM-27 test-runner app container
 > (`probes/`, `fm.spotlight-direct-call`): `CSSearchableItem` donation **works**, and
