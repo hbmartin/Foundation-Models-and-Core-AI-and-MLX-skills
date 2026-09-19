@@ -1,8 +1,8 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**397 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**396 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-17. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-18. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -17,7 +17,7 @@
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
 | [Version drift](#version-drift) | 31 |
-| [Docs vs reality](#docs-vs-reality) | 41 |
+| [Docs vs reality](#docs-vs-reality) | 40 |
 | [API footguns](#api-footguns) | 70 |
 | [General cautions](#general-cautions) | 55 |
 
@@ -393,7 +393,6 @@
 - [Python docstrings leak Swift #/…/# regex delimiters — working tests use bare patterns; do not copy the delimiters.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#35-a-note-on-pattern_) — 2.2
 - [Apple's ResponseStream snippet does not compile — unbalanced braces, a stray try!, and an undefined variable.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#93-responsestream-snapshot-and-response) — 2.2
 - [LanguageModelSession.Error is in docs and a forum snippet but no shipping sample — keep the arm, distrust its cases.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#111-the-three-error-ladder) — 2.2
-- [A historical Apple-article mirror writes Attachment(image:)/label: — both spellings wrong per the SDK symbol page.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#31-the-two-initializers) — 2.5
 - [Apple's article writes GenerationOptions(samplingMode:); Apple's code and the Python SDK write sampling: — unresolved.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#81-classification-with-greedy-sampling) — 2.5
 - [Three names circulate for the availability-testing menu — trust the docs' spelling over transcripts.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#27-testing-availability-without-a-drawer-full-of-devices) — 2.6
 

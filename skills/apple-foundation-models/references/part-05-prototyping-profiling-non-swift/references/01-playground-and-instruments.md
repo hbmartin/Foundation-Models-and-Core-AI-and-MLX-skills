@@ -845,13 +845,11 @@ One editorial note on the first four rows, because Apple changed its own advice:
 > 3. Click the **Record** button and interact with your app's AI features.
 > 4. Observe the token count as your app interacts with the model.
 
-> ✅ **VERIFIED** — Apple's *Analyzing the runtime performance of your Foundation Models app* article
-> gives it as three steps ending in **"Click the Record Trace button"**. (Read via a local mirror of that
-> page, preserved in the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)
-> from `DocumentationforAPIs&SDKs/AppleFoundationModels/RuntimePerformance.md:15-19`;
-> the mirror condenses Apple's prose rather than copying it byte for byte, so treat the button label as
-> approximately-quoted. The canonical page is
-> `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`.)
+> 🔴 **GAP — re-check the exact runtime-performance article wording.** A retired third-party summary
+> reported a three-step flow, but the summary itself was not preserved in the research note and its
+> exact **Record Trace** wording is therefore not verified evidence. Re-capture Apple's canonical
+> `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`
+> page before quoting its button label or step count.
 
 **Requirements**, stated flatly at the end of the session:
 
@@ -1063,8 +1061,9 @@ The shape of the bars tells you which problem you have, before you read a single
 And the general rule from Apple's written documentation, which is the reason the timeline is readable at
 all:
 
-> ✅ **VERIFIED** — Apple's *Analyzing the runtime performance…* article: *"the width of each component on
-> the timeline indicates latency."* (Read via the local mirror, `RuntimePerformance.md:21`.)
+> 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article described each
+> component's timeline width as its latency. The underlying summary is no longer reproducible from
+> this repository, so use the visual relationship as guidance rather than an exact Apple quotation.
 
 ### 6.3 The other four lanes
 
@@ -1204,10 +1203,10 @@ if you look.
 Apple's written documentation lists what the inspector holds in slightly more detail than the session
 does:
 
-> ✅ **VERIFIED** — Apple's *Analyzing the runtime performance…* article, via the local mirror
-> (`RuntimePerformance.md:70-76`): the inspector shows **full instruction text sent to the model**,
-> **prompt text as received**, **model response text**, **tool call details including arguments and
-> return values**, and **token count per component**.
+> 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article listed full
+> instructions, received prompt text, response text, tool-call arguments/results, and per-component
+> token counts in the inspector. Re-check the canonical article before treating that complete list
+> as a current UI contract.
 
 "Tool call details including arguments and return values" is worth its own moment. When a tool is invoked
 with arguments you did not expect — the `.anyOf` guide that does not constrain, the optional the model
@@ -1600,8 +1599,9 @@ Two more TTFT levers that are not "shorten the prompt" at all:
 - **`prewarm(promptPrefix:)`**, which moves asset loading out of the critical path. In the code-along's
   trace this was worth roughly **700 ms** of dead time before the first token, moved to before the
   session even started (✅ `205:891`, `205:979-983`; Apple-published, Xcode 26 era, hardware unstated).
-  *"The instrument shows whether the prewarm completed before the first request arrived."* (✅ Apple's
-  *Analyzing the runtime performance…* article, via mirror `RuntimePerformance.md:66`.)
+  A retired article summary said the instrument reveals whether prewarming completed before the
+  first request; treat that specific inspector claim as 🟡 **RECONSTRUCTED** until the canonical page
+  is captured again.
 - **`includeSchemaInPrompt: false`**, when — and only when — a fully-populated example of the `@Generable`
   type is already in your instructions. *"Excluding the schema removes redundant schema information and
   **can save hundreds of tokens per request**."* (✅ Apple's *Analyzing the runtime performance…*
@@ -1648,10 +1648,9 @@ move. What moves is the moment the user stops looking at nothing. Combine with:
 Session 243 says the inspector shows "token usage metrics" and moves on. Apple's written companion
 enumerates them, and one of the four is the single most useful number in the instrument.
 
-> ✅ **VERIFIED** — Apple's *Analyzing the runtime performance of your Foundation Models app*, read via
-> the local mirror `RuntimePerformance.md:25-32`. **The mirror condenses Apple's prose rather than copying
-> it byte for byte**, so treat the wording as Apple's substance and not necessarily Apple's exact
-> sentences; the canonical page is
+> 🟡 **RECONSTRUCTED** — a retired summary of Apple's *Analyzing the runtime performance of your
+> Foundation Models app* enumerated the following metrics. The summary is not preserved, so treat
+> the list as a re-verification target rather than current Apple documentation; the canonical page is
 > `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`.
 >
 > - **Cache hit rate** — percentage of input tokens served from the KV prefix cache (**divide cached
@@ -1660,8 +1659,8 @@ enumerates them, and one of the four is the single most useful number in the ins
 > - **Output tokens** — tokens generated by the model
 > - **Reasoning tokens** (**PCC only**) — tokens used for intermediate reasoning in reasoning mode
 >
-> Plus, from the same page: *"High token counts affect both initial processing time and memory usage.
-> **Low cache hit rates between turns signal unexpected cache invalidation.**"*
+> The same summary associated high token counts with initial processing and memory use, and low
+> between-turn cache-hit rates with possible cache invalidation.
 
 ⚠️ **Note the discrepancy, because it will cost you time.** Session 242 tells you to watch session 243
 *"for more about detecting cache invalidations with Instruments"* (✅ `242:177`) — and **session 243 never
@@ -1672,10 +1671,9 @@ show it pre-divided.**
 
 Also from the same page, two more things the inspector surfaces that the session skips:
 
-> ✅ **VERIFIED** — via the mirror (`RuntimePerformance.md:53-55, 70-76`): *"The instrument shows **each
-> tool invocation's execution duration and output**. Use this to identify slow tools that add latency to
-> the model's response chain."* And the inspector's per-request breakdown includes **token count per
-> component**.
+> 🟡 **RECONSTRUCTED** — the retired summary said the instrument shows each tool invocation's duration
+> and output and includes per-component token counts. Confirm those fields against the current
+> instrument before depending on them in automated profiling instructions.
 
 Tool execution duration deserves emphasis. In a `.required`-mode agent, your own Swift code is inside the
 latency budget, N times per user request, and it is the one part of the chain you fully control. A tool

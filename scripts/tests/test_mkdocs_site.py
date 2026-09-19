@@ -1,8 +1,14 @@
+import ast
+import argparse
+import json
+import os
 import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
+from types import SimpleNamespace
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -68,6 +74,34 @@ class MkDocsHookTests(unittest.TestCase):
         )
         self.assertNotIn("The `Tool` protocol, calling modes, and the required-mode loop", titles)
 
+    def test_navigation_uses_every_shared_site_only_prefix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            docs = Path(directory)
+            (docs / "README.md").write_text("# Overview\n", encoding="utf-8")
+            (docs / "API-INDEX.md").write_text("# API index\n", encoding="utf-8")
+            (docs / "SILENT-FAILURES.md").write_text("# Failures\n", encoding="utf-8")
+            part = docs / "part-01-test"
+            part.mkdir()
+            (part / "README.md").write_text("# Part one\n", encoding="utf-8")
+            for name, title in (("workflows", "Deployment workflows"), ("labs", "Labs")):
+                section = docs / name
+                section.mkdir()
+                (section / "README.md").write_text(f"# {title}\n", encoding="utf-8")
+                (section / "example.md").write_text(f"# {title} example\n", encoding="utf-8")
+
+            with mock.patch.object(
+                mkdocs_hooks,
+                "SITE_ONLY_GUIDE_PREFIXES",
+                ("workflows/", "labs/"),
+            ):
+                navigation = mkdocs_hooks.build_navigation(docs)
+
+        paths = flatten_nav_paths(navigation)
+        self.assertIn("workflows/example.md", paths)
+        self.assertIn("labs/example.md", paths)
+        self.assertIn("Deployment workflows", [next(iter(item)) for item in navigation])
+        self.assertIn("Labs", [next(iter(item)) for item in navigation])
+
     def test_workflow_pages_carry_evidence_markers(self):
         workflows = REPOSITORY_ROOT / "guides" / "workflows"
         markers = ("✅ **VERIFIED**", "🟡 **RECONSTRUCTED**", "🔴 **GAP")
@@ -108,13 +142,143 @@ class MkDocsHookTests(unittest.TestCase):
         self.assertLess(trainer.index("write_json(manifest_path, manifest)"), first_upload)
         self.assertLess(trainer.index("shutil.copy2(manifest_path"), first_upload)
         self.assertLess(trainer.index("shutil.copy2(eval_path"), first_upload)
-        self.assertLess(trainer.index("write_json(publication_path, publication)"), first_upload)
+        self.assertLess(trainer.index('"adapter", args.adapter_repo'), trainer.index("del trainer"))
+        self.assertGreater(trainer.index('"merged_hf", args.merged_repo'), trainer.index("del trainer"))
+        self.assertIn("logging_nan_inf_filter=False", trainer)
+        self.assertIn('require_finite_metrics("training log"', trainer)
+        self.assertIn("require_private_repo(api, args.adapter_repo)", trainer)
 
-        self.assertNotIn("coreai.llm.export ../artifacts", contents)
         self.assertEqual(
             2,
-            contents.count("coreai.llm.export <ORG>/qwen3-ios-v1-hf"),
+            contents.count("coreai.llm.export ../artifacts/qwen3-ios-v1-hf"),
         )
+        self.assertNotIn("coreai.llm.export <ORG>/qwen3-ios-v1-hf", contents)
+        self.assertNotIn("hf upload ", contents)
+        self.assertNotIn("exit 1", contents)
+        self.assertIn("--model /outputs/mlx-run/base-model", contents)
+        self.assertIn("--dataset-revision <DATASET_COMMIT_SHA>", contents)
+
+    def test_remote_training_receipt_migrates_without_losing_a_sha(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
+        trainer = next(block for block in blocks if "def load_publication_receipt" in block)
+        tree = ast.parse(trainer)
+        function = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "load_publication_receipt"
+        )
+        namespace = {"json": json, "Path": Path}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), "receipt", "exec"), namespace)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "publication-receipt.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "adapter": {"repo": "org/adapter", "commit_sha": "abc123"},
+                        "merged": {"repo": "org/merged", "commit_sha": None},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            migrated = namespace["load_publication_receipt"](path, {"immutable": "inputs"})
+
+        self.assertEqual(1, migrated["schema_version"])
+        self.assertEqual(
+            [{"repo": "org/adapter", "commit_sha": "abc123"}],
+            migrated["artifacts"]["adapter"]["publications"],
+        )
+        self.assertNotIn("merged_hf", migrated["artifacts"])
+
+    def test_remote_publication_helper_is_append_only_and_failure_safe(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
+        helper = next(block for block in blocks if "def append_publication" in block)
+        wanted = {"atomic_write", "load_receipt", "append_publication", "upload_hub"}
+        functions = [
+            node
+            for node in ast.parse(helper).body
+            if isinstance(node, ast.FunctionDef) and node.name in wanted
+        ]
+        namespace = {
+            "argparse": argparse,
+            "json": json,
+            "os": os,
+            "Path": Path,
+        }
+        exec(compile(ast.Module(body=functions, type_ignores=[]), "publisher", "exec"), namespace)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "publication-receipt.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "inputs": {}, "artifacts": {}}),
+                encoding="utf-8",
+            )
+            publication = {"repo": "org/model", "commit_sha": "abc123"}
+            namespace["append_publication"](path, "mlx_4bit", "hugging_face", publication)
+            namespace["append_publication"](path, "mlx_4bit", "hugging_face", publication)
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [publication], receipt["artifacts"]["mlx_4bit"]["publications"]
+            )
+
+            before = path.read_bytes()
+
+            class PublicApi:
+                def create_repo(self, *args, **kwargs):
+                    return None
+
+                def repo_info(self, *args, **kwargs):
+                    return SimpleNamespace(private=False)
+
+            namespace["HfApi"] = PublicApi
+            arguments = SimpleNamespace(
+                repo="org/public",
+                folder=Path(directory),
+                message="test",
+                source_commit_sha=None,
+                receipt=path,
+                artifact="mlx_fused",
+            )
+            with self.assertRaisesRegex(RuntimeError, "public repository"):
+                namespace["upload_hub"](arguments)
+            self.assertEqual(before, path.read_bytes())
+
+    def test_remote_training_mlx_normalizer_rejects_malformed_completion(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
+        preparation = next(block for block in blocks if "def normalize(row" in block)
+        tree = ast.parse(preparation)
+        function = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "normalize"
+        )
+        namespace = {}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), "normalize", "exec"), namespace)
+        normalize = namespace["normalize"]
+
+        normalized = normalize(
+            {
+                "prompt": [{"role": "user", "content": "Question"}],
+                "completion": [{"role": "assistant", "content": "Answer"}],
+            }
+        )
+        self.assertEqual(["user", "assistant"], [item["role"] for item in normalized["messages"]])
+        with self.assertRaisesRegex(ValueError, "exactly one assistant"):
+            normalize(
+                {
+                    "prompt": [{"role": "user", "content": "Question"}],
+                    "completion": [
+                        {"role": "assistant", "content": "First"},
+                        {"role": "assistant", "content": "Second"},
+                    ],
+                }
+            )
 
     def test_global_header_targets_workflows_landing_page(self):
         config = (REPOSITORY_ROOT / "mkdocs.yml").read_text(encoding="utf-8")

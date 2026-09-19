@@ -821,7 +821,7 @@ long before the counter reaches 10, and no modifier in this package will notice.
    40 KB, your threshold has to assume every entry is a 40 KB tool output.
 3. **Measure with the real instrument.** The Foundation Models Instrument reports token usage per
    request (✅ 243:93, 243:130) and the KV-cache-hit metric — `cached input tokens ÷ total input
-   tokens` — is documented at `OptimizingKV.md:171` / `RuntimePerformance.md:27`. That ratio is what
+   tokens` — is documented in the captured optimization research. That ratio is what
    §12's argument is ultimately about, and it is measurable today.
 4. **If you need a token gate, write one.** §9 shows the modifier pattern; you supply the counting.
    Nothing in the framework hands you a tokenizer, so you will be estimating — but a
@@ -1576,9 +1576,9 @@ What that is worth, in wall-clock time:
 > model-selection consequence, and it is.
 
 For Apple's own on-device `SystemLanguageModel` the cache behaviour is real and the Instrument
-measures it: the metric is **cached input tokens ÷ total input tokens** (`OptimizingKV.md:171`,
-`RuntimePerformance.md:27`). That ratio is how you check the claims in this section on your own
-device.
+measures it: the metric is **cached input tokens ÷ total input tokens**, as recorded in the research
+synthesis from `OptimizingKV.md:171`. That ratio is how you check the claims in this section on your
+own device.
 
 ### 12.2 The line
 
@@ -2903,7 +2903,7 @@ lifecycle modifiers verbatim (`:92-101`) and the `@SessionProperty(\.history)` t
 (`:118-119` — its `[Transcript.Entry]` annotation is now known to be wrong: beta 5 projects
 `Transcript.HistoryView`, §9) ·
 `OptimizingKV.md` — append-preserves / rewrite-invalidates (`:28`, `:32`), profile switch as full
-prefix change (`:100`), the cache-hit metric (`:171`) · `RuntimePerformance.md:27`.
+prefix change (`:100`), and the cache-hit metric (`:171`).
 
 **Community, attributed as such and never presented as an Apple claim:**
 `john-rocky/coreai-model-zoo` — the 101× prefix-reuse measurement and the

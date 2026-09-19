@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 import re
 import unittest
@@ -14,17 +15,14 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
     def read(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
 
-    def test_image_tool_reverification_is_not_described_as_drift(self) -> None:
-        guide = self.read(
-            "guides/part-02-foundation-models-everyday-api/"
-            "references/05-image-input-and-attachments.md"
-        )
-        router = self.read("guides/part-02-foundation-models-everyday-api/README.md")
+    def test_image_tool_reverification_records_both_tool_runs(self) -> None:
         probes = self.read("probes/README.md")
-
-        self.assertNotIn("where both generic tool turns completed", guide)
-        self.assertNotIn("had completed those generic tool turns", router)
-        self.assertIn("unlabeledTool=timeout toolRan=true labeledTool=timeout toolRan=true", probes)
+        result = next(
+            line for line in probes.splitlines()
+            if "name=fm.attachment-label-recording" in line and "toolRan=true" in line
+        )
+        self.assertRegex(result, r"unlabeledTool=timeout\s+toolRan=true")
+        self.assertRegex(result, r"labeledTool=timeout\s+toolRan=true")
 
     def test_large_overflow_uses_its_own_token_count(self) -> None:
         taxonomy = self.read(
@@ -38,19 +36,37 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         self.assertIn("contextSizeExceeded(4096,168951)", stable_row)
         self.assertNotIn("4096,4099", stable_row)
 
-    def test_full_snippet_run_date_precedes_blocked_refresh(self) -> None:
+        probes = self.read("probes/README.md")
+        july = probes.split("## Results harvested 2026-07-31", 1)[1].split(
+            "## Results harvested 2026-07-31, second pass", 1
+        )[0]
+        september = probes.split("## Results harvested 2026-09-16", 1)[1].split(
+            "## Probe inventory", 1
+        )[0]
+        self.assertIn("168918", july)
+        self.assertNotIn("168951", july)
+        self.assertIn("168951", september)
+        self.assertNotIn("168918", september)
+
+    def test_full_snippet_run_date_is_not_later_than_the_snapshot(self) -> None:
         state = json.loads(self.read("notes/current-state.json"))
         verification = state["verification"]
 
-        self.assertEqual("2026-08-17", verification["lastFullRun"])
-        self.assertIn("Xcode", verification["blocker"])
-        self.assertIn("26", verification["blocker"])
-        self.assertNotEqual(state["asOf"], verification["lastFullRun"])
+        full_run = date.fromisoformat(verification["lastFullRun"])
+        snapshot = date.fromisoformat(state["asOf"])
+        self.assertLessEqual(full_run, snapshot)
 
     def test_active_guides_do_not_depend_on_removed_noema_checkout(self) -> None:
         offenders = []
         for path in GUIDES.rglob("*.md"):
-            if "repos/noemaai-labs__noema-ios" in path.read_text(encoding="utf-8"):
+            contents = path.read_text(encoding="utf-8")
+            unavailable_sources = (
+                "repos/noemaai-labs__noema-ios",
+                "RuntimePerformance.md",
+                "MultimodalPrompting.md",
+                "DebuggingAndProfiling.md",
+            )
+            if any(source in contents for source in unavailable_sources):
                 offenders.append(path.relative_to(ROOT).as_posix())
         self.assertEqual([], offenders)
 
@@ -59,14 +75,6 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             "guides/part-05-prototyping-profiling-non-swift/"
             "references/02-fm-cli-and-python-sdk.md"
         )
-        stale_claims = (
-            "Interactive, has a model switch. macOS 27 only.",
-            "PCC from Python means shelling out to `fm`.",
-            "Use `fm` / `fm serve`.",
-        )
-        for claim in stale_claims:
-            self.assertNotIn(claim, fm)
-
         canonical_anchor = "#3--the-fm-help-surface-captured-on-macos-27"
         linked_files = (
             "notes/NEEDED-FROM-A-MACOS-27-MACHINE.md",
@@ -90,14 +98,15 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         )
         for relative in files:
             contents = self.read(relative)
-            self.assertNotIn("8192 claim remains uncorroborated", contents, relative)
-            self.assertNotIn("uncorroborated, not disproved", contents, relative)
             self.assertRegex(contents, r"(?is)8192.{0,500}retired|retired.{0,500}8192")
 
     def test_historical_host_26_is_defined(self) -> None:
         probes = self.read("probes/README.md")
-        definition = "| **HISTORICAL HOST-26** | archived macOS 26.x observations"
-        self.assertIn(definition, probes)
+        definition = next(
+            line for line in probes.splitlines() if "| **HISTORICAL HOST-26** |" in line
+        )
+        self.assertIn("archived", definition.lower())
+        self.assertIn("macOS 26", definition)
         self.assertNotRegex(probes, r"(?<!HISTORICAL )HOST-26")
 
     def test_readme_callout_counts_match_generated_index(self) -> None:

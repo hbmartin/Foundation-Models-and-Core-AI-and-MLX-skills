@@ -165,6 +165,15 @@ than drifting: call-site tool options beat profile modifiers in both directions,
 `onToolCall` aborts and reverts the whole turn, and required image-tool turns timed out after
 `toolRan=true`. See `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md` for the integrated report.
 
+## Results harvested 2026-09-16 (verbatim stable-era overflow result)
+
+This line belongs to the stable macOS 27 run described above; it is not part of the archived July
+Simulator block later in this file:
+
+```
+PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] fmcase=contextSizeExceeded(contextSize:4096,tokenCount:168951) desc=Content contains 168951 tokens, which exceeds the maximum allowed context size of 4096. os=27.0.0 platform=macOS
+```
+
 ## Probe inventory
 
 Guide refs abbreviated: `2.3 §4.4` = `guides/part-02-…/references/03-… .md` §4.4.
@@ -295,7 +304,7 @@ PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool def
 PROBE-RESULT name=fm.contextSize value=4096                                          (26.5/MAC-27 host and DEVICE-27); app-hosted SIM-27=0 on 2026-09-04; tool-hosted SIM-27 changed from 4096 on 2026-08-17 to 0 on 2026-09-05
 PROBE-RESULT name=fm.availability value=available                                    (27.0 sim; 26.5 host: unavailable(.appleIntelligenceNotEnabled))
 PROBE-RESULT name=fm.includeSchemaInPrompt-recording value=legacyFalse=[ContextOptions(includeSchemaInPrompt: Optional(false), …)] contextOptionsFalse=[…Optional(false)…] default=[…Optional(true)…]
-PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] fmcase=contextSizeExceeded(contextSize:4096,tokenCount:168951) desc=Content contains 168951 tokens, which exceeds the maximum allowed context size of 4096. os=27.0.0 platform=macOS
+PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] desc=Content contains 168918 tokens, which exceeds the maximum allowed context size of 4096.
 PROBE-RESULT name=fm.parsingError-thrown value=threw detail=type=ParsingError domain=FoundationModels.GeneratedContent.ParsingError code=1 casts=[GeneratedContent.ParsingError] desc=GeneratedContent does not contain a property 'summary'.
 PROBE-RESULT name=fm.stream-early-break value=partialsSeen=2 entries=[prompt,response] isResponding=true followUp=not-attempted
 PROBE-RESULT name=fm.collect-after-iteration value=collect-succeeded detail=iterations=13 contentChars=51

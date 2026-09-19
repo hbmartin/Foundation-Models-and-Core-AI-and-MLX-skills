@@ -233,17 +233,10 @@ The first initializer's argument is **unlabelled**. That matters, because a wide
 paraphrase of Apple's multimodal article writes it as `Attachment(image: image)`, which does not
 match the symbol page and does not match Apple's shipping sample code.
 
-> ⚠️ **API-spelling conflict, resolved.** A local mirror of Apple's *"Analyzing images with
-> multimodal prompting"* article (the copy preserved from the community app in the
-> [frozen Noema research note](../../../notes/repos/noema-ios.md) as
-> `DocumentationforAPIs&SDKs/AppleFoundationModels/MultimodalPrompting.md`) renders the calls as
-> `Attachment(image: image)` and `Attachment(image: supplyPhoto, label: "supplies")`. Both are
-> **wrong**. The symbol page declares `init(_:orientation:)` and a separate `label(_:)` method, and
-> Apple's own Origami sample source writes `Attachment(image).label(idString)`. The same mirror also
-> stamps the article `Availability: Beta (iOS 26.0+ …)`, which is impossible for a 27.0 symbol — the
-> mirror's front-matter is unreliable across the board (the `DynamicSessions.md` mirror has the
-> identical defect). **Precedence applied: symbol pages and shipping sample source beat a
-> third-party mirror.** Use `Attachment(image)` and `.label("…")`.
+> ✅ **VERIFIED spelling.** The symbol page declares `init(_:orientation:)` and a separate
+> `label(_:)` method, while Apple's shipping Origami sample writes
+> `Attachment(image).label(idString)`. Use `Attachment(image)` and `.label("…")`; do not infer an
+> `image:` initializer label or initializer-level `label:` parameter from retired paraphrases.
 
 ### 3.2 What you can hand it
 

@@ -42,15 +42,54 @@ REPOS=(
 if [ -n "${RESEARCH_REPOS_ENTRIES:-}" ]; then
   REPOS=()
   while IFS= read -r entry; do
-    [ -n "$entry" ] && REPOS+=("$entry")
+    case "$entry" in
+      *[![:space:]]*) REPOS+=("$entry") ;;
+    esac
   done <<<"$RESEARCH_REPOS_ENTRIES"
 fi
 
-clone_repository() {
-  local entry="$1"
-  local slug expected_sha dir remote actual_remote actual_sha
+PARSED_SLUG=""
+PARSED_SHA=""
 
-  read -r slug expected_sha <<<"$entry"
+parse_repository_entry() {
+  local entry="$1"
+  local extra=""
+
+  PARSED_SLUG=""
+  PARSED_SHA=""
+  read -r PARSED_SLUG PARSED_SHA extra <<<"$entry"
+  if [ -z "$PARSED_SLUG" ] || [ -z "$PARSED_SHA" ] || [ -n "$extra" ]; then
+    echo "!! INVALID: repository entry must contain exactly OWNER/REPO and a full commit SHA: $entry" >&2
+    return 1
+  fi
+  case "$PARSED_SLUG" in
+    */*/*|/*|*/|*[!A-Za-z0-9._/-]*|*[[:space:]]*)
+      echo "!! INVALID: repository slug must be OWNER/REPO: $PARSED_SLUG" >&2
+      return 1
+      ;;
+    */*) ;;
+    *)
+      echo "!! INVALID: repository slug must be OWNER/REPO: $PARSED_SLUG" >&2
+      return 1
+      ;;
+  esac
+  if [ "${#PARSED_SHA}" -ne 40 ]; then
+    echo "!! INVALID: $PARSED_SLUG commit must be a 40-character lowercase hexadecimal SHA" >&2
+    return 1
+  fi
+  case "$PARSED_SHA" in
+    *[!0-9a-f]*)
+      echo "!! INVALID: $PARSED_SLUG commit must be a 40-character lowercase hexadecimal SHA" >&2
+      return 1
+      ;;
+  esac
+}
+
+clone_repository() {
+  local slug="$1"
+  local expected_sha="$2"
+  local dir remote actual_remote actual_sha
+
   dir="${slug//\//__}"
   remote="${remote_base%/}/$slug"
   actual_remote=""
@@ -98,12 +137,19 @@ clone_repository() {
 }
 
 failures=()
-for entry in "${REPOS[@]}"; do
-  slug="${entry%% *}"
-  if ! clone_repository "$entry"; then
-    failures+=("$slug")
-  fi
-done
+if [ "${#REPOS[@]}" -gt 0 ]; then
+  for entry in "${REPOS[@]}"; do
+    if ! parse_repository_entry "$entry"; then
+      failures+=("${PARSED_SLUG:-<invalid-entry>}")
+      continue
+    fi
+    slug="$PARSED_SLUG"
+    expected_sha="$PARSED_SHA"
+    if ! clone_repository "$slug" "$expected_sha"; then
+      failures+=("$slug")
+    fi
+  done
+fi
 
 if [ "${#failures[@]}" -ne 0 ]; then
   echo "Completed with ${#failures[@]} research repository failure(s):" >&2
