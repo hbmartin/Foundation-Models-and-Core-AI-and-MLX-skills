@@ -106,8 +106,10 @@ Follow-up from the reporter (unanswered by Apple in-thread):
   (Referenced by an Apple member; a guide should cross-reference the actual macOS 27 naming.)
 - There is an **`fm` command-line tool** with (at least) a `respond` subcommand and an
   **`fm serve`** subcommand that exposes an **OpenAI Chat-Completions-compatible endpoint**.
-- **PCC is CLI-only from Python.** If a Python program needs PCC, the sanctioned path is
-  shelling out to `fm` or hitting `fm serve` over HTTP — not `apple_fm_sdk`.
+- **This was beta-era PCC evidence, not a stable contract.** Stable macOS 27 still includes
+  `serve`, but advertises only the `system` model and no PCC selection, so there is currently no
+  documented non-Swift PCC route. See the maintained comparison in
+  [guide 5.2 §3](../../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
 - The `--model pcc` flag in the follow-up is the *reporter's guess*, **UNVERIFIED**.
 
 ## 1.4 Issue #6 — `pip install` hard-fails with Command Line Tools only (STILL OPEN)

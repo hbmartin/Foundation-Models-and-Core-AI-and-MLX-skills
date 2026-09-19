@@ -27,6 +27,33 @@ class IndexToolingTests(unittest.TestCase):
             check=False,
         )
 
+    def test_only_top_level_workflows_are_site_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            top = guides / "workflows"
+            nested = guides / "part-01-test/references/workflows"
+            top.mkdir(parents=True)
+            nested.mkdir(parents=True)
+            (top / "site.md").write_text(
+                "# Site\n\n⚠️ top-only warning\n\n`TopWorkflowSymbol` `TopWorkflowSymbol`\n",
+                encoding="utf-8",
+            )
+            (nested / "kept.md").write_text(
+                "# Nested\n\n⚠️ nested warning\n\n"
+                "`NestedWorkflowSymbol` `NestedWorkflowSymbol`\n",
+                encoding="utf-8",
+            )
+
+            callouts = self.run_python(EXTRACT_CALLOUTS, guides)
+            self.assertEqual(callouts.returncode, 0, callouts.stderr)
+            self.assertIn("part-01-test/references/workflows/kept.md", callouts.stdout)
+            self.assertNotIn("workflows/site.md", callouts.stdout)
+
+            symbols = self.run_python(EXTRACT_SYMBOLS, guides)
+            self.assertEqual(symbols.returncode, 0, symbols.stderr)
+            self.assertIn("NestedWorkflowSymbol", symbols.stdout)
+            self.assertNotIn("TopWorkflowSymbol", symbols.stdout)
+
     def test_duplicate_heading_slugs_are_unique(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)

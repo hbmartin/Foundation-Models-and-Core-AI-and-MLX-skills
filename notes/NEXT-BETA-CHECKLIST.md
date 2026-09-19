@@ -47,7 +47,7 @@ a toolchain — this checklist covers what a toolchain drop CAN answer).
 > and 0 failures. Call-site tool mode now has direct two-direction proof, `onToolCall` throwing is
 > confirmed as a turn abort/revert, image-tool turns time out after the tool runs, and the device
 > overflow probe timed out where Mac returned typed after 92.7 seconds. Stable `/usr/bin/fm`
-> removed beta-5 `quota-usage` and `--model pcc` and exposes only `system`. The daily job completed;
+> has a smaller, system-only surface; the canonical comparison is [guide 5.2 §3](../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27). The daily job completed;
 > weekly was blocked solely by the unavailable Noema mirror, which has now been removed from the
 > clone inventory. Full promoted evidence: `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
 
@@ -132,7 +132,7 @@ the repo root.
   xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
   ```
 - [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
-  four-destination table HOST-26 / SIM-27 / MAC-27 / DEVICE-27 and the per-probe results. The
+  historical-host / SIM-27 / MAC-27 / DEVICE-27 destination table and the per-probe results. The
   beta-5 baselines are **46 host tests, 23 skipped, 0 failures** and **39 simulator tests,
   19 skipped, 0 failures** — but note those are *gated* counts. Model-backed host and Simulator
   probes never infer safety from an unfamiliar build identifier: run the bounded default first,

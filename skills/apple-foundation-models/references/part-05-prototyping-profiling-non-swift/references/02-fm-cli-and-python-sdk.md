@@ -40,17 +40,15 @@ you an exact procedure for finding out in ninety seconds on a real Mac.
 
 If you take one instruction from this guide: **match scripts to the running OS's help surface.**
 The canonical file `notes/sdk-interfaces/fm-help-27.0.txt` is a beta-5 capture, not a stable
-contract. On stable macOS 27 (`26A428`), the project measured seven commands: `available`, `chat`,
-`count-tokens`, `license`, `respond`, `schema`, and `serve`. `quota-usage`, the `pcc` model choice,
-and `--model pcc` disappeared; only `system` is advertised. The exact stable comparison is recorded
-in `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
+contract. The canonical beta-versus-stable command comparison is [§3](#3--the-fm-help-surface-captured-on-macos-27);
+stable macOS 27 advertises only `system`, so no current non-Swift PCC route is established.
 
 ---
 
 ## What this covers
 
-- **The `fm` CLI** — what ships, the three subcommands anyone has named, the two `fm chat` slash
-  commands, `fm respond`'s options *as semantic concepts*, `fm serve`, the on-device/PCC default,
+- **The `fm` CLI** — what ships, the three subcommands anyone has named, the beta-era `fm chat`
+  slash commands, `fm respond`'s options *as semantic concepts*, `fm serve`, historical PCC support,
   and a prominent, unhedged 🔴 GAP box listing exactly what is unknown and what resolves it.
 - **The shell-automation pattern**, which *is* attested even though the flags are not: model output
   constrained to a schema, emitted as JSON on stdout, parsed by `jq`, driving real file operations.
@@ -149,7 +147,7 @@ changes when the user updates macOS, exactly as a Swift app's does.
 | You want to… | Use | Why |
 |---|---|---|
 | Try a prompt in ten seconds, no project | `fm respond` | No build step at all. macOS 27 only. |
-| Feel out a model's behaviour conversationally | `fm chat` | Interactive, has a model switch. macOS 27 only. |
+| Feel out the system model's behaviour conversationally | `fm chat` | Interactive. Beta sessions showed a model switch; stable macOS 27 advertises only `system`. |
 | Glue a model into a shell script, cron job, Makefile | `fm respond` + a schema | Structured JSON on stdout. macOS 27 only. |
 | Reach **Private Cloud Compute** from a non-Swift program | No stable macOS 27 CLI path is currently advertised | Beta-5 `fm` exposed PCC, but stable build `26A428` exposes only `system`. Use Swift's PCC surface or verify a later `fm --help` before designing around non-Swift PCC. |
 | Batch-evaluate a Swift feature's prompts over a dataset | Python SDK | pandas, notebooks, no rebuild loop. |
@@ -278,10 +276,13 @@ refutes the sibling-kinds guess — top-level help would not show sub-subcommand
 > with **`/model`**, I can **switch the conversation to use the Private Cloud Compute model**. Or,
 > with **`/save`**, I can **save the current conversation to resume later**."*
 
+This is verified beta-era session behavior. Stable `fm chat` was not exercised interactively and
+stable help advertises only `system`, so `/model` and `/save` remain unverified on that surface.
+
 | Slash command | Effect | Evidence |
 |---|---|---|
-| `/model` | switch the live conversation to another model — PCC is the named example | ✅ spoken |
-| `/save` | save the current conversation so it can be resumed | ✅ spoken |
+| `/model` | switch the live conversation to another model — PCC is the named example | ✅ beta-era session |
+| `/save` | save the current conversation so it can be resumed | ✅ beta-era session |
 | *(unknown)* | *"a number of commands"* — only two were demonstrated | 🔴 GAP |
 
 Note what `/model` implies architecturally: **the transcript survives the model switch.** That is
@@ -362,7 +363,7 @@ data point is still worth showing precisely because of who said it:
 > answer that follow-up. The issue was not evidence by itself; the two independent command examples
 > above are what now corroborate the spelling and value.
 
-### 2.5 The default is on-device, and PCC is metered
+### 2.5 The beta default was on-device, and PCC was metered
 
 > ✅ **VERIFIED** (spoken, `334:56-59`): *"the `fm` command line tool lets you use **either the
 > on-device model, or the Apple Foundation Model on Private Cloud Compute**. **By default, it uses
@@ -370,13 +371,11 @@ data point is still worth showing precisely because of who said it:
 > Apple Foundation Model on Private Cloud Compute, **which has usage limits**. It's a much bigger
 > model than the on-device model, so it will **perform better on complex problems**."*
 
-Three things to carry away. The default is local, so an `fm` invocation with no options costs
-nothing and leaves the machine. PCC is opt-in and **quota-limited** — a loop over ten thousand rows
-through PCC will hit a wall, and the quota API in Swift is coarse enough that you should not expect
-a precise remaining-budget readout from the CLI either (see
+This describes the beta-era CLI shown in the session. The default was local, while PCC was opt-in
+and **quota-limited**. Stable macOS 27 no longer advertises the PCC model, so do not turn that
+historical behavior into current automation. The quota API in Swift is coarse (see
 [`../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md`](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md)).
-And PCC is *better at hard problems*, which is a quality argument, not a latency one — the
-on-device model will usually answer faster.
+The session's claim that PCC is *better at hard problems* is a quality argument, not a latency one.
 
 ### 2.6 `fm serve` — the one written sentence, and why it matters most
 
@@ -401,8 +400,8 @@ Four separate facts fall out of one sentence:
    HTTP code — can in principle talk to Apple's models through it. It is also the exact protocol
    that Foundation Models' own `ChatCompletionsLanguageModel` speaks in the other direction
    (Part 4), so the ecosystem closes a loop here.
-3. **PCC is reachable through it.** Combined with fact 4 below, `fm serve` is the *only* sanctioned
-   way for a Python program to reach Private Cloud Compute.
+3. **PCC was reachable through it on the beta-era surface described by the Apple member.** Stable
+   macOS 27 advertises only `system`, so this is historical evidence, not a current Python route.
 4. **PCC in the Python SDK is not a "not yet" — it is a "not planned."** "We do not currently plan
    to add support" is as clear as Apple gets. Do not architect around it arriving.
 
@@ -883,7 +882,8 @@ is bigger than "you can install it on an older Mac":
 > header. **Absent:**
 >
 > - **`PrivateCloudComputeLanguageModel`** — and this one is not an oversight; an Apple member
->   states there is no plan to add it (§2.6, issue #13). PCC from Python means shelling out to `fm`.
+>   states there is no plan to add it (§2.6, issue #13). Beta-era `fm` exposed PCC, but stable
+>   macOS 27 does not; use Swift's PCC surface unless a later CLI advertises the model again.
 > - **The `LanguageModel` / `LanguageModelExecutor` protocol pair**, and therefore
 >   `CoreAILanguageModel`, `MLXLanguageModel`, `ChatCompletionsLanguageModel`. There is exactly one
 >   model type in Python: `SystemLanguageModel`.
@@ -3126,7 +3126,7 @@ reading `__all__` and the C header, not by failing to find something in the docs
 | Transcript export / load / resume | ✅ (v0.1.1+) | §12 |
 | Image attachments | ✅ (v0.2.0+), **SDK-27 + OS-27 gated** | §6.4, §11 |
 | `context_size` / `token_count` | ✅ (v0.2.1+), **OS 26.4+ gated** | §7.3 |
-| **Private Cloud Compute** | ❌ **not planned** | Apple member, issue #13: *"we do not currently plan to add support"*. Use `fm` / `fm serve`. §2.6 |
+| **Private Cloud Compute** | ❌ **not planned** | Apple member, issue #13: *"we do not currently plan to add support"*. Beta-era `fm` exposed PCC; stable macOS 27 does not. Use Swift unless a later CLI restores it. §2.6 |
 | **`LanguageModel` protocol, BYO backends** | ❌ | One model type exists in `__all__`. |
 | **Dynamic profiles, `historyTransform`, `summarizeHistory`** | ❌ | 27-era; SDK is 26-generation. §5.2 |
 | **Mutable `session.transcript` / `transcript.history`** | ❌ | Transcripts are opaque dicts. |
@@ -3518,7 +3518,7 @@ throw** are the ones that cost days.
 | Python SDK `token_count()` | **macOS / iOS / visionOS 26.4** | `context_size` is **not** gated |
 | Swift `SystemLanguageModel` | iOS / macOS / visionOS 26.0 | The thing being bridged |
 | Evaluations framework | **Xcode 27** | The Swift alternative to §15 |
-| PCC from Python | **not available at any version** | Use `fm` / `fm serve` |
+| PCC from Python | **not available in the SDK; no stable CLI route currently advertised** | Use Swift's PCC surface; beta-era `fm` evidence is historical |
 
 ### 17.2 The thirty-second Python program
 
@@ -3605,7 +3605,7 @@ async def batch(prompts, instructions, chunk=100):
 | `available`, `count-tokens`, `license` exist | ✅ stable project-verified 2026-09-16; beta-only `quota-usage` is absent |
 | `respond` flags and short forms | ✅ fully captured, including `-m`, `-i`, `-g`, `-v`, `-h` |
 | `fm schema object` grammar | ✅ fully captured for this seed: scalar, nested object, `anyOf`, array, description, optional |
-| `/model`, `/save` in `fm chat` | ✅ verified |
+| `/model`, `/save` in `fm chat` | ✅ beta-era session evidence; stable interactive surface remains untested |
 | Other slash commands | 🔴 **unknown** (and do not borrow `fmx`'s — §3 item 4) |
 | Default model = on-device | ✅ stable help advertises only `system`; PCC was a beta-5 CLI option and is absent on stable build `26A428` |
 | Structured output arrives as JSON on stdout | ✅ verified |
@@ -3648,7 +3648,8 @@ the eight `docs/source/*.rst` pages and eight `docs/source/api/*.rst` pages; the
 **The repository's GitHub history** — releases `v0.1.0-beta.1` → `v0.2.1`, all ten commits, and the
 issue/PR bodies and comments for **issues #1–#6, #11–#13, #16, #17** and **PRs #7–#10, #14, #15,
 #18**, with diffs read for #9, #14, #15 and #18. Two items here are load-bearing and appear nowhere
-else in the corpus: **issue #13** (the Apple member's "no PCC in Python; use `fm` / `fm serve`") and
+else in the corpus: **issue #13** (the Apple member's beta-era "no PCC in Python; use `fm` / `fm serve`"
+guidance, superseded on stable macOS) and
 **issue #17 / PR #18** (the FD leak, its measurement, and the fix that is not in a release).
 
 **WWDC26 transcripts** — session **334** *Foundation Models on macOS* (`fm` CLI + Python SDK), Eric

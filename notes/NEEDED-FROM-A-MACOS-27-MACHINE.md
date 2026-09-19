@@ -27,14 +27,13 @@ The project ran `/usr/bin/fm` on macOS 27 beta 5 (`26A5406e`) and captured top-l
 revealed subcommand help page in `notes/sdk-interfaces/fm-help-27.0.txt`. The live surface has
 eight commands: `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`, `schema`,
 and `serve`. This corrects the third-party `token-count` spelling and adds the previously unreported
-`license` command. **On stable macOS 27 build `26A428`, the surface has seven commands:**
-`available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, `serve`. Stable removes
-`quota-usage`, advertises only `system`, and no longer accepts beta's `--model pcc` choice.
+`license` command. Stable macOS 27 has a smaller, system-only surface; the canonical comparison is
+[guide 5.2 §3](../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
 `fm --version` is unsupported. The managed beta capture includes all short/long flags,
 the complete `schema object` property grammar, and `serve` transports/endpoints.
 
-Runtime-only questions remain in the guide: stable interactive slash commands, refusal/error exit behavior,
-`/model` and `/save`, refusal/error exit behavior, and field-level Chat Completions compatibility.
+Runtime-only questions remain in the guide: stable interactive slash commands including `/model`
+and `/save`, refusal/error exit behavior, and field-level Chat Completions compatibility.
 
 ### Historical pre-capture record
 
@@ -195,10 +194,10 @@ Part 11.
   (and the overflow error text there independently says "maximum allowed context size of 4096").
   **Documented 2026-08-02:** Apple's written Q&A summary for WWDC26 Group Lab 8121
   (ch. `0:08:11`) gives **4096, shared across input and output**, as the iOS 27 platform value,
-  with PCC at 32K. The third-party 8192 device report remains uncorroborated rather than disproved.
+  with PCC at 32K. The unreproduced third-party 8192 comment is retired historical provenance.
   Folded into guides 17.1 §1.1 and 3.1 §3.3.
   The physical result closes the device-specific residual for this hardware/build and leaves the
-  third-party 8192 report uncorroborated. Continue re-running on later seeds because the OS-27 API
+  retired third-party 8192 comment. Continue re-running on later seeds because the OS-27 API
   remains dynamic.
 
 The 2026-09-16 iOS build `24A435` run again returned 4096 and reverified cache deletion, cache

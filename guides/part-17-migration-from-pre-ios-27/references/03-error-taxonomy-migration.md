@@ -1196,7 +1196,7 @@ failure can bridge differently by destination/build:
 | `.required` with empty toolset (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **6** | `LanguageModelError.unsupportedGenerationGuide` |
 | `am_ET` prompt (sim) | **nothing thrown** | — | — (⚠️ silent success) |
 | `am_ET` prompt (device, `24A5408d`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **2** | `.guardrailViolation`, **not** `.unsupportedLanguageOrLocale` |
-| Context overflow (stable macOS 27) | `LanguageModelError` after 92.7 s | `FoundationModels.LanguageModelError` / 0 | `.contextSizeExceeded(4096,4099)` |
+| Context overflow (stable macOS 27) | `LanguageModelError` after 92.7 s | `FoundationModels.LanguageModelError` / 0 | `.contextSizeExceeded(4096,168951)` |
 | Context overflow (device, `24A435`) | probe deadline at 120 s | — | no thrown value observed before deadline |
 | `am_ET` prompt (stable Mac + device `24A435`) | `LanguageModelError` | `FoundationModels.LanguageModelError` / **2** | `.guardrailViolation`, again **not** `.unsupportedLanguageOrLocale` |
 

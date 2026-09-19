@@ -1,0 +1,126 @@
+from __future__ import annotations
+
+import json
+from datetime import date
+from pathlib import Path
+import re
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[2]
+GUIDES = ROOT / "guides"
+
+
+class PlatformRefreshConsistencyTests(unittest.TestCase):
+    def read(self, relative: str) -> str:
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    def test_image_tool_reverification_records_both_tool_runs(self) -> None:
+        probes = self.read("probes/README.md")
+        result = next(
+            line for line in probes.splitlines()
+            if "name=fm.attachment-label-recording" in line and "toolRan=true" in line
+        )
+        self.assertRegex(result, r"unlabeledTool=timeout\s+toolRan=true")
+        self.assertRegex(result, r"labeledTool=timeout\s+toolRan=true")
+
+    def test_large_overflow_uses_its_own_token_count(self) -> None:
+        taxonomy = self.read(
+            "guides/part-17-migration-from-pre-ios-27/"
+            "references/03-error-taxonomy-migration.md"
+        )
+        stable_row = next(
+            line for line in taxonomy.splitlines()
+            if "Context overflow (stable macOS 27)" in line
+        )
+        self.assertIn("contextSizeExceeded(4096,168951)", stable_row)
+        self.assertNotIn("4096,4099", stable_row)
+
+        probes = self.read("probes/README.md")
+        july = probes.split("## Results harvested 2026-07-31", 1)[1].split(
+            "## Results harvested 2026-07-31, second pass", 1
+        )[0]
+        september = probes.split("## Results harvested 2026-09-16", 1)[1].split(
+            "## Probe inventory", 1
+        )[0]
+        self.assertIn("168918", july)
+        self.assertNotIn("168951", july)
+        self.assertIn("168951", september)
+        self.assertNotIn("168918", september)
+
+    def test_full_snippet_run_date_is_not_later_than_the_snapshot(self) -> None:
+        state = json.loads(self.read("notes/current-state.json"))
+        verification = state["verification"]
+
+        full_run = date.fromisoformat(verification["lastFullRun"])
+        snapshot = date.fromisoformat(state["asOf"])
+        self.assertLessEqual(full_run, snapshot)
+
+    def test_active_guides_do_not_depend_on_removed_noema_checkout(self) -> None:
+        offenders = []
+        for path in GUIDES.rglob("*.md"):
+            contents = path.read_text(encoding="utf-8")
+            unavailable_sources = (
+                "repos/noemaai-labs__noema-ios",
+                "RuntimePerformance.md",
+                "MultimodalPrompting.md",
+                "DebuggingAndProfiling.md",
+            )
+            if any(source in contents for source in unavailable_sources):
+                offenders.append(path.relative_to(ROOT).as_posix())
+        self.assertEqual([], offenders)
+
+    def test_stable_fm_claims_point_to_the_canonical_surface(self) -> None:
+        fm = self.read(
+            "guides/part-05-prototyping-profiling-non-swift/"
+            "references/02-fm-cli-and-python-sdk.md"
+        )
+        canonical_anchor = "#3--the-fm-help-surface-captured-on-macos-27"
+        linked_files = (
+            "notes/NEEDED-FROM-A-MACOS-27-MACHINE.md",
+            "guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md",
+            "guides/part-05-prototyping-profiling-non-swift/README.md",
+            "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md",
+            "notes/repos/issues-community-stack.md",
+            "notes/synthesis/PROPOSED-GUIDE-TOPICS.md",
+            "notes/synthesis/proposal-by-depth.md",
+            "notes/synthesis/proposal-by-framework.md",
+        )
+        for relative in linked_files:
+            self.assertIn(canonical_anchor, self.read(relative), relative)
+
+    def test_retired_8192_claim_is_not_an_active_gap(self) -> None:
+        files = (
+            "guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md",
+            "guides/part-03-context-profiles-agentic/references/04-agentic-orchestration.md",
+            "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md",
+            "guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md",
+        )
+        for relative in files:
+            contents = self.read(relative)
+            self.assertRegex(contents, r"(?is)8192.{0,500}retired|retired.{0,500}8192")
+
+    def test_historical_host_26_is_defined(self) -> None:
+        probes = self.read("probes/README.md")
+        definition = next(
+            line for line in probes.splitlines() if "| **HISTORICAL HOST-26** |" in line
+        )
+        self.assertIn("archived", definition.lower())
+        self.assertIn("macOS 26", definition)
+        self.assertNotRegex(probes, r"(?<!HISTORICAL )HOST-26")
+
+    def test_readme_callout_counts_match_generated_index(self) -> None:
+        index = self.read("guides/SILENT-FAILURES.md")
+        overview = self.read("guides/README.md")
+        match = re.search(
+            r"Every ⚠️ callout in the series — ([\d,]+) of them, "
+            r"([\d,]+) describing a concrete silent failure",
+            index,
+        )
+        self.assertIsNotNone(match)
+        total, concrete = (f"{int(value.replace(',', '')):,}" for value in match.groups())
+        self.assertIn(f"({total},\n  of which {concrete} describe", overview)
+
+
+if __name__ == "__main__":
+    unittest.main()

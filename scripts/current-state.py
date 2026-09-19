@@ -264,6 +264,8 @@ def load_manifest(path: pathlib.Path) -> dict:
     require_iso_date(
         verification["lastFullRun"], "current-state verification lastFullRun"
     )
+    if dt.date.fromisoformat(verification["lastFullRun"]) > dt.date.fromisoformat(value["asOf"]):
+        raise SystemExit("error: current-state verification lastFullRun cannot be later than asOf")
     if "collection" in value:
         collection = require_object(
             value, "collection", {"complete", "blockers", "observedAt"}

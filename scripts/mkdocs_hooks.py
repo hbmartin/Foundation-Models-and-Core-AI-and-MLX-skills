@@ -15,13 +15,14 @@ from urllib.parse import quote, unquote
 
 try:
     from scripts.mdslug import slugify
+    from scripts.mdlinks import SITE_ONLY_GUIDE_PREFIXES
 except ModuleNotFoundError:  # MkDocs can load a hook with scripts/ on sys.path.
     from mdslug import slugify
+    from mdlinks import SITE_ONLY_GUIDE_PREFIXES
 
 
 PART_DIRECTORY = re.compile(r"part-(?P<number>\d{2})-[a-z0-9-]+$")
 REFERENCE_FILE = re.compile(r"(?P<number>\d{2})-[a-z0-9-]+\.md$")
-WORKFLOWS_DIRECTORY = "workflows"
 HEADING_ONE = re.compile(r"^#\s+(.+?)\s*$")
 MARKDOWN_LINK = re.compile(r"\[([^]]+)\]\(([^)]*)\)")
 CODE_SPAN = re.compile(r"(?<!`)`+([^`]+?)`+(?!`)")
@@ -135,18 +136,31 @@ def build_navigation(docs_dir: Path) -> list[dict[str, Any]]:
             )
         parts.append({first_title(overview): children})
 
-    workflows_directory = docs_dir / WORKFLOWS_DIRECTORY
-    workflow_pages = (
-        sorted(path for path in workflows_directory.rglob("*.md") if path.is_file())
-        if workflows_directory.is_dir()
-        else []
-    )
-    workflows: list[dict[str, str]] = []
-    for workflow in workflow_pages:
-        included.add(workflow.resolve())
-        workflows.append(
-            {first_title(workflow): workflow.relative_to(docs_dir).as_posix()}
+    site_only_sections: list[dict[str, Any]] = []
+    for prefix in SITE_ONLY_GUIDE_PREFIXES:
+        relative_directory = Path(prefix.rstrip("/"))
+        if (
+            not relative_directory.parts
+            or len(relative_directory.parts) != 1
+            or relative_directory.parts[0] in {".", ".."}
+        ):
+            raise ValueError(f"site-only guide prefix must name a top-level directory: {prefix}")
+        directory = docs_dir / relative_directory
+        pages = (
+            sorted(path for path in directory.rglob("*.md") if path.is_file())
+            if directory.is_dir()
+            else []
         )
+        if not pages:
+            continue
+        overview = directory / "README.md"
+        if not overview.is_file():
+            raise ValueError(f"{directory}: site-only directory is missing README.md")
+        children: list[dict[str, str]] = []
+        for page in pages:
+            included.add(page.resolve())
+            children.append({first_title(page): page.relative_to(docs_dir).as_posix()})
+        site_only_sections.append({first_title(overview): children})
 
     all_markdown = {path.resolve() for path in docs_dir.rglob("*.md")}
     unexpected = sorted(all_markdown - included)
@@ -158,8 +172,7 @@ def build_navigation(docs_dir: Path) -> list[dict[str, Any]]:
         {"Overview": "README.md"},
         {"Parts": parts},
     ]
-    if workflows:
-        navigation.append({"Deployment workflows": workflows})
+    navigation.extend(site_only_sections)
     navigation.append(
         {
             "Cross-cutting indexes": [

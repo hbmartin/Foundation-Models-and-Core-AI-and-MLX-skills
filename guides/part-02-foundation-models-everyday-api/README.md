@@ -187,7 +187,8 @@ regression head's output, and Apple's own answer on the forums is a redirect to 
 > generated image. Read `response.usage` and measure successful turns; do not use image
 > `tokenCount(for:)` as a preflight on these builds. Both destinations confirmed exact label
 > write-through; required labeled and unlabeled image-tool turns reached `toolRan=true` and then
-> timed out. The 2026-08 beta-5 device run had completed those generic tool turns, so this is runtime drift.
+> timed out, matching the 2026-08 beta-5 device run. This is a reverified limitation, not runtime
+> drift.
 
 ### [2.6 — The complete failure taxonomy: availability, errors, guardrails and refusals](references/06-availability-errors-and-guardrails.md)
 
