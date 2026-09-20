@@ -158,7 +158,7 @@ class MkDocsHookTests(unittest.TestCase):
         self.assertIn("--model /outputs/mlx-run/base-model", contents)
         self.assertIn("--dataset-revision <DATASET_COMMIT_SHA>", contents)
 
-    def test_remote_training_receipt_migrates_without_losing_a_sha(self):
+    def test_remote_training_receipt_enforces_immutable_input_binding(self):
         workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
         contents = workflow.read_text(encoding="utf-8")
         blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
@@ -171,26 +171,46 @@ class MkDocsHookTests(unittest.TestCase):
         )
         namespace = {"json": json, "Path": Path}
         exec(compile(ast.Module(body=[function], type_ignores=[]), "receipt", "exec"), namespace)
+        load_receipt = namespace["load_publication_receipt"]
+        inputs = {"immutable": "inputs"}
 
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "publication-receipt.json"
-            path.write_text(
-                json.dumps(
-                    {
-                        "adapter": {"repo": "org/adapter", "commit_sha": "abc123"},
-                        "merged": {"repo": "org/merged", "commit_sha": None},
-                    }
-                ),
-                encoding="utf-8",
+            self.assertEqual(
+                {"schema_version": 1, "inputs": inputs, "artifacts": {}},
+                load_receipt(path, inputs),
             )
-            migrated = namespace["load_publication_receipt"](path, {"immutable": "inputs"})
 
-        self.assertEqual(1, migrated["schema_version"])
-        self.assertEqual(
-            [{"repo": "org/adapter", "commit_sha": "abc123"}],
-            migrated["artifacts"]["adapter"]["publications"],
-        )
-        self.assertNotIn("merged_hf", migrated["artifacts"])
+            legacy = {
+                "adapter": {"repo": "org/adapter", "commit_sha": "abc123"},
+                "merged": {"repo": "org/merged", "commit_sha": None},
+            }
+            path.write_text(json.dumps(legacy), encoding="utf-8")
+            before = path.read_bytes()
+            with self.assertRaisesRegex(
+                ValueError,
+                r"not bound to immutable model and dataset inputs.*new output directory",
+            ):
+                load_receipt(path, inputs)
+            self.assertEqual(before, path.read_bytes())
+
+            receipt = {
+                "schema_version": 1,
+                "inputs": inputs,
+                "artifacts": {
+                    "adapter": {
+                        "kind": "hugging_face",
+                        "publications": [
+                            {"repo": "org/adapter", "commit_sha": "abc123"}
+                        ],
+                    }
+                },
+            }
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            self.assertEqual(receipt, load_receipt(path, inputs))
+
+            with self.assertRaisesRegex(ValueError, "different model or dataset inputs"):
+                load_receipt(path, {"immutable": "different-inputs"})
 
     def test_remote_publication_helper_is_append_only_and_failure_safe(self):
         workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"

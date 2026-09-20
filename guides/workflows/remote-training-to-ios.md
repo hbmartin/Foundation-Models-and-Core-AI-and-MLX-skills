@@ -298,17 +298,12 @@ def load_publication_receipt(path: Path, inputs: dict) -> dict:
 
     receipt = json.loads(path.read_text(encoding="utf-8"))
     if "schema_version" not in receipt:
-        migrated = {"schema_version": 1, "inputs": inputs, "artifacts": {}}
-        for legacy_key, artifact_key in (("adapter", "adapter"), ("merged", "merged_hf")):
-            legacy = receipt.get(legacy_key)
-            if isinstance(legacy, dict) and legacy.get("commit_sha"):
-                migrated["artifacts"][artifact_key] = {
-                    "kind": "hugging_face",
-                    "publications": [
-                        {"repo": legacy.get("repo"), "commit_sha": legacy["commit_sha"]}
-                    ],
-                }
-        return migrated
+        raise ValueError(
+            "legacy publication receipt is not bound to immutable model and dataset "
+            "inputs; preserve or archive it, then start with a new output directory. "
+            "Only reconstruct a schema-v1 receipt after independently verifying the "
+            "original immutable inputs"
+        )
 
     if receipt.get("schema_version") != 1:
         raise ValueError("unsupported publication receipt schema")
@@ -534,10 +529,13 @@ training and the merged model for conversion.
 returns `CommitInfo` for each folder upload. Each published folder contains its weights,
 `run-manifest.json`, and `eval.json` in one commit. The separate local
 `publication-receipt.json` records each returned `CommitInfo.oid` only after upload success. It is
-updated atomically, migrates the earlier two-key receipt, and appends distinct successful
-publications instead of clearing an earlier SHA on retry. The adapter upload precedes the
-memory-heavy merge, so a merge OOM still leaves the independently useful adapter published. If you
-omit the repository arguments, the durable output volume is the only artifact copy.
+updated atomically and appends distinct successful publications instead of clearing an earlier SHA
+on retry. A legacy two-key receipt is deliberately rejected because it does not identify the
+immutable model and dataset inputs that produced its SHAs. Preserve or archive that file and start
+with a new output directory; reconstruct a schema-v1 receipt only when you can independently verify
+the original immutable inputs. The adapter upload precedes the memory-heavy merge, so a merge OOM
+still leaves the independently useful adapter published. If you omit the repository arguments, the
+durable output volume is the only artifact copy.
 
 Qwen3 was trained in BF16. If the selected GPU does not support BF16, `--precision fp16` is a risky
 fallback, not an equivalent recommendation: FP16's smaller exponent range can overflow and produce

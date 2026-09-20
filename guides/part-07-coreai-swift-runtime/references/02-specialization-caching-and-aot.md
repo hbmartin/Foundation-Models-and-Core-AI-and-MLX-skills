@@ -568,7 +568,7 @@ second three-minute stall and storage that grows faster than your model files ex
 > `AIModel(contentsOf:options:)`, and to `specialize(…)`. If those three call sites can disagree,
 > they eventually will.
 >
-> A shipping community iOS app ([frozen Noema research note](../../../notes/repos/noema-ios.md),
+> A shipping community iOS app ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
 > community-authored — attribute as such) encodes
 > exactly this lesson in a comment on its recovery path: *"each `SpecializationOptions` change
 > leaves its own multi-GB entry behind."*
@@ -1611,7 +1611,7 @@ static var availableKinds: Set<ComputeUnitKind> { get }   // "The compute unit k
 
 Not every device has every unit, and asking for one that isn't there is a silent downgrade at best.
 A shipping community app guards it (community-authored,
-[frozen Noema research note](../../../notes/repos/noema-ios.md) — attribute as such):
+[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — attribute as such):
 
 ```swift prelude:guide-context
 let preferred: ComputeUnitKind = ComputeUnitKind.availableKinds.contains(.neuralEngine)
@@ -1783,7 +1783,7 @@ the reason `expectFrequentReshapes` exists at all.
 The phenomenon is corroborated independently by a shipping community iOS app, which built its
 prefill strategy around it:
 
-> **Community-measured** ([frozen Noema research note](../../../notes/repos/noema-ios.md),
+> **Community-measured** ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
 > community-authored). Source comment, verbatim: *"…
 > re-specialization — so feed a **fixed bucket, then power-of-two remainder chunks**: a handful of
 > shapes total, each compiled once and reused across prompts, instead of one fresh compile per
@@ -1811,7 +1811,7 @@ inference at the shape you expect, at load time, so that the compilation happens
 loading UI rather than on the user's first real request:
 
 > **Community-measured / community-authored**
-> ([frozen Noema research note](../../../notes/repos/noema-ios.md)): *"Prewarm builds the session's decoder
+> ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md)): *"Prewarm builds the session's decoder
 > at full context so **one state shape** gets specialized at load time rather than on the first
 > message, runs one `step`, then `reset()`s it in place."*
 >
@@ -2335,7 +2335,7 @@ amount of time for very large models"* — and leaves the quantities to you.
 
 > ⚠️ **Attribution, stated once and applying to this whole subsection.** These figures come from a
 > single community author (`john-rocky`, a ~60-model community Core AI zoo) and one shipping
-> community iOS app ([frozen Noema research note](../../../notes/repos/noema-ios.md)). The author's own benchmark files declare uncontrolled conditions
+> community iOS app ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md)). The author's own benchmark files declare uncontrolled conditions
 > — thermal state, protocol differences, and beta OS builds. They are **valuable because they are
 > often the only numbers in existence**, and they must never be presented as Apple figures.
 
@@ -2498,7 +2498,7 @@ enum ModelLoader {
 ```
 
 > 🟡 **RECONSTRUCTED as a composition** — the *shape* of rungs 1, 3 and 4 is taken from a shipping
-> community iOS app ([frozen Noema research note](../../../notes/repos/noema-ios.md),
+> community iOS app ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
 > community-authored), whose own comment on the delete step reads:
 > *"Clear every cached variant of this model: each `SpecializationOptions` change leaves its own
 > multi-GB entry behind, and stale/evicted entries are the documented way loads get wedged under
@@ -2745,7 +2745,7 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 | `john-rocky` Core AI model zoo — `aot-and-specialization.md` | 19.2 s → 4.9 s AOT A/B; the `expectFrequentReshapes` SIGSEGV incident; architecture names tracking the **device identifier** (`iPhone18,1` → `h18p`); *"compile EXITs 0 for ANY requested arch"*; the community `--help` synopsis; the 1.8 GB load-succeeds/run-jetsams result | Community-measured, 2026-06/07 |
 | `john-rocky` — `apple-models-bench.md` | qwen3-4b ANE **194 s** cold load; qwen3-0.6b 2.85 s / 0.045 s; gpt-oss-20b 13.2 s / 2.1 s; **the macOS 26 vs 27-beta export A/B (2.2×)** | Community-measured, 2026-07 |
 | `john-rocky` — `dense-int4km-flagship-session-findings.md` | Qwen3.6-35B int4 (18 GB) jetsam during a ~26-minute cold compile; the non-fatal `ANECCompile() FAILED` observation | Community-measured, 2026-07 |
-| [Frozen Noema 3.5 snapshot](../../../notes/repos/noema-ios.md) (shipping community iOS app) | The cache-first load with delete-and-retry recovery; per-folder `SpecializationOptions` derivation; prefill shape bucketing; the prewarm rule and its host-cache exception; *"each `SpecializationOptions` change leaves its own multi-GB entry behind"* | Historical community-authored source |
+| [Frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) (shipping community iOS app) | The cache-first load with delete-and-retry recovery; per-folder `SpecializationOptions` derivation; prefill shape bucketing; the prewarm rule and its host-cache exception; *"each `SpecializationOptions` change leaves its own multi-GB entry behind"* | Historical community-authored source |
 
 ### Open gaps carried by this guide
 
