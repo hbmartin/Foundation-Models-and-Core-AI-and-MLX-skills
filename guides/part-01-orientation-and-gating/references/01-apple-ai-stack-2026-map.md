@@ -1817,8 +1817,8 @@ Collected here so downstream readers and agents do not mistake absence for nonex
 
 > ✅ **MEASURED — and the beta/stable surfaces differ.** The project captured every help page on
 > macOS 27 beta 5, then compared it with stable macOS 27 build `26A428` on 2026-09-16. Stable has
-> seven commands (`available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, `serve`),
-> removes beta-5 `quota-usage`, and advertises only the `system` model; beta's `--model pcc` is gone.
+> a smaller surface that advertises only the `system` model. The canonical command comparison is
+> [5.2 §3](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
 > `--image`, `--label`, `--schema`, and the structured-schema grammar remain available. Interactive
 > slash commands and field-level `serve` compatibility are still runtime gaps. See Part 5 §3 and
 > `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.

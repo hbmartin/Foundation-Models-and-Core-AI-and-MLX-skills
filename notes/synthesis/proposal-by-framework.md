@@ -595,10 +595,10 @@ Sources: `repos/foundation-models-utilities.md`, `02-lead-agent-corpus-gaps-fill
 Both non-Swift access paths, including the substantial install friction and the parity gaps that the
 WWDC talk understates.
 
-Sections: `fm` ships preinstalled with macOS 27 · `fm respond` / `fm chat` / `fm schema` /
-`fm schema object` / `fm serve` · slash commands `/model` and `/save` · structured JSON output for
-shell pipelines · ⚠️ `fm serve` is Apple's stated path to PCC from Python — there is no PCC in the
-Python SDK · `pip install apple-fm-sdk` and what actually happens: a custom PEP 517 backend shells
+Sections: the beta-era `fm` surface versus the smaller stable macOS 27 surface documented in
+[guide 5.2 §3](../../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) · historical PCC-through-`fm serve`, `/model`, and `/save` evidence · structured JSON output for
+shell pipelines · ⚠️ no stable non-Swift PCC route is currently advertised, and the Python SDK
+does not expose PCC · `pip install apple-fm-sdk` and what actually happens: a custom PEP 517 backend shells
 out to `swift build` · ⚠️ requires **full Xcode**, not Command Line Tools; the license agreement must
 have been accepted · ⚠️ image support is gated on the *build-time* SDK version
 (`FM_HAS_MACOS_27_SDK`) as well as runtime OS · the Swift ↔ Python API mapping table ·

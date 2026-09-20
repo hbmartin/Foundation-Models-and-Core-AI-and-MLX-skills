@@ -915,10 +915,23 @@ class CommittedSkillsTests(unittest.TestCase):
             )
 
     def test_site_only_workflows_do_not_become_skill_pages(self):
-        workflow = GUIDES / "workflows" / "remote-training-to-ios.md"
-        self.assertTrue(workflow.is_file())
+        workflows = {path.resolve() for path in (GUIDES / "workflows").glob("*.md")}
+        self.assertTrue(workflows)
         discovered = {page.source for page in builder.discover_pages(GUIDES)}
-        self.assertNotIn(workflow.resolve(), discovered)
+        self.assertTrue(workflows.isdisjoint(discovered))
+
+    def test_nested_workflows_directory_is_not_silently_site_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guides = Path(directory)
+            (guides / "README.md").write_text("# Guides\n", encoding="utf-8")
+            (guides / "workflows").mkdir()
+            (guides / "workflows/site.md").write_text("# Site only\n", encoding="utf-8")
+            nested = guides / "part-01-test/references/workflows"
+            nested.mkdir(parents=True)
+            (nested / "nested.md").write_text("# Must be classified\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(builder.SkillError, "unrecognized guide path"):
+                builder.discover_pages(guides)
 
     def test_no_skill_cites_a_guide_it_does_not_own(self):
         # Three skills share part 16, so filtering by part rather than by guide

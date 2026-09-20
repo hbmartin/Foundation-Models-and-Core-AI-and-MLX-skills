@@ -2,12 +2,12 @@
   "asOf": "2026-09-16",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1428,
-      "total": 1790
+      "concreteSilentFailures": 1427,
+      "total": 1789
     },
-    "externalLinks": 192,
+    "externalLinks": 194,
     "generatedSkills": 10,
-    "guideMarkdownFiles": 81,
+    "guideMarkdownFiles": 82,
     "parts": 17,
     "referenceGuides": 60,
     "symbols": 1212
@@ -237,7 +237,7 @@
   "verification": {
     "blocker": "SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.",
     "errors": 0,
-    "lastFullRun": "2026-09-16",
+    "lastFullRun": "2026-08-02",
     "snippetFences": 1359,
     "statusCounts": {
       "ILLUSTRATIVE": 486,

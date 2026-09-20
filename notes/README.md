@@ -6,7 +6,7 @@ written; operational files below are the maintained source of truth for what to 
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-09-16**, the corpus has 60 reference guides in 17 parts, 1790 classified callouts (1428 concrete silent failures), 1212 indexed symbols, and 10 generated skills.
+**As of 2026-09-16**, the corpus has 60 reference guides in 17 parts, 1789 classified callouts (1427 concrete silent failures), 1212 indexed symbols, and 10 generated skills.
 
 Snippet verification covers 1359 fences: 486 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 677 `PRELUDE-NEEDED`, 192 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.
 

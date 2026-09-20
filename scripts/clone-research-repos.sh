@@ -13,9 +13,11 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
-mkdir -p repos
-cd repos
+repository_root="$(cd "$(dirname "$0")/.." && pwd)"
+repos_root="${RESEARCH_REPOS_ROOT:-$repository_root/repos}"
+remote_base="${RESEARCH_REPOS_REMOTE_BASE:-https://github.com}"
+mkdir -p "$repos_root"
+cd "$repos_root"
 
 # Repository and exact research snapshot. Keep full SHAs so abbreviated-object
 # ambiguity can never change what this script checks out.
@@ -37,37 +39,124 @@ REPOS=(
   "lucasnewman/mlx2coreai 059c9f365c9f48dc7d238cc37b0e30eb9d47fdbe"
 )
 
-for entry in "${REPOS[@]}"; do
-  read -r slug expected_sha <<<"$entry"
+if [ -n "${RESEARCH_REPOS_ENTRIES:-}" ]; then
+  REPOS=()
+  while IFS= read -r entry; do
+    case "$entry" in
+      *[![:space:]]*) REPOS+=("$entry") ;;
+    esac
+  done <<<"$RESEARCH_REPOS_ENTRIES"
+fi
+
+PARSED_SLUG=""
+PARSED_SHA=""
+
+parse_repository_entry() {
+  local entry="$1"
+  local extra=""
+
+  PARSED_SLUG=""
+  PARSED_SHA=""
+  read -r PARSED_SLUG PARSED_SHA extra <<<"$entry"
+  if [ -z "$PARSED_SLUG" ] || [ -z "$PARSED_SHA" ] || [ -n "$extra" ]; then
+    echo "!! INVALID: repository entry must contain exactly OWNER/REPO and a full commit SHA: $entry" >&2
+    return 1
+  fi
+  case "$PARSED_SLUG" in
+    */*/*|/*|*/|*[!A-Za-z0-9._/-]*|*[[:space:]]*)
+      echo "!! INVALID: repository slug must be OWNER/REPO: $PARSED_SLUG" >&2
+      return 1
+      ;;
+    */*) ;;
+    *)
+      echo "!! INVALID: repository slug must be OWNER/REPO: $PARSED_SLUG" >&2
+      return 1
+      ;;
+  esac
+  if [ "${#PARSED_SHA}" -ne 40 ]; then
+    echo "!! INVALID: $PARSED_SLUG commit must be a 40-character lowercase hexadecimal SHA" >&2
+    return 1
+  fi
+  case "$PARSED_SHA" in
+    *[!0-9a-f]*)
+      echo "!! INVALID: $PARSED_SLUG commit must be a 40-character lowercase hexadecimal SHA" >&2
+      return 1
+      ;;
+  esac
+}
+
+clone_repository() {
+  local slug="$1"
+  local expected_sha="$2"
+  local dir remote actual_remote actual_sha
+
   dir="${slug//\//__}"
-  remote="https://github.com/$slug"
+  remote="${remote_base%/}/$slug"
   actual_remote=""
 
   if [ ! -d "$dir/.git" ]; then
     echo "== $slug -> $dir"
-    mkdir -p "$dir"
-    git -C "$dir" init --quiet
-    git -C "$dir" remote add origin "$remote"
+    if ! mkdir -p "$dir" \
+      || ! git -C "$dir" init --quiet \
+      || ! git -C "$dir" remote add origin "$remote"; then
+      echo "!! FAILED: $slug could not initialize its checkout" >&2
+      return 1
+    fi
   else
-    actual_remote="$(git -C "$dir" remote get-url origin)"
+    if ! actual_remote="$(git -C "$dir" remote get-url origin)"; then
+      echo "!! FAILED: $slug has no readable origin" >&2
+      return 1
+    fi
     actual_remote="${actual_remote%.git}"
     if [ "$actual_remote" != "$remote" ]; then
       echo "!! REFUSING: $dir has an unexpected origin" >&2
-      exit 1
+      return 1
     fi
   fi
 
   if ! git -C "$dir" cat-file -e "$expected_sha^{commit}" 2>/dev/null; then
-    git -C "$dir" fetch --depth 1 origin "$expected_sha"
+    if ! git -C "$dir" fetch --depth 1 origin "$expected_sha"; then
+      echo "!! FAILED: $slug could not fetch $expected_sha" >&2
+      return 1
+    fi
   fi
-  git -C "$dir" checkout --quiet --detach "$expected_sha"
+  if ! git -C "$dir" checkout --quiet --detach "$expected_sha"; then
+    echo "!! FAILED: $slug could not check out $expected_sha" >&2
+    return 1
+  fi
 
-  actual_sha="$(git -C "$dir" rev-parse HEAD)"
+  if ! actual_sha="$(git -C "$dir" rev-parse HEAD)"; then
+    echo "!! FAILED: $slug could not resolve HEAD" >&2
+    return 1
+  fi
   if [ "$actual_sha" != "$expected_sha" ]; then
     echo "!! FAILED: $slug expected $expected_sha, got $actual_sha" >&2
-    exit 1
+    return 1
   fi
   echo "== $slug pinned at $actual_sha"
-done
+}
+
+failures=()
+if [ "${#REPOS[@]}" -gt 0 ]; then
+  for entry in "${REPOS[@]}"; do
+    if ! parse_repository_entry "$entry"; then
+      failures+=("${PARSED_SLUG:-<invalid-entry>}")
+      continue
+    fi
+    slug="$PARSED_SLUG"
+    expected_sha="$PARSED_SHA"
+    if ! clone_repository "$slug" "$expected_sha"; then
+      failures+=("$slug")
+    fi
+  done
+fi
+
+if [ "${#failures[@]}" -ne 0 ]; then
+  echo "Completed with ${#failures[@]} research repository failure(s):" >&2
+  for slug in "${failures[@]}"; do
+    echo "  - $slug" >&2
+  done
+  exit 1
+fi
 
 echo "Done. All research repositories match their recorded commits."

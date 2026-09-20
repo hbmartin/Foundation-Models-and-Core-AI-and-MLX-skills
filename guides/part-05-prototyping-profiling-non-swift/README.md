@@ -35,9 +35,10 @@ would have answered in ten seconds, or the reverse.
 
 The second half of the part is a different story with the same root. In 2026 Apple opened two non-Swift
 doors onto the same `SystemLanguageModel`: the `fm` CLI and a Python SDK. Same model, same 4,096-token
-window, same guardrails — but the doors are not peers. The CLI is a 27-generation tool and is the *only*
-sanctioned non-Swift path to Private Cloud Compute; the Python SDK is a **26-generation** binding that
-cannot instantiate a single 27-era feature and whose stated purpose is evaluating your *Swift* app.
+window, same guardrails — but the doors are not peers. The CLI is a 27-generation tool whose beta
+surface exposed PCC; stable macOS 27 advertises only the system model. The Python SDK is a
+**26-generation** binding that cannot instantiate a single 27-era feature and whose stated purpose
+is evaluating your *Swift* app.
 
 One editorial warning, because this part carries more of them than any other in Parts 1–6. **This is where
 the guides most often stop and say "we do not know."** Nobody on this project has run Xcode 27's
@@ -61,7 +62,7 @@ the evidence markers; they are doing real work here.
 | "Every turn of the conversation has a long prefill" | [5.1 §10](references/01-playground-and-instruments.md#10-detecting-kv-cache-invalidation) | KV-cache invalidation, with a blast-radius table and a measurement loop |
 | "I am about to attach a `.trace` to a Feedback Assistant report" | [5.1 §5.2](references/01-playground-and-instruments.md#52-️-the-record-anyway-dialog--read-this-before-you-click) | **Stop.** It stores prompts and responses unencrypted |
 | "I want the model in a shell script or a cron job" | [5.2 §4](references/02-fm-cli-and-python-sdk.md#4-the-shell-automation-pattern-attested-with-unverified-flags-marked) | The pattern is verified; read the [captured beta-5 surface](references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) first. |
-| "I need PCC from something that is not Swift" | [5.2 §2.6](references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) | `fm serve` — an OpenAI-compatible endpoint, and the only sanctioned path |
+| "I need PCC from something that is not Swift" | [5.2 §2.6](references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) | No stable CLI route is currently advertised; use Swift or verify a later `fm` surface |
 | "I want to batch-compare prompts in pandas" | [5.2 §15](references/02-fm-cli-and-python-sdk.md#15-the-evaluation-pipeline-session-334s-case-study) | Apple's own case study, including the counter-intuitive result |
 | "My Swift feature uses dynamic profiles, PCC, or a BYO backend" | [5.2 §5.2](references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) | The Python SDK **cannot represent it.** Evaluate in Swift — [Part 6](../part-06-evaluations/) |
 | "My seeded Python runs will not reproduce" | [5.2 §8.3, §8.6](references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) | Two bugs that compose. Use `schema=` plus `greedy()` |
@@ -115,7 +116,7 @@ Apple's official bug-reporting channel for the model itself.
 
 Two products, two floors, and — unusually — two opposite evidence classes, which the guide flags in its
 own opening. The `fm` half covers what is genuinely attested: preinstalled on macOS 27, `respond` /
-`chat` / `schema` / `schema object` "and more", `/model` and `/save` inside beta `fm chat`, and
+`chat` / `schema` / `schema object` "and more", historical `/model` and `/save` inside beta `fm chat`, and
 `fm serve` — which no WWDC session mentions and which an Apple engineer described in a GitHub issue
 as serving the model "as a Chat Completions endpoint". Stable macOS 27 no longer advertises the beta
 PCC model choice, so Swift is the documented PCC route until a later CLI says otherwise. The Python half is the strongest evidence
@@ -125,8 +126,8 @@ five dispatch paths, snapshot streaming, `@fm.generable`, the raw JSON-Schema pa
 your Swift app exported verbatim, tools, images, memory, and the session-334 evaluation pipeline.
 
 > ✅ **MEASURED — including stable drift.** The project captured every beta-5 help page and compared
-> it with stable macOS 27 build `26A428` on 2026-09-16. Stable has seven commands and only the
-> `system` model; beta-5 `quota-usage` and `--model pcc` disappeared. The schema grammar and public
+> it with stable macOS 27 build `26A428` on 2026-09-16. The canonical command-by-command comparison
+> is [5.2 §3](references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27). The schema grammar and public
 > flags are known. Exit codes, stderr discipline, interactive slash commands, and streaming behavior
 > remain runtime gaps. The guide therefore separates stable recommendations from historical beta syntax.
 >
@@ -200,7 +201,7 @@ whether the SDK can represent your feature at all, and if it cannot, the correct
   part, not a substitute for its argument.
 - **PCC and bring-your-own backends.** The quota model in full, `CoreAILanguageModel`, `MLXLanguageModel`
   and `ChatCompletionsLanguageModel`: [Part 4](../part-04-beyond-the-built-in-model/). Part 5 only shows
-  you how to *simulate* the quota branches and how to reach PCC from outside Swift.
+  you how to *simulate* the quota branches and preserves the now-historical beta `fm` PCC route.
 - **Device eligibility, entitlements, and the Siri-enablement availability defect in full:**
   [Part 1](../part-01-orientation-and-gating/).
 - **A local OpenAI-compatible server you can use today**, while `fm serve` remains undocumented:
@@ -231,7 +232,8 @@ Tracker**, whose shipped `#Playground` block is quoted whole. For the Python hal
 `github.com/apple/python-apple-fm-sdk` **cloned and read on disk at HEAD `e868e60`** — fifteen Python
 modules, the 146-line C header, all 1,831 lines of the Swift shim, seventeen test files, the Sphinx docs,
 the Swift/Python parity fixtures, and the complete issue and PR history, of which issue **#13** (the Apple
-member's "no PCC in Python; use `fm` / `fm serve`") and issue **#17** / PR **#18** (the measured FD leak
+member's beta-era "no PCC in Python; use `fm` / `fm serve`" guidance, now superseded on stable macOS)
+and issue **#17** / PR **#18** (the measured FD leak
 and its unreleased fix) appear nowhere else in the corpus. Apple Developer Forums: **791250** (the pinned
 and locked DTS thread defining the feedback process), **831404** and **831998** (the Simulator punch-out
 and PCC-in-simulators known issue 177684296), **836285**, **836760**/**835211** (the Siri-enablement

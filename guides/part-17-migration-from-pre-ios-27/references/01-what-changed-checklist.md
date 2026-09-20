@@ -185,15 +185,17 @@ func contextBudget() -> Int {
 > for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab]
 >
 > This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
-> we can find" and left the question open. Apple has now corroborated **4096**, for iOS 27
+> we can find" and left the question open. The 8192 comment is now retired historical provenance.
+> Apple has corroborated **4096**, for iOS 27
 > specifically, on the record. Four other lines of evidence agree: session 319's comparison table
 > and Apple's PCC article (4K/32K), the repo's simulator measurement, a **2026-08-20 physical
 > iPhone 15 Pro measurement** (4096 on iOS 27 beta-5 build `24A5408d`, `probes/`), and the 27.0
 > `swiftinterface`, which returns a dynamic `_contextSize` on OS 27+ with a **4096 fallback** below
 > it.
 >
-> **The community 8192 report remains uncorroborated.** It is a single comment describing device
-> probing, and the first project-run 27-hardware check returned 4096. One iPhone family cannot
+> **The community 8192 report is retired from active guidance.** It is a single comment describing
+> device probing with no device/build/date, its upstream is unavailable, and repeated project-run
+> 27-hardware checks returned 4096. One iPhone family cannot
 > prove every device reports the same value, which is exactly why the standing advice below does
 > not change.
 >
@@ -1168,8 +1170,8 @@ runs.
 > your project in Xcode**."*
 
 Subcommands named on screen: `fm respond`, `fm chat`, `fm schema` (and `fm schema object`), plus
-"and more". `fm chat` has slash commands including `/model` (switch the live conversation to PCC)
-and `/save`. Bare `fm` prints the command list.
+"and more". The beta-era session demonstrated `/model` (switch the live conversation to PCC) and
+`/save`; stable interactive slash commands remain untested. Bare `fm` prints the command list.
 
 > ✅ **RESOLVED 2026-08-17** (was 🟡 RECONSTRUCTED) — the **flag spellings**. The presenter only ever
 > named *"the model option"*, *"the image option"*, *"the schema option"*, *"the help option"*; the
@@ -1187,11 +1189,11 @@ and `/save`. Bare `fm` prints the command list.
 > owns the full capture; the runtime-only residue (interactive slash commands, refusal/error exits,
 > field-level `serve` compatibility) is tracked there and in §14.8 row 7.
 
-> ⚠️ **STABLE-SURFACE UPDATE, 2026-09-16.** Stable macOS 27 build `26A428` has seven commands:
-> `available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, and `serve`. It removes
-> beta-5 `quota-usage` and advertises only the `system` model; `--model pcc` is no longer a valid
-> stable recommendation. Keep the beta capture as historical evidence and re-run `fm --help` on
-> the deployment OS before using it in migration automation.
+> ⚠️ **STABLE-SURFACE UPDATE, 2026-09-16.** Stable macOS 27 has a smaller surface and advertises
+> only the `system` model. The canonical beta-versus-stable comparison is
+> [5.2 §3](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
+> Keep the beta capture as historical evidence and re-run `fm --help` on the deployment OS before
+> using it in migration automation.
 
 **Migration relevance:** stable `fm` is the fastest way to exercise the on-device system model
 without touching your project. Use Swift for PCC comparison unless a later stable CLI advertises
@@ -2270,8 +2272,9 @@ tool that fails in your evaluation harness therefore *looks like a model quality
 
 **The bottom line for a migration:** use the Python SDK to *measure* the on-device model across the
 26 → 27 boundary. Do not plan to exercise PCC, profiles, or the model-abstraction layer from Python.
-For those, the supported non-Swift path is the **`fm` CLI** (§5.2) — which does reach PCC via
-`/model` and its model option — or Swift interop.
+For profiles and the model-abstraction layer, use Swift interop. Beta-era `fm` reached PCC via its
+model option, but stable macOS 27 advertises only `system`; no current non-Swift PCC route is
+established. See [5.2 §3](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
 
 ---
 
@@ -2656,7 +2659,7 @@ discount if you want only first-party evidence.
 
 | Claim | Attribution |
 |---|---|
-| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 — **UNCORROBORATED; first project-run hardware check disagreed 2026-08-20** | Community source comment in a shipping third-party app. Apple's Group Lab 8121 summary documents **4096, shared input+output**, joining session 319, the PCC article, the repo's simulator measurement, the 27.0 interface fallback, and now a physical iPhone 15 Pro measurement of 4096 on build `24A5408d`. Read `contextSize` at runtime. §1.1 |
+| `contextSize` reportedly returns **8192** on iOS 27 where 26 returned 4096 — **RETIRED historical claim; never reproduced** | Community source comment in a now-unavailable third-party app. Apple's Group Lab 8121 summary documents **4096, shared input+output**, joining session 319, the PCC article, the repo's simulator measurement, the 27.0 interface fallback, and repeated physical-iPhone measurements. Read `contextSize` at runtime. §1.1 |
 | Core AI first-load of a 3 GB model at **194 seconds** on iPhone | Community-measured. §6.10 |
 | Foundation Models may downsample images to **896 px** on the longest dimension | Developer inference in thread 838613. **Never Apple-confirmed.** §4.1 |
 | Grammar-constrained decoding (`@Generable`) is unavailable on GPU-pipelined Core AI bundles because logits are not exposed | Community-measured. §4.3 |

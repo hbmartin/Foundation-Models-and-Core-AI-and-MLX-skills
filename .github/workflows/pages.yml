@@ -63,7 +63,7 @@ jobs:
           test -s .build/mkdocs-site/API-INDEX/index.html
           test -s .build/mkdocs-site/SILENT-FAILURES/index.html
           test -s .build/mkdocs-site/search/search_index.json
-          test "$(find .build/mkdocs-site -name index.html | wc -l)" -eq 81
+          test "$(find .build/mkdocs-site -name index.html | wc -l)" -eq 82
           git diff --exit-code -- guides
 
       - name: Upload GitHub Pages artifact

@@ -1,9 +1,10 @@
 # Snippet compile-verification — results and the marker grammar
 
 `scripts/verify-snippets.py` (driver: `scripts/verify-snippets.sh`) extracts every
-```` ```swift ```` fence in `guides/`, classifies it, wraps fragments in a minimal
-harness, and runs `swiftc -typecheck` per requested SDK. This directory holds the
-committed latest results:
+```` ```swift ```` fence in the numbered guide corpus under `guides/`, classifies it,
+wraps fragments in a minimal harness, and runs `swiftc -typecheck` per requested SDK.
+Top-level `guides/workflows/` pages are website-only and deliberately excluded. This
+directory holds the committed latest results:
 
 - `results.tsv` — one row per fence: `file line anchor info status wrap v26 v27
   vsim27 v27on26 vsim27on26 err_line first_error snippet_id content_hash` (strict tabs,

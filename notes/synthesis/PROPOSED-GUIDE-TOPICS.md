@@ -725,12 +725,12 @@ Three cross-cutting realities every guide must carry:
 
 > **⚠ Evidence caveat.** The `fm` CLI's actual flags were never shown on screen; only semantic option names were spoken aloud ("the model option", "the image option"). `fm schema object`'s argument grammar, the full subcommand list, the slash commands beyond `/model` and `/save`, and everything about `fm serve` need a live macOS 27 run before publication. Separately, the public `apple/python-apple-fm-sdk` repo is at the **26 generation** (no PCC, no dynamic profiles, no `LanguageModel` protocol) while WWDC26 presented the SDK as new-this-year; whether a 27-era release exists is unresolved.
 
-**Scope.** Both non-Swift access paths, including the substantial install friction the WWDC talk understates and the parity gaps that matter. Covers `fm`'s subcommands and `fm serve` as Apple's stated path to PCC from Python (there is no PCC in the SDK), then the SDK's custom build backend, its Swift↔Python API mapping, and five confirmed bugs found by reading both sides of the bridge.
+**Scope.** Both non-Swift access paths, including the substantial install friction the WWDC talk understates and the parity gaps that matter. Covers the beta-era `fm` PCC evidence and the smaller stable macOS 27 surface (which advertises no non-Swift PCC route), then the SDK's custom build backend, its Swift↔Python API mapping, and five confirmed bugs found by reading both sides of the bridge. The maintained comparison lives in [guide 5.2 §3](../../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27).
 
 **Key sections**
-- `fm` ships preinstalled with macOS 27: `respond`, `chat`, `schema`, `schema object`, `serve`
-- Slash commands and structured JSON output for shell pipelines
-- `fm serve` as the sanctioned PCC bridge from Python — and as a Chat-Completions endpoint
+- Stable `fm` versus its broader beta-era command surface
+- Beta-only slash commands and structured JSON output for shell pipelines
+- Historical `fm serve` PCC evidence; no stable non-Swift PCC route is currently advertised
 - `pip install apple-fm-sdk`: a custom PEP 517 backend that shells out to `swift build`; requires full Xcode, not CLT, with the license accepted
 - Image support is gated on the **build-time** SDK version as well as the runtime OS
 - The Swift → Python API mapping table

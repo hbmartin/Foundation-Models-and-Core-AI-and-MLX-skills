@@ -111,6 +111,23 @@ class CurrentStateTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("installed xcode metadata is invalid", result.stderr)
 
+    def test_manifest_rejects_a_full_run_after_the_snapshot_date(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / "state.json"
+            payload = json.loads((ROOT / "notes/current-state.json").read_text())
+            payload["verification"]["lastFullRun"] = "2099-01-01"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            result = subprocess.run(
+                [SCRIPT, "--manifest", path, "render", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lastFullRun cannot be later than asOf", result.stderr)
+
     def test_render_detects_stale_generated_block(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
         with tempfile.TemporaryDirectory() as directory:
@@ -235,6 +252,15 @@ class CurrentStateTests(unittest.TestCase):
             STATE.generated_output_state = old_generated
         self.assertEqual(collected["generatedOutputs"], derived)
         self.assertIn("generated-output-indexes: stale index", collected["collection"]["blockers"])
+
+    def test_snippet_collection_preserves_last_attested_full_run(self) -> None:
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        previous = json.loads(json.dumps(manifest["verification"]))
+        previous["lastFullRun"] = "2001-02-03"
+
+        observed = STATE.snippet_state(previous)
+
+        self.assertEqual("2001-02-03", observed["lastFullRun"])
 
     def test_pending_reason_does_not_claim_a_newer_installed_build_trails(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
