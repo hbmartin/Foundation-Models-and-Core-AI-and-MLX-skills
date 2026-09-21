@@ -9,6 +9,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 GUIDES = ROOT / "guides"
+FROZEN_NOEMA_URL = (
+    "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/"
+    "blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md"
+)
 
 
 class PlatformRefreshConsistencyTests(unittest.TestCase):
@@ -70,6 +74,24 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
                 offenders.append(path.relative_to(ROOT).as_posix())
         self.assertEqual([], offenders)
 
+    def test_frozen_noema_citations_use_immutable_links(self) -> None:
+        citation_pattern = re.compile(r"\[[^]]+\]\(([^)\s]+)(?:\s+[^)]*)?\)")
+        citations = []
+        for path in GUIDES.rglob("*.md"):
+            for destination in citation_pattern.findall(path.read_text(encoding="utf-8")):
+                target = destination.partition("#")[0]
+                if target.endswith("notes/repos/noema-ios.md"):
+                    citations.append((path.relative_to(ROOT).as_posix(), destination))
+                    self.assertEqual(FROZEN_NOEMA_URL, target)
+
+        self.assertTrue(citations, "expected at least one citation to the frozen Noema note")
+
+        mutable_skill_links = []
+        for path in (ROOT / "skills").rglob("*.md"):
+            if "blob/main/notes/repos/noema-ios.md" in path.read_text(encoding="utf-8"):
+                mutable_skill_links.append(path.relative_to(ROOT).as_posix())
+        self.assertEqual([], mutable_skill_links)
+
     def test_stable_fm_claims_point_to_the_canonical_surface(self) -> None:
         fm = self.read(
             "guides/part-05-prototyping-profiling-non-swift/"
@@ -99,6 +121,41 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         for relative in files:
             contents = self.read(relative)
             self.assertRegex(contents, r"(?is)8192.{0,500}retired|retired.{0,500}8192")
+
+        orchestration = self.read(
+            "guides/part-03-context-profiles-agentic/references/04-agentic-orchestration.md"
+        )
+        lines = orchestration.splitlines()
+        source_entry = next(
+            "\n".join(lines[index : index + 4])
+            for index, line in enumerate(lines)
+            if "frozen Noema 3.5 snapshot" in line
+        )
+        self.assertIn("historical", source_entry.lower())
+        self.assertIn("unreproduced", source_entry.lower())
+
+    def test_reconstructed_runtime_claims_are_marked_for_reverification(self) -> None:
+        performance = self.read(
+            "guides/part-05-prototyping-profiling-non-swift/"
+            "references/01-playground-and-instruments.md"
+        )
+        claims = (
+            "timeline width as its latency",
+            "tool-call arguments/results",
+            "Cache hit rate",
+            "tool invocation's duration",
+        )
+        for claim in claims:
+            claim_offset = performance.index(claim)
+            marker_offset = performance.rfind(
+                "🟡 **RECONSTRUCTED**",
+                max(0, claim_offset - 1_000),
+                claim_offset,
+            )
+            self.assertGreaterEqual(marker_offset, 0, claim)
+            window = performance[marker_offset : claim_offset + 500]
+            self.assertIn("RECONSTRUCTED", window, claim)
+            self.assertIn("retired summary", window.lower(), claim)
 
     def test_historical_host_26_is_defined(self) -> None:
         probes = self.read("probes/README.md")

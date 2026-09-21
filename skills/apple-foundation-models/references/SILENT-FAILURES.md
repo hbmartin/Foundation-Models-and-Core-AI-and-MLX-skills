@@ -2,7 +2,7 @@
 
 **396 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-09-18. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-09-20. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -430,7 +430,7 @@
 
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
-- [Session 242 defers cache-invalidation detection to 243, which never mentions it; cache hit rate exists only in written…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-only-the-documentation-names) — 5.1
+- [Session 242 defers cache detection to 243, which never mentions it; the retired metric summary needs re-verification.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-reported-by-the-retired-summary) — 5.1
 - [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
 - [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2

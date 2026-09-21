@@ -747,7 +747,7 @@ The tool is `SWIFT_ACTIVE_COMPILATION_CONDITIONS` with a **build-setting conditi
 
 ### 5.1 The pattern, from a shipping app
 
-🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)** (Noema 3.5, MIT). This is a shipping multi-backend
+🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md)** (Noema 3.5, MIT). This is a shipping multi-backend
 on-device LLM app that targets iOS 18–27, macOS 26/27 and visionOS 26/27 simultaneously, so it has
 had to solve this problem for real. ✅ VERIFIED from the retained research snapshot —
 `Noema.xcodeproj/project.pbxproj`, lines ~1391-1395 and ~1456-1460 (the Debug and Release
@@ -1412,7 +1412,7 @@ this is a runtime concern and belongs nowhere near an `#if`.
 ### 10.2 PCC quota state
 
 Private Cloud Compute has a per-user daily quota, and its state is a pure runtime question. 🧑‍💻
-**COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)**, ✅ VERIFIED from the retained research note,
+**COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md)**, ✅ VERIFIED from the retained research note,
 `Noema/AppleFoundationModelAvailability.swift`, showing the full three-layer gate around a purely
 runtime probe:
 
@@ -1552,7 +1552,7 @@ style switch and you sweep these into it, your Xcode 26 build loses context intr
 — and you will not notice, because the Xcode 27 build works fine and that is the one you develop
 against.
 
-🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md)** hit this and left a comment about it. ✅ VERIFIED from
+🧑‍💻 **COMMUNITY — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md)** hit this and left a comment about it. ✅ VERIFIED from
 the retained research note, `Noema/AFMLLMClient.swift:133-146`:
 
 ```swift illustrative
@@ -3002,7 +3002,7 @@ to Siri toggle, unanswered).
 iOS 26.4 context APIs), session 246 (`SpotlightSearchTool` and the `_CoreSpotlight_FoundationModels`
 overlay), sessions 319 / 339 (`ContextOptions`, PCC).
 
-**Community, attributed:** [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md) (Noema 3.5, MIT) — the
+**Community, attributed:** [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) (Noema 3.5, MIT) — the
 `SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=…27.*]` pattern, the three-layer gate, the `Any`-erased
 stored properties, the two-case error enum, the 26.4 over-gating comment, and the
 `ci_pre_xcodebuild.sh` `.swiftinterface` workaround. All preserved in the retained research note; never presented as

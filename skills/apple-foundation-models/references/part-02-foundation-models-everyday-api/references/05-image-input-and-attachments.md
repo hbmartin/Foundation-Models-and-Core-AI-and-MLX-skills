@@ -315,7 +315,7 @@ let stream = session.streamResponse(to: prompt)
 
 That is the idiomatic pattern for "N images plus surrounding text, where N is dynamic": build
 `[Prompt]`, splice. A shipping third-party app preserved in the
-[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md) reaches the same shape with a `for`
+[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) reaches the same shape with a `for`
 loop directly inside the builder:
 
 ```swift prelude:guide-context
@@ -450,7 +450,7 @@ Two numbers circulate. Neither is Apple's, and you should treat them accordingly
   `ImagePreprocessor.gemma3` preset is `896×896` — but plausible is not verified, and the two facts
   are about different model families.
 - **~576 tokens per image.** Historical source: the shipping community app preserved in the
-  [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md), which hardcodes
+  [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md), which hardcodes
   `ImagePromptBudgetEstimator.promptTokensPerImage = 576` for its context meter, across *all* of its
   backends (llama.cpp, MLX, Core ML, Core AI and Foundation Models). It is a **generic VLM working
   figure, not an AFM measurement** — 576 is what you get from a 24×24 patch grid, e.g. 336 px at
@@ -1873,7 +1873,7 @@ Models on macOS* (the `fm` CLI image option, the Python SDK) · **319** *Private
 text-and-images demo behind §10.4's settled support claim) · **339** *Bring an LLM provider to the Foundation Models
 framework* (capabilities and routing).
 
-**Community** — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md) (a shipping multi-backend app: the `for`-loop prompt builder,
+**Community** — [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) (a shipping multi-backend app: the `for`-loop prompt builder,
 the `promptTokensPerImage = 576` constant, `GenerationOptions(sampling:)`). Marked as community
 throughout; none of its numbers are Apple's.
 

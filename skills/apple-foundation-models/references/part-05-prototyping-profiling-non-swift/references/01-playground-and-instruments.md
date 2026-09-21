@@ -43,9 +43,9 @@ a fixed order, that between them cover prototyping, unhappy paths, and productio
 - **The canonical worked bug**, reproduced end to end: a tool referenced in the *instructions text* but
   absent from the *toolset*. The model loops, keeps calling tools, and never throws. This is the bug
   Apple built an entire WWDC session around, and it is the archetype for the whole class.
-- **Three metrics** — Time to First Token, Tokens per Second, Total Latency — plus the four token
-  metrics Apple's written documentation names and the session does not, including the **cache hit rate**
-  that is the only practical way to detect a KV-cache invalidation.
+- **Three metrics** — Time to First Token, Tokens per Second, Total Latency — plus four token metrics
+  reported by a retired runtime-article summary but absent from the session. The list, including its
+  **cache hit rate**, is a re-verification target rather than a current UI contract.
 
 ## What you need
 
@@ -61,10 +61,11 @@ a fixed order, that between them cover prototyping, unhappy paths, and productio
   which this guide is the measuring instrument for.
 
 > ⚠️ **A word about what this guide does not claim.** Nobody on this project has run Xcode 27's
-> Instruments. Every statement about the instrument's UI below is traced to Apple's spoken narration in
-> WWDC26 session 243 or to Apple's written documentation, and where those run out — most importantly,
-> for **four of the six timeline lanes** — this guide says so and stops. There are no invented lane
-> names here. §6.3 is a 🔴 GAP box, not a list.
+> Instruments. Statements about the instrument's UI below are traced to Apple's spoken narration in
+> WWDC26 session 243 or preserved Apple documentation. Claims found only in a retired article summary
+> are explicitly marked 🟡 **RECONSTRUCTED** and framed as re-verification targets. Where the evidence
+> runs out — most importantly, for **four of the six timeline lanes** — this guide says so and stops.
+> There are no invented lane names here. §6.3 is a 🔴 GAP box, not a list.
 
 ---
 
@@ -1058,8 +1059,7 @@ The shape of the bars tells you which problem you have, before you read a single
 - **A yellow bar with no orange after it** → the turn produced no generated text. Often that is a
   tool-call-only turn, which is legitimate and has its own UI hazard (§7.4).
 
-And the general rule from Apple's written documentation, which is the reason the timeline is readable at
-all:
+A retired summary also supplied the relationship that would make the timeline readable:
 
 > 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article described each
 > component's timeline width as its latency. The underlying summary is no longer reproducible from
@@ -1200,17 +1200,17 @@ in the entire toolchain where the instruction *prose* and the declared *toolset*
 side. Nothing in the compiler, the framework, or the runtime cross-checks them. Instruments does, visually,
 if you look.
 
-Apple's written documentation lists what the inspector holds in slightly more detail than the session
-does:
+A retired summary reported a more detailed inspector payload than the session does:
 
 > 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article listed full
 > instructions, received prompt text, response text, tool-call arguments/results, and per-component
 > token counts in the inspector. Re-check the canonical article before treating that complete list
 > as a current UI contract.
 
-"Tool call details including arguments and return values" is worth its own moment. When a tool is invoked
-with arguments you did not expect — the `.anyOf` guide that does not constrain, the optional the model
-left `nil` — this is where you see it, without adding a single `print`.
+If a current Instruments build exposes tool-call arguments and return values there, use them to inspect
+unexpected arguments — the `.anyOf` guide that does not constrain, or the optional the model left
+`nil` — without adding a `print`. Until that field list is re-verified, do not assume those details are
+present or build automated profiling instructions around them.
 
 ### 7.5 The Info column is your triage filter
 
@@ -1643,10 +1643,10 @@ move. What moves is the moment the user stops looking at nothing. Combine with:
 > never off first-token arrival.** Full treatment in
 > [Part 2 guide 02](../../part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md).
 
-### 9.2 The four token metrics only the documentation names
+### 9.2 The four token metrics reported by the retired summary
 
-Session 243 says the inspector shows "token usage metrics" and moves on. Apple's written companion
-enumerates them, and one of the four is the single most useful number in the instrument.
+Session 243 says the inspector shows "token usage metrics" and moves on. A retired summary of the
+written companion enumerated four metrics, but the source is no longer reproducible from this corpus.
 
 > 🟡 **RECONSTRUCTED** — a retired summary of Apple's *Analyzing the runtime performance of your
 > Foundation Models app* enumerated the following metrics. The summary is not preserved, so treat
@@ -1664,21 +1664,21 @@ enumerates them, and one of the four is the single most useful number in the ins
 
 ⚠️ **Note the discrepancy, because it will cost you time.** Session 242 tells you to watch session 243
 *"for more about detecting cache invalidations with Instruments"* (✅ `242:177`) — and **session 243 never
-mentions a cache metric at all.** The metric exists only in the written documentation. If you watched the
-videos and went looking for a "cache" lane, that is why you did not find one. **Look in the Metrics
-section of a model-inference node's inspector, and compute the ratio yourself if the instrument does not
-show it pre-divided.**
+mentions a cache metric at all.** The only cache-metric claim in the current corpus comes from the
+retired summary. Do not assume that a current instrument exposes the metric, its raw counts, or a
+particular inspector location. Re-check the canonical page and the current UI first; only compute a
+ratio when the instrument verifiably exposes the necessary cached and total input-token counts.
 
-Also from the same page, two more things the inspector surfaces that the session skips:
+The same retired summary reported two more inspector fields that the session skips:
 
 > 🟡 **RECONSTRUCTED** — the retired summary said the instrument shows each tool invocation's duration
 > and output and includes per-component token counts. Confirm those fields against the current
 > instrument before depending on them in automated profiling instructions.
 
-Tool execution duration deserves emphasis. In a `.required`-mode agent, your own Swift code is inside the
-latency budget, N times per user request, and it is the one part of the chain you fully control. A tool
-that does a 300 ms network round-trip and gets called four times is 1.2 seconds of Total Latency that has
-nothing to do with the model.
+If re-verification confirms a per-tool duration field, it is worth using. In a `.required`-mode agent,
+your own Swift code is inside the latency budget, N times per user request, and it is the one part of the
+chain you fully control. A tool that does a 300 ms network round-trip and gets called four times is 1.2
+seconds of Total Latency that has nothing to do with the model.
 
 ### 9.3 The programmatic equivalents
 
@@ -2138,10 +2138,10 @@ WWDC25 leftovers** and are not cited anywhere in this guide as 2026 evidence.
 
 **Apple documentation.**
 
-- *Analyzing the runtime performance of your Foundation Models app* — the instrument's written companion;
-  token metrics, cache hit rate, tool-call duration, inspector contents. Read via the historical
-  mirror recorded in the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/repos/noema-ios.md),
-  which **condenses** Apple's prose; quoted as substance, not as exact sentences.
+- *Analyzing the runtime performance of your Foundation Models app* — the instrument's canonical written
+  companion, which must be captured again. A retired summary reported token metrics, cache hit rate,
+  tool-call duration, and inspector contents, but neither that summary nor the page content is preserved
+  in this repository; those claims are marked 🟡 **RECONSTRUCTED** above.
 - *Managing the context window* — 4,096 tokens, what consumes them, the four-step Instruments workflow,
   the prompt-shortening rules, the unencrypted-recording warning.
 - *Optimizing key-value caching in language model sessions* — token layout, blast radius, stateless vs
