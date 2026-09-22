@@ -335,8 +335,9 @@ to resolve — a header to read, a command to run, a device to test on. Nothing 
 invented, and no gap has been quietly papered over with a plausible-looking identifier.
 
 The single largest cluster has one cause: **this series was written on macOS 26.5.2 / Xcode 26.6.**
-Some questions require a macOS 27 runtime (`fm --help`, Instruments 27 lane names); others require
-the Xcode 27 SDK or one of its separately installed components. The `CoreAI` and
+Some questions require a macOS 27 runtime (`fm --help`, empirical Instruments 27 UI details, and
+Core AI lane and metric names); others require the Xcode 27 SDK or one of its separately installed
+components. The `CoreAI` and
 `FoundationModels` interfaces were captured from Xcode 27.0 beta on 2026-07-29. `coreai-build` was
 captured on the same host on 2026-07-31 after installing the optional **Metal Toolchain component**
 with `xcodebuild -downloadComponent MetalToolchain`; it is not part of the Xcode app bundle and

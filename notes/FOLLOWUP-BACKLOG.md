@@ -147,9 +147,10 @@ Organizer additions relevant to shipping: a **Storage metric** that breaks out *
 *and* your own history, and **Generate Recommendations**.
 
 > Correction on record: this file's first draft said 258 had no Instruments content. That came from
-> a truncated fetch and was wrong. What remains true is narrower — **258 does not close the
-> Instruments *lane-names* gap** (`NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3). No Core AI Debugger,
-> no FM/Core AI lane names. Do not re-fetch 258 hoping for them.
+> a truncated fetch and was wrong. What remains true is narrower — **258 does not name the
+> AI-specific Instruments lanes** (`NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3). Apple's current
+> runtime-performance page later closed the six Foundation Models names; Core AI names and empirical
+> UI details remain open. Do not re-fetch 258 hoping for them.
 
 ---
 
@@ -272,7 +273,7 @@ with digests, transcripts, code, and an `llms.txt`).
 | `maximumReservedLocales` **value** | It is a computed property; the value is not in the interface. Runtime probe only. `part-16` ref 01 `:1243` stands. |
 | Does system **generated-subtitles** (session 256) expose a Speech API? | **No.** System-level, automatic, `MediaAccessibility` styling only. |
 | LoRA-vs-DoRA-vs-full **quality** ablation | None was found in the inspected documentation for `mlx-lm`, `mlx-lm-lora`, `mlx-tune`, `MLX-GRPO`, or `SiLLM`, or in the ~140-project `awesome-mlx` index. |
-| Instruments 27 **lane names** / Core AI Debugger in session 258 | The AI-specific lanes and Core AI Debugger are not there. The session does cover Organizer, Instruments, and Top Functions. See §2.5. |
+| Instruments 27 **lane names** / Core AI Debugger in session 258 | The AI-specific lanes and Core AI Debugger are not there. Later Apple documentation names all six Foundation Models lanes; Core AI names remain open. The session does cover Organizer, Instruments, and Top Functions. See §2.5. |
 
 ### 4.4 One source to distrust
 

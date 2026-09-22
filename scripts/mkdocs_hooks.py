@@ -221,7 +221,7 @@ def github_url(
 ) -> str:
     relative = target.relative_to(repository_root).as_posix()
     object_kind = "tree" if target.is_dir() else "blob"
-    ref = repository_ref(target, repository_root, branch)
+    ref = repository_ref(relative, branch)
     url = (
         f"{repository_url.rstrip('/')}/{object_kind}/"
         f"{quote(ref, safe='')}/{quote(relative, safe='/')}"

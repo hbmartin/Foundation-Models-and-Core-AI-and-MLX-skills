@@ -221,7 +221,7 @@ knob (asset/entitlement).
 | `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 `am_ET`: sim silently succeeds; stable Mac/device throw guardrail violation, not unsupported-locale — named case still unobserved |
 | `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 · DEVICE-27 | ✅ `spotlight_search`, `includesSchema=true`, beta-5 schema 83,570 characters on sim + device |
 | `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ sim + device donation works; all three encodings rejected **in-band** (code-100 JSON, never throws); 3 replies observed |
-| `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 `PROBE_INSTRUMENTS_WORKLOAD=1`; procedure in `INSTRUMENTS-RECORDING.md` |
+| `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 six FM lane names are documented; use `INSTRUMENTS-RECORDING.md` for rendered order, detail fields, badges, and remaining Core AI names |
 
 ## Results harvested 2026-08-20 (physical iPhone)
 
@@ -448,7 +448,7 @@ Readings, one line each:
 | Gap | Guide § | Why skipped |
 |---|---|---|
 | `fm` CLI flag surface | 5.2 + NEEDED item 1 | CLI capture on a macOS 27 machine, not an XCTest |
-| Instruments 27 lane names (FM + Core AI templates) | 5.1 §6.3 · 10.2 §3.2 + NEEDED item 3 | still human-read — but the workload + full GUI procedure now exist: `INSTRUMENTS-RECORDING.md` + `instruments.fm-workload` |
+| Instruments 27 rendered FM details + Core AI lane/metric names | 5.1 §6.3 · 10.2 §3.2 + NEEDED item 3 | Apple's current page names all six FM lanes; display order/detail fields and Core AI names remain human-read via `INSTRUMENTS-RECORDING.md` + `instruments.fm-workload` |
 | Where a `#Playground` block executes | 5.1 §4 | Xcode UI behavior, not linkable API |
 | Xcode "Simulated Apple Foundation Models Availability" menu contents | 5.1 §8 | Xcode UI |
 | What a third-party `LanguageModel` populates in the FM instrument | 5.1 §10 | needs Instruments attached + human reading of lanes |

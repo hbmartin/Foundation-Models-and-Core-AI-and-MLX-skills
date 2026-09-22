@@ -7,12 +7,16 @@ import re
 import unittest
 from urllib.parse import unquote
 
+from scripts import mdlinks
+
 
 ROOT = Path(__file__).resolve().parents[2]
 GUIDES = ROOT / "guides"
+NOEMA_RELATIVE_PATH = "notes/repos/noema-ios.md"
+NOEMA_SNAPSHOT = mdlinks.REPOSITORY_PATH_SNAPSHOTS[NOEMA_RELATIVE_PATH]
 FROZEN_NOEMA_URL = (
     "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/"
-    "blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md"
+    f"blob/{NOEMA_SNAPSHOT.ref}/{NOEMA_RELATIVE_PATH}"
 )
 
 
@@ -81,13 +85,19 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         guide_citations = []
         guide_offenders = []
         for path in GUIDES.rglob("*.md"):
-            for destination in citation_pattern.findall(path.read_text(encoding="utf-8")):
+            contents = path.read_text(encoding="utf-8")
+            if NOEMA_RELATIVE_PATH not in contents:
+                continue
+            for destination in citation_pattern.findall(contents):
                 target = destination.partition("#")[0]
-                if target.endswith("notes/repos/noema-ios.md"):
+                if target.endswith(NOEMA_RELATIVE_PATH):
                     relative = path.relative_to(ROOT).as_posix()
                     guide_citations.append((relative, destination))
+                    if "://" in target:
+                        guide_offenders.append((relative, destination))
+                        continue
                     resolved = (path.parent / unquote(target)).resolve()
-                    if "://" in target or resolved != note or not resolved.is_file():
+                    if resolved != note or not resolved.is_file():
                         guide_offenders.append((relative, destination))
 
         self.assertTrue(
@@ -98,9 +108,12 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         skill_citations = []
         skill_offenders = []
         for path in (ROOT / "skills").rglob("*.md"):
-            for destination in citation_pattern.findall(path.read_text(encoding="utf-8")):
+            contents = path.read_text(encoding="utf-8")
+            if NOEMA_RELATIVE_PATH not in contents:
+                continue
+            for destination in citation_pattern.findall(contents):
                 target = destination.partition("#")[0]
-                if target.endswith("notes/repos/noema-ios.md"):
+                if target.endswith(NOEMA_RELATIVE_PATH):
                     relative = path.relative_to(ROOT).as_posix()
                     skill_citations.append((relative, destination))
                     if target != FROZEN_NOEMA_URL:
@@ -193,8 +206,14 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             self.assertIn(f"**{metric}**", metric_section)
         self.assertNotIn("Reasoning Tokens", metric_section)
         self.assertIn("duration and output", performance)
-        self.assertIn("cached input tokens ÷ total input tokens", performance)
+        self.assertIn("Cached Tokens ÷ Consumed Tokens", performance)
         self.assertIn("cached input tokens ÷ total input tokens", orchestration)
+
+        prewarm_claim = performance.split("- **`prewarm(promptPrefix:)`**", 1)[1].split(
+            "- **`includeSchemaInPrompt: false`**", 1
+        )[0]
+        self.assertIn("dedicated completion indicator", prewarm_claim)
+        self.assertIn("🟡 **RECONSTRUCTED**", prewarm_claim)
 
         combined = "\n".join((performance, readme, orchestration))
         for contradiction in (
@@ -219,10 +238,45 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             evidence,
         )
 
+    def test_foundation_models_lane_names_are_resolved_in_active_trackers(self) -> None:
+        tracker = self.read("notes/NEEDED-FROM-A-MACOS-27-MACHINE.md")
+        self.assertIn("Foundation Models names resolved", tracker)
+        self.assertIn("Core AI still open", tracker)
+        for lane in (
+            "Session",
+            "Request",
+            "Instructions",
+            "Model Inference",
+            "Tool",
+            "Model Loading",
+        ):
+            self.assertIn(lane, tracker)
+
+        active_documents = (
+            "notes/NEEDED-FROM-A-MACOS-27-MACHINE.md",
+            "notes/FRESHNESS-RUNBOOK.md",
+            "notes/FOLLOWUP-BACKLOG.md",
+            "probes/INSTRUMENTS-RECORDING.md",
+            "probes/README.md",
+        )
+        stale_claims = (
+            "four of the six lane names are unknown",
+            "only two of the six FM lane names",
+            "only two of the six Foundation Models lane names",
+        )
+        for relative in active_documents:
+            contents = self.read(relative)
+            for claim in stale_claims:
+                self.assertNotIn(claim, contents, relative)
+
     def test_stated_noema_line_count_matches_the_frozen_snapshot(self) -> None:
-        snapshot = self.read("notes/repos/noema-ios.md")
+        snapshot = self.read(NOEMA_RELATIVE_PATH)
         line_count = len(snapshot.splitlines())
         self.assertEqual(2_225, line_count)
+        self.assertEqual(
+            NOEMA_SNAPSHOT.content_sha256,
+            mdlinks.sha256(ROOT / NOEMA_RELATIVE_PATH),
+        )
 
         mlx = self.read(
             "guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md"

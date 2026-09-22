@@ -1,18 +1,20 @@
-# Instruments 27 lane-name capture — the one manual GUI session
+# Instruments 27 UI capture — the one manual GUI session
 
-**Goal.** Transcribe the lane names (and detail-pane columns) of the **Foundation Models**
-and **Core AI** Instruments templates. This is the last evidence gap on this machine that
-needs no new hardware (`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3): the lane
-definitions **stream from the recording target at attach time** — they are not on disk —
-and headless `xcrun xctrace record` against the booted simulator **hangs for every
-template on this 26.5 host** (measured 2026-07-31; `--no-prompt` set, `.trace` frozen at
-52 KB). So: a human, the Instruments GUI, and a live Foundation Models workload.
+**Goal.** Confirm the documented lane order and capture the detail-pane columns, labels, colors,
+and error badges of the **Foundation Models** template; transcribe the still-unknown lane and metric
+names of the **Core AI** template. This is the last original evidence gap on this machine that needs
+no new hardware (`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3): rendered instrument details
+**stream from the recording target at attach time** — they are not on disk — and headless `xcrun
+xctrace record` against the booted simulator **hangs for every template on this 26.5 host** (measured
+2026-07-31; `--no-prompt` set, `.trace` frozen at 52 KB). So: a human, the Instruments GUI, and a live
+Foundation Models workload.
 
 The workload is `InstrumentsWorkloadProbes.testInstrumentsRecordingWorkload` — an
 env-gated XCTest that loops four narrated phases designed to light up the known lanes
 (prefill-heavy → decode-heavy → an instructions switch → two deliberate errors). Only
-two of the six FM lane names are known from Apple's corpus (*Instructions*, *Model
-Inference*); the session below reads the other four off the timeline.
+all six FM lane names are now documented by Apple — *Session, Request, Instructions, Model
+Inference, Tool,* and *Model Loading* — so the session below verifies their rendered order and
+captures UI details the written page does not enumerate.
 
 ---
 
@@ -60,8 +62,8 @@ Inference*); the session below reads the other four off the timeline.
 
 ### What to transcribe (this is the deliverable)
 
-- **All six lane header strings** of the `com.apple.FoundationModels` instrument,
-  top-to-bottom, **verbatim** — including capitalization.
+- Confirm the six documented lane headers of the `com.apple.FoundationModels` instrument,
+  top-to-bottom and **verbatim** — including capitalization — and record any mismatch.
 - For each lane: click it and copy the **detail-pane column names** from the bottom pane.
 - **Instructions lane:** the region count and each region's label. Expect **≥ 2 regions**
   (the workload alternates two instruction strings — phases 1/2 vs phase 3).
@@ -109,14 +111,13 @@ deadline. Recheck the printed availability line on later runtimes.
 ## Where the transcription gets written back
 
 1. `guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md`
-   §6.3 — replace the lane-names GAP box with the six verbatim lane names + detail-pane
-   columns. Citation line: *"measured, Instruments 27.0 beta (27A5228h) GUI against the
-   iOS 27.0 simulator (24A5390f), 2026-MM-DD"*. Re-check §8 and §10, which currently
-   reason from only the two known lane names.
+   §6.3 — confirm or correct the documented lane order and add measured detail-pane columns,
+   labels, colors, and error badges. Citation line: *"measured, Instruments 27.0 beta (27A5228h)
+   GUI against the iOS 27.0 simulator (24A5390f), 2026-MM-DD"*.
 2. `guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md`
    §3 — the Core AI template's lane/metric/column names (names only; live Core AI events
    remain a DEVICE-27 item).
-3. `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 → ✅ RESOLVED, with method + date;
-   update the header prose (the remaining machine-dependent items become 1 and 7).
+3. `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 → ✅ RESOLVED, with method + date, once both
+   the Foundation Models UI details and Core AI names have been captured.
 4. `probes/README.md` — flip the two Instruments rows in the SKIPPED table to answered,
    pointing here.

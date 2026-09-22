@@ -1,6 +1,6 @@
 # What still requires macOS 27, Instruments UI, or a physical OS-27 device
 
-**Status checked 2026-09-16.** The host now runs stable macOS 27 (`26A428`), while **Xcode 27.0
+**Status checked 2026-09-22.** The host now runs stable macOS 27 (`26A428`), while **Xcode 27.0
 beta 5 (`27A5237l`)**, its optional Metal Toolchain, and the **iOS 27.0 beta 5 simulator
 (`24A5408d`)** remain selected. An attached iPhone 15 Pro (`D83AP`, `h16p`) running iOS 27 build
 `24A435` completed 46 tests with 2 intentional skips and 0 failures. That build differs from the
@@ -10,9 +10,10 @@ interface set into `notes/sdk-interfaces/` — including the Core AI SubFramewor
 (`_Vision_FoundationModels`, `_CoreSpotlight_FoundationModels`), and Xcode-bundled `Evaluations`.
 **Items 1, 2, 4, 5, 6, and 7 below are resolved and folded into the guides (2 and 6's toolchain half fell
 on 2026-07-31 when the Metal Toolchain component turned out to contain `coreai-build` and the Metal
-compiler).** **Item 3 — one manual Instruments GUI recording — is the only original item still
-open.** The broader behavioral backlog (including cancellation with a genuinely slow Core AI
-asset and an entitled app-group cache run) remains in `probes/README.md`.
+compiler).** **Item 3 is partially resolved: Apple's current written documentation now names all
+six Foundation Models lanes; exact Core AI lane/metric names and empirical detail-pane fields still
+need one manual Instruments GUI recording.** The broader behavioral backlog (including cancellation
+with a genuinely slow Core AI asset and an entitled app-group cache run) remains in `probes/README.md`.
 
 Run what you can, paste the raw output back. Partial is fine — every item is independent.
 
@@ -106,26 +107,35 @@ swept codes on this 26.5 host — the one residual caveat).
 
 ---
 
-## 3. Xcode 27 Instruments lane names — 🔴 still open, narrowed to "needs a target"
+## 3. Xcode 27 Instruments UI details — 🟡 Foundation Models names resolved; Core AI still open
 
-Progress 2026-07-29, from the beta's `Instruments.app` on disk: the **Foundation Models** template
+**Foundation Models lane names resolved 2026-09-22.** Apple's current runtime-performance page names
+all six: **Session, Request, Instructions, Model Inference, Tool, and Model Loading**. The direct
+Apple Markdown response, response hash, and targeted evidence are preserved in
+[`notes/web/apple-foundation-models-runtime-performance-2026-09-22.md`](web/apple-foundation-models-runtime-performance-2026-09-22.md),
+and guide 5.1 §6.3 now carries the complete table. A manual trace is still useful for display order,
+detail-pane columns, labels, and error badges, but it is no longer needed to discover the names.
+
+Historical toolchain progress from 2026-07-29: the beta's **Foundation Models** template
 archives exactly **one instrument, `com.apple.FoundationModels`** (all six lanes are its lanes),
 and the **Core AI** template archives exactly **four** (`com.apple.dt.instruments.coreai`,
-`com.apple.ane`, `metal-gpu`, `coresampler2`) — both now cited in guides 5.1 §6.3 and 10.2 §3.2.
-But the **lane names are not extractable from the host toolchain**: instrument definitions stream
-from the *recording target* at attach time (a full-text sweep of Instruments.app for the known lane
-name "Model Inference" finds nothing).
+`com.apple.ane`, `metal-gpu`, `coresampler2`); the latter composition is cited in guide 10.2 §3.2.
+The **rendered lane and detail-field names are not extractable from the host toolchain**: instrument
+definitions stream from the *recording target* at attach time (a full-text sweep of Instruments.app
+for the known lane name "Model Inference" finds nothing).
 
 **Sharpened 2026-07-31: this no longer needs new hardware.** The iOS 27.0 Simulator runtime on
 THIS machine is an OS 27 recording target, and Foundation Models inference provably runs in it
 (`probes/`). What failed is *headless* capture: `xcrun xctrace record` against the booted
 simulator hangs for every template on this 26.5 host (Time Profiler control included,
 `--no-prompt` set), and the lane strings are not on disk (sim framework binaries live in the dyld
-shared cache). The residue is one manual GUI job on this machine:
+shared cache). The remaining GUI work on this machine is:
 
 1. Open Instruments 27 → Foundation Models template → target the **booted iOS 27.0 simulator** →
-   Record (click through the privacy consent) → read the six lane headers off the timeline.
-2. Same for the Core AI template — lane/metric names and detail-pane columns render from the
+   Record (click through the privacy consent) → confirm the documented lane order and capture the
+   detail-pane columns, labels, colors, and any error badges.
+2. Open the Core AI template — its exact lane/metric names and detail-pane columns remain unknown and
+   render from the
    template even though Core AI events cannot occur in the simulator (CoreAI is absent from the
    simulator SDK; a real 27 device is still the only way to see live Core AI events).
 
@@ -202,15 +212,15 @@ Part 11.
 
 The 2026-09-16 iOS build `24A435` run again returned 4096 and reverified cache deletion, cache
 growth, specialization identity, attachment labels, and tool-call behavior. It also closed the
-reverse tool-mode precedence direction. Remaining original work is still the manual Instruments
-recording; cancellation with a genuinely slow Core AI asset and public-final iOS `24A437` are new
-follow-up boundaries, not regressions of the original checklist.
+reverse tool-mode precedence direction. Remaining original work is the narrowed manual Instruments
+recording above; cancellation with a genuinely slow Core AI asset and public-final iOS `24A437` are
+new follow-up boundaries, not regressions of the original checklist.
 
 ---
 
 ## Not needed from you
 
 Everything else in this original machine-dependency list is resolved. After the SDK, Metal
-Toolchain, macOS-27, simulator, and 2026-08-20 physical-device passes, **item 3's manual Instruments
-GUI recording is the sole residue here**. New and partially answered runtime questions are tracked
-at probe granularity in `probes/README.md`.
+Toolchain, macOS-27, simulator, and 2026-08-20 physical-device passes, **item 3's Core AI names and
+empirical Instruments UI details are the sole residue here**. New and partially answered runtime
+questions are tracked at probe granularity in `probes/README.md`.
