@@ -2,7 +2,7 @@
 
 The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
-> Generated 2026-09-20 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Generated 2026-09-22 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## Part 2 — Foundation Models: the everyday API
 
@@ -407,7 +407,7 @@ Three tools used in a fixed order.
 | 6. Anatomy of a trace, part 1: the lanes | `#6-anatomy-of-a-trace-part-1-the-lanes` |
 | 7. Anatomy of a trace, part 2: the tree detail view | `#7-anatomy-of-a-trace-part-2-the-tree-detail-view` |
 | 8. ⚠️ The canonical worked bug: a tool named in prose, missing from the toolset | `#8-️-the-canonical-worked-bug-a-tool-named-in-prose-missing-from-the-toolset` |
-| 9. Three metrics, and the four Apple only wrote down | `#9-three-metrics-and-the-four-apple-only-wrote-down` |
+| 9. Duration and token metrics | `#9-duration-and-token-metrics` |
 | 10. Detecting KV-cache invalidation | `#10-detecting-kv-cache-invalidation` |
 | 11. What changed between the 2025 and 2026 instrument | `#11-what-changed-between-the-2025-and-2026-instrument` |
 | 12. The whole loop, in order | `#12-the-whole-loop-in-order` |

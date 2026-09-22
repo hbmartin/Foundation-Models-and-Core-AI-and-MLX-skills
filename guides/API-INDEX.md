@@ -2,7 +2,7 @@
 
 **1212 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-09-20; regenerate rather than hand-edit.
+> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-09-22; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>164 symbols</sub>
@@ -1249,7 +1249,7 @@
 | `UNMutableNotificationContent.appEntityIdentifiers` |  |  | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `UnsafeRawPointer` | ✓ | ✓ | [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
 | `UnsupportedLanguageOrLocale.languageCode` |  | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
-| `Usage` |  | ✓ | [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.README](part-03-context-profiles-agentic/README.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) +4 more |
+| `Usage` |  | ✓ | [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.README](part-03-context-profiles-agentic/README.md), [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) +4 more |
 | `Usage.Input` |  | ✓ | [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md) |
 | `Usage.Input.cachedTokenCount` |  | ✓ | [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md) |
 | `Usage.metadata` |  | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |

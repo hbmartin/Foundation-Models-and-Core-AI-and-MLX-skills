@@ -99,6 +99,7 @@ let x = [Int](repeating: 0, count: rank)
 ## 2. ⚠️ The trap
 
 More text, citing [the runbook](../../../notes/FRESHNESS-RUNBOOK.md).
+The frozen app evidence is in [Noema](../../../notes/repos/noema-ios.md).
 """
 
 SERIES_README = """\
@@ -179,6 +180,8 @@ def make_fixture(root):
     notes = root / "notes"
     notes.mkdir()
     (notes / "FRESHNESS-RUNBOOK.md").write_text("# Runbook\n", encoding="utf-8")
+    (notes / "repos").mkdir()
+    (notes / "repos" / "noema-ios.md").write_text("# Noema\n", encoding="utf-8")
     (notes / "skill-manifest.json").write_text(
         json.dumps(SKILL_MANIFEST), encoding="utf-8"
     )
@@ -263,6 +266,11 @@ class SkillBuildTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             self.assertIn(
                 "https://github.com/owner/repo/blob/main/notes/FRESHNESS-RUNBOOK.md",
+                copied,
+            )
+            self.assertIn(
+                "https://github.com/owner/repo/blob/"
+                "467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md",
                 copied,
             )
 

@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 import re
 import unittest
+from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,21 +77,38 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
 
     def test_frozen_noema_citations_use_immutable_links(self) -> None:
         citation_pattern = re.compile(r"\[[^]]+\]\(([^)\s]+)(?:\s+[^)]*)?\)")
-        citations = []
+        note = (ROOT / "notes/repos/noema-ios.md").resolve()
+        guide_citations = []
+        guide_offenders = []
         for path in GUIDES.rglob("*.md"):
             for destination in citation_pattern.findall(path.read_text(encoding="utf-8")):
                 target = destination.partition("#")[0]
                 if target.endswith("notes/repos/noema-ios.md"):
-                    citations.append((path.relative_to(ROOT).as_posix(), destination))
-                    self.assertEqual(FROZEN_NOEMA_URL, target)
+                    relative = path.relative_to(ROOT).as_posix()
+                    guide_citations.append((relative, destination))
+                    resolved = (path.parent / unquote(target)).resolve()
+                    if "://" in target or resolved != note or not resolved.is_file():
+                        guide_offenders.append((relative, destination))
 
-        self.assertTrue(citations, "expected at least one citation to the frozen Noema note")
+        self.assertTrue(
+            guide_citations, "expected at least one local citation to the frozen Noema note"
+        )
+        self.assertEqual([], guide_offenders)
 
-        mutable_skill_links = []
+        skill_citations = []
+        skill_offenders = []
         for path in (ROOT / "skills").rglob("*.md"):
-            if "blob/main/notes/repos/noema-ios.md" in path.read_text(encoding="utf-8"):
-                mutable_skill_links.append(path.relative_to(ROOT).as_posix())
-        self.assertEqual([], mutable_skill_links)
+            for destination in citation_pattern.findall(path.read_text(encoding="utf-8")):
+                target = destination.partition("#")[0]
+                if target.endswith("notes/repos/noema-ios.md"):
+                    relative = path.relative_to(ROOT).as_posix()
+                    skill_citations.append((relative, destination))
+                    if target != FROZEN_NOEMA_URL:
+                        skill_offenders.append((relative, destination))
+        self.assertTrue(
+            skill_citations, "expected generated skills to cite the frozen Noema note"
+        )
+        self.assertEqual([], skill_offenders)
 
     def test_stable_fm_claims_point_to_the_canonical_surface(self) -> None:
         fm = self.read(
@@ -125,37 +143,95 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         orchestration = self.read(
             "guides/part-03-context-profiles-agentic/references/04-agentic-orchestration.md"
         )
-        lines = orchestration.splitlines()
-        source_entry = next(
-            "\n".join(lines[index : index + 4])
-            for index, line in enumerate(lines)
-            if "frozen Noema 3.5 snapshot" in line
+        source_entry_match = re.search(
+            r"(?ms)^- \[frozen Noema 3\.5 snapshot\].*?(?=^\s*-\s|\Z)",
+            orchestration,
         )
+        self.assertIsNotNone(
+            source_entry_match,
+            "expected the frozen Noema source bullet in the orchestration guide",
+        )
+        source_entry = source_entry_match.group(0)
         self.assertIn("historical", source_entry.lower())
         self.assertIn("unreproduced", source_entry.lower())
 
-    def test_reconstructed_runtime_claims_are_marked_for_reverification(self) -> None:
+    def test_current_runtime_claims_match_the_preserved_apple_pages(self) -> None:
         performance = self.read(
             "guides/part-05-prototyping-profiling-non-swift/"
             "references/01-playground-and-instruments.md"
         )
-        claims = (
-            "timeline width as its latency",
-            "tool-call arguments/results",
-            "Cache hit rate",
-            "tool invocation's duration",
+        readme = self.read("guides/part-05-prototyping-profiling-non-swift/README.md")
+        orchestration = self.read(
+            "guides/part-03-context-profiles-agentic/references/04-agentic-orchestration.md"
         )
-        for claim in claims:
-            claim_offset = performance.index(claim)
-            marker_offset = performance.rfind(
-                "🟡 **RECONSTRUCTED**",
-                max(0, claim_offset - 1_000),
-                claim_offset,
+        evidence = self.read(
+            "notes/web/apple-foundation-models-runtime-performance-2026-09-22.md"
+        )
+
+        lane_section = performance.split("### 6.3 The six documented lanes", 1)[1].split(
+            "\n---", 1
+        )[0]
+        for lane in (
+            "Session",
+            "Request",
+            "Instructions",
+            "Model Inference",
+            "Tool",
+            "Model Loading",
+        ):
+            self.assertIn(f"**{lane}**", lane_section)
+
+        metric_section = performance.split("### 9.2 The four current token metrics", 1)[
+            1
+        ].split("### 9.3", 1)[0]
+        for metric in (
+            "Total Tokens",
+            "Consumed Tokens",
+            "Generated Tokens",
+            "Cached Tokens",
+        ):
+            self.assertIn(f"**{metric}**", metric_section)
+        self.assertNotIn("Reasoning Tokens", metric_section)
+        self.assertIn("duration and output", performance)
+        self.assertIn("cached input tokens ÷ total input tokens", performance)
+        self.assertIn("cached input tokens ÷ total input tokens", orchestration)
+
+        combined = "\n".join((performance, readme, orchestration))
+        for contradiction in (
+            "four of the six lane names are unknown",
+            "The same retired summary reported two more inspector fields",
+            "four token metrics reported by the retired summary",
+            "runtime-performance article, via mirror",
+        ):
+            self.assertNotIn(contradiction, combined)
+        for document in (performance, readme, orchestration):
+            self.assertIn(
+                "apple-foundation-models-runtime-performance-2026-09-22.md",
+                document,
             )
-            self.assertGreaterEqual(marker_offset, 0, claim)
-            window = performance[marker_offset : claim_offset + 500]
-            self.assertIn("RECONSTRUCTED", window, claim)
-            self.assertIn("retired summary", window.lower(), claim)
+
+        self.assertIn(
+            "1dca2e84e0da356d5b61f04a9b720776e4df26610c3e7493b6e18fec14d73110",
+            evidence,
+        )
+        self.assertIn(
+            "3ce642e4e431912b276a1f4b7c9536d7d6d5b03ed8b9398f0301d601ca3bbde4",
+            evidence,
+        )
+
+    def test_stated_noema_line_count_matches_the_frozen_snapshot(self) -> None:
+        snapshot = self.read("notes/repos/noema-ios.md")
+        line_count = len(snapshot.splitlines())
+        self.assertEqual(2_225, line_count)
+
+        mlx = self.read(
+            "guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md"
+        )
+        entry = re.search(
+            r"(?ms)^- \[`notes/repos/noema-ios\.md`\].*?(?=^\s*-\s|\Z)", mlx
+        )
+        self.assertIsNotNone(entry, "expected Noema research-note source entry")
+        self.assertIn(f"{line_count:,} lines", entry.group(0))
 
     def test_historical_host_26_is_defined(self) -> None:
         probes = self.read("probes/README.md")

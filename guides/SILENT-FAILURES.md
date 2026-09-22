@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-09-20 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-09-22 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -1598,7 +1598,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
-- [Session 242 defers cache detection to 243, which never mentions it; the retired metric summary needs re-verification.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-token-metrics-reported-by-the-retired-summary) — 5.1
+- [Session 242 defers cache detection to 243, which never names it; the current written documentation supplies the metric.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-current-token-metrics) — 5.1
 - [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
 - [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -2151,7 +2151,7 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 5**
 
 - [The instrument's trace file is a sensitive artefact: it captures prompt and response data in the clear.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-this-covers) — 5.1
-- [No one on this project ran Xcode 27's Instruments; four of six timeline lanes are unverified — UI claims trace to…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
+- [No one here ran Xcode 27 Instruments; UI claims trace to the session or preserved direct Apple documentation.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
 - [The code-along targets macOS Tahoe/Xcode 26 — treat its Playground UI details as 'at least true in 26', not 27.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#21-the-macro-the-canvas-and-the-refresh-button) — 5.1
 - [LanguageModelFeedback attachments carry the full session transcript — consent, no auto-upload, scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) — 5.1
 - [Recording a trace turns FM logging on; read the Record Anyway dialog before clicking.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#52-️-the-record-anyway-dialog--read-this-before-you-click) — 5.1

@@ -3796,7 +3796,7 @@ evidence class.
 - `notes/repos/mlx-swift-examples.md` — 3,348 lines; `ml-explore/mlx-swift-examples` at HEAD
   `378f244` (*"MLXChatExample: fix VLM image handling on iOS (PhotosPicker, EXIF, empty assistant
   trim) (#472)"*, 2026-06-16). Source of every sample-app listing in §4, §6, §7 and §8.
-- [`notes/repos/noema-ios.md`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — 2,217 lines; frozen Noema 3.5 snapshot, a shipping
+- [`notes/repos/noema-ios.md`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — 2,225 lines; frozen Noema 3.5 snapshot, a shipping
   third-party iOS app. **All material from this source is labelled community-measured in the text.**
   Source of §6.7–§6.9, §8.2's isolation pattern, §9.5's SDK-keyed conditions.
 - `notes/repos/issues-mlx-stack.md` — 1,183 lines; a GitHub issue/PR mining pass over `mlx`,
