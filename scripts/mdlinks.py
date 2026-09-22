@@ -37,6 +37,9 @@ from urllib.parse import quote
 FENCE = re.compile(r"^(?: {0,3}>[ \t]?)* {0,3}(`{3,}|~{3,})")
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 SITE_ONLY_GUIDE_PREFIXES = ("workflows/",)
+REPOSITORY_PATH_REF_OVERRIDES = {
+    "notes/repos/noema-ios.md": "467d3cc496248af2928d92f8d330ba4a8457f0f8",
+}
 
 
 def is_site_only_guide(relative_path: str | Path) -> bool:
@@ -71,6 +74,12 @@ def page_target(candidate: Path, raw_path: str) -> Path:
     return candidate
 
 
+def repository_ref(target: Path, repository_root: Path, default_ref: str) -> str:
+    """Return the immutable ref for a pinned repository path, or the configured ref."""
+    relative = target.relative_to(repository_root).as_posix()
+    return REPOSITORY_PATH_REF_OVERRIDES.get(relative, default_ref)
+
+
 def github_url(
     target: Path,
     repository_root: Path,
@@ -80,9 +89,10 @@ def github_url(
 ) -> str:
     relative = target.relative_to(repository_root).as_posix()
     object_kind = "tree" if target.is_dir() else "blob"
+    ref = repository_ref(target, repository_root, branch)
     url = (
         f"{repository_url.rstrip('/')}/{object_kind}/"
-        f"{quote(branch, safe='')}/{quote(relative, safe='/')}"
+        f"{quote(ref, safe='')}/{quote(relative, safe='/')}"
     )
     return f"{url}#{fragment}" if fragment else url
 

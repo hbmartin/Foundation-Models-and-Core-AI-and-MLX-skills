@@ -300,9 +300,10 @@ def load_publication_receipt(path: Path, inputs: dict) -> dict:
     if "schema_version" not in receipt:
         raise ValueError(
             "legacy publication receipt is not bound to immutable model and dataset "
-            "inputs; preserve or archive it, then start with a new output directory. "
-            "Only reconstruct a schema-v1 receipt after independently verifying the "
-            "original immutable inputs"
+            "inputs; preserve the existing checkpoints and archive or rename only "
+            "publication-receipt.json before resuming in this output directory. Only "
+            "reconstruct a schema-v1 receipt after independently binding the old "
+            "publications to the original immutable inputs"
         )
 
     if receipt.get("schema_version") != 1:
@@ -321,6 +322,9 @@ def record_hub_publication(
     repo: str,
     commit_sha: str,
 ) -> None:
+    if not isinstance(commit_sha, str) or not commit_sha.strip():
+        raise ValueError("commit_sha must be a nonblank string")
+    commit_sha = commit_sha.strip()
     artifact = receipt["artifacts"].setdefault(
         artifact_key, {"kind": "hugging_face", "publications": []}
     )
@@ -366,6 +370,10 @@ def main() -> None:
         "train": split["train"]._fingerprint,
         "eval": split["test"]._fingerprint,
     }
+    publication_path = run_dir / "publication-receipt.json"
+    publication = load_publication_receipt(
+        publication_path, publication_inputs(args, dataset_fingerprints)
+    )
 
     use_bf16 = args.precision == "bf16"
     torch_dtype = torch.bfloat16 if use_bf16 else torch.float16
@@ -466,11 +474,6 @@ def main() -> None:
     shutil.copy2(manifest_path, adapter_dir / manifest_path.name)
     shutil.copy2(eval_path, adapter_dir / eval_path.name)
 
-    publication_path = run_dir / "publication-receipt.json"
-    publication = load_publication_receipt(
-        publication_path, publication_inputs(args, dataset_fingerprints)
-    )
-
     api = HfApi()
     if args.adapter_repo:
         require_private_repo(api, args.adapter_repo)
@@ -531,11 +534,13 @@ returns `CommitInfo` for each folder upload. Each published folder contains its 
 `publication-receipt.json` records each returned `CommitInfo.oid` only after upload success. It is
 updated atomically and appends distinct successful publications instead of clearing an earlier SHA
 on retry. A legacy two-key receipt is deliberately rejected because it does not identify the
-immutable model and dataset inputs that produced its SHAs. Preserve or archive that file and start
-with a new output directory; reconstruct a schema-v1 receipt only when you can independently verify
-the original immutable inputs. The adapter upload precedes the memory-heavy merge, so a merge OOM
-still leaves the independently useful adapter published. If you omit the repository arguments, the
-durable output volume is the only artifact copy.
+immutable model and dataset inputs that produced its SHAs. Preserve the checkpoints and archive or
+rename only `publication-receipt.json`; keep the same output directory so its checkpoints remain
+resumable. Reconstruct a schema-v1 receipt only after independently binding each old publication
+identity to the original immutable inputs. Starting with a fresh receipt can publish an artifact again
+because the new receipt no longer records the earlier publication identity. The adapter upload precedes
+the memory-heavy merge, so a merge OOM still leaves the independently useful adapter published. If you
+omit the repository arguments, the durable output volume is the only artifact copy.
 
 Qwen3 was trained in BF16. If the selected GPU does not support BF16, `--precision fp16` is a risky
 fallback, not an equivalent recommendation: FP16's smaller exponent range can overflow and produce
@@ -581,6 +586,11 @@ def load_receipt(path: Path) -> dict:
 
 
 def append_publication(path: Path, key: str, kind: str, publication: dict) -> None:
+    if kind == "hugging_face":
+        commit_sha = publication.get("commit_sha")
+        if not isinstance(commit_sha, str) or not commit_sha.strip():
+            raise ValueError("commit_sha must be a nonblank string")
+        publication = {**publication, "commit_sha": commit_sha.strip()}
     receipt = load_receipt(path)
     artifact = receipt["artifacts"].setdefault(key, {"kind": kind, "publications": []})
     if artifact.get("kind") != kind or not isinstance(artifact.get("publications"), list):

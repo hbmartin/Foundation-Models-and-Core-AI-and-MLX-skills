@@ -39,13 +39,13 @@ a fixed order, that between them cover prototyping, unhappy paths, and productio
   Models Availability"*, which is how you reach `.unavailable(.appleIntelligenceNotEnabled)` and
   *Quota Usage Limit Reached* without owning four devices and burning a real PCC quota.
 - **The Foundation Models instrument in Xcode 27** — how to launch it, ⚠️ **why the trace file is a
-  sensitive artefact**, the two lanes anybody has named, the tree detail view, and the Info column.
+  sensitive artefact**, all six documented lanes, the tree detail view, and the Info column.
 - **The canonical worked bug**, reproduced end to end: a tool referenced in the *instructions text* but
   absent from the *toolset*. The model loops, keeps calling tools, and never throws. This is the bug
   Apple built an entire WWDC session around, and it is the archetype for the whole class.
-- **Three metrics** — Time to First Token, Tokens per Second, Total Latency — plus four token metrics
-  reported by a retired runtime-article summary but absent from the session. The list, including its
-  **cache hit rate**, is a re-verification target rather than a current UI contract.
+- **Three session metrics** — Time to First Token, Tokens per Second, Total Latency — plus the four
+  current token metrics: Total, Consumed, Generated, and Cached. The KV-caching page supplies the
+  cache-hit formula and the interpretation of a low rate between turns.
 
 ## What you need
 
@@ -62,10 +62,11 @@ a fixed order, that between them cover prototyping, unhappy paths, and productio
 
 > ⚠️ **A word about what this guide does not claim.** Nobody on this project has run Xcode 27's
 > Instruments. Statements about the instrument's UI below are traced to Apple's spoken narration in
-> WWDC26 session 243 or preserved Apple documentation. Claims found only in a retired article summary
-> are explicitly marked 🟡 **RECONSTRUCTED** and framed as re-verification targets. Where the evidence
-> runs out — most importantly, for **four of the six timeline lanes** — this guide says so and stops.
-> There are no invented lane names here. §6.3 is a 🔴 GAP box, not a list.
+> WWDC26 session 243 or to the direct Apple Markdown captures preserved in
+> [the 2026-09-22 evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
+> Claims those sources still do not establish — such as a dedicated prewarm-completion indicator —
+> remain explicitly marked 🟡 **RECONSTRUCTED**. The written documentation now names all six lanes and
+> all four current token metrics; this guide does not infer UI fields beyond that evidence.
 
 ---
 
@@ -79,7 +80,7 @@ a fixed order, that between them cover prototyping, unhappy paths, and productio
 6. [Anatomy of a trace, part 1: the lanes](#6-anatomy-of-a-trace-part-1-the-lanes)
 7. [Anatomy of a trace, part 2: the tree detail view](#7-anatomy-of-a-trace-part-2-the-tree-detail-view)
 8. [⚠️ The canonical worked bug: a tool named in prose, missing from the toolset](#8-️-the-canonical-worked-bug-a-tool-named-in-prose-missing-from-the-toolset)
-9. [Three metrics, and the four Apple only wrote down](#9-three-metrics-and-the-four-apple-only-wrote-down)
+9. [Duration and token metrics](#9-duration-and-token-metrics)
 10. [Detecting KV-cache invalidation](#10-detecting-kv-cache-invalidation)
 11. [What changed between the 2025 and 2026 instrument](#11-what-changed-between-the-2025-and-2026-instrument)
 12. [The whole loop, in order](#12-the-whole-loop-in-order)
@@ -846,11 +847,10 @@ One editorial note on the first four rows, because Apple changed its own advice:
 > 3. Click the **Record** button and interact with your app's AI features.
 > 4. Observe the token count as your app interacts with the model.
 
-> 🔴 **GAP — re-check the exact runtime-performance article wording.** A retired third-party summary
-> reported a three-step flow, but the summary itself was not preserved in the research note and its
-> exact **Record Trace** wording is therefore not verified evidence. Re-capture Apple's canonical
-> `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`
-> page before quoting its button label or step count.
+> ✅ **VERIFIED** — the current runtime-performance page independently gives the three launch steps
+> (Product > Profile, select the Foundation Models template, click Choose) and then directs you to the
+> **Record Trace** button or File > Record Trace. See the
+> [direct-page capture](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
 **Requirements**, stated flatly at the end of the session:
 
@@ -1059,57 +1059,28 @@ The shape of the bars tells you which problem you have, before you read a single
 - **A yellow bar with no orange after it** → the turn produced no generated text. Often that is a
   tool-call-only turn, which is legitimate and has its own UI hazard (§7.4).
 
-A retired summary also supplied the relationship that would make the timeline readable:
+✅ **VERIFIED** — the current runtime-performance page says each component's timeline width indicates
+latency. That visual relationship is documented, not reconstructed. See the
+[direct-page capture](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
-> 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article described each
-> component's timeline width as its latency. The underlying summary is no longer reproducible from
-> this repository, so use the visual relationship as guidance rather than an exact Apple quotation.
+### 6.3 The six documented lanes
 
-### 6.3 The other four lanes
+The current written documentation names and defines all six lanes:
 
-> 🔴 **GAP — four of the six lane names are unknown.** Apple states plainly that the Foundation Models
-> instrument has **six lanes** (`243:74`) and then names exactly **two**: *Instructions* (`243:78`) and
-> *Model Inference* (`243:81`). The remaining four are never named, never described, and never
-> enumerated — not in session 243, not in session 242, not in Apple's *Analyzing the runtime performance
-> of your Foundation Models app* article, and not in any other source in this project's corpus.
->
-> **Nobody working on this series has run Xcode 27's Instruments.** We are not going to guess. There are
-> plausible candidates — the tree hierarchy has levels named *sessions*, *requests* and *tool calls*, the
-> 2025 instrument had an *Asset Loading* track, and the documentation names a *cache hit rate* metric —
-> but "plausible" is exactly how the fabricated API names in circulation got there. **Do not write these
-> four names down, do not let a coding agent fill them in, and be suspicious of any document that lists
-> six lane names without a citation.**
->
-> **Narrowed 2026-07-29, from the Xcode 27.0 beta on this machine.** The template itself is now on
-> disk and was inspected: `Instruments.app/Contents/Resources/templates/Foundation Models.tracetemplate`
-> (also listed by `xcrun xctrace list templates`). Its archive records **exactly one instrument,
-> `com.apple.FoundationModels`** ("Inspect Foundation Models usage") — all six lanes belong to that one
-> instrument, so the lane names live in the instrument's definition, not the template. And that
-> definition is **not in the host toolchain**: a full-text sweep of Instruments.app for the known lane
-> name "Model Inference" finds nothing, because modern instruments stream their definitions from the
-> **recording target** at attach time. Consequence: the thirty-second job needs more than the
-> toolchain — it needs a recording target running an OS 27 (device or Mac); the toolchain alone,
-> which this project now has, cannot produce the names.
->
-> **Narrowed again 2026-07-31 — the target exists; headless recording against it does not.** The
-> Xcode 27 beta's **iOS 27.0 Simulator runtime is an OS 27 recording target**, and the probe run
-> (§13.4, `probes/`) proved Foundation Models inference actually executes there. But `xcrun xctrace
-> record` against the booted simulator **hangs for every template tried** on this macOS 26.5 host —
-> Foundation Models *and* a plain Time Profiler control, `--no-prompt` set, 15-second limits never
-> completing, the `.trace` bundle frozen at its 52 KB scaffold — so CLI recording cannot reach the
-> lane names in this host/beta combination. The sweep of the simulator runtime's own filesystem
-> finds no lane strings either (its framework binaries live in the dyld shared cache).
->
-> **What would resolve it:** one **manual GUI recording on this machine** — open Instruments 27 →
-> Foundation Models template → target the booted iOS 27.0 simulator → Record (click through the
-> §5.2 consent) → read the six lane headers off the timeline. No new hardware, no macOS 27
-> install — a thirty-second human job that CLI automation measurably cannot do today. (A screenshot
-> in Instruments help / release notes would also settle it.)
->
-> **What to do meanwhile:** the two named lanes carry the diagnoses in §8 and §10, which are the two
-> highest-value reads in the instrument. Work from those, and treat the other lanes as unlabelled context
-> — you can still see *that* something is happening at a given moment and click into it, which routes you
-> to the tree view, which is documented (§7).
+| Lane | What the current page says it represents |
+|---|---|
+| **Session** | the interval in which a session is active |
+| **Request** | the time required to perform a request within a session |
+| **Instructions** | the instructions associated with the request |
+| **Model Inference** | processing the input prompt and computing the response |
+| **Tool** | when a tool call occurs and how long its work takes |
+| **Model Loading** | loading model data from storage before fulfilling a request |
+
+✅ **VERIFIED** — all six names and meanings come from Apple's current runtime-performance page,
+preserved with provenance in the
+[2026-09-22 evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
+Session 243 only narrates Instructions and Model Inference, so use the written page — not guesses from
+the tree hierarchy — for the other four names.
 
 ---
 
@@ -1200,17 +1171,11 @@ in the entire toolchain where the instruction *prose* and the declared *toolset*
 side. Nothing in the compiler, the framework, or the runtime cross-checks them. Instruments does, visually,
 if you look.
 
-A retired summary reported a more detailed inspector payload than the session does:
-
-> 🟡 **RECONSTRUCTED** — a retired summary of Apple's runtime-performance article listed full
-> instructions, received prompt text, response text, tool-call arguments/results, and per-component
-> token counts in the inspector. Re-check the canonical article before treating that complete list
-> as a current UI contract.
-
-If a current Instruments build exposes tool-call arguments and return values there, use them to inspect
-unexpected arguments — the `.anyOf` guide that does not constrain, or the optional the model left
-`nil` — without adding a `print`. Until that field list is re-verified, do not assume those details are
-present or build automated profiling instructions around them.
+✅ **VERIFIED** — the current runtime-performance page says the request inspector shows instructions,
+prompt, response, duration, and token metrics. For custom tools, it documents where and how the model
+invokes them, how long each invocation takes, and its output. It does **not** promise that tool-call
+arguments are visible, so do not build a debugging procedure that depends on that field. See the
+[2026-09-22 evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
 ### 7.5 The Info column is your triage filter
 
@@ -1566,7 +1531,7 @@ a bug waiting for a WWDC session.
 
 ---
 
-## 9. Three metrics, and the four Apple only wrote down
+## 9. Duration and token metrics
 
 ### 9.1 The three from the session
 
@@ -1600,14 +1565,16 @@ Two more TTFT levers that are not "shorten the prompt" at all:
   trace this was worth roughly **700 ms** of dead time before the first token, moved to before the
   session even started (✅ `205:891`, `205:979-983`; Apple-published, Xcode 26 era, hardware unstated).
   A retired article summary said the instrument reveals whether prewarming completed before the
-  first request; treat that specific inspector claim as 🟡 **RECONSTRUCTED** until the canonical page
-  is captured again.
+  first request. The captured current page does not establish a dedicated completion indicator, so
+  that specific UI claim remains 🟡 **RECONSTRUCTED**.
 - **`includeSchemaInPrompt: false`**, when — and only when — a fully-populated example of the `@Generable`
   type is already in your instructions. *"Excluding the schema removes redundant schema information and
   **can save hundreds of tokens per request**."* (✅ Apple's *Analyzing the runtime performance…*
-  article.) In the code-along this took max token count from **1,044 → 700** (✅ `205:897`, `205:985`;
-  Apple-published). ⚠️ Turning it off *without* a one-shot example in the instructions is a footgun — the
-  model then has neither the schema nor an example to pattern-match against.
+  article, preserved in the
+  [2026-09-22 evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).)
+  In the code-along this took max token count from **1,044 → 700** (✅ `205:897`, `205:985`;
+  Apple-published). ⚠️ Turning it off *without* a one-shot example in the instructions is a footgun —
+  the model then has neither the schema nor an example to pattern-match against.
 
 **Tokens per Second is a regression detector, not a target.** Apple's own framing is about *benchmarking
 across configurations* and *catching regressions after changes*. That is the right use: record it for
@@ -1643,42 +1610,33 @@ move. What moves is the moment the user stops looking at nothing. Combine with:
 > never off first-token arrival.** Full treatment in
 > [Part 2 guide 02](../../part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md).
 
-### 9.2 The four token metrics reported by the retired summary
+### 9.2 The four current token metrics
 
-Session 243 says the inspector shows "token usage metrics" and moves on. A retired summary of the
-written companion enumerated four metrics, but the source is no longer reproducible from this corpus.
+Session 243 says the inspector shows token-usage metrics without naming them. The current written
+runtime-performance page does name the four metrics:
 
-> 🟡 **RECONSTRUCTED** — a retired summary of Apple's *Analyzing the runtime performance of your
-> Foundation Models app* enumerated the following metrics. The summary is not preserved, so treat
-> the list as a re-verification target rather than current Apple documentation; the canonical page is
-> `/documentation/foundationmodels/analyzing-the-runtime-performance-of-your-foundation-models-app`.
->
-> - **Cache hit rate** — percentage of input tokens served from the KV prefix cache (**divide cached
->   input tokens by total input tokens**)
-> - **Input tokens** — tokens from **instructions, tools, schemas, and prompts**
-> - **Output tokens** — tokens generated by the model
-> - **Reasoning tokens** (**PCC only**) — tokens used for intermediate reasoning in reasoning mode
->
-> The same summary associated high token counts with initial processing and memory use, and low
-> between-turn cache-hit rates with possible cache invalidation.
+- **Total Tokens** — consumed input plus generated output tokens.
+- **Consumed Tokens** — prompt, instructions, transcript, and other prompt metadata such as tool
+  definitions.
+- **Generated Tokens** — model output tokens.
+- **Cached Tokens** — input tokens reused from a previous request.
 
-⚠️ **Note the discrepancy, because it will cost you time.** Session 242 tells you to watch session 243
-*"for more about detecting cache invalidations with Instruments"* (✅ `242:177`) — and **session 243 never
-mentions a cache metric at all.** The only cache-metric claim in the current corpus comes from the
-retired summary. Do not assume that a current instrument exposes the metric, its raw counts, or a
-particular inspector location. Re-check the canonical page and the current UI first; only compute a
-ratio when the instrument verifiably exposes the necessary cached and total input-token counts.
+✅ **VERIFIED** — these names and meanings come from Apple's direct Markdown response captured on
+2026-09-22. The page describes cache hit rate as the percentage of input tokens served from the prefix
+cache; the companion KV-caching page supplies the calculation: **cached input tokens ÷ total input
+tokens**. A low rate between turns signals cache invalidation and full-prefix reprocessing. See the
+[preserved evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
-The same retired summary reported two more inspector fields that the session skips:
+⚠️ **Keep the source distinction visible.** Session 242 points to session 243 for cache-invalidation
+measurement (`242:177`), but session 243 never says "cache hit rate". That does not make the metric
+unsupported: it lives in Apple's current written documentation. Reasoning-token usage is available in
+the iOS 27 programmatic `Usage` API (§9.3), but it is **not** one of these four documented instrument
+metrics.
 
-> 🟡 **RECONSTRUCTED** — the retired summary said the instrument shows each tool invocation's duration
-> and output and includes per-component token counts. Confirm those fields against the current
-> instrument before depending on them in automated profiling instructions.
-
-If re-verification confirms a per-tool duration field, it is worth using. In a `.required`-mode agent,
-your own Swift code is inside the latency budget, N times per user request, and it is the one part of the
-chain you fully control. A tool that does a 300 ms network round-trip and gets called four times is 1.2
-seconds of Total Latency that has nothing to do with the model.
+The same current page verifies that the instrument shows where and how tools run, plus each tool's
+duration and output. That duration is worth using: in a `.required`-mode agent, your own Swift code is
+inside the latency budget N times per user request. A tool that does a 300 ms network round-trip and is
+called four times contributes 1.2 seconds of latency that has nothing to do with model inference.
 
 ### 9.3 The programmatic equivalents
 
@@ -1742,8 +1700,8 @@ and Apple makes the connection explicitly.
 > For more about detecting cache invalidations with Instruments, make sure to check out our video on
 > debugging and profiling.**"*
 
-That is 242 handing the problem to 243 — which, as noted in §9.2, does not pick it up by name. So here is
-the reconstructed procedure, built from what each source *does* say.
+That is 242 handing the problem to 243 — which, as noted in §9.2, does not pick it up by name. Apple's
+current KV-caching page now supplies the numeric procedure directly.
 
 ### 10.1 The read
 
@@ -1753,9 +1711,11 @@ the new tokens are processed. **A long yellow bar on every turn is the signature
 cache.**
 
 **In the inspector.** Open a model-inference node from turn *n* and compute
-`cached input tokens ÷ total input tokens` (§9.2). *"Low cache hit rates between turns signal unexpected
-cache invalidation."* (✅ Apple's runtime-performance article, via mirror.) A near-zero rate on a turn that
-should have inherited a large prefix means something changed in the prefix.
+`cached input tokens ÷ total input tokens` (§9.2). Apple's current KV-caching page says a low rate
+between turns signals cache invalidation and full-prefix reprocessing (✅
+[direct-page capture](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
+A near-zero rate on a turn that should have inherited a large prefix means something changed in the
+prefix.
 
 **In the Instructions lane.** A new region means a new instruction set means a new prefix. If regions
 appear more often than your feature actually changes mode, you have found your invalidator without
@@ -1869,12 +1829,12 @@ Side by side:
 | | **Xcode 26 instrument** | **Xcode 27 instrument** |
 |---|---|---|
 | How you reach it | Blank template, then `+`, then search "foundation models" | its **own template** in the chooser |
-| Timeline | 3 tracks (Response / Asset loading / first token) | **6 lanes**, two of them named: Instructions, Model Inference |
+| Timeline | 3 tracks (Response / Asset loading / first token) | **6 lanes**: Session, Request, Instructions, Model Inference, Tool, Model Loading |
 | Prefill vs decode | not distinguished | **yellow vs orange bars** |
 | Structure | one blue bar per session | **tree**: sessions ▸ requests ▸ model inferences ▸ instructions / prompts / responses |
 | Text of prompts and responses | not surfaced | **surfaced in the inspector** — hence the privacy dialog |
-| Tool calls | not surfaced | **nodes in the tree**, with arguments, return values and execution duration |
-| Token reporting | one number: "max token count" | input / output / **cached** / reasoning, per inference |
+| Tool calls | not surfaced | **Tool lane** plus invocation location, duration, and output; arguments are not documented |
+| Token reporting | one number: "max token count" | **Total / Consumed / Generated / Cached** tokens |
 | Triage affordance | none | the **Info column** |
 | Privacy confirmation | none described | **"Record Anyway"** |
 | Backends | on-device only (nothing else existed) | **any model used through the framework** |
@@ -2105,17 +2065,16 @@ at anywhere above.
 
 | # | Unknown | What would resolve it | Safe default meanwhile |
 |---|---|---|---|
-| 1 | **The names of four of the six timeline lanes.** Apple states six (`243:74`) and names two. | Anyone with Xcode 27 reading the lane headers, or a screenshot in Instruments help. | Work from Instructions and Model Inference; click unlabelled activity to route into the tree. |
-| 2 | **Whether the FM template works against the Simulator.** `243:147` implies a device. | Select a Simulator destination and hit Product ▸ Profile. | Profile on a device; Simulator numbers would be the host Mac's. |
-| 3 | **Where a `#Playground` block's model calls execute** (host / Simulator / device), and whether it follows the scheme destination. | Run a playground with a device selected; check whether the response reflects that device's OS. | Use `#Playground` for prompt shape; confirm behaviour on a device. |
-| 4 | **The exact contents and semantics of the Xcode 27 scheme menu** — one drop-down or two, whether quota simulation also throws `quotaLimitReached`. | Open the menu; run one request under each setting. | Drive UI off `quotaUsage` **and** catch the thrown error. |
-| 5 | **Member names inside `LanguageModelSession.Usage` / `.Input` / `.Output`.** | `/documentation/foundationmodels/languagemodelsession/usage`, or a 27.0 SDK interface dump. | Dump `session.usage` once with `String(describing:)` and code against what you see. |
-| 6 | **The `LanguageModelFeedback.Issue.Category` case list.** Only `.incorrect` is attested. | The `Issue.Category` symbol page, or an SDK interface dump. | Use `.incorrect`; put the detail in `explanation`. |
-| 7 | **The two 27.0 `logFeedbackAttachment` overloads** (`desiredResponseContent:` / `desiredResponseText:`) — spellings come from an index listing, not a signature. | The symbol pages. | Try `desiredResponseText:` first; fall back to `desiredOutput:`. |
-| 8 | **Whether third-party `LanguageModel` backends populate every lane and metric** — cached-token counts presuppose a KV cache the provider may not expose. | A trace against an MLX- or ChatCompletions-backed session on Xcode 27. | Trust structural lanes for any backend; verify per-token metrics before quoting them. |
-| 9 | **Whether the instrument surfaces PCC reasoning tokens as their own lane or only as a metric.** Apple's article names the metric; session 243 never mentions it. | A PCC trace with `reasoningLevel` set. | Read it from the model-inference inspector's Metrics section. |
-| 10 | **Whether "Session" in the tree is one `LanguageModelSession` instance**, and whether a node survives a profile switch. Session 243 shows two instruction regions in one recording without saying whether that was one Session node or two. | Expand a trace of a two-profile feature. | Read region counts off the Instructions lane, which is unambiguous. |
-| 11 | **`Transcript.Instructions.toolDefinitions` / `.segments` as readable properties** (used by the test in §8.7) — inferred from initialiser labels. | The `Transcript.Instructions` symbol page. | Fall back to encoding the `Transcript` to JSON and searching the string. |
+| 1 | **Whether the FM template works against the Simulator.** `243:147` implies a device. | Select a Simulator destination and hit Product ▸ Profile. | Profile on a device; Simulator numbers would be the host Mac's. |
+| 2 | **Where a `#Playground` block's model calls execute** (host / Simulator / device), and whether it follows the scheme destination. | Run a playground with a device selected; check whether the response reflects that device's OS. | Use `#Playground` for prompt shape; confirm behaviour on a device. |
+| 3 | **The exact contents and semantics of the Xcode 27 scheme menu** — one drop-down or two, whether quota simulation also throws `quotaLimitReached`. | Open the menu; run one request under each setting. | Drive UI off `quotaUsage` **and** catch the thrown error. |
+| 4 | **Member names inside `LanguageModelSession.Usage` / `.Input` / `.Output`.** | `/documentation/foundationmodels/languagemodelsession/usage`, or a 27.0 SDK interface dump. | Dump `session.usage` once with `String(describing:)` and code against what you see. |
+| 5 | **The `LanguageModelFeedback.Issue.Category` case list.** Only `.incorrect` is attested. | The `Issue.Category` symbol page, or an SDK interface dump. | Use `.incorrect`; put the detail in `explanation`. |
+| 6 | **The two 27.0 `logFeedbackAttachment` overloads** (`desiredResponseContent:` / `desiredResponseText:`) — spellings come from an index listing, not a signature. | The symbol pages. | Try `desiredResponseText:` first; fall back to `desiredOutput:`. |
+| 7 | **Whether third-party `LanguageModel` backends populate every lane and metric** — cached-token counts presuppose a KV cache the provider may not expose. | A trace against an MLX- or ChatCompletions-backed session on Xcode 27. | Verify the backend's per-token metrics before quoting them. |
+| 8 | **Whether the instrument surfaces PCC reasoning tokens at all.** The current page's four metrics do not include reasoning tokens. | A PCC trace with `reasoningLevel` set. | Read reasoning usage from the programmatic `Usage` API; do not claim an Instruments field. |
+| 9 | **Whether "Session" in the tree is one `LanguageModelSession` instance**, and whether a node survives a profile switch. Session 243 shows two instruction regions in one recording without saying whether that was one Session node or two. | Expand a trace of a two-profile feature. | Read region counts off the Instructions lane, which is unambiguous. |
+| 10 | **`Transcript.Instructions.toolDefinitions` / `.segments` as readable properties** (used by the test in §8.7) — inferred from initialiser labels. | The `Transcript.Instructions` symbol page. | Fall back to encoding the `Transcript` to JSON and searching the string. |
 
 ---
 
@@ -2138,14 +2097,12 @@ WWDC25 leftovers** and are not cited anywhere in this guide as 2026 evidence.
 
 **Apple documentation.**
 
-- *Analyzing the runtime performance of your Foundation Models app* — the instrument's canonical written
-  companion, which must be captured again. A retired summary reported token metrics, cache hit rate,
-  tool-call duration, and inspector contents, but neither that summary nor the page content is preserved
-  in this repository; those claims are marked 🟡 **RECONSTRUCTED** above.
+- *Analyzing the runtime performance of your Foundation Models app* and *Optimizing key-value caching
+  in language model sessions* — direct Apple Markdown captured on 2026-09-22 with response hashes and
+  targeted excerpts in the
+  [runtime-performance evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 - *Managing the context window* — 4,096 tokens, what consumes them, the four-step Instruments workflow,
   the prompt-shortening rules, the unencrypted-recording warning.
-- *Optimizing key-value caching in language model sessions* — token layout, blast radius, stateless vs
-  in-place transforms, batching your trimming.
 - *Using Private Cloud Compute* — the quota API, the four UI recommendations, the scheme steps.
 - *Foundation Models updates* — the "February 2026" (26.4) and 2026 entries; the playground token-count
   feature; the "the model changes when a person updates" warnings.

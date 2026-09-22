@@ -15,10 +15,10 @@ from urllib.parse import quote, unquote
 
 try:
     from scripts.mdslug import slugify
-    from scripts.mdlinks import SITE_ONLY_GUIDE_PREFIXES
+    from scripts.mdlinks import SITE_ONLY_GUIDE_PREFIXES, repository_ref
 except ModuleNotFoundError:  # MkDocs can load a hook with scripts/ on sys.path.
     from mdslug import slugify
-    from mdlinks import SITE_ONLY_GUIDE_PREFIXES
+    from mdlinks import SITE_ONLY_GUIDE_PREFIXES, repository_ref
 
 
 PART_DIRECTORY = re.compile(r"part-(?P<number>\d{2})-[a-z0-9-]+$")
@@ -221,9 +221,10 @@ def github_url(
 ) -> str:
     relative = target.relative_to(repository_root).as_posix()
     object_kind = "tree" if target.is_dir() else "blob"
+    ref = repository_ref(target, repository_root, branch)
     url = (
         f"{repository_url.rstrip('/')}/{object_kind}/"
-        f"{quote(branch, safe='')}/{quote(relative, safe='/')}"
+        f"{quote(ref, safe='')}/{quote(relative, safe='/')}"
     )
     if query:
         url += f"?{query}"

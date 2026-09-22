@@ -42,10 +42,11 @@ is evaluating your *Swift* app.
 
 One editorial warning, because this part carries more of them than any other in Parts 1–6. **This is where
 the guides most often stop and say "we do not know."** Nobody on this project has run Xcode 27's
-Instruments or `fm` on a macOS 27 machine. Four of the instrument's six lane names are unknown and left
-blank rather than guessed; not one `fm` flag spelling is verified. The Python half is the opposite — a
-cloned Apple repository read file by file, with bugs cited down to the assignment that causes them. Read
-the evidence markers; they are doing real work here.
+Instruments or `fm` on a macOS 27 machine. Apple's current written documentation now names all six
+instrument lanes and all four token metrics; UI details it does not establish remain marked as gaps.
+Not one `fm` flag spelling is verified. The Python half is the opposite — a cloned Apple repository
+read file by file, with bugs cited down to the assignment that causes them. Read the evidence markers;
+they are doing real work here.
 
 ---
 
@@ -85,9 +86,10 @@ four devices and a burned daily quota. Then the Xcode 27 instrument: the Instruc
 of your app's state machine, the Model Inference lane's yellow-prefill/orange-decode split, the tree
 (sessions ▸ requests ▸ model inferences ▸ instructions / prompts / responses / tool calls), the Info
 column as a linter, and the three latency metrics plus the four token metrics only Apple's *written*
-documentation names — including the cache hit rate that session 242 promises session 243 will cover and
-which session 243 never mentions. Section 3 is the least-known thing in the part: `#Playground` is
-Apple's official bug-reporting channel for the model itself.
+documentation names — **Total, Consumed, Generated, and Cached** — plus the KV-caching page's cache-hit
+formula. Session 243 never names that metric, so the guide keeps the written-documentation attribution
+explicit. Section 3 is the least-known thing in the part: `#Playground` is Apple's official
+bug-reporting channel for the model itself.
 
 > ⚠️ **SILENT FAILURE — the Simulator trap.** Xcode ships the SDK; the *model* ships with the OS. Against
 > a Simulator, inference is executed by the **host Mac**, and an Xcode 27 SDK on a macOS 26 host
@@ -103,14 +105,13 @@ Apple's official bug-reporting channel for the model itself.
 > content, and read a trace before you attach it to anything. The same applies with the same force to
 > `logFeedbackAttachment` JSON (§3.1) and to Origami's `TranscriptRecorder` snapshots (§13.1).
 >
-> 🔴 **GAP — Apple states the instrument has six lanes and names two.** *Instructions* and *Model
-> Inference* are quoted; the other four are never named in any source in this corpus, and this guide
-> refuses to invent them — "plausible" is exactly how the fabricated API names in circulation got there.
-> Ten more declared gaps are collected in §15, the load-bearing ones being where a `#Playground` block
-> actually executes, whether the Foundation Models template works against a Simulator at all, the member
-> names inside `LanguageModelSession.Usage`, and whether third-party `LanguageModel` backends populate
-> the per-token metrics. Each carries a safe default and a thirty-second remedy for someone with the
-> toolchain.
+> ✅ **VERIFIED — the current written documentation names all six lanes:** Session, Request,
+> Instructions, Model Inference, Tool, and Model Loading. The direct Apple Markdown response and its
+> SHA-256 are preserved in the
+> [2026-09-22 evidence note](../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
+> The remaining declared gaps are collected in §15, including where a `#Playground` block actually
+> executes, whether the Foundation Models template works against a Simulator, the member names inside
+> `LanguageModelSession.Usage`, and whether third-party `LanguageModel` backends populate every metric.
 
 ### [5.2 — The `fm` CLI and the Foundation Models SDK for Python](references/02-fm-cli-and-python-sdk.md)
 
@@ -222,10 +223,12 @@ the primary source for the whole trace anatomy, plus sessions **241**, **242**, 
 **334** (*Foundation Models on macOS*), and Meet-with-Apple **205**, the Xcode 26 code-along that supplies
 the 2025 instrument baseline and the 1,044 → 700 token result. All are **spoken** transcripts, which is
 why narrated command lines appear here as 🔴 unknown rather than as flags. Apple documentation:
-*Analyzing the runtime performance of your Foundation Models app* — read via a local mirror that
-**condenses** Apple's prose, and labelled as substance rather than exact sentences at every use —
-*Managing the context window*, *Optimizing key-value caching in language model sessions*, *Using Private
-Cloud Compute*, *Foundation Models updates*, and the FoundationModels symbol index. Apple sample code from
+*Analyzing the runtime performance of your Foundation Models app* and *Optimizing key-value caching in
+language model sessions* — captured directly as Apple Markdown on 2026-09-22, with hashes and targeted
+excerpts preserved in the
+[evidence note](../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md) — plus
+*Managing the context window*, *Using Private Cloud Compute*, *Foundation Models updates*, and the
+FoundationModels symbol index. Apple sample code from
 downloaded archives, treated as top-tier evidence: **Origami** (`OrigamiInstructions.swift`,
 `CraftTools.swift`, `CoachInstructions.swift`, `TranscriptRecorder.swift`, `CoachModel.swift`) and **Book
 Tracker**, whose shipped `#Playground` block is quoted whole. For the Python half,

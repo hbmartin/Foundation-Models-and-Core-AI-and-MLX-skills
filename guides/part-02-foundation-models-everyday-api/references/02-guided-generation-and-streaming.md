@@ -2226,7 +2226,9 @@ Apple's documentation puts the same claim in generic terms:
 > Excluding the schema removes redundant schema information and **can save hundreds of tokens per
 > request.**
 >
-> ✅ **VERIFIED** verbatim from *Analyzing the runtime performance of your Foundation Models app*.
+> ✅ **VERIFIED** verbatim from *Analyzing the runtime performance of your Foundation Models app*;
+> the direct Apple Markdown response and its SHA-256 are preserved in the
+> [2026-09-22 evidence note](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
 And the token budget counts everything:
 

@@ -1001,9 +1001,11 @@ parent's transcript it never gets cheaper. Two mitigations:
 > a fresh child prefill per consultation, plus two entries in the parent). We **cannot** give you a
 > crossover point, because no Apple or community measurement compares them on the same workload.
 > Resolving this needs an Instruments trace of both shapes on one device — the Foundation Models
-> template reports input tokens, output tokens and cache hit rate per inference, which is exactly the
-> instrumentation required. **Safe default meanwhile: use phone-a-friend for anything called less
-> than once per turn on average, baton-pass for a mode the conversation stays in.**
+> template reports **Total, Consumed, Generated, and Cached Tokens** for a request. The KV-caching page
+> defines cache hit rate as cached input tokens divided by total input tokens, which is exactly the
+> instrumentation required (✅ [direct Apple Markdown captured 2026-09-22](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
+> **Safe default meanwhile: use phone-a-friend for anything called less than once per turn on average,
+> baton-pass for a mode the conversation stays in.**
 
 ---
 
@@ -2194,9 +2196,10 @@ tutorial, review — and stays there pays once per mode change and appends the r
 
 > ✅ **VERIFIED** — `242:175`: *"It's important to understand that **different models have different
 > caching behavior and the only way to be certain is by measuring**."* The instrument is the metric:
-> **cache hit rate = cached input tokens ÷ total input tokens** (✅ Apple's KV-caching and runtime
-> performance articles; note that WWDC26 session 243 never says the words "cache hit rate" even
-> though 242 points at it for exactly this — the number lives in the written docs only).
+> **cache hit rate = cached input tokens ÷ total input tokens** (✅ Apple's current KV-caching page,
+> [captured directly on 2026-09-22](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
+> The runtime-performance page names the supporting **Consumed Tokens** and **Cached Tokens** metrics.
+> WWDC26 session 243 never says "cache hit rate", so the attribution remains to the written docs.
 
 ### 8.3 What switching actually measured, on real hardware
 

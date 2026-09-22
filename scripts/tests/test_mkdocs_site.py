@@ -147,6 +147,11 @@ class MkDocsHookTests(unittest.TestCase):
         self.assertIn("logging_nan_inf_filter=False", trainer)
         self.assertIn('require_finite_metrics("training log"', trainer)
         self.assertIn("require_private_repo(api, args.adapter_repo)", trainer)
+        main_body = trainer.split("def main()", 1)[1]
+        self.assertLess(
+            main_body.index("load_publication_receipt("),
+            main_body.index("trainer.train("),
+        )
 
         self.assertEqual(
             2,
@@ -189,10 +194,12 @@ class MkDocsHookTests(unittest.TestCase):
             before = path.read_bytes()
             with self.assertRaisesRegex(
                 ValueError,
-                r"not bound to immutable model and dataset inputs.*new output directory",
+                r"preserve the existing checkpoints.*archive or rename only.*"
+                r"publication-receipt\.json",
             ):
                 load_receipt(path, inputs)
             self.assertEqual(before, path.read_bytes())
+            self.assertNotIn("start with a new output directory", contents)
 
             receipt = {
                 "schema_version": 1,
@@ -211,6 +218,43 @@ class MkDocsHookTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "different model or dataset inputs"):
                 load_receipt(path, {"immutable": "different-inputs"})
+
+    def test_remote_training_rejects_blank_commit_identity_without_mutation(self):
+        workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
+        contents = workflow.read_text(encoding="utf-8")
+        blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
+        trainer = next(block for block in blocks if "def record_hub_publication" in block)
+        tree = ast.parse(trainer)
+        function = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "record_hub_publication"
+        )
+
+        def write_json(path, value):
+            path.write_text(json.dumps(value), encoding="utf-8")
+
+        namespace = {"Path": Path, "write_json": write_json}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), "receipt", "exec"), namespace)
+        record = namespace["record_hub_publication"]
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "publication-receipt.json"
+            receipt = {"schema_version": 1, "inputs": {}, "artifacts": {}}
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            for invalid in (None, "", "   "):
+                before_bytes = path.read_bytes()
+                before_receipt = json.loads(json.dumps(receipt))
+                with self.assertRaisesRegex(ValueError, "nonblank string"):
+                    record(path, receipt, "adapter", "org/model", invalid)
+                self.assertEqual(before_receipt, receipt)
+                self.assertEqual(before_bytes, path.read_bytes())
+
+            record(path, receipt, "adapter", "org/model", "  abc123  ")
+            self.assertEqual(
+                "abc123",
+                receipt["artifacts"]["adapter"]["publications"][0]["commit_sha"],
+            )
 
     def test_remote_publication_helper_is_append_only_and_failure_safe(self):
         workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
@@ -245,6 +289,28 @@ class MkDocsHookTests(unittest.TestCase):
                 [publication], receipt["artifacts"]["mlx_4bit"]["publications"]
             )
 
+            before = path.read_bytes()
+            for invalid in (None, "", "   "):
+                with self.assertRaisesRegex(ValueError, "nonblank string"):
+                    namespace["append_publication"](
+                        path,
+                        "invalid",
+                        "hugging_face",
+                        {"repo": "org/model", "commit_sha": invalid},
+                    )
+                self.assertEqual(before, path.read_bytes())
+
+            namespace["append_publication"](
+                path,
+                "normalized",
+                "hugging_face",
+                {"repo": "org/model", "commit_sha": "  def456  "},
+            )
+            normalized = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                "def456",
+                normalized["artifacts"]["normalized"]["publications"][0]["commit_sha"],
+            )
             before = path.read_bytes()
 
             class PublicApi:
@@ -350,6 +416,24 @@ class MkDocsHookTests(unittest.TestCase):
         )
         self.assertIn("https://github.com/example/project/tree/main/scripts", result)
         self.assertIn("](part-01-orientation-and-gating/README.md)", result)
+
+    def test_rewrites_frozen_noema_note_to_its_immutable_ref(self):
+        source = (
+            REPOSITORY_ROOT
+            / "guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md"
+        )
+        result = mkdocs_hooks.transform_markdown(
+            "[Noema](../../../notes/repos/noema-ios.md)\n",
+            source,
+            REPOSITORY_ROOT / "guides",
+            REPOSITORY_ROOT,
+            "https://github.com/example/project",
+        )
+        self.assertIn(
+            "https://github.com/example/project/blob/"
+            "467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md",
+            result,
+        )
 
     def test_does_not_rewrite_links_inside_code(self):
         markdown = (

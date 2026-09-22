@@ -1001,9 +1001,11 @@ parent's transcript it never gets cheaper. Two mitigations:
 > a fresh child prefill per consultation, plus two entries in the parent). We **cannot** give you a
 > crossover point, because no Apple or community measurement compares them on the same workload.
 > Resolving this needs an Instruments trace of both shapes on one device — the Foundation Models
-> template reports input tokens, output tokens and cache hit rate per inference, which is exactly the
-> instrumentation required. **Safe default meanwhile: use phone-a-friend for anything called less
-> than once per turn on average, baton-pass for a mode the conversation stays in.**
+> template reports **Total, Consumed, Generated, and Cached Tokens** for a request. The KV-caching page
+> defines cache hit rate as cached input tokens divided by total input tokens, which is exactly the
+> instrumentation required (✅ [direct Apple Markdown captured 2026-09-22](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
+> **Safe default meanwhile: use phone-a-friend for anything called less than once per turn on average,
+> baton-pass for a mode the conversation stays in.**
 
 ---
 
@@ -2148,7 +2150,7 @@ half is easy to reason about and the cost half is where people get surprised.
 > ⚠️ **Apple documents 4K, but you still should not hardcode it.** A shipping third-party app's own
 > source comment claims a different device probe: *"The on-device context is selected by the installed system
 > model. **iOS 26 reports 4K while the iOS 27 model reports 8K.** `contextSize` is available in the
-> Xcode 26.4+ SDK."* (community, [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+> Xcode 26.4+ SDK."* (community, [frozen Noema research note](../../../notes/repos/noema-ios.md),
 > `AFMLLMClient.swift:133-135`; the app hardcodes 4096
 > only as a fallback when `contextSize` returns `<= 0`.) Apple's written Group Lab 8121 summary
 > documents 4096 for iOS 27, and the unreproduced 8192 comment is now retired as historical
@@ -2194,9 +2196,10 @@ tutorial, review — and stays there pays once per mode change and appends the r
 
 > ✅ **VERIFIED** — `242:175`: *"It's important to understand that **different models have different
 > caching behavior and the only way to be certain is by measuring**."* The instrument is the metric:
-> **cache hit rate = cached input tokens ÷ total input tokens** (✅ Apple's KV-caching and runtime
-> performance articles; note that WWDC26 session 243 never says the words "cache hit rate" even
-> though 242 points at it for exactly this — the number lives in the written docs only).
+> **cache hit rate = cached input tokens ÷ total input tokens** (✅ Apple's current KV-caching page,
+> [captured directly on 2026-09-22](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
+> The runtime-performance page names the supporting **Consumed Tokens** and **Cached Tokens** metrics.
+> WWDC26 session 243 never says "cache hit rate", so the attribution remains to the written docs.
 
 ### 8.3 What switching actually measured, on real hardware
 
@@ -2359,7 +2362,7 @@ Routing *to* PCC is not just picking a model. Four things can stop it, and all f
 > }
 > ```
 > Shipping third-party code matches these cases and adds an `@unknown default:` arm
-> ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+> ([frozen Noema research note](../../../notes/repos/noema-ios.md),
 > `AppleFoundationModelAvailability.swift:163-186`) — do the same; the enum is
 > resilient. And ✅ `319:36-37`: *"just like with the on-device model, **PCC is only available on
 > Apple Intelligence devices.**"*
@@ -2370,7 +2373,7 @@ model.**"* That is a routing fallback Apple explicitly recommends, and `DynamicP
 belongs — a `networkAvailable` flag in your route enum, not a `try?` at the call site.
 
 **3. Locale.** ✅ `PrivateCloudComputeLanguageModel.supportsLocale(_:)` exists and is used in shipping
-code to throw before the request ([frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+code to throw before the request ([frozen Noema research note](../../../notes/repos/noema-ios.md),
 `AFMLLMClient.swift:92-95` — written against the
 pre-beta-5 synchronous surface). ⚠️ **Changed in Xcode 27 beta 5 (noted 2026-08-23):** the PCC
 overload is now **`async throws`** — ✅ **SDK-verified**
@@ -3042,7 +3045,7 @@ Extracted from the archives obtained via Apple's tutorials JSON API.
   `engine.supportsLogits`), `knowledge/agentic-security-checklist.md` (the `onToolCall` chokepoint
   sketch attributed to WWDC26 347, and the `historyTransform` spotlighting/redaction guidance),
   `knowledge/evaluations-framework.md` (`disallowed` as an injection gate).
-- [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — the Apple Foundation Models documentation mirror used to cross-check
+- [frozen Noema 3.5 snapshot](../../../notes/repos/noema-ios.md) — the Apple Foundation Models documentation mirror used to cross-check
   242, and `AFMLLMClient.swift` / `AppleFoundationModelAvailability.swift` for the `contextSize`
   historical, unreproduced 8K observation and the availability/quota switch shapes.
 

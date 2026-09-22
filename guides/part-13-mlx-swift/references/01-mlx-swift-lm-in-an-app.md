@@ -1080,7 +1080,7 @@ sample):
 ```
 
 A shipping third-party iOS app makes the opposite, and better, choice — **community-measured,
-from a deep read of the [frozen Noema 3.5 snapshot](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md), which stores models under `Documents`**:
+from a deep read of the [frozen Noema 3.5 snapshot](../../../notes/repos/noema-ios.md), which stores models under `Documents`**:
 
 ```swift illustrative
 static func baseDir(for format: ModelFormat, modelID: String) -> URL {
@@ -1717,7 +1717,7 @@ Note MNISTTrainer is the one app *without* it — because MNIST is tiny. That is
 entitlement is not boilerplate, it is a statement that your app intends to hold gigabytes.
 
 A shipping third-party app carries it too, alongside two others that matter for this domain —
-community-measured, read from the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+community-measured, read from the [frozen Noema research note](../../../notes/repos/noema-ios.md),
 `Noema.entitlements`:
 
 ```xml
@@ -1761,7 +1761,7 @@ Verified surface, from that note's read of `mlx-swift-examples` at HEAD `378f244
 **But `GPU.set(cacheLimit:)` has not vanished from the ecosystem.** A shipping third-party app,
 pinned to an older `mlx-swift-lm` revision (`702e5a0`) and to `mlx-swift` **branch `main`**, calls
 `MLX.GPU.set(cacheLimit:)` — community-measured, read from the
-[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md), `MLXBridge.swift`, this
+[frozen Noema research note](../../../notes/repos/noema-ios.md), `MLXBridge.swift`, this
 session. And `mlx-swift-lm` still calls **`GPU.maxRecommendedWorkingSetBytes()`** in three places
 (✅ VERIFIED: `WiredMemoryPolicies.swift:8`, `SpeculativeDecoding.swift:7` and `:167`), so the `GPU`
 namespace is alive; it is the *cache-limit setter* that moved.
@@ -1853,7 +1853,7 @@ right for every case. Two pieces of evidence complicate it:
 1. **Apple's own StableDiffusion sample uses 256 MB on a normal machine** and 1 MB only when
    conserving.
 2. A shipping app abandoned the flat 20 MB deliberately. Community-measured, from the
-   [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+   [frozen Noema research note](../../../notes/repos/noema-ios.md),
    `MLXBridge.swift`, verbatim comment plus code:
 
 ```swift illustrative
@@ -2227,7 +2227,7 @@ closes".
 footprint the kernel measures. You need `phys_footprint` and `os_proc_available_memory`.
 
 The following is **community-measured**, preserved in the
-[frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — a shipping third-party
+[frozen Noema research note](../../../notes/repos/noema-ios.md) — a shipping third-party
 iOS LLM app. It is the best-documented example of this problem in the corpus and none of it is
 Apple-sanctioned. The C shim (`Noema/GGUFScanner.c`):
 
@@ -2369,7 +2369,7 @@ gate it harder than a resident launch."* All community-measured.
 ### 6.9 Backgrounding, unloading, and download behaviour
 
 Three production behaviours that are invisible in a sample app and mandatory in a shipping one. All
-community-measured from the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) unless marked.
+community-measured from the [frozen Noema research note](../../../notes/repos/noema-ios.md) unless marked.
 
 **1. Unload big models when backgrounded.** The policy, verbatim in shape:
 
@@ -3105,7 +3105,7 @@ on a timer or every N chunks — Apple's own `LoRAEvaluator` does exactly that w
 `if count % evaluateShowEvery == 0 { self.output = output }` (✅ VERIFIED via the research note).
 
 **3. Isolate the streaming text from the rest of the view model.** Community-measured, from
-the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md):
+the [frozen Noema research note](../../../notes/repos/noema-ios.md):
 
 ```swift illustrative
 @MainActor final class StreamingMessageStore: ObservableObject {
@@ -3304,7 +3304,7 @@ returns.
 
 **Option B — fake checkpoints.** A shipping app broadcasts synthetic progress at load milestones,
 clamped to `[0, 0.97]` so the bar never claims completion it cannot verify — community-measured,
-from the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md), which records
+from the [frozen Noema research note](../../../notes/repos/noema-ios.md), which records
 `.mlxModelLoadProgress` notifications at 0.12 → 0.3 → 0.55 → 0.95.
 Cruder, but it keeps a single bar moving. The clamp is the good idea: **never let a progress bar
 reach 1.0 before the thing is actually usable.**
@@ -3556,7 +3556,7 @@ it is illustrative — add it (§9.1).
 `#if canImport(FoundationModels, _version: 2)` is elegant but it only works when the framework
 itself is the version signal. For APIs that are *new in 27 but live in a framework that existed in
 26*, there is no `canImport` trick. A shipping app solves this with SDK-keyed build settings.
-**Community-measured**, read from the [frozen Noema research note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md),
+**Community-measured**, read from the [frozen Noema research note](../../../notes/repos/noema-ios.md),
 `project.pbxproj`:
 
 ```
@@ -3796,7 +3796,7 @@ evidence class.
 - `notes/repos/mlx-swift-examples.md` — 3,348 lines; `ml-explore/mlx-swift-examples` at HEAD
   `378f244` (*"MLXChatExample: fix VLM image handling on iOS (PhotosPicker, EXIF, empty assistant
   trim) (#472)"*, 2026-06-16). Source of every sample-app listing in §4, §6, §7 and §8.
-- [`notes/repos/noema-ios.md`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md) — 2,217 lines; frozen Noema 3.5 snapshot, a shipping
+- [`notes/repos/noema-ios.md`](../../../notes/repos/noema-ios.md) — 2,225 lines; frozen Noema 3.5 snapshot, a shipping
   third-party iOS app. **All material from this source is labelled community-measured in the text.**
   Source of §6.7–§6.9, §8.2's isolation pattern, §9.5's SDK-keyed conditions.
 - `notes/repos/issues-mlx-stack.md` — 1,183 lines; a GitHub issue/PR mining pass over `mlx`,
