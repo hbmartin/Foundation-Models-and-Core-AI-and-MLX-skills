@@ -25,6 +25,7 @@ now imports them from here.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 import re
@@ -37,8 +38,19 @@ from urllib.parse import quote
 FENCE = re.compile(r"^(?: {0,3}>[ \t]?)* {0,3}(`{3,}|~{3,})")
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 SITE_ONLY_GUIDE_PREFIXES = ("workflows/",)
-REPOSITORY_PATH_REF_OVERRIDES = {
-    "notes/repos/noema-ios.md": "467d3cc496248af2928d92f8d330ba4a8457f0f8",
+
+
+@dataclass(frozen=True)
+class RepositorySnapshot:
+    ref: str
+    content_sha256: str
+
+
+REPOSITORY_PATH_SNAPSHOTS = {
+    "notes/repos/noema-ios.md": RepositorySnapshot(
+        ref="467d3cc496248af2928d92f8d330ba4a8457f0f8",
+        content_sha256="170ef0b437d61280efbc16c25c119d79d33b6f4cc1d3486257559784eb76eede",
+    ),
 }
 
 
@@ -74,10 +86,11 @@ def page_target(candidate: Path, raw_path: str) -> Path:
     return candidate
 
 
-def repository_ref(target: Path, repository_root: Path, default_ref: str) -> str:
+def repository_ref(relative_path: str | Path, default_ref: str) -> str:
     """Return the immutable ref for a pinned repository path, or the configured ref."""
-    relative = target.relative_to(repository_root).as_posix()
-    return REPOSITORY_PATH_REF_OVERRIDES.get(relative, default_ref)
+    relative = Path(relative_path).as_posix()
+    snapshot = REPOSITORY_PATH_SNAPSHOTS.get(relative)
+    return snapshot.ref if snapshot is not None else default_ref
 
 
 def github_url(
@@ -89,7 +102,7 @@ def github_url(
 ) -> str:
     relative = target.relative_to(repository_root).as_posix()
     object_kind = "tree" if target.is_dir() else "blob"
-    ref = repository_ref(target, repository_root, branch)
+    ref = repository_ref(relative, branch)
     url = (
         f"{repository_url.rstrip('/')}/{object_kind}/"
         f"{quote(ref, safe='')}/{quote(relative, safe='/')}"

@@ -17,6 +17,14 @@ The runtime-performance response was 10,204 bytes / 189 lines; the KV-caching re
 bytes / 296 lines. Hash the response bytes, without rewriting line endings, to reproduce the values
 above.
 
+### Relationship to the July capture
+
+`notes/transcripts/fm-advanced.md` preserves excerpts and analysis from the July 2026 Noema/mirror
+copies of both pages. That older material remains historical evidence for what the project read then,
+but its runtime-performance summary names a different token-metric set. The direct Apple responses
+captured here supersede it for claims about the **current** lane names, inspector fields, and token
+metrics. They do not erase the older capture or its more detailed KV-caching research notes.
+
 ## Runtime-performance page: targeted evidence
 
 The launch sequence is Product > Profile, select the Foundation Models template, then click Choose.
@@ -54,7 +62,9 @@ The schema-saving statement used in Part 2 and Part 5 is preserved verbatim:
 
 The page's Instruments procedure says to compute cache hit rate by dividing **cached input tokens by
 total input tokens**. A low rate between turns signals cache invalidation and reprocessing of the full
-prefix.
+prefix. In the current runtime-performance page's inspector labels, the numerator is **Cached Tokens**
+and the total-input denominator is **Consumed Tokens**; **Total Tokens** also includes generated output
+and is not the denominator.
 
 It also documents the dependency order — instructions, then tool definitions, then transcript entries
 — and explains that changing instructions invalidates the cached tool definitions and transcript,

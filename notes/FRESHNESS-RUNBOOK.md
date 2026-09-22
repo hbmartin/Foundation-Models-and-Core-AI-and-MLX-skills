@@ -176,7 +176,8 @@ rebuild fails CI rather than shipping stale material into someone's project.
 
 Special case — **the day this machine gets macOS 27**: run the whole upgrade-day list in
 `probes/README.md` (`swift test` natively closes the MAC-27 probes), capture `fm --help`
-(NEEDED item 1), and do the one-time GUI Instruments recording for the lane names (NEEDED item 3).
+(NEEDED item 1), and do the one-time GUI Instruments recording for rendered Foundation Models
+details and the still-unknown Core AI lane/metric names (NEEDED item 3).
 
 ---
 
@@ -197,5 +198,5 @@ scripts can establish the former, while edits require the evidence-bounded dispo
 | Daily | manual; installed schedule paused | defect sweep `--changed-only` + ground checks | 5–10 min |
 | Weekly | Monday 09:00 | isolated evidence collection, bounded fixes, verified draft/ready PR | ~30 min + checks |
 | Per-event | new beta / runtime / OS | NEXT-BETA-CHECKLIST ritual, interface diff, index rebuild if needed | 1–3 h |
-| Upgrade day | this machine gets macOS 27 | probes MAC-27 run, `fm` capture, GUI lane-name recording | ~1 h |
+| Upgrade day | this machine gets macOS 27 | probes MAC-27 run, `fm` capture, GUI detail/Core AI-name recording | ~1 h |
 | Per-edit | any guide change | conventions + ledger updates; index rebuild only on heading/⚠️ changes | in-line |

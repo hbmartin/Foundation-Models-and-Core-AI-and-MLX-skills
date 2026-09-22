@@ -292,17 +292,30 @@ def publication_inputs(args: argparse.Namespace, fingerprints: dict[str, str]) -
     }
 
 
-def load_publication_receipt(path: Path, inputs: dict) -> dict:
+def load_publication_receipt(
+    path: Path,
+    inputs: dict,
+    resume_checkpoint: str | None,
+) -> dict:
     if not path.exists():
-        return {"schema_version": 1, "inputs": inputs, "artifacts": {}}
+        if resume_checkpoint is not None:
+            raise ValueError(
+                "publication receipt is missing beside existing checkpoints; do not "
+                "create a fresh receipt for checkpoints of unverified provenance. Start "
+                "with a new output directory, or reconstruct the schema-v1 receipt only "
+                "after independently binding the checkpoints and old publications to "
+                "their original immutable inputs"
+            )
+        receipt = {"schema_version": 1, "inputs": inputs, "artifacts": {}, "events": []}
+        write_json(path, receipt)
+        return receipt
 
     receipt = json.loads(path.read_text(encoding="utf-8"))
     if "schema_version" not in receipt:
         raise ValueError(
             "legacy publication receipt is not bound to immutable model and dataset "
-            "inputs; preserve the existing checkpoints and archive or rename only "
-            "publication-receipt.json before resuming in this output directory. Only "
-            "reconstruct a schema-v1 receipt after independently binding the old "
+            "inputs; preserve this output directory and start a new one. Only reconstruct "
+            "a schema-v1 receipt after independently binding both its checkpoints and old "
             "publications to the original immutable inputs"
         )
 
@@ -312,6 +325,8 @@ def load_publication_receipt(path: Path, inputs: dict) -> dict:
         raise ValueError("publication receipt belongs to different model or dataset inputs")
     if not isinstance(receipt.get("artifacts"), dict):
         raise ValueError("publication receipt artifacts must be an object")
+    if "events" in receipt and not isinstance(receipt["events"], list):
+        raise ValueError("publication receipt events must be an array")
     return receipt
 
 
@@ -321,9 +336,26 @@ def record_hub_publication(
     artifact_key: str,
     repo: str,
     commit_sha: str,
+    commit_url: str | None,
 ) -> None:
     if not isinstance(commit_sha, str) or not commit_sha.strip():
-        raise ValueError("commit_sha must be a nonblank string")
+        event = {
+            "kind": "hub_upload_identity_unresolved",
+            "artifact": artifact_key,
+            "repo": repo,
+            "commit_url": commit_url.strip()
+            if isinstance(commit_url, str) and commit_url.strip()
+            else None,
+        }
+        events = receipt.setdefault("events", [])
+        if not isinstance(events, list):
+            raise ValueError("publication receipt events must be an array")
+        events.append(event)
+        write_json(path, receipt)
+        raise ValueError(
+            "Hub upload may have succeeded but returned a blank commit SHA; inspect "
+            "commit_url and repair the receipt before retrying"
+        )
     commit_sha = commit_sha.strip()
     artifact = receipt["artifacts"].setdefault(
         artifact_key, {"kind": "hugging_face", "publications": []}
@@ -354,6 +386,7 @@ def main() -> None:
     adapter_dir = run_dir / "adapter"
     merged_dir = run_dir / "merged"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    resume = get_last_checkpoint(str(checkpoint_dir))
 
     dataset = load_dataset(
         args.dataset_id,
@@ -372,7 +405,9 @@ def main() -> None:
     }
     publication_path = run_dir / "publication-receipt.json"
     publication = load_publication_receipt(
-        publication_path, publication_inputs(args, dataset_fingerprints)
+        publication_path,
+        publication_inputs(args, dataset_fingerprints),
+        resume,
     )
 
     use_bf16 = args.precision == "bf16"
@@ -434,7 +469,6 @@ def main() -> None:
         peft_config=lora,
     )
 
-    resume = get_last_checkpoint(str(checkpoint_dir))
     train_result = trainer.train(resume_from_checkpoint=resume)
     require_finite_metrics("training log", trainer.state.log_history)
     require_finite_metrics("training summary", [train_result.metrics])
@@ -483,7 +517,12 @@ def main() -> None:
             commit_message="Final LoRA adapter with run manifest",
         )
         record_hub_publication(
-            publication_path, publication, "adapter", args.adapter_repo, adapter_commit.oid
+            publication_path,
+            publication,
+            "adapter",
+            args.adapter_repo,
+            adapter_commit.oid,
+            adapter_commit.commit_url,
         )
 
     # Produce the portable handoff only after the independently useful adapter
@@ -515,7 +554,12 @@ def main() -> None:
             commit_message="Merged portable checkpoint with run manifest",
         )
         record_hub_publication(
-            publication_path, publication, "merged_hf", args.merged_repo, merged_commit.oid
+            publication_path,
+            publication,
+            "merged_hf",
+            args.merged_repo,
+            merged_commit.oid,
+            merged_commit.commit_url,
         )
 
 
@@ -534,13 +578,15 @@ returns `CommitInfo` for each folder upload. Each published folder contains its 
 `publication-receipt.json` records each returned `CommitInfo.oid` only after upload success. It is
 updated atomically and appends distinct successful publications instead of clearing an earlier SHA
 on retry. A legacy two-key receipt is deliberately rejected because it does not identify the
-immutable model and dataset inputs that produced its SHAs. Preserve the checkpoints and archive or
-rename only `publication-receipt.json`; keep the same output directory so its checkpoints remain
-resumable. Reconstruct a schema-v1 receipt only after independently binding each old publication
-identity to the original immutable inputs. Starting with a fresh receipt can publish an artifact again
-because the new receipt no longer records the earlier publication identity. The adapter upload precedes
-the memory-heavy merge, so a merge OOM still leaves the independently useful adapter published. If you
-omit the repository arguments, the durable output volume is the only artifact copy.
+immutable model and dataset inputs that produced its SHAs. Preserve that output directory and start a
+new one; do not rename the receipt and resume checkpoints whose provenance is no longer bound. Reconstruct
+a schema-v1 receipt only after independently binding both the checkpoints and each old publication
+identity to the original immutable inputs. A new run writes its receipt before training, so every later
+checkpoint has a durable input binding. If a successful upload returns an unusable commit identity, the
+receipt records an unresolved-upload event and stops rather than losing the external side effect or
+pretending it is a valid publication. The adapter upload precedes the memory-heavy merge, so a merge OOM
+still leaves the independently useful adapter published. If you omit the repository arguments, the
+durable output volume is the only artifact copy.
 
 Qwen3 was trained in BF16. If the selected GPU does not support BF16, `--precision fp16` is a risky
 fallback, not an equivalent recommendation: FP16's smaller exponent range can overflow and produce
@@ -582,15 +628,45 @@ def load_receipt(path: Path) -> dict:
     value = json.loads(path.read_text(encoding="utf-8"))
     if value.get("schema_version") != 1 or not isinstance(value.get("artifacts"), dict):
         raise ValueError("expected a schema-version-1 publication receipt")
+    if "events" in value and not isinstance(value["events"], list):
+        raise ValueError("publication receipt events must be an array")
     return value
 
 
-def append_publication(path: Path, key: str, kind: str, publication: dict) -> None:
+def nonblank_identity(publication: dict, field: str) -> str:
+    value = publication.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a nonblank string")
+    return value.strip()
+
+
+def normalize_publication(kind: str, publication: dict) -> dict:
+    normalized = dict(publication)
     if kind == "hugging_face":
-        commit_sha = publication.get("commit_sha")
-        if not isinstance(commit_sha, str) or not commit_sha.strip():
-            raise ValueError("commit_sha must be a nonblank string")
-        publication = {**publication, "commit_sha": commit_sha.strip()}
+        normalized["commit_sha"] = nonblank_identity(normalized, "commit_sha")
+        if "source_commit_sha" in normalized:
+            normalized["source_commit_sha"] = nonblank_identity(
+                normalized, "source_commit_sha"
+            )
+    elif kind == "release_file":
+        normalized["source_commit_sha"] = nonblank_identity(
+            normalized, "source_commit_sha"
+        )
+        normalized["exporter_commit_sha"] = nonblank_identity(
+            normalized, "exporter_commit_sha"
+        )
+    return normalized
+
+
+def append_event(path: Path, event: dict) -> None:
+    receipt = load_receipt(path)
+    events = receipt.setdefault("events", [])
+    events.append(event)
+    atomic_write(path, receipt)
+
+
+def append_publication(path: Path, key: str, kind: str, publication: dict) -> None:
+    publication = normalize_publication(kind, publication)
     receipt = load_receipt(path)
     artifact = receipt["artifacts"].setdefault(key, {"kind": kind, "publications": []})
     if artifact.get("kind") != kind or not isinstance(artifact.get("publications"), list):
@@ -618,6 +694,22 @@ def upload_hub(args: argparse.Namespace) -> None:
         folder_path=args.folder,
         commit_message=args.message,
     )
+    if not isinstance(commit.oid, str) or not commit.oid.strip():
+        append_event(
+            args.receipt,
+            {
+                "kind": "hub_upload_identity_unresolved",
+                "artifact": args.artifact,
+                "repo": args.repo,
+                "commit_url": commit.commit_url.strip()
+                if isinstance(commit.commit_url, str) and commit.commit_url.strip()
+                else None,
+            },
+        )
+        raise ValueError(
+            "Hub upload may have succeeded but returned a blank commit SHA; inspect "
+            "commit_url and repair the receipt before retrying"
+        )
     publication = {"repo": args.repo, "commit_sha": commit.oid}
     if args.source_commit_sha:
         publication["source_commit_sha"] = args.source_commit_sha

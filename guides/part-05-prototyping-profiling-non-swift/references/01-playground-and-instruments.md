@@ -982,8 +982,9 @@ looks wrong, then drop into the tree to find out why.**
 
 ## 6. Anatomy of a trace, part 1: the lanes
 
-Six lanes. Two of them have names in Apple's narration. Four do not, anywhere in this project's corpus,
-and this guide will not invent them.
+Apple's current written documentation names all six lanes. The WWDC narration explains Instructions
+and Model Inference in depth (§6.1–§6.2); §6.3 keeps the complete six-lane inventory together and adds
+the four names the session does not narrate.
 
 ### 6.1 The Instructions lane — the profile-switch visualiser
 
@@ -1623,8 +1624,10 @@ runtime-performance page does name the four metrics:
 
 ✅ **VERIFIED** — these names and meanings come from Apple's direct Markdown response captured on
 2026-09-22. The page describes cache hit rate as the percentage of input tokens served from the prefix
-cache; the companion KV-caching page supplies the calculation: **cached input tokens ÷ total input
-tokens**. A low rate between turns signals cache invalidation and full-prefix reprocessing. See the
+cache; the companion KV-caching page calls the calculation “cached input tokens ÷ total input tokens.”
+In the current inspector's labels, that is **Cached Tokens ÷ Consumed Tokens** — not Total Tokens,
+which also includes generated output. A low rate between turns signals cache invalidation and
+full-prefix reprocessing. See the
 [preserved evidence](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
 
 ⚠️ **Keep the source distinction visible.** Session 242 points to session 243 for cache-invalidation
@@ -1711,8 +1714,9 @@ the new tokens are processed. **A long yellow bar on every turn is the signature
 cache.**
 
 **In the inspector.** Open a model-inference node from turn *n* and compute
-`cached input tokens ÷ total input tokens` (§9.2). Apple's current KV-caching page says a low rate
-between turns signals cache invalidation and full-prefix reprocessing (✅
+`Cached Tokens ÷ Consumed Tokens` (§9.2). Apple's current KV-caching page describes the same denominator
+as “total input tokens” and says a low rate between turns signals cache invalidation and full-prefix
+reprocessing (✅
 [direct-page capture](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)).
 A near-zero rate on a turn that should have inherited a large prefix means something changed in the
 prefix.
@@ -2071,7 +2075,7 @@ at anywhere above.
 | 4 | **Member names inside `LanguageModelSession.Usage` / `.Input` / `.Output`.** | `/documentation/foundationmodels/languagemodelsession/usage`, or a 27.0 SDK interface dump. | Dump `session.usage` once with `String(describing:)` and code against what you see. |
 | 5 | **The `LanguageModelFeedback.Issue.Category` case list.** Only `.incorrect` is attested. | The `Issue.Category` symbol page, or an SDK interface dump. | Use `.incorrect`; put the detail in `explanation`. |
 | 6 | **The two 27.0 `logFeedbackAttachment` overloads** (`desiredResponseContent:` / `desiredResponseText:`) — spellings come from an index listing, not a signature. | The symbol pages. | Try `desiredResponseText:` first; fall back to `desiredOutput:`. |
-| 7 | **Whether third-party `LanguageModel` backends populate every lane and metric** — cached-token counts presuppose a KV cache the provider may not expose. | A trace against an MLX- or ChatCompletions-backed session on Xcode 27. | Verify the backend's per-token metrics before quoting them. |
+| 7 | **Whether third-party `LanguageModel` backends populate every lane and metric** — cached-token counts presuppose a KV cache the provider may not expose. | A trace against an MLX- or ChatCompletions-backed session on Xcode 27. | Trust structural lanes for any backend; verify the backend's per-token metrics before quoting them. |
 | 8 | **Whether the instrument surfaces PCC reasoning tokens at all.** The current page's four metrics do not include reasoning tokens. | A PCC trace with `reasoningLevel` set. | Read reasoning usage from the programmatic `Usage` API; do not claim an Instruments field. |
 | 9 | **Whether "Session" in the tree is one `LanguageModelSession` instance**, and whether a node survives a profile switch. Session 243 shows two instruction regions in one recording without saying whether that was one Session node or two. | Expand a trace of a two-profile feature. | Read region counts off the Instructions lane, which is unambiguous. |
 | 10 | **`Transcript.Instructions.toolDefinitions` / `.segments` as readable properties** (used by the test in §8.7) — inferred from initialiser labels. | The `Transcript.Instructions` symbol page. | Fall back to encoding the `Transcript` to JSON and searching the string. |
@@ -2097,10 +2101,15 @@ WWDC25 leftovers** and are not cited anywhere in this guide as 2026 evidence.
 
 **Apple documentation.**
 
-- *Analyzing the runtime performance of your Foundation Models app* and *Optimizing key-value caching
-  in language model sessions* — direct Apple Markdown captured on 2026-09-22 with response hashes and
-  targeted excerpts in the
-  [runtime-performance evidence note](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
+- *Analyzing the runtime performance of your Foundation Models app* — direct Apple Markdown captured
+  on 2026-09-22: launch and recording flow, all six lanes, inspector contents, duration and token
+  metrics, tool timing/output, and schema-exclusion guidance. Provenance and targeted excerpts are in
+  the [runtime-performance evidence note](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md).
+- *Optimizing key-value caching in language model sessions* — direct Apple Markdown captured on
+  2026-09-22: token layout, invalidation blast radius, stateless dropping versus in-place replacement,
+  batching transcript trimming, restore/prewarm behavior, and the cache-hit calculation. The same
+  [evidence note](../../../notes/web/apple-foundation-models-runtime-performance-2026-09-22.md)
+  records how this capture supersedes the older mirror-derived summary for current UI claims.
 - *Managing the context window* — 4,096 tokens, what consumes them, the four-step Instruments workflow,
   the prompt-shortening rules, the unencrypted-recording warning.
 - *Using Private Cloud Compute* — the quota API, the four UI recommendations, the scheme steps.

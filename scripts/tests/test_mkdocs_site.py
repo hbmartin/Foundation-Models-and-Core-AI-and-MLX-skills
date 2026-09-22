@@ -15,7 +15,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from scripts import mdslug, mkdocs_hooks
+from scripts import mdlinks, mdslug, mkdocs_hooks
 
 
 def flatten_nav_paths(items):
@@ -142,12 +142,20 @@ class MkDocsHookTests(unittest.TestCase):
         self.assertLess(trainer.index("write_json(manifest_path, manifest)"), first_upload)
         self.assertLess(trainer.index("shutil.copy2(manifest_path"), first_upload)
         self.assertLess(trainer.index("shutil.copy2(eval_path"), first_upload)
-        self.assertLess(trainer.index('"adapter", args.adapter_repo'), trainer.index("del trainer"))
-        self.assertGreater(trainer.index('"merged_hf", args.merged_repo'), trainer.index("del trainer"))
+        self.assertLess(
+            trainer.index("adapter_commit = api.upload_folder"), trainer.index("del trainer")
+        )
+        self.assertGreater(
+            trainer.index("merged_commit = api.upload_folder"), trainer.index("del trainer")
+        )
         self.assertIn("logging_nan_inf_filter=False", trainer)
         self.assertIn('require_finite_metrics("training log"', trainer)
         self.assertIn("require_private_repo(api, args.adapter_repo)", trainer)
         main_body = trainer.split("def main()", 1)[1]
+        self.assertLess(
+            main_body.index("resume = get_last_checkpoint("),
+            main_body.index("load_publication_receipt("),
+        )
         self.assertLess(
             main_body.index("load_publication_receipt("),
             main_body.index("trainer.train("),
@@ -174,17 +182,32 @@ class MkDocsHookTests(unittest.TestCase):
             for node in tree.body
             if isinstance(node, ast.FunctionDef) and node.name == "load_publication_receipt"
         )
-        namespace = {"json": json, "Path": Path}
+
+        def write_json(path, value):
+            path.write_text(json.dumps(value), encoding="utf-8")
+
+        namespace = {"json": json, "Path": Path, "write_json": write_json}
         exec(compile(ast.Module(body=[function], type_ignores=[]), "receipt", "exec"), namespace)
         load_receipt = namespace["load_publication_receipt"]
         inputs = {"immutable": "inputs"}
 
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "publication-receipt.json"
-            self.assertEqual(
-                {"schema_version": 1, "inputs": inputs, "artifacts": {}},
-                load_receipt(path, inputs),
-            )
+            fresh = {
+                "schema_version": 1,
+                "inputs": inputs,
+                "artifacts": {},
+                "events": [],
+            }
+            self.assertEqual(fresh, load_receipt(path, inputs, None))
+            self.assertEqual(fresh, json.loads(path.read_text(encoding="utf-8")))
+
+            path.unlink()
+            with self.assertRaisesRegex(
+                ValueError, "missing beside existing checkpoints.*new output directory"
+            ):
+                load_receipt(path, inputs, str(Path(directory) / "checkpoint-10"))
+            self.assertFalse(path.exists())
 
             legacy = {
                 "adapter": {"repo": "org/adapter", "commit_sha": "abc123"},
@@ -194,12 +217,12 @@ class MkDocsHookTests(unittest.TestCase):
             before = path.read_bytes()
             with self.assertRaisesRegex(
                 ValueError,
-                r"preserve the existing checkpoints.*archive or rename only.*"
-                r"publication-receipt\.json",
+                r"preserve this output directory and start a new one.*"
+                r"binding both its checkpoints and old publications",
             ):
-                load_receipt(path, inputs)
+                load_receipt(path, inputs, str(Path(directory) / "checkpoint-10"))
             self.assertEqual(before, path.read_bytes())
-            self.assertNotIn("start with a new output directory", contents)
+            self.assertNotIn("rename only `publication-receipt.json`", contents)
 
             receipt = {
                 "schema_version": 1,
@@ -214,12 +237,22 @@ class MkDocsHookTests(unittest.TestCase):
                 },
             }
             path.write_text(json.dumps(receipt), encoding="utf-8")
-            self.assertEqual(receipt, load_receipt(path, inputs))
+            self.assertEqual(
+                receipt,
+                load_receipt(path, inputs, str(Path(directory) / "checkpoint-10")),
+            )
 
             with self.assertRaisesRegex(ValueError, "different model or dataset inputs"):
-                load_receipt(path, {"immutable": "different-inputs"})
+                load_receipt(path, {"immutable": "different-inputs"}, None)
 
-    def test_remote_training_rejects_blank_commit_identity_without_mutation(self):
+            invalid_events = {**receipt, "events": {}}
+            path.write_text(json.dumps(invalid_events), encoding="utf-8")
+            before = path.read_bytes()
+            with self.assertRaisesRegex(ValueError, "events must be an array"):
+                load_receipt(path, inputs, None)
+            self.assertEqual(before, path.read_bytes())
+
+    def test_remote_training_records_unresolved_upload_identity_before_raising(self):
         workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
         contents = workflow.read_text(encoding="utf-8")
         blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
@@ -243,14 +276,37 @@ class MkDocsHookTests(unittest.TestCase):
             receipt = {"schema_version": 1, "inputs": {}, "artifacts": {}}
             path.write_text(json.dumps(receipt), encoding="utf-8")
             for invalid in (None, "", "   "):
-                before_bytes = path.read_bytes()
-                before_receipt = json.loads(json.dumps(receipt))
-                with self.assertRaisesRegex(ValueError, "nonblank string"):
-                    record(path, receipt, "adapter", "org/model", invalid)
-                self.assertEqual(before_receipt, receipt)
-                self.assertEqual(before_bytes, path.read_bytes())
+                with self.assertRaisesRegex(ValueError, "may have succeeded"):
+                    record(
+                        path,
+                        receipt,
+                        "adapter",
+                        "org/model",
+                        invalid,
+                        " https://huggingface.co/org/model/commit/unknown ",
+                    )
 
-            record(path, receipt, "adapter", "org/model", "  abc123  ")
+            event = {
+                "kind": "hub_upload_identity_unresolved",
+                "artifact": "adapter",
+                "repo": "org/model",
+                "commit_url": "https://huggingface.co/org/model/commit/unknown",
+            }
+            self.assertEqual([event, event, event], receipt["events"])
+            self.assertEqual(
+                [event, event, event],
+                json.loads(path.read_text(encoding="utf-8"))["events"],
+            )
+            self.assertEqual({}, receipt["artifacts"])
+
+            record(
+                path,
+                receipt,
+                "adapter",
+                "org/model",
+                "  abc123  ",
+                "https://huggingface.co/org/model/commit/abc123",
+            )
             self.assertEqual(
                 "abc123",
                 receipt["artifacts"]["adapter"]["publications"][0]["commit_sha"],
@@ -261,7 +317,15 @@ class MkDocsHookTests(unittest.TestCase):
         contents = workflow.read_text(encoding="utf-8")
         blocks = re.findall(r"^```python[^\n]*\n(.*?)^```[ \t]*$", contents, re.M | re.S)
         helper = next(block for block in blocks if "def append_publication" in block)
-        wanted = {"atomic_write", "load_receipt", "append_publication", "upload_hub"}
+        wanted = {
+            "atomic_write",
+            "load_receipt",
+            "nonblank_identity",
+            "normalize_publication",
+            "append_event",
+            "append_publication",
+            "upload_hub",
+        }
         functions = [
             node
             for node in ast.parse(helper).body
@@ -311,6 +375,90 @@ class MkDocsHookTests(unittest.TestCase):
                 "def456",
                 normalized["artifacts"]["normalized"]["publications"][0]["commit_sha"],
             )
+
+            source_bound = {
+                "repo": "org/model",
+                "commit_sha": " abc123 ",
+                "source_commit_sha": " source123 ",
+            }
+            namespace["append_publication"](
+                path, "source_bound", "hugging_face", source_bound
+            )
+            namespace["append_publication"](
+                path,
+                "source_bound",
+                "hugging_face",
+                {
+                    "repo": "org/model",
+                    "commit_sha": "abc123",
+                    "source_commit_sha": "source123",
+                },
+            )
+            source_bound_receipt = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [
+                    {
+                        "repo": "org/model",
+                        "commit_sha": "abc123",
+                        "source_commit_sha": "source123",
+                    }
+                ],
+                source_bound_receipt["artifacts"]["source_bound"]["publications"],
+            )
+
+            release = {
+                "release_url": "https://example.com/model.bin",
+                "sha256": "digest",
+                "source_commit_sha": " source123 ",
+                "exporter_commit_sha": " exporter123 ",
+            }
+            namespace["append_publication"](path, "release", "release_file", release)
+            namespace["append_publication"](
+                path,
+                "release",
+                "release_file",
+                {
+                    **release,
+                    "source_commit_sha": "source123",
+                    "exporter_commit_sha": "exporter123",
+                },
+            )
+            release_receipt = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                1, len(release_receipt["artifacts"]["release"]["publications"])
+            )
+            self.assertEqual(
+                "exporter123",
+                release_receipt["artifacts"]["release"]["publications"][0][
+                    "exporter_commit_sha"
+                ],
+            )
+
+            before_invalid_identity = path.read_bytes()
+            for kind, invalid_publication in (
+                (
+                    "hugging_face",
+                    {
+                        "repo": "org/model",
+                        "commit_sha": "abc123",
+                        "source_commit_sha": "   ",
+                    },
+                ),
+                (
+                    "release_file",
+                    {
+                        "release_url": "https://example.com/model.bin",
+                        "sha256": "digest",
+                        "source_commit_sha": "source123",
+                        "exporter_commit_sha": None,
+                    },
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "must be a nonblank string"):
+                    namespace["append_publication"](
+                        path, "invalid_identity", kind, invalid_publication
+                    )
+                self.assertEqual(before_invalid_identity, path.read_bytes())
             before = path.read_bytes()
 
             class PublicApi:
@@ -332,6 +480,37 @@ class MkDocsHookTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "public repository"):
                 namespace["upload_hub"](arguments)
             self.assertEqual(before, path.read_bytes())
+
+            class BlankOidApi:
+                def create_repo(self, *args, **kwargs):
+                    return None
+
+                def repo_info(self, *args, **kwargs):
+                    return SimpleNamespace(private=True)
+
+                def upload_folder(self, *args, **kwargs):
+                    return SimpleNamespace(
+                        oid="   ",
+                        commit_url="https://huggingface.co/org/model/commit/unknown",
+                    )
+
+            namespace["HfApi"] = BlankOidApi
+            arguments.repo = "org/model"
+            arguments.artifact = "mlx_fused"
+            with self.assertRaisesRegex(ValueError, "may have succeeded"):
+                namespace["upload_hub"](arguments)
+            unresolved = json.loads(path.read_text(encoding="utf-8"))["events"]
+            self.assertEqual(
+                [
+                    {
+                        "kind": "hub_upload_identity_unresolved",
+                        "artifact": "mlx_fused",
+                        "repo": "org/model",
+                        "commit_url": "https://huggingface.co/org/model/commit/unknown",
+                    }
+                ],
+                unresolved,
+            )
 
     def test_remote_training_mlx_normalizer_rejects_malformed_completion(self):
         workflow = REPOSITORY_ROOT / "guides/workflows/remote-training-to-ios.md"
@@ -429,9 +608,10 @@ class MkDocsHookTests(unittest.TestCase):
             REPOSITORY_ROOT,
             "https://github.com/example/project",
         )
+        snapshot = mdlinks.REPOSITORY_PATH_SNAPSHOTS["notes/repos/noema-ios.md"]
         self.assertIn(
             "https://github.com/example/project/blob/"
-            "467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md",
+            f"{snapshot.ref}/notes/repos/noema-ios.md",
             result,
         )
 

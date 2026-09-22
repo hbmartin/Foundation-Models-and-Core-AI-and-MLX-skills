@@ -12,6 +12,8 @@ import sys
 import tempfile
 import unittest
 
+from scripts import mdlinks
+
 
 REPO = Path(__file__).resolve().parents[2]
 GUIDES = REPO / "guides"
@@ -270,7 +272,8 @@ class SkillBuildTests(unittest.TestCase):
             )
             self.assertIn(
                 "https://github.com/owner/repo/blob/"
-                "467d3cc496248af2928d92f8d330ba4a8457f0f8/notes/repos/noema-ios.md",
+                f"{mdlinks.REPOSITORY_PATH_SNAPSHOTS['notes/repos/noema-ios.md'].ref}/"
+                "notes/repos/noema-ios.md",
                 copied,
             )
 
