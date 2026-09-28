@@ -253,14 +253,15 @@ Xcode fallback in that order, so a move shows up as a changed path in its output
   ls "/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/Library/Frameworks" | grep -i evaluations
   ```
 
-## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — current docs now agree with beta 5
+## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — docs are contradictory again
 
 The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 instead has
 **only** un-deprecated `resolved(in: some Sequence<Transcript.Entry>)`. A live-docs re-check on
-2026-09-07 now lists only the sequence spelling and uses `resolved(in: history)` in the
-`ImageReference` overview, matching beta 5. A documentation changes view still exposes the
-whole-`Transcript` spelling as a deprecated historical overload, but the default current symbol
-page no longer has a two-member contradiction.
+2026-09-28 found the contradiction again: the default `ImageReference` overview and topic list use
+`resolve(in: Transcript)`, while the separate `resolved(in:)` member page still documents
+`resolved(in: some Sequence<Transcript.Entry>)`. The installed beta-5 interface continues to expose
+only the sequence spelling, so treat the default overview as documentation drift rather than a
+toolchain rename.
 Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
 §7.6 (line ~1959).
