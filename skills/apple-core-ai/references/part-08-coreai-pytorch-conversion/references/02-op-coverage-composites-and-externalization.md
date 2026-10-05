@@ -2711,7 +2711,7 @@ Nine defects, in one table, so you can check your own model against it:
 | 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
 | 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` open | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
-| 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) | `apple/coreai-torch#49` open, FB23695952 | Skip `optimize()` or reorder |
+| 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` fixed in 0.4.3 retest; closed 2026-10-02 | Upgrade; retain parity gate |
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 | 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |

@@ -967,16 +967,16 @@ This one belongs to the conversion stage but lands in your migration, so it goes
 call `.optimize()`; stateful models *require* it (mutation outputs become handle tokens). ✅
 **VERIFIED** against the `coreai-torch` source and its documented usage.
 
-> ⚠️ **And `optimize()` has an open correctness bug.** ✅ **VERIFIED** — `coreai-torch` issue **#49**,
-> open at time of writing: *"`AIProgram.optimize()` removes broadcasting-significant axis moves and
+> ⚠️ **And `optimize()` had a correctness bug in 0.4.1.** ✅ **VERIFIED** — `coreai-torch` issue **#49**:
+> *"`AIProgram.optimize()` removes broadcasting-significant axis moves and
 > **silently miscompiles** N×N distance expressions."* A transpose that exists only to make
 > broadcasting work can be treated as removable, and the resulting graph computes something else.
 >
-> 🔴 **GAP — still unresolved.** Re-checked via `gh` on **2026-07-29**: the issue remains **open
-> with zero comments** — no maintainer response, last activity 2026-07-23. **What would resolve it:**
-> check `github.com/apple/coreai-torch/issues/49`
-> before you trust a converted model containing pairwise-distance or explicit-broadcast patterns.
-> **Safe default meanwhile:** run the Python-side numeric parity check on the **optimized** program,
+> ✅ **FIXED WITH RESIDUAL — 2026-10-02.** The issue closed as completed after the reporter retested
+> `coreai-torch 0.4.3` / `coreai-core 1.0.0b3`; all three minimal patterns passed with maximum absolute
+> error from 1.907e-06 to 3.815e-06. The retest did not include full end-to-end registration validation
+> or an expanded boundary sweep. **Safe default:** run the Python-side numeric parity check on the
+> shipped optimized program,
 > not the unoptimized one — the bug is introduced by `optimize()`, so a parity test that runs before
 > it will pass while the shipped asset is wrong.
 
