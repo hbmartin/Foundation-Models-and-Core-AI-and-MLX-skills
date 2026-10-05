@@ -1047,11 +1047,13 @@ Two more pass names are attested from a crash report rather than from source:
 
 ### 6.4 ⚠️ SILENT FAILURE — `optimize()` is not always semantics-preserving
 
-This is the most important callout in Part 8. It is an **open bug**, it produces an artifact that
-loads and runs, and the wrongness is large.
+This is the most important historical callout in Part 8. In 0.4.1 it produced an artifact that
+loaded and ran, and the wrongness was large.
 
 > ✅ **VERIFIED** — `coreai-torch#49`, *"`AIProgram.optimize()` removes broadcasting-significant axis
-> moves and silently miscompiles N×N distance expressions"*. **OPEN, 0 comments, as of 2026-07-29.**
+> moves and silently miscompiles N×N distance expressions"*. Originally open as of 2026-07-29;
+> **closed as completed on 2026-10-02** after the reporter's 0.4.3/1.0.0b3 retest no longer reproduced
+> the three minimal patterns.
 > Reported 2026-07-23 by `dkomoroske`. Environment: macOS 27.0 builds `26A5378j` and `26A5388g`,
 > `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0, Python 3.12.13. Also filed as Feedback
 > Assistant **FB23695952**.
@@ -1143,8 +1145,10 @@ For calibration, Apple's own agent skill sets these acceptance thresholds:
 > `optimize=True` against `optimize=False` on real inputs and fail the build on a divergence.** §11.4
 > is that gate, written out.
 >
-> **Status: unresolved as of 2026-07-29.** Zero comments on the issue. Re-check `coreai-torch#49`
-> before shipping.
+> **Status: fixed-with-residual as of 2026-10-02.** The reporter measured minimal-case maximum absolute
+> errors of 1.907e-06 to 3.815e-06 in 0.4.3, versus 1.022e+01 before updating. The retest was not a
+> complete end-to-end registration validation or expanded boundary sweep, so retain shipped-artifact
+> parity testing.
 
 This is not an isolated case, which is why the gate matters more than the specific bug. The same
 issue tracker documents a family of `optimize()`-reachable and converter-reachable
@@ -3147,7 +3151,8 @@ Two more, inherited from the corpus and worth carrying:
 *Guide last verified 2026-07-27 against `coreai-torch` 0.4.1 (`main`, HEAD `4529671`),
 `coreai-core` 1.0.0b2, `coreai-models` 0.2.0-pre, macOS 27.0 beta builds `26A5378j` / `26A5388g`.
 Issue and PR states were re-checked 2026-07-29. `coreai-torch#49` — the `optimize()`
-miscompile — was still **unresolved with zero comments**; re-check it before you ship.*
+miscompile — closed as completed on 2026-10-02 after a 0.4.3/1.0.0b3 retest no longer reproduced
+the minimal failure; the shipped-artifact parity gate remains recommended.*
 
 [^sample-routing-policy]: The name classifier and preferences are implemented by the optional
     `apple/coreai-models` package in its pinned

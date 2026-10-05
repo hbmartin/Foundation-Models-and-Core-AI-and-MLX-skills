@@ -90,14 +90,18 @@ which twelve ops it preserves (Apple's README says three — a subset); the two 
 passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the
 multi-function split; and the Python-side verification gate that catches everything above for free.
 
-> ⚠️ **SILENT FAILURE — `optimize()` can change your model's semantics.** `coreai-torch#49`, **open with
-> zero comments** as of 2026-07-29 (FB23695952): the optimizer deletes a broadcasting-significant
+> ⚠️ **SILENT FAILURE IN 0.4.1 — `optimize()` could change model semantics.** `coreai-torch#49`
+> (FB23695952) documented an optimizer deleting a broadcasting-significant
 > `expand_dims` in the expanded squared-distance form, and the output shape still validates because the
 > inputs are square. **17 dB PSNR** at model scale; **78–85 dB** with `optimize()` off. Reproduces under
 > `cpu_only()`, so it is the compiler, not a delegate. Unequal input lengths do **not** reproduce it, so a
 > gate on rectangular toy tensors passes while your square production case is broken. And you often cannot
 > simply skip it: **a stateful model requires `optimize()`**, because mutation outputs only become handle
 > tokens after `_UPDATE_SIGNATURE_TO_HANDLES` runs.
+> The issue closed as completed on 2026-10-02 after the reporter retested `coreai-torch 0.4.3` /
+> `coreai-core 1.0.0b3`: all three minimal patterns passed, and `to_coreai()` now returns an already
+> optimized program. Keep the shipped-artifact parity gate because the closure did not include a full
+> end-to-end registration validation or expanded boundary sweep.
 >
 > ⚠️ **SILENT FAILURE (four more).** `run_decompositions(torch.export.default_decompositions())` compiles,
 > converts, saves, loads and is numerically fine — with your fused attention composite gone. An in-place
@@ -265,7 +269,8 @@ hardware, OS build and date where the source gave them. **Apple published no per
 this except the SAM3 76% and the Qwen3-MoE tok/s deltas, both with hardware and methodology unstated.** All
 three guides were last verified 2026-07-27 against `coreai-torch` 0.4.1, `coreai-core` 1.0.0b2,
 `coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; the state of every issue and PR
-cited was re-checked 2026-07-29, and `coreai-torch#49` was still unresolved. `coreai-torch` PR #7 (the
+cited was re-checked 2026-07-29. `coreai-torch#49` later closed as completed on 2026-10-02 after a
+0.4.3/1.0.0b3 retest no longer reproduced the minimal failure. `coreai-torch` PR #7 (the
 SDPA submodule re-export fix) was **closed without being merged on 2026-07-29** (re-checked via `gh`
 2026-07-31). The 0.4.0-artifact incident
 issues are resolved: `coreai-torch#37` closed as completed 2026-07-13 and `#44` closed as completed
