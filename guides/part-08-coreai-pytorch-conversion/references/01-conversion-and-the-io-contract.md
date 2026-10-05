@@ -7,7 +7,8 @@
 `ComputeUnitKind` are all documented as *"Available on: iOS 27.0+ Beta, iPadOS 27.0+ Beta,
 Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta, tvOS 27.0+ Beta, visionOS 27.0+ Beta, watchOS 27.0+ Beta."*
 Nothing here back-deploys to 26.x. On the Python side the floor is **Python 3.11**, **PyTorch 2.8.0**
-(validated up to 2.13.0), **`coreai-torch` 0.4.1** and its exact pin **`coreai-core==1.0.0b2`**;
+(validated up to 2.13.0), **`coreai-torch` 0.4.3** and **`coreai-core==1.0.0b3`**. Version 0.4.1 is
+retained below as historical evidence and as the asset-compatibility floor;
 `apple/coreai-models` additionally requires **macOS/iOS 27.0+ and Xcode 27.0+**. And one hard gate you
 must read before anything else: **`.aimodel` assets converted with `coreai-torch` v0.4.0 fail to
 load or specialize on device from OS 27 beta 2 onward** — §2.3 covers both the reconvert and the
@@ -32,10 +33,9 @@ ep = torch.export.export(model, args=(torch.randn(1, 3, 224, 224),))
 ep = ep.run_decompositions(get_decomp_table())
 converter = TorchConverter().add_exported_program(ep)
 program = converter.to_coreai()
-program.optimize()
 ```
 
-Those five lines are strictly sequential, each one has a failure mode, and **three of the five fail
+Those four conversion lines are strictly sequential, each one has a failure mode, and **three can fail
 silently** — they produce an artifact that loads, runs, returns tensors of the right shape, and is
 wrong or slow. This guide is about the contract each line establishes.
 
@@ -46,9 +46,9 @@ wrong or slow. This guide is about the contract each line establishes.
 - **§5** — the two input forms. `add_exported_program()` for a decomposed `ExportedProgram`, versus
   `add_pytorch_module()` — which is the *only* door to externalization and composite-op marking, and
   which session 325 never mentions.
-- **§6** — `to_coreai()` is a pure conversion; `optimize()` is where the passes run. What it folds,
-  with before/after IR. And the currently-open bug where it deletes a broadcasting-significant axis
-  move and silently miscompiles an entire class of expression.
+- **§6** — in 0.4.3, `to_coreai()` performs conversion and the pre-compilation rewrite. What it folds,
+  with IR evidence, plus the closed 0.4.1 defect where the separate optimizer deleted a
+  broadcasting-significant axis move.
 - **§7** — **the IO contract.** `input_names` / `output_names` are the dictionary keys your Swift or
   Python caller types. Omit them and you inherit FX placeholder names, which Apple's own
   documentation says are *not a stable PyTorch contract*.
@@ -101,7 +101,7 @@ wheels**, so Linux containers must run `--platform linux/amd64`.
 3. [`torch.export` — the part that is not Apple's](#3-torchexport--the-part-that-is-not-apples)
 4. [`run_decompositions(get_decomp_table())` — the most consequential line](#4-run_decompositionsget_decomp_table--the-most-consequential-line)
 5. [Two input forms: `add_exported_program` vs `add_pytorch_module`](#5-two-input-forms-add_exported_program-vs-add_pytorch_module)
-6. [`to_coreai()` and `optimize()`](#6-to_coreai-and-optimize)
+6. [`to_coreai()` and automatic optimization](#6-to_coreai-and-automatic-optimization)
 7. [The IO contract: names are your caller's API](#7-the-io-contract-names-are-your-callers-api)
 8. [Dynamic shapes: keeping the traced length out of the asset](#8-dynamic-shapes-keeping-the-traced-length-out-of-the-asset)
 9. [State: mutable buffers become Core AI states](#9-state-mutable-buffers-become-core-ai-states)
@@ -133,16 +133,15 @@ Here is the canonical pipeline, verbatim from Apple's README:
 > # Convert to Core AI IR
 > converter = TorchConverter().add_exported_program(ep)
 > coreai_program = converter.to_coreai()
-> coreai_program.optimize()
 > ```
 
 Read the comment on line 3 of that snippet again: **"this is your responsibility."** That is not
-boilerplate politeness. `coreai-torch` does not call `torch.export` for you in this form, does not
-call `run_decompositions` for you, and does not optimize for you. Each of those is a separate
-decision with a separate contract, and the package's own validator exists precisely because
+boilerplate politeness. `coreai-torch` does not call `torch.export` or `run_decompositions` for you
+in this form. In 0.4.3, `to_coreai()` does apply the pre-compilation rewrite before returning. The
+package's own validator exists precisely because
 developers were arriving with programs that had skipped one.
 
-There is a **sixth** line every real pipeline has, which the README snippet omits because it belongs
+There is a **fifth** line every real pipeline has, which the README snippet omits because it belongs
 to a different package:
 
 ```python
@@ -167,11 +166,10 @@ asset = coreai_program.save_asset(Path("MyModel.aimodel"))
 | `torch.export.export(...)` | PyTorch | Loudly — `torch.export` raises on unsupported constructs | §3 |
 | `.run_decompositions(get_decomp_table())` | You, using Apple's table | **Loudly if skipped, silently if you use the wrong table** | §4 |
 | `TorchConverter().add_*(...)` | `coreai-torch` | Loudly — eager validation with actionable messages | §5 |
-| `.to_coreai()` | `coreai-torch` | Loudly — `ValueError` on unsupported ATen ops | §6.1 |
-| `.optimize()` | `coreai-core` | **Silently, in one known open case** | §6.4 |
+| `.to_coreai()` | `coreai-torch` + `coreai-core` | Loudly on unsupported ATen ops; historically capable of silent rewrite defects | §6.1, §6.4 |
 | `.save_asset(path)` | `coreai-core` | Loudly — extension validation, overwrite is fine | §1 |
 
-Three of the six are silent-capable. That ratio is the reason this part of the series exists.
+Three stages are silent-capable. That ratio is the reason this part of the series exists.
 
 ### 1.2 There is no `convert()` function, and no conversion CLI
 
@@ -753,7 +751,6 @@ coreai_program = (
     .add_exported_program(ep, input_names=["image"], output_names=["logits"])
     .to_coreai()
 )
-coreai_program.optimize()
 ```
 
 > ✅ **VERIFIED** — this exact shape is `docs/getting-started/quickstart.ipynb` cell 14 (MobileNetV2)
@@ -796,7 +793,6 @@ converter = TorchConverter().add_pytorch_module(
     ),
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 ```
 
 > ✅ **VERIFIED** — `apple/coreai-torch/README.md:66–82`, verbatim.
@@ -840,7 +836,6 @@ converter = TorchConverter().add_pytorch_module(
     ],
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 ```
 
 > ✅ **VERIFIED** — `docs/guides/conversion-workflows.ipynb`, cell 8, verbatim, with Apple's own
@@ -934,9 +929,9 @@ Three externalization footguns, all verified, all silent or nearly so:
 
 ---
 
-## 6. `to_coreai()` and `optimize()`
+## 6. `to_coreai()` and automatic optimization
 
-### 6.1 `to_coreai()` converts and nothing else
+### 6.1 `to_coreai()` returns an optimized program in 0.4.3
 
 > ✅ **VERIFIED** — `coreai_torch/converter.py`:
 >
@@ -951,55 +946,45 @@ Three externalization footguns, all verified, all silent or nearly so:
 > - **Staged programs persist after conversion.** Call `converter.clear()` to drop them;
 >   `clear(entrypoints=[…])` drops a subset. *"Custom lowerings registered via
 >   `register_torch_lowering()` are always preserved."*
-> - It prints a `rich` banner: `coreai-torch 0.4.1: converting N program(s) to Core AI`. The progress
+> - It prints a `rich` conversion banner. The progress
 >   bar is auto-disabled when stdout is not a TTY (`disable=not sys.stdout.isatty()`), so CI logs stay
 >   clean.
 
-The critical property, which Apple has a dedicated test class for:
+The critical 0.4.3 property, which Apple has dedicated tests for:
 
-> ✅ **VERIFIED** — `tests/test_converter.py::TestConvertToCoreaiNoOptimization`. `to_coreai()` runs
-> **no optimization passes at all**. The IR you get back is a direct transliteration of the FX graph.
+> ✅ **VERIFIED** — `TorchConverter.to_coreai()` documents that the returned `AIProgram` is already
+> optimized. `tests/test_converter.py::TestConvertToCoreaiIR` verifies that the pre-compilation rewrite
+> has already folded the cast chain when `to_coreai()` returns. The separate `AIProgram.optimize()`
+> method used by 0.4.1 no longer exists.
 
-### 6.2 `optimize()` is where the passes run
+### 6.2 The pre-compilation rewrite runs during conversion
 
-Every documented example calls it, always as a bare statement, never assigning the result:
+The current conversion path is:
 
 ```python
 coreai_program = converter.to_coreai()
-coreai_program.optimize()                      # in-place; return value unused everywhere
 asset = coreai_program.save_asset(Path("MyModel.aimodel"))
 ```
 
-> ✅ **VERIFIED** — the return value of `optimize()` is not used in a single example, test or doc in
-> the `coreai-torch` tree. Treat it as `-> None` and mutating in place.
+Here is what the automatic rewrite means concretely — a cast chain:
 
-Here is the before/after that shows what "optimize" means concretely — a cast chain:
-
-> ✅ **VERIFIED** — `tests/test_converter.py::test_cast_chain_preserved_until_optimize`, using
-> `filecheck` assertions on the printed MLIR:
+> ✅ **VERIFIED** — `tests/test_converter.py::test_cast_chain_fused`, using `filecheck` assertions on
+> the printed MLIR:
 >
 > ```python
 > coreai_program = TorchConverter().add_exported_program(program).to_coreai()
-> # BEFORE optimize — two casts, exactly as the graph was written:
-> #   coreai.cast %{{.*}} : tensor<3x4xsi32> to tensor<3x4xf32>
-> #   coreai.cast %{{.*}} : tensor<3x4xf32>  to tensor<3x4xf16>
->
-> coreai_program.optimize()
-> # AFTER optimize — the intermediate f32 hop is gone:
+> # The intermediate f32 hop is already gone when to_coreai() returns:
 > #   CHECK-NOT: coreai.cast %{{.*}} : tensor<3x4xsi32> to tensor<3x4xf32>
 > #   CHECK:     coreai.cast %{{.*}} : tensor<3x4xsi32> to tensor<3x4xf16>
 > ```
 
-That is cast folding. The same pass family does constant folding and inlines graphs that are not
-marked `noinline` — which is exactly why composite externalization marks its graphs `noinline`
-(§5.3): so `optimize()` cannot dissolve the boundary it just created.
+That is cast folding. The same rewrite family does constant folding and inlines graphs that are not
+marked `noinline` — which is exactly why composite externalization marks its graphs `noinline` (§5.3).
 
-### 6.3 What `optimize()` actually wraps
+### 6.3 Historical 0.4.1 pass sequencing
 
-The HEAD commit of `coreai-torch` is `4529671`, *"Remove run_transforms helper in favor of
-result.optimize() (#50)"*, merged 2026-07-23. **The API changed very recently.** Before it, the test
-suite drove the compiler through a private pass list; the deleted helper is therefore the best
-available enumeration of what `optimize()` now wraps:
+In 0.4.1, the converter returned raw IR and a separate method drove a private pass list. This is useful
+historical context for old assets and issue reports, but it is not the 0.4.3 API:
 
 > ✅ **VERIFIED** — code deleted by commit `4529671` (`git show 4529671`, `tests/utils.py`):
 >
@@ -1021,8 +1006,8 @@ available enumeration of what `optimize()` now wraps:
 >     )
 > ```
 >
-> The migration in the same commit was `await run_transforms(result)` → `result.optimize()` —
-> **note the loss of `await`. `optimize()` is synchronous.**
+> The 0.4.3 converter now constructs `AIProgram(module)`, whose context-manager exit performs the
+> pre-compilation rewrite before `to_coreai()` returns.
 
 | Pass | What it appears to do |
 |---|---|
@@ -1037,23 +1022,18 @@ Two more pass names are attested from a crash report rather than from source:
 > **`core-to-odix`**, with the crash site in `apply_passes_sync`. `apply_passes_sync` independently
 > corroborates that `optimize()` is the synchronous driver.
 
-> 🔴 **GAP — the full `CorePasses` catalog and `optimize()`'s signature are unverified.** Five pass
-> names are attested; there are certainly more. No in-tree call site passes any argument to
-> `optimize()`, so whether it accepts a pass list, an optimization level, or options at all is
-> unknown. **What would resolve it:** `dir(coreai._compiler._transforms.passes.CorePasses)` on an
-> installed `coreai-core 1.0.0b2`, plus `help(AIProgram.optimize)`. **Safe default meanwhile:** call
-> it with no arguments, exactly as every Apple example does, and treat the escape hatch in §6.5 as
-> your only knob.
+> 🔴 **GAP — the full current `CorePasses` catalog remains unverified.** The public 0.4.3 converter
+> does not expose a pass list or optimization-level switch.
 
-### 6.4 ⚠️ SILENT FAILURE — `optimize()` is not always semantics-preserving
+### 6.4 ⚠️ HISTORICAL SILENT FAILURE — the 0.4.1 optimizer miscompile
 
 This is the most important historical callout in Part 8. In 0.4.1 it produced an artifact that
 loaded and ran, and the wrongness was large.
 
-> ✅ **VERIFIED** — `coreai-torch#49`, *"`AIProgram.optimize()` removes broadcasting-significant axis
+> 🟠 **COMMUNITY-MEASURED** — `coreai-torch#49`, *"`AIProgram.optimize()` removes broadcasting-significant axis
 > moves and silently miscompiles N×N distance expressions"*. Originally open as of 2026-07-29;
 > **closed as completed on 2026-10-02** after the reporter's 0.4.3/1.0.0b3 retest no longer reproduced
-> the three minimal patterns.
+> the three minimal patterns. Version 0.4.2 was not tested; its release notes do not claim this fix.
 > Reported 2026-07-23 by `dkomoroske`. Environment: macOS 27.0 builds `26A5378j` and `26A5388g`,
 > `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0, Python 3.12.13. Also filed as Feedback
 > Assistant **FB23695952**.
@@ -1132,21 +1112,23 @@ For calibration, Apple's own agent skill sets these acceptance thresholds:
 > 17 dB is far below the floor for *2-bit palettization*. This is not a numerics wobble; it is a
 > different computation.
 
-**Two verified workarounds, from the issue:**
+**Historical 0.4.1 workarounds, from the issue:**
 
 1. **Do not call `optimize()`.** *"Conversion, `save_asset`, specialization, loading, and inference
-   work correctly without it."* — with the caveat in §6.6 about stateful models.
+   work correctly without it."* This applied to the historical 0.4.1 API only.
 2. **Reorder the algebra** to `(‖xᵢ‖² + ‖yⱼ‖²) − 2·xᵢ·yⱼ`, which the control table shows converts
    correctly.
 
-> ⚠️ **SILENT FAILURE — make this a standing gate, not a one-off check.** Any distance matrix,
+> ⚠️ **Keep a standing shipped-asset parity gate.** Any distance matrix,
 > attention-score construction, kernel/Gram matrix, contrastive loss at inference, or nearest-neighbour
-> search built from the expanded square form is exposed. **Every conversion pipeline should A/B
-> `optimize=True` against `optimize=False` on real inputs and fail the build on a divergence.** §11.4
-> is that gate, written out.
+> search built from the expanded square form was exposed in 0.4.1. In 0.4.3 there is no public
+> unoptimized arm, so compare eager PyTorch, the decomposed exported program, and the shipped Core AI
+> asset on the same production-shaped inputs. §11.4 is that gate, written out.
 >
-> **Status: fixed-with-residual as of 2026-10-02.** The reporter measured minimal-case maximum absolute
-> errors of 1.907e-06 to 3.815e-06 in 0.4.3, versus 1.022e+01 before updating. The retest was not a
+> 🟠 **COMMUNITY-MEASURED — fixed with residual risk as of 2026-10-02.** On an M5 running macOS 27.2
+> (26B5091g), Xcode 27.2 (27B5028f), `coreai-torch 0.4.3`, and `coreai-core 1.0.0b3`, the reporter
+> measured minimal-case maximum absolute errors of 1.907e-06 to 3.815e-06, versus 1.022e+01 before
+> updating. The retest was not a
 > complete end-to-end registration validation or expanded boundary sweep, so retain shipped-artifact
 > parity testing.
 
@@ -1159,14 +1141,14 @@ diagnostic:
 >
 > | Issue | Silent behaviour |
 > |---|---|
-> | `coreai-torch#49` | `optimize()` drops a broadcast-significant axis move — 17 dB PSNR |
+> | `coreai-torch#49` | In 0.4.1, the separate optimizer dropped a broadcast-significant axis move — 17 dB PSNR; fixed in the tested 0.4.3 path |
 > | `coreai-torch#9` | float→int→float cast round-trips folded away, dropping truncation: `(x + 64.0).long().float() - 64.0` returns the identity instead of `floor` |
 > | `coreai-torch#10` | GPU delegate executes `floor`/`trunc`/`ceil` as identity; `round` uses away-from-zero ties |
 > | `coreai-torch#11` | an int64-comparison bool-mask chain clobbers an unrelated live tensor; in a full RF-DETR decoder the output cosine was **~0.65 with no error raised** |
 > | `coreai-torch` PR#43 (MERGED) | `aten.min.dim` returned correct `values` but **silently wrong `indices`** at dtype-extremal minima |
 >
-> Issue #49 explicitly cross-references #9 as *"also … a silent semantics-changing simplification
-> reached through `prog.optimize()`."* Between #9 and #10, **both natural in-graph `floor`
+> Issue #49 explicitly cross-references #9 as a related historical simplification. Between #9 and
+> #10, **both natural in-graph `floor`
 > workarounds are removed on GPU** — worth knowing if your model quantizes coordinates.
 
 ### 6.5 The const-folding escape hatch
@@ -1181,12 +1163,12 @@ private API, so treat it as a debugging tool rather than a production dependency
 >     register_should_const_folding_hook,
 > )
 >
-> coreai_program = TorchConverter().add_exported_program(program).to_coreai()
+> converter = TorchConverter()
 > register_should_const_folding_hook(
 >     callable=lambda op: op.name != "coreai.cast",
->     context=coreai_program._mlir_module.context,
+>     context=converter.context._mlir_context,
 > )
-> coreai_program.optimize()
+> coreai_program = converter.add_exported_program(program).to_coreai()
 > # Both now survive:
 > #   coreai.constant dense<7> : tensor<1xsi32>
 > #   coreai.cast %{{.*}} : tensor<1xsi32> to tensor<1xf32>
@@ -1196,30 +1178,11 @@ private API, so treat it as a debugging tool rather than a production dependency
 > as private as an API gets, and `coreai-core`'s own docs warn that *"a few graph-building primitives
 > … currently live under `coreai._compiler` while the public authoring surface is finalized."*
 
-### 6.6 When `optimize()` is mandatory
+### 6.6 Stateful conversion in 0.4.3
 
-"Just skip `optimize()`" is not universally available advice. Apple's test harness runs it
-conditionally, and the condition is instructive:
-
-> ✅ **VERIFIED** — `tests/utils.py::_export_and_convert` runs optimize when
-> `run_optimize_passes or state_names or has_state`, where
-> `has_state = bool(sig.buffers_to_mutate) or bool(sig.user_inputs_to_mutate)`.
->
-> And the reason, from a comment in `_compare_by_name`: *"state mutation outputs become tokens after
-> optimize and won't appear here."*
-
-So: **a stateful model must be optimized.** `_UPDATE_SIGNATURE_TO_HANDLES` and
-`_PROPAGATE_HANDLE_UPDATES` are what convert the exported program's "mutated buffer comes back as an
-extra output" convention into Core AI's handle-based state protocol. Without them the runtime's
-state binding (§9.4) has nothing to bind to.
-
-| Model shape | Can you skip `optimize()`? |
-|---|---|
-| Stateless (no mutable buffers, no in-place input mutation) | Yes — with a measured size/latency cost, and it is the documented workaround for #49 |
-| Stateful (KV cache, running counters, in-place mutated inputs) | **No.** State does not work without it |
-
-If you have a stateful model *and* an expanded-square-distance expression, workaround 2 (reorder the
-algebra) is your only option.
+The automatic rewrite includes the handle-signature passes required for mutable buffers and in-place
+input mutation. There is no separate stateful-model optimization call and no public switch to skip the
+rewrite. Test state names, ordering, and runtime updates as part of the shipped-asset parity gate.
 
 ---
 
@@ -1242,7 +1205,6 @@ coreai_program = (
     .add_exported_program(exported, input_names=["image"], output_names=["logits"])
     .to_coreai()
 )
-coreai_program.optimize()
 ```
 
 ```python
@@ -1450,7 +1412,6 @@ coreai_program = (
     )
     .to_coreai()
 )
-coreai_program.optimize()
 
 # Assert the contract before anything downstream can depend on it.
 ir = str(coreai_program)
@@ -1497,7 +1458,6 @@ program = (
     .add_exported_program(ep, input_names=["input_ids"], output_names=["logits"])
     .to_coreai()
 )
-program.optimize()
 ```
 
 > ✅ **VERIFIED** — the mechanism is the standard `torch.export` one:
@@ -1747,7 +1707,7 @@ The only remedy is source-level: clone, or go out-of-place.
 >     state_names=["kv_cache", "pos_idx", "y_state"],
 >     input_names=["query", "context"],
 >     output_names=["attn_out", "scaled"],
-> ).to_coreai().optimize()
+> ).to_coreai()
 > ```
 
 Trace the counts, because they are the whole lesson:
@@ -1975,7 +1935,6 @@ and in Python, `model.function_names` lists them and `load_function(name)` binds
 >     output_names=["pred_masks", "pred_boxes", "pred_logits", "presence_logits", "semantic_seg"],
 > )
 > coreai_program = converter.to_coreai()
-> coreai_program.optimize()
 >
 > metadata = build_aimodel_metadata(config.hf_model_id)
 > coreai_program.save_asset(asset_path, metadata)
@@ -2399,16 +2358,14 @@ async def assert_io_contract(asset_path: Path, entrypoint: str = "main") -> None
 Commit this as a test. It costs milliseconds and it is the only thing standing between a PyTorch
 upgrade and a renamed public interface.
 
-### 11.4 ⚠️ The `optimize=True` / `optimize=False` gate
+### 11.4 ⚠️ The shipped-asset parity gate
 
-This is the specific defence against §6.4, and the issue reporter's own recommendation:
-
-> ✅ **VERIFIED** — `coreai-torch#49`'s guide takeaway, verbatim: *"`optimize()` is **not**
-> semantics-preserving in all cases as of 0.4.1/1.0.0b2. Any pipeline guide should recommend an
-> `optimize=True` vs `optimize=False` numerics gate as a standard step."*
+In 0.4.3, `to_coreai()` returns an already optimized program, so there is no valid optimized-versus-
+unoptimized A/B test. Compare all three observable stages instead: eager PyTorch, the decomposed
+`ExportedProgram`, and the exact Core AI asset you will ship.
 
 ```python
-"""Convert twice — with and without optimize() — and fail loudly if they disagree."""
+"""Fail loudly when export or Core AI conversion changes model semantics."""
 
 import asyncio
 import tempfile
@@ -2416,67 +2373,45 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from coreai.authoring import AIModelAsset
 from coreai.runtime import NDArray
 from coreai_torch import TorchConverter, get_decomp_table
 
 
-def build_program(ep, *, optimize: bool):
+async def shipped_asset_gate(model: torch.nn.Module, example: tuple[torch.Tensor, ...],
+                             *, atol: float = 1e-3) -> None:
+    model = model.eval()
+    ep = torch.export.export(model, args=example).run_decompositions(get_decomp_table())
     program = (
         TorchConverter()
         .add_exported_program(ep, input_names=["x"], output_names=["y"])
         .to_coreai()
     )
-    if optimize:
-        program.optimize()
-    return program
-
-
-async def run_program(program, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        asset = program.save_asset(Path(tmpdir) / "gate.aimodel")
-        async with asset.executable() as model:
-            fn = model.load_function("main")
-            out = await fn({k: NDArray(np.ascontiguousarray(v)) for k, v in inputs.items()})
-            # Materialize INSIDE the block — buffers are only valid until it exits.
-            return {k: v.numpy().copy() for k, v in out.items()}
-
-
-async def optimize_gate(model: torch.nn.Module, example: tuple[torch.Tensor, ...],
-                        *, atol: float = 1e-3) -> None:
-    ep = torch.export.export(model.eval(), args=example)
-    ep = ep.run_decompositions(get_decomp_table())
-
-    inputs = {"x": example[0].contiguous().numpy()}
-
-    plain = await run_program(build_program(ep, optimize=False), inputs)
-    tuned = await run_program(build_program(ep, optimize=True), inputs)
 
     with torch.no_grad():
-        eager = model(*example)
+        eager = model(*example).detach().cpu().numpy()
+        exported = ep.module()(*example).detach().cpu().numpy()
 
-    for name in plain:
-        d_opt = float(np.max(np.abs(plain[name] - tuned[name])))
-        d_ref = float(np.max(np.abs(eager.numpy() - tuned[name])))
-        print(f"{name}: |unopt - opt| = {d_opt:.3e}   |eager - opt| = {d_ref:.3e}")
-        assert d_opt < atol, (
-            f"optimize() changed the semantics of output {name!r} "
-            f"(max abs delta {d_opt:.3e}). See coreai-torch#49."
-        )
-        assert d_ref < atol, f"Core AI diverges from eager PyTorch on {name!r}: {d_ref:.3e}"
+    inputs = {"x": np.ascontiguousarray(example[0].detach().cpu().numpy())}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        asset = program.save_asset(Path(tmpdir) / "gate.aimodel")
+        async with asset.executable() as runtime_model:
+            fn = runtime_model.load_function("main")
+            result = await fn({name: NDArray(value) for name, value in inputs.items()})
+            coreai = result["y"].numpy().copy()  # materialize inside the context
+
+    export_delta = float(np.max(np.abs(eager - exported)))
+    coreai_delta = float(np.max(np.abs(eager - coreai)))
+    print(f"|eager - exported| = {export_delta:.3e}   |eager - Core AI| = {coreai_delta:.3e}")
+    assert export_delta < atol, f"export changed model semantics: {export_delta:.3e}"
+    assert coreai_delta < atol, f"Core AI diverges from eager PyTorch: {coreai_delta:.3e}"
 
 
-asyncio.run(optimize_gate(MyModel(), (torch.randn(1, 32, 8),)))
+asyncio.run(shipped_asset_gate(MyModel(), (torch.randn(1, 32, 8),)))
 ```
 
-The `#49` reproducer's own numbers show what a hit looks like: `1.907e-06` unoptimized versus
-`1.022e+01` optimized, on the same graph. A threshold of `1e-3` separates those by seven orders of
-magnitude — you will not get a marginal call.
-
-> ⚠️ **Use realistic inputs.** `#49`'s control table shows the bug **does not reproduce with unequal
-> input lengths (17 × 23)** because the wrong operand cannot broadcast. A gate run on rectangular
-> toy tensors would pass while the square production case is broken. Run the gate at your real
-> shapes.
+Adapt the input and output names for multi-input or multi-output models, and run the gate at every
+production shape boundary. The historical #49 control passed at 17×23 but failed at 32×32; a single
+rectangular toy fixture would therefore have missed the defect.
 
 ### 11.5 Structural checks that need no inference
 
@@ -2572,7 +2507,7 @@ four in CI:
 | # | Comparison | Catches |
 |---|---|---|
 | 1 | eager PyTorch vs Core AI | decomposition-table mistakes, lowering bugs, dtype narrowing |
-| 2 | `optimize=True` vs `optimize=False` | `#49`-class optimizer miscompiles, cast-fold semantics loss |
+| 2 | decomposed `ExportedProgram` vs eager PyTorch | export and decomposition changes before conversion |
 | 3 | CPU vs GPU vs ANE, same asset | delegate-specific bugs, fp16 overflow, `floor`-as-identity |
 | 4 | descriptor assertion (names + order) | renamed IO, reordered states, missing entrypoints |
 
@@ -2820,15 +2755,15 @@ There is a gate on all of this in the current preview, and it is easy to miss:
 | Post-hoc `strip_debug_info(program)` then `save_asset` | nothing | shipping an *already converted* asset; also the §2.3 recovery |
 
 The pragmatic recipe: **convert twice.** Keep the DEBUG asset next to the RELEASE one, ship the
-RELEASE one, and diagnose against the DEBUG one when a field report arrives. They are the same
-computation — verify that with §11.4's harness comparing the two assets, which costs one extra run
+RELEASE one, and diagnose against the DEBUG one when a field report arrives. They should be the same
+computation — verify that by running §11.4's shipped-asset harness once for each asset
 and rules out the (unlikely, unverified) possibility that mode affects codegen.
 
 > 🔴 **GAP — whether `Mode.RELEASE` affects the emitted computation at all is unverified.** The
 > docstring describes it purely as a debug-information level, and nothing in the source suggests
 > otherwise, but no test in the corpus asserts numeric equality between a DEBUG-converted and a
 > RELEASE-converted asset. **What would resolve it:** such a test, or a statement in the docs.
-> **Safe default meanwhile:** run §11.4's comparison across the two modes once per model. If they
+> **Safe default meanwhile:** run §11.4's shipped-asset parity check for both modes once per model. If they
 > differ, that is a bug report.
 
 ---
@@ -2862,11 +2797,11 @@ Every one of these raises at conversion time with an actionable message. They ar
 | 1 | export without `.eval()` | dropout active, batch stats wrong at inference | §11.1 eager-vs-Core-AI |
 | 2 | `run_decompositions(default_decompositions())` | SDPA/silu/pad decompose → **fast paths silently lost** | §11.5 `"scaled_dot_product_attention" in ir` |
 | 3 | rely on a non-preserved op (`softplus`, `mish`, `logsumexp`) at fp16 | overflow → 0 or NaN, earlier still on ANE | §11.6 CPU/GPU/ANE A/B at real activation ranges |
-| 4 | call `optimize()` on an expanded-square-distance graph | broadcast axis move deleted → **17 dB PSNR** | §11.4 optimize on/off gate |
+| 4 | use the 0.4.1 separate optimizer on an expanded-square-distance graph | broadcast axis move deleted → **17 dB PSNR** | historical #49 reproducer; current §11.4 shipped-asset gate |
 | 5 | omit `input_names` / `output_names` | outputs named after internal ops; renamed by a PyTorch upgrade | §11.3 descriptor assertion |
 | 6 | omit `state_names` with two same-shape buffers | states may silently reorder | §11.3 + asymmetric state contents |
 | 7 | mutate a `forward` argument in place | it silently becomes a **state**, changing the calling convention | count mismatch (loud) or §11.3 |
-| 8 | skip `optimize()` on a stateful model | mutation outputs never become handle tokens; state does not work | §11.3 `desc.state_names` |
+| 8 | fail to validate automatic state-handle rewriting | state names or updates are wrong at runtime | §11.3 `desc.state_names` + runtime state test |
 | 9 | typo an `ExternalizeSpec` target class | `UserWarning` only; composite never emitted | §11.5 `"composite_decl" in ir` |
 | 10 | pass a bare class instead of an `ExternalizeSpec` | "simple externalization" — no metadata, **no benefit** | §11.5 + `freqop` |
 | 11 | let an int64 value exceed int32 | silently narrowed and wrong | §11.1 with realistic magnitudes |
@@ -2941,12 +2876,10 @@ def convert(model: nn.Module, example: tuple[torch.Tensor, ...], *, optimize: bo
             state_names=STATE_NAMES,
             entrypoint_name=ENTRYPOINT,
         )
-        .to_coreai()                                 # 5. pure conversion, no passes
+        .to_coreai()                                 # 5. conversion + automatic rewrite
     )
-    if optimize:
-        program.optimize()                           # 6. passes. Mandatory for stateful models.
 
-    ir = str(program)                                # 7. structural assertions before saving
+    ir = str(program)                                # 6. structural assertions before saving
     for name in INPUT_NAMES + OUTPUT_NAMES:
         assert f'coreai.name = "{name}"' in ir, f"missing IO name {name!r}"
 
@@ -2990,8 +2923,8 @@ if __name__ == "__main__":
 
 > ⚠️ Two notes on that listing. The model is a **toy** whose only job is to exercise every contract
 > — buffers, dynamic dims, explicit names, state binding — not to be a good attention
-> implementation. And it deliberately does **not** run the §11.4 optimize gate inline; run that
-> separately, at your real shapes, because §6.4's bug is shape-sensitive.
+> implementation. Run the §11.4 shipped-asset gate separately at your real shapes, because §6.4's
+> historical bug was shape-sensitive.
 
 ### 13.4 API quick reference
 
@@ -3010,12 +2943,11 @@ converter.add_pytorch_module(model, *, export_fn, externalize_modules=None,
                              state_names=None, entrypoint_name="main") -> Self
 
 # ---- conversion ----
-converter.to_coreai(*, entrypoints=None) -> AIProgram
+converter.to_coreai(*, entrypoints=None) -> AIProgram # already optimized in coreai-torch 0.4.3
 converter.clear(*, entrypoints=None) -> None          # custom lowerings always preserved
 TorchConverter(mode=TorchConverter.Mode.DEBUG)        # or .RELEASE
 
 # ---- program (from coreai.authoring) ----
-program.optimize()                                    # synchronous, in place
 program.save_asset(path)                              # -> AIModelAsset; path must end .aimodel
 program.save_asset(path, metadata)                    # optional second positional
 str(program)                                          # prints MLIR
@@ -3046,12 +2978,12 @@ Before you consider a conversion done:
 - [ ] every dimension that varies at runtime declared via `dynamic_shapes=`
 - [ ] `input_names`, `output_names` and (if stateful) `state_names` passed explicitly
 - [ ] `entrypoint_name` chosen deliberately, matching the consumer's expectations (§10.4)
-- [ ] `optimize()` called — and A/B'd against not calling it, at real shapes (§11.4)
+- [ ] `to_coreai()` output and shipped asset checked against eager/exported PyTorch at real shapes (§11.4)
 - [ ] IR structural assertions: composites present, IO names present (§11.5)
 - [ ] descriptor assertion committed as a test (§11.3)
 - [ ] eager-vs-Core-AI numerics inside Apple's PSNR bands (§11.2)
 - [ ] CPU / GPU / ANE A/B on the same asset (§11.6)
-- [ ] converted with `coreai-torch` ≥ 0.4.1 (§2.3)
+- [ ] converted with `coreai-torch` 0.4.3 for the current API (§2.3, §6)
 - [ ] `USE_LOCAL_COREAI=1` and `ENABLE_DEBUG_INFO=1` set if you want the Debugger to work (§12.5)
 
 ---

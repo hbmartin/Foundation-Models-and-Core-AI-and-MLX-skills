@@ -2,8 +2,11 @@
 
 **Part 8 · Core AI: converting from PyTorch · Reference 02**
 
-**Version floor.** Everything here is `coreai-torch` **0.4.1** (published 2026-07-06), which pins
-`coreai-core==**1.0.0b2**` exactly, requires **Python ≥ 3.11**, and accepts **torch ≥ 2.8.0** with no
+**Version note.** The original defect evidence and overload inventory were captured against
+`coreai-torch` **0.4.1** (published 2026-07-06), which pins `coreai-core==**1.0.0b2**` exactly.
+The current pipeline uses **coreai-torch 0.4.3 / coreai-core 1.0.0b3**; `to_coreai()` returns an
+already optimized program and the separate `.optimize()` method no longer exists. Both require
+**Python ≥ 3.11**, and accept **torch ≥ 2.8.0** with no
 upper bound but warns above **2.13.0**. The `.aimodel` assets it produces run on **iOS 27.0 /
 iPadOS 27.0 / macOS 27.0** and are compiled with **Xcode 27.0+**; nothing in this guide back-deploys
 to any 26.x OS, because the Core AI framework does not exist there. Two hard version gates you must
@@ -805,7 +808,7 @@ when it cannot.
 
 Three properties fall out of that IR and are worth holding onto:
 
-1. **`noinline` is what preserves the boundary.** `AIProgram.optimize()` inlines non-`noinline`
+1. **`noinline` is what preserves the boundary.** The pre-compilation rewrite inlines non-`noinline`
    graphs; a composite survives it.
 2. **Attributes are `op_attrs`, not inputs.** `eps` is `9.99999974E-6 : f32` inside the declaration,
    not a graph argument. That is why `composite_attrs` exists and why scalars must be instance
@@ -961,7 +964,6 @@ converter = TorchConverter().add_pytorch_module(          # NOT add_exported_pro
     output_names=["y"],
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 
 # The composite survives optimize() because it is `noinline`.
 assert 'composite_declaration<"rms_norm"' in str(coreai_program)
@@ -1503,7 +1505,6 @@ coreai_program = converter.add_exported_program(
     input_names=["x", "y"],
     output_names=["result"],
 ).to_coreai()
-coreai_program.optimize()
 
 print(str(coreai_program))    # AIProgram's __str__ prints the MLIR
 ```
@@ -1600,7 +1601,6 @@ def lower_adaptive_avg_pool2d_static(values_map, node, loc):
 
 
 coreai_program = converter.add_exported_program(pool_exported).to_coreai()
-coreai_program.optimize()
 ```
 
 Read that lowering with the failure classes in mind. It indexes `x.type.shape[2]` and
@@ -2624,9 +2624,9 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > cheap, consistent with the Neural Engine's BC1S/4D orientation, and worth trying before you conclude
 > your quantization is at fault.
 
-**`AIProgram.optimize()` is not always semantics-preserving.**
+**Historical 0.4.1 optimizer defect; fixed in the tested 0.4.3 path.**
 
-> ✅ **VERIFIED** — `coreai-torch` issue **#49** (open), author `dkomoroske`, 2026-07-23. macOS 27.0
+> 🟠 **COMMUNITY-MEASURED** — `coreai-torch` issue **#49**, author `dkomoroske`, 2026-07-23. macOS 27.0
 > builds `26A5378j` and `26A5388g`, `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0. Also
 > filed as Feedback Assistant **FB23695952**. `optimize()` deletes an `expand_dims`/`transpose` that
 > is **semantically load-bearing for broadcasting**, in the expanded squared-distance form.
@@ -2656,15 +2656,15 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > reproduces it — *"so it is a compiler/optimizer bug, not a delegate bug"*. Second, and more
 > important for your test design: **unequal input lengths (17×23) come out correct**, and only
 > shape-compatible (square) cases miscompile, because the wrong operand still broadcasts. **A parity
-> test on square tensors can pass while the same code on rectangular tensors fails, and vice versa.**
+> test only on rectangular tensors can pass while the square production case fails.**
 >
-> **Two verified workarounds:** (1) do not call `optimize()` — *"Conversion, `save_asset`,
+> **Historical 0.4.1 workarounds:** (1) do not call `optimize()` — *"Conversion, `save_asset`,
 > specialization, loading, and inference work correctly without it"*; (2) reorder to
 > `(||x||² + ||y||²) − 2·x·y`.
 >
-> **This is why "optimize=True vs optimize=False" is one of the four standard numerics gates in §10.**
-> Note the tension with §5.1: `optimize()` is also what stateful models **require** (mutation outputs
-> become handle tokens only after it runs), so "just skip it" is not free.
+> **Current disposition:** closed 2026-10-02 after a 0.4.3 retest passed all three minimal patterns.
+> Version 0.4.2 was not tested. In 0.4.3 `to_coreai()` returns an already optimized program, so use
+> the shipped-asset parity gate in §10 rather than trying to construct an unoptimized arm.
 
 ### 9.6 Recovering 0.4.0 artifacts without re-converting
 
@@ -2705,13 +2705,13 @@ is easy to miss.
 
 Nine defects, in one table, so you can check your own model against it:
 
-| # | Defect | Wrong on | Fix status 2026-07-29 | Cheap workaround |
+| # | Defect | Wrong on | Fix status 2026-10-02 | Cheap workaround |
 |---|---|---|---|---|
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
 | 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` open | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
-| 5 | `optimize()` drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` fixed in 0.4.3 retest; closed 2026-10-02 | Upgrade; retain parity gate |
+| 5 | 0.4.1 optimizer drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate |
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 | 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
@@ -2783,13 +2783,13 @@ Did add_exported_program() / add_pytorch_module() raise?
 
 ### 10.2 The four gates every converted model should pass
 
-Every single silent miscompile in §9 was found by one of these four A/Bs. Run all four; they are
+Every silent miscompile in §9 was found by one of these comparisons. Run all four; they are
 cheap relative to what they find, and each one catches a defect class the others cannot.
 
 | Gate | What you compare | Catches |
 |---|---|---|
 | **A · Eager vs Core AI** | `model(x)` vs the `.aimodel`'s output for the same `x` | Lowering arithmetic (§9.1–9.4), composite mismatch (§5.5, §5.7) |
-| **B · `optimize=True` vs `optimize=False`** | Two assets from the same `AIProgram`, one optimized | Optimizer-introduced miscompiles (§9.5) |
+| **B · ExportedProgram vs eager** | The decomposed exported module and eager PyTorch on the same inputs | Export and decomposition changes before Core AI conversion |
 | **C · CPU vs GPU vs ANE** | The *same* `.aimodel`, three `SpecializationOptions` | Delegate divergence (§9.5, issue #10), ANE fp16 (§9.5) |
 | **D · Token-exact greedy oracle** (LLMs only) | Greedy generation vs an fp32 reference, token by token | Everything above, compounded over many steps |
 
@@ -2925,11 +2925,10 @@ knows the names are random.
 ### 10.5 A conversion gate you can paste into CI
 
 ```python
-"""Minimal conversion gate. Fails loudly on the things that otherwise fail silently.
+"""Minimal 0.4.3 conversion gate. Fails loudly on silent conversion changes.
 
-Covers: composites present, optimize() is semantics-preserving for this model,
-eager parity. Add gate C (compute units) and gate D (greedy oracle) as your
-model demands.
+Covers: composites present and shipped-asset eager parity. Add exported-program,
+compute-unit, and greedy-oracle comparisons as your model demands.
 """
 
 import asyncio
@@ -2946,7 +2945,7 @@ from coreai_torch import ExternalizeSpec, TorchConverter
 REQUIRED_COMPOSITES = ("rms_norm", "rope", "scaled_dot_product_attention")
 
 
-def build(model, sample, specs, *, optimize: bool):
+def build(model, sample, specs):
     converter = TorchConverter().add_pytorch_module(
         model,
         export_fn=lambda m: torch.export.export(m, args=sample).run_decompositions(
@@ -2956,10 +2955,7 @@ def build(model, sample, specs, *, optimize: bool):
         input_names=["x"],
         output_names=["y"],
     )
-    program = converter.to_coreai()
-    if optimize:
-        program.optimize()
-    return program
+    return converter.to_coreai()  # already optimized in coreai-torch 0.4.3
 
 
 async def run(program, x: np.ndarray) -> np.ndarray:
@@ -2974,27 +2970,21 @@ async def run(program, x: np.ndarray) -> np.ndarray:
 async def gate(model, sample, specs):
     x = sample[0].numpy()
 
-    prog_opt = build(model, sample, specs, optimize=True)
-    prog_raw = build(model, sample, specs, optimize=False)
+    program = build(model, sample, specs)
 
     # 1. Composites survived externalization (§8.7a — a typo only warns).
-    ir = str(prog_opt)
+    ir = str(program)
     for name in REQUIRED_COMPOSITES:
         assert f'composite_declaration<"{name}"' in ir, f"missing composite: {name}"
 
-    y_opt = await run(prog_opt, x)
-    y_raw = await run(prog_raw, x)
+    y_coreai = await run(program, x)
 
-    # 2. optimize() did not change the math (§9.5).
-    d_opt = np.abs(y_opt.astype(np.float32) - y_raw.astype(np.float32)).max()
-    assert d_opt < 1e-3, f"optimize() changed the result: max|d| = {d_opt:g}"
-
-    # 3. Eager parity. atol=1e-2 is coreai-torch's own default "because FP16
+    # 2. Eager parity. atol=1e-2 is coreai-torch's own default "because FP16
     #    accuracy is flaky" — tighten it if your model is fp32.
     with torch.no_grad():
         y_torch = model(*sample).numpy()
-    assert np.allclose(y_torch, y_opt, atol=1e-2), (
-        f"eager parity failed: max|d| = {np.abs(y_torch - y_opt).max():g}"
+    assert np.allclose(y_torch, y_coreai, atol=1e-2), (
+        f"eager parity failed: max|d| = {np.abs(y_torch - y_coreai).max():g}"
     )
     print("gate: OK")
 ```
@@ -3232,11 +3222,10 @@ No number in this guide is presented as an Apple figure unless the row above say
   exists. Safe default given: externalize as Apple does, but promise nothing. §8.6
 - **Whether `strip_debug_info` returns a new program or mutates in place.** Safe default given: a
   call form that is correct either way. §9.6
-- **The full `CorePasses` catalog behind `AIProgram.optimize()`**, and whether `optimize()` takes
-  arguments. Only three pass names are attested (`_CORE_OPTIMIZE`, `_UPDATE_SIGNATURE_TO_HANDLES`,
+- **The full current `CorePasses` catalog behind the automatic pre-compilation rewrite.** Only three
+  pass names are attested (`_CORE_OPTIMIZE`, `_UPDATE_SIGNATURE_TO_HANDLES`,
   `_PROPAGATE_HANDLE_UPDATES`, from a deleted test helper) plus two from a crash report
-  (`legalize-to-core`, `core-to-odix`). Consequence for this guide: §9.5's advice is "A/B it", not
-  "disable pass X".
+  (`legalize-to-core`, `core-to-odix`). The public 0.4.3 API exposes no per-pass switch.
 
 ### Not used as evidence
 

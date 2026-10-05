@@ -2,7 +2,7 @@
 
 **Version floor:** everything here is **27.0 and only 27.0**. `apple/coreai-models` pins
 `platforms: [.macOS("27.0"), .iOS("27.0")]` and requires **Xcode 27.0+**; the Python side is
-`coreai-core==1.0.0b2` (a *beta* wheel), `coreai-torch==0.4.1`, `coreai-opt==0.2.1`, a pinned
+`coreai-core==1.0.0b3` (a *beta* wheel), `coreai-torch==0.4.3`, `coreai-opt==0.2.1`, a pinned
 `torch==2.9.0` and Python 3.11 in a `uv` ≥ 0.9.0 workspace. **Core AI Debugger is a separate download**
 with its own floor — host **macOS 27+**, paired devices iOS/iPadOS/macOS 27+ (no visionOS, tvOS or
 watchOS). Nothing back-deploys, and anything describing "iOS 20", "macOS 17", `.coreaimodel` or a

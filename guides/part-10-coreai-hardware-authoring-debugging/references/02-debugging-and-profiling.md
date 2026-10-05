@@ -760,7 +760,6 @@ program = (
     )
     .to_coreai()
 )
-program.optimize()                                      # in-place; return value unused
 asset = program.save_asset(Path("snake.aimodel"))
 ```
 
@@ -1304,7 +1303,6 @@ Two assets, one graph:
 ```python
 # Debuggable asset — default DEBUG mode, full stack traces, Source Viewer works.
 program_dbg = TorchConverter().add_exported_program(ep, …).to_coreai()
-program_dbg.optimize()
 program_dbg.save_asset(Path("MyModel.debug.aimodel"))
 
 # Shipping asset — RELEASE mode, op IDs only, smaller.
@@ -1313,7 +1311,6 @@ program_rel = (
     .add_exported_program(ep, …)
     .to_coreai()
 )
-program_rel.optimize()
 program_rel.save_asset(Path("MyModel.aimodel"))
 ```
 
@@ -1388,20 +1385,20 @@ the Instruments timeline (§3.5).
 Consequences for how you read what you see:
 
 - **An operation you wrote may not exist in the specialized graph.** It may have been fused into a
-  neighbour. That is not a bug; it is the compiler doing its job. `AIProgram.optimize()` and
-  specialization both do this.
+  neighbour. That is not a bug; it is the compiler doing its job. The automatic pre-compilation
+  rewrite and specialization both do this.
 - **Operations you never wrote may appear.** Layout conversions, casts, and split sub-functions.
 - **Comparing the two views is a real diagnostic.** If a composite op you deliberately externalized
   (an `sdpa`, an `rms_norm`) is present in the unspecialized graph but scattered into primitives in
   the specialized one, your fast-kernel path did not engage.
 
-> ⚠️ **SILENT FAILURE — `AIProgram.optimize()` can delete operations that carry meaning.** The
-> series carries this one from Part 8: `optimize()` is a mandatory in-place pass driver, and it will
-> remove axis manipulations it considers redundant — including ones that were doing
-> broadcasting-significant work. Nothing throws; the graph gets smaller and the numbers get wrong.
+> ⚠️ **HISTORICAL SILENT FAILURE — the 0.4.1 optimizer could delete operations that carried meaning.**
+> The Part 8 incident involved a broadcasting-significant axis move. In 0.4.3 `to_coreai()` applies
+> the rewrite automatically and the reported defect no longer reproduces, but conversion regressions
+> can still produce a smaller graph with wrong numbers.
 > The Debugger's specialized-vs-unspecialized comparison, and `coreai_torch.debugging.graph_diff`
-> (§13.5), are the two tools that make such a deletion visible at all. If a model was correct before
-> `optimize()` and wrong after, diff the two graphs before you start bisecting tensors.
+> (§13.5), are the tools that expose the first divergence. Compare eager/exported outputs with the
+> shipped asset and inspect intermediates before bisecting tensors.
 
 > 🔴 **GAP — the full list of values for `Target`, `Compute Units` and `Graph Visualization` in the
 > scheme dialog.** We have exactly four observed strings: one target (a MacBook Pro), two compute-unit
@@ -1557,7 +1554,6 @@ program = TorchConverter().add_exported_program(
     input_names=["pixel_values"],
     output_names=["pred_masks"],
 ).to_coreai()
-program.optimize()
 
 metadata_path = save_intermediates(
     program=exported,                 # executed
@@ -2876,7 +2872,6 @@ Colour indicators are metric-aware: green is always good.
 from coreai_torch import TorchConverter, get_decomp_table
 TorchConverter(mode=TorchConverter.Mode.RELEASE)          # ship; DEBUG is the default
 converter.add_exported_program(ep, input_names=…, output_names=…, state_names=…, entrypoint_name="main")
-program.optimize()                                        # in-place, return value unused
 program.save_asset(Path("m.aimodel"))                     # -> AIModelAsset; optional 2nd metadata arg
 
 from coreai_torch.debugging.torch_utils import save_intermediates, load_intermediates

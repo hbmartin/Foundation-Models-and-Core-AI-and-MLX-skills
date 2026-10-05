@@ -1,8 +1,10 @@
 # Part 8 — Core AI: converting a model from PyTorch
 
-**Version floor:** `coreai-torch` **0.4.1** (2026-07-06), which pins `coreai-core==1.0.0b2` *exactly*,
-requires **Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to **2.13.0**; above that, a `UserWarning` and
-you are on your own). `coreai-core==1.0.0b2` publishes cp311/cp312/cp313 wheels for **macOS arm64** and
+**Version floor:** use `coreai-torch` **0.4.3** with `coreai-core==1.0.0b3` for the current pipeline. The historical compatibility
+floor remains 0.4.1 for assets that must load on OS 27 beta 2 and later, but 0.4.1's separate
+`AIProgram.optimize()` workflow must not be copied into a 0.4.3 pipeline. The package requires
+**Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to **2.13.0**; above that, a `UserWarning` and
+you are on your own). Core AI publishes cp311/cp312/cp313 wheels for **macOS arm64** and
 **Linux x86_64** (`manylinux_2_34_x86_64`), but **not Linux arm64**; arm64 hosts therefore use a
 `--platform linux/amd64` container when they need the Linux wheel.
 The `.aimodel` you produce runs on **iOS / iPadOS / macOS / tvOS / visionOS / watchOS 27.0+ only**, built
@@ -29,7 +31,7 @@ every contract you define here — `AIModel`, `InferenceFunction.run`, state bin
 ## Why this part exists
 
 Apple's own README makes conversion look like five lines — `torch.export.export`, `run_decompositions`,
-`TorchConverter().add_exported_program`, `to_coreai()`, `optimize()`, then `save_asset`. Those lines are
+`TorchConverter().add_exported_program`, `to_coreai()`, then `save_asset`. Those lines are
 strictly sequential, each has a failure mode, and **three of them fail silently**: they produce an artifact
 that loads, runs, returns tensors of the right shape, and is wrong or slow. That ratio is why this part is
 three long guides rather than a quickstart. Four things underpin it:
@@ -52,10 +54,10 @@ three long guides rather than a quickstart. Four things underpin it:
    read this page" preamble. The error says *unsupported*, the doc says *supported*, both are telling the
    truth about different things.
 
-Underneath all four sits the sharpest single fact in the part: **`AIProgram.optimize()` is not always
-semantics-preserving**, it is an open bug with zero comments as of 2026-07-29, and its measured impact on a
-real model was **17 dB PSNR** against eager PyTorch — below the floor for *2-bit palettization*. It is
-shape-sensitive, so a parity test on toy tensors passes while production is broken.
+The sharpest historical example is `coreai-torch#49`: in 0.4.1 the separate optimizer produced
+**17 dB PSNR** on a real model. The issue closed after a 0.4.3 retest, and 0.4.3 removed the separate
+`AIProgram.optimize()` step: `to_coreai()` now returns an already optimized program. The lasting rule is
+to compare the shipped Core AI asset with eager PyTorch at production shapes.
 
 ---
 
@@ -66,7 +68,7 @@ shape-sensitive, so a parity test on toy tensors passes while production is brok
 | "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/01-conversion-and-the-io-contract.md#1-the-five-lines-and-what-each-one-is-for) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
 | "My assets stopped loading on a newer beta" | [8.1 §2.3](references/01-conversion-and-the-io-contract.md#23-️-the-version-gate-that-invalidates-already-published-assets) | The 0.4.0 gate, plus the `strip_debug_info` recovery that does *not* need a reconvert |
 | "My transformer converted fine and is slower than I expected" | [8.1 §4.4](references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) | You probably passed PyTorch's default decomposition table; SDPA decomposed into six supported ops and the fast path vanished |
-| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) → [§11.4](references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) | The `optimize()` miscompile, then the A/B gate that catches it and its whole family |
+| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) → [§11.4](references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) | The historical optimizer miscompile, then the current eager-to-Core-AI parity gate |
 | "My model has a KV cache" | [8.1 §9](references/01-conversion-and-the-io-contract.md#9-state-mutable-buffers-become-core-ai-states) | Mutable buffers become states, with **no opt-out**, in an order that is an observed-behaviour assumption |
 | "Which names should my inputs and outputs have?" | [8.1 §7.5](references/01-conversion-and-the-io-contract.md#75-name-your-outputs-the-way-your-consumer-wants-to-read-them) | Apple's own engines duck-type on substrings, and the LLM path reads states **positionally** |
 | "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md#10-multi-function-assets-and-the-finding-that-reframes-them) | Split when stages run at different cadences; preserve Apple’s names if you also adopt `coreai-models`’ sample routing policy |
@@ -86,21 +88,19 @@ shape-sensitive, so a parity test on toy tensors passes while production is brok
 
 The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly
 which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only
-`add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()` as where the
-passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the
+`add_pytorch_module` can externalize; `to_coreai()` as conversion plus the 0.4.3 pre-compilation rewrite;
+the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the
 multi-function split; and the Python-side verification gate that catches everything above for free.
 
-> ⚠️ **SILENT FAILURE IN 0.4.1 — `optimize()` could change model semantics.** `coreai-torch#49`
+> ⚠️ **HISTORICAL SILENT FAILURE IN 0.4.1 — the separate optimizer could change model semantics.** `coreai-torch#49`
 > (FB23695952) documented an optimizer deleting a broadcasting-significant
 > `expand_dims` in the expanded squared-distance form, and the output shape still validates because the
 > inputs are square. **17 dB PSNR** at model scale; **78–85 dB** with `optimize()` off. Reproduces under
 > `cpu_only()`, so it is the compiler, not a delegate. Unequal input lengths do **not** reproduce it, so a
-> gate on rectangular toy tensors passes while your square production case is broken. And you often cannot
-> simply skip it: **a stateful model requires `optimize()`**, because mutation outputs only become handle
-> tokens after `_UPDATE_SIGNATURE_TO_HANDLES` runs.
+> gate on rectangular toy tensors passes while your square production case is broken.
 > The issue closed as completed on 2026-10-02 after the reporter retested `coreai-torch 0.4.3` /
 > `coreai-core 1.0.0b3`: all three minimal patterns passed, and `to_coreai()` now returns an already
-> optimized program. Keep the shipped-artifact parity gate because the closure did not include a full
+> optimized program. Version 0.4.2 was not tested. Keep the shipped-artifact parity gate because the closure did not include a full
 > end-to-end registration validation or expanded boundary sweep.
 >
 > ⚠️ **SILENT FAILURE (four more).** `run_decompositions(torch.export.default_decompositions())` compiles,
@@ -112,8 +112,8 @@ multi-function split; and the Python-side verification gate that catches everyth
 > Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
 >
 > 🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
-> the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog and whether
-> `optimize()` takes arguments at all; the character set allowed in IO names; the semantics of
+> the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog; the character
+> set allowed in IO names; the semantics of
 > `ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
 
 ### [8.2 — When an op will not convert: coverage, composite ops, custom lowerings, externalization](references/02-op-coverage-composites-and-externalization.md)
@@ -193,7 +193,7 @@ If you read nothing else, read those two and paste §11.7's four A/Bs into CI.
 **Then branch by symptom, not by curiosity.** If your conversion *raises*,
 [8.2 §1–§4](references/02-op-coverage-composites-and-externalization.md#1-four-ways-a-conversion-fails) classifies the error in two minutes
 and three of the four classes are five-minute fixes. If it *succeeds and is wrong*:
-[8.1 §11.4](references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) → [8.2 §9](references/02-op-coverage-composites-and-externalization.md#9-four-live-silent-miscompile-defects-on-041).
+[8.1 §11.4](references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) → [8.2 §9](references/02-op-coverage-composites-and-externalization.md#9-four-live-silent-miscompile-defects-on-041).
 If it succeeds and is *slow*: [8.2 §5](references/02-op-coverage-composites-and-externalization.md#5-composite-ops-a-library-you-author-models-from) and
 [§8](references/02-op-coverage-composites-and-externalization.md#8-externalization) — composite ops before anything exotic.
 

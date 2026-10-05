@@ -142,7 +142,6 @@ the graph:
                      (shape inference)                   │
                                                          ▼
                                                  converter.to_coreai()
-                                                 program.optimize()
                                                  program.save_asset(path)
                                                          │
                                                          ▼
@@ -490,7 +489,6 @@ converter.add_exported_program(
     output_names=["result"],
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 ```
 
 Nine lines of that are the entire API surface. Everything else in this guide is about the ways those
@@ -593,7 +591,6 @@ converter.add_exported_program(
     output_names=["y"],
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 ```
 
 Read the MSL body against the declarations one more time, because this is the coupling that the
@@ -1276,7 +1273,6 @@ converter = TorchConverter()
 converter.register_custom_kernels([kernel_a, kernel_b])   # FIRST
 converter.add_exported_program(ep, input_names=[...], output_names=[...])   # THEN
 program = converter.to_coreai()
-program.optimize()
 ```
 
 The reason is mechanical: `add_exported_program` walks the FX graph and resolves each node's target
@@ -1347,7 +1343,6 @@ converter.add_exported_program(det_ep,  entrypoint_name="detect",
                                output_names=["pred_masks", "pred_boxes",
                                              "pred_logits", "presence_logits"])
 program = converter.to_coreai()
-program.optimize()
 program.save_asset(asset_path)
 ```
 
@@ -2258,7 +2253,7 @@ torch reference — before it goes anywhere near your model.
 
 > **Community-authored** — `notes/repos/john-rocky-models.md` §10.1 describes seven such scripts,
 > all built on the same skeleton: *"`TorchMetalKernel(src=<MSL body>)` → `torch.export` →
-> `TorchConverter.register_custom_kernels` → `add_exported_program` → `to_coreai().optimize()` →
+> `TorchConverter.register_custom_kernels` → `add_exported_program` → `to_coreai()` →
 > `save_asset` → `asset.executable()` → `load_function("main")` → `await fn({...})`, then cosine +
 > relative-L2 vs a torch reference."*
 >
@@ -2423,7 +2418,6 @@ converter = TorchConverter()
 converter.register_custom_kernels([kernel])   # BEFORE add_exported_program; returns self
 converter.add_exported_program(ep, input_names=[...], output_names=[...])
 program = converter.to_coreai()
-program.optimize()                            # in-place; nothing consumes the return value
 asset = program.save_asset(Path("m.aimodel")) # a DIRECTORY
 
 async with asset.executable() as ai_model:

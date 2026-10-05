@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1789 of them, 1427 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1788 of them, 1427 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -30,7 +30,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Version drift](#version-drift) | 100 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
 | [Docs vs reality](#docs-vs-reality) | 158 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 362 | Warnings and considerations that are not themselves silent failures. |
+| [General cautions](#general-cautions) | 361 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -100,10 +100,10 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 8**
 
-- [optimize() deletes a broadcasting-significant expand_dims — 17 dB PSNR at model scale, shape still validates (issue #49)](part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
+- [Historical 0.4.1 optimizer defect deleted a broadcasting-significant expand_dims; fixed in the tested 0.4.3 path](part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
 - [MTLTensor extents reverse the torch shape — a kernel correct in torch coordinates reads the wrong axes in Metal](part-08-coreai-pytorch-conversion/README.md#83--torchmetalkernel-writing-and-embedding-a-custom-metal-kernel) — 8.README 🔇
-- [optimize() is not always semantics-preserving — a deleted expand_dims changes results while shapes still validate](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) — 8.1
-- [Distance matrices, Gram matrices and contrastive forms are exposed — gate optimize=True vs False on real inputs](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-silent-failure--optimize-is-not-always-semantics-preserving) — 8.1 🔇
+- [Historical 0.4.1 optimizer defect deleted a broadcasting-significant axis move; the tested 0.4.3 path is fixed](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) — 8.1
+- [Keep shipped-asset parity against eager and exported PyTorch at production shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) — 8.1
 - [State ordering is an assumption — same-shape buffers like k_cache/v_cache can swap slots and every check still passes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1
 - [k_cache and v_cache can swap positions across a PyTorch upgrade — Swift binds key to the value slot and output is…](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1 🔇
 - [NDArray.from_descriptor only sizes the buffer — on Linux, buffer-state reads return garbage on the first call](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#94-the-runtime-state-protocol-and-its-own-footgun) — 8.1
@@ -150,14 +150,14 @@ Start from the symptom column that matches what you observe. Within each section
 - [Caching new_k instead of key_rope stores pre-RoPE keys; shapes are identical but PSNR collapses to ~20 dB.](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#413-the-read-only-kv-cache) — 10.1 🔇
 - [GELU substituted for SiLU runs like the original and is 20-30 dB off; activation functions are not interchangeable.](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#51-standard-layout-nnlinear-fp32-where-you-need-it) — 10.1
 - [A non-contiguous tensor through the Python wrapper can produce wrong numbers rather than an error.](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#73-what-to-do-when-a-gate-fails) — 10.1
-- [AIProgram.optimize() can delete broadcasting-significant axis ops; the graph shrinks and the numbers go wrong silently.](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#82-why-graph-visualization-specialized-is-the-most-important-field-in-that-dialog) — 10.2 🔇
+- [Historical 0.4.1 rewrite defect silently removed a broadcasting-significant axis move; preserve shipped-asset parity](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#82-why-graph-visualization-specialized-is-the-most-important-field-in-that-dialog) — 10.2 🔇
 - [Pipeline diagram: omit remove_functionalization and KV writes vanish silently.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#11-the-canonical-five-steps-and-where-the-real-work-hides) — 10.3
 - [input_names/state_names order is load-bearing: swap key and value and the model loads, runs, and emits fluent nonsense.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#32-the-macosgpu-graph-contract) — 10.3
 - [AIModel.load(path, None) trips MPSGraph errors, and a GC'd AIModel makes the load_function return garbage, not a crash.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#64-gate-a--graph-parity) — 10.3
 - [Bundles missing chat_template.jinja silently fall back to raw completion; quality collapses and nothing warns.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#68-️-silent-failure--the-missing-chat-template) — 10.3
 - [Recipe line: remove_functionalization is mandatory - omit it and KV writes disappear (see 8.4).](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#81-the-macos-export-verbatim-from-the-shipped-recipe) — 10.3
 - [Omit remove_functionalization and the KV cache never updates: fluent, incoherent output that mimics bad quantization.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#84-️-silent-failure--omit-remove_functionalization-and-your-kv-writes-disappear) — 10.3
-- [optimize() deletes ops it deems dead, including broadcasting-significant axis manipulations; outputs change silently.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#92-optimize-is-in-place-and-it-can-hurt-you) — 10.3
+- [Automatic rewrites can remove dead operations; validate the exact converted program and shipped asset](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#92-optimization-is-automatic-in-043-validate-its-result) — 10.3
 - [Skip chat_template.jinja in the bundle and runners fall back to raw completion; output quality quietly collapses.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#94-wrapping-it-into-a-bundle) — 10.3
 - [Checklist: KV cache is in-graph mutable state - remove_functionalization is what keeps its writes alive.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#122-the-checklist) — 10.3
 
@@ -253,8 +253,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [In string mode a refusal is a successful response; the apology string flows into your pipeline as real content](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#91-the-two-layers-from-apples-own-description) — 17.3 🔇
 - [A throwing subject(from:) lets refusals abort samples; aggregate eval scores silently exclude the refused cases](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#162-the-critical-design-decision) — 17.3 🔇
 - [coreai-models has zero EXIF or orientation handling; rotated camera photos silently produce wrong vision results](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#29-image-inputs-and-the-pre-processing-you-used-to-get-for-free) — 17.5
-- [optimize() is mandatory in the conversion path yet can miscompile, producing a graph that computes something else](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-silent-failure-the-converters-optimize-can-miscompile-and-optimize-is-mandatory) — 17.5
-- [coreai-torch #49: optimize() removes broadcasting-significant transposes and silently miscompiles NxN distance graphs](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-silent-failure-the-converters-optimize-can-miscompile-and-optimize-is-mandatory) — 17.5
+- [Historical 0.4.1 optimizer defect silently changed NxN distance expressions; fixed in the tested 0.4.3 path](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
+- [coreai-torch #49 is closed after a community-measured 0.4.3 retest; keep shipped-asset parity](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
 - [Orientation and coordinate conventions are now your job; getting them wrong yields plausible but wrong vision output](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 - [CIImage(contentsOf:) applies EXIF orientation, CGImageSource does not; the same JPEG preprocesses two different ways](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 
@@ -991,7 +991,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Changing SpecializationOptions makes a second cache entry, doubling storage and cost; any OS update flushes the cache.](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#54-turning-the-trace-into-a-gate-you-can-check) — 10.2
 - [nn.functional.silu lowers to cast+swish+cast the ANE cannot run; the graph partitions onto GPU/CPU with no diagnostic.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#56-️-silent-failure--nnfunctionalsilu-on-the-ane) — 10.3
 - [enable_per_channel_scale=True can push the model off the Neural Engine, per Apple's own shipped config comment.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#77-the-exploration-loop-if-you-need-one) — 10.3
-- [optimize() can hang outright on very large attention graphs.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#92-optimize-is-in-place-and-it-can-hurt-you) — 10.3
+- [Historical large-graph optimization hangs require a 0.4.3 upgrade; current hangs must be minimized and reported](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#92-optimization-is-automatic-in-043-validate-its-result) — 10.3
 - [swift run builds Debug by default; benchmark from a Release build or your numbers measure the wrong thing.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#117-the-cli-tools-for-testing-before-you-write-app-code) — 10.3
 
 **Part 11**
@@ -2223,10 +2223,9 @@ Start from the symptom column that matches what you observe. Within each section
 - [Evidence note: no Apple sample code — strongest sources are the shipped coreai-torch/models/optimization repos](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.1
 - [The Neural Engine path threads K/V as plain I/O, not Core AI state — register_buffer KV advice is GPU-only](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#96-what-the-swift-side-expects) — 8.1 🔇
 - [AIModelAsset.load only reads the header — compilation and its cost land lazily inside the executable() context manager](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#111-the-reference-implementation-verbatim) — 8.1
-- [The standing gate: convert twice (optimize on/off), run both at real shapes, fail the build on output divergence](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) — 8.1
-- [Gate with realistic inputs — issue #49 does not reproduce on 17x23 rectangles, only on square production shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-optimizetrue--optimizefalse-gate) — 8.1
+- [Compare eager PyTorch, the decomposed exported program and the exact Core AI asset shipped](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) — 8.1
 - [Preview-only env vars gate debug metadata — set them before conversion or tooling loses attribution](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#125-️-preview-only-environment-variables) — 8.1
-- [The pipeline listing is a toy exercising every contract — run the optimize gate separately at your real shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#133-the-complete-pipeline-in-one-block) — 8.1
+- [The pipeline listing is a toy exercising every contract — run shipped-asset parity at real shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#133-the-complete-pipeline-in-one-block) — 8.1
 - [Scope note: how far MoE gather_mm support does not extend — read before assuming coverage](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#63-️-how-far-that-support-does-not-extend) — 8.2
 - [MoE on GPU/ANE delegates is combination-dependent — Qwen3-MoE ships, but support is not universal](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#63-️-how-far-that-support-does-not-extend) — 8.2
 - [Externalization needs the live nn.Module via add_pytorch_module — add_exported_program has no externalization path](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#82-externalizespec) — 8.2
