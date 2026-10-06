@@ -1316,7 +1316,7 @@ deviation and alignment score sit together.
 >
 > ✅ **SDK-verified** — that is the complete public surface: the interface shows exactly those nine
 > members on `MetricsAggregator`, and the same eight compute/custom methods again on
-> `MetricsAggregator.Group` (`Evaluations-27.0-macos.swiftinterface:734-761`). The absence of an
+> `MetricsAggregator.Group` (`Evaluations-27.0-macos.swiftinterface:753-780`). The absence of an
 > agreement statistic is no longer an inference from a documentation member list; it is the shipped
 > interface, checked 2026-07-29.
 
@@ -1619,7 +1619,7 @@ sample uses plain, unweighted κ.
 > `computeMedian`, `computeMode`, `computeMinimum`, `computeMaximum`, `computeStandardDeviation`,
 > `computeVariance`, `custom(of:label:_:)`, `group(_:_:)`. **There is no agreement statistic of any
 > kind.** No correlation, no κ, no ICC. (Confirmed against the shipped interface, 2026-07-29:
-> `Evaluations-27.0-macos.swiftinterface:734-761`.)
+> `Evaluations-27.0-macos.swiftinterface:753-780`.)
 >
 > ✅ **VERIFIED** — the session itself is consistent with this once you listen closely (`335:127`):
 > *"we need to calculate Cohen's kappa, which I can do that with a **custom aggregation method**."*
@@ -1915,7 +1915,7 @@ func evaluateBookTagging() async throws {
 > ✅ **SDK-verified signature, 🟡 unverified output shape.** The exact declaration is
 > `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false,
 > includeTranscripts: Bool = false) throws -> URL`
-> (`Evaluations-27.0-macos.swiftinterface:581-597`, checked 2026-08-23; beta 5 added the defaulted
+> (`Evaluations-27.0-macos.swiftinterface:600-616`, checked 2026-08-23; beta 5 added the defaulted
 > `includeTranscripts:`) — the parameter is a
 > **directory**, which is why the snippet above no longer appends a filename. What is still
 > unverified is the *shape* of the JSON it writes: no sample calls it, and it is not necessarily the
@@ -2692,12 +2692,15 @@ fixture, joined positionally against 100% of your expert ratings (§19.1).
 > wrong shape (`invalidResponse`, `jsonDecodingFailed`), skipped a dimension you asked for
 > (`missingDimension`), or was handed a scale with no options (`noScaleValues`).
 >
-> 🔴 **Still open:** the framework's *policy* when a judge call throws mid-run — skipped, retried, or
-> whole-run failure — is runtime behaviour an interface cannot show. One data point leans "skip and
-> log": `EvaluationError`'s deprecated `metricsNotFound` case carries Apple's own message that
-> missing metrics are *"materialized as ignored columns and logged"* (`:489-498`).
-> **Safe default unchanged:** compare the judge array's length against your fixture's on every run
-> (§19.1's `precondition`), so a partial run cannot masquerade as a complete one.
+> 🔴 **Still open:** a real model judge's retry/abort policy is not established by these
+> interfaces or by model-free probes. Xcode 27 final exposes `EvaluationResult.errors`,
+> including inference/evaluator failure counters and `hasFailures`
+> (`Evaluations-27.0-macos.swiftinterface:505-515,564`). Reject reported failures and still
+> compare scored judge-array length with fixture length (§19.1's `precondition`). Neither
+> a clean error summary nor a plausible aggregate establishes complete scoring coverage.
+> The deprecated `EvaluationError.metricsNotFound` message cited in the July beta was
+> removed from the final interface; that historical evidence is retained in Git history,
+> as described in [§17.7](01-foundations-and-hill-climbing.md#177-a-failing-sample-that-vanishes-instead-of-failing).
 
 ### 19.9 The checklist
 
@@ -2900,8 +2903,7 @@ call site read, body not read**) · `HillClimbingEvaluations/BookTaggingEvaluati
 `BookSampleGenerator/main.swift` · `DatasetExtractor/main.swift`.
 
 **The framework's shipped Swift interface** —
-`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (885 lines), dumped from the Xcode 27
-beta's macOS `Evaluations.framework` on **2026-07-29**. For names, signatures, defaults,
+`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (925 lines), refreshed from Xcode 27 final (`27A266a`) on **2026-10-06**. For names, signatures, defaults,
 availability and case lists it outranks every source below, the sample included; for usage and
 runtime behaviour it decides nothing. Cited as ✅ **SDK-verified** with line numbers. It closed this
 guide's GAPs on `ScoringMode`, `ModelJudgeError`'s cases and `ModelJudgePrompt.reference`'s second

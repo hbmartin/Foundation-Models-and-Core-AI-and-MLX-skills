@@ -4,7 +4,9 @@
   "references": [
     {
       "automaticFixEligible": false,
-      "claims": ["CLOSED"],
+      "claims": [
+        "CLOSED"
+      ],
       "closedAt": null,
       "closureReason": null,
       "confidence": 0.9,
@@ -15,15 +17,20 @@
       "mergeTimestamp": null,
       "number": 17,
       "ref": "apple/coreai-torch#17",
+      "referenceKind": "issue-or-pr",
       "repository": "apple/coreai-torch",
       "resolutionDisposition": "unknown",
       "sightingCount": 1,
-      "sightingIds": ["s0004"],
+      "sightingIds": [
+        "s0004"
+      ],
       "transitionKind": "UNKNOWN"
     },
     {
       "automaticFixEligible": false,
-      "claims": ["MERGED"],
+      "claims": [
+        "MERGED"
+      ],
       "closedAt": null,
       "closureReason": null,
       "confidence": 0.75,
@@ -34,15 +41,20 @@
       "mergeTimestamp": null,
       "number": 62,
       "ref": "ml-explore/mlx#62",
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx",
       "resolutionDisposition": "unknown",
       "sightingCount": 1,
-      "sightingIds": ["s0001"],
+      "sightingIds": [
+        "s0001"
+      ],
       "transitionKind": "UNKNOWN"
     },
     {
       "automaticFixEligible": false,
-      "claims": ["MERGED"],
+      "claims": [
+        "MERGED"
+      ],
       "closedAt": null,
       "closureReason": null,
       "confidence": 0.75,
@@ -53,15 +65,20 @@
       "mergeTimestamp": null,
       "number": 74,
       "ref": "ml-explore/mlx#74",
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx",
       "resolutionDisposition": "unknown",
       "sightingCount": 1,
-      "sightingIds": ["s0002"],
+      "sightingIds": [
+        "s0002"
+      ],
       "transitionKind": "UNKNOWN"
     },
     {
       "automaticFixEligible": false,
-      "claims": ["OPEN"],
+      "claims": [
+        "OPEN"
+      ],
       "closedAt": null,
       "closureReason": null,
       "confidence": 0.75,
@@ -72,10 +89,13 @@
       "mergeTimestamp": null,
       "number": 85,
       "ref": "ml-explore/mlx#85",
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx",
       "resolutionDisposition": "unknown",
       "sightingCount": 1,
-      "sightingIds": ["s0003"],
+      "sightingIds": [
+        "s0003"
+      ],
       "transitionKind": "UNKNOWN"
     }
   ],
@@ -103,6 +123,7 @@
       "id": "s0001",
       "line": 1,
       "number": 62,
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx"
     },
     {
@@ -116,6 +137,7 @@
       "id": "s0002",
       "line": 1,
       "number": 74,
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx"
     },
     {
@@ -129,6 +151,7 @@
       "id": "s0003",
       "line": 1,
       "number": 85,
+      "referenceKind": "issue-or-pr",
       "repository": "ml-explore/mlx"
     },
     {
@@ -142,6 +165,7 @@
       "id": "s0004",
       "line": 3,
       "number": 17,
+      "referenceKind": "issue-or-pr",
       "repository": "apple/coreai-torch"
     }
   ],

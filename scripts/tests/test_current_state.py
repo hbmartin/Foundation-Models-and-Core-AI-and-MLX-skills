@@ -154,6 +154,38 @@ class CurrentStateTests(unittest.TestCase):
         blocks = STATE.render_blocks(manifest)
         self.assertIn("runtime is `unknown`", blocks["runbook"])
 
+    def test_failed_selection_retains_prior_evidence_without_using_it(self):
+        previous = STATE.load_manifest(ROOT / "notes/current-state.json")["environment"]["installed"]
+        def fail(*command, **kwargs):
+            return "", "unavailable"
+        with mock.patch.object(STATE, "run", side_effect=fail) as command, mock.patch.dict(os.environ, {"DEVELOPER_DIR": ""}):
+            observed, blockers = STATE.installed_environment(previous)
+        self.assertEqual(observed["xcode"], previous["xcode"])
+        self.assertTrue(blockers)
+        self.assertFalse(any(c.args[0] in ("xcodebuild", "xcrun") for c in command.call_args_list))
+
+    def test_collector_selects_environment_then_system_not_manifest(self):
+        previous = STATE.load_manifest(ROOT / "notes/current-state.json")["environment"]["installed"]
+        def commands(*args, **kwargs):
+            if args == ("xcode-select", "-p"):
+                return "/selected", None
+            return "", "unavailable in fixture"
+        with mock.patch.object(STATE, "run", side_effect=commands), mock.patch.dict(os.environ, {"DEVELOPER_DIR": ""}):
+            observed, _ = STATE.installed_environment(previous)
+            self.assertEqual(observed["xcode"]["path"], "/selected")
+        with mock.patch.object(STATE, "run", side_effect=commands), mock.patch.dict(os.environ, {"DEVELOPER_DIR": "/explicit"}):
+            observed, _ = STATE.installed_environment(previous)
+            self.assertEqual(observed["xcode"]["path"], "/explicit")
+
+    def test_simulator_comparison_requires_simulator_release_evidence(self):
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        installed = manifest["environment"]["installed"]
+        latest = manifest["environment"]["latestObserved"]
+        latest["simulatorRuntimes"] = []
+        self.assertFalse(any("Simulator" in x for x in STATE.pending_reasons(installed, latest)))
+        latest["simulatorRuntimes"] = [{"name": "iOS", "build": "different-runtime-build"}]
+        self.assertTrue(any("Simulator" in x for x in STATE.pending_reasons(installed, latest)))
+
     def test_unavailable_host_commands_preserve_prior_values_and_report_blockers(self) -> None:
         manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
         previous = manifest["environment"]["installed"]

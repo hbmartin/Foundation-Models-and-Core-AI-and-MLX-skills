@@ -61,7 +61,7 @@ the repo root.
 - [ ] Point this shell at the new beta and confirm what you got. Keep the selection process-local;
   the capture scripts respect `DEVELOPER_DIR` and never change global `xcode-select` state:
   ```bash
-  export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
   xcodebuild -version
   xcrun --sdk iphoneos --show-sdk-version
   xcrun --sdk macosx --show-sdk-version
@@ -96,7 +96,8 @@ the repo root.
 - [ ] Re-verify the guide snippets against the new SDK (added 2026-07-31; grammar and
   committed baseline in `notes/snippet-verification/README.md`):
   ```bash
-  ./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification
+  ./scripts/verify-snippets.sh --sdk 27 --developer-dir-27 "$DEVELOPER_DIR" \
+  --allow-unavailable-targets --out artifacts/swift-refresh
   ```
   `--sdk 27` is additive: it ensures target 27 is resolved and reported while marker-requested
   26/simulator/deployment-floor targets still run. It is not a corpus filter.
@@ -142,7 +143,7 @@ the repo root.
   ```bash
   (cd probes && swift test)
   (cd probes && xcodegen generate --spec device-project.yml && \
-      DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+      DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
       xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
       -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
   (cd probes && xcodegen generate --spec device-project.yml && \
@@ -253,20 +254,28 @@ Xcode fallback in that order, so a move shows up as a changed path in its output
   ls "/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/Library/Frameworks" | grep -i evaluations
   ```
 
-## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — docs are contradictory again
+## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — resolved; watch for regression
 
-The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 instead has
-**only** un-deprecated `resolved(in: some Sequence<Transcript.Entry>)`. A live-docs re-check on
-2026-09-28 found the contradiction again: the default `ImageReference` overview and topic list use
-`resolve(in: Transcript)`, while the separate `resolved(in:)` member page still documents
-`resolved(in: some Sequence<Transcript.Entry>)`. The installed beta-5 interface continues to expose
-only the sequence spelling, so treat the default overview as documentation drift rather than a
-toolchain rename.
+The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 and Xcode 27.0
+final (`27A266a`) instead have **only** un-deprecated
+`resolved(in: some Sequence<Transcript.Entry>)`. On 2026-10-05, Apple's default overview and the
+separate member page both documented the sequence spelling. A 2026-07-27 changes view retained the
+whole-`Transcript` overload as deprecated history; preserve that provenance, but do not treat it as
+part of the current surface.
 Tracked at
 `guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
-§7.6 (line ~1959).
+§7.6.
 
-- [ ] After each re-dump:
+- [ ] During each weekly docs watch, archive and compare both live pages before changing the guide:
+  ```bash
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  ./scripts/capture-apple-docs-watch.py \
+    --output "artifacts/freshness/apple-docs/$run_id"
+  ```
+  The command preserves the exact Markdown responses, their SHA-256 hashes, and extracted method
+  spellings in `manifest.json`; it exits nonzero if the two pages disagree or stop documenting
+  `resolved(in:)` exclusively.
+- [ ] After each SDK re-dump:
   ```bash
   grep -n 'func resolved\?(in' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface
   ```

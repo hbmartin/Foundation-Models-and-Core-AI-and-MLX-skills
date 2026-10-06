@@ -11,7 +11,7 @@ Select Xcode per process when necessary; the scripts honor `DEVELOPER_DIR` and n
 machine-wide `xcode-select` setting:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   ./scripts/dump-sdk-interfaces.sh --check-only
 ```
 
@@ -185,3 +185,13 @@ when no exact timestamp was recorded:
 
 `FoundationModels-26.5-key-declarations.md` is a derived excerpt, not a raw interface. It remains
 manifest-managed so edits cannot masquerade as the original evidence.
+
+## Final Xcode 27 promotion — 2026-10-06
+
+The reviewed final capture (`27A266a`, macOS SDK `26A425`, iPhoneOS SDK `24A430`)
+now owns the seventeen current 27.0 paths. Evaluations adds `EvaluationRunErrors` and
+`EvaluationResult.errors` and removes the deprecated `EvaluationError.metricsNotFound`
+case; the other Swift declaration bodies are unchanged. Compiler headers and the fm
+help surface were reviewed separately. SDK 26.5 and unrelated legacy records remain.
+Superseded evidence is available at commit `2b12a8544deb7b7c4a807d1e83ad35be2079dabf`.
+See [the promotion and validation record](../synthesis/pr49-followup/README.md).

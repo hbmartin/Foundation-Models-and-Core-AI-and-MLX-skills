@@ -442,6 +442,53 @@ class SynthesisTests(unittest.TestCase):
 
 
 class ToolchainDiscoveryTests(unittest.TestCase):
+    def fake_commands(self, command, **kwargs):
+        if command[0] == "xcode-select":
+            return subprocess.CompletedProcess(command, 0, stdout="/selected/Xcode.app/Contents/Developer\n")
+        if command[0] == "xcodebuild":
+            output = "Xcode 27.0\nBuild version 27A266a\n"
+        elif "--show-sdk-path" in command:
+            output = "/sdk"
+        elif "--show-sdk-version" in command:
+            output = "27.0"
+        else:
+            output = "26A425"
+        return subprocess.CompletedProcess(command, 0, stdout=output)
+
+    def test_generation_override_precedes_environment_and_system_selection(self):
+        with mock.patch.object(VS.os.path, "isdir", return_value=True), \
+                mock.patch.object(VS.subprocess, "run", side_effect=self.fake_commands), \
+                mock.patch.dict(os.environ, {"DEVELOPER_DIR": "/environment"}):
+            self.assertEqual(VS.discover_toolchain("27", {"27": "/explicit"}).developer_dir, "/explicit")
+            self.assertEqual(VS.discover_toolchain("27").developer_dir, "/environment")
+        with mock.patch.object(VS.os.path, "isdir", return_value=True), \
+                mock.patch.object(VS.subprocess, "run", side_effect=self.fake_commands), \
+                mock.patch.dict(os.environ, {"DEVELOPER_DIR": ""}):
+            self.assertEqual(VS.discover_toolchain("27").developer_dir, "/selected/Xcode.app/Contents/Developer")
+            with self.assertRaisesRegex(SystemExit, "requires SDK 26.*supplies 27.0"):
+                VS.discover_toolchain("26")
+
+    def test_partial_mode_records_unavailable_and_compiles_available_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            write_guide(directory, "fixture.md", "```swift compile:26,27\nlet x = 1\n```\n")
+            def discover(name, directories=None):
+                if name == "26":
+                    raise SystemExit("SDK 26 missing")
+                return VS.Toolchain(name, "/trusted", "/sdk", "27.0", "SDK", "arm64", "27", "XCODE", ())
+            with mock.patch.object(VS, "discover_toolchain", side_effect=discover), \
+                    mock.patch.object(VS, "typecheck", return_value=VS.CompileResult("pass")) as compiler:
+                code = VS.main(["--guides", directory, "--allow-unavailable-targets", "--out", directory + "/out"])
+            self.assertEqual(code, 3)
+            self.assertEqual(compiler.call_count, 1)
+            row = tsv_rows(pathlib.Path(directory + "/out/results.tsv").read_text())[0]
+            self.assertEqual(row["v26"], "unavailable")
+            self.assertEqual(row["v27"], "pass")
+            self.assertEqual(row["status"], "TOOLCHAIN-UNAVAILABLE")
+            self.assertIn("SDK 26 missing", row["first_error"])
+            with mock.patch.object(VS, "discover_toolchain", side_effect=discover):
+                with self.assertRaisesRegex(SystemExit, "SDK 26 missing"):
+                    VS.main(["--guides", directory])
+
     def test_command_failure_becomes_clear_system_exit(self):
         failure = subprocess.CalledProcessError(
             1, ["xcrun"], stderr="requested SDK is not installed"
@@ -452,7 +499,7 @@ class ToolchainDiscoveryTests(unittest.TestCase):
                 SystemExit,
                 "toolchain discovery for target 27 failed.*requested SDK is not installed",
             ):
-                VS.discover_toolchain("27")
+                VS.discover_toolchain("27", {"27": "/explicit"})
 
     def test_missing_executable_becomes_clear_system_exit(self):
         with mock.patch.object(VS.os.path, "isdir", return_value=True), \
@@ -463,6 +510,12 @@ class ToolchainDiscoveryTests(unittest.TestCase):
                 SystemExit,
                 "toolchain discovery for target 27 failed.*missing xcrun",
             ):
+                VS.discover_toolchain("27", {"27": "/explicit"})
+
+    def test_failed_system_selection_has_no_filename_fallback(self):
+        with mock.patch.dict(os.environ, {"DEVELOPER_DIR": ""}), \
+                mock.patch.object(VS.subprocess, "run", side_effect=FileNotFoundError("xcode-select absent")):
+            with self.assertRaisesRegex(SystemExit, "cannot select developer directory"):
                 VS.discover_toolchain("27")
 
 

@@ -775,9 +775,17 @@ def synthesize(fence, extra_imports, wrap):
 # Toolchains + compilation
 
 
-def discover_toolchain(name):
+def discover_toolchain(name, developer_dirs=None):
     spec = TARGETS[name]
-    dev_dir, sdk_name = spec.developer_dir, spec.sdk_name
+    overrides = developer_dirs or {}
+    dev_dir = overrides.get(spec.sdk_generation) or os.environ.get("DEVELOPER_DIR")
+    if not dev_dir:
+        try:
+            dev_dir = subprocess.run(["xcode-select", "-p"], capture_output=True,
+                                     text=True, check=True).stdout.strip()
+        except (OSError, subprocess.CalledProcessError) as error:
+            raise SystemExit(f"error: cannot select developer directory for target {name}: {error}") from error
+    sdk_name = spec.sdk_name
     if not os.path.isdir(dev_dir):
         raise SystemExit(f"error: developer dir for target {name} missing: {dev_dir}")
     env = dict(os.environ, DEVELOPER_DIR=dev_dir)
@@ -803,6 +811,9 @@ def discover_toolchain(name):
 
     sdk_path = xcrun("--sdk", sdk_name, "--show-sdk-path")
     sdk_version = xcrun("--sdk", sdk_name, "--show-sdk-version")
+    if sdk_version.split(".")[0] != spec.sdk_generation:
+        raise SystemExit(f"error: target {name} requires SDK {spec.sdk_generation}, "
+                         f"but {dev_dir} supplies {sdk_version}")
     sdk_build = xcrun("--sdk", sdk_name, "--show-sdk-build-version")
     out = checked_output(["xcodebuild", "-version"]).splitlines()
     xcode_version = out[0].replace("Xcode", "").strip() if out else "?"
@@ -934,6 +945,12 @@ def verify_fence(fence, toolchains, opts):
         for target in mk.compile_targets + mk.xfail_targets:
             xfail = target in mk.xfail_targets
             tc = toolchains[target]
+            if tc is None:
+                row[col[target]] = "unavailable"
+                if overall not in ("FAILED", "XFAIL-ERR"):
+                    overall = "TOOLCHAIN-UNAVAILABLE"
+                row["first_error"] = flatten(getattr(opts, "unavailable_targets", {}).get(target, "toolchain unavailable"))
+                continue
             verdict, wrap, result = compile_variants(
                 fence, mk, list(mk.imports), tc, opts, xfail)
             row[col[target]] = verdict
@@ -972,6 +989,11 @@ def verify_fence(fence, toolchains, opts):
             imports.append(mod)
     target = opts.guess_target
     tc = toolchains[target]
+    if tc is None:
+        row["status"] = "TOOLCHAIN-UNAVAILABLE"
+        row[col[target]] = "unavailable"
+        row["first_error"] = flatten(getattr(opts, "unavailable_targets", {}).get(target, "toolchain unavailable"))
+        return row
     def retry_mainactor_if_needed(target_name, verdict, wrap, result):
         if verdict != "fail" or not any(
                 fragment in result.first_error for fragment in (
@@ -990,7 +1012,7 @@ def verify_fence(fence, toolchains, opts):
     # iOS-only snippets (UIKit, WidgetKit, …) can never compile against the macOS
     # SDK — fall back to the simulator target before calling them failures.
     if (verdict == "fail" and "no such module" in result.first_error
-            and target != "sim27" and "sim27" in toolchains):
+            and target != "sim27" and toolchains.get("sim27") is not None):
         v2, w2, r2 = compile_variants(fence, Markers(), imports,
                                       toolchains["sim27"], opts, False)
         v2, w2, r2 = retry_mainactor_if_needed("sim27", v2, w2, r2)
@@ -1096,8 +1118,13 @@ def write_report(rows, toolchains, opts, out):
               "against the exact SDK builds below, never against \"iOS 27\" in the abstract.\n\n")
     out.write("| target | Xcode | SDK | triple |\n|---|---|---|---|\n")
     for name, tc in sorted(toolchains.items()):
+        if tc is None:
+            out.write(f"| {name} | unavailable | unavailable | not compiled |\n")
+            continue
         out.write(f"| {name} | {tc.xcode_version} ({tc.xcode_build}) | "
                   f"{tc.sdk_version} ({tc.sdk_build}) | {tc.triple} |\n")
+    for name, reason in sorted(getattr(opts, "unavailable_targets", {}).items()):
+        out.write(f"\nUnavailable target `{name}`: {flatten(reason)}\n")
     out.write(f"\n**Totals over {len(rows)} Swift fences:** ")
     out.write(" · ".join(f"{k} {v}" for k, v in sorted(counts.items())) + "\n\n")
     backlog = counts.get("UNCLASSIFIED", 0) + counts.get("UNCLASSIFIED-FAIL", 0)
@@ -1329,6 +1356,10 @@ def main(argv=None):
     ap.add_argument("--guess-target", default="27", choices=sorted(TARGETS))
     ap.add_argument("--changed", nargs="?", const=AUTO_CHANGED_REF, default=None, metavar="REF",
                     help="only fences in guide files changed vs REF (default: PR/default branch)")
+    ap.add_argument("--developer-dir-26", metavar="PATH")
+    ap.add_argument("--developer-dir-27", metavar="PATH")
+    ap.add_argument("--allow-unavailable-targets", action="store_true",
+                    help="record blocked targets, complete independent checks, and exit 3")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--timeout", type=int, default=60)
     ap.add_argument("--out", default=None,
@@ -1407,9 +1438,18 @@ def main(argv=None):
         needed.add(opts.guess_target)
         needed.add("sim27")  # iOS-only-module fallback target
     toolchains = {}
+    opts.unavailable_targets = {}
+    developer_dirs = {generation: path for generation, path in
+                      (("26", opts.developer_dir_26), ("27", opts.developer_dir_27)) if path}
     if not opts.stub_compiler:
         for name in sorted(needed):
-            toolchains[name] = discover_toolchain(name)
+            try:
+                toolchains[name] = discover_toolchain(name, developer_dirs)
+            except SystemExit as error:
+                if not opts.allow_unavailable_targets:
+                    raise
+                toolchains[name] = None
+                opts.unavailable_targets[name] = str(error)
     else:
         for name in sorted(needed or {opts.guess_target}):
             toolchains[name] = Toolchain(name, "/stub", "/stub-sdk", "0.0", "STUB",
@@ -1441,6 +1481,12 @@ def main(argv=None):
 
     if opts.out:
         os.makedirs(opts.out, exist_ok=True)
+        import json
+        provenance = {name: dataclasses.asdict(tc) if tc else {"unavailable": opts.unavailable_targets[name]}
+                      for name, tc in sorted(toolchains.items())}
+        with open(os.path.join(opts.out, "toolchains.json"), "w", encoding="utf-8") as output:
+            json.dump(provenance, output, indent=2)
+            output.write("\n")
         tsv_path = os.path.join(opts.out, "results.tsv")
         tmp = tsv_path + f".tmp.{os.getpid()}"
         with open(tmp, "w", encoding="utf-8") as f:
@@ -1463,6 +1509,8 @@ def main(argv=None):
         return 2
     if counts.get("FAILED") or counts.get("XFAIL-ERR"):
         return 1
+    if opts.unavailable_targets:
+        return 3
     return 0
 
 

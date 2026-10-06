@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-09-16",
+  "asOf": "2026-10-06",
   "corpus": {
     "callouts": {
       "concreteSilentFailures": 1427,
@@ -11,6 +11,92 @@
     "parts": 17,
     "referenceGuides": 60,
     "symbols": 1212
+  },
+  "environment": {
+    "installed": {
+      "fm": {
+        "build": "26A428",
+        "exception": "fm has no independent --version option; provenance is the owning macOS build.",
+        "path": "/usr/bin/fm",
+        "version": null
+      },
+      "os": {
+        "build": "26A428",
+        "name": "macOS",
+        "version": "27.0"
+      },
+      "sdks": {
+        "iphoneos": {
+          "build": "24A430",
+          "version": "27.0"
+        },
+        "macosx": {
+          "build": "26A425",
+          "version": "27.0"
+        }
+      },
+      "simulatorRuntimes": [
+        {
+          "build": "24A5390f",
+          "name": "iOS",
+          "version": "27.0"
+        },
+        {
+          "build": "24A5408d",
+          "name": "iOS",
+          "version": "27.0"
+        }
+      ],
+      "xcode": {
+        "build": "27A266a",
+        "path": "/Applications/Xcode.app/Contents/Developer",
+        "version": "27.0"
+      }
+    },
+    "latestObserved": {
+      "fm": {
+        "build": "26B5101f",
+        "exception": "fm has no independent --version option; the latest observation is bounded by the owning macOS release.",
+        "released": "2026-10-05",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": null
+      },
+      "ios": {
+        "build": "24B5099f",
+        "released": "2026-10-05",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27.2 beta 3"
+      },
+      "macos": {
+        "build": "26B5101f",
+        "released": "2026-10-05",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27.2 beta 3"
+      },
+      "sdks": {
+        "iphoneos": {
+          "build": null,
+          "exception": "Apple's public compatibility table identifies iOS 27 SDK but does not publish its internal build.",
+          "released": "2026-09-14",
+          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
+          "version": "27.0"
+        },
+        "macosx": {
+          "build": null,
+          "exception": "Apple's public compatibility table identifies macOS 27 SDK but does not publish its internal build.",
+          "released": "2026-09-14",
+          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
+          "version": "27.0"
+        }
+      },
+      "simulatorRuntimes": [],
+      "xcode": {
+        "build": "27B5028f",
+        "released": "2026-09-28",
+        "sourceUrl": "https://developer.apple.com/news/releases/",
+        "version": "27.2 beta 2"
+      }
+    }
   },
   "generatedOutputs": {
     "currentStateBlocks": {
@@ -29,134 +115,14 @@
       "status": "current"
     }
   },
-  "environment": {
-    "installed": {
-      "fm": {
-        "build": "26A428",
-        "exception": "fm has no independent --version option; provenance is the owning macOS build.",
-        "path": "/usr/bin/fm",
-        "version": null
-      },
-      "os": {
-        "build": "26A428",
-        "name": "macOS",
-        "version": "27.0"
-      },
-      "sdks": {
-        "iphoneos": {
-          "build": "24A5408c",
-          "version": "27.0"
-        },
-        "macosx": {
-          "build": "26A5406c",
-          "version": "27.0"
-        }
-      },
-      "simulatorRuntimes": [
-        {
-          "build": "22G86",
-          "name": "iOS",
-          "version": "18.6"
-        },
-        {
-          "build": "23F77",
-          "name": "iOS",
-          "version": "26.5"
-        },
-        {
-          "build": "24A5390f",
-          "name": "iOS",
-          "version": "27.0"
-        },
-        {
-          "build": "24A5408d",
-          "name": "iOS",
-          "version": "27.0"
-        }
-      ],
-      "xcode": {
-        "build": "27A5237l",
-        "path": "/Applications/Xcode-beta.app/Contents/Developer",
-        "version": "27.0"
-      }
-    },
-    "latestObserved": {
-      "ios": {
-        "build": "24B5084k",
-        "released": "2026-09-16",
-        "sourceUrl": "https://developer.apple.com/news/releases/",
-        "version": "27.2 beta"
-      },
-      "fm": {
-        "build": "26B5086k",
-        "exception": "fm has no independent --version option; the latest observation is bounded by the owning macOS release.",
-        "released": "2026-09-16",
-        "sourceUrl": "https://developer.apple.com/news/releases/",
-        "version": null
-      },
-      "macos": {
-        "build": "26B5086k",
-        "released": "2026-09-16",
-        "sourceUrl": "https://developer.apple.com/news/releases/",
-        "version": "27.2 beta"
-      },
-      "sdks": {
-        "iphoneos": {
-          "build": null,
-          "exception": "Apple's public compatibility table identifies iOS 27 SDK but does not publish its internal build.",
-          "released": "2026-08-24",
-          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
-          "version": "27.0"
-        },
-        "macosx": {
-          "build": null,
-          "exception": "Apple's public compatibility table identifies macOS 27 SDK but does not publish its internal build.",
-          "released": "2026-08-24",
-          "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
-          "version": "27.0"
-        }
-      },
-      "simulatorRuntimes": [
-        {
-          "build": "24B5084k",
-          "name": "iOS",
-          "released": "2026-09-16",
-          "sourceUrl": "https://developer.apple.com/news/releases/",
-          "version": "27.2 beta"
-        }
-      ],
-      "xcode": {
-        "build": "27B5019j",
-        "released": "2026-09-16",
-        "sourceUrl": "https://developer.apple.com/news/releases/",
-        "version": "27.2 beta"
-      }
-    }
-  },
   "pendingEvent": {
     "reasons": [
-      "Installed Xcode build 27A5237l differs from observed build 27B5019j.",
-      "Installed macOS build 26A428 differs from observed build 26B5086k.",
-      "Installed iOS Simulator build 24A5408d differs from observed build 24B5084k."
+      "Installed Xcode build 27A266a differs from observed build 27B5028f.",
+      "Installed macOS build 26A428 differs from observed build 26B5101f."
     ],
     "value": true
   },
   "probeBaselines": {
-    "device-hosted-iphone15pro-ios27-24A435": {
-      "contextSize": 4096,
-      "destination": "wired physical device",
-      "device": "iPhone 15 Pro (D83AP; h16p)",
-      "exceptions": "46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.",
-      "failures": 0,
-      "hostingMode": "device-hosted",
-      "osBuild": "24A435",
-      "osVersion": "27.0",
-      "platform": "iOS",
-      "skipped": 2,
-      "tests": 46,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
     "app-hosted-ios27-beta5-simulator": {
       "contextSize": 0,
       "destination": "generated DeviceProbes app",
@@ -169,6 +135,21 @@
       "platform": "iOS Simulator",
       "skipped": 19,
       "tests": 39,
+      "xcodeBuild": "27A5237l",
+      "xcodeVersion": "27.0 beta 5"
+    },
+    "device-hosted-iphone15pro-ios27-24A435": {
+      "contextSize": 4096,
+      "destination": "wired physical device",
+      "device": "iPhone 15 Pro (D83AP; h16p)",
+      "exceptions": "46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.",
+      "failures": 0,
+      "hostingMode": "device-hosted",
+      "osBuild": "24A435",
+      "osVersion": "27.0",
+      "platform": "iOS",
+      "skipped": 2,
+      "tests": 46,
       "xcodeBuild": "27A5237l",
       "xcodeVersion": "27.0 beta 5"
     },
@@ -235,7 +216,7 @@
   },
   "schemaVersion": 1,
   "verification": {
-    "blocker": "SDK-26 target Xcode is not installed at /Applications/Xcode.app/Contents/Developer.",
+    "blocker": "SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.",
     "errors": 0,
     "lastFullRun": "2026-08-02",
     "snippetFences": 1359,

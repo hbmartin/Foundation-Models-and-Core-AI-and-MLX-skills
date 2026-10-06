@@ -1,6 +1,6 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.30.4 clang-2100.3.30.1)
-// swift-module-flags: -target arm64-apple-macos14.0 -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -user-module-version 25065 -module-name Evaluations -package-name Evaluations
+// swift-compiler-version: Apple Swift version 6.4 effective-5.10 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+// swift-module-flags: -target arm64-apple-macos14.0 -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -user-module-version 25069 -module-name Evaluations -package-name Evaluations
 // swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4
 import Foundation
 import FoundationModels
@@ -496,11 +496,29 @@ extension Evaluations::Evaluation {
 @available(tvOS, unavailable)
 public enum EvaluationError : Swift::Error, Foundation::LocalizedError {
   case missingTranscript(evaluatorType: Swift::String)
-  @available(*, deprecated, message: "The runner no longer throws this; missing metrics are materialized as ignored columns and logged. This case will be removed before general availability.")
-  case metricsNotFound(names: [Swift::String])
   public var errorDescription: Swift::String? {
     get
   }
+}
+@available(anyAppleOS 27.0, *)
+@available(tvOS, unavailable)
+public struct EvaluationRunErrors : Swift::Sendable, Swift::Codable, Swift::Hashable {
+  public var inferenceFailureCount: Swift::Int
+  public var evaluatorFailureCount: Swift::Int
+  public var failingEvaluatorTypes: Swift::Set<Swift::String>
+  public var anyInferenceProduced: Swift::Bool
+  public var metricsNotFound: [Swift::String]
+  public var hasFailures: Swift::Bool {
+    get
+  }
+  public static let clean: Evaluations::EvaluationRunErrors
+  public static func == (a: Evaluations::EvaluationRunErrors, b: Evaluations::EvaluationRunErrors) -> Swift::Bool
+  public func encode(to encoder: any Swift::Encoder) throws
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+  public init(from decoder: any Swift::Decoder) throws
 }
 @available(anyAppleOS 27.0, *)
 @available(tvOS, unavailable)
@@ -543,6 +561,7 @@ public struct EvaluationResult : Swift::Sendable {
   public var duration: Foundation::TimeInterval {
     get
   }
+  public let errors: Evaluations::EvaluationRunErrors
   public func aggregateValue(_ operation: Evaluations::AggregationOperation) -> Swift::Double
   public var groupedSummary: Swift::String {
     get

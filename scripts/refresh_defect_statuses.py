@@ -37,7 +37,7 @@ ALIASES = {
 ALIAS_ALT = "|".join(sorted((re.escape(alias) for alias in ALIASES), key=len, reverse=True))
 
 RE_URL = re.compile(
-    r"https?://github\.com/([\w.-]+/[\w.-]+)/(?:issues|pull|discussions)/(\d+)"
+    r"https?://github\.com/([\w.-]+/[\w.-]+)/(?P<route>issues|pull|discussions)/(\d+)"
 )
 RE_OWNER = re.compile(r"(?<![\w.-])([\w-]+/[\w.-]+?)#(\d{1,6})(?![\w-])")
 RE_ADJACENT = re.compile(
@@ -226,6 +226,13 @@ def claim_in_clause(
     text: str, reference_start: int, reference_end: int
 ) -> tuple[str | None, float, list[dict[str, str]]]:
     clause_start, clause_end = clause_for_offset(text, reference_start)
+    # Bound association at every neighboring reference, including URL forms.
+    spans = sorted({(m.start(), m.end()) for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE)
+                    for m in pattern.finditer(text)})
+    previous = [end for start, end in spans if end <= reference_start]
+    following = [start for start, end in spans if start >= reference_end]
+    before_start = max([clause_start, *previous])
+    after_end = min([clause_end, *following])
 
     def scan(segment: str, distance_from_match: Any) -> list[tuple[int, str]]:
         found: list[tuple[int, str]] = []
@@ -239,14 +246,33 @@ def claim_in_clause(
     # Guide prose overwhelmingly states a reference's state after it. Preserve
     # that precedence, but keep both directions bounded inside the same clause
     # so a status attached to a neighbouring reference cannot leak arbitrarily.
-    after_segment = text[reference_end : min(clause_end, reference_end + 80)]
+    after_segment = text[reference_end : min(after_end, reference_end + 80)]
     candidates = scan(after_segment, lambda match: match.start())
     direction = "after"
     if not candidates:
-        before_segment = text[max(clause_start, reference_start - 40) : reference_start]
+        before_segment = text[max(before_start, reference_start - 40) : reference_start]
+        if any(end > clause_start for end in previous):
+            # Between references a state belongs to the previous reference unless
+            # it directly prefixes this reference (e.g. "and merged PR #18").
+            before_segment = re.sub(
+                r"(?is)^.*?\b(merged|landed|closed|open(?:ed)?)\b(?![\s*`\\]*(?:(?:PR|issue|pull request)[\s*`\\]*)?$).*$",
+                "", before_segment,
+            )
         candidates = scan(before_segment, lambda match: len(before_segment) - match.end())
         direction = "before"
     if not candidates:
+        # An explicit plural list shares its prefix state until prose/type changes.
+        prefixes = list(re.finditer(r"\b(merged|landed|closed|open)\s+(?:PRs|issues|pull requests)\b",
+                                    text[clause_start:reference_start], re.I))
+        if prefixes:
+            prefix = prefixes[-1]
+            tail = text[clause_start + prefix.end():reference_start]
+            for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
+                tail = pattern.sub("", tail)
+            tail = re.sub(r"\b(?:and|or)\b", "", tail, flags=re.I)
+            if not tail.strip(" \n\t,/*`\\"):
+                word = prefix.group(1).upper()
+                return "MERGED" if word == "LANDED" else word, 0.9, []
         return None, 1.0, []
     states = {state for _, state in candidates}
     chosen = min(candidates, key=lambda item: item[0])[1]
@@ -275,7 +301,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
             mentions.extend((match.start(), match.group(1)) for match in RE_URL.finditer(text))
             dates = [(match.start(), match.group(1)) for match in RE_AS_OF.finditer(text)]
             occupied: list[tuple[int, int]] = []
-            references: list[tuple[int, int, str | None, int, str, float, list[dict[str, str]]]] = []
+            references: list[tuple[int, int, str | None, int, str, float, list[dict[str, str]], str]] = []
 
             def take(
                 match: re.Match[str],
@@ -284,6 +310,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                 form: str,
                 confidence: float,
                 diagnostics: list[dict[str, str]] | None = None,
+                reference_kind: str = "issue-or-pr",
             ) -> None:
                 if any(match.start() < end and match.end() > start for start, end in occupied):
                     return
@@ -297,11 +324,13 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         form,
                         confidence,
                         diagnostics or [],
+                        reference_kind,
                     )
                 )
 
             for match in RE_URL.finditer(text):
-                take(match, match.group(1), int(match.group(2)), "url", 1.0)
+                take(match, match.group(1), int(match.group(3)), "url", 1.0,
+                     reference_kind="discussion" if match.group("route") == "discussions" else "issue-or-pr")
             for match in RE_OWNER.finditer(text):
                 take(match, match.group(1), int(match.group(2)), "owner-repo", 1.0)
             for match in RE_ADJACENT.finditer(text):
@@ -322,7 +351,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
 
             # Keep the legacy extraction order: URLs, owner/repo refs, adjacent
             # repo refs, then bare refs, each in regex encounter order.
-            for offset, end, repository, number, form, map_confidence, diagnostics in references:
+            for offset, end, repository, number, form, map_confidence, diagnostics, reference_kind in references:
                 claimed_state, claim_confidence, claim_diagnostics = claim_in_clause(
                     text, offset, end
                 )
@@ -343,6 +372,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         "repository": repository,
                         "number": number,
                         "form": form,
+                        "referenceKind": reference_kind,
                         "claimedState": claimed_state,
                         "claimDate": claim_date,
                         "context": " ".join(text[context_start:context_end].split()),
@@ -370,7 +400,21 @@ def gh_json(*arguments: str) -> tuple[dict[str, Any] | None, str | None]:
     return value, None
 
 
-def lookup(repository: str, number: int) -> dict[str, Any]:
+def lookup(repository: str, number: int, reference_kind: str = "issue-or-pr") -> dict[str, Any]:
+    if reference_kind == "discussion":
+        owner, name = repository.split("/", 1)
+        query = ("query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name)"
+                 "{discussion(number:$number){title url closedAt isAnswered}}}")
+        data, error = gh_json("api", "graphql", "-f", "query=" + query,
+                              "-f", "owner=" + owner, "-f", "name=" + name,
+                              "-F", "number=" + str(number))
+        discussion = ((data or {}).get("data", {}).get("repository") or {}).get("discussion")
+        if not discussion:
+            return {"error": error or "discussion not returned"}
+        return {"kind": "discussion", "state": "CLOSED" if discussion.get("closedAt") else "OPEN",
+                "url": discussion["url"], "title": discussion["title"],
+                "closedAt": discussion.get("closedAt"), "mergedAt": None,
+                "stateReason": None, "reason": None, "answered": discussion["isAnswered"]}
     data, error = gh_json("api", f"repos/{repository}/issues/{number}")
     if data:
         pull_request = data.get("pull_request") or {}
@@ -485,18 +529,18 @@ def verdict(
 def group_references(
     sightings: Sequence[dict[str, Any]], perform_lookup: bool, sleep_seconds: float
 ) -> list[dict[str, Any]]:
-    distinct: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    distinct: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for sighting in sightings:
         repository = sighting["repository"] or f"?@{sighting['file']}"
-        distinct.setdefault((repository, sighting["number"]), []).append(sighting)
+        distinct.setdefault((repository, sighting.get("referenceKind", "issue-or-pr"), sighting["number"]), []).append(sighting)
 
     references: list[dict[str, Any]] = []
-    for (_, number), group in sorted(distinct.items()):
+    for (_, reference_kind, number), group in sorted(distinct.items()):
         repository = group[0]["repository"]
         live: dict[str, Any] | None = None
         diagnostics = [diagnostic for sighting in group for diagnostic in sighting["diagnostics"]]
         if perform_lookup and repository:
-            live = lookup(repository, number)
+            live = lookup(repository, number, reference_kind) if reference_kind == "discussion" else lookup(repository, number)
             if "error" in live:
                 diagnostics.append({"code": "github-unreachable", "message": live["error"]})
             time.sleep(sleep_seconds)
@@ -518,6 +562,7 @@ def group_references(
             "ref": f"{repository or '?'}#{number}",
             "repository": repository,
             "number": number,
+            "referenceKind": reference_kind,
             "claims": claims,
             "latestClaimDate": claim_date,
             "sightingCount": len(group),

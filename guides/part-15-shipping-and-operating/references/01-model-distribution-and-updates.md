@@ -1451,10 +1451,13 @@ host-cache *chunk* graphs makes `coreai-build` itself SIGSEGV (host-side
 ~0.9 s in, all 6 chunks, both architectures), while the monolith from the same authoring compiles
 fine — diagnosed as *"beta compiler bug, size/shape-correlated"*
 (`notes/repos/john-rocky-models.md:1189-1193`). A near-identical crash signature is the subject of
-open issue #55 on `apple/coreai-models`, where the maintainer's response was *"We will file an
-internal report and investigate this"* (`notes/repos/issues-coreai-stack.md:920-921`). If
-`coreai-build` exits 139 after several minutes at 100% CPU with no diagnostic, that is this bug and
-not your model.
+historical issue `apple/coreai-models#55`, where the maintainer initially promised an internal
+investigation (`notes/repos/issues-coreai-stack.md:920-921`). Apple closed it on **2026-08-27**
+after the author confirmed that the SIGSEGV no longer reproduced on the later beta. The author
+still reported GPU-only fallback for the linear-INT4 ANE compile; that is a separate residual
+limitation. [Dated closure and confirmation](https://github.com/apple/coreai-models/issues/55#issuecomment-5443603467).
+An exit-139 signature is a reason to collect the crash log and toolchain identity, not proof that
+this resolved incident explains a new failure.
 
 ### 4.7 A build script
 

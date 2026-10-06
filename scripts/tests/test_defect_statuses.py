@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from scripts import refresh_defect_statuses as reporter
 
@@ -97,6 +98,35 @@ class DefectStatusGoldenTests(unittest.TestCase):
             csv.DictReader(io.StringIO(reporter.sighting_tsv(sightings)), delimiter="\t")
         )
         self.assertEqual([row["number"] for row in rows], ["2", "1"])
+
+    def test_actual_neighboring_references_do_not_share_attached_states(self):
+        fixtures = (
+            ("apple/coreai-optimization#7 closed 2026-10-02 after **#117** added dynamic overflow calibration", "#117", None),
+            ("issue #17 was fixed by PR #18 (merged)", "#17", None),
+            ("PR #448 fixes issue #420 (closed)", "#448", None),
+            (r"merged PRs **#62, \#74, #89**, PR **#85** (**closed unmerged 2026-08-23**)", "#74", "MERGED"),
+        )
+        for text, ref, expected in fixtures:
+            start = text.index(ref)
+            with self.subTest(text=text):
+                state, _, _ = reporter.claim_in_clause(text, start, start + len(ref))
+                self.assertEqual(state, expected)
+
+    def test_discussion_dispatch_and_number_namespace(self):
+        live = {"data": {"repository": {"discussion": {"title": "MLX on CUDA", "url": "https://github.com/ml-explore/mlx/discussions/2422", "closedAt": None, "isAnswered": False}}}}
+        with mock.patch.object(reporter, "gh_json", return_value=(live, None)) as request:
+            result = reporter.lookup("ml-explore/mlx", 2422, "discussion")
+            self.assertEqual(result["kind"], "discussion")
+            self.assertEqual(result["state"], "OPEN")
+            self.assertFalse(result["answered"])
+            self.assertEqual(request.call_args.args[:2], ("api", "graphql"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "guides").mkdir()
+            (root / "guides/fixture.md").write_text("https://github.com/ml-explore/mlx/discussions/2422\n\nhttps://github.com/ml-explore/mlx/issues/2422\n")
+            sightings = reporter.extract(root)
+            self.assertEqual({s["referenceKind"] for s in sightings}, {"discussion", "issue-or-pr"})
+            self.assertEqual(len(reporter.group_references(sightings, False, 0)), 2)
 
     def test_claim_parser_prefers_bounded_state_after_reference(self) -> None:
         text = (
