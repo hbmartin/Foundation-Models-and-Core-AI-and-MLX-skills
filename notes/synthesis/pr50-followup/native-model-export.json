@@ -1,0 +1,321 @@
+{
+  "runner_revision": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+  "source_revision": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+  "runner_helpers": {
+    "scripts/verify_coreai_examples.py": "dd579beddc2cd826d666d6bb02fa4d40d5b1d3f0695541219660f19fd1fdcecc",
+    "scripts/coreai_examples.py": "b25c194e1d7c37171af1e2d08db102d817d306b0c94f47089f6cb3cd1ccf0b14",
+    "scripts/mdlinks.py": "7862bc2cb3772a9e1134583a7d0a77ce072b53df58da6141a09c607eb424958a"
+  },
+  "isolated": true,
+  "optimized": false,
+  "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "compression": true,
+  "packages": {
+    "torch": "2.9.0",
+    "coreai-core": "1.0.0b3",
+    "coreai-torch": "0.4.3",
+    "numpy": "2.4.6",
+    "torchao": "0.17.0",
+    "coreai-opt": "0.3.0",
+    "scikit-learn": "1.9.1"
+  },
+  "toolchain": {
+    "developer_dir": "/Applications/Xcode.app/Contents/Developer",
+    "xcode": "Xcode 27.0\nBuild version 27A266a",
+    "macos_sdk": "26A425"
+  },
+  "fixtures": [
+    {
+      "name": "state consecutive/reset/copied outputs",
+      "outcome": "PASS",
+      "details": {
+        "lengths": [
+          2,
+          8,
+          32
+        ],
+        "shapes": [
+          [
+            1,
+            2,
+            8
+          ],
+          [
+            1,
+            8,
+            8
+          ],
+          [
+            1,
+            32,
+            8
+          ]
+        ]
+      }
+    },
+    {
+      "name": "state asymmetric initial buffers",
+      "outcome": "PASS",
+      "details": [
+        [
+          1,
+          2,
+          8
+        ],
+        [
+          1,
+          8,
+          8
+        ],
+        [
+          1,
+          32,
+          8
+        ]
+      ]
+    },
+    {
+      "name": "application range rejects 1",
+      "outcome": "PASS (rejected)",
+      "details": "sequence outside declared range 2\u201332"
+    },
+    {
+      "name": "application range rejects 33",
+      "outcome": "PASS (rejected)",
+      "details": "sequence outside declared range 2\u201332"
+    },
+    {
+      "name": "gate loads supplied RELEASE asset/output ownership/non-mutation",
+      "outcome": "PASS",
+      "details": {
+        "path": "/private/tmp/pr50-native/model-export/shipping-release.aimodel",
+        "shape": [
+          1,
+          64
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "name": "b3 replaces existing asset with different program",
+      "outcome": "PASS",
+      "details": {
+        "old_file_removed": true,
+        "new_program_max_abs": 0.0
+      }
+    },
+    {
+      "name": "CI supplied asset",
+      "outcome": "PASS",
+      "details": [
+        1,
+        64
+      ]
+    },
+    {
+      "name": "CI rejects missing required composite",
+      "outcome": "PASS (rejected)",
+      "details": "missing composite: rms_norm"
+    },
+    {
+      "name": "wrong weights fail export parity",
+      "outcome": "PASS (rejected)",
+      "details": "\nNot equal to tolerance rtol=1e-05, atol=1e-06\nexport y\nMismatched elements: 64 / 64 (100%)\nFirst 5 mismatches are at indices:\n [0, 0]: 0.0 (ACTUAL), 4.885098457336426 (DESIRED)\n [0, 1]: 0.0 (ACTUAL), 5.372894287109375 (DESIRED)\n [0, 2]: 0.0 (ACTUAL), 5.044828414916992 (DESIRED)\n [0, 3]: 0.5829583406448364 (ACTUAL), 6.154417037963867 (DESIRED)\n [0, 4]: 0.11947532743215561 (ACTUAL), 5.690934181213379 (DESIRED)\nMax absolute difference among violations: 5.571459\nMax relative difference among violations: 1.\n ACTUAL: array([[0.      , 0.      , 0.      , 0.582958, 0.119475, 0.      ,\n        0.    "
+    },
+    {
+      "name": "excessive runtime error",
+      "outcome": "PASS (rejected)",
+      "details": "\nNot equal to tolerance rtol=0.001, atol=0.01\nCore AI y\nMismatched elements: 64 / 64 (100%)\nFirst 5 mismatches are at indices:\n [0, 0]: 0.0 (ACTUAL), 4.885098457336426 (DESIRED)\n [0, 1]: 0.0 (ACTUAL), 5.372894287109375 (DESIRED)\n [0, 2]: 0.0 (ACTUAL), 5.044828414916992 (DESIRED)\n [0, 3]: 0.5829582214355469 (ACTUAL), 6.154417037963867 (DESIRED)\n [0, 4]: 0.11947531998157501 (ACTUAL), 5.690934181213379 (DESIRED)\nMax absolute difference among violations: 5.5714593\nMax relative difference among violations: 1.\n ACTUAL: array([[0.      , 0.      , 0.      , 0.582958, 0.119475, 0.      ,\n        0.   "
+    },
+    {
+      "name": "runtime shape mismatch",
+      "outcome": "PASS (rejected)",
+      "details": "('Core AI y', (1, 32), (1, 64))"
+    },
+    {
+      "name": "non-finite output nan",
+      "outcome": "PASS (rejected)",
+      "details": "negative output: non-finite result"
+    },
+    {
+      "name": "non-finite output inf",
+      "outcome": "PASS (rejected)",
+      "details": "negative output: non-finite result"
+    },
+    {
+      "name": "graph quantization",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 2.9802322387695312e-08,
+        "compression_quality_max_abs": 0.0016460120677947998
+      }
+    },
+    {
+      "name": "eager quantization",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 2.9802322387695312e-08,
+        "compression_quality_max_abs": 0.0016460120677947998
+      }
+    },
+    {
+      "name": "graph mmap finalize",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 2.9802322387695312e-08,
+        "compression_quality_max_abs": 0.0016460120677947998
+      }
+    },
+    {
+      "name": "eager mmap finalize",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 2.9802322387695312e-08,
+        "compression_quality_max_abs": 0.0016460120677947998
+      }
+    },
+    {
+      "name": "palettization",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 4.470348358154297e-08,
+        "compression_quality_max_abs": 0.02304600179195404
+      }
+    },
+    {
+      "name": "palettization PAT schedule",
+      "outcome": "PASS",
+      "details": {
+        "warmup_disabled": true,
+        "step_enabled": true,
+        "outside_training_rejected": true
+      }
+    },
+    {
+      "name": "pruning",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 2.9802322387695312e-08,
+        "compression_quality_max_abs": 0.08055323362350464,
+        "zero_weights": 2048
+      }
+    },
+    {
+      "name": "joint compression",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 0.0,
+        "compression_quality_max_abs": 0.025803886353969574
+      }
+    },
+    {
+      "name": "direct IR quantization",
+      "outcome": "PASS",
+      "details": {
+        "compression_quality_max_abs": 0.0014795362949371338,
+        "serialization_compression_op": "blockwise_shift_scale"
+      }
+    },
+    {
+      "name": "direct IR palettization",
+      "outcome": "PASS",
+      "details": {
+        "compression_quality_max_abs": 0.02077465131878853,
+        "serialization_compression_op": "lut_to_dense"
+      }
+    },
+    {
+      "name": "direct IR sparsification",
+      "outcome": "PASS",
+      "details": {
+        "compression_quality_max_abs": 0.08055323362350464,
+        "serialization_compression_op": "sparse_with_bitmask_to_dense"
+      }
+    },
+    {
+      "name": "casting exclusions",
+      "outcome": "PASS",
+      "details": {
+        "standard_exp_dtype": "torch.float16",
+        "excluded_exp_dtype": "torch.float32",
+        "boundary_casts": true,
+        "standard_overflow": true,
+        "excluded_result": 15.0
+      }
+    },
+    {
+      "name": "block activation",
+      "outcome": "PASS",
+      "details": {
+        "prepare": "PASS",
+        "finalize_restriction": "Failed to process fake quantization node activation_post_process_0: Core AI export does not support PerBlockGranularity on activations: a per-block scale cannot be canonicalized to 0-D or 1-D. Use PerTensorGranularity or PerChannelGranularity, export with backend=ExportBackend._TORCH, or install and activate an extension package that registers an activation export handler for this granularity."
+      }
+    },
+    {
+      "name": "eager tied weights",
+      "outcome": "PASS",
+      "details": {
+        "forward_orders": [
+          "int4",
+          "int4"
+        ],
+        "post_finalize_retying_rejected": true
+      }
+    },
+    {
+      "name": "casting no-op rejected",
+      "outcome": "PASS (rejected)",
+      "details": "standard cast did not lower exp"
+    },
+    {
+      "name": "casting ignored exclusions rejected",
+      "outcome": "PASS (rejected)",
+      "details": "ignored exp was cast"
+    },
+    {
+      "name": "graph composite quantization",
+      "outcome": "PASS",
+      "details": {
+        "conversion_max_abs": 3.5762786865234375e-07,
+        "compression_quality_max_abs": 0.009537994861602783
+      }
+    },
+    {
+      "name": "standalone composite invocation",
+      "outcome": "PASS",
+      "details": {
+        "entrypoint": "__main__",
+        "directory": "/private/tmp/pr50-native/model-export/composite-demo"
+      }
+    }
+  ],
+  "examples": {
+    "state-protocol": {
+      "path": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
+      "line": 2842,
+      "sha256": "be5c472aa653a23374a082b4e815804ae7dec4e4af2967c1a71be1c39c43441f"
+    },
+    "shipped-asset-gate": {
+      "path": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
+      "line": 2370,
+      "sha256": "3a8dbb1228994fb5db0a7692a34de882f1809ff508343f5a7a60389bbab1bba5"
+    },
+    "ci-asset-gate": {
+      "path": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
+      "line": 2938,
+      "sha256": "ea0a954e2fced64d3fbf97933d681f8c9ee198fae4698afa14bbeb3e1be8d6d2"
+    },
+    "compression-native-fixtures": {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3746,
+      "sha256": "af8981083c29034e8274b4e93bdbfedbbd51f5fab82661505390fba230fbc1bf"
+    },
+    "composite-quantization": {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1761,
+      "sha256": "11c1edc2faf40a7c869924682e11f54798fa9eaf084a30a5593592f2b19214bb"
+    }
+  },
+  "os": "macOS-27.0-arm64-arm-64bit",
+  "os_build": "26A428"
+}
