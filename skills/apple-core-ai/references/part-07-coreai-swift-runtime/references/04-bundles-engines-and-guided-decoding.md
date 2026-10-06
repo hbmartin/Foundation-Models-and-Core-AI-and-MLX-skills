@@ -1703,14 +1703,14 @@ How it works:
   `selectShapeForDecode(currentSeqLength:tokensToProcess:)`.
 
 The Python side that produces this shape is worth seeing once, because it explains the function-name
-explosion (✅ `python/src/coreai_models/export/ios.py`):
+explosion. This adaptation abbreviates the configuration body with Python’s `...` placeholder (✅ `python/src/coreai_models/export/ios.py`):
 
 ```python
 query_lengths = [8, 16, 64]
 cache_len = 256
 while cache_len <= max_context_length:
     for q_len in query_lengths:
-        forward_static_cfg[f'"{cache_len}_{q_len}"'] = { … }
+        forward_static_cfg[f'"{cache_len}_{q_len}"'] = { ... }
     cache_len *= 2
 coreai_program.set_static_shape_config(EXTEND_FUNCTION_NAME, forward_static_cfg)
 ```

@@ -178,6 +178,20 @@ def snapshot_examples(reader, documents):
     return {e.id: e for e in examples if e.id}
 
 
+def fixture_result(name, fn, expected_error=None):
+    """Only the specified exception and diagnostic establish a negative control."""
+    try:
+        value = fn()
+    except Exception as error:
+        if (expected_error is not None and isinstance(error, expected_error[0])
+                and expected_error[1] in str(error)):
+            return {"name": name, "outcome": "PASS (rejected)", "details": str(error)[:600]}
+        return {"name": name, "outcome": "FAIL", "details": traceback.format_exc()}
+    if expected_error is not None:
+        return {"name": name, "outcome": "FAIL", "details": "negative fixture unexpectedly passed"}
+    return {"name": name, "outcome": "PASS", "details": value}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
@@ -208,51 +222,43 @@ def main():
     if args.preflight_only:
         print(json.dumps({**provenance, "example_ids": sorted(examples)}, indent=2))
         return 0
-    record = {**provenance, "python": sys.version, "os": platform.platform(),
-              "os_build": subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip(),
-              "packages": {n: importlib.metadata.version(n) for n in
-                           ("torch", "torchao", "coreai-core", "coreai-torch", "coreai-opt", "numpy", "scikit-learn")},
-              "toolchain": {"developer_dir": os.environ.get("DEVELOPER_DIR") or subprocess.check_output(
-                  ["xcode-select", "-p"], text=True).strip(),
-                  "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True).strip(),
-                  "macos_sdk": subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-build-version"], text=True).strip()},
-              "fixtures": [], "examples": {}}
-    work = args.out.parent
+    record = {**provenance, "python": sys.version, "compression": args.compression,
+              "packages": {}, "toolchain": {}, "fixtures": [], "examples": {}}
+    work = args.out.parent.resolve()
     work.mkdir(parents=True, exist_ok=True)
 
-    def load(name):
+    def load(name, module_name="guide_verification"):
         example = examples[name]
-        ns = {"__name__": "guide_verification"}
-        exec(compile("\n" * (example.line - 1) + example.code, str(example.path), "exec"), ns)
-        import hashlib
+        ns = {"__name__": module_name}
         record["examples"][name] = {"path": str(example.path),
                                     "line": example.line,
                                     "sha256": hashlib.sha256(example.code.encode()).hexdigest()}
+        exec(compile("\n" * (example.line - 1) + example.code, str(example.path), "exec"), ns)
         return ns
 
-    def check(name, fn, rejects=False):
-        try:
-            value = fn()
-            if rejects:
-                raise RuntimeError("negative fixture unexpectedly passed")
-            record["fixtures"].append({"name": name, "outcome": "PASS", "details": value})
-        except (AssertionError, ValueError, RuntimeError) as error:
-            # A loader/compiler RuntimeError must never masquerade as a parity rejection.
-            if rejects and isinstance(error, AssertionError):
-                record["fixtures"].append({"name": name, "outcome": "PASS (rejected)", "details": str(error)[:600]})
-            else:
-                record["fixtures"].append({"name": name, "outcome": "FAIL", "details": traceback.format_exc()})
-        except Exception:
-            record["fixtures"].append({"name": name, "outcome": "FAIL", "details": traceback.format_exc()})
+    def check(name, fn, expected_error=None):
+        record["fixtures"].append(fixture_result(name, fn, expected_error))
         print(record["fixtures"][-1]["name"], record["fixtures"][-1]["outcome"], flush=True)
 
     try:
+        record["os"] = platform.platform()
+        record["os_build"] = subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip()
+        packages = ["torch", "coreai-core", "coreai-torch", "numpy"]
+        if args.compression:
+            packages.extend(["torchao", "coreai-opt", "scikit-learn"])
+        for name in packages:
+            record["packages"][name] = importlib.metadata.version(name)
+        record["toolchain"]["developer_dir"] = os.environ.get("DEVELOPER_DIR") or subprocess.check_output(
+            ["xcode-select", "-p"], text=True).strip()
+        record["toolchain"]["xcode"] = subprocess.check_output(["xcodebuild", "-version"], text=True).strip()
+        record["toolchain"]["macos_sdk"] = subprocess.check_output(
+            ["xcrun", "--sdk", "macosx", "--show-sdk-build-version"], text=True).strip()
         import numpy as np
         import torch
         from coreai_torch import TorchConverter, get_decomp_table
 
         state = load("state-protocol")
-        # Permit migration-only verification before all compression repairs land.
+        # Migration-only verification does not require compression-package metadata.
         state_path = work / "state-release.aimodel"
         reference, ep = state["convert_state_model"](state_path)
         run = lambda **kw: asyncio.run(state["verify_state_asset"](state_path, reference, **kw))
@@ -265,7 +271,8 @@ def main():
         check("state consecutive/reset/copied outputs", state_checks)
         check("state asymmetric initial buffers", lambda: [list(x.shape) for x in run(initial=(0.25, -0.5))])
         for length in (1, 33):
-            check(f"application range rejects {length}", lambda length=length: run(lengths=(length,)), rejects=True)
+            check(f"application range rejects {length}", lambda length=length: run(lengths=(length,)),
+                  expected_error=(ValueError, "sequence outside declared range 2–32"))
 
         gate = load("shipped-asset-gate")
         ci = load("ci-asset-gate")
@@ -307,31 +314,54 @@ def main():
             return {"old_file_removed": True, "new_program_max_abs": float(np.max(np.abs(actual - 3)))}
         check("b3 replaces existing asset with different program", replacement)
         check("CI supplied asset", lambda: list(asyncio.run(ci["ci_asset_gate"](
-            path, model, exported, sample, runtime_atol=1e-2, runtime_rtol=1e-3)).shape))
+            path, model, exported, sample, runtime_atol=1e-2, runtime_rtol=1e-3,
+            required_composites=())).shape))
+        check("CI rejects missing required composite", lambda: asyncio.run(ci["ci_asset_gate"](
+            path, model, exported, sample, runtime_atol=1e-2, runtime_rtol=1e-3,
+            required_composites=("rms_norm",))),
+            expected_error=(AssertionError, "missing composite: rms_norm"))
         wrong = copy.deepcopy(model)
         with torch.no_grad():
             wrong[0].weight.add_(1)
-        check("wrong weights fail export parity", lambda: invoke(wrong), rejects=True)
+        check("wrong weights fail export parity", lambda: invoke(wrong),
+              expected_error=(AssertionError, "export y"))
         wrong_ep = torch.export.export(wrong, sample).run_decompositions(get_decomp_table())
-        check("excessive runtime error", lambda: invoke(wrong, wrong_ep), rejects=True)
+        check("excessive runtime error", lambda: invoke(wrong, wrong_ep),
+              expected_error=(AssertionError, "Core AI y"))
         shape_model = torch.nn.Linear(64, 32).eval()
         shape_ep = torch.export.export(shape_model, sample).run_decompositions(get_decomp_table())
-        check("runtime shape mismatch", lambda: invoke(shape_model, shape_ep), rejects=True)
+        check("runtime shape mismatch", lambda: invoke(shape_model, shape_ep),
+              expected_error=(AssertionError, "Core AI y"))
         for value in (float("nan"), float("inf")):
             check(f"non-finite output {value}", lambda value=value: gate["assert_parity"](
-                np.zeros(2), np.full(2, value), atol=1, rtol=1, label="negative output"), rejects=True)
+                np.zeros(2), np.full(2, value), atol=1, rtol=1, label="negative output"),
+                expected_error=(AssertionError, "negative output: non-finite result"))
         if args.compression:
             compression = load("compression-native-fixtures")
             for name, fixture in compression["compression_fixtures"](work).items():
                 check(name, fixture)
+            original_cast = compression["cast_fp32_to_fp16"]
+            def substituted_cast(transform):
+                compression["cast_fp32_to_fp16"] = transform
+                try:
+                    return compression["compression_fixtures"](work)["casting exclusions"]()
+                finally:
+                    compression["cast_fp32_to_fp16"] = original_cast
+            check("casting no-op rejected", lambda: substituted_cast(lambda ep, **kw: ep),
+                  expected_error=(AssertionError, "standard cast did not lower exp"))
+            check("casting ignored exclusions rejected", lambda: substituted_cast(
+                lambda ep, **kw: original_cast(ep)), expected_error=(AssertionError, "ignored exp was cast"))
             composite = load("composite-quantization")
-            def composite_compare(path, sample, expected, dense):
-                actual = asyncio.run(compression["fixture_runtime"](path, sample))
-                assert actual.shape == expected.shape and np.isfinite(actual).all()
-                np.testing.assert_allclose(actual, expected, atol=1e-2, rtol=1e-3)
-                return {"conversion_max_abs": float(np.max(np.abs(actual - expected))),
-                        "compression_quality_max_abs": float(np.max(np.abs(expected - dense)))}
-            check("graph composite quantization", lambda: composite["composite_fixture"](work, composite_compare))
+            check("graph composite quantization", lambda: composite["composite_fixture"](work))
+            def standalone_composite():
+                previous = Path.cwd()
+                try:
+                    os.chdir(work)
+                    load("composite-quantization", module_name="__main__")
+                    return {"entrypoint": "__main__", "directory": str(work / "composite-demo")}
+                finally:
+                    os.chdir(previous)
+            check("standalone composite invocation", standalone_composite)
     except Exception:
         record["fixtures"].append({"name": "setup", "outcome": "FAIL", "details": traceback.format_exc()})
     finally:

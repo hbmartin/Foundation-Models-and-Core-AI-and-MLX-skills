@@ -56,7 +56,10 @@ CLAIM_PATTERNS = (
     (re.compile(r"\bclosed\b", re.IGNORECASE), "CLOSED"),
     (re.compile(r"\bopen(?:ed)?\b", re.IGNORECASE), "OPEN"),
 )
-RE_NEGATED = re.compile(r"\b(?:not|never|no)[\s`'\"*]*$|n't[\s`'\"*]*$", re.IGNORECASE)
+RE_NEGATED = re.compile(
+    r"\b(?:not|never|no)(?:\s+(?:currently|still|longer|yet))?[\s`'\"*]*$|n't[\s`'\"*]*$",
+    re.IGNORECASE,
+)
 RE_CLAUSE_BOUNDARY = re.compile(
     r"(?:[.;](?:\s+|$)|,\s*(?=(?:while|whereas|but)\b)|"
     r"\b(?:while|whereas|but)\b|,\s+and\s+(?=(?:issues?|PRs?|pull requests?|bugs?)\b))",
@@ -238,7 +241,7 @@ def claim_in_clause(
         found: list[tuple[int, str]] = []
         for pattern, state in CLAIM_PATTERNS:
             for match in pattern.finditer(segment):
-                prefix = segment[max(0, match.start() - 12) : match.start()]
+                prefix = segment[max(0, match.start() - 24) : match.start()]
                 if not RE_NEGATED.search(prefix):
                     found.append((distance_from_match(match), state))
         return found
@@ -266,6 +269,9 @@ def claim_in_clause(
                                     text[clause_start:reference_start], re.I))
         if prefixes:
             prefix = prefixes[-1]
+            preceding = text[clause_start + max(0, prefix.start() - 24):clause_start + prefix.start()]
+            if RE_NEGATED.search(preceding):
+                return None, 1.0, []
             tail = text[clause_start + prefix.end():reference_start]
             for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
                 tail = pattern.sub("", tail)

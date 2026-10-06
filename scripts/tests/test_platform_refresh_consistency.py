@@ -8,6 +8,7 @@ import unittest
 from urllib.parse import unquote
 
 from scripts import mdlinks
+from scripts import refresh_defect_statuses as defects
 from scripts.coreai_examples import removed_optimizer_errors, contract_errors, section
 
 
@@ -19,6 +20,25 @@ FROZEN_NOEMA_URL = (
     "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/"
     f"blob/{NOEMA_SNAPSHOT.ref}/{NOEMA_RELATIVE_PATH}"
 )
+
+
+def current_issue49_errors(root: Path) -> list[str]:
+    """Check every confidently mapped sighting, with historical dates kept explicit."""
+    errors = []
+    parts = ("guides/part-08-", "guides/part-10-", "guides/part-17-")
+    for row in defects.extract(root):
+        if (not row["file"].startswith(parts) or row["repository"] != "apple/coreai-torch"
+                or row["number"] != 49 or row["referenceKind"] != "issue-or-pr"):
+            continue
+        historical = row["claimDate"] is not None and row["claimDate"] < "2026-10-02"
+        historical |= bool(re.search(r"\bhistorical(?:ly)?\b", row["context"], re.I)
+                           and re.search(r"\b0\.4\.[012]\b", row["context"])
+                           and not re.search(r"\b(?:remains|still)\s+open\b", row["context"], re.I))
+        if row["claimedState"] == "OPEN" and not historical:
+            errors.append(f'{row["file"]}:{row["line"]}: coreai-torch#49 incorrectly reported open')
+        errors.extend(f'{row["file"]}:{row["line"]}: {error}'
+                      for error in contract_errors(row["context"], "issue49"))
+    return errors
 
 
 class PlatformRefreshConsistencyTests(unittest.TestCase):
@@ -312,6 +332,24 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
     def test_coreai_torch_043_guidance_has_no_removed_optimizer_calls(self) -> None:
         self.assertEqual([], removed_optimizer_errors(ROOT))
 
+    def test_previous_followup_corrections_are_preserved(self):
+        runtime = self.read("guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md")
+        self.assertNotIn("runs NO passes", runtime)
+        self.assertIn("successful module exit runs the pre-compilation rewrite", runtime)
+        formats = self.read("guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md")
+        self.assertNotRegex(formats, r"(?m)^at the commits recorded")
+        self.assertIn("Apple Tech Talk 111432.*", formats)
+        deployment = self.read("guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md")
+        lines = deployment.splitlines()
+        for stage in (8, 9):
+            i = next(i for i, line in enumerate(lines) if f"stage {stage} " in line)
+            self.assertEqual(lines[i - 1].index("│"), lines[i].index("▼"))
+        coverage = self.read("guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md")
+        defect = section(coverage, "### 9.3 ")
+        self.assertIn("merged 2026-09-25", defect)
+        self.assertIn("outside the 0.4.3 tag", defect)
+        self.assertNotIn("open, unmerged", defect)
+
     def test_coreai_torch_49_status_and_current_contract_are_consistent(self) -> None:
         register = self.read(
             "guides/part-08-coreai-pytorch-conversion/"
@@ -353,7 +391,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         conversion = self.read("guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md")
         for heading, contract in (("### 9.5 ", "state"), ("### 6.3 ", "rewrite")):
             self.assertEqual([], contract_errors(section(conversion, heading), contract))
-        self.assertEqual([], contract_errors(row, "issue49"))
+        self.assertEqual([], current_issue49_errors(ROOT))
         deployment = self.read("guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md")
         self.assertEqual([], contract_errors(section(deployment, "### 9.3 "), "overwrite"))
 
@@ -361,6 +399,35 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             "`to_coreai()` returns an already optimized program",
             active,
         )
+
+    def test_issue49_guard_scans_other_pages_and_handles_reference_context(self):
+        import tempfile
+        fixtures = (
+            ("`coreai-torch` issue **#49** (open)", True),
+            ("coreai-torch#49 remains open", True),
+            ("apple/coreai-torch#49 remains OPEN", True),
+            ("coreai-torch#49 is not OPEN", False),
+            ("coreai-torch#49 isn't open", False),
+            ("coreai-torch#49 is no longer open", False),
+            ("coreai-torch#49 is not currently OPEN", False),
+            ("coreai-torch has no open issues #49, #51", False),
+            ("coreai-torch#49 CLOSED; coreai-models#49 remains open", False),
+            ("coreai-torch#49 closed; issue #51 remains open", False),
+            ("Historical: as of 2026-07-29 coreai-torch#49 was open", False),
+            ("Historical 0.4.1: coreai-torch#49 was open", False),
+            ("Historical 0.4.1 bug: coreai-torch#49 remains open", True),
+            ("as of 2026-10-02 coreai-torch#49 remains open", True),
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for part in (8, 10, 17):
+                path = root / f"guides/part-{part:02d}-fixture/references/other-page.md"
+                path.parent.mkdir(parents=True)
+                for prose, stale in fixtures:
+                    path.write_text(prose + "\n")
+                    with self.subTest(part=part, prose=prose):
+                        self.assertEqual(stale, bool(current_issue49_errors(root)))
+                path.unlink()
 
 
 if __name__ == "__main__":

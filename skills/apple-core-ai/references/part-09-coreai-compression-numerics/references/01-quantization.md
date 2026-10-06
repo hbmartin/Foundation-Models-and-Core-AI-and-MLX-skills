@@ -1758,10 +1758,13 @@ at `b51fd006`. EAGER remains useful, but is no longer required merely to retain 
 
 <!-- coreai-example: {"id": "composite-quantization"} -->
 ```python
-import copy
+import asyncio
 from pathlib import Path
+import numpy as np
 import torch
 from torch import nn
+from coreai.authoring import AIModelAsset
+from coreai.runtime import NDArray
 from coreai_opt.quantization import Quantizer, QuantizerConfig
 from coreai_torch import (
     ExternalizeSpec, TorchConverter, get_decomp_table,
@@ -1791,7 +1794,20 @@ class CompositeModel(nn.Module):
         return self.out(self.norm(self.proj(x), self.norm_weight))
 
 
-def composite_fixture(work, convert_and_compare):
+async def composite_runtime(path, sample):
+    asset = AIModelAsset.load(Path(path))
+    async with asset.executable() as runtime_model:
+        fn = runtime_model.load_function("main")
+        assert list(fn.desc.input_names) == ["x"]
+        assert list(fn.desc.output_names) == ["y"]
+        assert list(fn.desc.state_names) == []
+        assert np.isfinite(sample.numpy()).all()
+        result = await fn(inputs={"x": NDArray(sample.numpy())})
+        assert set(result) == {"y"}
+        return result["y"].numpy().copy()
+
+
+def composite_fixture(work):
     torch.manual_seed(43)
     model = CompositeModel().eval()
     sample = torch.randn(1, 64) / 4
@@ -1813,8 +1829,17 @@ def composite_fixture(work, convert_and_compare):
     assert "rms_norm" in str(program) and "blockwise_shift_scale" in str(program)
     path = Path(work) / "composite-quantized.aimodel"
     program.save_asset(path)
-    # Callback uses the same runtime/output contract and separate quality/fidelity budgets as §19.7.
-    return convert_and_compare(path, sample, expected, dense)
+    actual = asyncio.run(composite_runtime(path, sample))
+    assert actual.shape == expected.shape == dense.shape
+    assert np.isfinite(actual).all() and np.isfinite(expected).all() and np.isfinite(dense).all()
+    # These conversion tolerances belong to this small fixture, not arbitrary models.
+    np.testing.assert_allclose(actual, expected, atol=1e-2, rtol=1e-3)
+    return {"conversion_max_abs": float(np.max(np.abs(actual - expected))),
+            "compression_quality_max_abs": float(np.max(np.abs(expected - dense)))}
+
+
+if __name__ == "__main__":
+    print(composite_fixture(Path("composite-demo")))
 ```
 
 ---
@@ -2513,8 +2538,18 @@ release guidance. In eager mode, conflicting shared-weight schedules still warn 
 module encountered; use identical specs and schedules for tied consumers and inspect the resolved
 fake-quantizer. Graph deduplication does not make conflicting configs a sensible experiment.
 
-The 0.2.0 known-issues release note about tied weights is historical. It does not override this
-0.3.0 graph-mode fix.
+Treat the 0.2.0 known-issues release note one limitation at a time:
+
+- **Still applies in eager mode:** re-tying after Core AI `finalize()` fails because the weight's
+  dequantization parametrization has no `right_inverse`. Tie before `prepare()`, and finalize only
+  for deployment. The native check reproduced this failure with 0.3.0.
+- **The old MODULE_NAME versus MODULE_TYPE forward-order warning is not current evidence:** the
+  priority-aware `StateSpecResolver` at `189612be` resolves `op_state_spec` using module priorities.
+  With an int4 module-name override over an int8 module-type config, the native check selected int4
+  in both forward orders. This small control does not establish every eager configuration; keep
+  shared-weight specs and schedules identical and inspect the resolved fake-quantizer.
+- **Graph dtype/schedule ownership:** fixed as described above. This graph-mode fix alone says
+  nothing about eager post-finalize assignment or schedule conflicts.
 
 ### 11.6 QAT does not rescue everything
 
@@ -3873,11 +3908,42 @@ def compression_fixtures(work):
         class Exp(nn.Module):
             def forward(self, x):
                 return torch.exp(x) + 1
-        ep = torch.export.export(Exp(), (sample,)).run_decompositions(get_decomp_table())
-        assert cast_fp32_to_fp16(ep, ignored_ops={torch.ops.aten.exp}) is ep
-        nodes = [n for n in ep.graph.nodes if n.target == torch.ops.aten.exp.default]
-        assert nodes and nodes[0].meta["val"].dtype == torch.float32
-        return {"exp_dtype": str(nodes[0].meta["val"].dtype)}
+        def export(model, value):
+            return torch.export.export(model, (value,)).run_decompositions(get_decomp_table())
+
+        standard, excluded = export(Exp(), sample), export(Exp(), sample)
+        assert cast_fp32_to_fp16(standard) is standard
+        ordinary_exp = next(n for n in standard.graph.nodes if n.target == torch.ops.aten.exp.default)
+        assert ordinary_exp.meta["val"].dtype == torch.float16, "standard cast did not lower exp"
+        assert cast_fp32_to_fp16(excluded, ignored_ops={torch.ops.aten.exp}) is excluded
+        exp = next(n for n in excluded.graph.nodes if n.target == torch.ops.aten.exp.default)
+        assert exp.meta["val"].dtype == torch.float32, "ignored exp was cast"
+        entry = exp.args[0]
+        assert entry.target == torch.ops.aten._to_copy.default
+        assert entry.kwargs["dtype"] == torch.float32
+        assert entry.args[0].meta["val"].dtype == torch.float16
+        exits = list(exp.users)
+        assert len(exits) == 1 and exits[0].target == torch.ops.aten._to_copy.default
+        assert exits[0].kwargs["dtype"] == torch.float16
+        add = next(n for n in excluded.graph.nodes if n.target == torch.ops.aten.add.Tensor)
+        assert add.args[0] is exits[0] and add.meta["val"].dtype == torch.float16
+
+        class StableResult(nn.Module):
+            def forward(self, x):
+                return torch.log1p(torch.exp(x))
+
+        value = torch.tensor([[15.0]])
+        overflow, safe = export(StableResult(), value), export(StableResult(), value)
+        cast_fp32_to_fp16(overflow)
+        cast_fp32_to_fp16(safe, ignored_ops={torch.ops.aten.exp, torch.ops.aten.log1p})
+        ordinary_result = overflow.module()(value.half())
+        safe_result = safe.module()(value.half())
+        assert torch.isinf(ordinary_result).all(), "standard overflow control did not overflow"
+        assert torch.isfinite(safe_result).all()
+        torch.testing.assert_close(safe_result.float(), StableResult()(value), atol=1e-3, rtol=1e-3)
+        return {"standard_exp_dtype": str(ordinary_exp.meta["val"].dtype),
+                "excluded_exp_dtype": str(exp.meta["val"].dtype), "boundary_casts": True,
+                "standard_overflow": True, "excluded_result": float(safe_result.item())}
 
     def block_activation():
         spec = QuantizationSpec(dtype=torch.int8, granularity=PerBlockGranularity(axis=1, block_size=32))
@@ -3895,6 +3961,38 @@ def compression_fixtures(work):
             return {"prepare": "PASS", "finalize_restriction": str(error)}
         raise AssertionError("inspect changed backend support before updating this fixture")
 
+    def tied_weights():
+        class Shared(nn.Module):
+            def __init__(self, reverse):
+                super().__init__()
+                self.a, self.b = nn.Linear(64, 64, bias=False), nn.Linear(64, 64, bias=False)
+                self.b.weight = self.a.weight
+                self.reverse = reverse
+
+            def forward(self, x):
+                return self.a(self.b(x)) if self.reverse else self.b(self.a(x))
+
+        resolved = []
+        for reverse in (False, True):
+            q = Quantizer(Shared(reverse).eval(), QuantizerConfig(global_config=None,
+                module_type_configs={nn.Linear: ModuleQuantizerConfig(
+                    op_state_spec={"weight": QuantizationSpec(dtype=torch.int8)})},
+                module_name_configs={"a": ModuleQuantizerConfig(
+                    op_state_spec={"weight": QuantizationSpec(dtype=torch.int4)})},
+                execution_mode=ExecutionMode.EAGER))
+            prepared = q.prepare((sample,))
+            for module in (prepared.a, prepared.b):
+                assert module.parametrizations.weight[0].qparams_calculator.dtype == torch.int4
+            resolved.append("int4")
+            finalized = q.finalize()
+            try:
+                finalized.b.weight = finalized.a.weight
+            except RuntimeError as error:
+                assert "right_inverse" in str(error)
+            else:
+                raise AssertionError("eager post-finalize re-tying unexpectedly succeeded")
+        return {"forward_orders": resolved, "post_finalize_retying_rejected": True}
+
     return {"graph quantization": lambda: quantization(ExecutionMode.GRAPH),
             "eager quantization": lambda: quantization(ExecutionMode.EAGER),
             "graph mmap finalize": lambda: quantization(ExecutionMode.GRAPH, mmap=True),
@@ -3904,7 +4002,8 @@ def compression_fixtures(work):
             "direct IR quantization": lambda: direct_ir("quantize"),
             "direct IR palettization": lambda: direct_ir("palettize"),
             "direct IR sparsification": lambda: direct_ir("sparsify"),
-            "casting exclusions": casting_exclusion, "block activation": block_activation}
+            "casting exclusions": casting_exclusion, "block activation": block_activation,
+            "eager tied weights": tied_weights}
 ```
 
 See §8.9 for graph-mode composite externalization. `bits_per_weight` is an analytical estimate
