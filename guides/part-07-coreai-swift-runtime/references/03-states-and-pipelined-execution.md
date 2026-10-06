@@ -401,7 +401,7 @@ TorchConverter().add_exported_program(
     state_names=["kv_cache", "pos_idx", "y_state"],
     input_names=["query", "context"],
     output_names=["attn_out", "scaled"],
-).to_coreai().optimize()
+).to_coreai()
 ```
 
 Study the argument lists. `forward` takes three tensors; `input_names` has **two** entries, because
@@ -591,33 +591,15 @@ That is a numerics bug with a clean bill of health from every tool in the pipeli
 The mitigation is one line in a conversion test: after `to_coreai()`, assert the state names *and
 their order*, and fail the build if they move.
 
-### `optimize()` is mandatory for stateful models
+### State rewriting is automatic in 0.4.3
 
-This is the least-known and most consequential fact in this section.
+State mutations require the handle-signature and handle-update rewrites. In `coreai-torch`
+0.4.3 / `coreai-core` 1.0.0b3 these run on successful exit from `with module:` inside
+`to_coreai()`, before `AIProgram(module)` is constructed. There is no separate optimizer call.
 
-> ✅ **VERIFIED** — `apple/coreai-torch`, `tests/utils.py::_export_and_convert` runs optimize when
-> `run_optimize_passes or state_names or has_state`, where
-> `has_state = bool(sig.buffers_to_mutate) or bool(sig.user_inputs_to_mutate)`. The accompanying
-> comment in `_compare_by_name` explains why: *"state mutation outputs become tokens after optimize
-> and won't appear here"*.
-
-`to_coreai()` is a **pure conversion step** — it runs no optimization passes at all
-(`tests/test_converter.py::TestConvertToCoreaiNoOptimization`). The passes that `optimize()` wraps
-include two that exist specifically for states:
-
-> ✅ **VERIFIED** — recovered from `git show 4529671` in `apple/coreai-torch` (the commit
-> "Remove run_transforms helper in favor of result.optimize() (#50)"), which deleted this helper:
->
-> | Pass | Purpose |
-> |---|---|
-> | `CorePasses._CORE_OPTIMIZE` | core dialect optimization (const folding, cast fusion, inlining) |
-> | `CorePasses._UPDATE_SIGNATURE_TO_HANDLES` | **rewrites the stateful graph signature to handle-based state; mutation outputs become tokens** |
-> | `CorePasses._PROPAGATE_HANDLE_UPDATES` | propagates those handle updates through the module |
->
-> The full `CorePasses` enum could not be enumerated — 🔴 unverified beyond these three.
-
-So: **`to_coreai()` without `optimize()` on a stateful model does not produce the runtime state
-protocol.** Always call it. Every documented example does.
+The earlier 0.4.1 API required a separate `optimize()` call. Its recovered pass list was
+`_CORE_OPTIMIZE`, `_UPDATE_SIGNATURE_TO_HANDLES`, and `_PROPAGATE_HANDLE_UPDATES`; that
+historical list explains the state protocol, but is not the current authoring API.
 
 ### The re-conversion, in full
 
@@ -626,7 +608,7 @@ with one added argument:
 
 ```python
 # Grounding: the TorchConverter call shape (input_names / output_names / .to_coreai() /
-# .optimize() / .save_asset()) is VERIFIED against apple/coreai-torch's quickstart and README.
+# automatic module rewrite / .save_asset()) is VERIFIED against apple/coreai-torch's quickstart and README.
 # The specific names ("features", "logits", "key_cache", "value_cache") follow session 324's
 # narration and the module in §3; they are yours to choose.
 import torch
@@ -655,7 +637,6 @@ coreai_program = (
     )
     .to_coreai()
 )
-coreai_program.optimize()                              # REQUIRED for stateful models
 
 asset = coreai_program.save_asset(Path("SnakeModel.aimodel"))
 ```
@@ -1730,7 +1711,7 @@ to a common prefix if you do not know what is in it.
 | Each state held in a stored property, or placeholder-swapped during the call | Swift | whole-cache `memcpy` per step (§8.1) |
 | Conversion test asserts exact `stateNames` array and order | Python CI | positional indexing off by one (§4, §8.2) |
 | No in-place mutation of `forward()` args you did not intend as state | PyTorch | input silently becomes state (§8.2) |
-| `optimize()` called after `to_coreai()` | Python | state protocol not produced at all (§4) |
+| Automatic module rewrite completes inside `to_coreai()` | Python | assert state descriptors and updates (§4) |
 | States zero-filled before first use and on reset | Swift | garbage in unread lanes, NaN propagation (§8.3) |
 | A `fedTokens`-style log of exactly what the state contains | Swift | cross-conversation bleed (§8.4) |
 | Build optimized (`-O`) even for local testing | Xcode | ~6 s per `reset()`; ~3× slower generation |
@@ -3047,7 +3028,7 @@ A practical sequence for a suspected state bug:
 | Layer | Spelling | Marker |
 |---|---|---|
 | PyTorch | `self.register_buffer("key_cache", …)` + in-place mutation in `forward()` | ✅ |
-| Export | `TorchConverter().add_exported_program(ep, state_names=["key_cache", …])` then **`.optimize()`** | ✅ |
+| Export | `TorchConverter().add_exported_program(ep, state_names=["key_cache", …])` with automatic module rewriting | ✅ |
 | IR | graph argument carries `MutableBuffers.buffer_mutation = "<output name>"` | ✅ |
 | Swift | `var s = InferenceFunction.MutableViews(); s.insert(&cache, for: name); try await fn.run(inputs:, states: consume s)` | ✅ |
 
@@ -3149,7 +3130,7 @@ TorchConverter(mode=TorchConverter.Mode.DEBUG)          # DEBUG is the DEFAULT �
                       input_names=None, output_names=None,
                       state_names=None, entrypoint_name="main")
   .to_coreai()            # pure conversion — runs NO passes
-program.optimize()        # REQUIRED for stateful models
+# State rewriting already ran inside to_coreai().
 program.save_asset(Path("Model.aimodel"))               # writes a DIRECTORY
 
 get_decomp_table()        # REQUIRED before add_exported_program; preserves composite ops
@@ -3220,7 +3201,7 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 | Apple developer documentation, Core AI framework (312 symbols, harvested 2026-07-27 via `sosumi.ai` plus Apple's raw DocC JSON API) | every Swift signature in §5, §9, §10, §16; the `states:` / `outputViews:` parameter semantics; `ComputeStream`; `AsyncValue` / `AsyncMutableValue`; `NDArrayDescriptor`; the four Instruments event categories and five Debugger metrics | **Apple documentation** |
 | WWDC26 session 324, *"Meet Core AI"* (presenter: Ben, Core AI team) | the growing-intervals symptom; the definition of a state; the `register_buffer` → `state_names` → `MutableViews` arc; the fixed-max-context decision; the three low-level levers; the "growing at a much slower rate" hedge | **WWDC transcript** |
 | WWDC26 session 326, *"Core AI app features"* (presenter: Carina, Core AI team) | multi-function models; the specialization-in-the-interactive-flow failure; deployment context | **WWDC transcript** |
-| `apple/coreai-torch` — `converter.py`, `_utils.py`, `tests/test_stateful.py`, `tests/utils.py`, `docs/api/TorchConverter.md`, `docs/api/debugging.md`, `docs/getting-started/quickstart.ipynb`, `docs/guides/conversion-workflows.ipynb` | the `state_names` contract and its error strings; the ordering invariant and its assertion; `MutableBuffers.buffer_mutation`; the two state kinds; why `optimize()` is mandatory; the unzeroed-buffer warning; the preview env vars | **Apple shipping source** |
+| `apple/coreai-torch` — `converter.py`, `_utils.py`, `tests/test_stateful.py`, `tests/utils.py`, `docs/api/TorchConverter.md`, `docs/api/debugging.md`, `docs/getting-started/quickstart.ipynb`, `docs/guides/conversion-workflows.ipynb` | the `state_names` contract and its error strings; the ordering invariant and its assertion; `MutableBuffers.buffer_mutation`; the two state kinds; automatic state rewriting in 0.4.3; the unzeroed-buffer warning; the preview env vars | **Apple shipping source** |
 | `apple/coreai-models` — `CoreAISequentialEngine.swift`, `CoreAIPipelinedEngine.swift`, `InferenceEngine.swift`, `ModelStructure.swift`, `NDArray+Helpers.swift`, `SpeechModel.swift`, `export/macos.py`, `export/ios.py`, `export/_constants.py`, `primitives/macos/cache.py`, `skills/model-authoring/` | the canonical `states:` call site; the LLM I/O contract; `KVCacheStrategy`; `pipelineDepth`, `PipelineGate`, buffer rotation, the completion sentinel; the ANE-vs-GPU KV conventions table; the logits-memory arithmetic; the `-Onone` zeroing measurement | **Apple shipping source** + **Apple agent skill** |
 | `lucasnewman/mlx2coreai` (MIT, HEAD `059c9f3`, June 2026) | an independent reproduction of Apple's LLM state contract; `_offset_from_position_ids`; `write_state` / `_mark_mutable_buffers`; the complete Swift stateful runner; the Python-bindings gap | **community, third-party** |
 | `john-rocky/coreai-models` fork + `coreai-model-zoo` | `trimKVCache` and prefix reuse; the MPSGraph in-graph KV-write incident (FB23024751 / issue #5) and both workarounds; the 3.5× baseline correction; the M4 Max and iPhone 17 Pro benchmark tables | **community, single-author, self-declared uncontrolled benchmarks** |
@@ -3237,7 +3218,7 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 | 12 | **No controlled sequential-vs-pipelined measurement exists.** Every published Core AI LLM number is a pipelined number | `llm-benchmark` run twice with `--inference-engine-variant coreai-sequential` and `coreai-pipelined`, same device, release build |
 | 13 | Status of FB23024751 / `apple/coreai-models` #5 is unknown; the input-mask escape is verified only on the beta Mac GPU | check the Feedback and the issue; re-isolate on iPhone GPU and ANE |
 | 14 | The pipelined `trimKVCache` path is implemented but unverified (blocked on a `GrowingLogitsBuffer` SIGTRAP) | a multi-turn pipelined device harness |
-| 4 | The full `CorePasses` enum could not be enumerated; only the three passes `optimize()` demonstrably wraps are known | `coreai-core` installed locally |
+| 4 | The full `CorePasses` enum could not be enumerated; the historical 0.4.1 three-pass list is known | `coreai-core` installed locally |
 
 ### Claims deliberately *not* made
 
@@ -3256,7 +3237,7 @@ Because they are in circulation and are wrong:
 
 A state is an argument the model reads and writes in place. You create one by registering a buffer in
 PyTorch and mutating it inside `forward()`; you name it with `state_names` at conversion (**and you
-must call `optimize()`**, or the state protocol is never generated); you feed it at runtime by holding
+must verify named states after the automatic rewrite**); you feed it at runtime by holding
 the `NDArray` yourself and inserting it into an `InferenceFunction.MutableViews` collection that you
 `consume` into `run(inputs:states:outputViews:)`. Every state must be supplied, every time. Doing this
 converts a decode loop from quadratic-per-call to linear-per-call — *not* constant, and Apple says so.

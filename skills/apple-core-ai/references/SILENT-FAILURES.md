@@ -1,15 +1,15 @@
 # Silent-failure index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**528 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**525 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-05. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
 | [Wrong output](#wrong-output) | 69 |
 | [Empty output / no-op](#empty-output--no-op) | 5 |
 | [Truncation & limits](#truncation--limits) | 2 |
-| [Ignored input](#ignored-input) | 37 |
+| [Ignored input](#ignored-input) | 35 |
 | [Stale state](#stale-state) | 6 |
 | [Data & artifact loss](#data--artifact-loss) | 7 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 18 |
@@ -20,7 +20,7 @@
 | [Version drift](#version-drift) | 19 |
 | [Docs vs reality](#docs-vs-reality) | 45 |
 | [API footguns](#api-footguns) | 62 |
-| [General cautions](#general-cautions) | 120 |
+| [General cautions](#general-cautions) | 119 |
 
 ## Wrong output
 
@@ -59,7 +59,7 @@
 - [fp16 casting ignores activation overflow in softplus/mish/logsumexp — the sanctioned fix is rewriting your module](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#91-fp16-overflow-in-softplus-mish-logsumexp-logcumsumexp) — 8.2
 - [Compression shifts activation distributions — values once below the fp16 overflow threshold can newly exceed it](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#91-fp16-overflow-in-softplus-mish-logsumexp-logcumsumexp) — 8.2
 - [Integer true divide ran as int division then cast — fractions dropped on every backend (PR #32; latent twin in div)](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#92-integer-true-divide-truncates-instead-of-promoting-to-float) — 8.2 🔇
-- [cat on packed sub-byte tensors always concatenates on dim 0 — (2,4)+(2,4) at dim=1 silently yields (4,4), not (2,8)](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#93-cat-on-packed-sub-byte-tensors-always-concatenates-on-dim-0) — 8.2 🔇
+- [0.4.3 packed cat silently concatenates on dim 0; apple/coreai-torch#41 merged outside that tag](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#93-cat-on-packed-sub-byte-tensors-always-concatenates-on-dim-0) — 8.2 🔇
 - [sum/prod on int64 reduced in int32 — silently wrapping identically on every backend, corrupting the lowered IR](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#94-int64-accumulator-narrowing-in-sum-and-prod) — 8.2 🔇
 - [The axis reversal: MTLTensor extents are the reverse of the torch shape, and subscripts reverse too](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#52-️-the-axis-reversal) — 8.3
 - [Torch (D0,D1,D2) arrives in the kernel as (D2,D1,D0) — your correct torch_defn cannot catch the reversed Metal body](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#52-️-the-axis-reversal) — 8.3 🔇
@@ -71,14 +71,14 @@
 **Part 9**
 
 - [Now-fixed axis bug in coreai::quantize/dequantize — worth knowing when reading older artifacts](part-09-coreai-compression-numerics/references/01-quantization.md#85-graph-mode-prepare-step-by-step) — 9.1
-- [axis=-1 normalized off by one — per-channel scales landed one dim early with no shape error when sizes match (fixed #24)](part-09-coreai-compression-numerics/references/01-quantization.md#85-graph-mode-prepare-step-by-step) — 9.1 🔇
+- [Historical negative-axis bug fixed before 0.4.3 by apple/coreai-torch#24](part-09-coreai-compression-numerics/references/01-quantization.md#85-graph-mode-prepare-step-by-step) — 9.1 🔇
 - [Pool/flatten share one FakeQuantize between input and output — a per-channel scale can land on the wrong axis](part-09-coreai-compression-numerics/references/01-quantization.md#96-️-shared-observers-and-the-per-channel-activation-constraint) — 9.1
 - [KV-cache quant ops must commute with quantize/dequantize — point it at arithmetic and the export succeeds, wrongly](part-09-coreai-compression-numerics/references/01-quantization.md#12-kv-cache-quantization-graph-mode-only) — 9.1
 - [The casting pass changes user input/output dtypes in place — feeding fp32 afterwards presents as garbage, not a type…](part-09-coreai-compression-numerics/references/01-quantization.md#143-the-ordering-rule-compress-first-cast-second) — 9.1
-- [fp16 casting does not guard activation overflow, and compression makes previously-safe values overflow](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1
-- [fp16-cast models can emit zeros where stable ops yield large finite values — activation overflow is unguarded (#7, open)](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1 🔇
-- [ChannelStructured(axis=-1) prunes the wrong channels — per-channel L1 norms collapse to a scalar (PR #45 open)](part-09-coreai-compression-numerics/references/01-quantization.md#176-a-negative-axis-used-to-land-on-the-wrong-dimension) — 9.1 🔇
-- [aten.cat on packed intx/uintx tensors drops dim — every cat runs on dim 0, (2,4)+(2,4) dim=1 gives (4,4) (PR #41 open)](part-09-coreai-compression-numerics/references/01-quantization.md#176-a-negative-axis-used-to-land-on-the-wrong-dimension) — 9.1 🔇
+- [0.3.0 lacks calibration-aware overflow protection; ignored_ops exclusions are available](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1
+- [0.3.0 casting can overflow dynamic activations; calibration fix apple/coreai-optimization#117 is post-release](part-09-coreai-compression-numerics/references/01-quantization.md#144-️-silent-failure--fp16-casting-does-not-guard-activation-overflow-and-compression-makes-it-worse) — 9.1 🔇
+- [Historical pruning negative-axis defect; apple/coreai-optimization#45 fix is in 0.3.0](part-09-coreai-compression-numerics/references/01-quantization.md#176-a-negative-axis-used-to-land-on-the-wrong-dimension) — 9.1 🔇
+- [0.4.3 packed cat drops dim; apple/coreai-torch#41 merged September 25 outside that tag](part-09-coreai-compression-numerics/references/01-quantization.md#176-a-negative-axis-used-to-land-on-the-wrong-dimension) — 9.1 🔇
 - [Per-channel axis-0 int8 Linear weights return garbage on the macOS-27-beta GPU delegate — use per-block-32 there](part-09-coreai-compression-numerics/references/01-quantization.md#186-community-measurements--attributed-and-to-be-treated-as-such) — 9.1
 - [The casting passes mutate the program and change user I/O dtypes — old callers feed fp32 and get garbage, not an error](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#29-casting-is-not-compression-and-the-order-matters) — 9.3
 - [Sub-byte nibble order is undocumented — the decode assumes MLX's low-first convention; verify on a known tensor first](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#32--gap--you-cannot-read-sub-byte-data-from-swift-except-as-raw-bytes) — 9.3
@@ -150,8 +150,6 @@
 - [module_type_configs keyed by the string 'torch.nn.Linear' silently matches nothing — use the class object](part-09-coreai-compression-numerics/references/01-quantization.md#52-module_type_configs--fully-qualified-class-names-only) — 9.1
 - [A block size your weight isn't divisible by leaves the layer uncompressed, with only a log line](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1
 - [Block-size mismatch is caught internally and swallowed — the fake-quantize disables itself and the layer ships…](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1 🔇
-- [Open bug follows: shared weights blend two configs — dtype from one, QAT schedule from the other](part-09-coreai-compression-numerics/references/01-quantization.md#115-per-module-schedules-and-the-two-conflict-rules) — 9.1
-- [A shared weight takes dtype from one config and fake-quant schedule from another — issue #41, open, no warning](part-09-coreai-compression-numerics/references/01-quantization.md#115-per-module-schedules-and-the-two-conflict-rules) — 9.1 🔇
 - [Diffusion path swallows quantization failures with a warning — you can ship a full-precision model believing it…](part-09-coreai-compression-numerics/references/01-quantization.md#172-diffusion-quantization-failures-are-swallowed-with-a-warning) — 9.1 🔇
 - [shape[axis] % group_size must be 0 — a non-dividing group size leaves the layer unpalettized with only a warning](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#42-scheme-2--scalar-palettization-per-grouped-channel) — 9.2
 - [Realized sparsity rounds down — an unreachable channel target can round to zero pruning](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#114-️-realized-sparsity-rounds-down-and-it-can-round-to-zero) — 9.2
@@ -493,7 +491,7 @@
 - [Talk says 4-bit on the two encoders; the shipped recipe is asymmetric — image w4/gs32, text w6/gs8](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
 - [Talk says per-channel scales; the shipping recipe sets enable_per_channel_scale=False and uses grouped-channel…](part-09-coreai-compression-numerics/references/01-quantization.md#136-what-apple-actually-shipped-which-is-not-what-the-talk-showed) — 9.1
 - [Return value vs in-place mutation: Apple's own docs give both readings of the casting passes](part-09-coreai-compression-numerics/references/01-quantization.md#142-️-return-value-vs-in-place-mutation--a-documented-conflict) — 9.1
-- [One doc says the casting passes mutate in place and return nothing; the signatures return ExportedProgram — a conflict](part-09-coreai-compression-numerics/references/01-quantization.md#142-️-return-value-vs-in-place-mutation--a-documented-conflict) — 9.1
+- [Casting mutates and returns the same ExportedProgram in 0.3.0; earlier documentation conflicted](part-09-coreai-compression-numerics/references/01-quantization.md#142-️-return-value-vs-in-place-mutation--a-documented-conflict) — 9.1
 - [Framework page lists seven platforms; every symbol page's platform array omits macOS and Catalyst — a docs-generation…](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#31-the-full-enum-grouped) — 9.3
 - [Session 325 narration says per-channel scales; shipped code sets enable_per_channel_scale=False — both readings are live](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#42-️-silent-failure--a-bare-python-float-literal-can-move-an-op-to-the-gpu) — 9.3
 
@@ -635,7 +633,6 @@
 - [AIModelAsset.load only reads the header — compilation and its cost land lazily inside the executable() context manager](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#111-the-reference-implementation-verbatim) — 8.1
 - [Compare eager PyTorch, the decomposed exported program and the exact Core AI asset shipped](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) — 8.1
 - [Preview-only env vars gate debug metadata — set them before conversion or tooling loses attribution](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#125-️-preview-only-environment-variables) — 8.1
-- [The pipeline listing is a toy exercising every contract — run shipped-asset parity at real shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#133-the-complete-pipeline-in-one-block) — 8.1
 - [Scope note: how far MoE gather_mm support does not extend — read before assuming coverage](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#63-️-how-far-that-support-does-not-extend) — 8.2
 - [MoE on GPU/ANE delegates is combination-dependent — Qwen3-MoE ships, but support is not universal](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#63-️-how-far-that-support-does-not-extend) — 8.2
 - [Externalization needs the live nn.Module via add_pytorch_module — add_exported_program has no externalization path](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#82-externalizespec) — 8.2

@@ -147,7 +147,7 @@ A decode loop written the naive way gets slower every step, and in Instruments i
 **inference intervals that visibly widen along the timeline**. The fix is *states* — arguments the model
 both reads and writes in place — taught across all three layers they touch, because a mistake at any one
 converts cleanly and then misbehaves: `register_buffer` plus in-place mutation in PyTorch, `state_names`
-plus a **mandatory** `optimize()` at conversion, `InferenceFunction.MutableViews` at runtime. Then the
+plus automatic state rewriting during conversion, `InferenceFunction.MutableViews` at runtime. Then the
 tier above `run`: `encode(…, to: ComputeStream)` is `throws`, not `async throws`, so the CPU can encode
 step *n+1* while the GPU computes step *n*, with the framework inserting the dependency edges itself.
 

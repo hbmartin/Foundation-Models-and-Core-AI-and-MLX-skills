@@ -2251,9 +2251,9 @@ Community practice worth adopting wholesale: for each kernel *idea*, write a sta
 script that does nothing but that kernel, and reports cosine similarity plus relative L2 against a
 torch reference — before it goes anywhere near your model.
 
-> **Community-authored** — `notes/repos/john-rocky-models.md` §10.1 describes seven such scripts,
+> **Historical community-authored 0.4.1 example** — `notes/repos/john-rocky-models.md` §10.1 describes seven such scripts,
 > all built on the same skeleton: *"`TorchMetalKernel(src=<MSL body>)` → `torch.export` →
-> `TorchConverter.register_custom_kernels` → `add_exported_program` → `to_coreai()` →
+> `TorchConverter.register_custom_kernels` → `add_exported_program` → `to_coreai().optimize()` →
 > `save_asset` → `asset.executable()` → `load_function("main")` → `await fn({...})`, then cosine +
 > relative-L2 vs a torch reference."*
 >

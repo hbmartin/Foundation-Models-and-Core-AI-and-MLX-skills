@@ -980,7 +980,7 @@ The separate `.optimize()` method used by 0.4.1 no longer exists.
 > shipped program. Version 0.4.2 was not tested, so do not infer its status from the 0.4.1 and 0.4.3
 > measurements. The canonical status entry is [Part 8 §9.7](../../part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register).
 
-That last sentence generalizes into the rule this whole section is arguing for: **validate the
+The shipped-artifact requirement generalizes into the rule this whole section is arguing for: **validate the
 artifact you are going to ship, at the stage you are going to ship it from.** Every silent failure
 above survives a check performed one stage too early.
 
@@ -1786,7 +1786,7 @@ Both paths bottom out in the same object: a **`torch.export.ExportedProgram`**. 
 directly; the other takes an `nn.Module` plus a function that produces one. Either way, the input to
 Core AI conversion is *a live PyTorch model in a Python process*.
 
-The canonical five lines:
+The canonical conversion workflow (adapted for 0.4.3):
 
 ```python
 import torch
@@ -1805,13 +1805,13 @@ coreai_program = converter.to_coreai()
 coreai_program.save_asset("MyModel.aimodel")
 ```
 
-> ✅ **VERIFIED** — the first six lines are verbatim from `coreai-torch`'s README; `save_asset` is
+> ✅ **VERIFIED** — the export/decomposition workflow is adapted from `coreai-torch`'s README; `save_asset` is
 > from `coreai-core`'s `AIProgram`. Two mandatory steps hide in there:
 > **`run_decompositions(get_decomp_table())` is required** — `add_exported_program` validates and
 > raises an actionable error otherwise, and even `aten.linear` trips it — and **`get_decomp_table()`
 > is not interchangeable with `torch.export.default_decompositions()`**, which decomposes
-> `instance_norm` into an op Core AI does not support. **`optimize()` is also required**, and does
-> not happen inside `to_coreai()`.
+> `instance_norm` into an op Core AI does not support. **Rewriting runs on successful exit from `with module:` inside `to_coreai()`**, before
+> `AIProgram(module)` is returned. The separate optimizer method was removed in 0.4.3.
 
 Now compare that with where a Core ML model comes from 🟡: `coremltools` has historically accepted a
 traced or scripted PyTorch model, a TensorFlow graph, and — importantly — could round-trip its own

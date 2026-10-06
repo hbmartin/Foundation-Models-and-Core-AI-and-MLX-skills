@@ -1,0 +1,1343 @@
+{
+  "examples": [
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 257,
+      "id": "p9-01-001",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 299,
+      "id": "p9-01-002",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 317,
+      "id": "p9-01-003",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 366,
+      "id": "p9-01-004",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 389,
+      "id": "p9-01-005",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 407,
+      "id": "p9-01-006",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 427,
+      "id": "p9-01-007",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 522,
+      "id": "p9-01-008",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 572,
+      "id": "p9-01-009",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.ExecutionMode"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 648,
+      "id": "p9-01-010",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 669,
+      "id": "p9-01-011",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 702,
+      "id": "p9-01-012",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 726,
+      "id": "p9-01-013",
+      "imports": [
+        "coreai_opt.quantization.ModuleQuantizerConfig",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.QuantizationSpec"
+      ],
+      "calls_checked": 4,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 754,
+      "id": "p9-01-014",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 783,
+      "id": "p9-01-015",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 818,
+      "id": "p9-01-016",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 833,
+      "id": "p9-01-017",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 855,
+      "id": "p9-01-018",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 873,
+      "id": "p9-01-019",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 903,
+      "id": "p9-01-020",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 915,
+      "id": "p9-01-021",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 938,
+      "id": "p9-01-022",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 969,
+      "id": "p9-01-023",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1000,
+      "id": "p9-01-024",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1006,
+      "id": "p9-01-025",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1029,
+      "id": "p9-01-026",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1081,
+      "id": "p9-01-027",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1116,
+      "id": "p9-01-028",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1209,
+      "id": "p9-01-029",
+      "imports": [
+        "coreai_opt.quantization.spec.QParamsCalculatorBase",
+        "coreai_opt.quantization.spec.RunningRangeMixin"
+      ],
+      "calls_checked": 1,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1277,
+      "id": "p9-01-030",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1322,
+      "id": "p9-01-031",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1396,
+      "id": "p9-01-032",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1428,
+      "id": "p9-01-033",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1448,
+      "id": "p9-01-034",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1457,
+      "id": "p9-01-035",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1508,
+      "id": "p9-01-036",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1646,
+      "id": "p9-01-037",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1720,
+      "id": "p9-01-038",
+      "imports": [
+        "coreai_opt.quantization._graph._annotation_pattern_registry.NAryActPattern",
+        "coreai_opt.quantization._graph._annotation_pattern_registry._AnnotationPatternRegistry",
+        "coreai_opt.quantization._graph._annotation_pattern_registry._get_all_patterns_from_base_ops"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1761,
+      "id": "composite-quantization",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_torch.ExternalizeSpec",
+        "coreai_torch.TorchConverter",
+        "coreai_torch.get_decomp_table",
+        "coreai_torch._patch_model_for_externalization",
+        "coreai_torch._subexport_and_restore"
+      ],
+      "calls_checked": 7,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1832,
+      "id": "p9-01-040",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1856,
+      "id": "p9-01-041",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1890,
+      "id": "p9-01-042",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 1991,
+      "id": "p9-01-043",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2088,
+      "id": "p9-01-044",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2137,
+      "id": "p9-01-045",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2211,
+      "id": "p9-01-046",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.ModuleQuantizerConfig",
+        "coreai_opt.quantization.QuantizationSpec",
+        "coreai_opt.quantization.spec.PerChannelGranularity",
+        "coreai_opt.quantization.spec.PerTensorGranularity",
+        "coreai_opt.ExportBackend"
+      ],
+      "calls_checked": 7,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2291,
+      "id": "p9-01-047",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2338,
+      "id": "p9-01-048",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2360,
+      "id": "p9-01-049",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2392,
+      "id": "p9-01-050",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2460,
+      "id": "p9-01-051",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2484,
+      "id": "p9-01-052",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2548,
+      "id": "p9-01-053",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2558,
+      "id": "p9-01-054",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2657,
+      "id": "p9-01-055",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.ExecutionMode"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2734,
+      "id": "p9-01-056",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2811,
+      "id": "p9-01-057",
+      "imports": [
+        "coreai_opt.ExportBackend",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity"
+      ],
+      "calls_checked": 5,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2869,
+      "id": "p9-01-058",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2900,
+      "id": "p9-01-059",
+      "imports": [
+        "coreai_opt.casting.cast_fp32_to_fp16",
+        "coreai_opt.casting.cast_int32_to_int16",
+        "coreai_opt.casting.cast_to_16_bit_precision"
+      ],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2941,
+      "id": "p9-01-060",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2948,
+      "id": "p9-01-061",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 2968,
+      "id": "p9-01-062",
+      "imports": [
+        "coreai_opt.casting.cast_to_16_bit_precision"
+      ],
+      "calls_checked": 1,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3061,
+      "id": "p9-01-063",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3079,
+      "id": "p9-01-064",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3108,
+      "id": "p9-01-065",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3130,
+      "id": "p9-01-066",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3153,
+      "id": "p9-01-067",
+      "imports": [
+        "coreai.authoring.AIModelAsset",
+        "coreai_opt.coreai_utils.DType",
+        "coreai_opt.coreai_utils.quantize_weights"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3202,
+      "id": "p9-01-068",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3212,
+      "id": "p9-01-069",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3232,
+      "id": "p9-01-070",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3279,
+      "id": "p9-01-071",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3298,
+      "id": "p9-01-072",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3569,
+      "id": "p9-01-073",
+      "imports": [
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3581,
+      "id": "p9-01-074",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 3709,
+      "id": "compression-native-fixtures",
+      "imports": [
+        "coreai.authoring.AIModelAsset",
+        "coreai.runtime.NDArray",
+        "coreai_torch.TorchConverter",
+        "coreai_torch.get_decomp_table",
+        "coreai_opt.ExportBackend",
+        "coreai_opt.quantization.ExecutionMode",
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.ModuleQuantizerConfig",
+        "coreai_opt.quantization.QuantizationSpec",
+        "coreai_opt.quantization.spec.PerBlockGranularity",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.pruning.MagnitudePruner",
+        "coreai_opt.inspection.bits_per_weight",
+        "coreai_opt.casting.cast_fp32_to_fp16",
+        "coreai_opt.coreai_utils.DType",
+        "coreai_opt.coreai_utils.quantize_weights",
+        "coreai_opt.coreai_utils.palettize_weights",
+        "coreai_opt.coreai_utils.sparsify_weights"
+      ],
+      "calls_checked": 33,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/01-quantization.md",
+      "line": 4001,
+      "id": "p9-01-076",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 147,
+      "id": "p9-02-001",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 271,
+      "id": "p9-02-002",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 332,
+      "id": "p9-02-003",
+      "imports": [
+        "coreai_opt.ExportBackend",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 355,
+      "id": "p9-02-004",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 422,
+      "id": "p9-02-005",
+      "imports": [
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity"
+      ],
+      "calls_checked": 4,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 504,
+      "id": "p9-02-006",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 522,
+      "id": "p9-02-007",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 600,
+      "id": "p9-02-008",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 617,
+      "id": "p9-02-009",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 653,
+      "id": "p9-02-010",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 688,
+      "id": "p9-02-011",
+      "imports": [
+        "coreai_opt.palettization.spec.PerTensorGranularity",
+        "coreai_opt.quantization.spec.PerTensorGranularity"
+      ],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 740,
+      "id": "p9-02-012",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 760,
+      "id": "p9-02-013",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 786,
+      "id": "p9-02-014",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1009,
+      "id": "p9-02-015",
+      "imports": [
+        "coreai_opt.ExportBackend",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity"
+      ],
+      "calls_checked": 5,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1094,
+      "id": "p9-02-016",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1299,
+      "id": "p9-02-017",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1347,
+      "id": "p9-02-018",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1376,
+      "id": "p9-02-019",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1421,
+      "id": "p9-02-020",
+      "imports": [
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1439,
+      "id": "p9-02-021",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1446,
+      "id": "p9-02-022",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1557,
+      "id": "p9-02-023",
+      "imports": [
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.quantization.spec.QuantizationSpec",
+        "coreai_opt.quantization.spec.QuantizationScheme",
+        "coreai_opt.quantization.spec.PerTensorGranularity"
+      ],
+      "calls_checked": 3,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1593,
+      "id": "p9-02-024",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1675,
+      "id": "p9-02-025",
+      "imports": [
+        "coreai_opt.ExportBackend",
+        "coreai_opt.casting.cast_to_16_bit_precision",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig"
+      ],
+      "calls_checked": 3,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1777,
+      "id": "p9-02-026",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1801,
+      "id": "p9-02-027",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1809,
+      "id": "p9-02-028",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1880,
+      "id": "p9-02-029",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1896,
+      "id": "p9-02-030",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1952,
+      "id": "p9-02-031",
+      "imports": [
+        "coreai_opt.pruning.MagnitudePruner",
+        "coreai_opt.pruning.MagnitudePrunerConfig",
+        "coreai_opt.pruning.ModuleMagnitudePrunerConfig",
+        "coreai_opt.pruning.PruningSpec",
+        "coreai_opt.pruning.config.PolynomialDecaySchedule"
+      ],
+      "calls_checked": 5,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 1991,
+      "id": "p9-02-032",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2011,
+      "id": "p9-02-033",
+      "imports": [
+        "coreai_opt.pruning.MagnitudePrunerConfig",
+        "coreai_opt.pruning.ModuleMagnitudePrunerConfig",
+        "coreai_opt.pruning.PruningSpec",
+        "coreai_opt.pruning.spec.Unstructured",
+        "coreai_opt.pruning.config.PolynomialDecaySchedule"
+      ],
+      "calls_checked": 8,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2069,
+      "id": "p9-02-034",
+      "imports": [
+        "coreai_opt.coreai_utils.CompressionGranularity",
+        "coreai_opt.coreai_utils.DType",
+        "coreai_opt.coreai_utils.quantize_weights",
+        "coreai_opt.coreai_utils.palettize_weights",
+        "coreai_opt.coreai_utils.sparsify_weights"
+      ],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2074,
+      "id": "p9-02-035",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2090,
+      "id": "p9-02-036",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2106,
+      "id": "p9-02-037",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2143,
+      "id": "p9-02-038",
+      "imports": [
+        "coreai.authoring.AIModelAsset",
+        "coreai_opt.coreai_utils.CompressionGranularity",
+        "coreai_opt.coreai_utils.DType",
+        "coreai_opt.coreai_utils.palettize_weights"
+      ],
+      "calls_checked": 2,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2176,
+      "id": "p9-02-039",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2272,
+      "id": "p9-02-040",
+      "imports": [
+        "coreai_opt.ExportBackend",
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity",
+        "coreai_opt.quantization.Quantizer",
+        "coreai_opt.quantization.QuantizerConfig",
+        "coreai_opt.quantization.ModuleQuantizerConfig",
+        "coreai_opt.quantization.spec.QuantizationSpec",
+        "coreai_opt.quantization.spec.QuantizationScheme",
+        "coreai_opt.quantization.spec.PerTensorGranularity"
+      ],
+      "calls_checked": 11,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2494,
+      "id": "p9-02-041",
+      "imports": [
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity"
+      ],
+      "calls_checked": 5,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2619,
+      "id": "p9-02-042",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2722,
+      "id": "p9-02-043",
+      "imports": [
+        "coreai_opt.palettization.KMeansPalettizerConfig"
+      ],
+      "calls_checked": 1,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 2777,
+      "id": "p9-02-044",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 3031,
+      "id": "p9-02-045",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 3432,
+      "id": "p9-02-046",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 3572,
+      "id": "p9-02-047",
+      "imports": [
+        "coreai_opt.palettization.KMeansPalettizer",
+        "coreai_opt.palettization.KMeansPalettizerConfig",
+        "coreai_opt.palettization.ModuleKMeansPalettizerConfig",
+        "coreai_opt.palettization.PalettizationSpec",
+        "coreai_opt.palettization.spec.PalettizationGranularity",
+        "coreai_opt.palettization.spec.PerGroupedChannelGranularity",
+        "coreai_opt.palettization.spec.PerTensorGranularity",
+        "coreai_opt.palettization.spec.default_weight_palettization_spec",
+        "coreai_opt.palettization.spec.DefaultTrainingSpec",
+        "coreai_opt.palettization.spec.TrainingStrategy",
+        "coreai_opt.palettization.spec.TrainingStrategySpec",
+        "coreai_opt.palettization.config.PATSchedule",
+        "coreai_opt.pruning.MagnitudePruner",
+        "coreai_opt.pruning.MagnitudePrunerConfig",
+        "coreai_opt.pruning.ModuleMagnitudePrunerConfig",
+        "coreai_opt.pruning.PruningSpec",
+        "coreai_opt.pruning.spec.ChannelStructured",
+        "coreai_opt.pruning.spec.PruneImplBase",
+        "coreai_opt.pruning.spec.PruningScheme",
+        "coreai_opt.pruning.spec.Unstructured",
+        "coreai_opt.pruning.spec.default_weight_pruning_spec",
+        "coreai_opt.pruning.config.ConstantSparsitySchedule",
+        "coreai_opt.pruning.config.OpMagnitudePrunerConfig",
+        "coreai_opt.pruning.config.PolynomialDecaySchedule",
+        "coreai_opt.pruning.config.SparsityScheduleBase",
+        "coreai_opt.coreai_utils.CompressionGranularity",
+        "coreai_opt.coreai_utils.DType",
+        "coreai_opt.coreai_utils.palettize_weights",
+        "coreai_opt.coreai_utils.quantize_weights",
+        "coreai_opt.coreai_utils.sparsify_weights",
+        "coreai_opt.coreai_utils.common.QScheme",
+        "coreai_opt.ExportBackend",
+        "coreai_opt.CoreMLExportError",
+        "coreai_opt.casting.cast_to_16_bit_precision"
+      ],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md",
+      "line": 3625,
+      "id": "p9-02-048",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 263,
+      "id": "p9-03-001",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 367,
+      "id": "p9-03-002",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 403,
+      "id": "p9-03-003",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 460,
+      "id": "p9-03-004",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 482,
+      "id": "p9-03-005",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 530,
+      "id": "p9-03-006",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 549,
+      "id": "p9-03-007",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 578,
+      "id": "p9-03-008",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 615,
+      "id": "p9-03-009",
+      "imports": [
+        "coreai_opt.casting.cast_to_16_bit_precision",
+        "coreai_opt.casting.cast_fp32_to_fp16",
+        "coreai_opt.casting.cast_int32_to_int16"
+      ],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 870,
+      "id": "p9-03-010",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 893,
+      "id": "p9-03-011",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 907,
+      "id": "p9-03-012",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1000,
+      "id": "p9-03-013",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1088,
+      "id": "p9-03-014",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1094,
+      "id": "p9-03-015",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1107,
+      "id": "p9-03-016",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1476,
+      "id": "p9-03-017",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "AST/import/signature review; runtime only if named in native records"
+    },
+    {
+      "path": "guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+      "line": 1537,
+      "id": "p9-03-018",
+      "imports": [],
+      "calls_checked": 0,
+      "disposition": "signature/pseudocode fragment; tokenized, not executed"
+    }
+  ],
+  "errors": []
+}

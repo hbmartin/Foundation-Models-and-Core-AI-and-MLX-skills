@@ -2,7 +2,7 @@
 
 **Version floor:** everything here is **27.0 and only 27.0**. `apple/coreai-models` pins
 `platforms: [.macOS("27.0"), .iOS("27.0")]` and requires **Xcode 27.0+**; the Python side is
-`coreai-core==1.0.0b3` (a *beta* wheel), `coreai-torch==0.4.3`, `coreai-opt==0.2.1`, a pinned
+`coreai-core==1.0.0b3` (a *beta* wheel), `coreai-torch==0.4.3`, `coreai-opt==0.3.0`, a pinned
 `torch==2.9.0` and Python 3.11 in a `uv` ≥ 0.9.0 workspace. **Core AI Debugger is a separate download**
 with its own floor — host **macOS 27+**, paired devices iOS/iPadOS/macOS 27+ (no visionOS, tvOS or
 watchOS). Nothing back-deploys, and anything describing "iOS 20", "macOS 17", `.coreaimodel` or a
@@ -13,6 +13,11 @@ re-authoring a model for a specific compute unit, diagnosing why the converted o
 and shipping an LLM bundle a Swift app can load. If you only want to *call* a Core AI model behind
 `LanguageModelSession`, that is [Part 4](../part-04-beyond-the-built-in-model/) and
 [Part 7](../part-07-coreai-swift-runtime/) — this part is upstream of both.
+
+
+Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
+`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
+These model-export constraints are narrower than the standalone compression requirements in Part 9.
 
 ---
 

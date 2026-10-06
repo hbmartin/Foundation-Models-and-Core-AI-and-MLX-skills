@@ -8,8 +8,8 @@ watchOS 27.0+`, every symbol carrying a **Beta** flag. You need **Xcode 27** for
 and the Instruments template. **Core AI Debugger is a separate download** with its own floor: host
 **macOS 27 or later**, paired devices **iOS 27+, iPadOS 27+, or macOS 27+** (no visionOS, tvOS or
 watchOS in the paired-device list). On the Python side the debugging APIs described here need
-**`coreai-torch` 0.4.1 or later** — 0.4.0 produces assets the beta-2 compiler refuses to load, which
-is the closing story of this guide — alongside `coreai-core 1.0.0b2`, `coreai-opt 0.2.1`, and a
+**`coreai-torch` 0.4.3 or later** — 0.4.0 produces assets the beta-2 compiler refuses to load, which
+is the closing story of this guide — alongside `coreai-core 1.0.0b3`, `coreai-opt 0.3.0`, and a
 pinned `torch==2.9.0`. Nothing here back-deploys to 26.x, because Core AI did not exist in 26.x.
 
 > ⚠️ **Read this before you trust any signature below.** Core AI has **zero Apple sample-code
@@ -20,6 +20,11 @@ pinned `torch==2.9.0`. Nothing here back-deploys to 26.x, because Core AI did no
 > own agent skills inside those repos, Apple's documentation articles, and the WWDC26 transcripts.
 > Every claim below is marked ✅ VERIFIED / 🟡 RECONSTRUCTED / 🔴 GAP accordingly, and the GAPs are
 > real — **nobody in this corpus has run Xcode 27's Instruments or the Core AI Debugger by hand.**
+
+
+Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
+`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
+These model-export constraints are narrower than the standalone compression requirements in Part 9.
 
 ---
 
@@ -77,7 +82,7 @@ why **asset provenance** is a debugging concern and not a bookkeeping one.
   on its own, because other apps competing for CPU, GPU or Neural Engine distort the trace.
 - **Core AI Debugger**, from `https://developer.apple.com/core-ai-debugger/` (Apple Account sign-in,
   free registration, developer agreement). It is not bundled with Xcode.
-- A Python environment with `coreai-torch` ≥ 0.4.1 if you intend to produce reference data.
+- A Python environment with `coreai-torch==0.4.3` if you intend to produce reference data.
 
 ---
 
@@ -1315,9 +1320,7 @@ program_rel.save_asset(Path("MyModel.aimodel"))
 ```
 
 ✅ Both call shapes are verified: `TorchConverter(mode=…)` keyword-only from `converter.py`;
-`add_exported_program(...)` chainable returning `self`; `optimize()` called as a bare statement for
-its in-place side effect — every example in Apple's repo does it that way and none uses the return
-value; `save_asset(path)` returning an `AIModelAsset`, with an optional second positional metadata
+`add_exported_program(...)` chainable returning `self`; rewriting on successful exit from `with module:` before `AIProgram(module)` is returned; `save_asset(path)` returning an `AIModelAsset`, with an optional second positional metadata
 argument used by `apple/coreai-models`' own pipeline (`save_asset(asset_path, metadata)`).
 
 Keep the debug asset out of the app bundle and next to your export script. When something goes wrong
@@ -1534,7 +1537,7 @@ run.
 
 ```python
 # Produce the reference run the Core AI Debugger will load as Configuration B.
-# Requires coreai-torch >= 0.4.1. Set USE_LOCAL_COREAI=1 and ENABLE_DEBUG_INFO=1
+# Current profile: coreai-torch 0.4.3 / coreai-core b3. Set USE_LOCAL_COREAI=1 and ENABLE_DEBUG_INFO=1
 # in the shell before running (see §7.3).
 from pathlib import Path
 
@@ -2464,7 +2467,7 @@ grouping the Debugger's Navigator uses, for the same reason (§7).
 > directional — for *ranking* modules, not for publishing latency figures. Publish numbers from a
 > device, from a Release build, via the Instruments template.
 
-### 13.5 Graph diff — did `optimize()` change what I think it changed?
+### 13.5 Graph diff — did conversion change what I think it changed?
 
 > ✅ **VERIFIED** — `coreai_torch/debugging/graph_diff.py`:
 > ```python
@@ -2491,7 +2494,7 @@ else:
     write_diff(diff, diff.source_graph, diff.target_graph, output=sys.stdout, max_items=20)
 ```
 
-This is the tool for the `optimize()` silent-deletion class of bug from §8.2, and for "which of my
+This is the tool for the historical optimizer silent-deletion class of bug from §8.2, and for "which of my
 two exports is different, and how".
 
 ### 13.6 Two CLI tools nobody mentions
@@ -2839,8 +2842,8 @@ Strip to ship, never to debug.
 | Debug gauge, Core AI Instruments template | Xcode 27 |
 | Core AI Debugger host | **macOS 27+** |
 | Core AI Debugger paired devices | iOS 27+, iPadOS 27+, macOS 27+ (no visionOS/tvOS/watchOS) |
-| `save_intermediates`, `strip_debug_info`, `coreai_torch.debugging` | `coreai-torch` 0.4.1+, `coreai-core` 1.0.0b2 |
-| `ModelInspector` | `coreai-opt` 0.2.1 |
+| `save_intermediates`, `strip_debug_info`, `coreai_torch.debugging` | `coreai-torch` 0.4.3, `coreai-core` 1.0.0b3 |
+| `ModelInspector` | `coreai-opt` 0.3.0 |
 | AOT (`coreai-build`) target devices | A17 Pro+, M1+ Mac, M2+ Vision Pro only |
 
 **Event categories**

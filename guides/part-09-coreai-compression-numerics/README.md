@@ -1,18 +1,23 @@
 # Part 9 — Core AI: compression and numeric formats
 
-**Version floor:** this part is almost entirely **host-side Python**. The package is **`coreai-opt`**
-(import `coreai_opt`), verified against **0.2.1, released 2026-07-02**, with a handful of behaviours
-taken from `main` at commit `cd95cb2` — newer than 0.2.1 and in no release — marked inline wherever
-used. Host requirements are hard and non-negotiable: **Python ≥ 3.11, < 3.14**; **torch ≥ 2.8.0,
-≤ 2.11.0**; **torchao ≥ 0.15.0, ≤ 0.17.0**; macOS or Linux; and a **C++ toolchain present at runtime**,
-not merely at install time. What you produce deploys to **Core AI on iOS 27.0 / macOS 27.0** — Core AI
-does not exist before 27.0 on any platform, and there is no "26.4 Core AI." The optional `coreml`
-export backend targets **`ct.target.iOS26`** and is a strictly smaller feature set. Reference 03
-additionally spans two *other* version stories routinely confused with Core AI's: **MPP TensorOps is a
-26.x feature** with a per-point-release ladder (26.0 introduction · 26.1 bfloat · 26.3 cooperative
-tensors as matmul inputs · 26.4 int4/int8 tensors) while the shipped Xcode 26.6 SDK annotates the
-deployment macro as **26.2**; and **MLX** gates its accelerated kernels on **26.2** plus a
-GPU-generation check.
+**Version floor:** Core AI runtime OS 27, `coreai-core==1.0.0b3`, `coreai-torch==0.4.3`.
+Current compression behavior is pinned in the 2026-10-06 audit to
+`coreai-opt==0.3.0` (2026-09-25), implementation commit `189612be`. Python is **>=3.11,<3.14**;
+base requirements are **torch>=2.8.0** and **torchao>=0.15.0**, with no upper bounds.
+The source defines tested pairs Torch 2.8.0/2.9.1 with TorchAO 0.15.0, Torch 2.10.0 with
+TorchAO 0.16.0, and Torch 2.11–2.14 with TorchAO 0.18.0. Import-time compatibility warnings
+are not a guarantee that another pair works. A C++ compiler and Ninja are required for vendored
+k-means JIT compilation. `coremltools` is optional: the `coreml` extra requires
+`coremltools>=8.3` and `numpy>=2,<2.4`.
+
+The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includes
+`scikit-learn>=1.7.2`. b3 publishes cp314 wheels, but **this compression package still excludes
+Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
+`torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
+and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
+recorded separately in [the refresh evidence](../../notes/synthesis/coreai-030-refresh/README.md).
+Published model benchmarks retain their original dates and environments.
+
 
 **Who this is for:** Python ML engineers who have a working PyTorch model and now have to make it
 small enough, fast enough, and still good enough. Getting it *converted* is
@@ -99,22 +104,22 @@ narrative in the part.
 > and `_eager/` (`__torch_function__`) are separate implementations with different capabilities,
 > different config vocabularies — graph keys on aten op names, eager on call sites — and different
 > bugs. Apple's own source says it plainly: the two modes are ***"not guaranteed to produce equivalent
-> quantized models."*** So **never compare a graph-mode result to an eager-mode result**, and inspect
+> quantized models."*** Compare each mode against its own dense and compressed references, and inspect
 > in the mode you will compress in.
 >
 > ⚠️ **SILENT FAILURE (the headline one).** A **block size your weight dimension isn't divisible by
 > leaves the layer at full precision** — warning only, and the fake-quant node is then *deleted* from
 > the prepared graph. Also live: **diffusion quantization failures are swallowed with a warning**
 > (`export/compiler.py:69-72`), so a `--compression 4bit` FLUX-class export whose quantization pass
-> throws produces a successful export of an **fp16 model** — *file size is the only signal*. A
-> **shared/tied weight can take its dtype from one config and its schedule from another** (issue #41,
-> OPEN), and the warning mentions only the schedule. **fp16 casting can zero an activation** (issue
-> #7, OPEN). For eager-mode quantization and eager-only k-means palettization, finalizing with the
-> Core AI backend **frees the original dense weights in place**; this is not a universal behavior of
-> every `finalize()` backend or graph mode. Preserve a float reference with `deepcopy` before
-> `prepare()`.[^destructive-finalize-scope]
+> throws produces a successful export of an **fp16 model** — inspect the realized compression.
+> In 0.3.0 the **graph-mode tied-weight dtype/schedule conflict is fixed**
+> (`apple/coreai-optimization#41`); use identical eager tied-weight configs. **fp16 casting can
+> overflow activations**; 0.3.0 provides `ignored_ops` exclusions, while the calibration fix in
+> `apple/coreai-optimization#117` is post-release. CoreAI finalize frees dense originals in eager
+> quantization/palettization and removes unused originals in graph quantization. Preserve both a
+> dense quality reference and a prepared compressed reference before finalize.[^destructive-finalize-scope]
 >
-> 🔴 **GAP — fourteen, tabulated in §20.3, and nothing is guessed inside any of them.** The sharpest:
+> 🔴 **GAP — remaining limitations are tabulated in §20.3, and nothing is guessed inside any of them.** The sharpest:
 > whether diffusion `metadata.json` records the **attempted** or the **achieved** compression. If it
 > records the attempted setting, your bundle metadata actively confirms a compression that did not
 > happen. Safe default until someone runs the experiment: **do not trust metadata as evidence of
@@ -219,7 +224,7 @@ unless you also use MLX; [9.1 §12](references/01-quantization.md#12-kv-cache-qu
 
 ## What this part deliberately does not cover
 
-- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, `optimize()`, `save_asset()`,
+- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic frontend rewriting, `save_asset()`,
   and how a compressed `nn.Module` becomes an `.aimodel` — [Part 8](../part-08-coreai-pytorch-conversion/).
   Every guide here starts with an `nn.Module` and hands back an `nn.Module`.
 - **The Core AI Debugger** — sync points, the PSNR metric, `save_intermediates` / `load_intermediates`,
@@ -240,10 +245,10 @@ unless you also use MLX; [9.1 §12](references/01-quantization.md#12-kv-cache-qu
 
 ## Sources for this part
 
-Strongest first. **Shipped source read on disk:** `apple/coreai-optimization` at `main` HEAD
-`cd95cb2` — 29,337 Python LOC under `src/`, with the quantization, palettization, pruning, casting,
+Strongest first. **Current source audit:** `apple/coreai-optimization` at release `189612be` (0.3.0),
+with the historical July snapshot retained only for dated measurements, with the quantization, palettization, pruning, casting,
 inspection and `coreai_utils` subtrees read file by file, plus `pyproject.toml`, `Makefile`,
-`AGENTS.md`, `CHANGELOG.md`, the unreleased `changelog.d/` fragments and the CI workflow;
+`CHANGELOG.md` and the tested dependency groups;
 `apple/coreai-models` for the shipping recipes (`models/sam3/pipeline.py`, `export/presets.py`,
 `export/compiler.py`, `diffusion/presets.py`, `llm/export.py`); `apple/coreai-torch`;
 `ml-explore/mlx` at HEAD `973e27f` and `ml-explore/mlx-lm`; and the
@@ -256,8 +261,8 @@ transcripts*: `model-authoring/SKILL.md` (the four PSNR gates at `:94-99`, the s
 `model-compression-exploration/SKILL.md` and `model-deployment`. **`coreai-opt` documentation** — the
 quantization, palettization, pruning, utils, debugging and examples trees, source of every
 Apple-published number here. **GitHub issues and PRs** on both Apple repos, several with maintainer
-answers (#3, #7, #16, #38, #40, #41, #42/#44, #45, #52, #56), states re-checked
-2026-08-17; `apple/coreai-models#56` remains open.
+answers; repository-qualified dispositions are recorded in the 2026-10-06 refresh evidence.
+Historical community measurements and SDK inventories retain their original scope.
 **WWDC26 session 325**, *"Dive into Core AI model authoring and optimization"* — used for narration,
 framing and the SAM3 story, and **never alone for a signature**; plus **Apple Tech Talk 111432** for
 the M5 numbers, which is a Tech Talk and not a WWDC26 session, has no published code block, and whose
@@ -269,8 +274,8 @@ in `apple/coreai-models`**, and no M5 hardware backed any TensorOps claim in thi
 
 [^destructive-finalize-scope]: The pinned `coreai-optimization` sources limit dense-weight freeing to
     `ExportBackend.CoreAI` in eager quantization and document the same Core AI-specific behavior for
-    k-means palettization: [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/quantization/quantizer.py#L435-L482) and
-    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/palettization/kmeans/palettizer.py#L357-L425).
+    k-means palettization: [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/189612be60bc1d5cca9b73ad8811660f738c637d/src/coreai_opt/quantization/quantizer.py) and
+    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/189612be60bc1d5cca9b73ad8811660f738c637d/src/coreai_opt/palettization/kmeans/palettizer.py).
 
 [^xcode27-scale-planes]: Apple documents the OS 27 API in
     [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor),
