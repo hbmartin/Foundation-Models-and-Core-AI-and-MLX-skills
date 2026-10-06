@@ -1,0 +1,7 @@
+{
+  "package": "coreai-core==1.0.0b3",
+  "files": {
+    "coreai/authoring/module.py": "ab121671d2f756f98d55c3130b85d01f9721d6d10dd004458483f9415ba5839c",
+    "coreai/authoring/asset.py": "f69894cdd60530de13f0e1aa93909c8b9175e16927781b486014b22371eeba82"
+  }
+}

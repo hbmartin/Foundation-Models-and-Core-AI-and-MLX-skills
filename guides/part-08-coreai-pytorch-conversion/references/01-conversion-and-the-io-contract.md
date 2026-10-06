@@ -344,15 +344,15 @@ if you possibly can; strip only to unblock an already-published artifact.
 
 ### 2.4 Version-floor cheat sheet
 
-| Component | Version as of 2026-07-27 | Notes |
+| Component | Current profile (2026-10-06) | Notes |
 |---|---|---|
-| `coreai-torch` | **0.4.1** (released 2026-07-06) | 0.4.0 assets are OS-rejected — §2.3 |
-| `coreai-core` | **1.0.0b2** (exact pin) | Beta. Private `coreai._compiler.*` may move without notice |
-| `coreai-opt` | 0.2.1 (2026-07-02) | Part 9 |
-| `coreai-models` | 0.2.0 pre-release (2026-07-08) | Requires macOS/iOS 27.0+, Xcode 27.0+ |
-| Python | ≥ 3.11 | Wheels: cp311, cp312; **cp313 added in `coreai-core` 1.0.0b2** |
-| PyTorch | ≥ 2.8.0, validated ≤ 2.13.0 | Warning above the ceiling |
-| Runtime OS | iOS/iPadOS/macOS/tvOS/visionOS/watchOS **27.0+ Beta** | No 26.x back-deployment |
+| `coreai-torch` | **0.4.3** at `b51fd006` | Automatic module rewrite; historical compatibility floor 0.4.1 |
+| `coreai-core` | **1.0.0b3** exact pin | Beta; save replaces an existing destination |
+| `coreai-opt` | **0.3.0** at `189612be` | Compression profile in Part 9 |
+| `coreai-models` | snapshot `db63a2d8` | Torch 2.9.0 and TorchAO<0.18 |
+| Python | ≥3.11 for conversion | b3 cp311/cp312/cp313/cp314; compression requires <3.14 |
+| PyTorch | ≥2.8.0 for converter | Use Torch 2.9.0 in model-export profile |
+| Runtime OS | iOS/iPadOS/macOS/tvOS/visionOS/watchOS **27.0+** | No 26.x deployment target |
 
 > 🔴 **GAP — `coreai-torch` states no minimum OS anywhere in its own tree.** Nothing in the converter
 > repo declares a deployment target for the artifacts it produces; CI runs on self-hosted
@@ -2826,7 +2826,7 @@ Every one of these raises at conversion time with an actionable message. They ar
 | 13 | ship a three-function asset and expect the 76% | Apple's engine re-runs `image_encode` every call | measure; build your own cache |
 | 14 | convert with `Mode.RELEASE` or without `ENABLE_DEBUG_INFO` | Debugger source viewer and module navigator are empty | open the asset in the Debugger |
 | 15 | pass a non-contiguous PyTorch tensor through the `coreai-models` Python wrapping path | that bridge reads the raw backing memory as contiguous | call `.contiguous()` at this bridge boundary; do not generalize this to Swift `NDArray`, which supports explicit strides[^stride-scope] |
-| 16 | read an `NDArray` after the `async with` exits | backing buffers no longer guaranteed valid | `.numpy()` inside the block |
+| 16 | read an `NDArray` after the `async with` exits | backing buffers no longer guaranteed valid | `.numpy().copy()` inside the block |
 | 17 | build state with `NDArray.from_descriptor` | buffer sized but not zeroed on Linux → garbage first call | allocate `np.zeros` |
 | 18 | convert with `coreai-torch` 0.4.0 | asset rejected on device from OS 27 beta 2 | reconvert on 0.4.1+, or `strip_debug_info` |
 

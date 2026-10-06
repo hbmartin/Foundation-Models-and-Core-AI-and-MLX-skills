@@ -179,57 +179,54 @@ step 1 for you** — which, for the ten catalog presets, they have.
 The full picture, with the stages this guide actually walks:
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│ acquire weights            HF snapshot → local safetensors             │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 1 ──────────────────────────────────────────────────────────────┐
+│ acquire weights            HF snapshot → local safetensors              │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌────────────────────────────────────────────────────────────────────────┐
-│ re-author                  plain-torch model built FROM safetensors,   │
-│  (or use a repo primitive)  targeting GPU **or** ANE — not both        │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 2 ──▼───────────────────────────────────────────────────────────┐
+│ re-author                  plain-torch model built FROM safetensors,    │
+│  (or use a repo primitive)  targeting GPU **or** ANE — not both         │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌────────────────────────────────────────────────────────────────────────┐
-│ oracle + Gate A(pre)       re-authored vs HF reference                 │
-│                            Apple: PSNR > 70 dB · community: cos ≥.999  │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 3 ──▼───────────────────────────────────────────────────────────┐
+│ oracle + Gate A(pre)       re-authored vs HF reference                  │
+│                            Apple: PSNR > 70 dB · community: cos ≥.999   │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌────────────────────────────────────────────────────────────────────────┐
-│ compress                   macOS: coreai-opt Quantizer (int4/block32)  │
-│                            iOS:   coreai-opt KMeansPalettizer (LUT)    │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 4 ──▼───────────────────────────────────────────────────────────┐
+│ compress                   macOS: coreai-opt Quantizer (int4/block32)   │
+│                            iOS:   coreai-opt KMeansPalettizer (LUT)     │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌─────────────────────────────────────────────────────────────────────────┐
+┌── stage 5 ──▼───────────────────────────────────────────────────────────┐
 │ torch.export + decomp      run_decompositions(get_decomp_table())       │
 │  + remove_functionalization  ⚠️ omit this and KV writes vanish silently │
 │  + dynamic_shapes / static_shape_config                                 │
 └─────────────────────────────────────────────────────────────────────────┘
               │
-┌────────────────────────────────────────────────────────────────────────┐
-│ convert                    TorchConverter(...).to_coreai() → AIProgram │
-│                            input_names / output_names / state_names    │
-└────────────────────────────────────────────────────────────────────────┘
-              │
-┌─────────────────────────────────────────────────────────────────────────┐
-│ optimize                   converter.to_coreai() applies rewrites       │
+┌── stage 6 ──▼───────────────────────────────────────────────────────────┐
+│ convert                    `with module:` exit → rewrite → AIProgram    │
+│                            before to_coreai() returns                   │
+│                            input_names / output_names / state_names     │
 └─────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 8 ──▼─────────────────────────────────────────────────────────┐
-│ save bundle                <name>/                                     │
-│                              metadata.json   (schema "0.2")            │
-│                              tokenizer/                                │
-│                              <name>.aimodel/                           │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 7 ──▼───────────────────────────────────────────────────────────┐
+│ save bundle                <name>/                                      │
+│                              metadata.json   (schema "0.2")             │
+│                              tokenizer/                                 │
+│                              <name>.aimodel/                            │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 9 ──▼─────────────────────────────────────────────────────────┐
-│ AOT compile (device)       xcrun coreai-build compile … --architecture │
-│                            → <name>.<arch>.aimodelc                    │
+┌── stage 8 ──▼───────────────────────────────────────────────────────────┐
+│ AOT compile (device)       xcrun coreai-build compile … --architecture  │
+│                            → <name>.<arch>.aimodelc                     │
 │                            ⚠️ then hand-edit metadata.json "assets"     │
-└────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 10 ─▼─────────────────────────────────────────────────────────┐
-│ load in Swift              CoreAILanguageModel(resourcesAt:)           │
-│                            → LanguageModelSession(model:)              │
-└────────────────────────────────────────────────────────────────────────┘
+┌── stage 9 ─▼────────────────────────────────────────────────────────────┐
+│ load in Swift              CoreAILanguageModel(resourcesAt:)            │
+│                            → LanguageModelSession(model:)               │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.2 What a bundle actually is
@@ -3684,9 +3681,10 @@ sliding-window masks yet.")` — so sliding-window-attention models are out on t
 
 > 🔴 **GAP — whether a `coreai-core` 1.0.0b1 asset loads on a 27.0 GM is unverified.** The community
 > report is specific and cites a Feedback number, but it is about a *beta* SDK. **Resolving this
-> needs a test on shipping 27.0.** Meanwhile the safe default: **install `coreai-core==1.0.0b2` (or
-> later) into the `mlx2coreai` environment yourself**, overriding its pin, and verify the produced
-> asset's `producer` field says `coreai-core 1.0.0b2` (§9.5) before you ship it.
+> needs a test on shipping 27.0.** The inspected `mlx2coreai` 0.1.1 bridge uses private historical
+> APIs; simply overriding its wheel pin does not establish b3 compatibility. The current PyTorch
+> workflow uses b3/0.4.3 and records the asset's producer before shipment. The b2 fingerprint in
+> §9.5 belongs to the historical compatibility incident.
 
 ### 15.6 When to reach for it
 

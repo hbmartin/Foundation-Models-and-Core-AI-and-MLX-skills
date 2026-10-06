@@ -2,17 +2,23 @@
 
 **Part 9 · Core AI: compression and numeric formats · Reference 02**
 
-**Version floor.** Everything here is host-side Python in **`coreai-opt`** (import `coreai_opt`),
-verified against **0.2.1, released 2026-07-02**, plus a small number of behaviours from `main` at
-commit `cd95cb2`, which is **newer than 0.2.1 and in no release** — those are marked inline. `0.2.0`
-was the initial release, **2026-06-08**. Host floor is hard: **Python ≥ 3.11, < 3.14**; **torch
-≥ 2.8.0, ≤ 2.11.0**; **torchao ≥ 0.15.0, ≤ 0.17.0**; macOS or Linux; and — for palettization
-specifically — **a C++ toolchain present on the host at runtime**, not just at install time.
-Within the package there is one API-level version gate that matters: **`ConvTranspose1d/2d/3d`
-palettization was added in 0.2.1** and is absent from 0.2.0. The artefacts you produce deploy to
-**Core AI on iOS 27.0 / macOS 27.0**; Core AI does not exist before 27.0 on any platform. The
-optional `coreml` export path targets **`ct.target.iOS26`** and is a strictly smaller feature set
-that rejects most of what this guide teaches.
+**Release scope (2026-10-06 audit).** Current compression behavior is pinned to
+`coreai-opt==0.3.0` (2026-09-25), implementation commit `189612be`. Python is **>=3.11,<3.14**;
+base requirements are **torch>=2.8.0** and **torchao>=0.15.0**, with no upper bounds.
+The source defines tested pairs Torch 2.8.0/2.9.1 with TorchAO 0.15.0, Torch 2.10.0 with
+TorchAO 0.16.0, and Torch 2.11–2.14 with TorchAO 0.18.0. Import-time compatibility warnings
+are not a guarantee that another pair works. A C++ compiler and Ninja are required for vendored
+k-means JIT compilation. `coremltools` is optional: the `coreml` extra requires
+`coremltools>=8.3` and `numpy>=2,<2.4`.
+
+The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includes
+`scikit-learn>=1.7.2`. b3 publishes cp314 wheels, but **this compression package still excludes
+Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
+`torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
+and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
+recorded separately in [the refresh evidence](../../../notes/synthesis/coreai-030-refresh/README.md).
+Published model benchmarks retain their original dates and environments.
+
 
 ⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
 indexed Core AI symbols, and `/documentation/updates/coreai` 404s. There is no first-party compiling
@@ -82,7 +88,7 @@ things `coreai-opt` does, and the two ways of combining them.
 
 ```bash
 pip install coreai-opt                     # or: uv pip install coreai-opt
-pip install 'coreai-opt[coreai]'           # adds coreai-core==1.0.0b2, coreai-torch==0.4.1, scikit-learn
+pip install 'coreai-opt[coreai]'           # adds coreai-core==1.0.0b3, coreai-torch==0.4.3, scikit-learn
 ```
 
 - **A C++ compiler on the host, at runtime.** This is not optional for palettization and it is not
@@ -105,7 +111,7 @@ pip install 'coreai-opt[coreai]'           # adds coreai-core==1.0.0b2, coreai-t
 
 1. [Lookup tables are a different idea, and the ANE is why](#1-lookup-tables-are-a-different-idea-and-the-ane-is-why)
 2. [The palettizer in eight lines](#2-the-palettizer-in-eight-lines)
-3. [`PalettizationSpec`: five fields, and what each one costs](#3-palettizationspec-five-fields-and-what-each-one-costs)
+3. [`PalettizationSpec`: six fields, and what each one costs](#3-palettizationspec-six-fields-and-what-each-one-costs)
 4. [The three schemes, with diagrams](#4-the-three-schemes-with-diagrams)
 5. [⚠️ The ANE rank-5 ceiling](#5-️-the-ane-rank-5-ceiling)
 6. [Sizing: what a bit-width actually buys](#6-sizing-what-a-bit-width-actually-buys)
@@ -136,6 +142,7 @@ pip install 'coreai-opt[coreai]'           # adds coreai-core==1.0.0b2, coreai-t
 statement of the taxonomy:
 
 > ✅ **VERIFIED** — `src/coreai_opt/common.py:110-134`:
+> <!-- coreai-example: {"id": "p9-02-001"} -->
 > ```python
 > _COREML_COMPRESSION_CODES = {"quantization": 3, "palettization": 2, "pruning": 1}
 >
@@ -185,9 +192,9 @@ The capability matrix is where they stop being parallel:
 | Weights | ✅ | ✅ | ✅ |
 | Activations | ✅ | ✗ (weight-only, enforced) | ✗ (weight-only, enforced) |
 | `calibration_mode()` | ✅ (activation ranges) | ✅ (**different meaning** — sensitivities, §8) | ✗ |
-| `training_mode()` / QAT | ✅ | ✗ | ✗ (but see §11.5) |
+| `training_mode()` / schedules | ✅ QAT | ✅ PATSchedule; frozen default strategy | own training loop + `step()` |
 | `step()` | ✅ (QAT schedule) | ✗ | ✅ (**sparsity** schedule) |
-| `mmap_dir` on `finalize` | ✅ (EAGER + CoreAI only) | ✅ (CoreAI only) | ✗ |
+| `mmap_dir` on `finalize` | ✅ (GRAPH/EAGER + CoreAI only) | ✅ (CoreAI only) | ✗ |
 | Presets | `w8` `w4` `w4_per_block` | `w4` `w6` `w8` | **none** |
 
 > ✅ **VERIFIED** — the eager-only constraint for palettization is stated in the docs
@@ -195,7 +202,7 @@ The capability matrix is where they stop being parallel:
 > soft preference; there is no `_graph/` directory under `palettization/` or `pruning/`, only
 > `quantization/_graph/`.
 
-The practical consequence of "eager only" is that palettization uses PyTorch's
+The practical consequence of eager palettization is that palettization uses PyTorch's
 `__torch_function__` protocol to intercept ops rather than `torch.export` + torchao PT2E. That
 means it **tolerates dynamic control flow** that would break graph mode, but it also means it gets
 none of graph mode's conveniences: no Conv+BN folding, no shared-observer logic, and op names in
@@ -259,6 +266,7 @@ Which is exactly how Apple's own export tooling treats it.
 The `apple/coreai-models` LLM exporter has two preset families, and they do not overlap.
 
 > ✅ **VERIFIED** — `python/src/coreai_models/export/presets.py`:
+> <!-- coreai-example: {"id": "p9-02-002"} -->
 > ```python
 > DEFAULT_MACOS_COMPRESSION_PRESET = "4bit"
 > DEFAULT_IOS_COMPRESSION_PRESET   = "4bit_weight_palettized_group32"
@@ -296,7 +304,7 @@ nn.Module ──►  re-author  ──►  KMeansPalettizer(model, config)      
           ──►  torch.export(...).run_decompositions(coreai_torch.get_decomp_table())
           ──►  cast_to_16_bit_precision(exported_program)      ← compress FIRST, cast SECOND
           ──►  coreai_torch.TorchConverter().add_exported_program(...).to_coreai()
-          ──►  automatic frontend module rewrite  ──►  ai_program.save_asset("model.aimodel")   (Part 8)
+          ──►  rewrite already completed inside to_coreai() ──► ai_program.save_asset(Path("model.aimodel"))   (Part 8)
 ```
 
 The property that makes this workable is that **every compressor output is itself a PyTorch
@@ -319,6 +327,7 @@ That is not a stylistic preference either — see §10.2 for what `finalize()` d
 
 ### 2.1 The minimum viable palettization
 
+<!-- coreai-example: {"id": "p9-02-003"} -->
 ```python
 import copy
 import torch
@@ -341,6 +350,7 @@ finalized = palettizer.finalize(backend=ExportBackend.CoreAI)  # default backend
 ```
 
 > ✅ **VERIFIED** — exact signatures, `src/coreai_opt/palettization/kmeans/palettizer.py`:
+> <!-- coreai-example: {"id": "p9-02-004"} -->
 > ```python
 > class KMeansPalettizer(_BasePalettizer, _EagerCompressionComponentBuilderMixin):
 >     def __init__(self, model: nn.Module, config: KMeansPalettizerConfig | None = None)
@@ -370,19 +380,16 @@ Three things about that signature list are worth pausing on, because they differ
    wall-clock lever in the whole palettization workflow and session 325 never mentions it. §7.2.
 2. **`sensitivity_path` appears in `prepare()` *and* `calibration_mode()`.** These are the two ends
    of the same feature: `calibration_mode()` writes the file, `prepare()` reads it. §8.
-3. **There is no `training_mode()` and no `step()`.** Palettization is a post-training technique in
-   this package, full stop. If your 4-bit palettized model has lost too much quality, your options
-   are a coarser bit-width, a finer group size, sensitivity weighting, mixed precision, or moving to
-   QAT-based **quantization** instead — not palettization-aware training.
+3. **0.3.0 adds `training_mode()` and `step()`**, plus `PATSchedule` on module configs and
+   `training_strategy_spec` on `PalettizationSpec`. The default `_DefaultTrainingStrategy` uses
+   frozen one-shot centroids/indices: palettized weights receive no gradient; other parameters can
+   adapt around them. It does **not** automatically learn centroids or perform differentiable
+   palettization. Register a custom `TrainingStrategy` to change that behavior.
 
-> 🔴 **GAP — palettization-aware fine-tuning.** `_BasePalettizer` does not implement
-> `training_mode()`, so a call raises `NotImplementedError` with the base-class message. Whether
-> Apple intends to add differentiable palettization (the `coremltools.optimize.torch` lineage had a
-> `DKMPalettizer`) is **not stated anywhere in the repo, the changelog, or any session**. What would
-> resolve it: a `training_mode()` implementation under `palettization/`, or a changelog entry.
-> **Safe default meanwhile:** if you need trained low-bit weights, use `Quantizer` + `QATSchedule`
-> (guide 01 §11) and accept the affine format, or keep palettization at ≥ 6 bits where PTQ is
-> comfortable.
+`PATSchedule(enable_fake_palettize=N)` postpones activation. When enabled after warm-up, the
+implementation re-clusters warmed-up weights. `step()` advances the schedule at your chosen cadence.
+Source: `palettization/spec/training_strategy.py`, `config/palettization_config.py`, and
+`kmeans/palettizer.py` at `189612be`. Choose the training strategy explicitly when describing results.
 
 ### 2.2 The preset roster, and what `w4()` expands to
 
@@ -410,6 +417,7 @@ is usually not fine. §6 has the arithmetic.
 
 `presets.w4()` expanded by hand, so you can see every field it sets:
 
+<!-- coreai-example: {"id": "p9-02-005"} -->
 ```python
 from coreai_opt.palettization import (
     KMeansPalettizerConfig, ModuleKMeansPalettizerConfig, PalettizationSpec,
@@ -491,6 +499,7 @@ In **eager** mode — which is the only mode palettization has — compression i
 you the fake-palettized value, because they are the same object. If you want the float weights for
 a comparison, `copy.deepcopy` the model **before** `prepare()`, or save the tensors you care about.
 
+<!-- coreai-example: {"id": "p9-02-006"} -->
 ```python
 float_model = copy.deepcopy(model)          # do this FIRST
 prepared = KMeansPalettizer(model, config).prepare(example_inputs)
@@ -508,6 +517,7 @@ prepared = KMeansPalettizer(model, config).prepare(example_inputs)
 ### 2.5 The two default state keys, and the weight-only enforcement
 
 > ✅ **VERIFIED** — `src/coreai_opt/palettization/config/palettization_config.py`:
+> <!-- coreai-example: {"id": "p9-02-007"} -->
 > ```python
 > class OpKMeansPalettizerConfig(WeightOnlyOpValidationMixin, OpCompressionConfig[PalettizationSpec]):
 >     @classmethod
@@ -579,12 +589,13 @@ for Apple's iOS models carry an asterisk for exactly this reason — see §20.
 
 ---
 
-## 3. `PalettizationSpec`: five fields, and what each one costs
+## 3. `PalettizationSpec`: six fields, and what each one costs
 
-`QuantizationSpec` has nine fields. `PalettizationSpec` has five, and every one of them changes the
-shape of the artefact you ship.
+`QuantizationSpec` has nine fields. `PalettizationSpec` has six in 0.3.0, including the training strategy.
+The first five control the representation; the sixth controls training-time behavior.
 
 > ✅ **VERIFIED** — `src/coreai_opt/palettization/spec/spec.py:86-93`:
+> <!-- coreai-example: {"id": "p9-02-008"} -->
 > ```python
 > class PalettizationSpec(CompressionSpec):     # pydantic BaseModel, frozen=True, extra="forbid"
 >     n_bits: Literal[1, 2, 3, 4, 6, 8] = 4
@@ -592,6 +603,7 @@ shape of the artefact you ship.
 >     granularity: PalettizationGranularity = PerTensorGranularity()
 >     cluster_dim: PositiveInt = 1
 >     enable_per_channel_scale: bool = False
+>     training_strategy_spec: TrainingStrategySpec = DefaultTrainingSpec()
 > ```
 > And the factory (`default_weight_palettization_spec()`) returns exactly those defaults:
 > `n_bits=4, lut_qspec=None, PerTensorGranularity(), cluster_dim=1, enable_per_channel_scale=False`.
@@ -600,6 +612,7 @@ Note `frozen=True, extra="forbid"`, inherited from `CompressionSpec`. You cannot
 construction and you cannot typo a field name — `PalettizationSpec(nbits=4)` raises rather than
 silently doing nothing. To vary one field, use pydantic's `model_copy`:
 
+<!-- coreai-example: {"id": "p9-02-009"} -->
 ```python
 base = PalettizationSpec(n_bits=4, granularity=PerGroupedChannelGranularity(axis=0, group_size=32))
 six_bit = base.model_copy(update={"n_bits": 6})
@@ -632,8 +645,10 @@ Quantization has three granularity classes. Palettization has two.
 
 > ✅ **VERIFIED** — `coreai_opt.palettization.spec.__all__` =
 > `PalettizationGranularity, PalettizationSpec, PerGroupedChannelGranularity, PerTensorGranularity,
-> default_weight_palettization_spec`. Registry keys (used in YAML): `"per_tensor"`,
+> default_weight_palettization_spec`, plus `DefaultTrainingSpec`, `TrainingStrategy`, and
+> `TrainingStrategySpec` in 0.3.0. Registry keys (used in YAML): `"per_tensor"`,
 > `"per_grouped_channel"`.
+> <!-- coreai-example: {"id": "p9-02-010"} -->
 > ```python
 > class PerGroupedChannelGranularity(PalettizationGranularity):
 >     axis: int | None = Field(default=None, ge=0, le=1)
@@ -668,6 +683,7 @@ interchangeable. If you import the wrong one into a `PalettizationSpec`, pydanti
 if you import the wrong one into `lut_qspec` (which takes a *quantization* spec), validation raises
 `ValueError`. Prefer qualified imports in any file that touches both:
 
+<!-- coreai-example: {"id": "p9-02-011"} -->
 ```python
 from coreai_opt.palettization.spec import PerTensorGranularity as PalettPerTensor
 from coreai_opt.quantization.spec import PerTensorGranularity as QuantPerTensor
@@ -719,6 +735,7 @@ Two knobs live on `ModuleKMeansPalettizerConfig` rather than on `PalettizationSp
 control the *clustering process* rather than the *format*:
 
 > ✅ **VERIFIED** — `src/coreai_opt/palettization/config/palettization_config.py`:
+> <!-- coreai-example: {"id": "p9-02-012"} -->
 > ```python
 > class ModuleKMeansPalettizerConfig(WeightOnlyModuleValidationMixin,
 >                                    ModuleCompressionConfig[OpKMeansPalettizerConfig, PalettizationSpec]):  # @final
@@ -738,6 +755,7 @@ control the *clustering process* rather than the *format*:
 it is literally the same generic base class, `CompressionConfig[...]`.
 
 > ✅ **VERIFIED** — `src/coreai_opt/palettization/config/palettization_config.py`:
+> <!-- coreai-example: {"id": "p9-02-013"} -->
 > ```python
 > class KMeansPalettizerConfig(CompressionConfig[ModuleKMeansPalettizerConfig]):   # @final
 >     _CONFIG_KEY = "kmeans_palettization_config"
@@ -763,6 +781,7 @@ Everything guide 01 §4–§5 says applies unchanged:
 
 The two mechanisms you will actually reach for:
 
+<!-- coreai-example: {"id": "p9-02-014"} -->
 ```python
 # Compress everything EXCEPT the detector subtree (the SAM3 move — guide 01 §13)
 config = KMeansPalettizerConfig.presets.w4(group_size=32)
@@ -985,6 +1004,7 @@ The shipped code that reproduces that demo does the opposite, and says why in a 
 And the code:
 
 > ✅ **VERIFIED** — `models/sam3/pipeline.py:208-245`:
+> <!-- coreai-example: {"id": "p9-02-015"} -->
 > ```python
 > from coreai_opt import ExportBackend
 > from coreai_opt.palettization import (
@@ -1069,6 +1089,7 @@ singleton dimensions, fold axes together, and get back under 5. Apple's skill gi
 conversions:
 
 > ✅ **VERIFIED** — `references/neural_engine_rules.md`, BC1S conversion helpers:
+> <!-- coreai-example: {"id": "p9-02-016"} -->
 > ```python
 > x = x.permute(0, 2, 1).unsqueeze(2)        # (B, S, D) → (B, D, 1, S)
 > x = x.squeeze(2).permute(0, 2, 1)          # back
@@ -1187,13 +1208,12 @@ guessing at the size. This section is arithmetic.
 
 Apple's compression-exploration skill ships a script that computes the same things:
 
-> 🟡 **RECONSTRUCTED** — `skills/skills/model-compression-exploration/scripts/compression_metrics.py`
-> is documented in `SKILL.md` as providing *"theoretical size, average bitwidth, divisibility,
-> parametrize walk"*, and the skill text names a helper **`check_divisibility()`** used to pre-check
-> group/block compatibility. The **exact signatures of `compute_average_bitwidth`,
-> `check_divisibility`, `extract_layer_specs` were not read** — only the SKILL.md prose that names
-> them. Treat the names as attested and the call shapes as unverified. The output record shape *is*
-> verified — see §15.3.
+> ✅ **SOURCE-INSPECTED** — `compression_metrics.py` at model snapshot `db63a2d8`:
+> `check_divisibility(model, axis, block_size) -> dict[str, tuple[int, int]]`,
+> `extract_layer_specs(prepared, *, quantizer=None) -> list[LayerSpec]`, and
+> `compute_average_bitwidth(specs: list[LayerSpec]) -> float`. Prefer keyword arguments for axis
+> and block size. Package-level `coreai_opt.inspection.bits_per_weight` is the 0.3.0 analytical
+> alternative for prepared eager quantization/palettization.
 
 ### 6.2 Worked: a `[512, 1024]` Linear at every setting
 
@@ -1274,6 +1294,7 @@ using and say so, because the two numbers can differ by more than a bit.
 
 The documented reproducibility recipe:
 
+<!-- coreai-example: {"id": "p9-02-017"} -->
 ```python
 import numpy as np, torch
 
@@ -1321,6 +1342,7 @@ Practical notes:
 - A sensible default is `min(os.cpu_count(), number_of_palettizable_layers)`, and for anything
   bigger than a toy model you should pass it explicitly:
 
+<!-- coreai-example: {"id": "p9-02-018"} -->
 ```python
 import os
 prepared = palettizer.prepare(example_inputs, num_workers=max(1, os.cpu_count() // 2))
@@ -1349,6 +1371,7 @@ palette. It becomes relevant when:
 
 Turn it off, or raise the precision:
 
+<!-- coreai-example: {"id": "p9-02-019"} -->
 ```python
 ModuleKMeansPalettizerConfig(
     op_state_spec={"weight": spec, "in_proj_weight": spec},
@@ -1393,6 +1416,7 @@ each weight by its importance.
 
 ### 8.1 The API
 
+<!-- coreai-example: {"id": "p9-02-020"} -->
 ```python
 import torch.nn.functional as F
 from coreai_opt.palettization import KMeansPalettizer, KMeansPalettizerConfig
@@ -1410,12 +1434,14 @@ with palettizer.calibration_mode(loss_fn=F.cross_entropy,
 
 Reuse on a later run, skipping the calibration pass entirely:
 
+<!-- coreai-example: {"id": "p9-02-021"} -->
 ```python
 prepared_model = palettizer.prepare(example_inputs, sensitivity_path="sensitivities.pt")
 ```
 
 Or save them after the fact:
 
+<!-- coreai-example: {"id": "p9-02-022"} -->
 ```python
 palettizer.save_sensitivities("sensitivities.pt")
 ```
@@ -1526,6 +1552,7 @@ worth doing.** If you are not quantizing activations, leave it `None`.
 > - FP8 dtypes additionally require **symmetric** quantization (inherited from `QuantizationSpec`'s
 >   own `validate_qscheme_for_fp_quant`).
 
+<!-- coreai-example: {"id": "p9-02-023"} -->
 ```python
 import torch
 from coreai_opt.palettization import PalettizationSpec
@@ -1561,6 +1588,7 @@ a different backend. Rank is the recurring constraint in this whole subsystem.
 The full CoreML restriction matrix, for reference:
 
 > ✅ **VERIFIED** — `src/coreai_opt/_utils/export_utils.py:17-47`:
+> <!-- coreai-example: {"id": "p9-02-024"} -->
 > ```python
 > COREML_SUPPORTED_WEIGHT_DTYPES            = {torch.int8, torch.uint8, torch.int4, torch.uint4}
 > COREML_SUPPORTED_ACTIVATION_DTYPES        = {torch.int8, torch.uint8}
@@ -1631,18 +1659,18 @@ package, not of palettization.
 
 > ✅ **VERIFIED** — `finalize(..., mmap_dir=...)` is **CoreAI-only** (`ValueError` otherwise), and
 > *"the files in `mmap_dir` must remain in place for the lifetime of the returned model; removing
-> them invalidates the mmap-backed weights."* On the quantizer side the same option additionally
-> requires all tensors on CPU and an empty target directory; `_validate_mmap_dir_constraints` runs
+> them invalidates the mmap-backed weights."* Both quantizer and palettizer require all tensors on CPU and an empty target directory; `_validate_mmap_dir_constraints` runs
 > before anything else in `finalize()`.
 
-> 🔴 **GAP — the on-disk layout under `mmap_dir`.** No example exists in the docs, and the
-> filenames/safetensors layout were not read. **Safe default:** treat the directory as opaque, keep
-> it alive as long as the model, and do not try to hand-assemble it.
+The 0.3.0 source writes per-weight safetensors files and reloads them through mmap. Both
+quantizer modes and the eager palettizer require CPU tensors and an empty directory; preserve the
+files for the returned model's lifetime. §19.7 in guide 01 runs graph and eager quantizer fixtures.
 
 ### 10.4 The full export chain, end to end
 
 Putting §1.4's diagram into code, with the ordering rule that matters:
 
+<!-- coreai-example: {"id": "p9-02-025"} -->
 ```python
 from pathlib import Path
 import torch
@@ -1744,6 +1772,7 @@ And there is a second, sharper reason for that ordering, which is the gap box in
 > ModuleMagnitudePrunerConfig, OpMagnitudePrunerConfig, PolynomialDecaySchedule,
 > SparsityScheduleBase`.
 >
+> <!-- coreai-example: {"id": "p9-02-026"} -->
 > ```python
 > class MagnitudePruner(_BasePruner, _EagerCompressionComponentBuilderMixin):
 >     def __init__(self, model: nn.Module, config: MagnitudePrunerConfig | None = None)
@@ -1767,6 +1796,7 @@ Note the absences, and note that they are *different* absences from palettizatio
 ### 11.3 `PruningSpec` and the two schemes
 
 > ✅ **VERIFIED** — `src/coreai_opt/pruning/spec/spec.py`:
+> <!-- coreai-example: {"id": "p9-02-027"} -->
 > ```python
 > class PruningSpec(CompressionSpec):
 >     target_sparsity: float = Field(default=0.5, ge=0.0, le=1.0)
@@ -1774,6 +1804,7 @@ Note the absences, and note that they are *different* absences from palettizatio
 >     pruning_algo: type[PruneImplBase] = "default"        # → _MagnitudePruneImpl
 > ```
 > Scheme registry keys `"unstructured"` / `"channel_structured"`:
+> <!-- coreai-example: {"id": "p9-02-028"} -->
 > ```python
 > class Unstructured(PruningScheme):        axis: Literal[None] = None
 > class ChannelStructured(PruningScheme):   axis: int = 0
@@ -1844,6 +1875,7 @@ Which to choose, in one line each:
 > the amount you were counting on. This compounds with the divisibility silent skip in §19.1 —
 > `coreai-opt` has a consistent house style of degrading quietly rather than raising.
 > **Detection:** after `prepare()`, compute realized sparsity yourself:
+> <!-- coreai-example: {"id": "p9-02-029"} -->
 > ```python
 > for name, module in prepared.named_modules():
 >     for attr, plist in getattr(module, "parametrizations", {}).items():
@@ -1859,6 +1891,7 @@ Pruning is the only compressor whose `step()` advances a *sparsity* schedule rat
 schedule. Two implementations ship.
 
 > ✅ **VERIFIED** — `src/coreai_opt/pruning/config/sparsity_schedule.py`:
+> <!-- coreai-example: {"id": "p9-02-030"} -->
 > ```python
 > @SparsityScheduleBase.register("constant")
 > class ConstantSparsitySchedule(SparsityScheduleBase):
@@ -1914,6 +1947,7 @@ Use `ConstantSparsitySchedule` when you want the measurement Apple describes in 
 ### 11.6 The fine-tuning loop
 
 > ✅ **VERIFIED** — `docs/src/pruning/overview.md:56-89`:
+> <!-- coreai-example: {"id": "p9-02-031"} -->
 > ```python
 > from coreai_opt.pruning import MagnitudePruner, MagnitudePrunerConfig, ModuleMagnitudePrunerConfig, PruningSpec
 > from coreai_opt.pruning.config import PolynomialDecaySchedule
@@ -1952,6 +1986,7 @@ the schedule has not yet reached its target — and it is also why you must not 
 ### 11.7 Configuration
 
 > ✅ **VERIFIED** — `src/coreai_opt/pruning/config/magnitude_pruner_config.py`:
+> <!-- coreai-example: {"id": "p9-02-032"} -->
 > ```python
 > class ModuleMagnitudePrunerConfig(WeightOnlyModuleValidationMixin, ModuleCompressionConfig[...]):
 >     sparsity_schedule: SparsityScheduleBase | None = None
@@ -1971,6 +2006,7 @@ YAML top-level key is `magnitude_pruning_config`.
 A per-layer example — prune the deep layers harder than the shallow ones, and leave the first and
 last alone entirely:
 
+<!-- coreai-example: {"id": "p9-02-033"} -->
 ```python
 from coreai_opt.pruning import MagnitudePrunerConfig, ModuleMagnitudePrunerConfig, PruningSpec
 from coreai_opt.pruning.spec import Unstructured
@@ -2028,10 +2064,12 @@ compressed one.
 
 > ✅ **VERIFIED** — `src/coreai_opt/coreai_utils/__init__.py`, `__all__` =
 > `CompressionGranularity, DType, palettize_weights, quantize_weights, sparsify_weights`.
+> <!-- coreai-example: {"id": "p9-02-034"} -->
 > ```python
 > from coreai_opt.coreai_utils import CompressionGranularity, DType
 > from coreai_opt.coreai_utils import quantize_weights, palettize_weights, sparsify_weights
 > ```
+> <!-- coreai-example: {"id": "p9-02-035"} -->
 > ```python
 > class DType(_StrEnum):
 >     INT2, UINT2, INT4, UINT4, INT8, UINT8, FP4_E2M1FN, FP8_E4M3FN, FP8_E5M2, FP8_E8M0FNU
@@ -2040,15 +2078,14 @@ compressed one.
 > class CompressionGranularity(_StrEnum): PER_TENSOR, PER_CHANNEL, PER_BLOCK, PER_GROUPED_CHANNEL
 > ```
 
-> 🟡 **RECONSTRUCTED — `QScheme`'s import path.** `coreai_utils.__init__.__all__` does **not** list
-> `QScheme`, but `docs/src/utils/coreai_compression.md:92-97` writes
-> `from coreai_opt.coreai_utils import (..., QScheme, ...)`. Either the docs are stale or the
-> package re-exports it implicitly. **Safe default:** import it from
-> `coreai_opt.coreai_utils.common`, which is where it is defined, and which works either way.
+> ✅ **SOURCE-INSPECTED (0.3.0)** — `QScheme` is defined in
+> `coreai_opt.coreai_utils.common` and is not re-exported by `coreai_utils.__init__`.
+> The tagged documentation's package-level import is stale. Import it from `common`.
 
 Only constants consumed by a specific op set are candidates:
 
 > ✅ **VERIFIED** — `coreai_utils/passes/__init__.py`:
+> <!-- coreai-example: {"id": "p9-02-036"} -->
 > ```python
 > _OPS_WEIGHT_NEED_COMPRESSION = frozenset({
 >     "coreai.batch_matmul", "coreai.conv2d",
@@ -2064,6 +2101,7 @@ your problem is an embedding table.
 ### 12.1 `palettize_weights`
 
 > ✅ **VERIFIED** — `coreai_utils/passes/weight_palettization.py:63-76`:
+> <!-- coreai-example: {"id": "p9-02-037"} -->
 > ```python
 > def palettize_weights(
 >     coreai_program: AIProgram,
@@ -2100,6 +2138,7 @@ Differences from the PyTorch path worth knowing:
 
 Entry point:
 
+<!-- coreai-example: {"id": "p9-02-038"} -->
 ```python
 from pathlib import Path
 from coreai.authoring import AIModelAsset
@@ -2132,6 +2171,7 @@ palettizer cannot reach.
 ### 12.2 `sparsify_weights` — the pruning features the PyTorch path does not have
 
 > ✅ **VERIFIED** — `coreai_utils/passes/weight_sparsification.py:55-64`:
+> <!-- coreai-example: {"id": "p9-02-039"} -->
 > ```python
 > def sparsify_weights(
 >     coreai_program: AIProgram,
@@ -2227,6 +2267,7 @@ because it explains an otherwise puzzling line in the source:
 
 ### 13.2 The complete flow
 
+<!-- coreai-example: {"id": "p9-02-040"} -->
 ```python
 import copy
 import torch
@@ -2437,24 +2478,18 @@ The algorithm in words:
 Step 4 is not optional and is the step people skip. A per-layer sensitivity table is a *heuristic
 ranking*, not an additive error model.
 
-> 🔴 **GAP — no verified helper API for the greedy search.** `docs/src/utils/mixed_precision.md`
-> documents the workflow and `docs/src/examples/mixed_precision_palettization.md` reports its
-> results, but **we did not read the page's code listings**, and no function name for the sweep or
-> the greedy walk appears in `coreai_opt.__all__`, `coreai_opt.palettization.__all__`, or any
-> package `__init__` we verified. The top-level public surface is
-> `{CoreMLExportError, ExportBackend, __version__}` plus the three technique subpackages — there is
-> no `mixed_precision` module in the package tree listing.
-> **What would resolve it:** `make api-list` output, or reading
-> `docs/src/utils/mixed_precision.md` end to end.
-> **Safe default meanwhile:** write the twenty lines yourself (§14.3). Everything the loop needs —
-> per-module config overrides, `prepare()` without `finalize()`, a scoreable torch model — is
-> verified API. **Do not invent a `coreai_opt.mixed_precision.*` import; if you see one in
-> circulation, it is not from this corpus.**
+> ✅ **SOURCE-INSPECTED (0.3.0)** — `docs/src/utils/mixed_precision.md` explicitly labels the
+> sensitivity and greedy recipe algorithms as pseudocode. There is no public
+> `coreai_opt.mixed_precision` module or greedy-search function in the release package.
+> Implement the sweep with per-module configs and prepared models (§14.3), and use
+> `coreai_opt.inspection.bits_per_weight` for supported eager quantization/palettization models
+> (§15.6). The BPW utility does not support graph quantization, pruning, or finalized models.
 
 ### 14.3 Writing the sweep yourself
 
 Every primitive this needs is verified. The only thing you supply is a scoring function.
 
+<!-- coreai-example: {"id": "p9-02-041"} -->
 ```python
 """Per-layer sensitivity sweep + greedy bit assignment for palettization.
 
@@ -2579,6 +2614,7 @@ def greedy_assign(cells: list[Cell], names: list[str], target_bpw: float) -> dic
 
 Driving it:
 
+<!-- coreai-example: {"id": "p9-02-042"} -->
 ```python
 baseline_score = score(model)
 names = palettizable_modules(model)
@@ -2681,6 +2717,7 @@ kmeans_palettization_config:
     'lm_head': null
 ```
 
+<!-- coreai-example: {"id": "p9-02-043"} -->
 ```python
 from coreai_opt.palettization import KMeansPalettizerConfig
 config = KMeansPalettizerConfig.from_yaml("mixed_4bit_8bit.yaml")
@@ -2735,6 +2772,7 @@ diagnosis is worth repeating here because the *fix* is a mixed-precision fix.
 
 The mechanism is the one this guide has used repeatedly:
 
+<!-- coreai-example: {"id": "p9-02-044"} -->
 ```python
 # The SAM3 move: compress everything, leave one subtree alone.
 config = KMeansPalettizerConfig.presets.w4(group_size=32)
@@ -2914,6 +2952,17 @@ workflow:
 
 ---
 
+### 15.6 Inspection and analytical BPW in 0.3.0
+
+`ModelInspector(model, example_inputs, execution_mode, compressor=None, dynamic_shapes=None,
+export_with_no_grad=True)` requires an explicit execution mode. `format_summary(colorize=None)`
+accepts the colorization keyword. Use the mode you plan to compress in; graph and eager op names
+differ. `bits_per_weight(prepared)` returns `BitsPerWeightResult(bpw, per_module_map, total_bits,
+total_weights)` for prepared eager quantization/palettization. It counts bias, norms, skipped
+parameters and buffers at full precision, including non-persistent buffers except its internal
+prepared marker. It rejects unsupported/pruned models; it is not a file-size or runtime-speed
+measurement. Source: `inspection/model_inspector.py` and `inspection/bits_per_weight.py` at `189612be`.
+
 ## 16. Apple's PSNR acceptance gates
 
 There is no Apple documentation page titled "how good does my compressed model have to be". There
@@ -2977,6 +3026,7 @@ deployment expectation — and the difference is small enough not to matter in p
 
 ### 16.3 Using them
 
+<!-- coreai-example: {"id": "p9-02-045"} -->
 ```python
 import torch
 
@@ -3377,6 +3427,7 @@ The big one.
 >
 > **Pre-flight it** — the `check_divisibility` implementation in §14.3 is 12 lines and catches every
 > instance. Or verify after the fact:
+> <!-- coreai-example: {"id": "p9-02-046"} -->
 > ```python
 > prepared = palettizer.prepare(example_inputs, num_workers=8)
 > n_palettized = sum(
@@ -3516,6 +3567,7 @@ Stated plainly, because absence of a number is information:
 
 ### 21.1 Imports
 
+<!-- coreai-example: {"id": "p9-02-047"} -->
 ```python
 # Palettization
 from coreai_opt.palettization import (
@@ -3524,8 +3576,9 @@ from coreai_opt.palettization import (
 from coreai_opt.palettization.spec import (
     PalettizationGranularity, PerGroupedChannelGranularity,
     PerTensorGranularity,                    # ⚠️ NOT the quantization one
-    default_weight_palettization_spec,
+    default_weight_palettization_spec, DefaultTrainingSpec, TrainingStrategy, TrainingStrategySpec,
 )
+from coreai_opt.palettization.config import PATSchedule
 
 # Pruning
 from coreai_opt.pruning import (
@@ -3567,6 +3620,7 @@ from coreai_opt.casting import cast_to_16_bit_precision
 
 ### 21.3 Field cheat-sheet
 
+<!-- coreai-example: {"id": "p9-02-048"} -->
 ```python
 PalettizationSpec(
     n_bits=4,                    # {1, 2, 3, 4, 6, 8} — NO 5, NO 7
@@ -3574,12 +3628,14 @@ PalettizationSpec(
     granularity=PerTensorGranularity(),   # or PerGroupedChannelGranularity(axis={0,1}, group_size=N)
     cluster_dim=1,               # >1 ⇒ vector; requires enable_fast_kmeans_mode=False
     enable_per_channel_scale=False,       # ⚠️ True ⇒ rank-6 LUT ⇒ ANE rejects ⇒ GPU fallback
+    training_strategy_spec=DefaultTrainingSpec(),  # frozen one-shot centroids/indices
 )
 
 ModuleKMeansPalettizerConfig(
     op_state_spec={"weight": spec, "in_proj_weight": spec},   # BOTH keys
     enable_fast_kmeans_mode=True,        # rounds weights to `rounding_precision` decimals first
     rounding_precision=4,
+    pat_schedule=PATSchedule(enable_fake_palettize=0),  # step() controls activation
 )
 
 PruningSpec(
@@ -3632,7 +3688,7 @@ PolynomialDecaySchedule(
 
 ### 22.1 Primary — shipped source
 
-- **`apple/coreai-optimization`** at `main`, HEAD `cd95cb2`, package `coreai-opt` **0.2.1**. Files
+- **`apple/coreai-optimization`** at release `189612be`, package `coreai-opt` **0.3.0**. Files
   read for this guide: `palettization/{__init__,base_palettizer}.py`,
   `palettization/spec/{__init__,spec,granularity,fake_palettize}.py`,
   `palettization/config/{__init__,palettization_config}.py`,
@@ -3699,7 +3755,8 @@ For the record, and so that a future editor does not "fix" an absence into an in
 - **No `coreai_opt.mixed_precision` module.** The package tree has `quantization/`, `palettization/`,
   `pruning/`, `casting/`, `inspection/`, `coreai_utils/`, `config/`, `deps/`, `_utils/`. There is no
   mixed-precision subpackage in it. §14's sweep is code you write.
-- **No `KMeansPalettizer.training_mode()`**, no palettization-aware training, no `DKMPalettizer`.
+- **No built-in differentiable centroid training by default**, and no `DKMPalettizer`;
+  0.3.0 provides training strategies and PATSchedule (§2.1).
 - **No pruning presets.** `MagnitudePrunerConfig.presets` does not exist.
 - **No `n_bits=5` or `n_bits=7`.**
 - **No claim that the Core AI runtime exploits sparsity.** §11.8 is a declared gap, not an omission.
@@ -3713,14 +3770,14 @@ Every 🔴 GAP in this guide, in one place, so they can be closed by someone wit
 
 | § | Unknown | What would resolve it |
 |---|---|---|
-| 2.1 | Whether palettization-aware training is planned | a `training_mode()` under `palettization/`, or a changelog entry |
+| 2.1 | Resolved: learned centroids require a custom training strategy | 0.3.0 default freezes centroids/indices; see `training_strategy.py` |
 | 4.3 | Device latency and compute-unit placement for `cluster_dim > 1` | timing two artefacts under `from_preferred_compute_unit_kind` |
 | 5.3 | The precise axis accounting behind the rank-6 LUT | an MLIR dump of the lowered program, or an `mps.dequantize_lut` doc page |
 | 8.4 | The quality delta from sensitivity-weighted k-means in `coreai-opt` | an ablation on `edsr` or `resnet50` |
-| 10.3 | The on-disk layout under `mmap_dir` | reading the directory after a `finalize(mmap_dir=...)` |
+| 10.3 | Resolved: per-weight safetensors and mmap reload | `_utils/export_utils.py` at `189612be`; native GRAPH/EAGER fixtures |
 | 11.8 | Whether Core AI exploits unstructured sparsity for size or speed | `.aimodel` size + on-device latency, 0% vs 70% sparse |
 | 12.2 | Whether Apple silicon exploits `n:m` or block sparsity | same measurement, with `n_m_ratio=(2,4)` |
-| 14.2 | Whether a helper API exists for the greedy mixed-precision search | `make api-list`, or reading `docs/src/utils/mixed_precision.md` |
+| 14.2 | Resolved: greedy search is documentation pseudocode, not a public helper | `docs/src/utils/mixed_precision.md` and package tree at `189612be` |
 | 15.5 | The Debugger's full list of similarity metrics | the metric picker in Xcode 27 |
 | 17.3 | Whether every utility export script exposes `--dtype` | `--help` on each script in `apple/coreai-models` |
 
@@ -3738,4 +3795,4 @@ depends on.*
 
 [^destructive-finalize-scope]: The pinned k-means palettizer docstring limits this behavior to its
     Core AI backend:
-    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/palettization/kmeans/palettizer.py#L357-L425).
+    [`KMeansPalettizer.finalize`](https://github.com/apple/coreai-optimization/blob/189612be60bc1d5cca9b73ad8811660f738c637d/src/coreai_opt/palettization/kmeans/palettizer.py).

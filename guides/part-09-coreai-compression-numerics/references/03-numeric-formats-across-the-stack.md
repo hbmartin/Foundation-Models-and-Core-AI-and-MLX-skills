@@ -2,17 +2,23 @@
 
 **Part 9 · Core AI: compression and numeric formats · Reference 03**
 
-**Version floor.** Four independent version stories collide in this guide and confusing them is the
-single most common way to lose a week. **Core AI** — `AIModel`, `NDArray`, `NDArray.ScalarType`,
-`AIModelAsset.Summary` — is **27.0 and only 27.0** (iOS 27.0 / iPadOS 27.0 / tvOS 27.0 /
-visionOS 27.0 / watchOS 27.0, plus macOS 27.0 which Apple's own symbol pages omit; see §3.1).
-**`coreai-opt`** is host-side Python, verified here against **0.2.1, released 2026-07-02**, requiring
-Python ≥ 3.11 < 3.14 and torch ≥ 2.8.0 ≤ 2.11.0. **Metal Performance Primitives TensorOps** is a
-**26.x** feature with a per-point-release ladder — **26.0** introduction, **26.1** bfloat, **26.3**
-cooperative tensors as matmul inputs, **26.4** int4/int8 tensors — while the shipped Xcode 26.6 SDK
-annotates the deployment macro as **26.2**; both facts are true and they are about different things
-(§5.2). **MLX** tracks its own release cadence and gates its accelerated kernels on macOS/iOS
-**26.2** plus a GPU generation check. There is no "26.4 Core AI" and no "iOS 20 / macOS 17."
+**Release scope (2026-10-06 audit).** Current compression behavior is pinned to
+`coreai-opt==0.3.0` (2026-09-25), implementation commit `189612be`. Python is **>=3.11,<3.14**;
+base requirements are **torch>=2.8.0** and **torchao>=0.15.0**, with no upper bounds.
+The source defines tested pairs Torch 2.8.0/2.9.1 with TorchAO 0.15.0, Torch 2.10.0 with
+TorchAO 0.16.0, and Torch 2.11–2.14 with TorchAO 0.18.0. Import-time compatibility warnings
+are not a guarantee that another pair works. A C++ compiler and Ninja are required for vendored
+k-means JIT compilation. `coremltools` is optional: the `coreml` extra requires
+`coremltools>=8.3` and `numpy>=2,<2.4`.
+
+The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includes
+`scikit-learn>=1.7.2`. b3 publishes cp314 wheels, but **this compression package still excludes
+Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
+`torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
+and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
+recorded separately in [the refresh evidence](../../../notes/synthesis/coreai-030-refresh/README.md).
+Published model benchmarks retain their original dates and environments.
+
 
 ⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
 indexed Core AI symbols, and `/documentation/updates/coreai` 404s. Unlike Parts 1–6, there is no
@@ -252,6 +258,7 @@ they were left off the slide. Take the source, not the slide.
 
 > ✅ **VERIFIED** — `apple/coreai-optimization`, `src/coreai_opt/quantization/spec/spec.py:376-390`,
 > `QuantizationSpec.SUPPORTED_DTYPES`:
+> <!-- coreai-example: {"id": "p9-03-001"} -->
 > ```python
 > torch.int8,  torch.int4,  torch.int2,
 > torch.uint8, torch.uint4, torch.uint2,
@@ -355,6 +362,7 @@ and whether a layer gets compressed at all.
 
 > ✅ **VERIFIED** — `coreai_opt/quantization/spec/granularity.py`, registry keys `"per_tensor"`,
 > `"per_channel"`, `"per_block"`:
+> <!-- coreai-example: {"id": "p9-03-002"} -->
 > ```python
 > PerTensorGranularity()                              # axis: Literal[None] = None
 > PerChannelGranularity(axis: int | None = None)      # negative axes allowed
@@ -390,12 +398,14 @@ Palettization is not quantization with a small dtype. It is a codebook: `n_bits`
 of centroids, and the stored per-weight value is an **index**, not a number.
 
 > ✅ **VERIFIED** — `coreai_opt/palettization/spec/spec.py:86-93`:
+> <!-- coreai-example: {"id": "p9-03-003"} -->
 > ```python
 > n_bits: Literal[1, 2, 3, 4, 6, 8] = 4
 > lut_qspec: QuantizationSpec | None = None
 > granularity: PalettizationGranularity = PerTensorGranularity()
 > cluster_dim: PositiveInt = 1
 > enable_per_channel_scale: bool = False
+> training_strategy_spec: TrainingStrategySpec = DefaultTrainingSpec()
 > ```
 > `_SUPPORTED_LUT_DTYPES = {torch.int8, torch.uint8, torch.float8_e4m3fn, torch.float8_e5m2}`.
 > Granularity registry keys are `"per_tensor"` and `"per_grouped_channel"` — **there is no
@@ -445,6 +455,7 @@ a lookup table decides the *compute* format of the operation that consumes it.
 `nn.Module`. It has its own dtype enum, and it is not identical to `SUPPORTED_DTYPES`:
 
 > ✅ **VERIFIED** — `coreai_opt/coreai_utils/common.py`:
+> <!-- coreai-example: {"id": "p9-03-004"} -->
 > ```python
 > class DType(_StrEnum):
 >     INT2, UINT2, INT4, UINT4, INT8, UINT8,
@@ -466,6 +477,7 @@ Three differences from the PyTorch-level API worth internalising:
    keep them in separate registries.
 3. **Only constants feeding five ops are candidates.** ✅ VERIFIED,
    `coreai_utils/passes/__init__.py`:
+   <!-- coreai-example: {"id": "p9-03-005"} -->
    ```python
    _OPS_WEIGHT_NEED_COMPRESSION = frozenset({
        "coreai.batch_matmul", "coreai.conv2d",
@@ -513,6 +525,7 @@ the countermeasure:
 
 **Two checks that catch it:**
 
+<!-- coreai-example: {"id": "p9-03-006"} -->
 ```python
 # 1. Before compressing: does every target weight divide by the block size?
 #    (Apple's skill ships check_divisibility(); this is the same test written out.)
@@ -531,6 +544,7 @@ def report_divisibility(model: nn.Module, block_size: int, axis: int = 1) -> Non
 report_divisibility(float_model, block_size=32, axis=1)
 ```
 
+<!-- coreai-example: {"id": "p9-03-007"} -->
 ```python
 # 2. After compressing: did the size actually move?
 #    avg_bitwidth = sum(numel_i * bits_i) / sum(numel_i)
@@ -559,6 +573,7 @@ If you target `ExportBackend.CoreML` instead of `ExportBackend.CoreAI`, four of 
 most of the interesting granularities disappear.
 
 > ✅ **VERIFIED** — `src/coreai_opt/_utils/export_utils.py:17-47`:
+> <!-- coreai-example: {"id": "p9-03-008"} -->
 > ```python
 > COREML_SUPPORTED_WEIGHT_DTYPES     = {torch.int8, torch.uint8, torch.int4, torch.uint4}
 > COREML_SUPPORTED_ACTIVATION_DTYPES = {torch.int8, torch.uint8}
@@ -595,6 +610,7 @@ backend."* ✅ VERIFIED, `docs/src/utils/joint_compression.md`.
 it runs on the `ExportedProgram` rather than the `nn.Module`.
 
 > ✅ **VERIFIED** — `src/coreai_opt/casting/__init__.py`:
+> <!-- coreai-example: {"id": "p9-03-009"} -->
 > ```python
 > from coreai_opt.casting import (
 >     cast_to_16_bit_precision,   # FP32→FP16 and INT32/INT64→INT16
@@ -622,6 +638,11 @@ of "why is this op still fp32" confusion:
 need to be updated so that input tensors are passed as `fp16`/`int16`."* ✅ VERIFIED, same file. If
 your Swift `NDArray(shape:scalarType:)` still says `.float32` after you added a cast pass, you have
 a shape-and-type mismatch waiting at `run()`.
+
+0.3.0 adds `ignored_ops` to the FP casting helpers: supply op overloads/packets, a collection,
+or a node predicate to keep sensitive operations in fp32 with boundary casts. Automatic dynamic
+activation calibration is a later main change (`apple/coreai-optimization#117`, merged 2026-10-02),
+not released 0.3.0 behavior. Casting returns the same modified ExportedProgram.
 
 ### 2.10 The complete `coreai-opt` emit set, on one card
 
@@ -844,6 +865,7 @@ you cannot just reshape it away:
 The `coreai-torch` type map corroborates the whole column, which is a useful independent check:
 
 > ✅ **VERIFIED** — `apple/coreai-torch`, `coreai_torch/_type_mapping.py`, `TORCH_TO_COREAI_DTYPE`:
+> <!-- coreai-example: {"id": "p9-03-010"} -->
 > ```python
 > torch.bool          -> IntegerType.get_signless(1)
 > torch.uint1/2/3/4/6 -> IntegerType.get_unsigned(1/2/3/4/6)
@@ -866,6 +888,7 @@ The `coreai-torch` type map corroborates the whole column, which is a useful ind
 ### 3.5 ⚠️ 64-bit types are narrowed on the way in
 
 > ⚠️ **SILENT NARROWING.** ✅ VERIFIED — `coreai_torch/_utils.py:305`:
+> <!-- coreai-example: {"id": "p9-03-011"} -->
 > ```python
 > # Narrow int64/fp64 to int32/fp32 since coreai does not handle 64-bit types.
 > _NARROW_TORCH_DTYPE: dict[torch.dtype, torch.dtype] = {
@@ -879,6 +902,7 @@ The `coreai-torch` type map corroborates the whole column, which is a useful ind
 > converter will not produce them, and the comment says why in one line. If you have an int64 index
 > tensor with values above `INT32_MAX`, conversion narrows it and the overflow is yours. The same
 > file already carries an explicit clamp for one instance of this class of bug:
+> <!-- coreai-example: {"id": "p9-03-012"} -->
 > ```python
 > # INT32_MAX overflow to negative (e.g. INT64_MAX → -1), causing coreai.slice_ to compute a wrong
 > # output shape. Clamp to INT32_MAX.
@@ -971,6 +995,7 @@ Concrete instances of this class already documented in the corpus:
 > ✅ **VERIFIED** — `apple/coreai-models`, `skills/model-authoring/references/common_issues.md`:
 > `nn.functional.silu(x)` lowers to `mps.cast(→f32) + mps.swish(f32) + mps.cast(→f16)` — *"3 invalid
 > ops on NE"* — and the prescribed fix is to write the activation out by hand:
+> <!-- coreai-example: {"id": "p9-03-013"} -->
 > ```python
 > # instead of: gate = torch.nn.functional.silu(gate_pre)
 > gate = gate_pre * torch.sigmoid(gate_pre)
@@ -1058,11 +1083,13 @@ configuration looks like in practice — and note that **the iOS path uses palet
 macOS path uses quantization**. They are not the same technique with different parameters.
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `python/src/coreai_models/export/presets.py`:
+> <!-- coreai-example: {"id": "p9-03-014"} -->
 > ```python
 > DEFAULT_MACOS_COMPRESSION_PRESET = "4bit"
 > DEFAULT_IOS_COMPRESSION_PRESET   = "4bit_weight_palettized_group32"
 > ```
 > **macOS `"4bit"`** — a `torch_quantization_config`:
+> <!-- coreai-example: {"id": "p9-03-015"} -->
 > ```python
 > {"execution_mode": "eager",
 >  "global_config": {"op_state_spec": {"weight": {"dtype": "int4",
@@ -1075,6 +1102,7 @@ macOS path uses quantization**. They are not the same technique with different p
 > `[num_weight_sets, num_experts, output_dims, input_dims]` and the global 2-D spec cannot express it.
 >
 > **iOS `"4bit_weight_palettized_group8"` / `"…_group32"`** — a `kmeans_palettization_config`:
+> <!-- coreai-example: {"id": "p9-03-016"} -->
 > ```python
 > {"n_bits": 4, "granularity": {"type": "per_grouped_channel", "axis": 0, "group_size": 8 or 32}}
 > ```
@@ -1443,6 +1471,7 @@ understand what the Core AI runtime must also be doing internally.
 > ```
 > `*` marks the default when unspecified. Mirrored in Python at
 > `mlx.nn.layers.quantized._defaults_for_mode`:
+> <!-- coreai-example: {"id": "p9-03-017"} -->
 > ```python
 > mode_defaults = {"affine": (64, 4), "mxfp4": (32, 4), "nvfp4": (16, 4), "mxfp8": (32, 8)}
 > ```
@@ -1503,6 +1532,7 @@ The packing convention also explains a repr oddity you will hit immediately:
 ### 6.3 Python signatures
 
 > ✅ **VERIFIED** — `mlx/python/src/ops.cpp`, the `nb::sig` strings, verbatim:
+> <!-- coreai-example: {"id": "p9-03-018"} -->
 > ```python
 > def quantize(w: array, /, group_size: Optional[int] = None, bits: Optional[int] = None,
 >              mode: str = 'affine', *, global_scale: Optional[array] = None,
@@ -1747,7 +1777,7 @@ four must pass.
 > out of the whole NAX path** — the only precision control available, and it is all-or-nothing.
 > Complex dtypes are excluded outright.
 >
-> ⚠️ Upstream PR #3883 ("Warn once when float32 ops silently run at TF32 precision") existed
+> ⚠️ `ml-explore/mlx#3883` ("Warn once when float32 ops silently run at TF32 precision") existed
 > because users are being surprised by this — it was **closed unmerged 2026-08-03**, so as of that
 > check no runtime warning exists. **This is the MLX analogue of the Core AI silent-fallback
 > problem**: a precision reduction that produces correct-looking numbers and announces itself nowhere.
@@ -2445,7 +2475,7 @@ reason §5 and §6 can be stated flatly.
 | `MetalPerformancePrimitives.framework/Headers/` in the **Xcode 26.6 SDK (Build 17F113)** — ~14,300 lines including ~320 lines of Apple prose. `MPPTensorOpsTypes.h`, `MPPTensorOpsMatMul2d.h`, `MPPTensorOpsAvailability.h`, `MPPTensorOpsUtility.h`, `MPPTensorOpsMatMul2dImpl.h` | The 26.x baseline dtype set (§5.1–5.3) and availability macro (§5.4); not evidence about OS 27 additions |
 | Xcode 27 `Metal.framework/Headers/MTLTensor.h` and `MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsTypes.h` | int2/FP4/FP8/E8M0 datatypes, auxiliary scale-plane descriptors and shader-side TensorOps mappings (§5.1–5.5)[^xcode27-scale-planes] |
 | The Metal toolchain's language headers (`metal_tensor`, `metal_cooperative_tensor`, `__exec/units.h`), cryptex-mounted — locate with `xcrun -sdk macosx --find metal`, **never hardcode the path** | `metal::int4b_format`, the tensor/cooperative-tensor types |
-| `apple/coreai-optimization` (`coreai-opt` **0.2.1**, 2026-07-02, plus some behaviour from `main` at `cd95cb2`) | The whole of §2 |
+| `apple/coreai-optimization` at `189612be` (`coreai-opt` **0.3.0**, 2026-09-25) | The whole of §2 |
 | `apple/coreai-torch` (`_type_mapping.py`, `_utils.py`, converter constant emission) | §3.4, §3.5, §4.2 |
 | `ml-explore/mlx` (shallow clone, HEAD `973e27f`): `quantized_nax.h`, `fp_quantized_nax.h`, `fp8.h`, `fp4.h`, `steel/gemm/nax.h`, `device.cpp`, `quantized.cpp`, `matmul.cpp`, `utils.h`, `kernels/CMakeLists.txt` | The whole of §6 |
 | `ml-explore/mlx-lm` (`utils.py`, `convert.py`, `quant/`) | §6.6 |
@@ -2489,7 +2519,7 @@ behaviour surprises people, not as documentation.
 | Our own earlier register said "TensorOps availability is **26.2**"; the M5 talk's ladder is 26.0 → 26.1 → 26.3 → 26.4 and **never mentions 26.2** | **Report both, they are about different things** (§5.4). Do not print a single blanket version |
 | Session 325 says the SAM3 encoders use per-channel scales; the shipped code sets `enable_per_channel_scale=False` because `True` produces rank-6 LUTs the ANE rejects | **Shipped code wins**, and both readings of the discrepancy are stated rather than smoothed over (§4.2) |
 | Apple's framework page lists macOS for Core AI; every symbol page omits it | **Docs bug.** Treat macOS 27 as supported and flag the inconsistency (§3.1) |
-| `coreai_opt.coreai_utils.__all__` omits `QScheme`, but the docs import it from the package root | **Unresolved.** Import it from `coreai_opt.coreai_utils.common` if the package-root import fails |
+| `coreai_opt.coreai_utils.__all__` omits `QScheme`, but the docs import it from the package root | **Resolved in 0.3.0 source.** Import from `coreai_opt.coreai_utils.common`; it is not re-exported |
 
 ### 13.3 Open gaps declared in this guide
 
@@ -2525,7 +2555,9 @@ behaviour surprises people, not as documentation.
 
 ---
 
-*Last verified 2026-07-27 against: `coreai-opt` 0.2.1 · `apple/coreai-models` and `apple/coreai-torch`
+*Compression APIs audited 2026-10-06 against `coreai-opt` 0.3.0 at `189612be`, converter 0.4.3
+at `b51fd006` and model recipes at `db63a2d8`. SDK, MLX and published measurements retain the
+individually cited historical snapshots; this audit does not remeasure those benchmarks.*
 at the commits recorded in the research corpus · `ml-explore/mlx` HEAD `973e27f` · the Xcode 26.6
 baseline and Xcode 27 Metal/MPP headers · Apple's Core AI and Metal documentation pages · WWDC26
 sessions 325 and 330 · Apple Tech Talk 111432.*

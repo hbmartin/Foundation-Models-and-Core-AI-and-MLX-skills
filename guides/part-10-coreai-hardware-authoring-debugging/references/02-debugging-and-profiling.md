@@ -82,7 +82,7 @@ why **asset provenance** is a debugging concern and not a bookkeeping one.
   on its own, because other apps competing for CPU, GPU or Neural Engine distort the trace.
 - **Core AI Debugger**, from `https://developer.apple.com/core-ai-debugger/` (Apple Account sign-in,
   free registration, developer agreement). It is not bundled with Xcode.
-- A Python environment with `coreai-torch` ≥ 0.4.1 if you intend to produce reference data.
+- A Python environment with `coreai-torch==0.4.3` if you intend to produce reference data.
 
 ---
 
@@ -1537,7 +1537,7 @@ run.
 
 ```python
 # Produce the reference run the Core AI Debugger will load as Configuration B.
-# Requires coreai-torch >= 0.4.1. Set USE_LOCAL_COREAI=1 and ENABLE_DEBUG_INFO=1
+# Current profile: coreai-torch 0.4.3 / coreai-core b3. Set USE_LOCAL_COREAI=1 and ENABLE_DEBUG_INFO=1
 # in the shell before running (see §7.3).
 from pathlib import Path
 
@@ -2842,8 +2842,8 @@ Strip to ship, never to debug.
 | Debug gauge, Core AI Instruments template | Xcode 27 |
 | Core AI Debugger host | **macOS 27+** |
 | Core AI Debugger paired devices | iOS 27+, iPadOS 27+, macOS 27+ (no visionOS/tvOS/watchOS) |
-| `save_intermediates`, `strip_debug_info`, `coreai_torch.debugging` | `coreai-torch` 0.4.1+, `coreai-core` 1.0.0b2 |
-| `ModelInspector` | `coreai-opt` 0.2.1 |
+| `save_intermediates`, `strip_debug_info`, `coreai_torch.debugging` | `coreai-torch` 0.4.3, `coreai-core` 1.0.0b3 |
+| `ModelInspector` | `coreai-opt` 0.3.0 |
 | AOT (`coreai-build`) target devices | A17 Pro+, M1+ Mac, M2+ Vision Pro only |
 
 **Event categories**

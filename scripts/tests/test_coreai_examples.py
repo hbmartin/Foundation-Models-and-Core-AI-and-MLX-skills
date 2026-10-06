@@ -35,6 +35,10 @@ class CoreAIExampleTests(unittest.TestCase):
 
     def test_fail_closed(self):
         for text in ('```python\nx = (\n```', '```python\nx=1',
+                     '```python extra\nx=1\n```',
+                     '> ```python\n> x=1\n```',
+                     '<!-- coreai-example: {"id":"bad", "historical":{"coreai-torch":"0.4.3","coreai-core":"1.0.0b3"}} -->\n```python\np.optimize()\n```',
+                     '<!-- coreai-example: {"id":"same"} -->\n```python\nx=1\n```\n<!-- coreai-example: {"id":"same"} -->\n```python\nx=2\n```',
                      '<!-- coreai-example: nope -->\n```python\nx=1\n```',
                      '<!-- coreai-example: {"id":"bad", "historical":{}} -->\n```python\nx=1\n```',
                      '<!-- coreai-example: {"id":"bad"} -->\ntext\n```python\nx=1\n```',

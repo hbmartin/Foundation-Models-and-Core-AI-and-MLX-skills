@@ -2,16 +2,23 @@
 
 **Part 9 · Core AI: compression and numeric formats · Reference 01**
 
-**Version floor.** Everything in this guide is host-side Python. The package is **`coreai-opt`**
-(import `coreai_opt`), and the version this guide is verified against is **0.2.1, released
-2026-07-02** — with a handful of behaviours taken from `main` at commit `cd95cb2`, which is
-**newer than 0.2.1 and not in any release**; those are marked inline. `0.2.0` was the initial
-release, **2026-06-08**. Host requirements are hard: **Python ≥ 3.11, < 3.14**; **torch ≥ 2.8.0,
-≤ 2.11.0**; **torchao ≥ 0.15.0, ≤ 0.17.0**; macOS or Linux; and a **C++ toolchain present at
-runtime**. The artefacts you produce deploy to **Core AI on iOS 27.0 / macOS 27.0** — Core AI does
-not exist before 27.0, on any platform. The optional `coreml` path targets **`ct.target.iOS26`**
-and is a strictly smaller feature set. There is no "26.4 Core AI"; if you read that anywhere, it is
-wrong.
+**Release scope (2026-10-06 audit).** Current compression behavior is pinned to
+`coreai-opt==0.3.0` (2026-09-25), implementation commit `189612be`. Python is **>=3.11,<3.14**;
+base requirements are **torch>=2.8.0** and **torchao>=0.15.0**, with no upper bounds.
+The source defines tested pairs Torch 2.8.0/2.9.1 with TorchAO 0.15.0, Torch 2.10.0 with
+TorchAO 0.16.0, and Torch 2.11–2.14 with TorchAO 0.18.0. Import-time compatibility warnings
+are not a guarantee that another pair works. A C++ compiler and Ninja are required for vendored
+k-means JIT compilation. `coremltools` is optional: the `coreml` extra requires
+`coremltools>=8.3` and `numpy>=2,<2.4`.
+
+The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includes
+`scikit-learn>=1.7.2`. b3 publishes cp314 wheels, but **this compression package still excludes
+Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
+`torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
+and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
+recorded separately in [the refresh evidence](../../../notes/synthesis/coreai-030-refresh/README.md).
+Published model benchmarks retain their original dates and environments.
+
 
 ⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
 indexed Core AI symbols, and `/documentation/updates/coreai` 404s. Unlike Parts 1–6, there is no
@@ -81,8 +88,7 @@ What follows:
   lands in a block holding **4% of the parameters**, and the config change that recovers baseline
   quality at a fraction of the size.
 - **`coreai_opt.casting`** — the fp16/int16 helper, why it runs on the `ExportedProgram` and not the
-  `nn.Module`, the compress-then-cast ordering rule, and the open overflow hazard its maintainer has
-  acknowledged.
+  `nn.Module`, the compress-then-cast ordering rule, and the activation overflow hazard addressed by explicit exclusions in 0.3.0.
 - **`coreai_opt.coreai_utils`** — compressing an **already-converted** Core AI program instead of a
   PyTorch one, when that is the right call, and Apple's own "this is not the recommended path"
   caveat.
@@ -103,7 +109,7 @@ What follows:
 
 ```bash
 pip install coreai-opt                    # or: uv pip install coreai-opt
-pip install 'coreai-opt[coreai]'          # adds coreai-core==1.0.0b2, coreai-torch==0.4.1, scikit-learn
+pip install 'coreai-opt[coreai]'          # adds coreai-core==1.0.0b3, coreai-torch==0.4.3, scikit-learn
 ```
 
 - **A C++ compiler on the host at runtime.** Not just at install time. The vendored `kmeans1d` core
@@ -246,6 +252,7 @@ If you have shipped a Core ML model before, `coreai-opt` will read as the succes
 `coremltools.optimize` — because it is. It targets `.aimodel` first and keeps a compatibility path.
 
 > ✅ **VERIFIED** — `coreai_opt/common.py:137-160`:
+> <!-- coreai-example: {"id": "p9-01-001"} -->
 > ```python
 > class ExportBackend(_StrEnum, metaclass=_DeprecatedMemberEnumMeta):
 >     _TORCH = auto()
@@ -261,7 +268,7 @@ real member, not a private accident: it is the "keep this as a fake-quantized Py
 evaluation" escape hatch, and it is the **only** backend that accepts dynamic quantization (§6.5).
 And `coremltools` is no longer a runtime dependency at all:
 
-> ✅ **VERIFIED** — changelog fragment `changelog.d/31.changed` (merged as PR #31): *"Replace the
+> ✅ **VERIFIED** — 0.3.0 `CHANGELOG.md` (`apple/coreai-optimization#31`): *"Replace the
 > coremltools-based 1D k-means used by palettization with a vendored C++ core that is JIT-compiled at
 > runtime via `torch.utils.cpp_extension`. `coremltools` is no longer a runtime dependency (it is now
 > an optional dependency, installable via the `coreml` extra). **This requires a C++ compiler to be
@@ -287,6 +294,7 @@ Every compressor in `coreai-opt` derives from `_BaseModelCompressor`
 
 ### 2.1 The minimum viable quantization
 
+<!-- coreai-example: {"id": "p9-01-002"} -->
 ```python
 import torch
 from coreai_opt.quantization import Quantizer, QuantizerConfig
@@ -304,6 +312,7 @@ quantized_model = quantizer.finalize()                # backend defaults to Expo
 Five lines, no data, no calibration loop. For weight-only 8-bit this is genuinely the whole thing.
 
 > ✅ **VERIFIED** — `src/coreai_opt/quantization/quantizer.py`, exact signatures:
+> <!-- coreai-example: {"id": "p9-01-003"} -->
 > ```python
 > class Quantizer(_BaseQuantizer):
 >     def __init__(self, model: nn.Module, config: QuantizerConfig | None = None)
@@ -352,6 +361,7 @@ Two rules, both enforced, both regularly violated.
 > ✅ **VERIFIED** — `prepare()` asserts a **non-empty tuple**: `TypeError("example_inputs must be a
 > tuple")` for a non-tuple, `ValueError` for an empty one.
 
+<!-- coreai-example: {"id": "p9-01-004"} -->
 ```python
 quantizer.prepare(torch.randn(1, 3, 224, 224))       # TypeError
 quantizer.prepare([torch.randn(1, 3, 224, 224)])     # TypeError — a list is not a tuple
@@ -374,6 +384,7 @@ noise gives you an activation range calibrated to noise. Nothing will warn you.
 > **eager** mode, `.weight` on **both** the original and the returned model returns the
 > fake-quantized value after `prepare()`, because parametrizations are registered in place.
 
+<!-- coreai-example: {"id": "p9-01-005"} -->
 ```python
 import copy
 
@@ -391,6 +402,7 @@ Re-preparing is rejected outright:
 The prepared state is tracked with a deliberately-designed marker:
 
 > ✅ **VERIFIED** — `base_model_compressor.py:21,57-69`:
+> <!-- coreai-example: {"id": "p9-01-006"} -->
 > ```python
 > _COREAI_OPT_PREPARED_ATTR = "_coreai_opt_prepared"
 > model.register_buffer(_COREAI_OPT_PREPARED_ATTR, torch.tensor(True), persistent=False)
@@ -410,9 +422,10 @@ The prepared state is tracked with a deliberately-designed marker:
 The asymmetry is easy to miss and produces a class of bug where dropout is silently active during
 your post-quantization evaluation:
 
+<!-- coreai-example: {"id": "p9-01-007"} -->
 ```python
 quantized_model = quantizer.finalize()
-quantized_model.eval()                        # <- do not skip this
+quantized_model.eval()                        # do not assign this return value in graph mode
 ```
 
 There is a second trap layered on top, specific to graph mode:
@@ -422,7 +435,8 @@ There is a second trap layered on top, specific to graph mode:
 > via FX graph rewriting.** User code branching on the `training` flag and other ops with
 > mode-dependent behavior are not affected."*
 
-So `.eval()` on a graph-mode model handles dropout and BN and nothing else. If your module's
+So `.eval()` on a graph-mode model handles dropout and BN and nothing else.
+The patched 0.3.0 graph-mode `.eval()` returns `None`: call it separately, not in a chain. If your module's
 `forward` contains `if self.training:`, that branch was resolved at export time and `.eval()` will
 not change it.
 
@@ -460,32 +474,18 @@ A sweep of sixty configs that calls `finalize()` sixty times is doing sixty irre
 frees and sixty backend lowerings for no reason. `prepare()` alone gives you a numerically faithful
 model to score.
 
-### 2.6 `mmap_dir` — eager + CoreAI only
+### 2.6 `mmap_dir` — GRAPH or EAGER, CoreAI only
 
-`finalize(mmap_dir=...)` backs the finalized weights with memory-mapped files instead of resident
-tensors. It is the mechanism behind `coreai-models`' `from_hf_memory_efficient` export path for
-large LLMs on macOS. It has three hard constraints:
+0.3.0 adds graph-mode memory-efficient finalize. Both modes accept `finalize(mmap_dir=...)`
+with `ExportBackend.CoreAI`; other backends raise `ValueError`. All model tensors must be on CPU,
+and the destination must be an empty directory. Keep the files for the returned model's lifetime.
+Source: `quantization/quantizer.py::finalize`, `_graph/_prepare_for_export.py`, and
+`_utils/export_utils.py` at `189612be`. Each compressed weight is serialized to a safetensors file
+and reloaded through mmap; treat the filenames as implementation details. §19.7 exercises both modes.
 
-> ✅ **VERIFIED** — `_graph/quantizer.py:1051-1054`:
-> `ValueError("mmap_dir is only supported in eager execution mode, got execution_mode=graph.")`
->
-> ✅ **VERIFIED** — `_utils/export_utils.py:validate_mmap_backend_and_device`: *"`mmap_dir` requires
-> the prepared model to be on CPU; found tensor(s) on device(s) …. Call `model.cpu()` before
-> `finalize(mmap_dir=…)`. mmap is a CPU-only mechanism."*
->
-> ✅ **VERIFIED** — the directory must be empty (`FileExistsError` otherwise) and *"the files in
-> `mmap_dir` must remain in place for the lifetime of the returned model; removing them invalidates
-> the mmap-backed weights."*
-
-🔴 **GAP — the on-disk layout under `mmap_dir` is unverified.** No end-to-end `mmap_dir` example
-exists in the `coreai-opt` docs, and the safetensors filenames and sharding scheme were not read.
-What would resolve it: running `finalize(mmap_dir=d)` on any model and listing `d`, or reading
-`_utils/export_utils.py` in full. **Safe default meanwhile:** treat the directory as opaque, create
-it fresh per export with `tempfile.TemporaryDirectory()`, and keep it alive exactly as long as the
-returned model — which is what Apple's own LLM export pipeline does
-(`tempfile.TemporaryDirectory(prefix="coreai_export_")`, `coreai-models` `export/pipeline.py`).
-
----
+CoreAI finalize also removes unused original dense weights in graph mode. Eager quantization and
+palettization replace dense parametrization originals with zero-size placeholders. Capture dense
+quality references and **prepared compressed** conversion references before finalize, not afterwards.
 
 ## 3. Presets: the one-liners, and what they expand to
 
@@ -517,6 +517,7 @@ This is the preset the SAM3 demo uses, and the one whose consequences §13 is ab
 what it is:
 
 > ✅ **VERIFIED** — `_presets/quantizer_config.py`, quoted in full:
+> <!-- coreai-example: {"id": "p9-01-008"} -->
 > ```python
 > def w4(
 >     self,
@@ -566,6 +567,7 @@ same model.
 
 Both statements check out against the source. Two spellings are available and both are real:
 
+<!-- coreai-example: {"id": "p9-01-009"} -->
 ```python
 from coreai_opt.quantization import Quantizer, QuantizerConfig, ExecutionMode
 
@@ -641,6 +643,7 @@ This is the section to read twice. Everything else in the guide is a consequence
 >
 > *"**Setting a config to `None` explicitly disables quantization for that scope.**"*
 
+<!-- coreai-example: {"id": "p9-01-010"} -->
 ```python
 class QuantizerConfig(CompressionConfig[ModuleQuantizerConfig]):   # @final
     global_config: ModuleQuantizerConfig | None
@@ -661,6 +664,7 @@ Inside a `ModuleQuantizerConfig`, the same precedence idea repeats one level dow
 three dictionaries.
 
 > ✅ **VERIFIED** — `ModuleQuantizerConfig`, verbatim field list:
+> <!-- coreai-example: {"id": "p9-01-011"} -->
 > ```python
 > class ModuleQuantizerConfig(ModuleCompressionConfig[OpQuantizerConfig, QuantizationSpec]):  # @final
 >     op_input_spec:    dict[str|int, QuantizationSpec|None] | None
@@ -693,6 +697,7 @@ The `op_*` versions apply to every op in the module *and recursively to its chil
 The defaults, when you omit a field:
 
 > ✅ **VERIFIED** — `OpQuantizerConfig.get_default_*`:
+> <!-- coreai-example: {"id": "p9-01-012"} -->
 > ```python
 > op_input_spec  = {"*": default_activation_quantization_spec()}
 > op_output_spec = {"*": default_activation_quantization_spec()}
@@ -716,6 +721,7 @@ the rule people get wrong most often.
 
 Three configs that look similar and mean completely different things:
 
+<!-- coreai-example: {"id": "p9-01-013"} -->
 ```python
 from coreai_opt.quantization import ModuleQuantizerConfig, QuantizerConfig, QuantizationSpec
 import torch
@@ -743,6 +749,7 @@ otherwise. The presets exist partly to stop you doing this.
 
 At the outer level, `None` scopes off entire modules:
 
+<!-- coreai-example: {"id": "p9-01-014"} -->
 ```python
 # Skip everything under `detector`, whatever it contains.
 config.module_name_configs = {"detector.*": None}
@@ -771,6 +778,7 @@ Two design decisions you will run into if you try to be clever:
 
 So you cannot subclass a config, and you cannot mutate a spec. To vary a spec, copy it:
 
+<!-- coreai-example: {"id": "p9-01-015"} -->
 ```python
 base = QuantizationSpec(dtype=torch.int8, granularity=PerChannelGranularity(axis=0))
 int4_variant = base.model_copy(update={"dtype": torch.int4})
@@ -805,6 +813,7 @@ name in a HF model and it seems to match "too much", the alias map is why.
 `re.fullmatch`, not `re.match` and not `re.search`. The pattern must cover the **entire** module
 name. This trips up everybody once:
 
+<!-- coreai-example: {"id": "p9-01-016"} -->
 ```python
 # WRONG — matches nothing. "detector" is not the full name of any submodule.
 config.module_name_configs = {"detector": None}
@@ -819,6 +828,7 @@ config.module_name_configs = {"detector(\\..*)?": None}
 Module names are the dotted attribute paths you get from `model.named_modules()`. Print them before
 you write a pattern:
 
+<!-- coreai-example: {"id": "p9-01-017"} -->
 ```python
 for name, mod in model.named_modules():
     if name:
@@ -840,6 +850,7 @@ That loop also gives you the strings you need for §5.2, which is the other half
 Note the failure mode: `"torch.nn.Linear"` **does** contain a dot, so it passes the syntactic check
 and then matches nothing. You get no error and no compression change. This is a quiet one.
 
+<!-- coreai-example: {"id": "p9-01-018"} -->
 ```python
 import torch.nn as nn
 
@@ -857,6 +868,7 @@ config = QuantizerConfig(module_type_configs={"torch.nn.Linear": my_module_cfg})
 
 To get the right string for a class you already have:
 
+<!-- coreai-example: {"id": "p9-01-019"} -->
 ```python
 def fqn(cls: type) -> str:
     return f"{cls.__module__}.{cls.__qualname__}"
@@ -886,6 +898,7 @@ LLM pipeline, and it is the same one §13 arrives at from a different direction.
 Every setter returns `Self`, so configs compose.
 
 > ✅ **VERIFIED** — `config/compression_config.py`:
+> <!-- coreai-example: {"id": "p9-01-020"} -->
 > ```python
 > config.set_global(cfg_or_None)
 > config.set_module_type(nn.Linear | "torch.nn.modules.linear.Linear", cfg_or_None)
@@ -897,6 +910,7 @@ Every setter returns `Self`, so configs compose.
 
 `without(...)` is the readable way to say "everything except these":
 
+<!-- coreai-example: {"id": "p9-01-021"} -->
 ```python
 config = QuantizerConfig.presets.w4().without(nn.LayerNorm, nn.Embedding, "model.lm_head")
 ```
@@ -919,6 +933,7 @@ so a YAML-driven pipeline can construct a state the Python API refuses to constr
 ### 5.4 YAML, and why anchors are a first-class feature
 
 > ✅ **VERIFIED** — loading:
+> <!-- coreai-example: {"id": "p9-01-022"} -->
 > ```python
 > config = QuantizerConfig.from_yaml("config.yaml")          # top-level key: quantization_config
 > config = QuantizerConfig.from_dict({"quantization_config": {...}})
@@ -949,6 +964,7 @@ the schema reserves a whole top-level key so you can define them once as anchors
 >     op_state_spec: { weight: *mxfp4_weight }
 > ```
 > and its Python equivalent:
+> <!-- coreai-example: {"id": "p9-01-023"} -->
 > ```python
 > fp8_activation = QuantizationSpec(dtype=torch.float8_e4m3fn)
 > mxfp4_weight = QuantizationSpec(
@@ -979,11 +995,13 @@ same tool, two YAML dialects, a hard guard between them. Apple's own defaults sp
 **macOS LLMs are quantized, iOS LLMs are palettized**:
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `export/presets.py`:
+> <!-- coreai-example: {"id": "p9-01-024"} -->
 > ```python
 > DEFAULT_MACOS_COMPRESSION_PRESET = "4bit"
 > DEFAULT_IOS_COMPRESSION_PRESET   = "4bit_weight_palettized_group32"
 > ```
 > and the macOS `"4bit"` preset in full:
+> <!-- coreai-example: {"id": "p9-01-025"} -->
 > ```python
 > {"execution_mode": "eager",
 >  "global_config": {"op_state_spec": {"weight": {"dtype": "int4",
@@ -1006,6 +1024,7 @@ each.
 number format. Nine fields.
 
 > ✅ **VERIFIED** — `src/coreai_opt/quantization/spec/spec.py:357-370`:
+> <!-- coreai-example: {"id": "p9-01-026"} -->
 > ```python
 > class QuantizationSpec(CompressionSpec):          # pydantic BaseModel, frozen=True, extra="forbid"
 >     dtype: torch.dtype = torch.int8
@@ -1057,6 +1076,7 @@ Quantization ranges, straight from the docstring:
 ### 6.2 `qscheme` — three cases, and where the third earns its keep
 
 > ✅ **VERIFIED** — `spec/qscheme.py`:
+> <!-- coreai-example: {"id": "p9-01-027"} -->
 > ```python
 > class QuantizationScheme(Enum):
 >     SYMMETRIC = "symmetric"
@@ -1091,6 +1111,7 @@ Two validators constrain the FP dtypes:
 ### 6.3 `qformulation` — ZP vs MINVAL
 
 > ✅ **VERIFIED** — `spec/qformulation.py`:
+> <!-- coreai-example: {"id": "p9-01-028"} -->
 > ```python
 > class QuantizationFormulation(_StrEnum):
 >     MINVAL = auto()   # "minval"
@@ -1183,6 +1204,7 @@ lever, and Apple publishes a measurement of it — see §18.1.
 The registries are public extension points and the docs ship a worked example.
 
 > ✅ **VERIFIED** — `docs/src/quantization/advanced.md:312-341`, checked against `RunningRangeMixin`:
+> <!-- coreai-example: {"id": "p9-01-029"} -->
 > ```python
 > import torch
 > from coreai_opt.quantization.spec import QParamsCalculatorBase, RunningRangeMixin
@@ -1250,6 +1272,7 @@ is the canonical example:
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `export/presets.py`, `_TORCH_MOE_SWITCH_LINEAR_4BIT` for
 > `coreai_models.primitives.macos.switch.SwitchLinear`:
+> <!-- coreai-example: {"id": "p9-01-030"} -->
 > ```python
 > {"module_state_spec": {"weight": {"dtype": "int4",
 >     "qscheme": "symmetric_with_clipping",
@@ -1294,6 +1317,7 @@ average bit-width, not nominal.
 `axis=None` works because the framework has a per-module-type table.
 
 > ✅ **VERIFIED** — `src/coreai_opt/quantization/_axis_defaults.py`:
+> <!-- coreai-example: {"id": "p9-01-031"} -->
 > ```python
 > _WEIGHT_AXIS_SPECS: dict[type[nn.Module], _WeightAxisSpec] = {
 >     nn.Conv1d: _WeightAxisSpec(0, 1),
@@ -1343,7 +1367,7 @@ Graph mode reaches the table through the aten op rather than the module:
 
 Case 1 is what you hit with a **custom `nn.Linear` subclass in eager mode**, and it is deliberate:
 
-> ✅ **VERIFIED** — coreai-opt PR #3, closed as intentional, @pkmandke (Apple, MEMBER): *"Applying
+> ✅ **VERIFIED** — `apple/coreai-optimization#3`, closed as intentional, @pkmandke (Apple, MEMBER): *"Applying
 > the default axis for user-defined subclasses such as `class MyLinear(nn.Linear)` could be
 > **misleading and is intentionally unsupported in eager mode**. Specifically because a custom
 > subclass may use the weight in a way such that the default axis may no longer apply. Could you
@@ -1367,6 +1391,7 @@ This is the defining footgun of `coreai-opt` and it deserves its own callout.
 > When a tensor's shape is not divisible by the configured `block_size`, the granularity validator
 > raises the *internal* `_BlockSizeMismatchError` (`spec/errors.py`). The fake-quantize forward
 > **catches it**, calls `_warn_and_disable()`, and passes the tensor through untouched:
+> <!-- coreai-example: {"id": "p9-01-032"} -->
 > ```python
 > logger.warning(
 >     "Tensor (target: %s) incompatible with block size configuration: %s. Skipping quantization.",
@@ -1398,6 +1423,7 @@ bites:
 
 **1. Turn the warning into an exception during development.** `logging` gives you this for free:
 
+<!-- coreai-example: {"id": "p9-01-033"} -->
 ```python
 import logging
 
@@ -1412,10 +1438,12 @@ logging.getLogger("coreai_opt").addHandler(_RaiseOnCompressionSkip())
 logging.getLogger("coreai_opt").setLevel(logging.WARNING)
 ```
 
-> 🟡 **RECONSTRUCTED** — the logger *name* is inferred from the package name; the source uses a
-> module-level `logger` obtained in the usual way but the exact logger string was not read. If the
-> handler never fires, attach it to the **root** logger instead, which is guaranteed to see the
-> record:
+> ✅ **SOURCE-INSPECTED (0.3.0)** — skip warnings use `logging.getLogger(__name__)` in
+> `coreai_opt.quantization.spec.fake_quantize` and
+> `coreai_opt.palettization.kmeans.kmeans_fake_palettize`. They propagate to the `coreai_opt`
+> parent under the package's default logging setup. If your application changes propagation,
+> attach to those exact loggers. A root handler is an alternative when propagation remains enabled:
+> <!-- coreai-example: {"id": "p9-01-034"} -->
 > ```python
 > logging.getLogger().addHandler(_RaiseOnCompressionSkip())
 > ```
@@ -1424,6 +1452,7 @@ logging.getLogger("coreai_opt").setLevel(logging.WARNING)
 
 **2. Pre-check divisibility yourself**, before you ever call `prepare()`:
 
+<!-- coreai-example: {"id": "p9-01-035"} -->
 ```python
 import torch.nn as nn
 
@@ -1474,6 +1503,7 @@ config vocabularies, different capability sets and different bugs.
 ### 8.1 The enum
 
 > ✅ **VERIFIED** — `quantization_config.py:134-158`:
+> <!-- coreai-example: {"id": "p9-01-036"} -->
 > ```python
 > class ExecutionMode(_StrEnum, metaclass=_DeprecatedMemberEnumMeta):
 >     GRAPH = auto()      # "graph"  — the default
@@ -1482,7 +1512,7 @@ config vocabularies, different capability sets and different bugs.
 > ```
 > `ExecutionMode.PT2E` is deprecated → `GRAPH`. Unknown modes raise
 > `InvalidExecutionModeError("Unknown execution_mode {x}. Expected 'graph' or 'eager'.")`
-> (added in PR #38).
+> (added in `apple/coreai-optimization#38`).
 >
 > Docstrings, verbatim:
 > - **GRAPH**: *"Graph-based quantization using `torch.export` to capture the model as an FX graph,
@@ -1505,7 +1535,7 @@ config vocabularies, different capability sets and different bugs.
 > | Pattern fusion (Conv-BN-ReLU as one block) | **supported** | not supported |
 > | Shared quantizer for value-preserving ops (maxpool / avgpool / flatten / concat) | **supported** | not supported |
 > | Config op names | **aten op names** (`linear`, `linear_1`) | `__torch_function__` call sites (`linear1.linear`) |
-> | `mmap_dir` in `finalize` | ✗ `ValueError` | **✓** (CoreAI only) |
+> | `mmap_dir` in `finalize` | **✓** (CoreAI only, 0.3.0) | **✓** (CoreAI only) |
 > | Palettization / pruning | n/a | **the only supported mode** |
 > | KV-cache quantization | **✓** | ✗ `ValueError` |
 >
@@ -1525,7 +1555,7 @@ config vocabularies, different capability sets and different bugs.
 
 Consequences for how you work:
 
-- **Never compare a graph-mode result to an eager-mode result.** Pick a mode for a sweep and keep it
+- **Do not assume graph and eager results are equivalent.** Pick a mode for a sweep and keep it
   (this is why Apple's own skill falls back to eager *for the whole sweep*, §3.4).
 - **A config is not portable between modes**, because op names differ. `op_name_config` keyed on
   `"linear_1"` (graph) means nothing in eager, and `"linear1.linear"` (eager) means nothing in graph.
@@ -1542,26 +1572,18 @@ recommended default") gives a clean decision rule:
 
 | Situation | Mode | Why |
 |---|---|---|
-| **Weight-only, model exports cleanly** | GRAPH | The default; nothing lost. Fusion and dedup are irrelevant when no activations are quantized, so the two modes converge numerically. |
+| **Weight-only, model exports cleanly** | GRAPH | The default; nothing lost. Inspect eligible layers and compare against the prepared compressed reference. |
 | **Weight-only, model is awkward to export** | **EAGER** | No `torch.export` requirement. This is the SAM3 case, and Apple's own LLM preset case. |
 | **Weight + activation** | **GRAPH, strongly** | Fusion, FQ dedup, shared-observer handling and the known-range overrides (§9.5) all live in `_graph/`. The docs say eager *"may yield models with sub-optimal runtime performance"*, and the source says shared observers in eager *"can cause incorrect quantization"*. |
 | **Palettization or pruning** | **EAGER** | It is the only mode that exists. |
-| **You need `mmap_dir`** | **EAGER** | Graph mode raises. |
+| **You need `mmap_dir`** | **GRAPH or EAGER** | CoreAI backend, CPU, empty directory. |
 | **You need KV-cache quantization** | **GRAPH** | Eager raises. |
 | **Model has data-dependent control flow** | **EAGER** | `torch.export` cannot capture it. |
 | **You need to feed an `nn.Module` (not an `ExportedProgram`) to `coreai-torch`** | **EAGER** | See below. |
 
-That last row is a real and non-obvious reason, and it comes from the integration doc rather than
-the quantization doc:
-
-> ✅ **VERIFIED** — `docs/src/introduction/integration_coreai.md`: use eager *"When
-> `torch.nn.Module` needs to be provided as an input, instead of `ExportedProgram`, to the conversion
-> API of `coreai-torch`. This happens when the `coreai-torch` conversion needs to **'externalize'
-> certain sub-modules** to map them to *composite ops* for better runtime performance."*
-
-Externalization is how large embedding tables and similar sub-modules get lifted out of the graph
-(Part 8 covers it). If your conversion needs it, your compression has to be eager. There is no
-workaround.
+Graph-mode composite externalization is supported in 0.3.0 through the experimental
+patch/subexport workflow in §8.9. Requiring an `nn.Module` API is still a reason to choose eager,
+but preserving composites alone is no longer an eager-only constraint.
 
 ### 8.5 Graph-mode `prepare()`, step by step
 
@@ -1619,6 +1641,7 @@ which is the only way the framework could know the shapes did not divide.
 And what CoreAI export actually emits:
 
 > ✅ **VERIFIED** — `_graph/_prepare_for_export.py:403-430`:
+> <!-- coreai-example: {"id": "p9-01-037"} -->
 > ```python
 > # coreai.quantize(input, scale, output_dtype, zero_point=, minval=, axis=)
 > # coreai.dequantize(input, scale, zero_point=, minval=, axis=, input_dtype=, output_dtype=)
@@ -1630,7 +1653,7 @@ And what CoreAI export actually emits:
 
 ⚠️ These two ops have had an axis bug that is worth knowing about even though it is fixed:
 
-> ⚠️ **SILENT FAILURE (fixed 2026-07-08, `coreai-torch` PR #24)** — `coreai::quantize` /
+> ⚠️ **SILENT FAILURE (fixed 2026-07-08, `apple/coreai-torch#24`)** — `coreai::quantize` /
 > `coreai::dequantize` normalised a negative axis as **`axis + rank - 1`**, off by one from the eager
 > op which uses **`axis + rank`**. A per-channel `axis=-1` therefore landed one dimension early —
 > *"when the channel and its neighbour share a size there is **no shape error**; the model silently
@@ -1660,7 +1683,7 @@ Graph mode matches **patterns**, not modules. The registry is public enough to e
 > ```
 > conv_bn_act, conv_transpose_bn_act, conv_act, conv_transpose_act, conv_bn, conv_transpose_bn,
 > conv, conv_transpose, linear_bn_act, linear_act, linear_bn, linear, embedding,
-> matmul, matmul_act, add, add_act, mul, mul_act, sub, flatten, maxpool, avgpool, concat
+> matmul, matmul_act, einsum, einsum_act, add, add_act, mul, mul_act, sub, flatten, maxpool, avgpool, concat
 > ```
 > Three base classes:
 > - **`WeightedModulePattern`** — the conv / linear / embedding families.
@@ -1692,6 +1715,7 @@ And there is a public helper to find out what a config *will* touch, before it t
 Adding your own pattern is a documented three-liner:
 
 > ✅ **VERIFIED** — `docs/src/quantization/advanced.md:202-217`, verbatim:
+> <!-- coreai-example: {"id": "p9-01-038"} -->
 > ```python
 > from coreai_opt.quantization._graph._annotation_pattern_registry import (
 >     NAryActPattern, _AnnotationPatternRegistry, _get_all_patterns_from_base_ops,
@@ -1718,8 +1742,80 @@ some op was left alone.
 > linear, embedding, max_pool2d, adaptive_avg_pool2d, add, matmul, mul, sub
 > ```
 
-Fourteen entries versus graph mode's twenty-four patterns, with no fused forms at all. Everything
+Fourteen entries versus graph mode's twenty-six patterns, with no fused forms at all. Everything
 else in your model is, by construction, left in floating point in eager mode.
+
+---
+
+### 8.9 Graph-mode quantization with composite externalization
+
+0.3.0 supports graph-mode quantization around composite boundaries. Patch the original modules
+before `prepare`, then subexport and restore them after finalize. The composite body is opaque to
+the graph quantizer; its boundaries can be quantized. The two underscored helpers and the
+`_externalized_exported_programs` argument are experimental APIs, pinned here to converter 0.4.3.
+Source: `quantization/composite_op_quantization.md` at `189612be`, checked against implementation
+at `b51fd006`. EAGER remains useful, but is no longer required merely to retain composites.
+
+<!-- coreai-example: {"id": "composite-quantization"} -->
+```python
+import copy
+from pathlib import Path
+import torch
+from torch import nn
+from coreai_opt.quantization import Quantizer, QuantizerConfig
+from coreai_torch import (
+    ExternalizeSpec, TorchConverter, get_decomp_table,
+    _patch_model_for_externalization, _subexport_and_restore,
+)
+
+
+class RMSNormComposite(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.axes, self.eps, self.version = -1, 1e-5, 1
+
+    def forward(self, x: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
+        f = x.float()
+        return (x * torch.rsqrt((f * f).mean(self.axes, keepdim=True) + self.eps)).to(x.dtype) * scale
+
+
+class CompositeModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.proj = nn.Linear(64, 64)
+        self.norm = RMSNormComposite()
+        self.norm_weight = nn.Parameter(torch.ones(64))
+        self.out = nn.Linear(64, 64)
+
+    def forward(self, x):
+        return self.out(self.norm(self.proj(x), self.norm_weight))
+
+
+def composite_fixture(work, convert_and_compare):
+    torch.manual_seed(43)
+    model = CompositeModel().eval()
+    sample = torch.randn(1, 64) / 4
+    dense = model(sample).detach().numpy().copy()
+    _patch_model_for_externalization(model, targets=[ExternalizeSpec(
+        target_class=RMSNormComposite, composite_op_name="rms_norm",
+        composite_attrs=["axes", "eps", "version"])])
+    q = Quantizer(model, QuantizerConfig.presets.w8())
+    prepared = q.prepare((sample,))
+    prepared.eval()
+    assert any("activation_post_process" in str(n.target) for n in prepared.graph.nodes)
+    expected = prepared(sample).detach().numpy().copy()
+    finalized = q.finalize()
+    ep = torch.export.export(finalized, (sample,)).run_decompositions(get_decomp_table())
+    subprograms = _subexport_and_restore(model, ep)
+    program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
+        .add_exported_program(ep, input_names=["x"], output_names=["y"],
+                              _externalized_exported_programs=subprograms).to_coreai())
+    assert "rms_norm" in str(program) and "blockwise_shift_scale" in str(program)
+    path = Path(work) / "composite-quantized.aimodel"
+    program.save_asset(path)
+    # Callback uses the same runtime/output contract and separate quality/fidelity budgets as §19.7.
+    return convert_and_compare(path, sample, expected, dense)
+```
 
 ---
 
@@ -1731,6 +1827,7 @@ Weight quantization is a pure function of the weights. Activation quantization i
 ### 9.1 The two default specs
 
 > ✅ **VERIFIED** — `spec.py:716-735`, both factory functions in full:
+> <!-- coreai-example: {"id": "p9-01-040"} -->
 > ```python
 > def default_weight_quantization_spec() -> QuantizationSpec:
 >     return QuantizationSpec(dtype=torch.int8, qscheme="symmetric",
@@ -1754,6 +1851,7 @@ batches); and the weight default has an axis while the activation default cannot
 This is not what most people assume, and the reason is good.
 
 > ✅ **VERIFIED** — `_graph/quantizer.py:1160-1173`, the whole body:
+> <!-- coreai-example: {"id": "p9-01-041"} -->
 > ```python
 > self._model.apply(enable_observer)
 > self._model.apply(enable_weight_fake_quant)       # weight FQ stays ON
@@ -1777,7 +1875,7 @@ never exist.
 
 That second half is recent:
 
-> ✅ **VERIFIED** — coreai-opt PR #25, merged: *"`Quantizer.calibration_mode()` previously disabled
+> ✅ **VERIFIED** — `apple/coreai-optimization#25`, merged: *"`Quantizer.calibration_mode()` previously disabled
 > fake quant on **both** weights and activations; now only activations, 'so activation observers see
 > the effect of quantized weights when computing activation ranges.'"* New helpers
 > `enable_weight_fake_quant` / `disable_activation_fake_quant` in `_fake_quant_utils.py`. Commit
@@ -1787,6 +1885,7 @@ If you are reading numbers produced before that commit, they are from a differen
 
 ### 9.3 The calibration loop
 
+<!-- coreai-example: {"id": "p9-01-042"} -->
 ```python
 import torch
 from coreai_opt.quantization import Quantizer, QuantizerConfig
@@ -1851,8 +1950,8 @@ config** for them. This is correct behaviour and it is invisible unless you read
 > | `tanh` | [−1,1] | symmetric | (−1,1) | 2/255 | 0 |
 >
 > `hardtanh` reads its bounds from the node args and is symmetric iff `min_val == -max_val`; `relu6`
-> is handled as `hardtanh(0,6)`. Implemented by `adjust_output_qspec_for_qscheme_and_propagate`
-> (`_graph/_annotation_utils.py`).
+> is handled as `hardtanh(0,6)`. Implemented by the fixed-range constraints and reconciliation in
+> `_graph/_reconciler.py` at `189612be`.
 >
 > ⚠️ **Eager mode does not perform these adjustments.**
 
@@ -1862,7 +1961,7 @@ occupy `[0, 1]` — you throw away a bit for nothing.
 
 This machinery was broken until recently, which is a useful calibration on how new all of this is:
 
-> ✅ **VERIFIED** — coreai-opt PR #22 / commit `0eabc57`, merged: *"relu/relu6/sigmoid/tanh etc. —
+> ✅ **VERIFIED** — `apple/coreai-optimization#22` / commit `0eabc57`, merged: *"relu/relu6/sigmoid/tanh etc. —
 > 'Qscheme was not being set correctly, and **no fixed ranges were ever in place**.'"* The fix removed
 > fake-quantize's independent `qscheme` attribute in favour of `qparams_calculator.qscheme`. The
 > project's own **MNIST test accuracy expectation moved from <88% to <94%** as a direct result.
@@ -1870,32 +1969,24 @@ This machinery was broken until recently, which is a useful calibration on how n
 A six-point accuracy swing on MNIST from one qscheme fix. If you have int8 activation numbers from
 before `0eabc57`, re-measure them.
 
-There is a larger rewrite of this area in flight:
-
-> ✅ **VERIFIED** — coreai-opt PR #40, **OPEN**, +2326/−523: a full rewrite of graph-mode annotation
-> as a constraint-queue reconciler. Motivating bug: a **YOLO** subgraph
-> `concat(conv(...), sigmoid(...), sigmoid(...))` — sigmoid has a fixed (0,1) qspec and conv a
-> floating one, and the old order-dependent propagation **crashed**. The new model builds a
-> `NodeSlot → ProvisionalQSpec` map and processes a constraint queue that can relax
-> (sigmoid (0,1) + hardtanh → (−1,1)), force a winning field by priority, merge into a shared qspec,
-> or error.
->
-> Practical reading: **if your model concatenates a fixed-range activation with a floating-range one,
-> graph-mode annotation is a known-sharp area as of 2026-07.** Test it, and if it crashes, that is a
-> known bug and not your config.
+The 0.3.0 graph implementation uses a constraint-queue reconciler (`_graph/_reconciler.py`),
+including fixed-range propagation. `apple/coreai-optimization#40` was closed unmerged; that PR's
+status is not evidence that the release lacks reconciliation. The tagged implementation is the
+release contract. Retain calibration and shape-boundary tests for mixed activation branches.
 
 ### 9.6 ⚠️ Shared observers and the per-channel activation constraint
 
-This is the newest correctness rule in the package — merged **2026-07-24**, three days before this
-guide's evidence cut-off, and **not in release 0.2.1**.
+This shape- and axis-identity-aware shared-observer behavior is released in **0.3.0**.
+The earlier 0.2.1 behavior is retained below only as historical context.
 
 The setup: `SharedObserverModulePattern` ops (maxpool, avgpool, flatten, concat) tie their input and
 output to the **same `FakeQuantize` object** (§8.7). One observer, one scale, two tensors. If those
 two tensors do not agree about what the quantization axis *means*, a per-channel scale is applied to
 the wrong data.
 
-> ✅ **VERIFIED** — `main` @ `cd95cb2` (PR #52), `src/coreai_opt/quantization/_graph/_utils.py`. Three
+> ✅ **VERIFIED** — `189612be` (0.3.0; apple/coreai-optimization#52), `src/coreai_opt/quantization/_graph/_utils.py`. Three
 > op sets:
+> <!-- coreai-example: {"id": "p9-01-043"} -->
 > ```python
 > _AXIS_RESIZING_ATEN_OPS = {
 >     aten.max_pool1d.default, aten.max_pool2d.default, aten.max_pool3d.default,
@@ -1942,7 +2033,7 @@ What it replaced, and what the bug was:
 
 The subtlest part of the commit is worth quoting, because it explains why a size check is not enough:
 
-> ✅ **VERIFIED** — PR #52 commit message: **concat pulls transpose/permute into shared-observer
+> ✅ **VERIFIED** — `apple/coreai-optimization#52` commit message: **concat pulls transpose/permute into shared-observer
 > territory** — *"concat (a `SharedObserverModulePattern`, like MaxPool) ties both of its inputs to
 > the same observer object, so a transpose/permute branch feeding concat alongside its own
 > untransposed source gets its input and output tied together the same way MaxPool's are."* And the
@@ -1968,21 +2059,15 @@ The downgrade is now logged, and the message tells you what to do:
 - **Per-block activation granularity around a shared observer is *always* downgraded** — the check
   is per-channel-only. If you configured per-block activations and got per-tensor behaviour, this is
   why.
-- **On 0.2.1** (the current release at the time of writing) the old behaviour applies: channel-altering
-  ops **always** force per-tensor. Do not expect the shape-aware logic until the next release.
+- **Historical 0.2.1:** channel-altering ops always forced per-tensor. In **0.3.0** the
+  shape-aware logic described above is released.
 - **Batch and channel axes on pooling ops are the safe ones.** They are exactly the axes pools never
   touch, which is the practical version of the whole decision tree.
 
-There is one more open item in this area:
-
-> ✅ **VERIFIED** — coreai-opt PR **#56**, **OPEN**: *"Enable **block activation quantization**
-> support (limited to pre-finalize stages)."* Files: `_eager/_prepare_for_export.py`,
-> `_graph/_prepare_for_export.py`, `spec/granularity.py`.
->
-> 🔴 **GAP — block-granularity activation quantization is not shippable today.** "Limited to
-> pre-finalize stages" means you can simulate it in PyTorch but not export it. What would resolve
-> this: PR #56 merging and appearing in a release. **Safe default meanwhile:** per-tensor activations,
-> which is the documented default and the only granularity CoreML accepts anyway (§16.2).
+Block activation quantization is available for **pre-finalize simulation** in 0.3.0
+(`apple/coreai-optimization#56`, merged 2026-08-06). Backend export remains restricted: the
+CoreAI and CoreML validation paths reject per-block activations. It is not a shipped block-activation
+runtime capability. §19.7 checks prepare/calibration and the finalize rejection separately.
 
 ### 9.7 The fake-quantize forward, and where the gradient comes from
 
@@ -1998,6 +2083,7 @@ estimator.
 > 4. If `fake_quant_enabled[0] == 1` → cast to fp32, run `_fused_fake_quant_dequant`, cast back.
 >
 > ✅ **VERIFIED** — the math kernels, module-level:
+> <!-- coreai-example: {"id": "p9-01-044"} -->
 > ```python
 > def _quantize_int(tensor, scale, quant_offset, float_offset, quant_min, quant_max):
 >     result = (tensor - float_offset) / scale
@@ -2046,6 +2132,7 @@ Everything happens inside `prepare()`:
 > ✅ **VERIFIED** — `prepare()` *"compresses weights + inserts fake-quantize / fake-palettize / mask
 > ops; a forward on the result reflects compression. **Data-free PTQ happens here.**"*
 
+<!-- coreai-example: {"id": "p9-01-045"} -->
 ```python
 import copy, torch
 from coreai_opt.quantization import Quantizer, QuantizerConfig
@@ -2119,6 +2206,7 @@ have one before you start.
 The moment activations enter the picture, you need data (§9.3). Full recipe, with the pieces that
 usually get forgotten:
 
+<!-- coreai-example: {"id": "p9-01-046"} -->
 ```python
 import copy, torch
 from coreai_opt.quantization import (
@@ -2198,6 +2286,7 @@ If you want both a lookup-table weight format *and* int8 activations, the order 
 > to the `Core AI` backend."*
 
 > ✅ **VERIFIED** — the worked recipe, `docs/src/utils/joint_compression.md`:
+> <!-- coreai-example: {"id": "p9-01-047"} -->
 > ```python
 > lut_qspec = QuantizationSpec(dtype=torch.int8, qscheme=QuantizationScheme.SYMMETRIC)
 > palett_config = KMeansPalettizerConfig(
@@ -2244,6 +2333,7 @@ your training loop, your optimizer and your full dataset.
 ### 11.1 The simplest form: no schedule at all
 
 > ✅ **VERIFIED** — the `Quantizer` docstring's own example:
+> <!-- coreai-example: {"id": "p9-01-048"} -->
 > ```python
 > prepared_model = quantizer.prepare((example_input,))
 > with quantizer.training_mode():
@@ -2265,6 +2355,7 @@ reasons §11.2 makes concrete.
 ### 11.2 `QATSchedule`: three integers
 
 > ✅ **VERIFIED** — `quantization/config/`:
+> <!-- coreai-example: {"id": "p9-01-049"} -->
 > ```python
 > class QATSchedule(BaseModel):                        # frozen=True
 >     enable_observer: int = Field(default=0, ge=0)
@@ -2296,6 +2387,7 @@ Read as a story, the three integers are:
 Apple's documented example, verbatim:
 
 > ✅ **VERIFIED** — `docs/src/quantization/advanced.md:49-77`:
+> <!-- coreai-example: {"id": "p9-01-050"} -->
 > ```python
 > config = QuantizerConfig(
 >     global_config=ModuleQuantizerConfig(
@@ -2363,6 +2455,7 @@ the past. Build a fresh `Quantizer` per run.
 
 ### 11.4 The manual API, and why it is mutually exclusive
 
+<!-- coreai-example: {"id": "p9-01-051"} -->
 ```python
 quantizer.enable_observer(module=None)
 quantizer.disable_observer(module=None)
@@ -2386,6 +2479,7 @@ subtree-scoped control, which the schedule expresses differently (§11.5).
 
 Written manually, the documented schedule is:
 
+<!-- coreai-example: {"id": "p9-01-052"} -->
 ```python
 prepared = quantizer.prepare(example_inputs)
 
@@ -2409,84 +2503,18 @@ with quantizer.training_mode():
 > the verified schedule semantics. It is not quoted from Apple's docs, which only show the `step()`
 > form. It should behave identically; prefer the schedule form for anything you intend to keep.
 
-### 11.5 Per-module schedules, and the two conflict rules
+### 11.5 Tied weights, deduplication and schedule ownership
 
-`qat_schedule` is a field on **`ModuleQuantizerConfig`**, not on `QuantizerConfig`. That is
-deliberate: different parts of the model can be on different schedules.
+In 0.3.0 graph mode, a tied weight's dtype and QAT schedule resolve to the **same owning module**,
+using the priority that selects its dtype. This fixes the historical disagreement reported in
+`apple/coreai-optimization#41` (closed 2026-08-21). Source: `_graph/quantizer.py` and the 0.3.0
+changelog at `189612be`. Do not carry the old graph-order versus config-order diagnosis into current
+release guidance. In eager mode, conflicting shared-weight schedules still warn and select the first
+module encountered; use identical specs and schedules for tied consumers and inspect the resolved
+fake-quantizer. Graph deduplication does not make conflicting configs a sensible experiment.
 
-```python
-config = QuantizerConfig(
-    global_config=ModuleQuantizerConfig(
-        op_state_spec={"weight": w4_spec},
-        qat_schedule=QATSchedule(enable_observer=0, enable_fake_quant=150, disable_observer=2000),
-    ),
-    module_name_configs={
-        # The head is the most sensitive layer: let it train in float much longer.
-        "model.lm_head": ModuleQuantizerConfig(
-            op_state_spec={"weight": w8_spec},
-            qat_schedule=QATSchedule(enable_observer=0, enable_fake_quant=1000,
-                                     disable_observer=3000),
-        ),
-    },
-)
-```
-
-Which raises the obvious question of what happens when two configs claim the same fake-quantize
-object. There are two documented rules and one open bug.
-
-> ✅ **VERIFIED** — `QATSchedule` docstring, both rules verbatim:
-> - **Graph-mode dedup:** *"The schedule of the **consuming module** is always applied to the
->   deduplicated node, irrespective of the choice of deduplication made by the graph preparation."*
-> - **Shared weights:** *"the schedule of the **first module encountered in the module tree** is
->   applied. A warning is emitted for the conflict if there is no fake-quantize node deduplication
->   happening (in Eager execution mode)."*
-
-⚠️ And now the bug, which is open as of 2026-07 and is a genuine silent failure:
-
-> ⚠️ **SILENT FAILURE — a shared weight can take its *dtype* from one config and its *QAT schedule*
-> from a different one.**
->
-> ✅ **VERIFIED** — coreai-opt **issue #41, OPEN**. Repro: two `nn.Linear` modules sharing one weight;
-> `l1` configured int8 with `enable_fake_quant=1`, `l2` configured int4 with `enable_fake_quant=5`.
-> Observed:
-> ```
-> distinct weight FQ objects: 1
-> weight FQ dtype quant_min/quant_max: -8 / 7   -> int4    # l2, declared last
-> weight FQ governing schedule enable_fake_quant step: 1   # l1, first in graph
-> step=1 fake_quant_enabled=1     # fires at step 1, not l2's step 5
-> ```
-> Root cause — **two independent owner-resolution paths**:
-> - **Schedule owner** ← `_get_fake_quantize_modules` (`_graph/quantizer.py`) walks the FX graph and
->   maps each shared FQ to the **first consumer with `nn_module_stack`** → graph order picks `l1`.
-> - **Dtype owner** ← `_get_state_node_shared_spec` (`_graph/_annotation_utils.py`) keeps the spec of
->   the user annotated **first in priority order**, and priority follows **config declaration order**
->   → `l2` wins.
->
-> *"Eager mode has the same split. It warns about the schedule conflict, but **the warning only
-> mentions the schedule, not the dtype**."*
->
-> Test gap noted in the issue: `tests/quantization/test_qat_schedule.py::test_shared_weight_keeps_first_schedule`
-> gives both modules the same dtype, so the conflict is never covered.
-
-**Safe default:** for any weight shared between modules — tied embeddings and `lm_head`, Siamese
-towers, weight-tied autoencoders — **give every consumer the identical spec and the identical
-schedule.** Do not rely on precedence to pick for you. This is also the advice in the v0.2.0 release
-notes' known-issues list:
-
-> ✅ **VERIFIED** — coreai-opt v0.2.0 release notes, known issues, verbatim:
-> - *"Tying model weights (e.g. `layer1.weight = layer2.weight`) after quantizer finalize in eager
->   execution mode will fail"*
-> - *"For models with shared weights, in Eager mode, **MODULE_NAME > MODULE_TYPE precedence is only
->   honored if you express the override via `module_state_spec`. With `op_state_spec` alone, it depends
->   on forward-pass execution order.**"*
-> - *"For models with shared weights using **different local names** (last part of the name after the
->   rightmost '.'), in graph mode quantization, only one particular local name is matched. To know
->   which name, users must examine the torch exported graph or view ModelInspector summary for modules
->   sharing the weights. **Alternatively, users can configure the same weight spec for each distinct
->   local name to be safe.**"*
-
-Three separate known issues, all about shared weights, all with the same workaround: be explicit and
-be redundant.
+The 0.2.0 known-issues release note about tied weights is historical. It does not override this
+0.3.0 graph-mode fix.
 
 ### 11.6 QAT does not rescue everything
 
@@ -2515,6 +2543,7 @@ Not mentioned on stage, but present in the API and directly relevant to anyone d
 can keep the KV cache buffer itself in a quantized dtype.
 
 > ✅ **VERIFIED** — `QuantizerConfig.kv_cache_quant_configs`, and:
+> <!-- coreai-example: {"id": "p9-01-053"} -->
 > ```python
 > class KVCacheQuantConfig(BaseModel):   # frozen
 >     op_quantizer_config: OpQuantizerConfig
@@ -2524,6 +2553,7 @@ can keep the KV cache buffer itself in a quantized dtype.
 >
 > ✅ **VERIFIED** — usage, from `tests/quantization/test_kv_cache_quantization.py:161-169` and the
 > class docstring:
+> <!-- coreai-example: {"id": "p9-01-054"} -->
 > ```python
 > QuantizerConfig(
 >     execution_mode="graph",
@@ -2622,6 +2652,7 @@ matter in §13.5.
 
 ### 13.3 The one-line experiment
 
+<!-- coreai-example: {"id": "p9-01-055"} -->
 ```python
 from coreai_opt.quantization import Quantizer, QuantizerConfig, ExecutionMode
 
@@ -2698,6 +2729,7 @@ free.
 
 ### 13.5 The fix
 
+<!-- coreai-example: {"id": "p9-01-056"} -->
 ```python
 config = QuantizerConfig.presets.w4(execution_mode=ExecutionMode.EAGER)
 
@@ -2774,6 +2806,7 @@ choices and hardware placement are coupled, and the coupling is invisible from t
 The shipped palettization code, for completeness:
 
 > ✅ **VERIFIED** — `apple/coreai-models`, `segmentation/pipeline.py:208-245`:
+> <!-- coreai-example: {"id": "p9-01-057"} -->
 > ```python
 > from coreai_opt import ExportBackend
 > from coreai_opt.palettization import (
@@ -2831,6 +2864,7 @@ Strip the specifics and you get a method that applies to any model:
 5. **Cross the error map with the parameter map.** You are looking for blocks that are high-error and
    low-share. Those are free to exclude.
 
+   <!-- coreai-example: {"id": "p9-01-058"} -->
    ```python
    total = sum(p.numel() for p in model.parameters())
    for name, mod in model.named_modules():
@@ -2861,6 +2895,7 @@ the pipeline. `coreai_opt.casting` is the second one.
 ### 14.1 Three functions, one recommendation
 
 > ✅ **VERIFIED** — `src/coreai_opt/casting/__init__.py`:
+> <!-- coreai-example: {"id": "p9-01-059"} -->
 > ```python
 > from coreai_opt.casting import (
 >     cast_fp32_to_fp16,          # FP32 → FP16 only
@@ -2895,39 +2930,29 @@ And why this is not `model.half()`:
 
 ### 14.2 ⚠️ Return value vs in-place mutation — a documented conflict
 
-This is a real disagreement between two sources in the corpus and you should code defensively around
-it.
+The earlier source disagreement is retained below as context. The 0.3.0 implementation resolves it:
+the pass mutates and returns the same program.
 
 > ⚠️ **CONFLICT.**
 > - One reading (the `coreai-opt` API notes): *"All three **mutate** a `torch.export.ExportedProgram`
 >   in place and return nothing meaningful."* And Apple's own integration doc calls it as a statement:
+>   <!-- coreai-example: {"id": "p9-01-060"} -->
 >   ```python
 >   cast_to_16_bit_precision(exported_program)     # in-place graph rewrite
 >   ```
 > - The other reading (the signature listing and the shipping call site): the functions are typed
 >   `-> ExportedProgram`, and `apple/coreai-models`, `segmentation/pipeline.py:250-263` **assigns the
 >   result**:
+>   <!-- coreai-example: {"id": "p9-01-061"} -->
 >   ```python
 >   img_program = torch.export.export(img_enc, args=(pixel_ref,))
 >   img_program = img_program.run_decompositions(coreai_torch.get_decomp_table())
 >   img_program = cast_to_16_bit_precision(img_program)
 >   ```
 >
-> Both call styles appear in Apple's own material and both are presented as correct. The likely
-> reconciliation is that the pass mutates in place **and** returns the same object, which makes both
-> spellings work.
->
-> 🔴 **GAP — which is authoritative is unverified.** `casting/casting.py` was not read at the code
-> level; the pass names, node-level heuristics and the FP16 threshold constant are unconfirmed beyond
-> the docs' *"approximately ±65504"*.
-> **What would resolve it:** reading `src/coreai_opt/casting/casting.py`, or one line —
-> `ep2 = cast_to_16_bit_precision(ep); print(ep2 is ep)`.
-> **Safe default meanwhile:** **assign the result and never touch the input again.**
-> ```python
-> ep = cast_to_16_bit_precision(ep)     # works under both readings
-> ```
-> This is what Apple's shipping pipeline does, and it is correct whether the function returns a new
-> program or the same one.
+The 0.3.0 implementation mutates and returns the **same ExportedProgram**. Both call styles
+therefore work; assigning the result makes the pipeline explicit. Source:
+`casting/casting.py::cast_to_16_bit_precision` at `189612be` (returns `exported_program`).
 
 ### 14.3 The ordering rule: compress first, cast second
 
@@ -2938,6 +2963,7 @@ The full canonical pipeline, which is the shape every `coreai-opt` example follo
 
 > ✅ **SOURCE-INSPECTED** — adapted from `integration_coreai.md` for 0.4.3/b3; the tagged
 > 0.3.0 documentation still contains a removed optimizer call. Implementation governs:
+> <!-- coreai-example: {"id": "p9-01-062"} -->
 > ```python
 > from pathlib import Path
 > from coreai_opt.casting import cast_to_16_bit_precision
@@ -2975,7 +3001,7 @@ error.
 > ⚠️ **SILENT FAILURE — an fp16-cast model can produce zeros where a stable op should produce a large
 > finite value, and compression increases the chance of it.**
 >
-> ✅ **VERIFIED** — coreai-opt **issue #7, OPEN**, with a maintainer answer. The pass *"correctly
+> ✅ **VERIFIED** — `apple/coreai-optimization#7` (historical report; closed 2026-10-02), with a maintainer answer. The pass *"correctly
 > guards against **static tensor overflow** (weights/constants > FP16_MAX = 65504), but **does not
 > account for activation-level overflow**."*
 >
@@ -3000,16 +3026,16 @@ error.
 > stable versions of ops like `Softplus`**, avoiding the need for changes in either `coreai-opt` or
 > `coreai-torch`."*
 
-**Read that answer carefully.** As of 2026-07 the sanctioned fix for fp16 activation overflow is to
-**rewrite the PyTorch module**. There is no flag, no `ignore_ops` list, no calibration-aware casting.
-Two proposed enhancements are open feature requests, not shipped behaviour: calibration-based
-activation-range analysis, and a user-specified op-exclusion list.
+That maintainer answer describes the historical July behavior. **0.3.0 adds `ignored_ops`**
+to `cast_fp32_to_fp16` and `cast_to_16_bit_precision`. Supply an op overload/packet, a collection
+such as `{torch.ops.aten.exp, torch.ops.aten.softplus}`, or a node predicate. Excluded operations
+stay fp32 with boundary casts. This is an explicit exclusion, not automatic activation calibration.
 
-**Safe default:** if your model contains `softplus`, `logsumexp`, `logcumsumexp` or any `exp` on
-unbounded activations, either substitute a numerically stable formulation before export, or skip
-`cast_to_16_bit_precision` and let the converter handle precision. And **re-check for zeros after you
-change a compression config**, not just after you change the casting — the two interact, and the
-interaction is one-directional (more compression, more risk).
+`apple/coreai-optimization#7` closed 2026-10-02 after **#117** added dynamic overflow calibration
+on `main`. That fix merged after the 0.3.0 tag and **is not a 0.3.0 capability**. Do not pass the
+later `calibration_data` option to the release API. Source: `casting/casting.py` at `189612be`.
+Recheck finite outputs and unexpected zeros after either casting or compression changes; exclusions
+must reflect the sensitive operations in your model.
 
 The pattern of substituting a stable formulation is well-established in this stack; Apple's own
 Neural Engine authoring rules use it for a different reason:
@@ -3030,6 +3056,7 @@ model that has already been converted — with a graph pass, no PyTorch involved
 ### 15.1 The API
 
 > ✅ **VERIFIED** — `src/coreai_opt/coreai_utils/`:
+> <!-- coreai-example: {"id": "p9-01-063"} -->
 > ```python
 > from coreai_opt.coreai_utils import CompressionGranularity, DType
 > from coreai_opt.coreai_utils import quantize_weights, palettize_weights, sparsify_weights
@@ -3041,17 +3068,13 @@ model that has already been converted — with a graph pass, no PyTorch involved
 > class CompressionGranularity(_StrEnum): PER_TENSOR, PER_CHANNEL, PER_BLOCK, PER_GROUPED_CHANNEL
 > ```
 >
-> 🔴 **GAP — `QScheme`'s import path.** The package `__all__` is
-> `CompressionGranularity, DType, palettize_weights, quantize_weights, sparsify_weights` — **`QScheme`
-> is not in it** — yet `docs/src/utils/coreai_compression.md:92-97` does
-> `from coreai_opt.coreai_utils import (…, QScheme, …)`. Either the docs are stale or `__init__`
-> re-exports it implicitly. **What would resolve it:** one import statement in a REPL.
-> **Safe default meanwhile:** `from coreai_opt.coreai_utils.common import QScheme`, which is where it
-> is defined and is correct under both readings.
+`QScheme` is defined in `coreai_opt.coreai_utils.common`; the 0.3.0 package initializer does
+not re-export it. Import it from `common`. The tagged docs' package-level import is stale.
 
 `quantize_weights` in full:
 
 > ✅ **VERIFIED** — `passes/weight_quantization.py:151-160`:
+> <!-- coreai-example: {"id": "p9-01-064"} -->
 > ```python
 > def quantize_weights(
 >     coreai_program: AIProgram,
@@ -3080,6 +3103,7 @@ model that has already been converted — with a graph pass, no PyTorch involved
 The two siblings, for completeness:
 
 > ✅ **VERIFIED** — `passes/weight_palettization.py:63-76` and `passes/weight_sparsification.py:55-64`:
+> <!-- coreai-example: {"id": "p9-01-065"} -->
 > ```python
 > def palettize_weights(coreai_program, lut_dtype, n_bits=4,
 >                       granularity=CompressionGranularity.PER_TENSOR, group_size=32,
@@ -3101,6 +3125,7 @@ The two siblings, for completeness:
 Only constants feeding a small set of ops are candidates:
 
 > ✅ **VERIFIED** — `coreai_utils/passes/__init__.py`:
+> <!-- coreai-example: {"id": "p9-01-066"} -->
 > ```python
 > _OPS_WEIGHT_NEED_COMPRESSION = frozenset({
 >     "coreai.batch_matmul", "coreai.conv2d",
@@ -3110,7 +3135,7 @@ Only constants feeding a small set of ops are candidates:
 > ```
 
 Five ops. If your weight is consumed by anything else, this pass will not see it — which is a much
-narrower reach than the PyTorch-side quantizer's twenty-four annotation patterns.
+narrower reach than the PyTorch-side quantizer's twenty-six annotation patterns.
 
 `weight_num_threshold` is the second filter: constants with fewer elements than the threshold are
 left alone, because compressing a tiny tensor costs more in scale metadata than it saves.
@@ -3123,6 +3148,7 @@ left alone, because compressing a tiny tensor costs more in scale metadata than 
 
 > ✅ **SOURCE-INSPECTED** — adapted current b3 example from `coreai_compression.md`;
 > direct IR utilities modify the module without rerunning the frontend rewrite:
+> <!-- coreai-example: {"id": "p9-01-067"} -->
 > ```python
 > from coreai.authoring import AIModelAsset
 > from coreai_opt.coreai_utils import DType, quantize_weights
@@ -3171,6 +3197,7 @@ Everything §13 argues for is unavailable here.
 Every CoreML rejection carries the same closing sentence, which tells you Apple expects you to move:
 
 > ✅ **VERIFIED** — `common.py:163-177`:
+> <!-- coreai-example: {"id": "p9-01-068"} -->
 > ```python
 > class CoreMLExportError(ValueError):
 >     def __init__(self, message: str) -> None:
@@ -3180,6 +3207,7 @@ Every CoreML rejection carries the same closing sentence, which tells you Apple 
 ### 16.2 What CoreML cannot do
 
 > ✅ **VERIFIED** — `src/coreai_opt/_utils/export_utils.py:17-47`:
+> <!-- coreai-example: {"id": "p9-01-069"} -->
 > ```python
 > COREML_SUPPORTED_WEIGHT_DTYPES     = {torch.int8, torch.uint8, torch.int4, torch.uint4}
 > COREML_SUPPORTED_ACTIVATION_DTYPES = {torch.int8, torch.uint8}
@@ -3199,6 +3227,7 @@ Every CoreML rejection carries the same closing sentence, which tells you Apple 
 > maintainer note **"I verified that CoreML doesn't support per-channel activations"** (@guru-desh).
 >
 > ✅ **VERIFIED** — the CoreML pipeline shape, `docs/src/quantization/overview.md:54-69`:
+> <!-- coreai-example: {"id": "p9-01-070"} -->
 > ```python
 > finalized_model = quantizer.finalize(backend=opt.ExportBackend.CoreML)
 > traced_model = torch.jit.trace(finalized_model, example_inputs)
@@ -3217,20 +3246,14 @@ Two more CoreAI-only restrictions, gathered here so they are in one place:
 
 > ✅ **VERIFIED** — **joint compression finalizes only to CoreAI** (§10.4). **KV-cache quantization is
 > CoreAI-only** (§12); the CoreML branch raises `NotImplementedError`. And **`mmap_dir` is CoreAI +
-> eager only** (§2.6).
+> either execution mode in 0.3.0** (§2.6).
 
-### 16.3 One open CoreML bug worth knowing
+### 16.3 Historical CoreML root-module bug
 
-> ✅ **VERIFIED** — coreai-opt **issue/PR #15, OPEN**: `Quantizer.finalize(backend=ExportBackend.CoreML)`
-> crashes on a bare `nn.Linear` model. `_get_weight_input_names` splits the `get_attr` target on the
-> last dot; a **root-module parameter has a dot-less target** (`weight`) →
-> `ValueError: Invalid weight target path: weight`. The proposed fix returns `""` as the module name,
-> since `named_modules()` has a `""` key.
-
-If your minimal reproduction is a single `nn.Linear` and it fails on the CoreML backend, that is this
-bug, not your config. Wrap the layer in a container module and it goes away.
-
----
+`apple/coreai-optimization#15` fixed root-module weight target paths on 2026-08-03 and is included
+in 0.3.0. The former `ValueError: Invalid weight target path: weight` for a bare Linear is historical;
+a wrapper is no longer the prescribed workaround. CoreML validation restrictions in §16.2 still
+apply. This refresh did not run CoreML fixtures; the optional dependency profile is separate.
 
 ## 17. ⚠️ Silent failures, consolidated
 
@@ -3251,6 +3274,7 @@ you did not compute.
 > ✅ **VERIFIED** — `apple/coreai-models`, `export/compiler.py`. Unlike the LLM path (which compresses
 > the PyTorch model *before* export), **diffusion quantizes after MLIR lowering**:
 > `export/compiler.py:29`
+> <!-- coreai-example: {"id": "p9-01-071"} -->
 > ```python
 > async def apply_mlir_quantization(coreai_program, quantize_config) -> AIProgram
 > ```
@@ -3269,6 +3293,7 @@ you did not compute.
 > model with a deliberately invalid quantization config and reading the emitted `metadata.json`.
 > **Safe default meanwhile:** **do not trust `metadata.json` as evidence of compression.** Verify by
 > file size against the theoretical size from §7.2, and capture warnings during export:
+> <!-- coreai-example: {"id": "p9-01-072"} -->
 > ```python
 > import logging, warnings
 > logging.basicConfig(level=logging.WARNING)
@@ -3297,54 +3322,56 @@ of §13's method as this corpus can offer.
 
 ### 17.3 A shared weight can take its dtype from one config and its schedule from another
 
-Covered at §11.5 (coreai-opt issue #41, OPEN). The eager-mode warning **mentions only the schedule,
+Covered at §11.5 (`apple/coreai-optimization#41`, fixed in 0.3.0 graph mode). The eager-mode warning **mentions only the schedule,
 not the dtype**. **Detect:** for any tied weight, assert that the resolved quant range matches what
 you configured. **Avoid:** give every consumer of a shared weight identical specs and schedules.
 
 ### 17.4 fp16 casting can zero an activation, and compression makes it likelier
 
-Covered at §14.4 (`apple/coreai-optimization#7`, OPEN, with maintainer answer). **Detect:** check for
+Covered at §14.4 (`apple/coreai-optimization#7`, historical report; post-release fix on main). **Detect:** check for
 unexpected zeros in outputs after *any* change to either the compression config or the casting step.
-**Avoid:** substitute numerically stable op formulations in the PyTorch module — the sanctioned fix.
+**Avoid:** use 0.3.0 `ignored_ops` exclusions or stable op formulations; dynamic calibration is post-release.
 
 ### 17.5 Per-channel activation granularity is silently downgraded around shared observers
 
-Covered at §9.6. On 0.2.1 the downgrade is unconditional for channel-altering ops; on `main` it is
+Covered at §9.6. Historically 0.2.1 downgraded channel-altering ops unconditionally; in 0.3.0 it is
 shape- and identity-aware and **logs at warning level**. Per-block activation granularity is
 downgraded unconditionally in both. **Detect:** read the warnings; compare the realised bit-width to
 the configured one.
 
 ### 17.6 A negative `axis` used to land on the wrong dimension
 
-Covered at §8.5 (`coreai-torch` PR #24, MERGED 2026-07-08). The failure had **no shape error** when
+Covered at §8.5 (`apple/coreai-torch#24`, MERGED 2026-07-08). The failure had **no shape error** when
 the channel and its neighbour shared a size. **Avoid permanently:** write non-negative axes.
 
-A second, still-open instance of the same class:
+A second historical instance, fixed in 0.3.0:
 
-> ⚠️ **SILENT FAILURE (open).** ✅ **VERIFIED** — coreai-opt PR #45, **OPEN**:
-> **`ChannelStructured(axis=-1)` prunes the wrong channels.** `_compute_channel_mask` compares each
-> dim index against the raw axis; a negative axis never matches, so the per-channel L1 norms collapse
-> to a scalar. With more than one channel kept it fails loudly with
+> ⚠️ **HISTORICAL SILENT FAILURE.** `apple/coreai-optimization#45` merged 2026-08-03;
+> negative-axis normalization is present in 0.3.0:
+> **Before the fix, `ChannelStructured(axis=-1)` pruned the wrong channels.** `_compute_channel_mask`
+> compared each dim index against the raw axis; a negative axis never matched, so the per-channel L1
+> norms collapsed to a scalar. With more than one channel kept it failed loudly with
 > `RuntimeError: selected index k out of range` — but the failure mode with one channel is silent.
 > (`PerChannelGranularity` already documents and resolves negative indexing, which is why the
 > inconsistency is a bug.)
 
 And a third, in the converter:
 
-> ⚠️ **SILENT FAILURE (open).** ✅ **VERIFIED** — `coreai-torch` **PR #41, OPEN (fix unmerged as of
-> 2026-07-29)**:
+> ⚠️ **SILENT FAILURE in the 0.4.3 tag.** ✅ **SOURCE-INSPECTED** — `apple/coreai-torch#41`
+> merged 2026-09-25, after that tag; the release lacks the fix:
 > `SubbyteTensor.__torch_dispatch__`'s `aten.cat` branch reads `dim` via `fill_defaults` but **never
 > passes it**, so **every `cat` on a packed intx/uintx tensor runs on dim 0**. Two `(2,4)` tensors with
 > `dim=1` give `(4,4)` instead of `(2,8)`, **silently**. Affects both `IntxTensor` and `UintxTensor`.
 > File: `coreai_torch/_compression/_intx.py`.
 >
-> **Safe default:** avoid `torch.cat` on packed sub-byte tensors until this closes; concatenate before
+> **Safe default on 0.4.3:** avoid `torch.cat` on packed sub-byte tensors; concatenate before
 > packing, or in the dense domain.
 
 ### 17.7 Eager-mode `finalize(CoreAI)` frees your float weights
 
-Not silent, but irreversible and easy to walk into in eager mode with the Core AI backend (§2.5).
-It is not the behavior of every backend or graph mode. `deepcopy` before `prepare()`.
+Irreversible in eager mode with the Core AI backend (§2.5). Graph quantization also removes unused
+dense originals at finalize; the mechanisms differ. Preserve dense quality and prepared compressed
+references before finalize. These claims do not describe every export backend.
 [^destructive-finalize-scope]
 
 ### 17.8 A round-tripped config accepts `only_for` twice
@@ -3502,13 +3529,10 @@ quantized (§4.2 — `op_state_spec={"weight": ...}` targets exactly one name).
 data: `flatten` is a `SharedObserverModulePattern`, so its input and output are the same
 `FakeQuantize` object and therefore the same numbers.
 
-🔴 **GAP — the API that produces this table is unverified.** `docs/src/utils/activation_comparison.md`
-exists and the output above is quoted from it, but the function name and signature that generate it
-were not read. **What would resolve it:** reading that doc page's code block, or
-`make api-list MODULE=coreai_opt.inspection`. **Safe default meanwhile:** use
-`coreai_torch.debugging.torch_utils.save_intermediates(...)` plus `load_intermediates(...)` — a
-✅ **VERIFIED** pair with a published signature — and compute SNR yourself. That path is Part 10's
-subject and it is what the Core AI Debugger consumes.
+The 0.3.0 `activation_comparison.md` builds this table using local capture helpers
+`collect_node_outputs(gm, inputs)` and `op_to_fq(prepared)`, not a public inspection API.
+Those doc-local helpers illustrate matching dense and fake-quantized graph nodes. The dated SNR
+numbers above remain published measurements; our native fixtures do not remeasure this model.
 
 ### 18.6 Community measurements — attributed, and to be treated as such
 
@@ -3542,6 +3566,7 @@ meanwhile:** use them to decide **what to test**, never to decide **what to ship
 
 ### 19.1 The five-line recipe
 
+<!-- coreai-example: {"id": "p9-01-073"} -->
 ```python
 from coreai_opt.quantization import Quantizer, QuantizerConfig
 config = QuantizerConfig.presets.w8()            # or .w4(), or .w4_per_block(block_size=32)
@@ -3553,6 +3578,7 @@ final.eval()
 
 ### 19.2 API surface
 
+<!-- coreai-example: {"id": "p9-01-074"} -->
 ```python
 coreai_opt.__all__                       = CoreMLExportError, ExportBackend, __version__
 coreai_opt.quantization.__all__          = ExecutionMode, InvalidExecutionModeError,
@@ -3591,7 +3617,7 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 | Weight-only, awkward model? | same presets, `execution_mode=ExecutionMode.EAGER` |
 | Activations too? | GRAPH, **must** calibrate, use representative `example_inputs` |
 | Palettization or pruning? | EAGER — the only mode |
-| Need `mmap_dir`? | EAGER + CoreAI |
+| Need `mmap_dir`? | GRAPH/EAGER + CoreAI |
 | Need KV-cache quantization? | GRAPH + CoreAI |
 | Need FP4/FP8? | CoreAI only |
 | Need per-channel activations? | CoreAI only, and read §9.6 |
@@ -3633,7 +3659,7 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 | 11 | CoreML: no FP4/FP8, no int2, no per-channel activations, no MINVAL | 16.2 |
 | 12 | Joint compression finalizes only to CoreAI | 10.4 |
 | 13 | Eager-mode `finalize(CoreAI)` frees dense weights, irreversibly[^destructive-finalize-scope] | 2.5 |
-| 14 | `mmap_dir`: eager + CoreAI + CPU + empty dir, files must outlive the model | 2.6 |
+| 14 | `mmap_dir`: GRAPH/EAGER + CoreAI + CPU + empty dir, files must outlive the model | 2.6 |
 | 15 | Dynamic quantization cannot be exported — `_TORCH` only | 6.5 |
 | 16 | `step()` outside `training_mode()` raises; `_step_count` never resets | 11.3 |
 | 17 | QAT schedules and the manual enable/disable APIs are mutually exclusive | 11.4 |
@@ -3653,7 +3679,7 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 > ✅ **VERIFIED** — `Makefile`:
 > ```bash
 > make env                        # .venv with dev + coreai + coreml groups
-> make env-lowest-torch           # torch 2.8 ;  make env-highest-torch → torch 2.11
+> make env-lowest-torch           # torch 2.8 ;  make env-highest-torch → torch 2.14
 > make check                      # pre-commit: ruff, mypy, license headers, mdformat, …
 > make test-fast                  # marker 'not slow' ;  make test-slow ;  make test-smoke
 > make api-list MODULE=coreai_opt.quantization.spec.spec
@@ -3673,15 +3699,208 @@ coreai_opt.coreai_utils.__all__          = CompressionGranularity, DType, palett
 
 ---
 
+### 19.7 Small native fixtures for the 0.3.0 lifecycle
+
+The native verifier executes this fence itself in both documented dependency profiles. Each eligible
+Linear weight has 4096 elements. Capture the **compressed** reference before destructive finalize;
+report its quality loss against the dense model separately from conversion fidelity. These small
+fixtures establish API behavior, not production quality or delegate-specific performance.
+
+<!-- coreai-example: {"id": "compression-native-fixtures"} -->
+```python
+import asyncio
+import copy
+import tempfile
+from pathlib import Path
+
+import numpy as np
+import torch
+from torch import nn
+from coreai.authoring import AIModelAsset
+from coreai.runtime import NDArray
+from coreai_torch import TorchConverter, get_decomp_table
+from coreai_opt import ExportBackend
+from coreai_opt.quantization import (
+    ExecutionMode, Quantizer, QuantizerConfig, ModuleQuantizerConfig, QuantizationSpec,
+)
+from coreai_opt.quantization.spec import PerBlockGranularity
+from coreai_opt.palettization import (
+    KMeansPalettizer, KMeansPalettizerConfig, ModuleKMeansPalettizerConfig, PalettizationSpec,
+)
+from coreai_opt.pruning import MagnitudePruner
+from coreai_opt.inspection import bits_per_weight
+from coreai_opt.casting import cast_fp32_to_fp16
+from coreai_opt.coreai_utils import DType, quantize_weights, palettize_weights, sparsify_weights
+
+
+def small_dense_model():
+    torch.manual_seed(23)
+    return nn.Sequential(nn.Linear(64, 64, bias=False), nn.ReLU()).eval()
+
+
+async def fixture_runtime(path, sample):
+    asset = AIModelAsset.load(Path(path))
+    async with asset.executable() as model:
+        fn = model.load_function("main")
+        assert list(fn.desc.input_names) == ["x"]
+        assert list(fn.desc.output_names) == ["y"]
+        assert list(fn.desc.state_names) == []
+        out = await fn(inputs={"x": NDArray(sample.numpy())})
+        return out["y"].numpy().copy()
+
+
+def convert_fixture(finalized, sample, path, expected, dense):
+    ep = torch.export.export(finalized, (sample,)).run_decompositions(get_decomp_table())
+    program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
+               .add_exported_program(ep, input_names=["x"], output_names=["y"]).to_coreai())
+    program.save_asset(Path(path))
+    actual = asyncio.run(fixture_runtime(path, sample))
+    assert actual.shape == expected.shape
+    assert np.isfinite(actual).all() and np.isfinite(expected).all()
+    # Model-specific conversion budget, separate from compression quality below.
+    np.testing.assert_allclose(actual, expected, atol=1e-2, rtol=1e-3)
+    return {"conversion_max_abs": float(np.max(np.abs(actual - expected))),
+            "compression_quality_max_abs": float(np.max(np.abs(expected - dense)))}
+
+
+def compression_fixtures(work):
+    work = Path(work)
+    torch.manual_seed(31)
+    sample = torch.randn(1, 64) / 4
+
+    def quantization(mode, mmap=False):
+        model = small_dense_model()
+        dense = model(sample).detach().numpy().copy()
+        q = Quantizer(model, QuantizerConfig.presets.w8(execution_mode=mode))
+        prepared = q.prepare((sample,))
+        prepared.eval()
+        expected = prepared(sample).detach().numpy().copy()
+        if mode == ExecutionMode.EAGER:
+            assert bits_per_weight(prepared).bpw < 16
+        else:
+            assert any("activation_post_process" in str(n.target) for n in prepared.graph.nodes)
+        with tempfile.TemporaryDirectory() as directory:
+            finalized = q.finalize(mmap_dir=directory if mmap else None)
+            assert not any(x.is_floating_point() and x.numel() == 4096
+                           for x in finalized.state_dict().values()), "dense original retained"
+            if mmap:
+                assert list(Path(directory).glob("*.safetensors"))
+            result = convert_fixture(finalized, sample, work / f"quant-{mode}-{mmap}.aimodel", expected, dense)
+            return result
+
+    def palettization():
+        model = small_dense_model()
+        dense = model(sample).detach().numpy().copy()
+        p = KMeansPalettizer(model, KMeansPalettizerConfig.presets.w4())
+        prepared = p.prepare((sample,), num_workers=1).eval()
+        assert bits_per_weight(prepared).bpw < 16
+        expected = prepared(sample).detach().numpy().copy()
+        return convert_fixture(p.finalize(), sample, work / "palettized.aimodel", expected, dense)
+
+    def pruning():
+        model = small_dense_model()
+        dense = model(sample).detach().numpy().copy()
+        p = MagnitudePruner(model)
+        prepared = p.prepare((sample,)).eval()
+        zeros = int((prepared[0].weight == 0).sum())
+        assert zeros >= 2048
+        expected = prepared(sample).detach().numpy().copy()
+        result = convert_fixture(p.finalize(), sample, work / "pruned.aimodel", expected, dense)
+        result["zero_weights"] = zeros
+        return result
+
+    def joint():
+        model = small_dense_model()
+        dense = model(sample).detach().numpy().copy()
+        lut = QuantizationSpec(dtype=torch.int8)
+        p = KMeansPalettizer(model, KMeansPalettizerConfig(global_config=
+            ModuleKMeansPalettizerConfig(op_state_spec={"weight": PalettizationSpec(n_bits=4, lut_qspec=lut)})))
+        prepared = p.prepare((sample,), num_workers=1).eval()
+        assert bits_per_weight(prepared).bpw < 16
+        palettized = p.finalize()
+        q = Quantizer(palettized, QuantizerConfig(global_config=ModuleQuantizerConfig(op_state_spec=None)))
+        prepared = q.prepare((sample,))
+        with q.calibration_mode():
+            prepared(sample)
+        prepared.eval()
+        expected = prepared(sample).detach().numpy().copy()
+        return convert_fixture(q.finalize(), sample, work / "joint.aimodel", expected, dense)
+
+    def direct_ir(kind):
+        model = small_dense_model()
+        ep = torch.export.export(model, (sample,)).run_decompositions(get_decomp_table())
+        program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
+                   .add_exported_program(ep, input_names=["x"], output_names=["y"]).to_coreai())
+        dense = model(sample).detach().numpy().copy()
+        transforms = {"quantize": lambda p: quantize_weights(p, dtype=DType.INT8),
+                      "palettize": lambda p: palettize_weights(p, lut_dtype=None, n_bits=4),
+                      "sparsify": lambda p: sparsify_weights(p, target_sparsity=0.5)}
+        compressed = transforms[kind](program)
+        ir = str(compressed)
+        assert ir != str(program), "eligible weight was not compressed"
+        expected_op = {"quantize": "blockwise_shift_scale", "palettize": "lut_to_dense", "sparsify": "sparse_with_bitmask_to_dense"}[kind]
+        assert expected_op in ir
+        path = work / f"direct-{kind}.aimodel"
+        compressed.save_asset(path)  # serialize; neither utility nor save reruns frontend rewrite
+        assert expected_op in str(AIModelAsset.load(path).program)
+        actual = asyncio.run(fixture_runtime(path, sample))
+        assert actual.shape == dense.shape and np.isfinite(actual).all()
+        return {"compression_quality_max_abs": float(np.max(np.abs(actual - dense))),
+                "serialization_compression_op": expected_op}
+
+    def casting_exclusion():
+        class Exp(nn.Module):
+            def forward(self, x):
+                return torch.exp(x) + 1
+        ep = torch.export.export(Exp(), (sample,)).run_decompositions(get_decomp_table())
+        assert cast_fp32_to_fp16(ep, ignored_ops={torch.ops.aten.exp}) is ep
+        nodes = [n for n in ep.graph.nodes if n.target == torch.ops.aten.exp.default]
+        assert nodes and nodes[0].meta["val"].dtype == torch.float32
+        return {"exp_dtype": str(nodes[0].meta["val"].dtype)}
+
+    def block_activation():
+        spec = QuantizationSpec(dtype=torch.int8, granularity=PerBlockGranularity(axis=1, block_size=32))
+        q = Quantizer(small_dense_model(), QuantizerConfig(global_config=ModuleQuantizerConfig(
+            op_input_spec={"*": spec}, op_output_spec={"*": spec})))
+        prepared = q.prepare((sample,))
+        with q.calibration_mode():
+            prepared(sample)
+        assert torch.isfinite(prepared(sample)).all()
+        # 0.3.0 supports block activation simulation; backend export is separately restricted.
+        try:
+            q.finalize()
+        except RuntimeError as error:
+            assert "does not support PerBlockGranularity on activations" in str(error)
+            return {"prepare": "PASS", "finalize_restriction": str(error)}
+        raise AssertionError("inspect changed backend support before updating this fixture")
+
+    return {"graph quantization": lambda: quantization(ExecutionMode.GRAPH),
+            "eager quantization": lambda: quantization(ExecutionMode.EAGER),
+            "graph mmap finalize": lambda: quantization(ExecutionMode.GRAPH, mmap=True),
+            "eager mmap finalize": lambda: quantization(ExecutionMode.EAGER, mmap=True),
+            "palettization": palettization, "pruning": pruning, "joint compression": joint,
+            "direct IR quantization": lambda: direct_ir("quantize"),
+            "direct IR palettization": lambda: direct_ir("palettize"),
+            "direct IR sparsification": lambda: direct_ir("sparsify"),
+            "casting exclusions": casting_exclusion, "block activation": block_activation}
+```
+
+See §8.9 for graph-mode composite externalization. `bits_per_weight` is an analytical estimate
+for prepared eager quantization/palettization, including uncompressed parameters and buffers;
+it is not serialized asset size. The direct IR fixtures test emitted compression operations,
+serialization, finite runtime outputs and quality against dense output; they do not claim a
+separately established exact compressed PyTorch reference for the IR transformation.
+
+---
+
 ## 20. Sources and evidence ledger
 
 ### 20.1 What was read, and how strongly it counts
 
 **Class 1 — shipped source on disk (strongest evidence available for this topic).**
 
-`apple/coreai-optimization`, local clone, branch `main`, HEAD **`cd95cb2`** *("fix: try per-channel
-act quant for shared observers but fall back to per-tensor if unsafe (#52)")*. 29,337 Python LOC
-under `src/`. Files read in-session and cited above:
+`apple/coreai-optimization`, local clone, release commit **`189612be`** (0.3.0, 2026-09-25). The July snapshot
+`cd95cb2` is historical evidence only. Files read in-session and cited above:
 
 - `src/coreai_opt/{__init__,_about,common,base_model_compressor}.py`
 - `config/compression_config.py`, `config/spec/{base,compression_simulator,factory}.py`
@@ -3697,7 +3916,7 @@ under `src/`. Files read in-session and cited above:
 - `pyproject.toml`, `Makefile`, `AGENTS.md`, `CHANGELOG.md`, `changelog.d/*`, `.github/workflows/ci.yaml`
 - `tests/{test_smoke,test_joint_compression,test_api_visibility}.py`,
   `tests/quantization/test_kv_cache_quantization.py`
-- `git log --oneline -50`, `git show cd95cb2`
+- release `CHANGELOG.md` and implementation at `189612be`
 
 `apple/coreai-models`, local clone — for the shipping recipes, the presets and the SAM3 pipeline:
 `export/presets.py`, `export/pipeline.py`, `export/compiler.py`, `diffusion/presets.py`,
@@ -3717,8 +3936,9 @@ here.
 `examples/{toy_models,resnet50,edsr,mixed_precision_palettization}.md`.
 
 **Class 4 — GitHub issues and PRs** on `apple/coreai-optimization` and `apple/coreai-torch`, including
-several with Apple-maintainer answers (#3, #7, #16, #42/#44). Issue numbers, states and dates as of
-2026-07-29.
+several with Apple-maintainer answers on `apple/coreai-optimization#3`, `apple/coreai-optimization#7`,
+`apple/coreai-optimization#16`, `apple/coreai-optimization#42` and `apple/coreai-optimization#44`. Current dispositions are recorded in the 2026-10-06 refresh evidence; archived reports
+retain their dates.
 
 **Class 5 — WWDC26 session 325**, *"Dive into Core AI model authoring and optimization"* (Sachin,
 Core AI; Nicole, Core AI Debugger). Every `325:NN` citation is a transcript line reference. Used for
@@ -3737,11 +3957,11 @@ AI to check against — verified: **0 `sampleCode` entries across 312 indexed Co
 
 | Conflict | Ruling |
 |---|---|
-| Session 325: *"EAGER works great for weight compression"* vs the repo: GRAPH is the *"recommended default"* and the actual default | **Both true, different scopes.** For weight-only the modes converge and EAGER avoids `torch.export`; for activations GRAPH's machinery is load-bearing. §8.4 gives the decision table. |
+| Session 325: *"EAGER works great for weight compression"* vs the repo: GRAPH is the *"recommended default"* and the actual default | **Both true, different scopes.** Both support weight compression; EAGER avoids `torch.export`, but numerical equivalence is not guaranteed. For activations GRAPH provides broader support. §8.4 gives the decision table. |
 | Session 325: *"4-bit palettization to **the two encoders**"* vs shipped SAM3: image **w4/gs32**, text **w6/gs8** | **Shipped source wins.** The talk simplified. Both quoted, §13.6. |
 | Session 325: *"4-bit palettization **with per-channel scales**"* vs shipped SAM3: `enable_per_channel_scale=False` deliberately | **Shipped source wins**, and the reason is a hardware limit worth its own callout: rank-6 LUTs, ANE max rank 5, silent GPU fallback. §13.6. |
-| `cast_to_16_bit_precision`: *"mutates in place, returns nothing meaningful"* (API notes, and Apple's docs call it as a statement) vs `-> ExportedProgram` and Apple's shipping pipeline **assigning** the result | **Unresolved; declared as a 🔴 GAP.** Safe default given: **assign the result**, which is correct under both readings and is what Apple's own pipeline does. §14.2. |
-| `coreai_utils.QScheme`: absent from package `__all__` but imported from the package in Apple's docs | **Unresolved; declared as a 🔴 GAP.** Safe default: import from `coreai_opt.coreai_utils.common`. §15.1. |
+| `cast_to_16_bit_precision`: *"mutates in place, returns nothing meaningful"* (API notes, and Apple's docs call it as a statement) vs `-> ExportedProgram` and Apple's shipping pipeline **assigning** the result | **Resolved by 0.3.0 implementation:** mutates and returns the same ExportedProgram. §14.2. |
+| `coreai_utils.QScheme`: absent from package `__all__` but imported from the package in Apple's docs | **Resolved by 0.3.0 implementation:** import from `coreai_opt.coreai_utils.common`. §15.1. |
 | Community: *"int4 flips next-token argmax; int8 is the floor"* vs Apple shipping **int4** as the macOS LLM default | **Both stand.** Different acceptance bars — "matches HF greedy argmax" is not "is a good assistant". §10.2 states both and refuses to pick. |
 | Community: int8 **k-means** is exact for dense projections vs the same corpus: **symmetric linear int8** is clean and k-means lossier for MoE experts at top-k ≥ 4 | **Both stand, do not flatten.** Synthesis given: int8 is the safe floor; *which* int8 is tensor-role- and routing-dependent. §10.2. |
 | Apple docs use `weight_num_threshold=2048` in "advanced" examples; the code default is **1024**; Apple's diffusion export uses **32768** | No conflict — all three are deliberate. Stated as such. §15.2. |
@@ -3750,49 +3970,38 @@ AI to check against — verified: **0 `sampleCode` entries across 312 indexed Co
 
 | # | Unknown | What would resolve it | Safe default meanwhile |
 |---|---|---|---|
-| 1 | `mmap_dir` on-disk layout, safetensors filenames, sharding | `finalize(mmap_dir=d)` then `ls d`; or read `_utils/export_utils.py` in full | Treat as opaque; fresh `TemporaryDirectory` per export, kept alive exactly as long as the model (§2.6) |
-| 2 | Whether `cast_*` returns a new program or mutates and returns the same one | Read `casting/casting.py`, or `print(cast_to_16_bit_precision(ep) is ep)` | **Assign the result and never touch the input again** (§14.2) |
-| 3 | The exact FP16 threshold constant and node-level heuristics in the casting pass | Read `casting/casting.py` | Trust the docs' *"approximately ±65504"* only as an order of magnitude; test for zeros (§14.4) |
-| 4 | Whether `QScheme` is importable from `coreai_opt.coreai_utils` | One import in a REPL | `from coreai_opt.coreai_utils.common import QScheme` (§15.1) |
-| 5 | The API that produces the activation-comparison SNR table | Read that doc page's code block; `make api-list MODULE=coreai_opt.inspection` | `coreai_torch.debugging.torch_utils.save_intermediates` / `load_intermediates` — verified signatures, Part 10 (§18.5) |
-| 6 | `ModelInspector.format_summary(colorize=…)` — the kwarg name | Read `inspection/model_inspector.py` | Call `format_summary()` with no arguments |
+| 1 | Resolved: per-weight safetensors files and mmap reload | `_utils/export_utils.py` at `189612be`; native GRAPH/EAGER fixtures | Keep files alive with the model |
+| 2 | Resolved: casting mutates and returns the same program | `casting/casting.py` at `189612be`; native exclusion fixture | Assign returned program |
+| 3 | Resolved: FP16 static-range checks, explicit op exclusions | `casting/casting.py` at `189612be` | Dynamic calibration is post-release |
+| 4 | Resolved: QScheme is not re-exported | `coreai_utils/__init__.py` at `189612be` | Import from `common` |
+| 5 | Resolved: documentation-local capture helpers, not a public API | `activation_comparison.md` at `189612be` | See §18.5 |
+| 6 | Resolved: `format_summary(colorize: bool | None = None)` | `inspection/model_inspector.py` at `189612be` | Pass keyword `colorize` if needed |
 | 7 | Whether diffusion `metadata.json` records the **attempted** or **achieved** compression | Export with a deliberately invalid quantization config and read the emitted metadata | **Do not trust metadata as evidence of compression**; verify by size (§17.2) |
-| 8 | The exact logger name `coreai_opt` emits skip warnings on | `logging.getLogger("coreai_opt")` and check for records | Attach the handler to the **root** logger (§7.5) |
-| 9 | `check_divisibility()`'s real signature in Apple's `compression_metrics.py` | Read that file | The reimplementation in §7.5, written from the documented rule |
+| 8 | Resolved: module loggers for fake quantization and palettization | `spec/fake_quantize.py`, `kmeans/kmeans_fake_palettize.py` at `189612be` | Attach to exact loggers if propagation is disabled (§7.5) |
+| 9 | Resolved: `check_divisibility(model, axis, block_size)` returns a name-to-shape map | `coreai-models` `compression_metrics.py` at `db63a2d8` | Use keywords to avoid argument-order mistakes |
 | 10 | Whether `coreai-torch 0.4.1` / `coreai-core 1.0.0b2` map to specific Xcode or macOS builds | Apple release notes, or a version probe on a known build | Pin exactly what `coreai-opt[coreai]` pins; the only OS hint in the repo is the CI runner label `tahoe` |
-| 11 | k-means initialisation and convergence criteria (max iters, tolerance) | Read `_efficient_kmeans.py` and `deps/_kmeans1d/_core.cpp` | Seed numpy and torch, and use `num_workers=1`, if you need determinism |
+| 11 | Resolved: scalar 1-D exact clustering; vector iterative k-means++ | `_efficient_kmeans.py` and `kmeans_fake_palettize.py` at `189612be`: vector call site uses 5 initializations, max 300 iterations, tolerance 0.0001 (class default max is 100) | Seed NumPy and Torch and use `num_workers=1`; these are implementation details, not public config fields |
 | 12 | How int4/int2 weights are physically packed on disk | Lives in `coreai-torch` / Core AI, not here — Part 8 | Compute expected size from the §7.2 formula and compare |
 | 13 | The size of the detector-excluded SAM3 asset | Apple did not publish it | Quote the bound, not a number (§18.4) |
-| 14 | Whether block-granularity **activation** quantization will ship | PR #56 merging and appearing in a release | Per-tensor activations (§9.6) |
+| 14 | Block activation simulation is released; built-in export rejects it | `_export_utils.py` at `189612be`; native prepare/finalize test | Per-tensor activations for built-in backend export |
 
-### 20.4 Freshness caution
 
-This is young code and it is moving.
+### 20.4 Release versus later main
 
-> ✅ **VERIFIED** — the repository has roughly **35 commits** since `e27b3d0 chore: initial commit`.
-> Version 0.2.1 is dated **2026-07-02**; the HEAD read for this guide is **2026-07-24**. The project
-> classifier is `Development Status :: 3 - Alpha`.
+This guide's current API contract is **0.3.0 at `189612be`**, not whatever `main` contains today.
+`apple/coreai-optimization#117` merged 2026-10-02 and adds calibration-aware dynamic overflow
+handling after this tag. The 0.3.0 API supports `ignored_ops`, but has no `calibration_data`
+argument. Dependency upper bounds were removed in 0.3.0; use documented tested pairs and record
+warnings, rather than inferring that every newer Torch/TorchAO combination works.
 
-Signals worth carrying:
+The June 2026 upstream full-suite result (**4529 passed, 1417 skipped, 567 xfailed, 7 xpassed**)
+is a historical upstream measurement, not our 0.3.0 validation result. Our portable and native
+checks are recorded independently in the refresh evidence.
 
-- **bfloat16 was patched three separate times** (`4df45c0`, `859d7c9`, `f6baedf`) — bf16 paths are the
-  newest and least battle-tested in the package.
-- **CoreML export tests were previously skipped due to a segfault** (`61d7084`) and an eager
-  int8-activation failure (`1001e57`). Both now pass, which means both once did not.
-- **Four unreleased changelog fragments** sat in `changelog.d/` at HEAD: `52.fixed` (shared-observer
-  per-channel activation), `42.fixed` (reject per-channel activations on CoreML), `31.changed`
-  (coremltools removed), `180525445.fixed` (fixed-range op qscheme). None of them are in 0.2.1.
-- **PR #40**, an open +2326/−523 rewrite of graph-mode annotation, will change how config conflicts
-  resolve. If your model concatenates fixed-range and floating-range activations, that area is sharp
-  today (§9.5).
-- Full-suite scale as of June 2026: **4529 passed, 1417 skipped, 567 xfailed, 7 xpassed** in ~30
-  minutes. The skip and xfail counts are large, and several of the gaps in §20.3 correspond to them.
-
-**Before you rely on anything in this guide, check `__version__`:**
-
+<!-- coreai-example: {"id": "p9-01-076"} -->
 ```python
 import coreai_opt
-print(coreai_opt.__version__)     # this guide: 0.2.1, plus main @ cd95cb2 where marked
+assert coreai_opt.__version__ == "0.3.0"
 ```
 
 ### 20.5 Cross-links
@@ -3821,4 +4030,4 @@ print(coreai_opt.__version__)     # this guide: 0.2.1, plus main @ cd95cb2 where
 
 [^destructive-finalize-scope]: The pinned `coreai-optimization` source limits dense-weight freeing
     to `ExportBackend.CoreAI` in eager quantization:
-    [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/cd95cb2545a586dbc14c85f5efd16b4635e5786c/src/coreai_opt/quantization/quantizer.py#L435-L482).
+    [`Quantizer.finalize`](https://github.com/apple/coreai-optimization/blob/189612be60bc1d5cca9b73ad8811660f738c637d/src/coreai_opt/quantization/quantizer.py).

@@ -32,7 +32,7 @@ def main():
     record = {"python": sys.version, "os": platform.platform(),
               "os_build": subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip(),
               "packages": {n: importlib.metadata.version(n) for n in
-                           ("torch", "torchao", "coreai-core", "coreai-torch", "coreai-opt", "numpy")},
+                           ("torch", "torchao", "coreai-core", "coreai-torch", "coreai-opt", "numpy", "scikit-learn")},
               "fixtures": [], "examples": {}}
     work = args.out.parent
     work.mkdir(parents=True, exist_ok=True)
@@ -40,7 +40,7 @@ def main():
     def load(name):
         example = examples[name]
         ns = {"__name__": "guide_verification"}
-        exec(compile(example.code, str(example.path), "exec"), ns)
+        exec(compile("\n" * (example.line - 1) + example.code, str(example.path), "exec"), ns)
         import hashlib
         record["examples"][name] = {"path": str(example.path.relative_to(root)),
                                     "line": example.line,
@@ -54,7 +54,8 @@ def main():
                 raise RuntimeError("negative fixture unexpectedly passed")
             record["fixtures"].append({"name": name, "outcome": "PASS", "details": value})
         except (AssertionError, ValueError, RuntimeError) as error:
-            if rejects and str(error) != "negative fixture unexpectedly passed":
+            # A loader/compiler RuntimeError must never masquerade as a parity rejection.
+            if rejects and isinstance(error, AssertionError):
                 record["fixtures"].append({"name": name, "outcome": "PASS (rejected)", "details": str(error)[:600]})
             else:
                 record["fixtures"].append({"name": name, "outcome": "FAIL", "details": traceback.format_exc()})
@@ -81,7 +82,7 @@ def main():
         check("state consecutive/reset/copied outputs", state_checks)
         check("state asymmetric initial buffers", lambda: [list(x.shape) for x in run(initial=(0.25, -0.5))])
         for length in (1, 33):
-            check(f"export range rejects {length}", lambda length=length: run(lengths=(length,)), rejects=True)
+            check(f"application range rejects {length}", lambda length=length: run(lengths=(length,)), rejects=True)
 
         gate = load("shipped-asset-gate")
         ci = load("ci-asset-gate")
@@ -123,6 +124,14 @@ def main():
             compression = load("compression-native-fixtures")
             for name, fixture in compression["compression_fixtures"](work).items():
                 check(name, fixture)
+            composite = load("composite-quantization")
+            def composite_compare(path, sample, expected, dense):
+                actual = asyncio.run(compression["fixture_runtime"](path, sample))
+                assert actual.shape == expected.shape and np.isfinite(actual).all()
+                np.testing.assert_allclose(actual, expected, atol=1e-2, rtol=1e-3)
+                return {"conversion_max_abs": float(np.max(np.abs(actual - expected))),
+                        "compression_quality_max_abs": float(np.max(np.abs(expected - dense)))}
+            check("graph composite quantization", lambda: composite["composite_fixture"](work, composite_compare))
     except Exception:
         record["fixtures"].append({"name": "setup", "outcome": "FAIL", "details": traceback.format_exc()})
     finally:

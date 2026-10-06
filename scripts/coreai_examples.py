@@ -78,13 +78,16 @@ def python_fences(text: str, path: Path = Path("<fixture>")) -> list[Example]:
             continue
         fence = match[1]
         language = line[match.end():].strip()
+        if language.split()[:1] in (["python"], ["py"]) and language not in ("python", "py"):
+            raise ValueError(f"{path}:{i + 1}: unsupported Python fence info")
         depth = line[:match.start(1)].count(">")
         start = i + 2
         body = []
         i += 1
         while i < len(lines):
             closer = FENCE.match(lines[i])
-            if (closer and closer[1][0] == fence[0] and len(closer[1]) >= len(fence)
+            if (closer and lines[i][:closer.start(1)].count(">") == depth
+                    and closer[1][0] == fence[0] and len(closer[1]) >= len(fence)
                     and not lines[i][closer.end():].strip()):
                 break
             body.append(unquote(lines[i], depth) if language in ("python", "py") else lines[i])
@@ -126,10 +129,17 @@ def optimizer_calls(example: Example) -> list[int]:
 
 
 def guide_examples(root: Path) -> list[Example]:
-    return [example for part in PARTS
+    examples = [example for part in PARTS
             for directory in sorted((root / "guides").glob(f"part-{part:02d}-*"))
             for path in sorted(directory.rglob("*.md"))
             for example in python_fences(path.read_text(encoding="utf-8"), path)]
+    seen = set()
+    for example in examples:
+        if example.id is not None:
+            if example.id in seen:
+                raise ValueError(f"{example.path}:{example.line}: duplicate corpus example ID {example.id}")
+            seen.add(example.id)
+    return examples
 
 
 def removed_optimizer_errors(root: Path) -> list[str]:

@@ -6,7 +6,7 @@
 **26.x** generation and are moving to **iOS/iPadOS/macOS 27** and **Xcode 27**. The specific floors
 that matter: **Core AI is 27.0-only** on every platform, with no 26.x back-deployment; `coreai-torch`
 **0.4.1** is the first release whose assets survive **iOS/macOS 27 beta 2 and later**; `coreai-core`
-is pinned at **1.0.0b2**; AOT compilation needs **Xcode 27** plus the separately-downloaded **Metal
+is currently pinned at **1.0.0b3** with converter **0.4.3**; AOT compilation needs **Xcode 27** plus the separately-downloaded **Metal
 Toolchain**, and `xcrun coreai-build` runs on **macOS 27** hosts; `mlx-swift-lm` **`main` is 3.x**
 and breaks 2.x call sites; `apple/foundation-models-utilities` has shipped only **prerelease** tags.
 Everything in this guide that carries a number was measured on **beta** software, and every number
@@ -238,7 +238,8 @@ Two structural facts about #1 and #2 that trip people up constantly and are wort
 
 > ✅ **VERIFIED** — **`.aimodel` is a directory, not a file**, and so is `.aimodelc`.
 > `apple/coreai-models` treats it as a directory throughout, and its overwrite path calls
-> `shutil.rmtree` on it. `AIProgram.save_asset(path)` writes a bundle containing `main.mlirb`
+> `shutil.rmtree` on it (historical caller behavior; b3 `save_asset` itself replaces an existing
+> destination). `AIProgram.save_asset(path)` writes a bundle containing `main.mlirb`
 > (the IR bytecode), `main.hash`, and `metadata.json`. A compiled `.aimodelc` contains
 > `main-<arch>.mlirb` plus a `main-<arch>-delegates` directory.
 >
