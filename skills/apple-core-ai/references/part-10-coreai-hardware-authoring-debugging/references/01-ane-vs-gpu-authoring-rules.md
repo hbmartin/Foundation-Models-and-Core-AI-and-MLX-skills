@@ -3254,7 +3254,6 @@ converter.add_exported_program(
     output_names=["pred_masks", "pred_boxes", "pred_logits", "presence_logits", "semantic_seg"],
 )
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 
 metadata = build_aimodel_metadata(config.hf_model_id)
 coreai_program.save_asset(asset_path, metadata)

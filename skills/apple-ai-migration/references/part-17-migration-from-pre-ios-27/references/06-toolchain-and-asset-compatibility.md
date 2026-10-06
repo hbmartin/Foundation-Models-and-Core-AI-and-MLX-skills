@@ -280,7 +280,7 @@ planned for it. §5 is how you plan for it.
 PyTorch checkpoint
    │
    │  coreai-torch TorchConverter            ← producer version is recorded (§3)
-   │  AIProgram.optimize()                   ← lowering consults the HOST OS (§4)
+   │  TorchConverter.to_coreai() rewrite     ← lowering consults the HOST OS (§4)
    │  AIProgram.save_asset()
    ▼
 MyModel.aimodel/                             ← class 1: portable source (a directory)
@@ -1229,7 +1229,7 @@ does and does not know:
 > **Community-measured, verbatim:** *"`quantize_pytorch_model` → `coreai-opt` PT2E `Quantizer`… it
 > **ALWAYS** emits the parametrized/dequant form. The fast artifact's plain-`Linear$N`-no-dequant
 > form must therefore be produced **LATER**, by the compiler folding dequant into the Linear
-> composites during `prog.optimize()` (**`coreai-pre-compilation-rewrite`**) / serialization."*
+> composites during the **`coreai-pre-compilation-rewrite`** / serialization."*
 
 That is a deduction, not a direct observation of the pass — but it is a sound one, because it is
 grounded in the fact that the *quantiser's* output is the same in both cases. The divergence
@@ -1260,8 +1260,8 @@ import coreai                              import coreai
    └─ _coreaiIR            (wheel's)          └─ _coreaiIR              (OS's)
         │                                          │
         ▼                                          ▼
-   prog.optimize() runs the WHEEL'S           prog.optimize() runs the OS'S
-   compiler passes                            compiler passes
+   to_coreai() runs the WHEEL'S               to_coreai() runs the OS'S
+   pre-compilation rewrite                    pre-compilation rewrite
         │                                          │
         ▼                                          ▼
    fold dequant into Linear                   emit explicit dequant ops

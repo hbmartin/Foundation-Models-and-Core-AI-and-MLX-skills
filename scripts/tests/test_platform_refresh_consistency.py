@@ -308,6 +308,75 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         total, concrete = (f"{int(value.replace(',', '')):,}" for value in match.groups())
         self.assertIn(f"({total},\n  of which {concrete} describe", overview)
 
+    def test_coreai_torch_043_guidance_has_no_removed_optimizer_calls(self) -> None:
+        roots = (
+            GUIDES / "part-08-coreai-pytorch-conversion",
+            GUIDES / "part-10-coreai-hardware-authoring-debugging",
+            GUIDES / "part-17-migration-from-pre-ios-27",
+        )
+        executable_call = re.compile(
+            r"^\s*(?:>\s*)?[A-Za-z_]\w*(?:\.[A-Za-z_]\w*|\([^\n]*\))*\.optimize\("
+        )
+        offenders = []
+        for root in roots:
+            for path in root.rglob("*.md"):
+                for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                    if executable_call.search(line):
+                        offenders.append(f"{path.relative_to(ROOT)}:{line_number}: {line.strip()}")
+        self.assertEqual([], offenders)
+
+    def test_coreai_torch_49_status_and_current_contract_are_consistent(self) -> None:
+        register = self.read(
+            "guides/part-08-coreai-pytorch-conversion/"
+            "references/02-op-coverage-composites-and-externalization.md"
+        )
+        row = next(
+            line for line in register.splitlines()
+            if "apple/coreai-torch#49" in line
+        )
+        for required in (
+            "closed 2026-10-02",
+            "fixed in the tested 0.4.3 path",
+            "0.4.2 unverified",
+        ):
+            self.assertIn(required, row)
+
+        migration = self.read(
+            "guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md"
+        )
+        for required in (
+            "M5",
+            "26B5091g",
+            "27B5028f",
+            "coreai-torch 0.4.3",
+            "coreai-core 1.0.0b3",
+            "COMMUNITY-MEASURED",
+        ):
+            self.assertIn(required, migration)
+
+        active = "\n".join(
+            path.read_text(encoding="utf-8")
+            for part in (
+                "part-08-coreai-pytorch-conversion",
+                "part-10-coreai-hardware-authoring-debugging",
+                "part-17-migration-from-pre-ios-27",
+            )
+            for path in (GUIDES / part).rglob("*.md")
+        )
+        stale_claims = (
+            "coreai-torch#49` (open",
+            "coreai-torch` issue **#49** (open",
+            "coreai-torch#49` | `optimize() drops",
+            "#49` **OPEN**, 0 comments",
+        )
+        for claim in stale_claims:
+            self.assertNotIn(claim, active)
+
+        self.assertIn(
+            "`to_coreai()` returns an already optimized program",
+            active,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

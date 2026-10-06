@@ -7,7 +7,8 @@ macOS 27.0 · tvOS 27.0 · visionOS 27.0 · watchOS 27.0, every symbol flagged *
 26.x back-deployment, no `@available(iOS 26, *)` shim, and no Core AI release-notes page to diff
 against: `/documentation/updates/coreai` returns **404**. You need **Xcode 27** plus the separately
 downloaded **Metal Toolchain**, and the conversion half of this guide runs on a **macOS 27** host
-with `coreai-torch ≥ 0.4.1`. Core ML, meanwhile, has no announced end-of-life and keeps working on
+with `coreai-torch 0.4.3` for the current conversion API (0.4.1 remains the historical asset floor).
+Core ML, meanwhile, has no announced end-of-life and keeps working on
 every OS you already support. That asymmetry is the whole subject of this guide.
 
 > ⚠️ **This is a partial migration by design — and Apple says so in one sentence.**
@@ -959,26 +960,25 @@ on exactly this, is in
 [Part 15 reference 01 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md)
 and [Part 7 reference 02 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md).
 
-### 3.4 ⚠️ SILENT FAILURE: the converter's `optimize()` can miscompile, and `optimize()` is mandatory
+### 3.4 ⚠️ HISTORICAL SILENT FAILURE: the 0.4.1 optimizer miscompile
 
 This one belongs to the conversion stage but lands in your migration, so it goes here.
 
-`TorchConverter().…​.to_coreai()` returns an `AIProgram` that has **not** been optimized. You must
-call `.optimize()`; stateful models *require* it (mutation outputs become handle tokens). ✅
-**VERIFIED** against the `coreai-torch` source and its documented usage.
+In `coreai-torch 0.4.3`, `TorchConverter().…​.to_coreai()` returns an already optimized `AIProgram`.
+The separate `.optimize()` method used by 0.4.1 no longer exists.
 
-> ⚠️ **And `optimize()` had a correctness bug in 0.4.1.** ✅ **VERIFIED** — `coreai-torch` issue **#49**:
+> ⚠️ **The separate optimizer had a correctness bug in 0.4.1.** 🟠 **COMMUNITY-MEASURED** — `coreai-torch` issue **#49**:
 > *"`AIProgram.optimize()` removes broadcasting-significant axis moves and
 > **silently miscompiles** N×N distance expressions."* A transpose that exists only to make
 > broadcasting work can be treated as removable, and the resulting graph computes something else.
 >
-> ✅ **FIXED WITH RESIDUAL — 2026-10-02.** The issue closed as completed after the reporter retested
+> 🟠 **COMMUNITY-MEASURED — FIXED WITH RESIDUAL RISK, 2026-10-02.** The issue closed as completed
+> after the reporter retested on an M5 running macOS 27.2 (26B5091g), Xcode 27.2 (27B5028f),
 > `coreai-torch 0.4.3` / `coreai-core 1.0.0b3`; all three minimal patterns passed with maximum absolute
 > error from 1.907e-06 to 3.815e-06. The retest did not include full end-to-end registration validation
 > or an expanded boundary sweep. **Safe default:** run the Python-side numeric parity check on the
-> shipped optimized program,
-> not the unoptimized one — the bug is introduced by `optimize()`, so a parity test that runs before
-> it will pass while the shipped asset is wrong.
+> shipped program. Version 0.4.2 was not tested, so do not infer its status from the 0.4.1 and 0.4.3
+> measurements. The canonical status entry is [Part 8 §9.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register).
 
 That last sentence generalizes into the rule this whole section is arguing for: **validate the
 artifact you are going to ship, at the stage you are going to ship it from.** Every silent failure
@@ -1095,7 +1095,6 @@ program = (
     )
     .to_coreai()
 )
-program.optimize()          # mandatory — stateful models require it
 program.save_asset("Decoder.aimodel")
 ```
 
@@ -1104,10 +1103,10 @@ program.save_asset("Decoder.aimodel")
 > Core AI IR carries `{MutableBuffers.buffer_mutation = "b_state", coreai.name = "b_state"}`.
 > `add_exported_program`'s naming parameters are **keyword-only** in the real source (there is a `*`
 > in the signature) even though the published API doc shows them positionally — write them as
-> keywords. `to_coreai()` does **not** optimize; `.optimize()` is required, and stateful models
-> require it specifically because mutation outputs become handle tokens.
+> keywords. In 0.4.3 `to_coreai()` applies the pre-compilation rewrite, including the handle-signature
+> work required by stateful models; there is no separate optimization call.
 > 🟡 The body of `Decoder` here is illustrative app code shaped after session 324's narration;
-> only the `register_buffer` / `state_names` / `optimize()` mechanics are verified API.
+> only the `register_buffer` / `state_names` / `to_coreai()` mechanics are verified API.
 
 **How you drive them.** Swift side, states are a third argument to `run`:
 
@@ -1224,7 +1223,6 @@ converter.add_exported_program(det_program, entrypoint_name="detect",
                                input_names=["backbone_features", "text_features"],
                                output_names=["masks", "scores"])
 program = converter.to_coreai()
-program.optimize()
 program.save_asset("Segmenter.aimodel")
 ```
 
@@ -1688,12 +1686,11 @@ snippets have not.
 ### 5.4 Beta status, open bugs, and one tooling gap you will hit immediately
 
 Every Core AI symbol is flagged **Beta**. That is not a formality here; the corpus contains a
-substantial list of open, reproduced defects across the converter, the optimizer and the model
-repository. A representative sample, all ✅ verified as filed issues, all with **🔴 unknown current
-status** as of the corpus snapshot (2026-07-27):
+substantial list of reproduced defects across the converter, compiler and model repository. A
+representative sample follows; use the linked register for current status:
 
-- **Silent miscompiles** — `AIProgram.optimize()` dropping broadcasting-significant axis moves
-  (`coreai-torch` #49); the GPU delegate executing `floor`/`trunc`/`ceil` as identity (#10); float→int→float
+- **Silent miscompiles** — the historical 0.4.1 optimizer dropping broadcasting-significant axis moves
+  (`coreai-torch` #49, closed after a 0.4.3 retest); the GPU delegate executing `floor`/`trunc`/`ceil` as identity (#10); float→int→float
   cast round-trips folded away, dropping truncation semantics (#9).
 - **Numeric instability on the ANE** — fp16 overflow in `softplus`, `mish`, `logsumexp`,
   `logcumsumexp` for want of stable decompositions (#21); an fp16 discrepancy in MobileNetV3's
@@ -1805,7 +1802,6 @@ ep = ep.run_decompositions(get_decomp_table())
 # Convert to Core AI IR.
 converter = TorchConverter().add_exported_program(ep)
 coreai_program = converter.to_coreai()
-coreai_program.optimize()
 coreai_program.save_asset("MyModel.aimodel")
 ```
 
@@ -1934,7 +1930,7 @@ So the two ecosystems are separate at runtime and touching only in the test matr
 If you got here and decided to proceed, this is the shortest safe path for **one** model. Every item
 maps to a section above or a Part 8 section.
 
-1. **Pin your toolchain.** `coreai-torch ≥ 0.4.1`. Assets converted with **0.4.0 fail to load on
+1. **Pin your toolchain.** Use `coreai-torch 0.4.3` for the current API. Assets converted with **0.4.0 fail to load on
    OS 27 beta 2 and later** — this is verbatim from Apple's own release note, and it is the single
    biggest version gate in the stack. See [17.6](06-toolchain-and-asset-compatibility.md).
 2. **Get `torch.export.export` to succeed**, before anything Core AI–specific. This is PyTorch's
@@ -1947,9 +1943,8 @@ maps to a section above or a Part 8 section.
    `coreai-models.PreparedModel`, see §3.1: its classifier gives a dynamic single-`main` structure
    the package's GPU preference. Direct `AIModel` callers choose their own options.
    [^sample-routing-policy]
-6. **`to_coreai()`, then `optimize()`, then `save_asset()`.** In that order. `optimize()` is not
-   optional and `to_coreai()` does not do it.
-7. **Run the Python-side parity check on the optimized program** (§3.4). Record the threshold you
+6. **`to_coreai()`, then `save_asset()`.** In 0.4.3 conversion includes the automatic pre-compilation rewrite.
+7. **Run the Python-side parity check on the shipped program** (§3.4). Record the threshold you
    accepted.
 8. **Open the `.aimodel` in Xcode's model viewer** and read the Functions tab. Confirm the signature
    is what you think it is. The viewer shows a dynamic dimension as **`?`**; the API reports it as
@@ -2424,7 +2419,7 @@ Plus `developer.apple.com/core-ai-debugger/` for the Debugger's host and paired-
   `export/compiler.py` (the swallowed quantization warning), `pipeline.py` (`shutil.rmtree` on the
   `.aimodel` directory).
 - `apple/coreai-torch` — `TorchConverter` signatures, `tests/test_stateful.py` (the `register_buffer`
-  → state mechanism and the resulting IR), the mandatory `run_decompositions` / `optimize()` rules,
+  → state mechanism and the resulting IR), the mandatory `run_decompositions` and automatic 0.4.3 rewrite,
   the `entrypoint_name` uniqueness constraint, the `pyproject.toml` dependency sets.
 - `apple/coreai-optimization` — `Quantizer`, `KMeansPalettizer`, `MagnitudePruner`, the
   `ExportBackend.CoreAI` / `ExportBackend.CoreML` split, the destructive-`finalize` note, the silent
@@ -2465,7 +2460,6 @@ Every 🔴 in this guide, in one place, so a future pass can close them.
 | §2.3 | How to read sub-byte and 8-bit-float `NDArray`s from Swift; `ScalarType.type` is referenced by a doc note but absent from the 312-symbol index | An SDK interface dump, or a device experiment on a palettized tensor | Keep public function I/O in `.float32` / `.float16`; treat sub-byte as storage-only |
 | §2.5 | `expectFrequentReshapes` — no discussion, no stated default, no initializer | An Apple answer, or a controlled A/B on a dynamic-shape model | Leave it alone unless you ship a dynamic-shape decode loop |
 | §2.9 | Whether a zero-copy `CVPixelBuffer` image path exists in practice — Apple's own vision packages do not use one | A converted image-input model run both ways under the Instruments template | Follow Apple's package: `CGImage` in, hand-built `Float32` `NDArray` out |
-| §3.4 | Current status of `coreai-torch` #49 (`optimize()` dropping broadcasting-significant axis moves) | Check the issue before trusting a converted model with pairwise-distance or explicit-broadcast patterns | Run the parity check on the **optimized** program |
 | §4.2 | The 76%-faster claim has no stated device, warmup protocol or comparison basis | A reproduction on named hardware with a stated protocol | Treat it as an existence proof, not a number to quote |
 | §5.2 | ~~Whether a typed runtime error exists~~ **Narrowed 2026-07-29:** the interface dumps confirm no public error type outside `CoreAIAsset.AssetError` — throws are untyped. Still open: the runtime error *values* (domains/codes) that actually escape | Induced failures logged by domain and code on a device | Catch `AssetError` where relevant, then general `Error`; branch on observable state, not error identity |
 | §5.4 | Whether the Core AI Swift package still fails to build for the iOS Simulator | A clean `xcodebuild` against a current Xcode 27 beta | Plan for device-only development and CI |

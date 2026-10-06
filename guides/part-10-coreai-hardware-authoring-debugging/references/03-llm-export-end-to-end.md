@@ -205,7 +205,7 @@ The full picture, with the stages this guide actually walks:
 └────────────────────────────────────────────────────────────────────────┘
               │
 ┌── stage 7 ──▼─────────────────────────────────────────────────────────┐
-│ optimize                   program.optimize()   (in place)             │
+│ optimize                   converter.to_coreai() applies rewrites       │
 └────────────────────────────────────────────────────────────────────────┘
               │
 ┌── stage 8 ──▼─────────────────────────────────────────────────────────┐
@@ -1882,7 +1882,6 @@ converter.add_pytorch_module(
 )
 register_custom_torch_lowering(converter)
 program = converter.to_coreai()
-program.optimize()
 ```
 
 > ✅ **VERIFIED** — `python/src/coreai_models/export/macos.py`, `export_to_coreai`. This is Apple's
@@ -2167,7 +2166,6 @@ the iOS LLM's four functions. Apple's shipped segmentation code shows the patter
 >                                output_names=["pred_masks", "pred_boxes", "pred_logits",
 >                                              "presence_logits", "semantic_seg"])
 > coreai_program = converter.to_coreai()
-> coreai_program.optimize()
 >
 > metadata = build_aimodel_metadata(config.hf_model_id)
 > coreai_program.save_asset(asset_path, metadata)
@@ -2186,35 +2184,32 @@ only shows up in the shipped Swift:
 preference.** For an LLM this is not a choice you make separately—it *is* the iOS export—but the
 framework itself does not impose this naming policy.
 
-### 9.2 `optimize()` is in place, and it can hurt you
+### 9.2 Optimization is automatic in 0.4.3; validate its result
 
 ```python
 coreai_program = converter.to_coreai()
-coreai_program.optimize()          # in-place; every doc example ignores the return value
 asset = coreai_program.save_asset(Path("model.aimodel"))
 ```
 
-> ✅ **VERIFIED** — every example in `apple/coreai-torch`'s docs and every call site in
-> `apple/coreai-models` calls `optimize()` as a bare statement after `to_coreai()`, never assigning
-> the result. Session 325:48 describes it as *"The converted model is then optimized and saved as an
-> aimodel asset."*
+> ✅ **VERIFIED** — in `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program and
+> the separate `AIProgram.optimize()` method has been removed. Session 325:48's description—converted,
+> optimized, then saved—now occurs inside the conversion call.
 
 Two costs to know about.
 
-⚠️ **`optimize()` deletes ops it believes are dead** — that is its job, and it is why Apple's own
+⚠️ **The rewrite deletes ops it believes are dead** — that is its job, and it is why Apple's own
 Track-V guidance says *"let dead code die: export only the outputs you need; `optimize()` DCEs the
 branches that don't feed them."* The flip side is that anything semantically significant but not
-dataflow-visible can go with it. For an LLM the practical instance is **broadcasting-significant
-axis moves**: a `squeeze`/`unsqueeze` pair that exists to make a broadcast work can be eliminated if
-the optimizer decides the shapes agree without it. Gate after optimizing, not before.
+dataflow-visible can go with it. A historical 0.4.1 example removed a broadcasting-significant axis
+move. Gate the program returned by `to_coreai()` and the asset you actually ship.
 
-⚠️ **`optimize()` can hang on very large attention graphs.**
+⚠️ **Historical conversion pipelines could hang while optimizing very large attention graphs.**
 
 > **Community-measured** — `conversion-guide.md`: TripoSplat DiT (24 blocks × ~12 k-token attention)
-> took **> 90 minutes and ~64 GB RAM** in `optimize()` while the conversion itself was ~7 s. The
-> escape hatch is to skip it (`optimize=False` in that project's wrapper) and gate with a manual
-> `run()` — *"note `verify()` **forces** `optimize=True`"* — accepting that *"On-device AOT
-> `coreai-build` optimizes anyway."* Mac; model/OS not stated.
+> took **> 90 minutes and ~64 GB RAM** in the old separate optimization step while conversion itself
+> was ~7 s. Upgrade to 0.4.3 first: its release notes include a conversion-time fix for large graphs.
+> If a current conversion still hangs, minimize the graph and report it upstream; 0.4.3 exposes no
+> public switch that skips the automatic rewrite. Mac; model/OS not stated.
 
 ### 9.3 `save_asset` — two traps in one call
 
@@ -3534,7 +3529,7 @@ MLX callable / nn.Module
     → list[dict] events → a small SSA graph IR
     → normalize / shape-infer / check op support
     → CoreAILowerer → coreai.GraphOp inside an AIProgram
-    → program.optimize() → save_asset()
+    → automatic pre-compilation rewrite → save_asset()
     → <name>.aimodel/{main.mlirb, main.hash, metadata.json}
        (+ for the stateful path: bundle/{metadata.json, tokenizer/, <name>.aimodel})
 ```

@@ -149,7 +149,7 @@ The runtime owner for `CoreAISegmentation`, `CoreAIObjectDetection`, and `CoreAI
 
 ### 8.1 — `torch.export` to `.aimodel`, and the IO / state / dynamic-shape contract
 
-The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as pure conversion versus `optimize()` as where the passes run; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the multi-function split; and the Python-side verification gate that catches everything above for free.
+The pipeline end to end as a series of contracts rather than a recipe: the decomposition table and exactly which twelve ops it preserves (Apple's README says three — a subset); the two input forms and why only `add_pytorch_module` can externalize; `to_coreai()` as conversion plus the 0.4.3 pre-compilation rewrite; the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the multi-function split; and the Python-side verification gate that catches everything above for free.
 
 **Local reference:** [part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md)
 
@@ -164,7 +164,7 @@ The pipeline end to end as a series of contracts rather than a recipe: the decom
 | 3. `torch.export` — the part that is not Apple's | `#3-torchexport--the-part-that-is-not-apples` |
 | 4. `run_decompositions(get_decomp_table())` — the most consequential line | `#4-run_decompositionsget_decomp_table--the-most-consequential-line` |
 | 5. Two input forms: `add_exported_program` vs `add_pytorch_module` | `#5-two-input-forms-add_exported_program-vs-add_pytorch_module` |
-| 6. `to_coreai()` and `optimize()` | `#6-to_coreai-and-optimize` |
+| 6. `to_coreai()` and automatic optimization | `#6-to_coreai-and-automatic-optimization` |
 | 7. The IO contract: names are your caller's API | `#7-the-io-contract-names-are-your-callers-api` |
 | 8. Dynamic shapes: keeping the traced length out of the asset | `#8-dynamic-shapes-keeping-the-traced-length-out-of-the-asset` |
 | 9. State: mutable buffers become Core AI states | `#9-state-mutable-buffers-become-core-ai-states` |
