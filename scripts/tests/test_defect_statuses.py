@@ -20,6 +20,31 @@ FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "defect-status"
 
 
 class DefectStatusGoldenTests(unittest.TestCase):
+    def test_negated_states_preserve_the_actual_assertion(self):
+        for phrase, expected in (
+            ("isn't yet closed", "OPEN"), ("isn’t currently closed", "OPEN"),
+            ("isn't currently open", "CLOSED"), ("isn’t currently still open", "CLOSED"),
+            ("is no longer open", "CLOSED"), ("is not yet merged", None),
+            ("hasn’t yet landed", None), ("was not open", "CLOSED"),
+        ):
+            text = 'coreai-torch#49 ' + phrase
+            start = text.index('#49')
+            with self.subTest(phrase=phrase):
+                self.assertEqual(reporter.claim_in_clause(text, start, start + 3)[0], expected)
+
+    def test_claim_text_and_date_do_not_borrow_from_neighbors(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            (root / 'guides').mkdir()
+            (root / 'guides/test.md').write_text(
+                'Historical 0.4.1: coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open.\n')
+            row = next(r for r in reporter.extract(root) if r['number'] == 49)
+        self.assertEqual(row['claimedState'], 'OPEN')
+        self.assertIsNone(row['claimDate'])
+        self.assertNotIn('Historical', row['claimText'])
+        self.assertNotIn('2026-07-29', row['claimText'])
+        self.assertIn('Historical', row['context'])
+
     def make_fixture_checkout(self, directory: str) -> pathlib.Path:
         checkout = pathlib.Path(directory)
         (checkout / "guides").mkdir()

@@ -28,7 +28,7 @@ def guide_function(example_id, name, namespace):
 
 
 class NativeRecordingTests(unittest.TestCase):
-    def run_setup(self, *, compression=False, missing=None, command_failure=None):
+    def run_setup(self, *, compression=False, missing=None, command_failure=None, native_error=None):
         with tempfile.TemporaryDirectory() as folder:
             output = Path(folder) / 'record.json'
             argv = ['verifier', '--source-repo', '/unused', '--reviewed-revision', 'a' * 40,
@@ -54,7 +54,7 @@ class NativeRecordingTests(unittest.TestCase):
 
             def stop_native_import(name, *args, **kwargs):
                 if name == 'numpy':
-                    raise RuntimeError('portable test stops before native execution')
+                    raise native_error or RuntimeError('portable test stops before native execution')
                 return real_import(name, *args, **kwargs)
 
             with mock.patch.object(sys, 'argv', argv), \
@@ -66,10 +66,14 @@ class NativeRecordingTests(unittest.TestCase):
                     mock.patch.object(verifier.subprocess, 'check_output', side_effect=command), \
                     mock.patch('builtins.__import__', side_effect=stop_native_import):
                 status = verifier.main()
-            self.assertEqual(status, 1)
+            self.assertEqual(status, 130 if isinstance(native_error, KeyboardInterrupt) else 1)
             record = json.loads(output.read_text())
             self.assertEqual(record['source_revision'], 'a' * 40)
-            self.assertEqual(record['fixtures'][-1]['outcome'], 'FAIL')
+            if isinstance(native_error, KeyboardInterrupt):
+                self.assertEqual(record['run_status'], 'interrupted')
+            else:
+                self.assertEqual(record['fixtures'][-1]['outcome'], 'FAIL')
+                self.assertEqual(record['run_status'], 'failed')
             return record, queried
 
     def test_migration_only_does_not_query_compression_packages(self):
@@ -101,6 +105,13 @@ class NativeRecordingTests(unittest.TestCase):
                    lambda: fail(ValueError('asset loader failed')), lambda: fail(AssertionError('unrelated'))):
             self.assertEqual(verifier.fixture_result('range', fn, expected)['outcome'], 'FAIL')
 
+    def test_setup_exit_zero_is_a_recorded_failure(self):
+        record, _ = self.run_setup(native_error=SystemExit(0))
+        self.assertIn('SystemExit: 0', record['fixtures'][-1]['details'])
+
+    def test_setup_keyboard_interrupt_is_recorded(self):
+        self.run_setup(native_error=KeyboardInterrupt())
+
     def test_range_validation_survives_optimized_python_before_asset_load(self):
         script = '''
 import ast,asyncio,json
@@ -120,6 +131,158 @@ print(json.dumps({'rejected_before_any_model_or_asset_access':True}))
         result = subprocess.run([sys.executable, '-O', '-c', script], cwd=ROOT,
                                 capture_output=True, text=True, check=True, timeout=10)
         self.assertTrue(json.loads(result.stdout)['rejected_before_any_model_or_asset_access'])
+
+
+class CheckpointTests(unittest.TestCase):
+    def test_bad_details_and_exit_preserve_results_and_continue(self):
+        def exit_zero():
+            raise SystemExit(0)
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'results.json'
+            record = {'fixtures': []}
+            recorder = verifier.RunRecorder(output, record)
+            self.assertEqual(json.loads(output.read_text())['run_status'], 'running')
+            fixtures = [('earlier', lambda: {'value': 1}), ('unsupported', lambda: object()),
+                        ('nonfinite', lambda: float('nan')), ('exit', exit_zero), ('later', lambda: 2)]
+            for i, (name, fn) in enumerate(fixtures, 1):
+                recorder.check(name, fn)
+                self.assertEqual(len(json.loads(output.read_text())['fixtures']), i)
+            self.assertEqual(recorder.finish(), 1)
+            saved = json.loads(output.read_text())
+            self.assertEqual(saved['run_status'], 'failed')
+            self.assertEqual([x['outcome'] for x in saved['fixtures']], ['PASS', 'FAIL', 'FAIL', 'FAIL', 'PASS'])
+            self.assertIn('serialization failed', saved['fixtures'][1]['details'])
+            self.assertIn('SystemExit: 0', saved['fixtures'][3]['details'])
+
+    def test_supported_numpy_values_paths_and_tuples(self):
+        # Portable facsimiles exercise the optional NumPy adapter. Both native
+        # profiles additionally return real NumPy scalars/arrays through it.
+        class Scalar:
+            def __init__(self, value): self.value = value
+            def item(self): return self.value
+        class Array:
+            def tolist(self): return [[1, 2], [3, 4]]
+        numpy = SimpleNamespace(generic=Scalar, ndarray=Array)
+        with mock.patch.dict(sys.modules, {'numpy': numpy}):
+            result = verifier.fixture_result('supported', lambda: {
+                'scalar': Scalar(3), 'array': Array(), 'tuple': (Scalar(True), Path('asset.aimodel'))})
+        self.assertEqual(result['outcome'], 'PASS')
+        self.assertEqual(json.loads(json.dumps(result))['details'], {
+            'scalar': 3, 'array': [[1, 2], [3, 4]], 'tuple': [True, 'asset.aimodel']})
+
+    def test_serialization_cannot_satisfy_a_negative_control(self):
+        result = verifier.fixture_result('bad', lambda: object(), (TypeError, 'unsupported fixture detail'))
+        self.assertEqual(result['outcome'], 'FAIL')
+        self.assertNotEqual(result['details'], 'unsupported fixture detail')
+        for value in (float('inf'), float('-inf'), {1: 'key'}, complex(1, 2)):
+            self.assertEqual(verifier.fixture_result('bad', lambda: value)['outcome'], 'FAIL')
+
+    def test_interrupt_preserves_completed_fixture(self):
+        def interrupt(): raise KeyboardInterrupt()
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'results.json'
+            recorder = verifier.RunRecorder(output, {'fixtures': []})
+            recorder.check('earlier', lambda: 1)
+            with self.assertRaises(KeyboardInterrupt):
+                recorder.check('interrupted', interrupt)
+            self.assertEqual(recorder.finish(interrupted=True), 130)
+            saved = json.loads(output.read_text())
+            self.assertEqual(saved['run_status'], 'interrupted')
+            self.assertEqual([x['name'] for x in saved['fixtures']], ['earlier'])
+
+    def test_failed_publication_preserves_checkpoint_and_stops(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'results.json'
+            recorder = verifier.RunRecorder(output, {'fixtures': []})
+            recorder.check('earlier', lambda: 1)
+            previous = output.read_bytes()
+            later = mock.Mock()
+            with mock.patch.object(verifier.os, 'replace', side_effect=OSError('disk failure')):
+                with self.assertRaisesRegex(verifier.RecordWriteError, 'disk failure'):
+                    recorder.check('next', lambda: 2)
+                    later()
+                with self.assertRaises(verifier.RecordWriteError):
+                    recorder.finish()
+            later.assert_not_called()
+            self.assertEqual(output.read_bytes(), previous)
+            self.assertEqual(list(Path(folder).iterdir()), [output])
+
+
+class StandaloneCompositeTests(unittest.TestCase):
+    def test_inert_entrypoint_cannot_pass_or_reuse_an_old_asset(self):
+        with tempfile.TemporaryDirectory() as folder:
+            work = Path(folder)
+            (work / 'composite-demo/composite-quantized.aimodel').mkdir(parents=True)
+            compare = mock.Mock()
+            load = mock.Mock(return_value={})
+            previous = Path.cwd()
+            with self.assertRaisesRegex(AssertionError, 'did not create an asset'):
+                verifier.standalone_composite_check(work, load, {'compare_composite_asset': compare})
+            load.assert_called_once_with('composite-quantization', module_name='__main__')
+            compare.assert_not_called()
+            self.assertEqual(Path.cwd(), previous)
+
+    def test_created_asset_is_independently_compared(self):
+        with tempfile.TemporaryDirectory() as folder:
+            def load(*args, **kwargs):
+                path = Path('composite-demo/composite-quantized.aimodel')
+                path.mkdir(parents=True)
+                (path / 'model.bin').write_bytes(b'new asset')
+            def compare(path):
+                self.assertEqual((path / 'model.bin').read_bytes(), b'new asset')
+                return {'conversion_max_abs': 0.001, 'compression_quality_max_abs': 0.02}
+            result = verifier.standalone_composite_check(Path(folder), load, {'compare_composite_asset': compare})
+            self.assertTrue(result['asset_created'])
+            self.assertEqual(result['conversion_max_abs'], 0.001)
+            with self.assertRaisesRegex(AssertionError, 'wrong asset'):
+                verifier.standalone_composite_check(Path(folder), load, {
+                    'compare_composite_asset': lambda path: (_ for _ in ()).throw(AssertionError('wrong asset'))})
+
+
+class CompressionRuntimeContractTests(unittest.TestCase):
+    def runtime(self, example_id, name, *, keys=('y',), finite_input=True, finite_output=True,
+                input_names=('x',), output_names=('y',), state_names=()):
+        class Array:
+            def __init__(self, finite=True): self.finite, self.valid = finite, True
+            def copy(self):
+                if not self.valid: raise RuntimeError('expired borrowed array')
+                return Array(self.finite)
+        borrowed = Array(finite_output)
+        calls = []
+        class Function:
+            desc = SimpleNamespace(input_names=input_names, output_names=output_names, state_names=state_names)
+            async def __call__(self, **kwargs):
+                calls.append(kwargs)
+                return {key: SimpleNamespace(numpy=lambda: borrowed) for key in keys}
+        class Executable:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *args): borrowed.valid = False
+            def load_function(self, name): return Function()
+        asset = SimpleNamespace(executable=Executable)
+        def finite(array):
+            if not array.valid: raise RuntimeError('expired borrowed array')
+            return SimpleNamespace(all=lambda: array.finite)
+        ns = {'Path': Path, 'AIModelAsset': SimpleNamespace(load=lambda path: asset),
+              'NDArray': lambda value: value, 'np': SimpleNamespace(isfinite=finite)}
+        fn = guide_function(example_id, name, ns)
+        sample = SimpleNamespace(numpy=lambda: Array(finite_input))
+        return fn, sample, calls
+
+    def test_both_runtime_helpers_copy_and_check_contracts(self):
+        for example_id, name in (('composite-quantization', 'composite_runtime'),
+                                 ('compression-native-fixtures', 'fixture_runtime')):
+            with self.subTest(name=name):
+                fn, sample, calls = self.runtime(example_id, name)
+                result = asyncio.run(fn('/asset', sample))
+                self.assertTrue(result.valid)
+                self.assertEqual(len(calls), 1)
+            for options in ({'keys': ('y', 'extra')}, {'keys': ()}, {'finite_input': False},
+                            {'finite_output': False}, {'input_names': ('wrong',)},
+                            {'output_names': ('wrong',)}, {'state_names': ('unexpected',)}):
+                with self.subTest(name=name, options=options):
+                    fn, sample, _ = self.runtime(example_id, name, **options)
+                    with self.assertRaises(AssertionError):
+                        asyncio.run(fn('/asset', sample))
 
 
 class CIGuideContractTests(unittest.TestCase):

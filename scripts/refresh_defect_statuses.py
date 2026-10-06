@@ -57,7 +57,7 @@ CLAIM_PATTERNS = (
     (re.compile(r"\bopen(?:ed)?\b", re.IGNORECASE), "OPEN"),
 )
 RE_NEGATED = re.compile(
-    r"\b(?:not|never|no)(?:\s+(?:currently|still|longer|yet))?[\s`'\"*]*$|n't[\s`'\"*]*$",
+    r"(?:\b(?:not|never|no)|n['’]t)(?:\s+(?:currently|still|longer|yet))*[\s`'\"*]*$",
     re.IGNORECASE,
 )
 RE_CLAUSE_BOUNDARY = re.compile(
@@ -225,9 +225,8 @@ def clause_for_offset(text: str, offset: int) -> tuple[int, int]:
     return 0, len(text)
 
 
-def claim_in_clause(
-    text: str, reference_start: int, reference_end: int
-) -> tuple[str | None, float, list[dict[str, str]]]:
+def reference_claim_bounds(text: str, reference_start: int, reference_end: int) -> tuple[int, int]:
+    """Keep semantic claim text separate from the centered display context."""
     clause_start, clause_end = clause_for_offset(text, reference_start)
     # Bound association at every neighboring reference, including URL forms.
     spans = sorted({(m.start(), m.end()) for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE)
@@ -236,14 +235,35 @@ def claim_in_clause(
     following = [start for start, end in spans if start >= reference_end]
     before_start = max([clause_start, *previous])
     after_end = min([clause_end, *following])
+    if before_start > clause_start:
+        # The prose after a preceding reference belongs to that reference. A
+        # conjunction can introduce this reference's own prefix ("and merged
+        # PR #18"), but the preceding reference's date must not travel with it.
+        joins = list(re.finditer(r"\b(?:and|or)\b", text[before_start:reference_start], re.I))
+        before_start = before_start + joins[-1].end() if joins else reference_start
+    return before_start, after_end
+
+
+def state_with_negation(state: str, prefix: str) -> str | None:
+    if not RE_NEGATED.search(prefix):
+        return state
+    return {"CLOSED": "OPEN", "OPEN": "CLOSED"}.get(state)
+
+
+def claim_in_clause(
+    text: str, reference_start: int, reference_end: int
+) -> tuple[str | None, float, list[dict[str, str]]]:
+    clause_start, clause_end = clause_for_offset(text, reference_start)
+    before_start, after_end = reference_claim_bounds(text, reference_start, reference_end)
 
     def scan(segment: str, distance_from_match: Any) -> list[tuple[int, str]]:
         found: list[tuple[int, str]] = []
         for pattern, state in CLAIM_PATTERNS:
             for match in pattern.finditer(segment):
-                prefix = segment[max(0, match.start() - 24) : match.start()]
-                if not RE_NEGATED.search(prefix):
-                    found.append((distance_from_match(match), state))
+                prefix = segment[max(0, match.start() - 60) : match.start()]
+                claimed = state_with_negation(state, prefix)
+                if claimed is not None:
+                    found.append((distance_from_match(match), claimed))
         return found
 
     # Guide prose overwhelmingly states a reference's state after it. Preserve
@@ -254,7 +274,7 @@ def claim_in_clause(
     direction = "after"
     if not candidates:
         before_segment = text[max(before_start, reference_start - 40) : reference_start]
-        if any(end > clause_start for end in previous):
+        if before_start > clause_start:
             # Between references a state belongs to the previous reference unless
             # it directly prefixes this reference (e.g. "and merged PR #18").
             before_segment = re.sub(
@@ -269,16 +289,15 @@ def claim_in_clause(
                                     text[clause_start:reference_start], re.I))
         if prefixes:
             prefix = prefixes[-1]
-            preceding = text[clause_start + max(0, prefix.start() - 24):clause_start + prefix.start()]
-            if RE_NEGATED.search(preceding):
-                return None, 1.0, []
+            preceding = text[clause_start + max(0, prefix.start() - 60):clause_start + prefix.start()]
             tail = text[clause_start + prefix.end():reference_start]
             for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
                 tail = pattern.sub("", tail)
             tail = re.sub(r"\b(?:and|or)\b", "", tail, flags=re.I)
             if not tail.strip(" \n\t,/*`\\"):
                 word = prefix.group(1).upper()
-                return "MERGED" if word == "LANDED" else word, 0.9, []
+                state = "MERGED" if word == "LANDED" else word
+                return state_with_negation(state, preceding), 0.9, []
         return None, 1.0, []
     states = {state for _, state in candidates}
     chosen = min(candidates, key=lambda item: item[0])[1]
@@ -361,8 +380,8 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                 claimed_state, claim_confidence, claim_diagnostics = claim_in_clause(
                     text, offset, end
                 )
-                clause_start, clause_end = clause_for_offset(text, offset)
-                clause_dates = [date for date in dates if clause_start <= date[0] <= clause_end]
+                claim_start, claim_end = reference_claim_bounds(text, offset, end)
+                clause_dates = [date for date in dates if claim_start <= date[0] < claim_end]
                 claim_date = nearest(clause_dates, offset)
                 context_width = 240
                 reference_width = end - offset
@@ -381,6 +400,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         "referenceKind": reference_kind,
                         "claimedState": claimed_state,
                         "claimDate": claim_date,
+                        "claimText": " ".join(text[claim_start:claim_end].split()),
                         "context": " ".join(text[context_start:context_end].split()),
                         "confidence": round(min(map_confidence, claim_confidence), 2),
                         "diagnostics": diagnostics + claim_diagnostics,

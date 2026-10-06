@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from scripts.coreai_examples import contract_errors, optimizer_calls, python_fences, section
+from scripts.mdlinks import iter_lines
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -38,8 +39,54 @@ class CoreAIExampleTests(unittest.TestCase):
                 body = f"{prefix}{fence}python\n{prefix}# Existing\n{prefix}## Peer\n{prefix}program.optimize()\n{prefix}{fence}\n"
                 expected = "## Existing\n" + body + "### Child\ntext\n"
                 with self.subTest(fence=fence, prefix=prefix):
+                    self.assertTrue(all(fenced for _, _, fenced in iter_lines(body)))
+                    self.assertFalse(list(iter_lines(body + "## After\n"))[-1][2])
                     self.assertEqual(expected, section(body + expected + "\n## Peer\nnext", "## Existing"))
                     self.assertIn("program.optimize()", section(expected + "## Peer\nnext", "## Existing"))
+
+    def test_inline_backticks_do_not_open_fences(self):
+        for prefix in ("", "> ", "> > "):
+            prose = f"{prefix}```code``` is inline prose\n"
+            text = prose + "## Existing\nbody\n" + prose + "## Peer\nnext"
+            with self.subTest(prefix=prefix):
+                self.assertFalse(list(iter_lines(prose))[0][2])
+                self.assertEqual("## Existing\nbody\n" + prose.rstrip("\n"), section(text, "## Existing"))
+                self.assertEqual([], python_fences(text))
+        self.assertEqual(1, len(python_fences('```code```\n```python\nx = 1\n```')))
+
+    def test_shape_predicates_belong_to_the_named_shape(self):
+        for text in (
+            "square inputs exposed the bug, while unequal (17×23) inputs hid it",
+            "square inputs miscompiled; rectangular 17×23 inputs passed",
+            "equal-length inputs failed, but unequal-length inputs were correct",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual([], contract_errors(text, "issue49"))
+        for text in (
+            "square inputs were correct, while unequal (17×23) inputs exposed the bug",
+            "square inputs hid the bug and rectangular 17x23 inputs failed",
+            "equal-length inputs passed; unequal-length inputs miscompiled",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(contract_errors(text, "issue49"))
+
+    def test_overwrite_guard_handles_inflections_and_filename_dots(self):
+        for text in (
+            "save_asset never overwrites destinations",
+            "the destination will not be overwritten",
+            "save_asset cannot overwrite destinations",
+            "save_asset can’t overwrite destinations",
+            "save_asset will fail on an existing destination",
+            "save_asset will fail if MyModel.aimodel already exists",
+            "save_asset will not replace MyModel.aimodel because it cannot overwrite",
+            "save_asset will not\noverwrite the destination",
+        ):
+            with self.subTest(text=text):
+                self.assertTrue(contract_errors(text, "overwrite"))
+        for text in ("Note: b3 will overwrite the destination", "It does not merge. It overwrites.",
+                     "It will fail during conversion. The asset already exists."):
+            with self.subTest(text=text):
+                self.assertEqual([], contract_errors(text, "overwrite"))
 
     def test_invalid_identifiers_fail_across_tokenizer_versions(self):
         for code in ("x = …", "x = €", "program.…()"):

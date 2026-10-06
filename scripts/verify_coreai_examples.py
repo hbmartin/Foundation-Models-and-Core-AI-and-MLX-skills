@@ -13,11 +13,13 @@ import asyncio
 import copy
 import importlib.metadata
 import json
+import math
 from pathlib import Path
 import platform
 import subprocess
 import sys
 import traceback
+import tempfile
 
 # Everything before load_trusted_reader() is standard-library-only. Candidate
 # Git configuration, helper modules, bytecode and working-tree fences are untrusted.
@@ -178,10 +180,99 @@ def snapshot_examples(reader, documents):
     return {e.id: e for e in examples if e.id}
 
 
+def json_details(value):
+    """Normalize supported measurements without hiding invalid data as strings."""
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("non-finite fixture detail")
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        if not all(isinstance(key, str) for key in value):
+            raise TypeError("fixture detail keys must be strings")
+        return {key: json_details(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_details(item) for item in value]
+    # NumPy is imported only after the immutable trust preflight. Do not import
+    # it just to serialize a setup failure or a portable fixture.
+    numpy = sys.modules.get("numpy")
+    if numpy is not None:
+        if isinstance(value, getattr(numpy, "ndarray", ())):
+            return json_details(value.tolist())
+        if isinstance(value, getattr(numpy, "generic", ())):
+            item = value.item()
+            if type(item) is type(value):
+                raise TypeError(f"unsupported NumPy detail: {type(value).__name__}")
+            return json_details(item)
+    raise TypeError(f"unsupported fixture detail: {type(value).__name__}")
+
+
+class RecordWriteError(OSError):
+    """Publication failed; the previous complete checkpoint remains authoritative."""
+
+
+def publish_record(path, record):
+    temporary = None
+    try:
+        payload = json.dumps(record, indent=2, allow_nan=False) + "\n"
+        descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    except (OSError, TypeError, ValueError) as error:
+        raise RecordWriteError(f"cannot publish verification record {path}: {error}") from error
+    finally:
+        if temporary is not None and os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+class RunRecorder:
+    def __init__(self, path, record):
+        self.path, self.record = path, record
+        self.record["run_status"] = "running"
+        publish_record(self.path, self.record)
+
+    def check(self, name, fn, expected_error=None):
+        result = fixture_result(name, fn, expected_error)
+        self.record["fixtures"].append(result)
+        publish_record(self.path, self.record)
+        print(result["name"], result["outcome"], flush=True)
+        return result
+
+    def finish(self, *, interrupted=False):
+        failed = any(result["outcome"] == "FAIL" for result in self.record["fixtures"])
+        self.record["run_status"] = "interrupted" if interrupted else "failed" if failed else "passed"
+        publish_record(self.path, self.record)
+        return 130 if interrupted else int(failed)
+
+
+def standalone_composite_check(work, load, composite):
+    """Require fresh entrypoint output and independently execute the saved asset."""
+    with tempfile.TemporaryDirectory(prefix="standalone-composite-", dir=work) as directory:
+        previous = Path.cwd()
+        try:
+            os.chdir(directory)
+            load("composite-quantization", module_name="__main__")
+        finally:
+            os.chdir(previous)
+        path = Path(directory) / "composite-demo" / "composite-quantized.aimodel"
+        if not path.is_dir() or not any(path.iterdir()):
+            raise AssertionError("standalone composite entrypoint did not create an asset")
+        details = composite["compare_composite_asset"](path)
+        return {"entrypoint": "__main__", "asset_created": True, **details}
+
+
 def fixture_result(name, fn, expected_error=None):
     """Only the specified exception and diagnostic establish a negative control."""
     try:
         value = fn()
+    except SystemExit:
+        return {"name": name, "outcome": "FAIL", "details": traceback.format_exc()}
     except Exception as error:
         if (expected_error is not None and isinstance(error, expected_error[0])
                 and expected_error[1] in str(error)):
@@ -189,7 +280,11 @@ def fixture_result(name, fn, expected_error=None):
         return {"name": name, "outcome": "FAIL", "details": traceback.format_exc()}
     if expected_error is not None:
         return {"name": name, "outcome": "FAIL", "details": "negative fixture unexpectedly passed"}
-    return {"name": name, "outcome": "PASS", "details": value}
+    try:
+        details = json_details(value)
+    except (TypeError, ValueError, RecursionError) as error:
+        return {"name": name, "outcome": "FAIL", "details": f"fixture detail serialization failed: {error}"}
+    return {"name": name, "outcome": "PASS", "details": details}
 
 
 def main():
@@ -225,7 +320,12 @@ def main():
     record = {**provenance, "python": sys.version, "compression": args.compression,
               "packages": {}, "toolchain": {}, "fixtures": [], "examples": {}}
     work = args.out.parent.resolve()
-    work.mkdir(parents=True, exist_ok=True)
+    try:
+        work.mkdir(parents=True, exist_ok=True)
+        recorder = RunRecorder(args.out, record)
+    except OSError as error:
+        print(error, file=sys.stderr)
+        return 1
 
     def load(name, module_name="guide_verification"):
         example = examples[name]
@@ -237,9 +337,9 @@ def main():
         return ns
 
     def check(name, fn, expected_error=None):
-        record["fixtures"].append(fixture_result(name, fn, expected_error))
-        print(record["fixtures"][-1]["name"], record["fixtures"][-1]["outcome"], flush=True)
+        return recorder.check(name, fn, expected_error)
 
+    interrupted = False
     try:
         record["os"] = platform.platform()
         record["os_build"] = subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip()
@@ -257,6 +357,9 @@ def main():
         import torch
         from coreai_torch import TorchConverter, get_decomp_table
 
+        check("NumPy scalar/array fixture details", lambda: {
+            "integer": np.int64(7), "float": np.float32(0.25), "boolean": np.bool_(True),
+            "array": np.array([[1, 2], [3, 4]]), "tuple": (Path("asset.aimodel"), np.int32(3))})
         state = load("state-protocol")
         # Migration-only verification does not require compression-package metadata.
         state_path = work / "state-release.aimodel"
@@ -351,22 +454,30 @@ def main():
                   expected_error=(AssertionError, "standard cast did not lower exp"))
             check("casting ignored exclusions rejected", lambda: substituted_cast(
                 lambda ep, **kw: original_cast(ep)), expected_error=(AssertionError, "ignored exp was cast"))
+            def skip_overflow_cast(ep, **kwargs):
+                if any(n.target == torch.ops.aten.log1p.default for n in ep.graph.nodes):
+                    return ep
+                return original_cast(ep, **kwargs)
+            check("casting overflow graph no-op rejected", lambda: substituted_cast(skip_overflow_cast),
+                  expected_error=(AssertionError, "overflow graph computation was not lowered"))
             composite = load("composite-quantization")
             check("graph composite quantization", lambda: composite["composite_fixture"](work))
-            def standalone_composite():
-                previous = Path.cwd()
-                try:
-                    os.chdir(work)
-                    load("composite-quantization", module_name="__main__")
-                    return {"entrypoint": "__main__", "directory": str(work / "composite-demo")}
-                finally:
-                    os.chdir(previous)
-            check("standalone composite invocation", standalone_composite)
-    except Exception:
+            check("inert standalone composite rejected", lambda: standalone_composite_check(
+                work, lambda *args, **kwargs: {}, composite),
+                expected_error=(AssertionError, "standalone composite entrypoint did not create an asset"))
+            check("standalone composite invocation", lambda: standalone_composite_check(work, load, composite))
+    except RecordWriteError as error:
+        print(error, file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        interrupted = True
+    except (Exception, SystemExit):
         record["fixtures"].append({"name": "setup", "outcome": "FAIL", "details": traceback.format_exc()})
-    finally:
-        args.out.write_text(json.dumps(record, indent=2) + "\n")
-    return int(any(x["outcome"] == "FAIL" for x in record["fixtures"]))
+    try:
+        return recorder.finish(interrupted=interrupted)
+    except RecordWriteError as error:
+        print(error, file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

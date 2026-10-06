@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import tokenize
 
-from scripts.mdlinks import FENCE, iter_lines
+from scripts.mdlinks import FENCE, fence_opener, iter_lines
 
 PARTS = (7, 8, 9, 10, 17)
 MARKER = re.compile(r"<!-- coreai-example: (.+) -->")
@@ -70,7 +70,7 @@ def python_fences(text: str, path: Path = Path("<fixture>")) -> list[Example]:
                 raise ValueError(f"{path}:{i + 1}: invalid historical exemption")
             i += 1
             continue
-        match = FENCE.match(line)
+        match = fence_opener(line)
         if not match:
             if pending is not None and line.strip():
                 raise ValueError(f"{path}:{i + 1}: metadata must immediately precede a fence")
@@ -178,11 +178,27 @@ def contract_errors(text: str, contract: str) -> list[str]:
     elif contract == "issue49":
         # Status association is checked corpus-wide by the offline defect reader.
         # This small native helper has no dependency on the reporting toolchain.
-        if "square" in text.lower() and "17×23" in text and re.search(r"\bhid(?:es)?\b", text, re.I):
-            errors.append("square/rectangular #49 explanation reversed")
+        square = r"\b(?:square|equal[- ]length)\b"
+        rectangular = r"(?:\b(?:rectangular|unequal(?:[- ]length)?)\b|17\s*[×x]\s*23)"
+        success = r"\b(?:hid(?:e[sn]?|den)?|passed|passes|correct|unaffected)\b"
+        failure = r"\b(?:exposed?|exposes|failed|fails|miscompil(?:e[sd]?|ing))\b"
+        if not re.search(square, text, re.I) or not re.search(rectangular, text, re.I):
+            return errors
+        # Associate a predicate with its own shape, stopping at the next shape
+        # or contrasting clause rather than searching for words anywhere.
+        for clause in re.split(r"[;.!?](?:\s|$)|\b(?:and|while|whereas|but)\b", text, flags=re.I):
+            for shape, predicate in ((square, success), (rectangular, failure)):
+                pattern = rf"{shape}(?:(?!{square}|{rectangular}).){{0,120}}?{predicate}"
+                if re.search(pattern, clause, re.I | re.S):
+                    errors.append("square/rectangular #49 explanation reversed")
+                    return errors
     elif contract == "overwrite":
-        if re.search(r"\b(?:not|never|won['’]t)\b[^\n.;]*\boverwrite\b|\bwill fail\b[^\n.;]*\bexists?\b", text, re.I):
-            errors.append("b3 overwrite behavior incorrect")
+        for sentence in re.split(r"[;!?]|\.(?=\s|$)", text):
+            if re.search(r"\b(?:not|never|cannot|can['’]t|won['’]t|doesn['’]t|isn['’]t)\b"
+                         r".*?\b(?:overwrites?|overwritten)\b|"
+                         r"\bwill\s+fail\b.*?\b(?:exists?|existing)\b", sentence, re.I | re.S):
+                errors.append("b3 overwrite behavior incorrect")
+                break
     else:
         raise ValueError(f"unknown contract: {contract}")
     return errors
