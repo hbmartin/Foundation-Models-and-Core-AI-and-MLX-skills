@@ -172,7 +172,7 @@ three parameters.
 > `where Element : ModelSampleProtocol, Element : Generable`, both as
 > `makeSamples(_ prompt: Prompt, targetCount: Int, sessionProvider: (@Sendable () ->
 > LanguageModelSession)? = nil, validator: ((Element) async throws -> Bool)? = nil) -> some
-> AsyncSequence<Element, any Error>` (`Evaluations-27.0-macos.swiftinterface:883-894`). So the
+> AsyncSequence<Element, any Error>` (`Evaluations-27.0-macos.swiftinterface:902-913`). So the
 > `for try await` shape below is right, `sessionProvider` and `validator` are optional here too,
 > and — worth noticing — **`makeSamples` has no `samplingStrategy` parameter**; that knob is
 > `SampleGenerator`-only. No sample project calls it, so usage remains unexercised even though the
@@ -230,7 +230,7 @@ not much room for that. This is the single biggest practical reason to move to d
 > ```
 >
 > ✅ **SDK-verified** — with two touch-ups from the interface
-> (`Evaluations-27.0-macos.swiftinterface:855-882`): `samplingStrategy` and `validator` are
+> (`Evaluations-27.0-macos.swiftinterface:874-901`): `samplingStrategy` and `validator` are
 > *Optionals*, and `run()` returns `some AsyncSequence<SampleType, any Error>` rather than a literal
 > `AsyncStream` — which is why the loops below are `for try await`.
 
@@ -370,7 +370,7 @@ The prompt is positional; the dataset arrives under `samples:`, not `dataset:`. 
 >
 > ✅ **SDK-verified — GAP closed, and the old inference corrected (2026-07-29).** Both overloads take
 > a **`Prompt`** first; they differ by *generic constraint*, not by prompt type
-> (`Evaluations-27.0-macos.swiftinterface:870-871`). One is
+> (`Evaluations-27.0-macos.swiftinterface:889-890`). One is
 > `init<T>(…) where SampleType == ModelSample<T>, T : Generable` — the everyday form, for
 > `ModelSample`-shaped datasets whose expected value is `@Generable` — and the other is
 > `init(…) where SampleType : Generable`, for a custom `ModelSampleProtocol` conformance that is
@@ -412,7 +412,7 @@ routes. Pick one. Doing both silently doubles your dataset.
 
 **`validator` receives the whole sample — and it is `async throws`, not a plain predicate.** The
 declared type is `(@Sendable (SampleType) async throws -> Bool)?` — ✅ SDK-verified
-(`Evaluations-27.0-macos.swiftinterface:861,870-871`), correcting this guide's earlier "synchronous,
+(`Evaluations-27.0-macos.swiftinterface:880,889-890`), correcting this guide's earlier "synchronous,
 non-throwing" description — so a validator *may* await a model call or throw. Apple's own validator
 is a synchronous, non-throwing closure, which satisfies the type; what the generator does with a
 validator that actually throws (reject the sample, or fail the run) is runtime behaviour the
@@ -727,8 +727,8 @@ and gets random behaviour.
 > }
 > ```
 >
-> (`Evaluations-27.0-macos.swiftinterface:874-877`), and the initialiser's default is
-> `samplingStrategy: … = .random()` (`:870-871`) — confirming the session's "random is the default"
+> (`Evaluations-27.0-macos.swiftinterface:893-896`), and the initialiser's default is
+> `samplingStrategy: … = .random()` (`:889-890`) — confirming the session's "random is the default"
 > from the shipped declaration rather than from an omitted argument. Two things no document
 > mentioned: the case is **`.slidingWindow`**, one word, camel-cased; and `.random` carries a
 > **`retries: Int = 5`** associated value whose semantics no source states — the name reads as "how
@@ -2035,7 +2035,7 @@ evaluator the trajectory by attaching it to the subject.
 > ✅ **SDK-verified** — `ModelSubject.init(value: Value, transcript: StructuredTranscript? = nil)`;
 > the `= nil` default is exactly what makes the omission compile. The error case is real too:
 > `EvaluationError.missingTranscript(evaluatorType: String)`
-> (`Evaluations-27.0-macos.swiftinterface:634-646`, `:495-504`; `StructuredTranscript`'s five fields
+> (`Evaluations-27.0-macos.swiftinterface:653-665`, `:495-503`; `StructuredTranscript`'s five fields
 > and memberwise init at `:276-285`).
 
 Note that `transcript:` is **optional**. It compiles when you omit it. That is the failure.
@@ -2515,8 +2515,7 @@ coffee/generative-game sample and the SpeechAnalyzer sample are **iOS 26 / WWDC2
 never refreshed**, and nothing in them is evidence about 2026 behaviour.
 
 **The framework's shipped Swift interface** —
-`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (885 lines), dumped from the Xcode 27
-beta's macOS `Evaluations.framework` on **2026-07-29**. For names, signatures, defaults, availability
+`notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (925 lines), refreshed from Xcode 27 final (`27A266a`) on **2026-10-06**. For names, signatures, defaults, availability
 and case lists it outranks every source below, the sample included; for usage and runtime behaviour it
 decides nothing. Cited as ✅ **SDK-verified** with line numbers. It closed this guide's GAPs on the
 `SampleGenerator` overloads, `SamplingStrategy`'s cases, `TrajectoryExpectation`'s initialiser set

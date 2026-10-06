@@ -82,7 +82,7 @@ written from memory; if a spelling is inferred rather than read, it says so.
 | `ImageReference` | `struct ImageReference`, conforms `Generable` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/ImageAnalysis.swift:11-21` |
 | `ImageReference.attachmentLabel` | `var attachmentLabel: String` | 27.0 | ✅ Apple symbol page + `Origami/Brainstorm/BrainstormModel.swift:142-144`, `:168-171` |
 | `ImageReference.resolved(in:)` | `func resolved(in:) -> Transcript.ImageAttachment?` | 27.0 | ✅ Apple symbol page |
-| `ImageReference.resolve(in:)` | *(Deprecated)* | 27.0 | ✅ Apple symbol page |
+| `ImageReference.resolve(in:)` | Historical beta-4 spelling; absent from Xcode 27.0 final (`27A266a`) and the current symbol page | 27.0 beta 4 | ✅ superseded SDK capture + Apple documentation history |
 | `Transcript.ImageAttachment` | `struct ImageAttachment: Equatable, Sendable` | 27.0 | ✅ Apple symbol page |
 | `Transcript.AttachmentSegment` | `struct AttachmentSegment`, `init(id:content:label:)` | 27.0 | ✅ Apple symbol page + Apple's `SKILL.md` |
 | `Transcript.Attachment` | enum with `case image(ImageAttachment)` | 27.0 | ✅ Apple's `SKILL.md` in `foundation-models-utilities` |
@@ -758,8 +758,9 @@ struct MyTool: Tool {
 > ✅ **VERIFIED** — *"Use `ImageReference` to allow the model to reference images from the current
 > `LanguageModelSession`'s transcript."* `resolved(in:)` returns `Transcript.ImageAttachment?`.
 
-The older, **deprecated** form takes a `Transcript` rather than the history slice, and Apple's own
-article still shows it:
+The older beta-4 form took a whole `Transcript`. A 2026-07-27 Apple documentation changes view
+presented it as deprecated historical API, but the current article and Xcode 27.0 final no
+longer expose it:
 
 ```swift prelude:guide-context
 // Deprecated form, from the same article — kept here because you will meet it in older code
@@ -778,12 +779,12 @@ func call(arguments: Arguments) async throws -> String {
 ```
 
 Note the type mismatch between the two: `resolved(in:)` takes a `some Sequence<Transcript.Entry>`
-(beta 5 spelling, `27.0:3024-3027`; `Transcript.HistoryView`, which `@SessionProperty(\.history)`
-vends, satisfies it) while
-`resolve(in:)` takes a whole `Transcript`. That signature change is almost certainly the reason for
-the deprecation. **Prefer `resolved(in:)` with `@SessionProperty(\.history)`.**
+(`27.0:3023-3027`; `Transcript.HistoryView`, which `@SessionProperty(\.history)` vends, satisfies
+it), while beta 4's `resolve(in:)` takes a whole `Transcript`. **For shipping 27.0 and later, use
+`resolved(in:)` with `@SessionProperty(\.history)`; retain `resolve(in:)` only in code that must
+compile against the beta-4 SDK.**
 
-Also note what that deprecated snippet quietly demonstrates: **Apple's own documented example of what
+Also note what that historical snippet quietly demonstrates: **Apple's documented example of what
 to do with a referenced image is to hand it to the Vision framework** (`ClassifyImageRequest`). Hold
 that thought until §9.
 

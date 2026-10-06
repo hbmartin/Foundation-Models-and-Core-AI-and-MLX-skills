@@ -1,0 +1,44 @@
+{
+  "26": {
+    "unavailable": "error: target 26 requires SDK 26, but /Applications/Xcode.app/Contents/Developer supplies 27.0"
+  },
+  "27": {
+    "name": "27",
+    "developer_dir": "/Applications/Xcode.app/Contents/Developer",
+    "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
+    "sdk_version": "27.0",
+    "sdk_build": "26A425",
+    "triple": "arm64-apple-macos27.0",
+    "xcode_version": "27.0",
+    "xcode_build": "27A266a",
+    "framework_dirs": [
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
+    ]
+  },
+  "sim27": {
+    "name": "sim27",
+    "developer_dir": "/Applications/Xcode.app/Contents/Developer",
+    "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+    "sdk_version": "27.0",
+    "sdk_build": "24A430",
+    "triple": "arm64-apple-ios27.0-simulator",
+    "xcode_version": "27.0",
+    "xcode_build": "27A266a",
+    "framework_dirs": [
+      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"
+    ]
+  },
+  "sim27-on-26": {
+    "name": "sim27-on-26",
+    "developer_dir": "/Applications/Xcode.app/Contents/Developer",
+    "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk",
+    "sdk_version": "27.0",
+    "sdk_build": "24A430",
+    "triple": "arm64-apple-ios26.0-simulator",
+    "xcode_version": "27.0",
+    "xcode_build": "27A266a",
+    "framework_dirs": [
+      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"
+    ]
+  }
+}

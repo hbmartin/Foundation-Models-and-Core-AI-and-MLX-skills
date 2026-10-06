@@ -3129,7 +3129,7 @@ TorchConverter(mode=TorchConverter.Mode.DEBUG)          # DEBUG is the DEFAULT â
   .add_pytorch_module(model, *, export_fn, externalize_modules=None,
                       input_names=None, output_names=None,
                       state_names=None, entrypoint_name="main")
-  .to_coreai()            # pure conversion â€” runs NO passes
+  .to_coreai()            # successful module exit runs the pre-compilation rewrite
 # State rewriting already ran inside to_coreai().
 program.save_asset(Path("Model.aimodel"))               # writes a DIRECTORY
 

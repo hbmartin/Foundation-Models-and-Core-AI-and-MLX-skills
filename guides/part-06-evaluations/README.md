@@ -282,7 +282,8 @@ transcripts and the sample disagree — the evaluators property type, the `Evalu
 metric factories, `info:` versus "notes", the judge model, and κ's provenance — **the sample wins in every
 case**, and each guide's sources section says so explicitly. Since 2026-07-29 there is one source above
 even the sample for *signatures*: the framework's own `.swiftinterface`, shipped inside the Xcode 27 beta
-and captured into this repo at `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (885 lines,
+and captured into this repo at `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface` (925 lines,
+refreshed from Xcode 27 final `27A266a` on 2026-10-06; superseded beta evidence remains in Git history,
 read end-to-end that day). Signature-level claims across the three guides now cite it as ✅
 **SDK-verified** with line numbers. The sample remains the authority for *usage*.
 

@@ -153,11 +153,27 @@ From the repository root, create each Python 3.12 environment and install the ex
 ```sh
 uv venv --python python3.12 /tmp/coreai-030-model-export
 uv pip install --python /tmp/coreai-030-model-export/bin/python 'torch==2.9.0' 'torchao==0.17.0' 'numpy==2.4.6' 'coreai-core==1.0.0b3' 'coreai-torch==0.4.3' 'coreai-opt==0.3.0' 'scikit-learn==1.9.1'
-/tmp/coreai-030-model-export/bin/python scripts/verify_coreai_examples.py --compression --out artifacts/coreai-030-refresh/isolated-model-export/results.json
+# Review the full immutable source commit and the separate clean runner first.
+source_repo=/path/to/reviewed-source
+runner_repo=/path/to/trusted-runner
+reviewed_revision=<full-40-character-reviewed-commit-sha>
+/tmp/coreai-030-model-export/bin/python -I "$runner_repo/scripts/verify_coreai_examples.py" \
+  --source-repo "$source_repo" --reviewed-revision "$reviewed_revision" \
+  --compression --out /tmp/coreai-native/model-export/results.json
 uv venv --python python3.12 /tmp/coreai-030-standalone
 uv pip install --python /tmp/coreai-030-standalone/bin/python 'torch==2.11.0' 'torchao==0.18.0' 'numpy==2.4.6' 'coreai-core==1.0.0b3' 'coreai-torch==0.4.3' 'coreai-opt==0.3.0' 'scikit-learn==1.9.1'
-/tmp/coreai-030-standalone/bin/python scripts/verify_coreai_examples.py --compression --out artifacts/coreai-030-refresh/isolated-standalone/results.json
+/tmp/coreai-030-standalone/bin/python -I "$runner_repo/scripts/verify_coreai_examples.py" \
+  --source-repo "$source_repo" --reviewed-revision "$reviewed_revision" \
+  --compression --out /tmp/coreai-native/standalone/results.json
 ```
+
+Selecting the reviewed immutable revision establishes trust in the examples, which execute with
+host privileges. Virtual environments isolate dependencies; they are not a code sandbox.
+The runner rejects symbolic/abbreviated revisions, differing HEAD, local non-ignored edits,
+malformed metadata, duplicate IDs, current optimizer calls, and optimized Python. Helpers come
+only from verified runner blobs, and guide fences come only from approved Git blobs. Native
+execution remains manual; portable CI does not invoke this verifier. Reports identify both
+commits, helper/example hashes, package versions, and the actual OS and toolchain.
 
 Run the two native commands sequentially. `scripts/coreai_examples.py` is the shared standard-library
 fence/token reader. All 464 current Python fences across Parts 7/8/9/10/17 pass the removed optimizer
@@ -169,3 +185,12 @@ fences, actual prior guide wording, and a subprocess timeout with 800 parenthesi
 Final repository checks are recorded in [validation.md](validation.md). Generated indexes, skills,
 callout classifications and Swift verification line records are reconciled in the final delivery
 commit; unchanged Swift compiler verdicts are carried only with matching identity/content hash.
+
+## PR #49 follow-up evidence boundary
+
+The original 24-fixture runtime records and 341-group/125-call audits above are retained as
+historical measurements of the original refresh. The current follow-up is recorded separately
+in [pr49-followup](../pr49-followup/README.md): 26 fixtures per native profile, 142 Python
+fences / 130 statically resolved calls, and current section/fence hashes. Only the named
+compression fixture body changed (PAT schedule coverage); all other Part 9 fence bodies retain
+their reviewed hashes. The follow-up records the source and trusted runner commits explicitly.

@@ -3727,6 +3727,7 @@ from coreai_opt.quantization.spec import PerBlockGranularity
 from coreai_opt.palettization import (
     KMeansPalettizer, KMeansPalettizerConfig, ModuleKMeansPalettizerConfig, PalettizationSpec,
 )
+from coreai_opt.palettization.config import PATSchedule
 from coreai_opt.pruning import MagnitudePruner
 from coreai_opt.inspection import bits_per_weight
 from coreai_opt.casting import cast_fp32_to_fp16
@@ -3796,6 +3797,26 @@ def compression_fixtures(work):
         assert bits_per_weight(prepared).bpw < 16
         expected = prepared(sample).detach().numpy().copy()
         return convert_fixture(p.finalize(), sample, work / "palettized.aimodel", expected, dense)
+
+    def palettization_schedule():
+        config = KMeansPalettizerConfig(global_config=ModuleKMeansPalettizerConfig(
+            op_state_spec={"weight": PalettizationSpec(n_bits=4)},
+            pat_schedule=PATSchedule(enable_fake_palettize=1)))
+        p = KMeansPalettizer(small_dense_model(), config)
+        prepared = p.prepare((sample,), num_workers=1)
+        fake = prepared[0].parametrizations.weight[0]
+        try:
+            p.step()
+        except RuntimeError as error:
+            assert "training_mode" in str(error)
+        else:
+            raise AssertionError("step() outside training_mode() unexpectedly succeeded")
+        with p.training_mode():
+            assert not bool(fake.fake_palett_enabled[0])
+            p.step()
+            assert bool(fake.fake_palett_enabled[0])
+            assert torch.isfinite(prepared(sample)).all()
+        return {"warmup_disabled": True, "step_enabled": True, "outside_training_rejected": True}
 
     def pruning():
         model = small_dense_model()
@@ -3878,7 +3899,8 @@ def compression_fixtures(work):
             "eager quantization": lambda: quantization(ExecutionMode.EAGER),
             "graph mmap finalize": lambda: quantization(ExecutionMode.GRAPH, mmap=True),
             "eager mmap finalize": lambda: quantization(ExecutionMode.EAGER, mmap=True),
-            "palettization": palettization, "pruning": pruning, "joint compression": joint,
+            "palettization": palettization, "palettization PAT schedule": palettization_schedule,
+            "pruning": pruning, "joint compression": joint,
             "direct IR quantization": lambda: direct_ir("quantize"),
             "direct IR palettization": lambda: direct_ir("palettize"),
             "direct IR sparsification": lambda: direct_ir("sparsify"),
@@ -3975,7 +3997,7 @@ AI to check against — verified: **0 `sampleCode` entries across 312 indexed Co
 | 3 | Resolved: FP16 static-range checks, explicit op exclusions | `casting/casting.py` at `189612be` | Dynamic calibration is post-release |
 | 4 | Resolved: QScheme is not re-exported | `coreai_utils/__init__.py` at `189612be` | Import from `common` |
 | 5 | Resolved: documentation-local capture helpers, not a public API | `activation_comparison.md` at `189612be` | See §18.5 |
-| 6 | Resolved: `format_summary(colorize: bool | None = None)` | `inspection/model_inspector.py` at `189612be` | Pass keyword `colorize` if needed |
+| 6 | Resolved: `format_summary(colorize: bool \| None = None)` | `inspection/model_inspector.py` at `189612be` | Pass keyword `colorize` if needed |
 | 7 | Whether diffusion `metadata.json` records the **attempted** or **achieved** compression | Export with a deliberately invalid quantization config and read the emitted metadata | **Do not trust metadata as evidence of compression**; verify by size (§17.2) |
 | 8 | Resolved: module loggers for fake quantization and palettization | `spec/fake_quantize.py`, `kmeans/kmeans_fake_palettize.py` at `189612be` | Attach to exact loggers if propagation is disabled (§7.5) |
 | 9 | Resolved: `check_divisibility(model, axis, block_size)` returns a name-to-shape map | `coreai-models` `compression_metrics.py` at `db63a2d8` | Use keywords to avoid argument-order mistakes |

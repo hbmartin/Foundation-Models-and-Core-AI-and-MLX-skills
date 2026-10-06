@@ -287,7 +287,7 @@ PyTorch checkpoint
 MyModel.aimodel/                             ← class 1: portable source (a directory)
    ├── main.mlirb        (IR bytecode)
    ├── main.hash
-   └── metadata.json     ("producer": "coreai-core 1.0.0b2", …)
+   └── metadata.json     ("producer": "coreai-core 1.0.0b3", …)
    │
    │  xcrun coreai-build compile --architecture h18p …
    │      ← exits 0 for ANY arch you name (§7)
@@ -1449,7 +1449,8 @@ Two rules, and a third that is really a consequence.
 **Rule 1 — pin your export machine.**
 
 Nominate one machine (or one image) as the export host, record its OS build in your provenance file
-(§10), and change it deliberately. In practice, for a team, that means:
+(§10), and change it deliberately. The following **historical 0.4.1/b2 incident configuration** illustrates that policy; a current
+0.4.3/b3 host must record its own measured topology and package profile:
 
 ```yaml
 # build/export-host.yaml — checked in, reviewed like any other build config
@@ -2879,7 +2880,8 @@ This section is the checklist. It is deliberately boring.
 ### The record
 
 For every artifact you publish — every `.aimodel`, every `.aimodelc`, every bundle — record a
-sidecar with **at least** these fields:
+sidecar with **at least** these fields. The values below are a **historical July 2026 example**,
+not the current package profile; record the actual installed versions and asset producer for each export:
 
 ```json
 {
@@ -3187,6 +3189,9 @@ If more than one thing applies, this is the order that minimises wasted work:
 | Foundation Models docs link to `foundation-models-utilities` | Apple's Foundation Models documentation |
 
 ### Apple source and shipping repositories (evidence class 2)
+
+The converter rows below preserve the inspected 0.4.1/b2 incident snapshot. Current conversion
+uses 0.4.3/b3; see the version floor and Part 8 for that workflow.
 
 | Claim | Source |
 |---|---|

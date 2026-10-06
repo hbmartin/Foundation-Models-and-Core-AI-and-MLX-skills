@@ -1,0 +1,52 @@
+{
+  "discussionGroups": [
+    {
+      "automaticFixEligible": false,
+      "claims": [],
+      "closedAt": null,
+      "closureReason": null,
+      "confidence": 1.0,
+      "diagnostics": [],
+      "latestClaimDate": null,
+      "live": {
+        "answered": null,
+        "closedAt": null,
+        "kind": "discussion",
+        "mergedAt": null,
+        "reason": null,
+        "state": "OPEN",
+        "stateReason": null,
+        "title": "MLX on CUDA",
+        "url": "https://github.com/ml-explore/mlx/discussions/2422"
+      },
+      "liveState": "OPEN",
+      "liveUrl": "https://github.com/ml-explore/mlx/discussions/2422",
+      "mergeTimestamp": null,
+      "number": 2422,
+      "ref": "ml-explore/mlx#2422",
+      "referenceKind": "discussion",
+      "repository": "ml-explore/mlx",
+      "resolutionDisposition": "unknown",
+      "sightingCount": 1,
+      "sightingIds": [
+        "s1002"
+      ],
+      "transitionKind": "UNCLAIMED_TO_OPEN",
+      "verdict": "UNCHANGED"
+    }
+  ],
+  "generatedAt": "2026-10-06T19:18:26Z",
+  "policy": "Report-only: no automatic edits for ambiguous or unresolved references.",
+  "summary": {
+    "ambiguousSightings": 309,
+    "references": 416,
+    "sightings": 1002,
+    "verdicts": {
+      "AMBIGUOUS": 237,
+      "STALE-DATE-ONLY": 0,
+      "STATE-CHANGED": 0,
+      "UNCHANGED": 179,
+      "UNREACHABLE": 0
+    }
+  }
+}

@@ -133,14 +133,8 @@ final class EvaluationsProbes: XCTestCase {
 
     // MARK: eval.subject-throws  [SIM-27 · MAC-27]
     //
-    // GAP: part-06 …/01-foundations-and-hill-climbing.md §17.7 — when subject(from:)
-    //      throws for SOME samples, does the run abort, fail, or silently drop those
-    //      samples from the aggregate? (Interface hint: missing metrics become "ignored
-    //      columns and logged", which leans drop-silently — unproven for subject errors.)
-    // Candidates: (a) run() throws (abort); (b) samples dropped, aggregate over the rest;
-    //             (c) samples scored as failing.
-    // Write-back: §17.7's GAP box; if (b), the guide's "a run that silently drops its
-    //      five hardest samples reports an improved score" warning graduates to VERIFIED.
+    // Historical beta probe: aggregates excluded failed subjects. Final Xcode 27
+    // also exposes typed failure counters; scoring coverage remains independent.
     func testSubjectInferenceFailureHandling() async throws {
         try requireOS27()
         guard #available(macOS 27.0, iOS 27.0, *) else { return }
@@ -170,14 +164,55 @@ final class EvaluationsProbes: XCTestCase {
             Probe.result(
                 "eval.subject-throws",
                 "run-completed",
-                detail: "samples=5 subjectFailures=2 detailedRows=\(result.detailed.rows.count) meanMatch=\(result.aggregateValue(.mean(of: match))) \(Probe.runtimeDescription)"
+                detail: "samples=5 detailedRows=\(result.detailed.rows.count) meanMatch=\(result.aggregateValue(.mean(of: match))) inferenceFailures=\(result.errors.inferenceFailureCount) evaluatorFailures=\(result.errors.evaluatorFailureCount) hasFailures=\(result.errors.hasFailures) anyInferenceProduced=\(result.errors.anyInferenceProduced) \(Probe.runtimeDescription)"
             )
+            XCTAssertEqual(result.errors.inferenceFailureCount, 2)
+            XCTAssertEqual(result.errors.evaluatorFailureCount, 0)
+            XCTAssertTrue(result.errors.hasFailures)
+            XCTAssertTrue(result.errors.anyInferenceProduced)
+            XCTAssertEqual(result.detailed.rows.count, 5)
         } catch {
             Probe.result(
                 "eval.subject-throws",
                 "run-threw",
                 detail: "type=\(type(of: error)) desc=\(String(describing: error).prefix(200)) \(Probe.runtimeDescription)"
             )
+        }
+    }
+
+    // MARK: eval.run-errors  [SIM-27 · MAC-27]
+    // Four model-free cases establish counters without claiming judge retry policy.
+    func testRunErrorCounters() async throws {
+        try requireOS27()
+        guard #available(macOS 27.0, iOS 27.0, *) else { return }
+        for mode in ["clean", "subject", "evaluator", "all-subject"] {
+            let metric = Metric("RunErrors")
+            let evaluation = OfflineEvaluation<FixedSample>(
+                samples: (0..<4).map { FixedSample(input: "s\($0)", expected: 1) },
+                makeSubject: { sample in
+                    if mode == "all-subject" || (mode == "subject" && sample.input == "s0") {
+                        throw SubjectInferenceError.failed(reason: "deliberate subject failure")
+                    }
+                    return ModelSubject(value: 1)
+                },
+                evaluatorList: [Evaluator<FixedSample> { sample, _ in
+                    if mode == "evaluator" && sample.input == "s0" {
+                        throw EvaluatorError.failed(evaluator: nil,
+                            evaluatorType: "OfflineFailure", reason: "deliberate evaluator failure")
+                    }
+                    return metric.passing()
+                }],
+                aggregateMeans: [metric]
+            )
+            let result = try await evaluation.run()
+            let errors = result.errors
+            XCTAssertEqual(errors.inferenceFailureCount,
+                mode == "all-subject" ? 4 : (mode == "subject" ? 1 : 0))
+            XCTAssertEqual(errors.evaluatorFailureCount, mode == "evaluator" ? 1 : 0)
+            XCTAssertEqual(errors.hasFailures, mode != "clean")
+            XCTAssertEqual(errors.anyInferenceProduced, mode != "all-subject")
+            Probe.result("eval.run-errors.\(mode)", "completed",
+                detail: "rows=\(result.detailed.rows.count) scored=\(result.detailed[metric: metric].count) mean=\(result.aggregateValue(.mean(of: metric))) inferenceFailures=\(errors.inferenceFailureCount) evaluatorFailures=\(errors.evaluatorFailureCount) hasFailures=\(errors.hasFailures) anyInferenceProduced=\(errors.anyInferenceProduced) \(Probe.runtimeDescription)")
         }
     }
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Execute named guide fences on a native Core AI host; write an honest JSON record.
 
-Run with an isolated, explicitly pinned Python environment. This is not part of
+Run using python -I in a trusted pinned environment, from a separate reviewed
+runner checkout. --reviewed-revision explicitly authorizes the immutable source
+commit; this is a trust policy, not a sandbox. This is not part of
 portable unittest discovery and never installs dependencies itself.
 """
 from __future__ import annotations
@@ -17,22 +19,203 @@ import subprocess
 import sys
 import traceback
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.coreai_examples import guide_examples, removed_optimizer_errors
+# Everything before load_trusted_reader() is standard-library-only. Candidate
+# Git configuration, helper modules, bytecode and working-tree fences are untrusted.
+import hashlib
+import os
+import re
+import types
+
+
+def git_read(root, *arguments):
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_NO_REPLACE_OBJECTS="1", GIT_NO_LAZY_FETCH="1", GIT_TERMINAL_PROMPT="0")
+    command = ["/usr/bin/git", "-C", str(root), "--no-replace-objects",
+               "--work-tree=" + str(root), "-c", "core.fsmonitor=false",
+               "-c", "core.hooksPath=" + os.devnull, *arguments]
+    try:
+        return subprocess.run(command, env=env, check=True, capture_output=True).stdout
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = getattr(error, "stderr", b"").decode(errors="replace").strip()
+        raise ValueError(f"cannot read reviewed Git snapshot: {detail or error}") from error
+
+
+def object_id(payload, kind="blob"):
+    return hashlib.sha1(kind.encode() + b" " + str(len(payload)).encode() + b"\0" + payload).hexdigest()
+
+
+def reviewed_tree(root, revision):
+    """Verify the full commit/tree chain; recursive ls-tree alone trusts inner trees."""
+    commit = git_read(root, "cat-file", "commit", revision)
+    if object_id(commit, "commit") != revision:
+        raise ValueError("Git commit digest mismatch")
+    match = re.match(rb"tree ([0-9a-f]{40})\n", commit)
+    if match is None:
+        raise ValueError("reviewed commit has no valid tree")
+
+    def walk(oid, prefix="", ancestors=()):
+        if oid in ancestors:
+            raise ValueError("cyclic Git tree")
+        payload = git_read(root, "cat-file", "tree", oid)
+        if object_id(payload, "tree") != oid:
+            raise ValueError(f"Git tree digest mismatch: {prefix or '.'}")
+        offset, seen = 0, set()
+        while offset < len(payload):
+            space, end = payload.find(b" ", offset), payload.find(b"\0", offset)
+            if space < offset or end < space or end + 21 > len(payload):
+                raise ValueError("malformed Git tree entry")
+            mode = payload[offset:space].decode("ascii")
+            name = payload[space + 1:end].decode("utf-8")
+            child = payload[end + 1:end + 21].hex()
+            offset = end + 21
+            if name in seen or name in ("", ".", "..") or "/" in name:
+                raise ValueError(f"unsafe/duplicate Git tree entry: {name}")
+            seen.add(name)
+            relative = prefix + name
+            if mode == "40000":
+                yield from walk(child, relative + "/", (*ancestors, oid))
+            else:
+                yield mode, child, relative
+
+    yield from walk(match.group(1).decode())
+
+
+def clean_snapshot(root, revision):
+    """Read raw approved blobs and check bytes/index; never run status or filters."""
+    root = Path(root).resolve()
+    if git_read(root, "rev-parse", "HEAD").decode().strip() != revision:
+        raise ValueError(f"{root}: HEAD differs from reviewed revision {revision}")
+    if git_read(root, "cat-file", "-t", revision).strip() != b"commit":
+        raise ValueError("reviewed revision must identify a commit")
+    expected, documents = {}, {}
+    for mode, oid, relative in reviewed_tree(root, revision):
+        if relative.startswith("/") or ".." in Path(relative).parts:
+            raise ValueError(f"unsafe tracked path: {relative}")
+        if mode not in ("100644", "100755"):
+            raise ValueError(f"unsupported tracked mode {mode}: {relative}")
+        expected[relative] = (mode, oid)
+        payload = git_read(root, "cat-file", "blob", oid)
+        if object_id(payload) != oid:
+            raise ValueError(f"Git object digest mismatch: {relative}")
+        target = root / relative
+        if any(parent.is_symlink() for parent in (target, *target.parents) if parent != root):
+            raise ValueError(f"symlink in tracked path: {relative}")
+        try:
+            actual = target.read_bytes()
+            actual_mode = "100755" if target.stat().st_mode & 0o111 else "100644"
+        except OSError as error:
+            raise ValueError(f"missing tracked file: {relative}") from error
+        if actual_mode != mode or object_id(actual) != oid:
+            raise ValueError(f"non-reviewed tracked edit: {relative}")
+        documents[relative] = payload
+    indexed = {}
+    for entry in git_read(root, "ls-files", "--stage", "-z").split(b"\0"):
+        if not entry:
+            continue
+        metadata, raw_path = entry.split(b"\t", 1)
+        mode, oid, stage = metadata.decode().split()
+        name = raw_path.decode()
+        if stage != "0" or name in indexed:
+            raise ValueError(f"unmerged index entry: {name}")
+        indexed[name] = (mode, oid)
+    if indexed != expected:
+        raise ValueError(f"{root}: staged files differ from the reviewed tree")
+    extra = git_read(root, "ls-files", "--others", "--exclude-standard", "-z")
+    if extra:
+        raise ValueError(f"{root}: non-ignored untracked files: " + extra.decode().replace("\0", ", "))
+    return documents
+
+
+def approved_snapshots(runner_root, source_root, revision, *, isolated, optimize):
+    if not isolated:
+        raise ValueError("native verification requires python -I from a trusted runner checkout")
+    if optimize:
+        raise ValueError("optimized Python (-O/-OO) disables parity assertions and is unsupported")
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError("--reviewed-revision requires a full lowercase 40-hex commit SHA")
+    runner_root, source_root = Path(runner_root).resolve(), Path(source_root).resolve()
+    if runner_root == source_root:
+        raise ValueError("runner and source must be separate checkouts; review the runner independently")
+    runner_revision = git_read(runner_root, "rev-parse", "HEAD").decode().strip()
+    runner = clean_snapshot(runner_root, runner_revision)
+    source = clean_snapshot(source_root, revision)
+    return runner_revision, runner, source
+
+
+def load_trusted_reader(runner_documents):
+    """Load verified source bytes, without filesystem imports or ignored .pyc files."""
+    package = types.ModuleType("scripts")
+    package.__path__ = []
+    sys.modules["scripts"] = package
+    for name in ("mdlinks", "coreai_examples"):
+        relative = f"scripts/{name}.py"
+        module = types.ModuleType("scripts." + name)
+        module.__file__ = relative
+        module.__package__ = "scripts"
+        sys.modules[module.__name__] = module
+        exec(compile(runner_documents[relative], relative, "exec"), module.__dict__)
+    return sys.modules["scripts.coreai_examples"]
+
+
+def snapshot_examples(reader, documents):
+    examples, seen = [], set()
+    for relative, payload in sorted(documents.items()):
+        path = Path(relative)
+        if (len(path.parts) < 2 or path.parts[0] != "guides" or path.suffix != ".md"
+                or not any(path.parts[1].startswith(f"part-{part:02d}-") for part in reader.PARTS)):
+            continue
+        for example in reader.python_fences(payload.decode("utf-8"), path):
+            if example.id:
+                if example.id in seen:
+                    raise ValueError(f"{path}:{example.line}: duplicate corpus example ID {example.id}")
+                seen.add(example.id)
+            examples.append(example)
+    errors = [f"{e.path}:{line}: removed .optimize() call" for e in examples
+              if e.historical is None for line in reader.optimizer_calls(e)]
+    if errors:
+        raise ValueError("\n".join(errors))
+    return {e.id: e for e in examples if e.id}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--source-repo", type=Path, required=True)
+    parser.add_argument("--reviewed-revision", required=True)
+    parser.add_argument("--preflight-only", action="store_true", help="validate trust and examples without native execution")
     parser.add_argument("--compression", action="store_true")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
-    assert not removed_optimizer_errors(root)
-    examples = {e.id: e for e in guide_examples(root) if e.id}
-    record = {"python": sys.version, "os": platform.platform(),
+    runner_root = Path(__file__).resolve().parents[1]
+    try:
+        runner_revision, runner_documents, source_documents = approved_snapshots(
+            runner_root, args.source_repo, args.reviewed_revision,
+            isolated=sys.flags.isolated, optimize=sys.flags.optimize)
+        reader = load_trusted_reader(runner_documents)
+        examples = snapshot_examples(reader, source_documents)
+        required = {"state-protocol", "shipped-asset-gate", "ci-asset-gate"}
+        if args.compression:
+            required.update({"compression-native-fixtures", "composite-quantization"})
+        missing = required - examples.keys()
+        if missing:
+            raise ValueError("missing required example IDs: " + ", ".join(sorted(missing)))
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
+    provenance = {"runner_revision": runner_revision, "source_revision": args.reviewed_revision,
+                  "runner_helpers": {p: hashlib.sha256(runner_documents[p]).hexdigest()
+                     for p in ("scripts/verify_coreai_examples.py", "scripts/coreai_examples.py", "scripts/mdlinks.py")},
+                  "isolated": True, "optimized": False}
+    if args.preflight_only:
+        print(json.dumps({**provenance, "example_ids": sorted(examples)}, indent=2))
+        return 0
+    record = {**provenance, "python": sys.version, "os": platform.platform(),
               "os_build": subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip(),
               "packages": {n: importlib.metadata.version(n) for n in
                            ("torch", "torchao", "coreai-core", "coreai-torch", "coreai-opt", "numpy", "scikit-learn")},
+              "toolchain": {"developer_dir": os.environ.get("DEVELOPER_DIR") or subprocess.check_output(
+                  ["xcode-select", "-p"], text=True).strip(),
+                  "xcode": subprocess.check_output(["xcodebuild", "-version"], text=True).strip(),
+                  "macos_sdk": subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-build-version"], text=True).strip()},
               "fixtures": [], "examples": {}}
     work = args.out.parent
     work.mkdir(parents=True, exist_ok=True)
@@ -42,7 +225,7 @@ def main():
         ns = {"__name__": "guide_verification"}
         exec(compile("\n" * (example.line - 1) + example.code, str(example.path), "exec"), ns)
         import hashlib
-        record["examples"][name] = {"path": str(example.path.relative_to(root)),
+        record["examples"][name] = {"path": str(example.path),
                                     "line": example.line,
                                     "sha256": hashlib.sha256(example.code.encode()).hexdigest()}
         return ns
@@ -94,8 +277,6 @@ def main():
                    .add_exported_program(exported, input_names=["x"], output_names=["y"]).to_coreai())
         path = work / "shipping-release.aimodel"
         program.save_asset(path)
-        # Deliberately save again to establish b3 replaces an existing directory.
-        program.save_asset(path)
         before = {p.relative_to(path).as_posix(): p.read_bytes() for p in path.rglob("*") if p.is_file()}
         def invoke(m=model, e=exported, atol=1e-2, rtol=1e-3):
             return asyncio.run(gate["shipped_asset_gate"](path, m, e, sample,
@@ -105,7 +286,26 @@ def main():
             assert np.isfinite(result).all()
             assert before == {p.relative_to(path).as_posix(): p.read_bytes() for p in path.rglob("*") if p.is_file()}
             return {"path": str(path), "shape": list(result.shape), "unchanged": True}
-        check("gate loads supplied RELEASE asset/output ownership/b3 overwrite", supplied_asset)
+        check("gate loads supplied RELEASE asset/output ownership/non-mutation", supplied_asset)
+        def replacement():
+            destination = work / "overwrite.aimodel"
+            program.save_asset(destination)
+            sentinel = destination / "obsolete-sentinel.txt"
+            sentinel.write_text("old asset")
+            different = copy.deepcopy(model)
+            with torch.no_grad():
+                different[0].weight.zero_()
+                different[0].bias.fill_(3)
+            second_ep = torch.export.export(different, sample).run_decompositions(get_decomp_table())
+            second_program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
+                .add_exported_program(second_ep, input_names=["x"], output_names=["y"]).to_coreai())
+            second_program.save_asset(destination)
+            assert not sentinel.exists(), "save merged instead of replacing the destination"
+            actual = asyncio.run(gate["shipped_asset_gate"](destination, different, second_ep, sample,
+                input_names=["x"], output_names=["y"], runtime_atol=1e-2, runtime_rtol=1e-3))["y"]
+            assert not np.allclose(actual, model(*sample).detach().numpy(), atol=1e-2, rtol=1e-3)
+            return {"old_file_removed": True, "new_program_max_abs": float(np.max(np.abs(actual - 3)))}
+        check("b3 replaces existing asset with different program", replacement)
         check("CI supplied asset", lambda: list(asyncio.run(ci["ci_asset_gate"](
             path, model, exported, sample, runtime_atol=1e-2, runtime_rtol=1e-3)).shape))
         wrong = copy.deepcopy(model)

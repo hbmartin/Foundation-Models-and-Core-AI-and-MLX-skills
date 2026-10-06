@@ -196,8 +196,8 @@ def load_manifest(path: pathlib.Path) -> dict:
         ):
             raise SystemExit(f"error: current-state latestObserved SDK {name!r} is invalid")
     runtime_releases = latest["simulatorRuntimes"]
-    if not isinstance(runtime_releases, list) or not runtime_releases:
-        raise SystemExit("error: current-state latestObserved simulatorRuntimes must not be empty")
+    if not isinstance(runtime_releases, list):
+        raise SystemExit("error: current-state latestObserved simulatorRuntimes must be an array")
     for release in runtime_releases:
         if not isinstance(release, dict) or not {
             "name", "version", "build", "released", "sourceUrl",
@@ -351,25 +351,31 @@ def installed_environment(previous: dict) -> tuple[dict, list[str]]:
     sw = dict(
         line.split(":", 1) for line in sw_output.splitlines() if ":" in line
     )
-    xcode_path = os.environ.get("DEVELOPER_DIR") or previous["xcode"]["path"]
-    env = {**os.environ, "DEVELOPER_DIR": xcode_path}
-    xcode_lines = observe("xcode", "xcodebuild", "-version", env=env).splitlines()
+    selected_path = os.environ.get("DEVELOPER_DIR")
+    if not selected_path:
+        selected_path = observe("developer-directory", "xcode-select", "-p")
+    # Preserve prior values only as explicitly blocked evidence, never as selection.
+    xcode_path = selected_path or previous["xcode"]["path"]
+    env = {**os.environ, **({"DEVELOPER_DIR": selected_path} if selected_path else {})}
+    def observe_toolchain(label, *command):
+        return observe(label, *command, env=env) if selected_path else ""
+
+    xcode_lines = observe_toolchain("xcode", "xcodebuild", "-version").splitlines()
 
     def sdk(name: str) -> dict:
         prior = previous["sdks"][name]
         return {
-            "version": observe(
-                f"{name}-version", "xcrun", "--sdk", name, "--show-sdk-version", env=env
+            "version": observe_toolchain(
+                f"{name}-version", "xcrun", "--sdk", name, "--show-sdk-version"
             ) or prior["version"],
-            "build": observe(
-                f"{name}-build", "xcrun", "--sdk", name,
-                "--show-sdk-build-version", env=env
+            "build": observe_toolchain(
+                f"{name}-build", "xcrun", "--sdk", name, "--show-sdk-build-version"
             ) or prior["build"],
         }
 
     runtimes = []
-    runtime_output = observe(
-        "simulator-runtimes", "xcrun", "simctl", "list", "runtimes", env=env
+    runtime_output = observe_toolchain(
+        "simulator-runtimes", "xcrun", "simctl", "list", "runtimes"
     )
     for line in runtime_output.splitlines():
         match = re.match(r"(iOS) ([0-9.]+) \([0-9.]+ - ([^)]+)\)", line.strip())
@@ -449,8 +455,12 @@ def pending_reasons(installed: dict, latest: dict) -> list[str]:
     comparisons = (
         ("Xcode", installed["xcode"]["build"], latest["xcode"]["build"]),
         ("macOS", installed["os"]["build"], latest["macos"]["build"]),
-        ("iOS Simulator", latest_runtime.get("build"), latest["ios"]["build"]),
+
     )
+    published_runtimes = [r for r in latest["simulatorRuntimes"] if r["name"] == "iOS" and r.get("build")]
+    if published_runtimes:
+        expected_runtime = max(published_runtimes, key=lambda r: r["build"])
+        comparisons += (("iOS Simulator", latest_runtime.get("build"), expected_runtime["build"]),)
     return [
         f"Installed {name} build {actual or 'unknown'} differs from observed build {expected}."
         for name, actual, expected in comparisons

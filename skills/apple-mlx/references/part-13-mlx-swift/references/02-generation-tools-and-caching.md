@@ -2521,7 +2521,7 @@ tool-calling defects are worth knowing because they are *not* in the layers abov
   "#/$defs/Traveler"`, the envelope buries the `$defs` inside `arguments`, and **xgrammar resolves
   JSON Pointers from the document root** → dangling ref. *"Flat tools (only primitive fields) work,
   which is presumably why this hasn't surfaced — demo-sized tools don't produce `$defs`."*
-  **Fixed** in PR #434 (merged 2026-07-22).
+  **Fixed** in `ml-explore/mlx-swift-lm#434` (merged 2026-07-22).
 - **`.toolCalling` on a VLM-loaded model was a process-killing abort** —
   `Fatal error: SmallVector out of range` at `mlx-c/mlx/c/array.cpp:335`. The tool-calling path
   hand-built `LMInput(tokens: MLXArray(toolAwareTokens))`, a **1-D `[N]`** array; every VLM

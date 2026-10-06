@@ -909,12 +909,12 @@ warming up.**
 ## 4. The minimum viable conformance — 40 lines, Apple's own
 
 Before the 953-line one, here is the smallest complete conformance in the corpus. It is Apple's own
-test mock, and it compiles, runs through a real `LanguageModelSession`, and handles a full
-tool-calling round trip. If you read one code listing in this guide, read this one.
+test mock, adapted to Xcode 27 final's initializer. The complete adapted listing is compile-verified;
+the upstream source supplies the historical `LanguageModelSession` tool-calling round-trip example. If you read one code listing in this guide, read this one.
 
 > ✅ **VERIFIED** — `apple/foundation-models-utilities`,
-> `Tests/FoundationModelsUtilitiesTests/MockModel.swift:12-102`, verbatim (comments abridged where
-> marked):
+> `Tests/FoundationModelsUtilitiesTests/MockModel.swift:12-102`, adapted for Xcode 27 final
+> (`27A266a`): use the unlabeled capabilities initializer; comments are abridged where marked.
 
 ```swift compile:27
 import Foundation
@@ -933,7 +933,7 @@ struct MockModel: LanguageModel {
   let tokenCount: Int
 
   var capabilities: LanguageModelCapabilities {
-    LanguageModelCapabilities(capabilities: [.toolCalling])
+    LanguageModelCapabilities([.toolCalling])
   }
 
   var executorConfiguration: MockModelExecutor.Configuration {
@@ -1073,7 +1073,7 @@ Four capabilities exist. All four are exercised in compiled Apple source.
 > LanguageModelCapabilities([.vision, .toolCalling, .reasoning, .guidedGeneration])
 >
 > // Labelled — MockModel.swift:31, and MLXLanguageModel.swift:565
-> LanguageModelCapabilities(capabilities: [.toolCalling])
+> LanguageModelCapabilities([.toolCalling])
 > ```
 >
 > The positional form is new. Commit `376ca60` ("Updates to accompany Xcode 27 beta 3") lists

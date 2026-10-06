@@ -2557,10 +2557,10 @@ behaviour surprises people, not as documentation.
 
 *Compression APIs audited 2026-10-06 against `coreai-opt` 0.3.0 at `189612be`, converter 0.4.3
 at `b51fd006` and model recipes at `db63a2d8`. SDK, MLX and published measurements retain the
-individually cited historical snapshots; this audit does not remeasure those benchmarks.*
-at the commits recorded in the research corpus · `ml-explore/mlx` HEAD `973e27f` · the Xcode 26.6
-baseline and Xcode 27 Metal/MPP headers · Apple's Core AI and Metal documentation pages · WWDC26
-sessions 325 and 330 · Apple Tech Talk 111432.*
+individually cited historical snapshots; this audit does not remeasure those benchmarks. Those
+sources include the commits recorded in the research corpus, `ml-explore/mlx` at `973e27f`, the
+Xcode 26.6 baseline and Xcode 27 Metal/MPP headers, Apple's Core AI and Metal documentation pages,
+WWDC26 sessions 325 and 330, and Apple Tech Talk 111432.*
 
 [^xcode27-scale-planes]: Apple’s OS 27 API reference documents the scale-plane descriptor, the tensor
     descriptor’s auxiliary-plane map, and the new tensor datatypes:

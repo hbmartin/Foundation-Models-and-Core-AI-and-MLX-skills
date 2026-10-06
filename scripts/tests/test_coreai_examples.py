@@ -3,7 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from scripts.coreai_examples import contract_errors, optimizer_calls, python_fences
+from scripts.coreai_examples import contract_errors, optimizer_calls, python_fences, section
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,6 +23,11 @@ class CoreAIExampleTests(unittest.TestCase):
                 for prefix in ("", "> ", "> > "):
                     with self.subTest(code=code, fence=fence, prefix=prefix):
                         self.assertEqual(1, len(self.calls(code, fence, prefix)))
+
+    def test_missing_heading_has_context(self):
+        with self.assertRaisesRegex(ValueError, "missing heading: ## Missing"):
+            section("## Existing\nbody", "## Missing")
+        self.assertEqual("## Existing\nbody", section("## Existing\nbody\n## Next", "## Existing"))
 
     def test_comments_and_strings(self):
         self.assertEqual([], self.calls('# program.optimize()\nx = "program.optimize()"'))

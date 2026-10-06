@@ -16,7 +16,7 @@ when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and
 there; `/tmp` is only for disposable intermediates that will never be linked from a task.
 
 <!-- current-state:runbook:start -->
-> **Current trigger, generated 2026-09-16:** Installed Xcode build 27A5237l differs from observed build 27B5019j. Installed macOS build 26A428 differs from observed build 26B5086k. Installed iOS Simulator build 24A5408d differs from observed build 24B5084k. The installed topology is macOS 27.0 build `26A428`, Xcode 27.0 build `27A5237l`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
+> **Current trigger, generated 2026-10-06:** Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f. The installed topology is macOS 27.0 build `26A428`, Xcode 27.0 build `27A266a`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
 <!-- current-state:runbook:end -->
 
 ---
@@ -63,6 +63,11 @@ before**. Most quiet-day changed lists should be empty or short.
 
 **Parser guardrail, tightened 2026-09-04.** State claims are clause-scoped and bounded to 80
 characters after or 40 before a reference, with after-reference wording taking precedence.
+GitHub discussion URLs use GraphQL and have their own JSON `referenceKind`, separate from
+issue/PR number groups. Legacy TSV columns remain stable. Reference boundaries prevent a
+neighbor's status from leaking; explicit plural lists can share a prefix state. Unresolved
+repository mappings remain a report-only backlog.
+
 Ambiguous state windows no longer produce actionable verdicts, and regression tests pin real
 mixed-state corpus sightings. Still treat every `STATE-CHANGED` row as a review lead rather than
 an edit instruction: triage **per sighting**, since one ref can have both current and stale prose.
@@ -71,10 +76,11 @@ an edit instruction: triage **per sighting**, since one ref can have both curren
 
 ```bash
 # New Xcode beta / new simulator runtime? (If either changed → §3, not today's sweep)
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcodebuild -version
-DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer xcrun simctl list runtimes | grep iOS
-# Did the missing tool appear where we predicted? (fm ships with macOS 27, so: only after an OS update)
-xcrun --no-cache --find fm 2>/dev/null && echo "FM CLI APPEARED — NEEDED item 1 is closable"
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -version
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list runtimes | grep iOS
+# fm is installed on the current macOS 27 host; inspect its owning OS and help surface.
+sw_vers
+/usr/bin/fm --help
 ```
 
 Plus one browser glance: Apple Developer **News/Releases** (or an RSS reader on it). You are
@@ -147,11 +153,12 @@ Build directories, and retains the evidence.
 This is `notes/NEXT-BETA-CHECKLIST.md` — follow it top to bottom; summary of the spine:
 
 ```bash
-export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 ./scripts/dump-sdk-interfaces.sh --check-only       # Xcode + SDK + Metal component identity
 ./scripts/diff-interfaces.sh                        # temp capture + one-screen drift vs HEAD
 # managed capture includes coreai-build top-level + all subcommand help surfaces
-./scripts/verify-snippets.sh --sdk 27 --out notes/snippet-verification   # snippet-level drift
+./scripts/verify-snippets.sh --sdk 27 --developer-dir-27 "$DEVELOPER_DIR" \
+  --allow-unavailable-targets --out artifacts/swift-refresh   # snippet-level drift
 AUTOMATION_ID=beta-event ./scripts/run-probes.sh host
 AUTOMATION_ID=beta-event ./scripts/run-probes.sh simulator
 ./scripts/refresh-defect-statuses.sh --changed-only
@@ -200,3 +207,12 @@ scripts can establish the former, while edits require the evidence-bounded dispo
 | Per-event | new beta / runtime / OS | NEXT-BETA-CHECKLIST ritual, interface diff, index rebuild if needed | 1–3 h |
 | Upgrade day | this machine gets macOS 27 | probes MAC-27 run, `fm` capture, GUI detail/Core AI-name recording | ~1 h |
 | Per-edit | any guide change | conventions + ledger updates; index rebuild only on heading/⚠️ changes | in-line |
+
+Toolchain routing uses explicit `DEVELOPER_DIR`, then `xcode-select -p`; committed environment
+values are prior observations. Swift verification accepts per-generation `--developer-dir-26`
+and `--developer-dir-27` overrides and verifies actual SDK generation before compiling.
+`--allow-unavailable-targets` completes independent targets, records unavailable ones, and
+returns 3 for incomplete coverage. Write fresh results separately, then reconcile by semantic
+identity, content hash and target provenance. Do not restamp historical SDK-26 results as fresh.
+Apple's public iOS releases do not identify installed Simulator builds; leave the latest
+Simulator observation unknown until independently sourced. The daily schedule remains paused.

@@ -297,7 +297,7 @@ your model, evaluators that score it, an aggregate, a threshold.
 > generic protocol requirements — your own `Sample` type, your own `Subject` type, plain `Evaluator`
 > closures — and stay away from `ModelJudgeEvaluator`, `ToolCallEvaluator` and `SampleGenerator`, all
 > three of which are constrained to `ModelSampleProtocol` (constraints ✅ SDK-verified —
-> `Evaluations-27.0-macos.swiftinterface:166,311,840`).
+> `Evaluations-27.0-macos.swiftinterface:166,311,859`).
 
 The practical consequence of taking Apple at their word here: **an Evaluations suite is a reasonable
 place to put your Core ML or MLX regression tests too.** You get the same report UI, the same
@@ -805,7 +805,7 @@ The corrected shape:
 > ✅ **SDK-verified** — both match the interface, and the interface also pins the closure type the
 > docs never printed: `Evaluator.init(_ evaluate: (Input, ModelSubject<Input.ExpectedValue>) async
 > throws -> Metric)` — sample first, subject second, returning one `Metric`
-> (`Evaluations-27.0-macos.swiftinterface:295-303`; the protocol at `:650-656`).
+> (`Evaluations-27.0-macos.swiftinterface:295-303`; the protocol at `:669-675`).
 
 If a closure is not enough — you need stored state, or you want to emit several metrics — conform
 directly:
@@ -838,7 +838,7 @@ directly:
 > ```
 
 > ✅ **SDK-verified — still no `buildEither`, so the branching rule stands**
-> (`Evaluations-27.0-macos.swiftinterface:659-666`, checked 2026-08-23): the members are
+> (`Evaluations-27.0-macos.swiftinterface:678-685`, checked 2026-08-23): the members are
 > `buildExpression`, `buildOptional` and four pairwise `buildPartialBlock` overloads — beta 5
 > replaced the earlier capture's single variadic `buildBlock` (a source-compatible builder-protocol
 > swap; checked 2026-07-29 the list was `buildExpression`/`buildBlock`/`buildOptional`). Under
@@ -1161,7 +1161,8 @@ reconstructions of this API show — does not exist. The signature is a plain
 
 ### 8.4 Reading values back out: `aggregateValue(_:)`
 
-> ✅ **VERIFIED** — `EvaluationResult` (`/documentation/evaluations/evaluationresult`):
+> ✅ **VERIFIED — historical documentation excerpt, July 2026** — `EvaluationResult`
+> (`/documentation/evaluations/evaluationresult`):
 >
 > ```swift
 > struct EvaluationResult                   // Sendable
@@ -1184,13 +1185,14 @@ reconstructions of this API show — does not exist. The signature is a plain
 > struct ResultColumn
 > ```
 >
-> ✅ **SDK-verified** — that member list matches the shipped interface
-> (`Evaluations-27.0-macos.swiftinterface:530-610`, checked 2026-08-23) with one beta-5 delta the
-> docs page has not caught up to: `saveJSON` and `jsonData` each gained a defaulted
+> ✅ **SDK-verified — refreshed 2026-10-06.** The retained documentation list above omits
+> the final SDK's `let errors: EvaluationRunErrors` (`:564`); see §17.7. The current result
+> and serialization APIs are at `Evaluations-27.0-macos.swiftinterface:548-629`.
+> The beta-5 serialization change is retained: `saveJSON` and `jsonData` each gained a defaulted
 > `includeTranscripts: Bool = false` parameter. The interface also fixes two details the docs left
 > loose: `saveJSON(to:)`'s parameter is labelled **`to directory:`** — it takes a directory, writes
 > a file into it, and returns the file's URL (`@discardableResult`) — and `jsonData`'s options
-> default to `[.prettyPrinted, .sortedKeys]` (`:581-610`).
+> default to `[.prettyPrinted, .sortedKeys]` (`:600-629`).
 
 `aggregateValue` takes an `AggregationOperation` and returns a `Double`. Two forms are attested in
 shipping code:
@@ -1813,7 +1815,7 @@ func evaluateBookTagging() async throws {
 > ✅ **SDK-verified signature, 🟡 unverified usage.** The exact declaration is
 > `@discardableResult func saveJSON(to directory: URL, includeReportMetadata: Bool = false,
 > includeTranscripts: Bool = false) throws -> URL`
-> (`Evaluations-27.0-macos.swiftinterface:581-597`, checked 2026-08-23; beta 5 added the defaulted
+> (`Evaluations-27.0-macos.swiftinterface:600-616`, checked 2026-08-23; beta 5 added the defaulted
 > `includeTranscripts:`) — the parameter is a
 > **directory**, not a file path, which is why the snippet above no longer builds a filename from
 > `evaluationID`/`resultID` by hand. The same block pins the rest of the round trip:
@@ -2339,28 +2341,33 @@ which of your five expectations has no metric behind it.
 
 ### 17.7 A failing sample that vanishes instead of failing
 
-> ✅ **Probe-verified, 2026-07-31 — per-sample `subject(from:)` failures drop silently, and the
-> score improves.** (was a 🔴 GAP; `probes/` `eval.subject-throws`, 27.0 sim runtime.) The exact
-> resolving experiment was run: 5 samples, `subject(from:)` throwing on 2 of them. The run
-> **completed** — no abort, no test failure from the throws alone — the failed samples still occupy
-> detailed rows (`detailedRows=5`), and they are **EXCLUDED from the aggregate**: the mean over the
-> 3 survivors came back **1.0** with 2/5 failing. The "silently improved score" hazard is no longer
-> a hypothesis; it is reproduced fact.
+> ✅ **SDK-verified — Xcode 27 final (`27A266a`), refreshed 2026-10-06.**
+> `EvaluationResult.errors` exposes `inferenceFailureCount`, `evaluatorFailureCount`,
+> `failingEvaluatorTypes`, `anyInferenceProduced`, `metricsNotFound`, and `hasFailures`.
+> Check these before accepting an aggregate. The final interface is captured in
+> `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface:505-515,564`.
 >
-> Background that predicted the drop-silently arm, kept for the record: the interface pass
-> (2026-07-29) pinned `SubjectInferenceError.failed(reason: String)` and
-> `EvaluatorError.failed(evaluator:evaluatorType:reason:)`
-> (`Evaluations-27.0-macos.swiftinterface:505-527`), and `EvaluationError`'s deprecated
-> `metricsNotFound(names:)` case carries Apple's own statement that *"missing metrics are
-> materialized as ignored columns and logged."*
+> **Historical runtime measurement, 2026-07-31:** the beta Simulator completed a five-sample
+> run with two subject failures, retained five detailed rows, and reported mean **1.0** over
+> the three survivors. Earlier beta interfaces lacked this public result error summary.
+> The superseded interface, including the deprecated `EvaluationError.metricsNotFound`
+> message, remains in [the reviewed beta evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/2b12a8544deb7b7c4a807d1e83ad35be2079dabf/notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface).
 >
-> This matters because guardrail false positives are real and rate-dependent, and because the
-> on-device model refresh in 26.4 explicitly retuned them. A run that silently drops its five
-> hardest samples reports an *improved* score — measured, not imagined.
->
-> **The safe default is now a hard rule:** assert the scored row count (§17.1) in every test body.
-> It is the one check that catches every member of this family, and the probe shows nothing else
-> will.
+> **Safe default:** require `!result.errors.hasFailures`, then assert the scored metric count
+> and fixture length. A clean error summary alone does not prove that ignored scores or
+> dropped loader rows covered the complete fixture. Model-free failure probes are in
+> `probes/Tests/ProbesTests/EvaluationsProbes.swift`; their observed outcomes are recorded in
+> [the final-SDK evidence note](../../../notes/synthesis/pr49-followup/README.md).
+
+```swift compile:27 imports:Evaluations
+func requireCompleteScoring(_ result: EvaluationResult, metric: Metric, expectedRows: Int) {
+    precondition(!result.errors.hasFailures, "Evaluation recorded inference or scoring failures")
+    precondition(result.errors.inferenceFailureCount == 0)
+    precondition(result.errors.evaluatorFailureCount == 0)
+    precondition(result.detailed.rows.count == expectedRows, "Fixture rows are missing")
+    precondition(result.detailed[metric: metric].count == expectedRows, "Scored coverage is incomplete")
+}
+```
 
 ### The pattern behind all seven
 
@@ -2600,7 +2607,10 @@ develop → run → check expectations → analyse → repeat
 ```swift prelude:guide-context
 let result = EvaluationContext.current.result
 
-// 1. The denominator. Catches JSONLoader drops, ignored samples, and subject failures.
+// 1. Reported failures, then the denominator. Neither replaces the other.
+#expect(!result.errors.hasFailures)
+#expect(result.errors.inferenceFailureCount == 0)
+#expect(result.errors.evaluatorFailureCount == 0)
 #expect(result.detailed[metric: Self.evaluation.alwaysFires].count == expectedRowCount)
 
 // 2. The optimization target.
@@ -2617,8 +2627,8 @@ let result = EvaluationContext.current.result
 
 ### Evidence used, in precedence order
 
-0. **The framework's shipped Swift interface** — `Evaluations-27.0-macos.swiftinterface` (885
-   lines), dumped from the Xcode 27 beta's macOS `Evaluations.framework` on **2026-07-29** into
+0. **The framework's shipped Swift interface** — `Evaluations-27.0-macos.swiftinterface` (925
+   lines), refreshed from Xcode 27 final (`27A266a`) on **2026-10-06** into
    `notes/sdk-interfaces/` in this repo. For *names, signatures, defaults, availability and case
    lists* it outranks everything below, including the sample; for *usage and runtime behaviour* it
    decides nothing. Cited inline as ✅ **SDK-verified** with line numbers.
@@ -2692,7 +2702,7 @@ kept and marked, so you can see what moved:
 4. **What an all-`.ignore()` metric aggregates to** (§17.5). **Closed, probe-verified 2026-07-31:**
    the `-1.0` sentinel — indistinguishable from an unregistered metric, so keep asserting row
    counts (`probes/` `eval.mean-over-all-ignored`, 27.0 sim runtime).
-5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). **Closed,
+5. **What happens to a run when `subject(from:)` throws for some samples** (§17.7). **Historical measurement,
    probe-verified 2026-07-31:** the run continues and failed samples are excluded from the
    aggregate while still occupying detailed rows — the silently-improved-score hazard is reproduced
    fact (`probes/` `eval.subject-throws`, 27.0 sim runtime).
