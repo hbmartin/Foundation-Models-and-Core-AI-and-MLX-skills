@@ -32,6 +32,22 @@ class CoreAIExampleTests(unittest.TestCase):
     def test_comments_and_strings(self):
         self.assertEqual([], self.calls('# program.optimize()\nx = "program.optimize()"'))
 
+    def test_section_ignores_fenced_headings_and_preserves_body(self):
+        for fence in ("```", "~~~~"):
+            for prefix in ("", "> ", "> > "):
+                body = f"{prefix}{fence}python\n{prefix}# Existing\n{prefix}## Peer\n{prefix}program.optimize()\n{prefix}{fence}\n"
+                expected = "## Existing\n" + body + "### Child\ntext\n"
+                with self.subTest(fence=fence, prefix=prefix):
+                    self.assertEqual(expected, section(body + expected + "\n## Peer\nnext", "## Existing"))
+                    self.assertIn("program.optimize()", section(expected + "## Peer\nnext", "## Existing"))
+
+    def test_invalid_identifiers_fail_across_tokenizer_versions(self):
+        for code in ("x = …", "x = €", "program.…()"):
+            with self.subTest(code=code), self.assertRaises(ValueError):
+                python_fences(f"```python\n{code}\n```")
+        self.assertEqual([], self.calls('π = 1\n名前 = "…"\n# …\ndef incomplete():\n    ...'))
+        self.assertEqual([], self.calls('return program\n# intentionally incomplete fragment'))
+
     def test_valid_historical_exemption(self):
         metadata = '<!-- coreai-example: {"id":"old", "historical":{"coreai-torch":"0.4.1","coreai-core":"1.0.0b2"}} -->\n'
         example = python_fences(metadata + '```python\np.optimize()\n```')[0]
@@ -64,7 +80,6 @@ class CoreAIExampleTests(unittest.TestCase):
             ("state", "coreai_program.optimize()                              # REQUIRED for stateful models"),
             ("rewrite", "The 0.4.3 converter now constructs `AIProgram(module)`, whose context-manager exit performs the\npre-compilation rewrite before `to_coreai()` returns."),
             ("overwrite", "shutil.rmtree(out, ignore_errors=True)      # save_asset will NOT overwrite"),
-            ("issue49", "`coreai-torch` issue **#49** (open"),
             ("issue49", "`coreai-torch#49`, where square inputs hid an `optimize()` bug and unequal (17×23) inputs exposed it"),
         )
         for contract, fixture in fixtures:
@@ -76,6 +91,7 @@ class CoreAIExampleTests(unittest.TestCase):
             ("state", "State requires the automatic module rewrite."),
             ("rewrite", "Exit from `with module:` runs rewriting before `AIProgram(module)`."),
             ("overwrite", "b3 replaces existing destinations."),
+            ("overwrite", "Note: b3 will overwrite the destination."),
             ("issue49", "apple/coreai-torch#49 closed 2026-10-02; historical 0.4.1 failure."),
         ):
             self.assertEqual([], contract_errors(text, contract))

@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import tokenize
 
-from scripts.mdlinks import FENCE
+from scripts.mdlinks import FENCE, iter_lines
 
 PARTS = (7, 8, 9, 10, 17)
 MARKER = re.compile(r"<!-- coreai-example: (.+) -->")
@@ -115,6 +115,8 @@ def code_tokens(example: Example):
         for token in tokenize.generate_tokens(io.StringIO(example.code).readline):
             if token.type == tokenize.ERRORTOKEN and not token.string.isspace():
                 raise ValueError(f"invalid token {token.string!r}")
+            if token.type == tokenize.NAME and not token.string.isidentifier():
+                raise ValueError(f"invalid identifier {token.string!r}")
             if token.type not in ignored and not token.string.isspace():
                 yield token
     except (tokenize.TokenError, IndentationError, SyntaxError, ValueError) as error:
@@ -150,14 +152,15 @@ def removed_optimizer_errors(root: Path) -> list[str]:
 
 def section(text: str, heading: str) -> str:
     """Read a named section without swallowing following peer sections."""
-    lines = text.splitlines()
-    start = next((i for i, line in enumerate(lines) if line.startswith(heading)), None)
+    lines = list(iter_lines(text))
+    start = next((i for i, (line, _, fenced) in enumerate(lines)
+                  if not fenced and line.startswith(heading)), None)
     if start is None:
         raise ValueError(f"missing heading: {heading}")
-    level = len(lines[start]) - len(lines[start].lstrip("#"))
+    level = len(lines[start][0]) - len(lines[start][0].lstrip("#"))
     end = next((i for i in range(start + 1, len(lines))
-                if re.match(rf"^#{{1,{level}}} ", lines[i])), len(lines))
-    return "\n".join(lines[start:end])
+                if not lines[i][2] and re.match(rf"^#{{1,{level}}} ", lines[i][0])), len(lines))
+    return "".join(line + newline for line, newline, _ in lines[start:end]).removesuffix("\n")
 
 
 def contract_errors(text: str, contract: str) -> list[str]:
@@ -173,12 +176,12 @@ def contract_errors(text: str, contract: str) -> list[str]:
             if "with module:" not in text:
                 errors.append("rewrite assigned to AIProgram rather than module context")
     elif contract == "issue49":
-        if re.search(r"(?:#49|issue \*\*#49\*\*).*?(?:\bOPEN\b|\(open)", text):
-            errors.append("#49 incorrectly reported open")
-        if "square" in text and "17×23" in text and re.search(r"\bhid(?:es)?\b", text):
+        # Status association is checked corpus-wide by the offline defect reader.
+        # This small native helper has no dependency on the reporting toolchain.
+        if "square" in text.lower() and "17×23" in text and re.search(r"\bhid(?:es)?\b", text, re.I):
             errors.append("square/rectangular #49 explanation reversed")
     elif contract == "overwrite":
-        if re.search(r"(?:not|never|won.t).*overwrite|will fail.*exist", text, re.I):
+        if re.search(r"\b(?:not|never|won['’]t)\b[^\n.;]*\boverwrite\b|\bwill fail\b[^\n.;]*\bexists?\b", text, re.I):
             errors.append("b3 overwrite behavior incorrect")
     else:
         raise ValueError(f"unknown contract: {contract}")

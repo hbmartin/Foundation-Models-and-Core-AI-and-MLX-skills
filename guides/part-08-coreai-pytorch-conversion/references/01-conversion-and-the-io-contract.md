@@ -2893,6 +2893,10 @@ def convert_state_model(asset_path):
 
 async def verify_state_asset(asset_path, reference, *, lengths=(2, 8, 32),
                              initial=(0.0, 0.0), atol=1e-2, rtol=1e-3):
+    lengths = tuple(lengths)
+    for length in lengths:
+        if not 2 <= length <= 32:
+            raise ValueError("sequence outside declared range 2–32")
     # These tolerances belong to this small fixture, not arbitrary fp16 models.
     eager = copy.deepcopy(reference)
     for name, value in zip(STATE_NAMES, initial):
@@ -2907,7 +2911,6 @@ async def verify_state_asset(asset_path, reference, *, lengths=(2, 8, 32),
         assert list(fn.desc.state_names) == STATE_NAMES
         states = {n: NDArray(v) for n, v in state_values.items()}
         for length in lengths:                        # 7. consecutive updates, no reset
-            assert 2 <= length <= 32, "sequence outside declared range"
             x = state_input(length)
             with torch.no_grad():
                 expected = eager(x).numpy().copy()
