@@ -2,7 +2,7 @@
 
 The deep guides are bundled with this skill. Each entry links the local file, then lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` lists its subsections. Open the narrowest relevant section first.
 
-> Generated 2026-10-05 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Generated 2026-10-06 from the guide headings. Regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## Part 7 — Core AI: the Swift runtime
 
@@ -159,7 +159,7 @@ The pipeline end to end as a series of contracts rather than a recipe: the decom
 | What this does *not* cover | `#what-this-does-not-cover` |
 | What you need | `#what-you-need` |
 | Contents | `#contents` |
-| 1. The five lines, and what each one is for | `#1-the-five-lines-and-what-each-one-is-for` |
+| 1. The four lines, and what each one is for | `#1-the-four-lines-and-what-each-one-is-for` |
 | 2. Install, versions, and the 0.4.0 artifact gate | `#2-install-versions-and-the-040-artifact-gate` |
 | 3. `torch.export` — the part that is not Apple's | `#3-torchexport--the-part-that-is-not-apples` |
 | 4. `run_decompositions(get_decomp_table())` — the most consequential line | `#4-run_decompositionsget_decomp_table--the-most-consequential-line` |
@@ -278,7 +278,7 @@ The other three things `coreai-opt` does, plus the two ways of combining them.
 | Contents | `#contents` |
 | 1. Lookup tables are a different idea, and the ANE is why | `#1-lookup-tables-are-a-different-idea-and-the-ane-is-why` |
 | 2. The palettizer in eight lines | `#2-the-palettizer-in-eight-lines` |
-| 3. `PalettizationSpec`: five fields, and what each one costs | `#3-palettizationspec-five-fields-and-what-each-one-costs` |
+| 3. `PalettizationSpec`: six fields, and what each one costs | `#3-palettizationspec-six-fields-and-what-each-one-costs` |
 | 4. The three schemes, with diagrams | `#4-the-three-schemes-with-diagrams` |
 | 5. ⚠️ The ANE rank-5 ceiling | `#5-️-the-ane-rank-5-ceiling` |
 | 6. Sizing: what a bit-width actually buys | `#6-sizing-what-a-bit-width-actually-buys` |
@@ -405,7 +405,7 @@ The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.r
 | 6. Stage 3 — the oracle and the gates | `#6-stage-3--the-oracle-and-the-gates` |
 | 7. Stage 4 — compress | `#7-stage-4--compress` |
 | 8. Stage 5 — export with `state_names` | `#8-stage-5--export-with-state_names` |
-| 9. Stages 6–8 — convert, optimize, save the bundle | `#9-stages-68--convert-optimize-save-the-bundle` |
+| 9. Stages 6–8 — convert, rewrite, save the bundle | `#9-stages-68--convert-rewrite-save-the-bundle` |
 | 10. Stage 9 — AOT-compile per architecture | `#10-stage-9--aot-compile-per-architecture` |
 | 11. Stage 10 — load it in Swift | `#11-stage-10--load-it-in-swift` |
 | 12. The community porting playbook, as a checklist | `#12-the-community-porting-playbook-as-a-checklist` |

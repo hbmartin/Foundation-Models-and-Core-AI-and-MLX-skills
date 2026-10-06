@@ -49,7 +49,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 |---|---|
 | [7](references/part-07-coreai-swift-runtime/README.md) | everything here is **27.0 and only 27.0**. |
 | [8](references/part-08-coreai-pytorch-conversion/README.md) | use `coreai-torch` **0.4.3** with `coreai-core==1.0.0b3` for the current pipeline. |
-| [9](references/part-09-coreai-compression-numerics/README.md) | this part is almost entirely **host-side Python**. |
+| [9](references/part-09-coreai-compression-numerics/README.md) | Core AI runtime OS 27, `coreai-core==1.0.0b3`, `coreai-torch==0.4.3`. |
 | [10](references/part-10-coreai-hardware-authoring-debugging/README.md) | everything here is **27.0 and only 27.0**. |
 
 ## Read these before you trust a signature
@@ -74,7 +74,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#1-the-five-lines-and-what-each-one-is-for) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
+| "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#1-the-four-lines-and-what-each-one-is-for) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
 | "My assets stopped loading on a newer beta" | [8.1 §2.3](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#23-️-the-version-gate-that-invalidates-already-published-assets) | The 0.4.0 gate, plus the `strip_debug_info` recovery that does *not* need a reconvert |
 | "My transformer converted fine and is slower than I expected" | [8.1 §4.4](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) | You probably passed PyTorch's default decomposition table; SDPA decomposed into six supported ops and the fast path vanished |
 | "The numbers are wrong and nothing threw" | [8.1 §6.4](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) → [§11.4](references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) | The historical optimizer miscompile, then the current eager-to-Core-AI parity gate |

@@ -1,8 +1,8 @@
 # API & symbol index
 
-**1212 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1210 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-10-05; regenerate rather than hand-edit.
+> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-10-06; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>164 symbols</sub>
@@ -482,14 +482,15 @@
 | `URLSessionConfiguration.default` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `UUID` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## other  <sub>795 symbols</sub>
+## other  <sub>793 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
 | `AggregationOperation` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `AIProgram` |  |  | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) +6 more |
 | `AIProgram._from_mlir_module` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
-| `AIProgram.optimize()` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [root](README.md) +4 more |
+| `AIProgram.optimize()` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [root](README.md) +3 more |
+| `AIProgram.save_asset` |  |  | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `AIProgram.save_asset(path)` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AlbumView` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `AllocationType` |  |  | [10.1](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [10.README](part-10-coreai-hardware-authoring-debugging/README.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
@@ -625,10 +626,7 @@
 | `CoreImage` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [17.README](part-17-migration-from-pre-ios-27/README.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) +1 more |
 | `CoreML` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md) |
 | `CoreMLExportError` |  |  | [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
-| `CorePasses` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md) |
-| `CorePasses._CORE_OPTIMIZE` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md) |
-| `CorePasses._PROPAGATE_HANDLE_UPDATES` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md) |
-| `CorePasses._UPDATE_SIGNATURE_TO_HANDLES` |  |  | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md) |
+| `CorePasses` |  |  | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [8.README](part-08-coreai-pytorch-conversion/README.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md) |
 | `CoreSpotlight` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `CoreSpotlight.swiftinterface` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
 | `CoreSpotlightSource` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
@@ -967,7 +965,7 @@
 | `Noema.entitlements` |  |  | [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `None` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [12.1](part-12-mlx-python/references/01-core-fundamentals.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) +17 more |
 | `NoSystemMessageGenerator` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
-| `NotImplementedError` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) +3 more |
+| `NotImplementedError` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) +3 more |
 | `NowPlaying` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `NowPlayingView` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `NSClassFromString` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) +1 more |
@@ -1052,9 +1050,9 @@
 | `Property` | ✓ | ✓ | [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) |
 | `PurgeConditions` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `PythonicToolCallParser` |  |  | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `QATSchedule` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.README](part-09-coreai-compression-numerics/README.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md) |
+| `QATSchedule` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.README](part-09-coreai-compression-numerics/README.md) |
 | `QQLinear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
-| `QScheme` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
+| `QScheme` |  |  | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md) |
 | `QuantizationSpec` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [9.README](part-09-coreai-compression-numerics/README.md) +2 more |
 | `QuantizedEmbedding` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `QuantizedKVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.3](part-12-mlx-python/references/03-quantization.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
@@ -1185,7 +1183,7 @@
 | `TaskGroup` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md) |
 | `TaskPriority` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `Template` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
-| `TemporaryDirectory` |  |  | [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
+| `TemporaryDirectory` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
 | `Tensor` |  |  | [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) |
 | `@Test` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md) |
 | `Testing` |  | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |

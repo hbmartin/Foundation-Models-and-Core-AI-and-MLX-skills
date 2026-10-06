@@ -6,11 +6,16 @@
 **Xcode 27.0**. That is not a recommendation, it is the floor declared by the toolchain itself:
 `apple/coreai-models` `Package.swift` pins `platforms: [.macOS("27.0"), .iOS("27.0")]` and the
 repository README states *"macOS and iOS 27.0+ / Xcode 27.0+"* (✅ **VERIFIED** — local clone at
-commit `5ed9981`, 2026-07-23). The Python side is equally specific and equally young:
-`coreai-core==1.0.0b2` — a **beta** — plus `coreai-torch==0.4.1`, `coreai-opt==0.2.1`,
+commit `db63a2d8`, inspected 2026-10-06). The Python side is equally specific and equally young:
+`coreai-core==1.0.0b3` — a **beta** — plus `coreai-torch==0.4.3`, `coreai-opt==0.3.0`,
 `torch==2.9.0`, Python `>=3.11` (✅ **VERIFIED** — `python/pyproject.toml:28-43`, corroborated by
 `uv.lock`). There is no back-deployment story here. None of this exists on iOS 26 or macOS 26, and
 anything you read describing "iOS 20" or "macOS 17" in a Core AI context is fabricated.
+
+
+Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
+`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
+These model-export constraints are narrower than the standalone compression requirements in Part 9.
 
 ---
 

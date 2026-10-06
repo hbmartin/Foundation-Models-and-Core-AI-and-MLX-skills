@@ -71,8 +71,8 @@ dual-SDK builds.
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,788,
-  of which 1,427 describe a concrete silent failure), in one page, sorted by the symptom you
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,785,
+  of which 1,425 describe a concrete silent failure), in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
 - **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
   presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
@@ -274,7 +274,7 @@ A `🔴 GAP` box never contains a guess. If a guide needs `fm --help` output and
 > ⚠️ **SILENT FAILURE** — the defining property of this stack is that most defects *do not throw*.
 
 Every guide carries at least one of these where applicable. Known examples, so you know what
-kind of thing to expect: a `@Guide(.anyOf:)` that doesn't constrain; `AIProgram.optimize()`
+kind of thing to expect: a `@Guide(.anyOf:)` that doesn't constrain; the historical 0.4.1 `AIProgram.optimize()` defect
 deleting broadcasting-significant axis moves; fused SDPA falling back without a warning;
 `reduce_rows` defaulting its identity to zero regardless of the reduction operation; a tool named
 in your instructions but absent from the toolset, producing an infinite loop and no error.

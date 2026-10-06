@@ -77,7 +77,7 @@ lowering that ran, produced a correctly-shaped tensor, and got the arithmetic wr
 ## What this does *not* cover
 
 - **The basic conversion pipeline** — `torch.export` → `run_decompositions` → `TorchConverter` →
-  `optimize()` → `save_asset()`. See [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md).
+  automatic module rewrite → `save_asset()`. See [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md).
 - **Compression and numeric formats** — `coreai-opt`, quantization, palettization, fp16 casting. That
   is [Part 9](../../part-09-coreai-compression-numerics/README.md).
 - **The Core AI Debugger app, `coreai_torch.debugging`, and the ANE/GPU hardware rules** — that is
@@ -965,7 +965,7 @@ converter = TorchConverter().add_pytorch_module(          # NOT add_exported_pro
 )
 coreai_program = converter.to_coreai()
 
-# The composite survives optimize() because it is `noinline`.
+# The composite survives the automatic module rewrite because it is `noinline`.
 assert 'composite_declaration<"rms_norm"' in str(coreai_program)
 ```
 
@@ -2541,8 +2541,8 @@ if func is torch.ops.aten.slice.Tensor:
 > **Why you might not notice:** if the tensors are square, or if the concatenated dimensions happen
 > to have compatible sizes, the resulting shape can still be *valid* — just wrong. A downstream
 > matmul then computes garbage with no shape error. This is the same failure geometry as
-> `coreai-torch#49`, where square inputs hid an `optimize()` bug and unequal (17×23) inputs exposed
-> it.
+> `coreai-torch#49`, where square (32×32) inputs exposed the historical optimizer bug and rectangular
+> (17×23) inputs passed.
 >
 > **Workaround:** do every `cat` on **unpacked** tensors, before sub-byte injection. Concretely: do
 > your weight fusion in the PyTorch model definition or in the state-dict mutation step, never on a
@@ -2709,7 +2709,7 @@ Nine defects, in one table, so you can check your own model against it:
 |---|---|---|---|---|
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
-| 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` open | `cat` before packing |
+| 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` merged 2026-09-25; fix outside the 0.4.3 tag | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
 | 5 | 0.4.1 optimizer drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate |
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
@@ -2924,77 +2924,54 @@ knows the names are random.
 
 ### 10.5 A conversion gate you can paste into CI
 
+Supply the RELEASE asset already built by your pipeline, plus its eager reference and decomposed
+export. This gate loads that artifact and compares the same three stages as 8.1 §11.4.
+
+<!-- coreai-example: {"id": "ci-asset-gate"} -->
 ```python
-"""Minimal 0.4.3 conversion gate. Fails loudly on silent conversion changes.
-
-Covers: composites present and shipped-asset eager parity. Add exported-program,
-compute-unit, and greedy-oracle comparisons as your model demands.
-"""
-
-import asyncio
-import tempfile
 from pathlib import Path
 
 import numpy as np
 import torch
-
-import coreai_torch
+from coreai.authoring import AIModelAsset
 from coreai.runtime import NDArray
-from coreai_torch import ExternalizeSpec, TorchConverter
-
-REQUIRED_COMPOSITES = ("rms_norm", "rope", "scaled_dot_product_attention")
 
 
-def build(model, sample, specs):
-    converter = TorchConverter().add_pytorch_module(
-        model,
-        export_fn=lambda m: torch.export.export(m, args=sample).run_decompositions(
-            coreai_torch.get_decomp_table()
-        ),
-        externalize_modules=specs,
-        input_names=["x"],
-        output_names=["y"],
-    )
-    return converter.to_coreai()  # already optimized in coreai-torch 0.4.3
-
-
-async def run(program, x: np.ndarray) -> np.ndarray:
-    with tempfile.TemporaryDirectory() as tmp:
-        asset = program.save_asset(Path(tmp) / "gate.aimodel")
-        async with asset.executable() as ai_model:
-            fn = ai_model.load_function("main")
-            out = await fn({"x": NDArray(x)})
-            return out["y"].numpy()          # materialize INSIDE the block
-
-
-async def gate(model, sample, specs):
-    x = sample[0].numpy()
-
-    program = build(model, sample, specs)
-
-    # 1. Composites survived externalization (§8.7a — a typo only warns).
-    ir = str(program)
-    for name in REQUIRED_COMPOSITES:
+async def ci_asset_gate(asset_path, model, ep, sample, *, runtime_atol, runtime_rtol,
+                        export_atol=1e-6, export_rtol=1e-5,
+                        required_composites=()):
+    assert not model.training
+    assert len(sample) == 1
+    asset = AIModelAsset.load(Path(asset_path))
+    ir = str(asset.program)                            # inspect the supplied saved program
+    for name in required_composites:
         assert f'composite_declaration<"{name}"' in ir, f"missing composite: {name}"
-
-    y_coreai = await run(program, x)
-
-    # 2. Eager parity. atol=1e-2 is coreai-torch's own default "because FP16
-    #    accuracy is flaky" — tighten it if your model is fp32.
     with torch.no_grad():
-        y_torch = model(*sample).numpy()
-    assert np.allclose(y_torch, y_coreai, atol=1e-2), (
-        f"eager parity failed: max|d| = {np.abs(y_torch - y_coreai).max():g}"
-    )
-    print("gate: OK")
+        eager = model(*sample).detach().cpu().numpy().copy()
+        exported = ep.module()(*sample).detach().cpu().numpy().copy()
+    assert eager.shape == exported.shape
+    assert np.isfinite(eager).all() and np.isfinite(exported).all()
+    np.testing.assert_allclose(exported, eager, atol=export_atol, rtol=export_rtol)
+    x = np.ascontiguousarray(sample[0].detach().cpu().numpy())
+    assert np.isfinite(x).all()
+    async with asset.executable() as runtime_model:
+        fn = runtime_model.load_function("main")
+        assert list(fn.desc.input_names) == ["x"]
+        assert list(fn.desc.output_names) == ["y"]
+        assert list(fn.desc.state_names) == []
+        out = await fn(inputs={"x": NDArray(x)})
+        assert set(out) == {"y"}
+        actual = out["y"].numpy().copy()                 # own storage INSIDE the context
+    assert eager.shape == actual.shape
+    assert np.isfinite(actual).all()
+    np.testing.assert_allclose(actual, eager, atol=runtime_atol, rtol=runtime_rtol)
+    return actual
 ```
 
-> The `atol=1e-2` is not a shrug — it is `coreai-torch`'s own default in
-> `tests/utils.py::validate_numerical_output`, with the stated reason *"FP16 accuracy is flaky"*.
-> That helper is worth reading in full if you are building a serious harness; it supports two modes
-> (end-to-end from `model=`, or pre-converted from `coreai_program=` + `torch_out=`) and takes
-> `dynamic_shapes`, `state_names`, `num_calls`, `remove_decomps`, `run_optimize_passes`,
-> `custom_kernels` and `metal_inputs`.
+Pass the composite names required by your specific model (for example `rms_norm`, `rope`, and
+`scaled_dot_product_attention`). Runtime tolerances are required arguments: determine both `atol`
+and `rtol` from the model's error budget, separately from export fidelity. The 0.4.3 upstream
+`tests/utils.py` helper has no `run_optimize_passes` option; conversion rewriting is automatic.
 
 ---
 
