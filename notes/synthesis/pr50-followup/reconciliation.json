@@ -1,0 +1,39 @@
+{
+  "base_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada",
+  "implementation_revision": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+  "python_fences": {
+    "total": 464,
+    "dispositions": {
+      "unchanged": 456,
+      "changed": 8
+    },
+    "base_reader_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada",
+    "current_reader_revision": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "removed_optimizer_violations": 0
+  },
+  "part9_sections": {
+    "unchanged": 346,
+    "changed": 3
+  },
+  "callouts": {
+    "total": 1785,
+    "unchanged_identities_and_content_hashes": 1785
+  },
+  "swift": {
+    "fences": 1360,
+    "unchanged_identities_and_bodies": 1360,
+    "line_movements": 0,
+    "fresh_compilation": false,
+    "target_provenance": "notes/snippet-verification/target-provenance.json"
+  },
+  "primary_preservation": {
+    "primary_root": "/Volumes/ExtStor/FM and MLX and CoreAI",
+    "head": "9d9e16a51c915e43edf6f3852ba4616453a88dc4",
+    "head_unchanged": true,
+    "status_unchanged": true,
+    "tracked_and_nonignored_files": 458,
+    "file_set_and_bytes_unchanged": true,
+    "algorithm": "SHA-256",
+    "before_snapshot_sha256": "3c49559873a678e521e6fa3aa89bf78e8aa74665b5a9938d1fc33f1a6a313050"
+  }
+}

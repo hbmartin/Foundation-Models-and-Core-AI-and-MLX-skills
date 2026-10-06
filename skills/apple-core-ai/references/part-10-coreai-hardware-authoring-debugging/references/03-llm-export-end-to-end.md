@@ -223,7 +223,7 @@ The full picture, with the stages this guide actually walks:
 │                            ⚠️ then hand-edit metadata.json "assets"     │
 └─────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 9 ─▼────────────────────────────────────────────────────────────┐
+┌── stage 9 ──▼───────────────────────────────────────────────────────────┐
 │ load in Swift              CoreAILanguageModel(resourcesAt:)            │
 │                            → LanguageModelSession(model:)               │
 └─────────────────────────────────────────────────────────────────────────┘

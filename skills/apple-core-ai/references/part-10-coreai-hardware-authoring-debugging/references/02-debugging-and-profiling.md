@@ -1303,17 +1303,17 @@ whose OS is older than the wheel, this variable is not optional at all.
 
 ### 7.4 The practical rule
 
-Two assets, one graph:
+Two assets, one graph (adapted call shapes; `...` stands for your naming arguments):
 
 ```python
 # Debuggable asset — default DEBUG mode, full stack traces, Source Viewer works.
-program_dbg = TorchConverter().add_exported_program(ep, …).to_coreai()
+program_dbg = TorchConverter().add_exported_program(ep, ...).to_coreai()
 program_dbg.save_asset(Path("MyModel.debug.aimodel"))
 
 # Shipping asset — RELEASE mode, op IDs only, smaller.
 program_rel = (
     TorchConverter(mode=TorchConverter.Mode.RELEASE)
-    .add_exported_program(ep, …)
+    .add_exported_program(ep, ...)
     .to_coreai()
 )
 program_rel.save_asset(Path("MyModel.aimodel"))
@@ -1566,7 +1566,7 @@ metadata_path = save_intermediates(
     enable_autocast=False,            # True if your model is genuinely mixed-precision
     model_name="main",                # → ./debug_output/main.aimodelintermediates
 )
-print(metadata_path)                  # → …/main.aimodelintermediates/metadata.json
+print(metadata_path)                  # → .../main.aimodelintermediates/metadata.json
 ```
 
 On-disk layout, ✅ verified: a **directory** named `{model_name}.aimodelintermediates` inside
@@ -2869,23 +2869,23 @@ Colour indicators are metric-aware: green is always good.
 | 4-bit palettization | ~40 dB (flag < 35) |
 | 2-bit palettization | 25–35 dB — *"usually unacceptable"* |
 
-**The Python surface, one line each**
+**The Python surface, one line each** — adapted signatures with `...` placeholders
 
 ```python
 from coreai_torch import TorchConverter, get_decomp_table
 TorchConverter(mode=TorchConverter.Mode.RELEASE)          # ship; DEBUG is the default
-converter.add_exported_program(ep, input_names=…, output_names=…, state_names=…, entrypoint_name="main")
+converter.add_exported_program(ep, input_names=..., output_names=..., state_names=..., entrypoint_name="main")
 program.save_asset(Path("m.aimodel"))                     # -> AIModelAsset; optional 2nd metadata arg
 
 from coreai_torch.debugging.torch_utils import save_intermediates, load_intermediates
-save_intermediates(program=ep, inputs=…, output_dir=…, coreai_program=…, enable_autocast=False, model_name="main")
+save_intermediates(program=ep, inputs=..., output_dir=..., coreai_program=..., enable_autocast=False, model_name="main")
 load_intermediates(Path("out/main.aimodelintermediates"))  # -> DebugTrace(.inputs/.outputs/.intermediates)
 
 from coreai_torch.debugging.validator import create_validator_for_exported_program, create_validator_for_coreai_program
-await validator.check_for_nans(inputs=…) / .check_for_infs(…) / .check(predicate, …)
+await validator.check_for_nans(inputs=...) / .check_for_infs(...) / .check(predicate, ...)
 
 from coreai_torch.debugging.comparator import create_comparator_for_programs
-await comparator.compare_with_tolerance(inputs=…, rtol=1e-5, atol=1e-8)
+await comparator.compare_with_tolerance(inputs=..., rtol=1e-5, atol=1e-8)
 
 from coreai_torch.debugging.benchmarker import benchmark_coreai_program
 from coreai_torch.debugging.graph_diff import compute_coreai_program_diff, write_diff

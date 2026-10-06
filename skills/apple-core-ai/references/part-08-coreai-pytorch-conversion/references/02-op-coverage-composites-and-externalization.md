@@ -2436,6 +2436,12 @@ def stable_logsumexp(x: torch.Tensor, dim: int, keepdim: bool = False) -> torch.
 > it** 4. The casting pass has no mechanism to detect or prevent this."* A model that passed its
 > fp16 gate before compression can fail it after, from an op you never looked at.
 
+That quotation records the historical July behavior. **`coreai-opt` 0.3.0 adds explicit
+`ignored_ops` exclusions** to `cast_fp32_to_fp16` and `cast_to_16_bit_precision`, preserving selected
+operations in fp32 with boundary casts (`casting/casting.py` at `189612be`; Part 9 §14.4).
+Choose exclusions from measured intermediate ranges or substitute stable formulations. Automatic
+dynamic-overflow calibration was added after 0.3.0 and is not a released capability of this pin.
+
 ### 9.2 Integer true-divide truncates instead of promoting to float
 
 **Status:** `apple/coreai-torch#32` merged 2026-07-29.
@@ -2505,7 +2511,7 @@ as current HEAD.
 
 ### 9.3 `cat` on packed sub-byte tensors always concatenates on dim 0
 
-**Status:** PR **#41** open, unmerged.
+**Status:** `apple/coreai-torch#41` merged 2026-09-25; its fix is outside the 0.4.3 tag.
 
 **Verified live.** `coreai_torch/_compression/_intx.py:380-382`, `__torch_dispatch__`:
 
@@ -2938,8 +2944,7 @@ from coreai.runtime import NDArray
 
 
 async def ci_asset_gate(asset_path, model, ep, sample, *, runtime_atol, runtime_rtol,
-                        export_atol=1e-6, export_rtol=1e-5,
-                        required_composites=()):
+                        required_composites, export_atol=1e-6, export_rtol=1e-5):
     assert not model.training
     assert len(sample) == 1
     asset = AIModelAsset.load(Path(asset_path))
@@ -2969,7 +2974,8 @@ async def ci_asset_gate(asset_path, model, ep, sample, *, runtime_atol, runtime_
 ```
 
 Pass the composite names required by your specific model (for example `rms_norm`, `rope`, and
-`scaled_dot_product_attention`). Runtime tolerances are required arguments: determine both `atol`
+`scaled_dot_product_attention`). This keyword is required: use `required_composites=()` explicitly
+for a model whose contract requires none. Runtime tolerances are required arguments: determine both `atol`
 and `rtol` from the model's error budget, separately from export fidelity. The 0.4.3 upstream
 `tests/utils.py` helper has no `run_optimize_passes` option; conversion rewriting is automatic.
 
