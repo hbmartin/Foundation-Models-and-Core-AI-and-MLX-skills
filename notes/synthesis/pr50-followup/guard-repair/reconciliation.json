@@ -1,0 +1,61 @@
+{
+  "base_revision": "4714a9a4aeb91a8984dc8b8f9dcb12f518c5e1cb",
+  "implementation_revision": "e4a24f663b37b96585310cf3001f90c65f6942c1",
+  "python_fences": {
+    "total": 464,
+    "named_ids": 145,
+    "dispositions": {
+      "unchanged": 462,
+      "changed": 2
+    }
+  },
+  "part9_sections": {
+    "unchanged": 347,
+    "changed": 2
+  },
+  "callouts": {
+    "total": 1785,
+    "changed": [
+      {
+        "file": "part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
+        "id": "callout-46ddd6cac4576e39",
+        "old_hash": "ebcbc65ef8c61faadf67d5404b05211f70f3b960858d52cf18d70dea028ae2ae",
+        "new_hash": "ae49809b3678de602b273f5cd899b8a53b936efb9d36c31665947c174577b713"
+      }
+    ]
+  },
+  "swift": {
+    "fences": 1360,
+    "identities_bodies_and_verdicts_unchanged": true,
+    "fresh_compilation": false
+  },
+  "native_model_export": {
+    "total": 34,
+    "outcomes": {
+      "PASS": 22,
+      "PASS (rejected)": 12
+    },
+    "run_status": "passed"
+  },
+  "native_standalone": {
+    "total": 34,
+    "outcomes": {
+      "PASS": 22,
+      "PASS (rejected)": 12
+    },
+    "run_status": "passed"
+  },
+  "primary_preservation": {
+    "primary_root": "/Volumes/ExtStor/FM and MLX and CoreAI",
+    "head": "9d9e16a51c915e43edf6f3852ba4616453a88dc4",
+    "head_unchanged": true,
+    "status_unchanged": true,
+    "tracked_and_nonignored_files": 458,
+    "file_set_and_bytes_unchanged": true,
+    "algorithm": "SHA-256",
+    "before_snapshot_sha256": "b0357b56d6591044bce327cb49dccb7d2ffbd11bfb33a5b1b3679f2dc809cb26"
+  },
+  "guard_revision": "7380762be9609969b16db7aef97b613597090c72",
+  "native_helpers_and_named_fences_match_final_source": true,
+  "portable_validation_revision": "7380762be9609969b16db7aef97b613597090c72"
+}

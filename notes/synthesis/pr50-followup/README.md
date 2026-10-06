@@ -1,5 +1,9 @@
 # Remaining Core AI review repairs
 
+This page retains the original follow-up evidence at `2367dc31`. Subsequent
+verifier and claim-guard repairs at `e4a24f6`, including fresh runs of both native
+profiles, are recorded in [guard-repair evidence](guard-repair/README.md).
+
 Evidence date: **2026-10-06**. Base: merged PR #50, main
 `8972e4abeea713f233e55dd7e9b39073b4e90ada`. The original fifteen comments review
 PR #49 at `2b12a8544deb7b7c4a807d1e83ad35be2079dabf`; later fixes were inspected
