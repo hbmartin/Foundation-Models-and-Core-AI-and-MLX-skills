@@ -39,8 +39,7 @@ def current_issue49_errors(root: Path) -> list[str]:
         historical = row["claimDate"] is not None and row["claimDate"] < "2026-10-02"
         historical |= bool(re.search(r"\bhistorical(?:ly)?\b", claim, re.I)
                            and re.search(r"\b0\.4\.[012]\b", claim)
-                           and re.search(r"\b(?:was|were|had|miscompiled|failed)\b", claim, re.I)
-                           and not re.search(r"\b(?:remains|still|is|are)\s+open\b", claim, re.I))
+                           and re.search(r"#49[`* ]*\s+(?:was|were|had|miscompiled|failed)\b", claim, re.I))
         if row["claimedState"] == "OPEN" and not historical:
             errors.append(f'{row["file"]}:{row["line"]}: coreai-torch#49 incorrectly reported open')
         # Preserve verbatim issue titles; a title's present tense is not a new
@@ -439,6 +438,8 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             ("coreai-torch#49 miscompiles on square/equal-length inputs", True),
             ("Historical 0.4.1 notes describe old behavior; coreai-torch#49 is open", True),
             ("Historical 0.4.1 notes describe old behavior. coreai-torch#49 is open", True),
+            ("Historical 0.4.1 reports were different: coreai-torch#49 is currently open", True),
+            ("Historical 0.4.1 reports were different: coreai-torch#49 isn't yet closed", True),
             ("Historical 0.4.1: coreai-torch#9 was open; coreai-torch#49 is open", True),
             ("coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open", True),
             ("coreai-models#49 remains open", False),
