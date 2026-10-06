@@ -151,7 +151,9 @@ def removed_optimizer_errors(root: Path) -> list[str]:
 def section(text: str, heading: str) -> str:
     """Read a named section without swallowing following peer sections."""
     lines = text.splitlines()
-    start = next(i for i, line in enumerate(lines) if line.startswith(heading))
+    start = next((i for i, line in enumerate(lines) if line.startswith(heading)), None)
+    if start is None:
+        raise ValueError(f"missing heading: {heading}")
     level = len(lines[start]) - len(lines[start].lstrip("#"))
     end = next((i for i in range(start + 1, len(lines))
                 if re.match(rf"^#{{1,{level}}} ", lines[i])), len(lines))
