@@ -74,7 +74,7 @@ things `coreai-opt` does, and the two ways of combining them.
 - **The Core AI Debugger.** Sync points, the PSNR metric, `save_intermediates`, the comparison
   workspace — Part 10. §15.5 hands off to it explicitly, because the Debugger is how you *find* the
   layer that needs a different bit-width.
-- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, `optimize()`,
+- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic module rewriting,
   `save_asset()` — Part 8. This guide starts with an `nn.Module` and hands back an `nn.Module`.
 - **The Swift runtime.** Loading and running the resulting `.aimodel` — Part 7.
 
@@ -296,7 +296,7 @@ nn.Module ──►  re-author  ──►  KMeansPalettizer(model, config)      
           ──►  torch.export(...).run_decompositions(coreai_torch.get_decomp_table())
           ──►  cast_to_16_bit_precision(exported_program)      ← compress FIRST, cast SECOND
           ──►  coreai_torch.TorchConverter().add_exported_program(...).to_coreai()
-          ──►  ai_program.optimize()  ──►  ai_program.save_asset("model.aimodel")   (Part 8)
+          ──►  automatic frontend module rewrite  ──►  ai_program.save_asset("model.aimodel")   (Part 8)
 ```
 
 The property that makes this workable is that **every compressor output is itself a PyTorch
@@ -1090,9 +1090,8 @@ That technique works for **tensors your graph creates**. It is useless for the L
 - The rank-6 tensor is **synthesised by the lowering**, not by any line of your PyTorch. There is no
   `reshape` you can insert, because the tensor does not exist until after `torch.export` and
   `TorchConverter` have run.
-- `AIProgram.optimize()` will not save you either. It is a peephole optimiser, and — as Part 8
-  documents — it is quite capable of *deleting* semantically-significant reshapes rather than adding
-  helpful ones.
+- The automatic frontend module rewrite does not provide a supported remedy for a rank-6 LUT.
+  Validate the lowered graph and runtime placement instead of relying on an optimizer to repair it.
 
 So the rank-6 LUT has exactly one remedy: **do not create it.** Leave `enable_per_channel_scale`
 off.
@@ -1669,7 +1668,6 @@ cast_to_16_bit_precision(exported_program)          # mutates in place
 converter = coreai_torch.TorchConverter()
 converter.add_exported_program(exported_program)
 ai_program = converter.to_coreai()
-ai_program.optimize()
 ai_program.save_asset(Path("model.aimodel"))
 ```
 
@@ -2105,7 +2103,7 @@ Entry point:
 ```python
 from pathlib import Path
 from coreai.authoring import AIModelAsset
-from coreai_opt.coreai_utils import DType, palettize_weights
+from coreai_opt.coreai_utils import CompressionGranularity, DType, palettize_weights
 
 ai_asset = AIModelAsset.load(Path("model.aimodel"))
 compressed = palettize_weights(
@@ -2116,7 +2114,6 @@ compressed = palettize_weights(
     group_size=32,
     in_place=False,
 )
-compressed.optimize()
 compressed.save_asset(Path("model_palettized.aimodel"))
 ```
 
@@ -2128,7 +2125,7 @@ compressed.save_asset(Path("model_palettized.aimodel"))
 
 **When to use this path.** Rarely, and deliberately. You lose the ability to score the compressed
 model in PyTorch, you lose sensitivity weighting, and you are compressing a program that has already
-been through `optimize()` — so op fusion decisions were made against uncompressed weights. Use it
+been through the frontend module rewrite — so op fusion decisions were made against uncompressed weights. Use it
 when you have an `.aimodel` and no PyTorch source, or when you need to compress an op the PyTorch
 palettizer cannot reach.
 
@@ -2945,7 +2942,7 @@ re-author it; you changed it, and you have a bug. Same for ANE-layout vs GPU-lay
 the same math must agree.
 
 **The third gate is about the toolchain, and it is much looser.** 40 dB accepts real fp16 numerical
-drift through compilation, fusion and `optimize()`. That is a 30 dB relaxation from the authoring
+drift through compilation, fusion and automatic rewriting. That is a 30 dB relaxation from the authoring
 gates, and it tells you Apple expects conversion to cost you real precision.
 
 **The fourth gate is about compression, and it is looser still.** 35 dB after 4-bit palettization

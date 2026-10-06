@@ -89,14 +89,14 @@ uv sync
 
 A Mac with Apple silicon if you want to *run* what you convert from Python (`SpecializationOptions`
 is documented **macOS only**). Conversion itself is portable, but `coreai-core` publishes **macOS
-wheels only** — cp311/cp312 at first, cp313 added in `1.0.0b2` — and there are **no linux/arm64
+wheels only** — cp311/cp312 at first, cp313 added in `1.0.0b2`, cp314 in `1.0.0b3` — and there are **no linux/arm64
 wheels**, so Linux containers must run `--platform linux/amd64`.
 
 ---
 
 ## Contents
 
-1. [The five lines, and what each one is for](#1-the-five-lines-and-what-each-one-is-for)
+1. [The four lines, and what each one is for](#1-the-four-lines-and-what-each-one-is-for)
 2. [Install, versions, and the 0.4.0 artifact gate](#2-install-versions-and-the-040-artifact-gate)
 3. [`torch.export` — the part that is not Apple's](#3-torchexport--the-part-that-is-not-apples)
 4. [`run_decompositions(get_decomp_table())` — the most consequential line](#4-run_decompositionsget_decomp_table--the-most-consequential-line)
@@ -113,7 +113,7 @@ wheels**, so Linux containers must run `--platform linux/amd64`.
 
 ---
 
-## 1. The five lines, and what each one is for
+## 1. The four lines, and what each one is for
 
 Here is the canonical pipeline, verbatim from Apple's README:
 
@@ -622,7 +622,7 @@ table decomposes into `mul`, `transpose`, `matmul`, `add`, `softmax`, `matmul` �
 has a perfectly good lowering.** So:
 
 - conversion succeeds,
-- `optimize()` succeeds,
+- conversion and its automatic rewrite succeed,
 - `save_asset()` succeeds,
 - the model loads on device,
 - the numerics are correct,
@@ -1006,8 +1006,9 @@ historical context for old assets and issue reports, but it is not the 0.4.3 API
 >     )
 > ```
 >
-> The 0.4.3 converter now constructs `AIProgram(module)`, whose context-manager exit performs the
-> pre-compilation rewrite before `to_coreai()` returns.
+> The 0.4.3 converter runs the pre-compilation rewrite on successful exit from
+> `with module:`, **before** constructing and returning `AIProgram(module)`. Source:
+> `coreai-torch` at `b51fd006`, `converter.py:927–955`; b3 `authoring/module.py::_insertion`.
 
 | Pass | What it appears to do |
 |---|---|
@@ -1831,12 +1832,11 @@ The IR annotation that carries all this:
 > by **original FX placeholder** names — so passing custom `input_names` **silently dropped
 > `MutableBuffers.buffer_mutation` entirely**. The test exists because the failure was invisible.
 
-### 9.5 State requires `optimize()`
+### 9.5 State requires the automatic module rewrite
 
-Restating §6.6 because this is where it bites: mutation outputs become handle tokens only after
-`_UPDATE_SIGNATURE_TO_HANDLES` and `_PROPAGATE_HANDLE_UPDATES` run. **A stateful model that skips
-`optimize()` has no working state protocol**, and Apple's own comparison helper says so in a comment:
-*"state mutation outputs become tokens after optimize and won't appear here."*
+Restating §6.6: mutation outputs become handle tokens during the rewrite on successful exit from
+`with module:` inside `to_coreai()`, before `AIProgram(module)` is returned. The 0.4.3 API has no
+separate optimizer method. Check `desc.state_names` and consecutive updates as in §13.3.
 
 ### 9.6 What the Swift side expects
 
@@ -2360,58 +2360,75 @@ upgrade and a renamed public interface.
 
 ### 11.4 ⚠️ The shipped-asset parity gate
 
-In 0.4.3, `to_coreai()` returns an already optimized program, so there is no valid optimized-versus-
-unoptimized A/B test. Compare all three observable stages instead: eager PyTorch, the decomposed
-`ExportedProgram`, and the exact Core AI asset you will ship.
+In 0.4.3, `to_coreai()` returns an already optimized program. Compare eager PyTorch, the
+corresponding decomposed `ExportedProgram`, and **the existing RELEASE asset you will ship**.
+This gate never exports, converts, or saves a replacement. It is for stateless tensor outputs;
+§13.3 demonstrates the additional named-state checks needed for a stateful model.
 
+<!-- coreai-example: {"id": "shipped-asset-gate"} -->
 ```python
-"""Fail loudly when export or Core AI conversion changes model semantics."""
-
-import asyncio
-import tempfile
 from pathlib import Path
 
 import numpy as np
 import torch
+from coreai.authoring import AIModelAsset
 from coreai.runtime import NDArray
-from coreai_torch import TorchConverter, get_decomp_table
 
 
-async def shipped_asset_gate(model: torch.nn.Module, example: tuple[torch.Tensor, ...],
-                             *, atol: float = 1e-3) -> None:
-    model = model.eval()
-    ep = torch.export.export(model, args=example).run_decompositions(get_decomp_table())
-    program = (
-        TorchConverter()
-        .add_exported_program(ep, input_names=["x"], output_names=["y"])
-        .to_coreai()
-    )
+def assert_parity(expected, actual, *, atol, rtol, label):
+    assert expected.shape == actual.shape, (label, expected.shape, actual.shape)
+    assert np.isfinite(expected).all(), f"{label}: non-finite reference"
+    assert np.isfinite(actual).all(), f"{label}: non-finite result"
+    np.testing.assert_allclose(actual, expected, atol=atol, rtol=rtol, err_msg=label)
 
+
+def tensor_outputs(value):
+    values = value if isinstance(value, (tuple, list)) else (value,)
+    assert all(isinstance(v, torch.Tensor) for v in values), "adapt nested outputs explicitly"
+    return [v.detach().cpu().numpy().copy() for v in values]
+
+
+async def shipped_asset_gate(asset_path: Path, model: torch.nn.Module,
+                             ep: torch.export.ExportedProgram,
+                             inputs: tuple[torch.Tensor, ...], *,
+                             input_names, output_names, runtime_atol, runtime_rtol,
+                             export_atol=1e-6, export_rtol=1e-5, entrypoint="main"):
+    assert not model.training, "supply the evaluated reference used for export"
+    assert len(inputs) == len(input_names)
+    assert len(set(input_names)) == len(input_names)
+    assert len(set(output_names)) == len(output_names)
     with torch.no_grad():
-        eager = model(*example).detach().cpu().numpy()
-        exported = ep.module()(*example).detach().cpu().numpy()
+        eager = tensor_outputs(model(*inputs))
+        exported = tensor_outputs(ep.module()(*inputs))
+    assert len(eager) == len(exported) == len(output_names)
+    for name, a, b in zip(output_names, eager, exported):
+        assert_parity(a, b, atol=export_atol, rtol=export_rtol, label=f"export {name}")
 
-    inputs = {"x": np.ascontiguousarray(example[0].detach().cpu().numpy())}
-    with tempfile.TemporaryDirectory() as tmpdir:
-        asset = program.save_asset(Path(tmpdir) / "gate.aimodel")
-        async with asset.executable() as runtime_model:
-            fn = runtime_model.load_function("main")
-            result = await fn({name: NDArray(value) for name, value in inputs.items()})
-            coreai = result["y"].numpy().copy()  # materialize inside the context
-
-    export_delta = float(np.max(np.abs(eager - exported)))
-    coreai_delta = float(np.max(np.abs(eager - coreai)))
-    print(f"|eager - exported| = {export_delta:.3e}   |eager - Core AI| = {coreai_delta:.3e}")
-    assert export_delta < atol, f"export changed model semantics: {export_delta:.3e}"
-    assert coreai_delta < atol, f"Core AI diverges from eager PyTorch: {coreai_delta:.3e}"
-
-
-asyncio.run(shipped_asset_gate(MyModel(), (torch.randn(1, 32, 8),)))
+    arrays = [np.ascontiguousarray(x.detach().cpu().numpy()) for x in inputs]
+    assert all(np.isfinite(x).all() for x in arrays), "non-finite input"
+    asset = AIModelAsset.load(Path(asset_path))
+    async with asset.executable() as runtime_model:
+        assert entrypoint in runtime_model.function_names
+        fn = runtime_model.load_function(entrypoint)
+        assert list(fn.desc.input_names) == list(input_names)
+        assert list(fn.desc.output_names) == list(output_names)
+        assert list(fn.desc.state_names) == [], "use the stateful gate for mutable buffers"
+        result = await fn(inputs={n: NDArray(x) for n, x in zip(input_names, arrays)})
+        assert set(result) == set(output_names)
+        # Runtime storage is borrowed: copy every result before leaving the context.
+        actual = {n: result[n].numpy().copy() for n in output_names}
+    for name, expected in zip(output_names, eager):
+        assert_parity(expected, actual[name], atol=runtime_atol, rtol=runtime_rtol,
+                      label=f"Core AI {name}")
+    return actual
 ```
 
-Adapt the input and output names for multi-input or multi-output models, and run the gate at every
-production shape boundary. The historical #49 control passed at 17×23 but failed at 32×32; a single
-rectangular toy fixture would therefore have missed the defect.
+Call with your recorded model, decomposed export and shipping path, for example
+`await shipped_asset_gate(Path("model.aimodel"), reference, ep, sample,
+input_names=["x"], output_names=["y"], runtime_atol=1e-2, runtime_rtol=1e-3)`.
+Those runtime tolerances are illustrative for a small fp16 fixture; choose them from your model's
+error budget. Export and runtime error budgets are separate. Run every production shape boundary:
+the historical #49 control passed at 17×23 but failed at 32×32.
 
 ### 11.5 Structural checks that need no inference
 
@@ -2815,116 +2832,114 @@ Every one of these raises at conversion time with an actionable message. They ar
 
 ### 13.3 The complete pipeline, in one block
 
+This small model demonstrates the **state protocol**, with fixed batch size 1, sequence length
+2–32, and two fixed-size accumulator buffers. It is not an attention or KV-cache implementation.
+The reference is copied from the same deterministic initialized model before export. Conversion
+uses RELEASE once; verification loads that exact path and checks outputs and each named state.
+
+<!-- coreai-example: {"id": "state-protocol"} -->
 ```python
-"""End-to-end conversion with every contract made explicit.
-
-Requires: pip install coreai-torch   (coreai-torch 0.4.1 / coreai-core 1.0.0b2)
-Environment, for a debuggable asset:
-    export USE_LOCAL_COREAI=1
-    export ENABLE_DEBUG_INFO=1
-"""
-
+"""coreai-torch 0.4.3 / coreai-core 1.0.0b3; Python 3.12."""
 import asyncio
+import copy
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
+from coreai.authoring import AIModelAsset
 from coreai.runtime import NDArray
 from coreai_torch import TorchConverter, get_decomp_table
 
-INPUT_NAMES = ["input_ids"]
-OUTPUT_NAMES = ["logits"]
-STATE_NAMES = ["k_cache", "v_cache"]
-ENTRYPOINT = "main"
-ASSET = Path("MyModel.aimodel")
+INPUT_NAMES = ["x"]
+OUTPUT_NAMES = ["y"]
+STATE_NAMES = ["running_sum", "running_mean_sum"]
 
 
-class MyModel(nn.Module):
-    def __init__(self, vocab: int = 32000, dim: int = 64, ctx: int = 128):
+class StateModel(nn.Module):
+    def __init__(self):
         super().__init__()
-        self.embed = nn.Embedding(vocab, dim)
-        self.proj = nn.Linear(dim, vocab, bias=False)
-        # Mutable buffers -> Core AI states. Order here IS state order.
-        self.register_buffer("k_cache", torch.zeros(1, ctx, dim))
-        self.register_buffer("v_cache", torch.zeros(1, ctx, dim))
+        self.proj = nn.Linear(8, 8, bias=False)
+        with torch.no_grad():
+            self.proj.weight.copy_(torch.arange(64).reshape(8, 8).float() / 6400)
+        self.register_buffer("running_sum", torch.zeros(1, 8))
+        self.register_buffer("running_mean_sum", torch.zeros(1, 8))
 
-    def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
-        h = self.embed(input_ids)
-        self.k_cache.copy_(h)                       # in-place -> state
-        self.v_cache.copy_(h)                       # in-place -> state
-        attn = torch.matmul(h, self.k_cache.transpose(-2, -1))
-        ctx_vec = torch.matmul(torch.softmax(attn, dim=-1), self.v_cache)
-        return self.proj(ctx_vec)
+    def forward(self, x):
+        h = self.proj(x)
+        self.running_sum.add_(h.sum(dim=1))
+        self.running_mean_sum.add_(h.mean(dim=1))
+        return h + self.running_sum[:, None, :] + 2 * self.running_mean_sum[:, None, :]
 
 
-def convert(model: nn.Module, example: tuple[torch.Tensor, ...], *, optimize: bool = True):
-    model.eval()                                     # 1. never export in training mode
-
-    seq = torch.export.Dim("seq", min=1, max=128)
-    ep = torch.export.export(                        # 2. export, with dims you chose
-        model, args=example, dynamic_shapes={"input_ids": {1: seq}}
-    )
-    ep = ep.run_decompositions(get_decomp_table())   # 3. Apple's table, never PyTorch's default
-
-    program = (                                      # 4. stage with explicit names
-        TorchConverter()                             #    (DEBUG mode: keeps source locations)
-        .add_exported_program(
-            ep,
-            input_names=INPUT_NAMES,
-            output_names=OUTPUT_NAMES,
-            state_names=STATE_NAMES,
-            entrypoint_name=ENTRYPOINT,
-        )
-        .to_coreai()                                 # 5. conversion + automatic rewrite
-    )
-
-    ir = str(program)                                # 6. structural assertions before saving
-    for name in INPUT_NAMES + OUTPUT_NAMES:
-        assert f'coreai.name = "{name}"' in ir, f"missing IO name {name!r}"
-
-    return program
+def state_input(length):
+    return torch.arange(length * 8).reshape(1, length, 8).float() / 256
 
 
-async def verify(program, example: tuple[torch.Tensor, ...], model: nn.Module) -> None:
-    asset = program.save_asset(ASSET)                # 8. .aimodel is a DIRECTORY
-    async with asset.executable() as ai_model:
-        assert ENTRYPOINT in ai_model.function_names, ai_model.function_names
-        fn = ai_model.load_function(ENTRYPOINT)
+def convert_state_model(asset_path):
+    model = StateModel().eval()                        # 1. deterministic initialization
+    reference = copy.deepcopy(model)                  # 2. same weights and initial state
+    seq = torch.export.Dim("seq", min=2, max=32)
+    ep = torch.export.export(                         # 3. batch fixed, sequence dynamic
+        model, (state_input(8),), dynamic_shapes={"x": {1: seq}}
+    ).run_decompositions(get_decomp_table())
+    program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)  # 4. shipping conversion
+        .add_exported_program(ep, input_names=INPUT_NAMES, output_names=OUTPUT_NAMES,
+                              state_names=STATE_NAMES)
+        .to_coreai())                                 # rewrite exits `with module:` here
+    program.save_asset(Path(asset_path))              # 5. save the RELEASE asset once
+    return reference, ep
 
-        desc = fn.desc                               # 9. assert the contract
-        assert list(desc.input_names) == INPUT_NAMES, desc.input_names
-        assert list(desc.output_names) == OUTPUT_NAMES, desc.output_names
-        assert list(desc.state_names) == STATE_NAMES, desc.state_names
 
-        state = {}                                   # 10. zero-fill state yourself
-        for name in desc.state_names:
-            d = desc.state_descriptor(name=name)
-            shape = tuple(s if s is not None else 1 for s in d.shape)
-            state[name] = NDArray(np.zeros(shape, dtype=np.dtype(d.dtype)))
-
-        inputs = {"input_ids": NDArray(np.ascontiguousarray(example[0].numpy()))}
-        outputs = await fn(inputs=inputs, state=state)
-        got = outputs["logits"].numpy().copy()       # 11. materialize INSIDE the block
-
-    with torch.no_grad():                            # 12. compare against eager
-        expected = model(*example).numpy()
-
-    delta = float(np.max(np.abs(expected - got)))
-    print(f"max |eager - coreai| = {delta:.3e}")
-    assert delta < 1e-2, f"numeric divergence: {delta:.3e}"
+async def verify_state_asset(asset_path, reference, *, lengths=(2, 8, 32),
+                             initial=(0.0, 0.0), atol=1e-2, rtol=1e-3):
+    # These tolerances belong to this small fixture, not arbitrary fp16 models.
+    eager = copy.deepcopy(reference)
+    for name, value in zip(STATE_NAMES, initial):
+        getattr(eager, name).fill_(value)
+    state_values = {n: getattr(eager, n).numpy().copy() for n in STATE_NAMES}
+    asset = AIModelAsset.load(Path(asset_path))         # 6. verify the supplied artifact
+    captured = []
+    async with asset.executable() as runtime_model:
+        fn = runtime_model.load_function("main")
+        assert list(fn.desc.input_names) == INPUT_NAMES
+        assert list(fn.desc.output_names) == OUTPUT_NAMES
+        assert list(fn.desc.state_names) == STATE_NAMES
+        states = {n: NDArray(v) for n, v in state_values.items()}
+        for length in lengths:                        # 7. consecutive updates, no reset
+            assert 2 <= length <= 32, "sequence outside declared range"
+            x = state_input(length)
+            with torch.no_grad():
+                expected = eager(x).numpy().copy()
+            result = await fn(inputs={"x": NDArray(x.numpy())}, state=states)
+            got = result["y"].numpy().copy()           # 8. own outputs before context exit
+            assert got.shape == expected.shape
+            assert np.isfinite(got).all() and np.isfinite(expected).all()
+            np.testing.assert_allclose(got, expected, atol=atol, rtol=rtol)
+            for name in STATE_NAMES:                   # 9. identify each state by name
+                actual_state = states[name].numpy().copy()
+                expected_state = getattr(eager, name).numpy().copy()
+                assert actual_state.shape == expected_state.shape
+                assert np.isfinite(actual_state).all()
+                np.testing.assert_allclose(actual_state, expected_state, atol=atol, rtol=rtol)
+            captured.append(got)
+    return captured
 
 
 if __name__ == "__main__":
-    m = MyModel()
-    ex = (torch.randint(0, 32000, (1, 128)),)
-    asyncio.run(verify(convert(m, ex), ex, MyModel().eval()))
+    path = Path("StateProtocol.aimodel")
+    reference, ep = convert_state_model(path)
+    asyncio.run(verify_state_asset(path, reference))
+    asyncio.run(verify_state_asset(path, reference))     # fresh state: reset behavior
+    asyncio.run(verify_state_asset(path, reference, initial=(0.25, -0.5)))
 ```
 
-> ⚠️ Two notes on that listing. The model is a **toy** whose only job is to exercise every contract
-> — buffers, dynamic dims, explicit names, state binding — not to be a good attention
-> implementation. Run the §11.4 shipped-asset gate separately at your real shapes, because §6.4's
-> historical bug was shape-sensitive.
+The wrapper rejects lengths 1 and 33 before runtime execution. Torch export may admit a singleton
+sequence despite `Dim(min=2)` (its special handling of dimensions 0/1); keep the explicit boundary
+check at the application boundary instead of relying solely on exported range constraints.
+For source-location diagnostics, build a **separate** program with
+`TorchConverter(mode=TorchConverter.Mode.DEBUG)` and the same decomposed export, then save to a
+separate diagnostic path. Do not replace the RELEASE artifact while running a parity gate.
 
 ### 13.4 API quick reference
 

@@ -1226,10 +1226,10 @@ fingerprint reliable:
 And on where in the pipeline the fold happens, the author is careful and explicit about what he
 does and does not know:
 
-> **Community-measured, verbatim:** *"`quantize_pytorch_model` → `coreai-opt` PT2E `Quantizer`… it
+> **Historical community measurement (0.4.1/b2), verbatim:** *"`quantize_pytorch_model` → `coreai-opt` PT2E `Quantizer`… it
 > **ALWAYS** emits the parametrized/dequant form. The fast artifact's plain-`Linear$N`-no-dequant
 > form must therefore be produced **LATER**, by the compiler folding dequant into the Linear
-> composites during the **`coreai-pre-compilation-rewrite`** / serialization."*
+> composites during `prog.optimize()` (**`coreai-pre-compilation-rewrite`**) / serialization."*
 
 That is a deduction, not a direct observation of the pass — but it is a sound one, because it is
 grounded in the fact that the *quantiser's* output is the same in both cases. The divergence

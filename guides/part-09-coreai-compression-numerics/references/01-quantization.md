@@ -96,7 +96,7 @@ What follows:
 - **The Core AI Debugger** — the tool that produced the SAM3 diagnosis. Its workspace, sync points,
   PSNR metric and `save_intermediates` reference-capture API are Part 10's material. §13 uses its
   *output* and cross-links.
-- **Conversion** — `torch.export`, `get_decomp_table()`, `TorchConverter`, `optimize()`,
+- **Conversion** — `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic module rewriting,
   `save_asset()`. That is Part 8. This guide starts with an `nn.Module` and hands back an `nn.Module`.
 
 ## What you need
@@ -170,7 +170,7 @@ compressed nn.Module
    ├─ .run_decompositions(coreai_torch.get_decomp_table())│  Part 8
    ├─ [coreai_opt.casting.cast_to_16_bit_precision(...)] │  ← §14, and it lives here, not earlier
    ├─ TorchConverter().add_exported_program(...).to_coreai()
-   ├─ AIProgram.optimize()                              │
+   ├─ automatic frontend module rewrite                              │
    └─ AIProgram.save_asset(Path("model.aimodel"))       ┘
 ```
 
@@ -2936,7 +2936,8 @@ it.
 
 The full canonical pipeline, which is the shape every `coreai-opt` example follows:
 
-> ✅ **VERIFIED** — `docs/src/introduction/integration_coreai.md`, the canonical end-to-end:
+> ✅ **SOURCE-INSPECTED** — adapted from `integration_coreai.md` for 0.4.3/b3; the tagged
+> 0.3.0 documentation still contains a removed optimizer call. Implementation governs:
 > ```python
 > from pathlib import Path
 > from coreai_opt.casting import cast_to_16_bit_precision
@@ -2952,7 +2953,6 @@ The full canonical pipeline, which is the shape every `coreai-opt` example follo
 > converter = coreai_torch.TorchConverter()
 > converter.add_exported_program(exported_program)
 > ai_program = converter.to_coreai()
-> ai_program.optimize()
 > ai_program.save_asset(Path("model.aimodel"))
 > ```
 > and the explanation of why `finalize()` is what makes conversion work: *"Under the hood, `finalize()`
@@ -3121,7 +3121,8 @@ left alone, because compressing a tiny tensor costs more in scale metadata than 
 
 ### 15.3 The worked example, and Apple's caveat
 
-> ✅ **VERIFIED** — `docs/src/utils/coreai_compression.md:11-31`:
+> ✅ **SOURCE-INSPECTED** — adapted current b3 example from `coreai_compression.md`;
+> direct IR utilities modify the module without rerunning the frontend rewrite:
 > ```python
 > from coreai.authoring import AIModelAsset
 > from coreai_opt.coreai_utils import DType, quantize_weights
@@ -3131,7 +3132,6 @@ left alone, because compressing a tiny tensor costs more in scale metadata than 
 > compressed_program = quantize_weights(
 >     coreai_program=ai_asset.program, dtype=DType.INT8, in_place=False
 > )
-> compressed_program.optimize()
 > compressed_program.save_asset(Path("model_compressed.aimodel"))
 > ```
 
@@ -3798,7 +3798,7 @@ print(coreai_opt.__version__)     # this guide: 0.2.1, plus main @ cd95cb2 where
 ### 20.5 Cross-links
 
 - **Part 8 — Core AI: converting from PyTorch.** `torch.export`, `get_decomp_table()`,
-  `TorchConverter`, `optimize()`, `save_asset()`. Everything downstream of `finalize()`.
+  `TorchConverter`, automatic frontend rewriting, `save_asset()`. Everything downstream of `finalize()`.
 - **Part 9, other references.** Palettization (`KMeansPalettizer`, sensitive k-means, the LUT
   formats), pruning, and the numeric-format reference (int2/4/8, FP4/FP8, MXFP4 and the E8M0 scale
   story).

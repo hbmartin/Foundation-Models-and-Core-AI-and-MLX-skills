@@ -8,6 +8,7 @@ import unittest
 from urllib.parse import unquote
 
 from scripts import mdlinks
+from scripts.coreai_examples import removed_optimizer_errors, contract_errors, section
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -309,21 +310,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         self.assertIn(f"({total},\n  of which {concrete} describe", overview)
 
     def test_coreai_torch_043_guidance_has_no_removed_optimizer_calls(self) -> None:
-        roots = (
-            GUIDES / "part-08-coreai-pytorch-conversion",
-            GUIDES / "part-10-coreai-hardware-authoring-debugging",
-            GUIDES / "part-17-migration-from-pre-ios-27",
-        )
-        executable_call = re.compile(
-            r"^\s*(?:>\s*)?[A-Za-z_]\w*(?:\.[A-Za-z_]\w*|\([^\n]*\))*\.optimize\("
-        )
-        offenders = []
-        for root in roots:
-            for path in root.rglob("*.md"):
-                for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                    if executable_call.search(line):
-                        offenders.append(f"{path.relative_to(ROOT)}:{line_number}: {line.strip()}")
-        self.assertEqual([], offenders)
+        self.assertEqual([], removed_optimizer_errors(ROOT))
 
     def test_coreai_torch_49_status_and_current_contract_are_consistent(self) -> None:
         register = self.read(
@@ -363,14 +350,12 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             )
             for path in (GUIDES / part).rglob("*.md")
         )
-        stale_claims = (
-            "coreai-torch#49` (open",
-            "coreai-torch` issue **#49** (open",
-            "coreai-torch#49` | `optimize() drops",
-            "#49` **OPEN**, 0 comments",
-        )
-        for claim in stale_claims:
-            self.assertNotIn(claim, active)
+        conversion = self.read("guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md")
+        for heading, contract in (("### 9.5 ", "state"), ("### 6.3 ", "rewrite")):
+            self.assertEqual([], contract_errors(section(conversion, heading), contract))
+        self.assertEqual([], contract_errors(row, "issue49"))
+        deployment = self.read("guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md")
+        self.assertEqual([], contract_errors(section(deployment, "### 9.3 "), "overwrite"))
 
         self.assertIn(
             "`to_coreai()` returns an already optimized program",

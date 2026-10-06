@@ -6,17 +6,22 @@
 declares `platforms: [.macOS("27.0"), .iOS("27.0")]` and its README requires **macOS and iOS
 27.0+** with **Xcode 27.0+**. There is no back-deployment story — a `.aimodel` produced here
 carries a **minimum deployment target of iOS 27.0 / macOS 27.0**, which Xcode's model viewer shows
-you on the asset itself. The Python side pins **`coreai-core==1.0.0b2`** (a *beta* wheel),
-**`coreai-torch==0.4.1`**, **`coreai-opt==0.2.1`**, **`torch==2.9.0`**, Python **3.11**, and a
+you on the asset itself. The Python side pins **`coreai-core==1.0.0b3`** (a *beta* wheel),
+**`coreai-torch==0.4.3`**, **`coreai-opt==0.3.0`**, **`torch==2.9.0`**, Python **3.11**, and a
 **`uv` ≥ 0.9.0** workspace. The Swift side is **swift-tools-version 6.0**, Swift language mode 6.
 The compiled artifact extension is **`.aimodelc`**, produced by **`xcrun coreai-build compile`**;
 the portable one is **`.aimodel`**. Both are *directories*.
 
 > ✅ **VERIFIED** — `apple/coreai-models` `README.md:32-42` (requirements), `Package.swift`
 > (`swift-tools-version: 6.0`, `platforms: [.macOS("27.0"), .iOS("27.0")]`, `swiftLanguageModes:
-> [.v6]`), `python/pyproject.toml:28-43` (the four pins), `.python-version` = `3.11`, root
+> [.v6]`), `python/pyproject.toml:28-43` (the dependency profile), `.python-version` = `3.11`, root
 > `pyproject.toml` `[tool.uv] required-version = ">=0.9.0"`. Read from a local clone at HEAD
-> `5ed9981` (2026-07-23). Deployment-target display in Xcode: WWDC26 session 326, lines 78-93.
+> `db63a2d8` (inspected 2026-10-06). Deployment-target display in Xcode: WWDC26 session 326, lines 78-93.
+
+
+Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
+`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
+These model-export constraints are narrower than the standalone compression requirements in Part 9.
 
 ---
 
@@ -64,7 +69,7 @@ The path has nine stages, and the guide walks them in order:
 
 ```
 acquire weights → re-author (or use a repo primitive) → verify against an oracle
-    → compress → export with state_names → convert → optimize
+    → compress → export with state_names → convert (automatic module rewrite)
     → save bundle (tokenizer/ + metadata.json) → AOT-compile per architecture
     → load in Swift → LanguageModelSession
 ```
@@ -125,7 +130,7 @@ Specifically:
 6. [Stage 3 — the oracle and the gates](#6-stage-3--the-oracle-and-the-gates)
 7. [Stage 4 — compress](#7-stage-4--compress)
 8. [Stage 5 — export with `state_names`](#8-stage-5--export-with-state_names)
-9. [Stages 6–8 — convert, optimize, save the bundle](#9-stages-68--convert-optimize-save-the-bundle)
+9. [Stages 6–8 — convert, rewrite, save the bundle](#9-stages-68--convert-rewrite-save-the-bundle)
 10. [Stage 9 — AOT-compile per architecture](#10-stage-9--aot-compile-per-architecture)
 11. [Stage 10 — load it in Swift](#11-stage-10--load-it-in-swift)
 12. [The community porting playbook, as a checklist](#12-the-community-porting-playbook-as-a-checklist)
@@ -174,39 +179,39 @@ step 1 for you** — which, for the ten catalog presets, they have.
 The full picture, with the stages this guide actually walks:
 
 ```
-┌── stage 1 ─────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────┐
 │ acquire weights            HF snapshot → local safetensors             │
 └────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 2 ──▼─────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────┐
 │ re-author                  plain-torch model built FROM safetensors,   │
 │  (or use a repo primitive)  targeting GPU **or** ANE — not both        │
 └────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 3 ──▼─────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────┐
 │ oracle + Gate A(pre)       re-authored vs HF reference                 │
 │                            Apple: PSNR > 70 dB · community: cos ≥.999  │
 └────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 4 ──▼─────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────┐
 │ compress                   macOS: coreai-opt Quantizer (int4/block32)  │
 │                            iOS:   coreai-opt KMeansPalettizer (LUT)    │
 └────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 5 ──▼─────────────────────────────────────────────────────────┐
-│ torch.export + decomp      run_decompositions(get_decomp_table())      │
+┌─────────────────────────────────────────────────────────────────────────┐
+│ torch.export + decomp      run_decompositions(get_decomp_table())       │
 │  + remove_functionalization  ⚠️ omit this and KV writes vanish silently │
-│  + dynamic_shapes / static_shape_config                                │
-└────────────────────────────────────────────────────────────────────────┘
+│  + dynamic_shapes / static_shape_config                                 │
+└─────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 6 ──▼─────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────┐
 │ convert                    TorchConverter(...).to_coreai() → AIProgram │
 │                            input_names / output_names / state_names    │
 └────────────────────────────────────────────────────────────────────────┘
               │
-┌── stage 7 ──▼─────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────┐
 │ optimize                   converter.to_coreai() applies rewrites       │
-└────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────┘
               │
 ┌── stage 8 ──▼─────────────────────────────────────────────────────────┐
 │ save bundle                <name>/                                     │
@@ -2107,7 +2112,7 @@ int8."* The interleave factor is how a `(…, 1, max_context_length)` cache avoi
 
 ---
 
-## 9. Stages 6–8 — convert, optimize, save the bundle
+## 9. Stages 6–8 — convert, rewrite, save the bundle
 
 ### 9.1 The `TorchConverter` surface, complete
 
@@ -2207,30 +2212,26 @@ move. Gate the program returned by `to_coreai()` and the asset you actually ship
 
 > **Community-measured** — `conversion-guide.md`: TripoSplat DiT (24 blocks × ~12 k-token attention)
 > took **> 90 minutes and ~64 GB RAM** in the old separate optimization step while conversion itself
-> was ~7 s. Upgrade to 0.4.3 first: its release notes include a conversion-time fix for large graphs.
-> If a current conversion still hangs, minimize the graph and report it upstream; 0.4.3 exposes no
-> public switch that skips the automatic rewrite. Mac; model/OS not stated.
+> was ~7 s. This historical report does not establish behavior in 0.4.3. Its large-graph
+> performance fix concerns debug operation-ID assignment, not this optimizer stall. The old public
+> workaround was to skip `optimize()`; 0.4.3 exposes no public bypass for automatic rewriting.
+> Resolution and reproduction in 0.4.3 are unverified. Mac; model/OS not stated.
 
 ### 9.3 `save_asset` — two traps in one call
 
 ```python
-import shutil
 from pathlib import Path
 import coreai.runtime as rt
 
 out = Path("exports/my_model/my_model.aimodel")
-shutil.rmtree(out, ignore_errors=True)      # save_asset will NOT overwrite
 prog.save_asset(out, rt.AIModelAssetMetadata())
 ```
 
-> ✅ **VERIFIED (behaviour)** — Apple's own pipeline does the same thing:
-> `python/src/coreai_models/export/pipeline.py` calls `shutil.rmtree(aimodel_path)` on the overwrite
-> path. The `save_asset(path, metadata)` two-argument form is verified from
-> `segmentation/pipeline.py:265-286`.
->
-> **Community practice** — `PORTING.md:121-134` bakes the same into its canonical skeleton with the
-> comment `# save_asset will NOT overwrite`, and `conversion-guide.md:21-25` adds: **`save_asset`
-> takes a `Path`, not a `str`**, and **`minimum_os` defaults to v27**.
+> ✅ **VERIFIED (b3 source)** — `AIProgram.save_asset` in `coreai-core` 1.0.0b3 replaces an
+> existing file or directory at the destination. Redundant pre-save deletion is unnecessary.
+> Use a `Path` ending in `.aimodel`; `minimum_os` defaults to v27. Older community skeletons and
+> the inspected model-export pipeline pre-delete destinations; that is historical caller behavior,
+> not the b3 persistence contract.
 
 Metadata is worth filling in. Apple's LLM path builds it from a hardcoded table keyed by HF id:
 
@@ -3053,7 +3054,7 @@ it is what makes a re-authored model reusable across checkpoint sizes.
 - [ ] **Fix the input contract** — decide the static shapes, push variable-length logic to the host.
 - [ ] **Fold what you can into the graph** — normalization baked in means *"one class of host bugs
       disappears."*
-- [ ] **Let dead code die** — export only the outputs you need; `optimize()` DCEs the rest.
+- [ ] **Let dead code die** — export only the outputs you need; automatic rewriting removes dead branches.
 - [ ] LLM adds three systems: **KV cache as in-graph mutable state** (⚠️ `remove_functionalization`),
       **prefill and decode as different shapes of the same weights**, **tokenizer and sampler on the
       host**.
@@ -3521,7 +3522,11 @@ model's graph and emit Core AI MLIR directly.
 > clone. It vendors one Apple file — `_composite_declaration.py`, BSD-3, `Copyright 2026 Apple Inc.`
 > — copied out of Apple's Core AI Python tooling.
 
-### 15.1 What it does
+### 15.1 What the inspected 0.1.1 bridge does
+
+This is historical bridge behavior at `059c9f3`, built around older private Core AI APIs. Its
+optional optimizer step is not the b3 automatic `with module:` workflow; compatibility with b3
+has not been established by this source snapshot.
 
 ```
 MLX callable / nn.Module
@@ -3529,7 +3534,7 @@ MLX callable / nn.Module
     → list[dict] events → a small SSA graph IR
     → normalize / shape-infer / check op support
     → CoreAILowerer → coreai.GraphOp inside an AIProgram
-    → automatic pre-compilation rewrite → save_asset()
+    → optional `AIProgram.optimize()` → save_asset()  # inspected mlx2coreai 0.1.1 API
     → <name>.aimodel/{main.mlirb, main.hash, metadata.json}
        (+ for the stateful path: bundle/{metadata.json, tokenizer/, <name>.aimodel})
 ```
@@ -3740,8 +3745,8 @@ explains it.
 |---|---|---|
 | Export ENOSPCs mid-run | HF repo ships duplicate weights (Mistral: 27 GB not 15) + serialization scratch | §4.1 |
 | Download stalls near 99 %, or a "complete" file is sparse | Xet transfer pathologies; mixing Xet and non-Xet attempts | §4.3 |
-| `optimize()` runs for 90 minutes | Large attention graph | §9.2 |
-| `save_asset` fails | It will not overwrite; `rmtree` first | §9.3 |
+| Historical optimizer stall on TripoSplat | 0.4.3 status unverified; no public rewrite bypass | §9.2 |
+| `save_asset` fails | Check suffix, permissions and serialization; b3 replaces destinations | §9.3 |
 | Same recipe, different performance | The artifact is a build artifact, not a function of the recipe | §14.4 |
 | Two identical exports don't hash-match | **Conversion is not byte-deterministic** | §9.6 |
 | CI can't tell if an export regressed | Use a gate script, not a checksum | §9.6 |

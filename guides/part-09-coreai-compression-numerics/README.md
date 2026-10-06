@@ -219,7 +219,7 @@ unless you also use MLX; [9.1 §12](references/01-quantization.md#12-kv-cache-qu
 
 ## What this part deliberately does not cover
 
-- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, `optimize()`, `save_asset()`,
+- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic frontend rewriting, `save_asset()`,
   and how a compressed `nn.Module` becomes an `.aimodel` — [Part 8](../part-08-coreai-pytorch-conversion/).
   Every guide here starts with an `nn.Module` and hands back an `nn.Module`.
 - **The Core AI Debugger** — sync points, the PSNR metric, `save_intermediates` / `load_intermediates`,

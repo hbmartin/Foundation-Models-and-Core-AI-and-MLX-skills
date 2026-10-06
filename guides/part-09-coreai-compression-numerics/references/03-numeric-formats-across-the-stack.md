@@ -84,7 +84,7 @@ What follows:
   [`01-quantization.md`](01-quantization.md) (configs, GRAPH vs EAGER, calibration, QAT) and the
   palettization guide in this part. This guide tells you which formats *exist* at each layer; those
   guides tell you which one to pick and how to measure the trade.
-- **Conversion mechanics** — `torch.export`, `TorchConverter`, `optimize()`, `save_asset()`. Part 8.
+- **Conversion mechanics** — `torch.export`, `TorchConverter`, automatic frontend rewriting, `save_asset()`. Part 8.
 - **Writing TensorOps kernels.** Part 11. §5 here is the dtype surface only.
 - **MLX as a framework.** Parts 12 and 13. §6 here is the quantization surface only.
 - **Debugging a numerics regression** — the Core AI Debugger, PSNR workflows, `save_intermediates`.
@@ -2514,7 +2514,7 @@ behaviour surprises people, not as documentation.
 - [`01-quantization.md`](01-quantization.md) — the `coreai-opt` quantization API in depth: configs,
   GRAPH vs EAGER, calibration, QAT, the SAM3 story. This guide's §2 is the format surface only.
 - The palettization guide in this part — k-means, `cluster_dim`, sensitivity-based clustering.
-- **Part 8** — conversion: `torch.export`, `get_decomp_table()`, `TorchConverter`, `optimize()`,
+- **Part 8** — conversion: `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic module rewriting,
   `save_asset()`. Everything between "compressed `nn.Module`" and "`.aimodel`".
 - **Part 7** — the Core AI Swift runtime: `AIModel`, `InferenceFunction`, `NDArray` in anger,
   specialization and caching.
