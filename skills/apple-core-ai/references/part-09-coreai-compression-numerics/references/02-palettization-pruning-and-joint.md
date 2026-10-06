@@ -193,7 +193,7 @@ The capability matrix is where they stop being parallel:
 | Activations | ✅ | ✗ (weight-only, enforced) | ✗ (weight-only, enforced) |
 | `calibration_mode()` | ✅ (activation ranges) | ✅ (**different meaning** — sensitivities, §8) | ✗ |
 | `training_mode()` / schedules | ✅ QAT | ✅ PATSchedule; frozen default strategy | own training loop + `step()` |
-| `step()` | ✅ (QAT schedule) | ✗ | ✅ (**sparsity** schedule) |
+| `step()` | ✅ (QAT schedule) | ✅ PATSchedule, inside `training_mode()` | ✅ (**sparsity** schedule) |
 | `mmap_dir` on `finalize` | ✅ (GRAPH/EAGER + CoreAI only) | ✅ (CoreAI only) | ✗ |
 | Presets | `w8` `w4` `w4_per_block` | `w4` `w6` `w8` | **none** |
 

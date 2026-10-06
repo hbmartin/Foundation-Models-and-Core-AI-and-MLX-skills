@@ -1,0 +1,39 @@
+{
+  "profile": "model-export",
+  "packages": [
+    {
+      "package": "coreai-core",
+      "version": "1.0.0b3",
+      "recordFilesChecked": 87,
+      "recordErrors": [],
+      "pinnedSourceFilesChecked": 0,
+      "sourceDifferences": []
+    },
+    {
+      "package": "coreai-torch",
+      "version": "0.4.3",
+      "recordFilesChecked": 53,
+      "recordErrors": [],
+      "pinnedSourceFilesChecked": 46,
+      "sourceDifferences": []
+    },
+    {
+      "package": "coreai-opt",
+      "version": "0.3.0",
+      "recordFilesChecked": 147,
+      "recordErrors": [],
+      "pinnedSourceFilesChecked": 137,
+      "sourceDifferences": []
+    }
+  ],
+  "b3EvidenceHashes": [
+    {
+      "path": "coreai/authoring/module.py",
+      "matchesEvidence": true
+    },
+    {
+      "path": "coreai/authoring/asset.py",
+      "matchesEvidence": true
+    }
+  ]
+}

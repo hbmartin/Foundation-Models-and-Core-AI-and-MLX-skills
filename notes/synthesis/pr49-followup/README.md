@@ -74,6 +74,9 @@ Unresolved repository mappings remain a backlog, not automatically inferred corr
 [Apple's dated release list](https://developer.apple.com/news/releases/) reports parallel tracks:
 Xcode 27.2 beta 2 (`27B5028f`, September 28) and Xcode 27.1 RC (`27A9275`, October 5).
 iOS 27.2 beta 3 (`24B5099f`) and macOS 27.2 beta 3 (`26B5101f`) are dated October 5.
+[Apple's SDK compatibility table](https://developer.apple.com/xcode/system-requirements) lists
+27.2 SDKs for Xcode 27.2 beta 2; their internal builds are unknown here. The parallel 27.1 RC
+lists iOS 27.1 and macOS 27 SDKs. These observations do not replace measured installed SDK builds.
 The latest Simulator build remains unknown: a public iOS OS build is not Simulator evidence.
 Installed runtime identities are recorded independently. No toolchain installation, schedule
 resumption, merging, or publication is included. The daily schedule remains paused/report-only.
@@ -99,3 +102,44 @@ zero unreachable or state-changed groups, and 309 sightings with unresolved repo
 237 groups have ambiguity diagnostics and remain report-only.
 
 Final immutable native execution and reconciliation records follow in validation.md.
+
+## Verification reconciliation
+
+[validation.md](validation.md) records the final checks. Both native profiles pass **26/26**;
+source revision `428807a8047ae4be2146b2a948fcdb286c88d9dd`, trusted runner revision
+`2711181edf1e24cca867060c19abe937e28df444`. Example/helper hashes and actual package/OS/toolchain
+identities are in [native-model-export.json](native-model-export.json) and
+[native-standalone.json](native-standalone.json). Earlier 24-fixture records remain historical.
+
+[part9-fence-hashes.tsv](part9-fence-hashes.tsv) reconciles all **142** fence bodies against
+merged PR #49; 141 are unchanged and the PAT fixture is executed in both profiles.
+[part9-section-hashes.tsv](part9-section-hashes.tsv) covers **349** headings/preamble groups,
+including eight navigation/title groups omitted by the earlier 341-group ledger. It excludes
+fenced code headings and hashes each complete section with stripped boundary whitespace plus
+one final newline. Mechanical hash reconciliation is not additional runtime verification.
+The fresh [static audit](part9-static-audit.json) checks **130** resolvable calls, no errors;
+19 pseudocode/signature fragments are tokenized rather than executed.
+
+Swift records reconcile **1,360** identities/hashes. Fresh partial results are kept in
+[swift-fresh-results.tsv](swift-fresh-results.tsv); five unchanged SDK-26 targets carry historical
+verdicts only. [Target provenance](../../snippet-verification/target-provenance.json) distinguishes
+each fresh target from retained evidence. A portable regression checks provenance, actual body
+hashes, and target verdicts. The last complete multi-SDK run remains dated August 2; October 6
+is an available-target run. One callout hash changed because its SDK citation offsets moved;
+its docs-vs-reality classification is retained. Indexes and skills are regenerated from canonical
+sources and byte-compared by the full suite.
+
+[Review dispositions](review-dispositions.json) cover all eleven findings. The
+[reference backlog](unresolved-references.tsv) preserves unresolved repository mappings without
+inventing ownership. The [primary check](primary-verification.json) attests unchanged HEAD,
+Git status, and all 458 tracked/non-ignored file hashes.
+
+Security outcome: **fixed within the reviewed-revisions-only policy**. The affected path is
+verify_coreai_examples.py's fence executor. No candidate helper or unapproved working-tree code
+may run before immutable source selection and raw commit/tree/blob verification. This preserves
+manual execution of explicitly reviewed examples, which both pinned profiles demonstrate.
+Trust-selection, object-substitution, callback, shadowing, and optimization regressions show the
+original unreviewed-execution trigger is rejected. The patch keeps the existing fence reader and
+manual workflow; it does not introduce a sandbox. Relevant portable/native gates pass; SDK-26
+and Spotlight limitations are independent of this Python trust boundary. The read-only review's
+incomplete final report remains the review limitation noted above.

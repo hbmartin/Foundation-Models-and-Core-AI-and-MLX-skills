@@ -405,9 +405,9 @@ The capstone: one continuous path from `Qwen/Qwen3-0.6B` to `try await session.r
 | 6. Stage 3 — the oracle and the gates | `#6-stage-3--the-oracle-and-the-gates` |
 | 7. Stage 4 — compress | `#7-stage-4--compress` |
 | 8. Stage 5 — export with `state_names` | `#8-stage-5--export-with-state_names` |
-| 9. Stages 6–8 — convert, rewrite, save the bundle | `#9-stages-68--convert-rewrite-save-the-bundle` |
-| 10. Stage 9 — AOT-compile per architecture | `#10-stage-9--aot-compile-per-architecture` |
-| 11. Stage 10 — load it in Swift | `#11-stage-10--load-it-in-swift` |
+| 9. Stages 6–7 — convert, rewrite, save the bundle | `#9-stages-67--convert-rewrite-save-the-bundle` |
+| 10. Stage 8 — AOT-compile per architecture | `#10-stage-8--aot-compile-per-architecture` |
+| 11. Stage 9 — load it in Swift | `#11-stage-9--load-it-in-swift` |
 | 12. The community porting playbook, as a checklist | `#12-the-community-porting-playbook-as-a-checklist` |
 | 13. The hybrid / SSM wall | `#13-the-hybrid--ssm-wall` |
 | 14. Performance context, attributed | `#14-performance-context-attributed` |

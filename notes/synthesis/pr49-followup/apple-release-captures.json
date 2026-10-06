@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-10-06T19:39:10.218273+00:00",
+  "captures": [
+    {
+      "sourceUrl": "https://developer.apple.com/news/releases/",
+      "path": "releases.html",
+      "bytes": 215897,
+      "sha256": "27debc882dca4776affce372c713c9d9633f284d0bba64024800c19f919743ad"
+    },
+    {
+      "sourceUrl": "https://developer.apple.com/xcode/system-requirements",
+      "path": "xcode-system-requirements.html",
+      "bytes": 143015,
+      "sha256": "096c7ee6ea4e680affd4405005181c45b18cc965f05c15bc89a8f6a284fa50dd"
+    }
+  ]
+}

@@ -2237,7 +2237,8 @@ Its docstring documents two modes (`model=` end-to-end, or a pre-converted `core
 `torch_out=`), and notes the default `atol=1e-2` exists *"because FP16 accuracy is flaky"*.
 
 This lives in the repo's `tests/` package rather than the installed wheel, so you either vendor it or
-reimplement the twenty lines it wraps: export → decompose → register → convert → optimize →
+adapt its historical 0.4.1 workflow for 0.4.3: export → decompose → register → convert
+(successful exit from `with module:` runs the rewrite before `AIProgram(module)` is returned) →
 `save_asset` → `executable()` → `load_function` → `await function(...)` → compare against the torch
 reference.
 

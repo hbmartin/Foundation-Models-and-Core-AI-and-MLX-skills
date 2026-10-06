@@ -3,7 +3,7 @@
 Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
 
 <!-- current-state:next-beta:start -->
-Current installed baseline: Xcode 27.0 `27A5237l`, macOS 27.0 `26A428`, macOS SDK `26A5406c`, iOS SDK `24A5408c`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 beta `27B5019j`, iOS 27.2 beta `24B5084k`, and macOS 27.2 beta `26B5086k`. Installed Xcode build 27A5237l differs from observed build 27B5019j. Installed macOS build 26A428 differs from observed build 26B5086k. Installed iOS Simulator build 24A5408d differs from observed build 24B5084k.
+Current installed baseline: Xcode 27.0 `27A266a`, macOS 27.0 `26A428`, macOS SDK `26A425`, iOS SDK `24A430`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 beta 2 `27B5028f`, iOS 27.2 beta 3 `24B5099f`, and macOS 27.2 beta 3 `26B5101f`. Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
 <!-- current-state:next-beta:end -->
 
 SDK dumps are committed in `notes/sdk-interfaces/`. Companion docs:

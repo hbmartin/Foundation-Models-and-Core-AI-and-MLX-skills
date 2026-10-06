@@ -185,3 +185,12 @@ fences, actual prior guide wording, and a subprocess timeout with 800 parenthesi
 Final repository checks are recorded in [validation.md](validation.md). Generated indexes, skills,
 callout classifications and Swift verification line records are reconciled in the final delivery
 commit; unchanged Swift compiler verdicts are carried only with matching identity/content hash.
+
+## PR #49 follow-up evidence boundary
+
+The original 24-fixture runtime records and 341-group/125-call audits above are retained as
+historical measurements of the original refresh. The current follow-up is recorded separately
+in [pr49-followup](../pr49-followup/README.md): 26 fixtures per native profile, 142 Python
+fences / 130 statically resolved calls, and current section/fence hashes. Only the named
+compression fixture body changed (PAT schedule coverage); all other Part 9 fence bodies retain
+their reviewed hashes. The follow-up records the source and trusted runner commits explicitly.

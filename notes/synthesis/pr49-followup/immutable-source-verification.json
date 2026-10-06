@@ -1,0 +1,26 @@
+[
+  {
+    "repository": "apple/coreai-torch",
+    "revision": "b51fd006d978b6db7debef2566a373e258d91ba4",
+    "checkedAt": "2026-10-06T19:35:14.701555+00:00",
+    "checkedBlobs": 186,
+    "missing": [],
+    "mismatches": []
+  },
+  {
+    "repository": "apple/coreai-optimization",
+    "revision": "189612be60bc1d5cca9b73ad8811660f738c637d",
+    "checkedAt": "2026-10-06T19:35:14.744087+00:00",
+    "checkedBlobs": 382,
+    "missing": [],
+    "mismatches": []
+  },
+  {
+    "repository": "apple/coreai-models",
+    "revision": "db63a2d897b5df8adfe521ff0c20babba3500c11",
+    "checkedAt": "2026-10-06T19:35:15.153147+00:00",
+    "checkedBlobs": 605,
+    "missing": [],
+    "mismatches": []
+  }
+]

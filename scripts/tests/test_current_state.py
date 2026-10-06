@@ -230,6 +230,8 @@ class CurrentStateTests(unittest.TestCase):
         old_which = STATE.shutil.which
         try:
             def fake_run(*args, **kwargs):
+                if args == ("xcode-select", "-p"):
+                    return "/selected/Developer", None
                 if args[:4] == ("xcrun", "simctl", "list", "runtimes"):
                     return "== Runtimes ==\nunrecognized runtime format", None
                 return "", "simulated unavailable command"

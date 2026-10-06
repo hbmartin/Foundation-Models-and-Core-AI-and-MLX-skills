@@ -7,6 +7,7 @@ the Linux CI runner (same pattern as test_index_tooling.py).
 """
 
 import importlib.util
+import json
 import os
 import pathlib
 import subprocess
@@ -248,6 +249,43 @@ class CommittedResultsTests(unittest.TestCase):
             for row in rows
         ]
         self.assertEqual(actual, expected)
+
+    def test_target_provenance_matches_current_body_and_target_verdicts(self):
+        root = pathlib.Path(REPO_ROOT)
+        document = json.loads((root / "notes/snippet-verification/target-provenance.json").read_text())
+        records = {(r["file"], r["snippet_id"]): r for r in document["records"]}
+        prior = VS.read_prior_results(root / "notes/snippet-verification/results.tsv")
+        fences, errors = VS.extract_fences(str(root / "guides"))
+        self.assertEqual(errors, [])
+        columns = {"26": "v26", "27": "v27", "sim27": "vsim27",
+                   "27-on-26": "v27on26", "sim27-on-26": "vsim27on26"}
+        expected = set()
+        historical = 0
+        for fence in fences:
+            identity, digest = VS.fence_identity(fence)
+            key = (fence.rel_path, identity)
+            row = prior[key]
+            self.assertEqual(row["content_hash"], digest)
+            target_names = {name for name, col in columns.items() if row[col] != "-"}
+            if not target_names:
+                continue
+            expected.add(key)
+            record = records[key]
+            self.assertEqual(record["content_hash"], digest)
+            self.assertEqual(set(record["targets"]), target_names)
+            for name, evidence in record["targets"].items():
+                self.assertEqual(evidence["verdict"], row[columns[name]])
+                if evidence["kind"] == "historical-unchanged":
+                    historical += 1
+                    self.assertEqual(name, "26")
+                    self.assertEqual(evidence["freshCoverage"], "unavailable")
+                    self.assertEqual(evidence["sdkVersion"].split(".")[0], "26")
+                else:
+                    self.assertEqual(evidence["kind"], "fresh")
+                    self.assertEqual(evidence["toolchain"]["sdk_version"].split(".")[0], "27")
+        self.assertEqual(expected, set(records))
+        self.assertEqual(historical, 5)
+
 
 
 class MarkerTests(unittest.TestCase):

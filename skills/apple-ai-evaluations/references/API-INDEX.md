@@ -41,9 +41,9 @@
 | `Evaluation` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.README](part-06-evaluations/README.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `Evaluation.run(info:)` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `EvaluationResult` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
+| `EvaluationResult.errors` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluationResult.saveJSON(to:)` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md) |
 | `Evaluations` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
-| `Evaluations.framework` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `Evaluations.StructuredTranscript` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `Evaluator` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.README](part-06-evaluations/README.md) |
 
@@ -127,7 +127,7 @@
 | `Energy` | ✓ | ✓ | [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) |
 | `EntityIdentifier` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `EvaluationContext.current.result` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
-| `EvaluationError` |  | ✓ | [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
+| `EvaluationError.metricsNotFound` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluationError.missingTranscript` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `EvaluatorError` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluatorProtocol` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
