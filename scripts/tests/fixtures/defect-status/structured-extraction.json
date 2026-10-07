@@ -114,7 +114,7 @@
   "sightings": [
     {
       "claimDate": null,
-      "claimText": "The `mlx` merged PRs #62 and",
+      "claimText": "The `mlx` merged PRs #62 and #74",
       "claimedState": "MERGED",
       "confidence": 0.75,
       "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",
@@ -129,7 +129,7 @@
     },
     {
       "claimDate": null,
-      "claimText": "#74",
+      "claimText": "The `mlx` merged PRs #62 and #74",
       "claimedState": "MERGED",
       "confidence": 0.75,
       "context": "The `mlx` merged PRs #62 and #74, while issue #85 remains open as of **2026-08-01**.",

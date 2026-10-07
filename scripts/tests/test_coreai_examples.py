@@ -59,6 +59,9 @@ class CoreAIExampleTests(unittest.TestCase):
             "square inputs exposed the bug, while unequal (17×23) inputs hid it",
             "square inputs miscompiled; rectangular 17×23 inputs passed",
             "equal-length inputs failed, but unequal-length inputs were correct",
+            "Square inputs did not hide the bug; rectangular inputs did not expose it",
+            "The bug was exposed by square inputs and hidden by rectangular inputs",
+            "The bug was not hidden by square inputs; it was not exposed by rectangular inputs",
         ):
             with self.subTest(text=text):
                 self.assertEqual([], contract_errors(text, "issue49"))
@@ -66,6 +69,7 @@ class CoreAIExampleTests(unittest.TestCase):
             "square inputs were correct, while unequal (17×23) inputs exposed the bug",
             "square inputs hid the bug and rectangular 17x23 inputs failed",
             "equal-length inputs passed; unequal-length inputs miscompiled",
+            "The bug was hidden by square inputs and exposed by rectangular inputs",
         ):
             with self.subTest(text=text):
                 self.assertTrue(contract_errors(text, "issue49"))
@@ -80,11 +84,17 @@ class CoreAIExampleTests(unittest.TestCase):
             "save_asset will fail if MyModel.aimodel already exists",
             "save_asset will not replace MyModel.aimodel because it cannot overwrite",
             "save_asset will not\noverwrite the destination",
+            "Assets don't overwrite existing destinations",
+            "The converter didn’t overwrite the asset",
+            "Existing destinations aren't overwritten",
         ):
             with self.subTest(text=text):
                 self.assertTrue(contract_errors(text, "overwrite"))
         for text in ("Note: b3 will overwrite the destination", "It does not merge. It overwrites.",
-                     "It will fail during conversion. The asset already exists."):
+                     "It will fail during conversion. The asset already exists.",
+                     "- Do not optimize the program\n- save_asset overwrites an existing destination",
+                     "1. Do not optimize the program\n2. save_asset overwrites an existing destination",
+                     "The program is not optimized; the destination is overwritten"):
             with self.subTest(text=text):
                 self.assertEqual([], contract_errors(text, "overwrite"))
 

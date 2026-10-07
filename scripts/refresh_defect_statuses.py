@@ -57,11 +57,12 @@ CLAIM_PATTERNS = (
     (re.compile(r"\bopen(?:ed)?\b", re.IGNORECASE), "OPEN"),
 )
 RE_NEGATED = re.compile(
-    r"(?:\b(?:not|never|no)|n['’]t)(?:\s+(?:currently|still|longer|yet))*[\s`'\"*]*$",
+    r"(?:\b(?:not|never|no)|n['’]t)(?:\s+(?:currently|still|longer|yet|been))*[\s`'\"*]*$",
     re.IGNORECASE,
 )
 RE_CLAUSE_BOUNDARY = re.compile(
-    r"(?:[.;](?:\s+|$)|,\s*(?=(?:while|whereas|but)\b)|"
+    r"(?:[.;](?:\s+|$)|\n(?=\s*(?:>\s*)*(?:[-*+]\s|\d+[.)]\s))|"
+    r",\s*(?=(?:while|whereas|but)\b)|"
     r"\b(?:while|whereas|but)\b|,\s+and\s+(?=(?:issues?|PRs?|pull requests?|bugs?)\b))",
     re.IGNORECASE,
 )
@@ -225,93 +226,150 @@ def clause_for_offset(text: str, offset: int) -> tuple[int, int]:
     return 0, len(text)
 
 
-def reference_claim_bounds(text: str, reference_start: int, reference_end: int) -> tuple[int, int]:
-    """Keep semantic claim text separate from the centered display context."""
-    clause_start, clause_end = clause_for_offset(text, reference_start)
-    # Bound association at every neighboring reference, including URL forms.
-    spans = sorted({(m.start(), m.end()) for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE)
-                    for m in pattern.finditer(text)})
-    previous = [end for start, end in spans if end <= reference_start]
-    following = [start for start, end in spans if start >= reference_end]
-    before_start = max([clause_start, *previous])
-    after_end = min([clause_end, *following])
-    if before_start > clause_start:
-        # The prose after a preceding reference belongs to that reference. A
-        # conjunction can introduce this reference's own prefix ("and merged
-        # PR #18"), but the preceding reference's date must not travel with it.
-        joins = list(re.finditer(r"\b(?:and|or)\b", text[before_start:reference_start], re.I))
-        before_start = before_start + joins[-1].end() if joins else reference_start
-    return before_start, after_end
+RE_REFERENCE_JOIN = re.compile(
+    r"(?!.*[,/][\s*`\\]*(?:PR|issue|pull request|bug)\b)"
+    r"(?:[\s,*`\\/]|\b(?:and|or|PRs?|issues?|pull requests?|bugs?)\b)+", re.I | re.S
+)
+RE_DIRECT_PREFIX = re.compile(
+    r"\b(?:merged|landed|closed|open(?:ed)?)\b"
+    r"[\s*`\\]*(?:(?:PRs?|issues?|pull requests?|bugs?)[\s*`\\]*)?$", re.I
+)
 
 
-def state_with_negation(state: str, prefix: str) -> str | None:
-    if not RE_NEGATED.search(prefix):
-        return state
-    return {"CLOSED": "OPEN", "OPEN": "CLOSED"}.get(state)
+class ClaimScope:
+    """A reference's local predicates and explicitly shared metadata."""
+
+    def __init__(self, before: str, after: str, claim_text: str, claim_date: str | None):
+        self.before, self.after = before, after
+        self.claim_text, self.claim_date = claim_text, claim_date
+
+    @staticmethod
+    def scan(segment: str, before: bool = False) -> list[tuple[int, str, bool]]:
+        found = []
+        for pattern, state in CLAIM_PATTERNS:
+            for match in pattern.finditer(segment):
+                prefix = segment[max(0, match.start() - 60):match.start()]
+                distance = len(segment) - match.end() if before else match.start()
+                found.append((distance, state, bool(RE_NEGATED.search(prefix))))
+        return found
+
+    def state_words(self) -> list[tuple[int, str, bool]]:
+        """Include negation for focused guards, without inferring its opposite."""
+        return self.scan(self.after[:80]) or self.scan(self.before[-40:], before=True)
+
+    def claim(self) -> tuple[str | None, float, list[dict[str, str]]]:
+        candidates = [(distance, state) for distance, state, negated in self.scan(self.after[:80])
+                      if not negated]
+        direction = "after"
+        if not candidates:
+            candidates = [(distance, state) for distance, state, negated in
+                          self.scan(self.before[-40:], before=True) if not negated]
+            direction = "before"
+        if not candidates:
+            return None, 1.0, []
+        chosen = min(candidates, key=lambda item: item[0])[1]
+        if len({state for _, state in candidates}) == 1:
+            return chosen, 0.9, []
+        return chosen, 0.6, [{
+            "code": "multiple-state-words",
+            "message": f"Bounded {direction}-reference window contains multiple state words; "
+                       f"selected nearest state {chosen}.",
+        }]
+
+
+class ParagraphClaims:
+    """Parse once; associate states, dates, and prose with normalized references."""
+
+    def __init__(self, text: str, references=None, dates=None):
+        self.text = text
+        self.clauses = clause_spans(text)
+        self.dates = dates if dates is not None else [
+            (m.start(), m.group(1)) for m in RE_AS_OF.finditer(text)]
+        if references is None:
+            references = []
+            for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
+                for match in pattern.finditer(text):
+                    if any(match.start() < end and match.end() > start
+                           for start, end, _, _ in references):
+                        continue
+                    if pattern is RE_URL:
+                        repository, number = match.group(1), int(match.group(3))
+                    elif pattern is RE_OWNER:
+                        repository, number = match.group(1), int(match.group(2))
+                    elif pattern is RE_ADJACENT:
+                        repository, number = ALIASES[match.group(1)], int(match.group(2))
+                    else:
+                        repository, number = None, int(match.group(1))
+                    references.append((match.start(), match.end(), repository, number))
+        self.references = sorted(references)
+        self.scopes: dict[tuple[int, int], ClaimScope] = {}
+
+    def scope(self, reference_start: int, reference_end: int) -> ClaimScope:
+        key = (reference_start, reference_end)
+        if key in self.scopes:
+            return self.scopes[key]
+        index = next(i for i, (start, end, _, _) in enumerate(self.references)
+                     if start <= reference_start < end)
+        clause_start, clause_end = next(
+            (start, end) for start, end in self.clauses if start <= reference_start <= end)
+        left = right = index
+        while left > 0 and self.references[left - 1][0] >= clause_start:
+            if not RE_REFERENCE_JOIN.fullmatch(self.text[self.references[left - 1][1]:self.references[left][0]]):
+                break
+            left -= 1
+        while right + 1 < len(self.references) and self.references[right + 1][0] < clause_end:
+            if not RE_REFERENCE_JOIN.fullmatch(self.text[self.references[right][1]:self.references[right + 1][0]]):
+                break
+            right += 1
+        group_start, group_end = self.references[left][0], self.references[right][1]
+        previous = self.references[left - 1] if left > 0 and self.references[left - 1][0] >= clause_start else None
+        following = self.references[right + 1] if right + 1 < len(self.references) else None
+        before_start = previous[1] if previous else clause_start
+        after_end = min(clause_end, following[0]) if following else clause_end
+        if following and following[0] < clause_end:
+            next_prefix = RE_DIRECT_PREFIX.search(self.text[group_end:after_end])
+            if next_prefix:
+                after_end = group_end + next_prefix.start()
+        direct = None
+        if previous:
+            prefix = self.text[before_start:group_start]
+            joins = list(re.finditer(r"\b(?:and|or)\b", prefix, re.I))
+            direct = RE_DIRECT_PREFIX.search(prefix)
+            if direct:
+                # Preserve a state immediately before this reference. Earlier
+                # state words in the gap still belong to the preceding reference.
+                prior_states = [m for pattern, _ in CLAIM_PATTERNS for m in pattern.finditer(prefix)
+                                if m.end() <= direct.start()]
+                before_start += max((m.end() for m in prior_states), default=0)
+                if joins and joins[-1].end() <= direct.start():
+                    before_start = max(before_start, previous[1] + joins[-1].end())
+            elif joins:
+                before_start += joins[-1].end()
+            else:
+                before_start = group_start
+        first = next(r for r in self.references if clause_start <= r[0] < clause_end)
+        leading_dates = [d for d in self.dates if clause_start <= d[0] < first[0]]
+        local_dates = [d for d in self.dates if max(before_start, first[0]) <= d[0] < after_end]
+        claim_date = nearest(local_dates or leading_dates, reference_start)
+        claim_text = self.text[before_start:after_end]
+        if leading_dates and before_start > first[0]:
+            claim_text = self.text[clause_start:first[0]] + " " + claim_text
+        before = self.text[before_start:group_start] if not previous or direct else ""
+        scope = ClaimScope(before, self.text[group_end:after_end],
+                           " ".join(claim_text.split()), claim_date)
+        self.scopes[key] = scope
+        return scope
+
+    def matching_scopes(self, repository: str, number: int) -> list[ClaimScope]:
+        return [self.scope(start, end) for start, end, repo, num in self.references
+                if num == number and repo in (None, repository)]
 
 
 def claim_in_clause(
     text: str, reference_start: int, reference_end: int
 ) -> tuple[str | None, float, list[dict[str, str]]]:
-    clause_start, clause_end = clause_for_offset(text, reference_start)
-    before_start, after_end = reference_claim_bounds(text, reference_start, reference_end)
-
-    def scan(segment: str, distance_from_match: Any) -> list[tuple[int, str]]:
-        found: list[tuple[int, str]] = []
-        for pattern, state in CLAIM_PATTERNS:
-            for match in pattern.finditer(segment):
-                prefix = segment[max(0, match.start() - 60) : match.start()]
-                claimed = state_with_negation(state, prefix)
-                if claimed is not None:
-                    found.append((distance_from_match(match), claimed))
-        return found
-
-    # Guide prose overwhelmingly states a reference's state after it. Preserve
-    # that precedence, but keep both directions bounded inside the same clause
-    # so a status attached to a neighbouring reference cannot leak arbitrarily.
-    after_segment = text[reference_end : min(after_end, reference_end + 80)]
-    candidates = scan(after_segment, lambda match: match.start())
-    direction = "after"
-    if not candidates:
-        before_segment = text[max(before_start, reference_start - 40) : reference_start]
-        if before_start > clause_start:
-            # Between references a state belongs to the previous reference unless
-            # it directly prefixes this reference (e.g. "and merged PR #18").
-            before_segment = re.sub(
-                r"(?is)^.*?\b(merged|landed|closed|open(?:ed)?)\b(?![\s*`\\]*(?:(?:PR|issue|pull request)[\s*`\\]*)?$).*$",
-                "", before_segment,
-            )
-        candidates = scan(before_segment, lambda match: len(before_segment) - match.end())
-        direction = "before"
-    if not candidates:
-        # An explicit plural list shares its prefix state until prose/type changes.
-        prefixes = list(re.finditer(r"\b(merged|landed|closed|open)\s+(?:PRs|issues|pull requests)\b",
-                                    text[clause_start:reference_start], re.I))
-        if prefixes:
-            prefix = prefixes[-1]
-            preceding = text[clause_start + max(0, prefix.start() - 60):clause_start + prefix.start()]
-            tail = text[clause_start + prefix.end():reference_start]
-            for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
-                tail = pattern.sub("", tail)
-            tail = re.sub(r"\b(?:and|or)\b", "", tail, flags=re.I)
-            if not tail.strip(" \n\t,/*`\\"):
-                word = prefix.group(1).upper()
-                state = "MERGED" if word == "LANDED" else word
-                return state_with_negation(state, preceding), 0.9, []
-        return None, 1.0, []
-    states = {state for _, state in candidates}
-    chosen = min(candidates, key=lambda item: item[0])[1]
-    if len(states) == 1:
-        return chosen, 0.9, []
-    return chosen, 0.6, [
-        {
-            "code": "multiple-state-words",
-            "message": (
-                f"Bounded {direction}-reference window contains multiple state words; "
-                f"selected nearest state {chosen}."
-            ),
-        }
-    ]
+    """Compatibility entrypoint; extraction reuses its paragraph analysis."""
+    return ParagraphClaims(text).scope(reference_start, reference_end).claim()
 
 
 def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
@@ -374,15 +432,14 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         diagnostics,
                     )
 
+            analysis = ParagraphClaims(text, [(r[0], r[1], r[2], r[3]) for r in references], dates)
+
             # Keep the legacy extraction order: URLs, owner/repo refs, adjacent
             # repo refs, then bare refs, each in regex encounter order.
             for offset, end, repository, number, form, map_confidence, diagnostics, reference_kind in references:
-                claimed_state, claim_confidence, claim_diagnostics = claim_in_clause(
-                    text, offset, end
-                )
-                claim_start, claim_end = reference_claim_bounds(text, offset, end)
-                clause_dates = [date for date in dates if claim_start <= date[0] < claim_end]
-                claim_date = nearest(clause_dates, offset)
+                scope = analysis.scope(offset, end)
+                claimed_state, claim_confidence, claim_diagnostics = scope.claim()
+                claim_date = scope.claim_date
                 context_width = 240
                 reference_width = end - offset
                 left_budget = max(0, (context_width - reference_width) // 2)
@@ -400,7 +457,7 @@ def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
                         "referenceKind": reference_kind,
                         "claimedState": claimed_state,
                         "claimDate": claim_date,
-                        "claimText": " ".join(text[claim_start:claim_end].split()),
+                        "claimText": scope.claim_text,
                         "context": " ".join(text[context_start:context_end].split()),
                         "confidence": round(min(map_confidence, claim_confidence), 2),
                         "diagnostics": diagnostics + claim_diagnostics,

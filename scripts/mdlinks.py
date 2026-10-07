@@ -137,12 +137,15 @@ def split_destination(inner: str) -> tuple[str, str, bool] | None:
     return remainder[:end], leading + remainder[end:], False
 
 
+def valid_fence_opener(line: str, match: re.Match[str] | None) -> bool:
+    """Validate an existing match without changing the caller's quote policy."""
+    return bool(match and (match[1][0] == "~" or "`" not in line[match.end(1):]))
+
+
 def fence_opener(line: str) -> re.Match[str] | None:
     """CommonMark backtick info strings cannot themselves contain backticks."""
     match = FENCE.match(line)
-    if match and match[1][0] == "`" and "`" in line[match.end():]:
-        return None
-    return match
+    return match if valid_fence_opener(line, match) else None
 
 
 def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
@@ -159,8 +162,7 @@ def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
         newline = raw[len(body) :]
         match = FENCE.match(body)
         if fence is None:
-            match = fence_opener(body)
-            if match:
+            if valid_fence_opener(body, match):
                 fence = match.group(1)
                 yield body, newline, True
                 continue

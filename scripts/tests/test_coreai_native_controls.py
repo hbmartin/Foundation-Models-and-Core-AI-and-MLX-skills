@@ -5,6 +5,8 @@ from contextlib import nullcontext
 import importlib.metadata
 import inspect
 import json
+import os
+import stat
 from pathlib import Path
 import subprocess
 import sys
@@ -28,7 +30,7 @@ def guide_function(example_id, name, namespace):
 
 
 class NativeRecordingTests(unittest.TestCase):
-    def run_setup(self, *, compression=False, missing=None, command_failure=None, native_error=None):
+    def run_setup(self, *, compression=False, missing=None, command_failure=None, native_error=None, fixture_error=None):
         with tempfile.TemporaryDirectory() as folder:
             output = Path(folder) / 'record.json'
             argv = ['verifier', '--source-repo', '/unused', '--reviewed-revision', 'a' * 40,
@@ -38,6 +40,16 @@ class NativeRecordingTests(unittest.TestCase):
             blobs = dict.fromkeys(('scripts/verify_coreai_examples.py',
                                   'scripts/coreai_examples.py', 'scripts/mdlinks.py'), b'fixture')
             queried = []
+            examples = dict.fromkeys(names)
+            native_modules = {}
+            if fixture_error is not None:
+                code = ("import asyncio\n"
+                        "def convert_state_model(path): return None, None\n"
+                        f"async def verify_state_asset(*args, **kwargs): raise asyncio.{type(fixture_error).__name__}('fixture cancelled')\n")
+                examples['state-protocol'] = SimpleNamespace(code=code, line=1, path=Path('state-fixture.py'))
+                native_modules = {'numpy': SimpleNamespace(int64=int, float32=float, bool_=bool,
+                    array=lambda x: x, int32=int), 'torch': SimpleNamespace(),
+                    'coreai_torch': SimpleNamespace(TorchConverter=None, get_decomp_table=None)}
 
             def version(name):
                 queried.append(name)
@@ -53,23 +65,31 @@ class NativeRecordingTests(unittest.TestCase):
             real_import = __import__
 
             def stop_native_import(name, *args, **kwargs):
-                if name == 'numpy':
+                if name == 'numpy' and fixture_error is None:
                     raise native_error or RuntimeError('portable test stops before native execution')
                 return real_import(name, *args, **kwargs)
 
             with mock.patch.object(sys, 'argv', argv), \
                     mock.patch.object(verifier, 'approved_snapshots', return_value=('b' * 40, blobs, {})), \
                     mock.patch.object(verifier, 'load_trusted_reader'), \
-                    mock.patch.object(verifier, 'snapshot_examples', return_value=dict.fromkeys(names)), \
+                    mock.patch.object(verifier, 'snapshot_examples', return_value=examples), \
                     mock.patch.object(verifier.platform, 'platform', return_value='fixture-os'), \
                     mock.patch.object(verifier.importlib.metadata, 'version', side_effect=version), \
                     mock.patch.object(verifier.subprocess, 'check_output', side_effect=command), \
+                    mock.patch.dict(sys.modules, native_modules), \
                     mock.patch('builtins.__import__', side_effect=stop_native_import):
-                status = verifier.main()
-            self.assertEqual(status, 130 if isinstance(native_error, KeyboardInterrupt) else 1)
+                escaping = fixture_error or native_error
+                propagates = isinstance(escaping, BaseException) and not isinstance(
+                    escaping, (Exception, KeyboardInterrupt, SystemExit))
+                if propagates:
+                    with self.assertRaises(type(escaping)):
+                        verifier.main()
+                else:
+                    status = verifier.main()
+                    self.assertEqual(status, 130 if isinstance(native_error, KeyboardInterrupt) else 1)
             record = json.loads(output.read_text())
             self.assertEqual(record['source_revision'], 'a' * 40)
-            if isinstance(native_error, KeyboardInterrupt):
+            if propagates or isinstance(native_error, KeyboardInterrupt):
                 self.assertEqual(record['run_status'], 'interrupted')
             else:
                 self.assertEqual(record['fixtures'][-1]['outcome'], 'FAIL')
@@ -112,6 +132,18 @@ class NativeRecordingTests(unittest.TestCase):
     def test_setup_keyboard_interrupt_is_recorded(self):
         self.run_setup(native_error=KeyboardInterrupt())
 
+    def test_setup_cancellation_and_other_base_exceptions_finalize_before_propagating(self):
+        for error in (asyncio.CancelledError('setup cancelled'), GeneratorExit('setup stopped')):
+            with self.subTest(error=type(error).__name__):
+                record, _ = self.run_setup(native_error=error)
+                self.assertEqual(record['fixtures'], [])
+
+    def test_fixture_cancellation_retains_completed_results_and_skips_remaining_fixtures(self):
+        record, _ = self.run_setup(fixture_error=asyncio.CancelledError())
+        self.assertEqual([f['name'] for f in record['fixtures']], ['NumPy scalar/array fixture details'])
+        self.assertEqual(record['fixtures'][0]['outcome'], 'PASS')
+        self.assertEqual(set(record['examples']), {'state-protocol'})
+
     def test_range_validation_survives_optimized_python_before_asset_load(self):
         script = '''
 import ast,asyncio,json
@@ -153,6 +185,24 @@ class CheckpointTests(unittest.TestCase):
             self.assertEqual([x['outcome'] for x in saved['fixtures']], ['PASS', 'FAIL', 'FAIL', 'FAIL', 'PASS'])
             self.assertIn('serialization failed', saved['fixtures'][1]['details'])
             self.assertIn('SystemExit: 0', saved['fixtures'][3]['details'])
+
+    def test_publication_preserves_existing_mode_and_new_file_umask(self):
+        with tempfile.TemporaryDirectory() as folder:
+            existing = Path(folder) / 'existing.json'
+            existing.write_text('{}')
+            existing.chmod(0o640)
+            verifier.publish_record(existing, {'fixtures': []})
+            self.assertEqual(stat.S_IMODE(existing.stat().st_mode), 0o640)
+            for mask in (0o022, 0o077):
+                previous_umask = os.umask(mask)
+                try:
+                    output = Path(folder) / f'new-{mask}.json'
+                    verifier.publish_record(output, {'fixtures': []})
+                finally:
+                    os.umask(previous_umask)
+                self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o666 & ~mask)
+                self.assertEqual(json.loads(output.read_text()), {'fixtures': []})
+            self.assertFalse(any(p.name.startswith('.') for p in Path(folder).iterdir()))
 
     def test_supported_numpy_values_paths_and_tuples(self):
         # Portable facsimiles exercise the optional NumPy adapter. Both native

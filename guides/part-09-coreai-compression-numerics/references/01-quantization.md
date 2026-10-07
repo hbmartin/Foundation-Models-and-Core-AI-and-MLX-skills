@@ -3967,11 +3967,13 @@ def compression_fixtures(work):
         protected_exp = next(n for n in safe.graph.nodes if n.target == torch.ops.aten.exp.default)
         protected_log = next(n for n in safe.graph.nodes if n.target == torch.ops.aten.log1p.default)
         entry = protected_exp.args[0]
-        assert entry.target == torch.ops.aten._to_copy.default and entry.kwargs["dtype"] == torch.float32
-        assert entry.args[0].meta["val"].dtype == torch.float16
-        assert protected_log.args[0] is protected_exp
-        exit = next(iter(protected_log.users))
-        assert exit.target == torch.ops.aten._to_copy.default and exit.kwargs["dtype"] == torch.float16
+        assert entry.target == torch.ops.aten._to_copy.default and entry.kwargs["dtype"] == torch.float32, "overflow entry cast incorrect"
+        assert entry.args[0].meta["val"].dtype == torch.float16, "overflow entry input was not lowered"
+        assert protected_log.args[0] is protected_exp, "protected overflow ops are disconnected"
+        exits = list(protected_log.users)
+        assert len(exits) == 1, "overflow log1p must have exactly one user"
+        exit_cast = exits[0]
+        assert exit_cast.target == torch.ops.aten._to_copy.default and exit_cast.kwargs["dtype"] == torch.float16, "overflow exit cast incorrect"
         for graph in (overflow, safe):
             placeholder = next(n for n in graph.graph.nodes if n.op == "placeholder")
             assert placeholder.meta["val"].dtype == torch.float16

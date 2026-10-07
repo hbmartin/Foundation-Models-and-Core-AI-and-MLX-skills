@@ -18,6 +18,7 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import stat
 import traceback
 import tempfile
 
@@ -218,8 +219,15 @@ def publish_record(path, record):
     temporary = None
     try:
         payload = json.dumps(record, indent=2, allow_nan=False) + "\n"
+        try:
+            publish_mode = stat.S_IMODE(path.stat().st_mode)
+        except FileNotFoundError:
+            current_umask = os.umask(0)
+            os.umask(current_umask)
+            publish_mode = 0o666 & ~current_umask
         descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            os.fchmod(handle.fileno(), publish_mode)
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
@@ -340,6 +348,8 @@ def main():
         return recorder.check(name, fn, expected_error)
 
     interrupted = False
+    publication_failed = False
+    finish_status = 1
     try:
         record["os"] = platform.platform()
         record["os_build"] = subprocess.check_output(["sw_vers", "-buildVersion"], text=True).strip()
@@ -460,6 +470,34 @@ def main():
                 return original_cast(ep, **kwargs)
             check("casting overflow graph no-op rejected", lambda: substituted_cast(skip_overflow_cast),
                   expected_error=(AssertionError, "overflow graph computation was not lowered"))
+            def corrupt_overflow_cast(ep, defect, **kwargs):
+                overflow = any(n.target == torch.ops.aten.log1p.default for n in ep.graph.nodes)
+                if overflow and kwargs.get("ignored_ops") and defect == "exclusions":
+                    return original_cast(ep)
+                result = original_cast(ep, **kwargs)
+                if not overflow or not kwargs.get("ignored_ops"):
+                    return result
+                exp = next(n for n in ep.graph.nodes if n.target == torch.ops.aten.exp.default)
+                log = next(n for n in ep.graph.nodes if n.target == torch.ops.aten.log1p.default)
+                if defect == "entry":
+                    exp.args[0].kwargs = {**exp.args[0].kwargs, "dtype": torch.float16}
+                elif defect == "exit":
+                    exit_cast = next(iter(log.users))
+                    exit_cast.kwargs = {**exit_cast.kwargs, "dtype": torch.float32}
+                elif defect == "extra-user":
+                    with ep.graph.inserting_after(log):
+                        ep.graph.call_function(torch.ops.aten._to_copy.default,
+                                               args=(log,), kwargs={"dtype": torch.float16})
+                return result
+            for defect, diagnostic in (
+                ("exclusions", "overflow graph exclusion was ignored"),
+                ("entry", "overflow entry cast incorrect"),
+                ("exit", "overflow exit cast incorrect"),
+                ("extra-user", "overflow log1p must have exactly one user"),
+            ):
+                check(f"casting overflow {defect} rejected", lambda defect=defect: substituted_cast(
+                    lambda ep, **kwargs: corrupt_overflow_cast(ep, defect, **kwargs)),
+                    expected_error=(AssertionError, diagnostic))
             composite = load("composite-quantization")
             check("graph composite quantization", lambda: composite["composite_fixture"](work))
             check("inert standalone composite rejected", lambda: standalone_composite_check(
@@ -467,17 +505,22 @@ def main():
                 expected_error=(AssertionError, "standalone composite entrypoint did not create an asset"))
             check("standalone composite invocation", lambda: standalone_composite_check(work, load, composite))
     except RecordWriteError as error:
+        publication_failed = True
         print(error, file=sys.stderr)
-        return 1
     except KeyboardInterrupt:
         interrupted = True
     except (Exception, SystemExit):
         record["fixtures"].append({"name": "setup", "outcome": "FAIL", "details": traceback.format_exc()})
-    try:
-        return recorder.finish(interrupted=interrupted)
-    except RecordWriteError as error:
-        print(error, file=sys.stderr)
-        return 1
+    except BaseException:
+        interrupted = True
+        raise
+    finally:
+        if not publication_failed:
+            try:
+                finish_status = recorder.finish(interrupted=interrupted)
+            except RecordWriteError as error:
+                print(error, file=sys.stderr)
+    return finish_status
 
 
 if __name__ == "__main__":

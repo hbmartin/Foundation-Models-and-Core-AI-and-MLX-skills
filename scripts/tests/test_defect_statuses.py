@@ -20,17 +20,52 @@ FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "defect-status"
 
 
 class DefectStatusGoldenTests(unittest.TestCase):
-    def test_negated_states_preserve_the_actual_assertion(self):
-        for phrase, expected in (
-            ("isn't yet closed", "OPEN"), ("isn’t currently closed", "OPEN"),
-            ("isn't currently open", "CLOSED"), ("isn’t currently still open", "CLOSED"),
-            ("is no longer open", "CLOSED"), ("is not yet merged", None),
-            ("hasn’t yet landed", None), ("was not open", "CLOSED"),
+    def test_negated_states_do_not_infer_their_opposite(self):
+        for phrase in (
+            "isn't yet closed", "isn’t currently closed", "isn't currently open",
+            "isn’t currently still open", "is no longer open", "is not yet merged",
+            "hasn’t yet landed", "was not open", "hasn't been closed",
+            "has not yet been closed", "has never been closed",
         ):
             text = 'coreai-torch#49 ' + phrase
             start = text.index('#49')
             with self.subTest(phrase=phrase):
-                self.assertEqual(reporter.claim_in_clause(text, start, start + 3)[0], expected)
+                self.assertEqual(reporter.claim_in_clause(text, start, start + 3), (None, 1.0, []))
+
+    def test_negated_closed_does_not_conflict_with_merged(self):
+        text = 'coreai-torch PR #18 was merged, not closed'
+        start = text.index('#18')
+        state, confidence, diagnostics = reporter.claim_in_clause(text, start, start + 3)
+        self.assertEqual((state, confidence, diagnostics), ('MERGED', 0.9, []))
+        self.assertEqual(reporter.verdict({'state': 'MERGED', 'kind': 'PR'}, [state],
+                                        None, confidence, diagnostics), 'UNCHANGED')
+
+    def test_lists_share_predicates_and_metadata_but_individual_claims_do_not(self):
+        fixtures = (
+            ('As of 2026-08-01, coreai-torch#49 and coreai-torch#51 remain open',
+             [('OPEN', '2026-08-01'), ('OPEN', '2026-08-01')]),
+            ('Historical 0.4.1: coreai-torch#9 and coreai-torch#49 were open',
+             [('OPEN', None), ('OPEN', None)]),
+            ('Closed issues coreai-torch#49 or coreai-torch#51',
+             [('CLOSED', None), ('CLOSED', None)]),
+            ('coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open',
+             [('OPEN', '2026-07-29'), ('OPEN', None)]),
+            ('As of 2026-07-01, coreai-torch#49 was closed as of 2026-08-01 and coreai-torch#51 is open',
+             [('CLOSED', '2026-08-01'), ('OPEN', '2026-07-01')]),
+            ('coreai-torch#9 was closed by issue #49', [('CLOSED', None), (None, None)]),
+            ('coreai-torch#9 was open and closed coreai-torch#49', [('OPEN', None), ('CLOSED', None)]),
+            ('coreai-torch#9 was closed and merged PR #49', [('CLOSED', None), ('MERGED', None)]),
+            ('- As of 2026-07-29 coreai-torch#9 was open\n- coreai-torch#49 is open',
+             [('OPEN', '2026-07-29'), ('OPEN', None)]),
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            (root / 'guides').mkdir()
+            path = root / 'guides/fixture.md'
+            for text, expected in fixtures:
+                path.write_text(text)
+                with self.subTest(text=text):
+                    self.assertEqual([(r['claimedState'], r['claimDate']) for r in reporter.extract(root)], expected)
 
     def test_claim_text_and_date_do_not_borrow_from_neighbors(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -233,6 +268,10 @@ class DefectStatusGoldenTests(unittest.TestCase):
         )
         self.assertEqual(claim(quantization, 1266, 3824), "MERGED")
         self.assertEqual(claim(fundamentals, 122, 3924), "CLOSED")
+        self.assertEqual(claim(fundamentals, 2117, 1444), "CLOSED")
+        dated = next(r for r in sightings if r["file"] == quantization
+                     and r["line"] == 542 and r["number"] == 3757)
+        self.assertEqual(dated["claimDate"], "2026-08-23")
         self.assertIsNone(claim(runtime, 3670, 85))
 
     def test_unreachable_github_is_structured_and_nonfatal(self) -> None:
