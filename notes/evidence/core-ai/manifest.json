@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "consolidatedAt": "2026-10-07",
+  "files": [
+    {
+      "file": "native-model-export.json",
+      "originalPath": "notes/synthesis/pr50-followup/guard-regression-fixes/native-model-export.json",
+      "sha256": "b2d2d41bed3cb23648eff7376a9c3dbf2f37f2c5f51dc2280662b83c2f331ad0"
+    },
+    {
+      "file": "native-standalone.json",
+      "originalPath": "notes/synthesis/pr50-followup/guard-regression-fixes/native-standalone.json",
+      "sha256": "7368b3b31e43d953746b00e957fbfd1485bf326c186c5a9abd9b267e4b039e4e"
+    },
+    {
+      "file": "preflight.json",
+      "originalPath": "notes/synthesis/pr50-followup/guard-regression-fixes/preflight.json",
+      "sha256": "9e8a273265864ea1db24666ab02f5743ddda5da592744b5383720cc76e4fd673"
+    },
+    {
+      "file": "python-fence-hashes.tsv",
+      "originalPath": "notes/synthesis/pr50-followup/guard-regression-fixes/python-fence-hashes.tsv",
+      "sha256": "b1bdf322be65603d557d96ae16be1c453266983072a16230d2aa5ad527884c2b"
+    },
+    {
+      "file": "immutable-source-verification.json",
+      "originalPath": "notes/synthesis/pr49-followup/immutable-source-verification.json",
+      "sha256": "e930614231960006b8391ac1474cef9dd051482af538a536372945e89d9ccead"
+    },
+    {
+      "file": "model-export-package-integrity.json",
+      "originalPath": "notes/synthesis/pr49-followup/model-export-package-integrity.json",
+      "sha256": "4cf47a958a3e800be99270cad7bbdd2952a0c031b7b56998d339088072d71310"
+    },
+    {
+      "file": "standalone-package-integrity.json",
+      "originalPath": "notes/synthesis/pr49-followup/standalone-package-integrity.json",
+      "sha256": "93325f0916a223c27d2c526e91719d1fea38e22372e3050cfc6af98e6c9f9807"
+    },
+    {
+      "file": "apple-release-captures.json",
+      "originalPath": "notes/synthesis/pr49-followup/apple-release-captures.json",
+      "sha256": "a73b0e3cc40a2b387bae7bb810b6347f58c37ac0842d48c3bc24dd13ceb4ee26"
+    },
+    {
+      "file": "swift-final-results.tsv",
+      "originalPath": "notes/synthesis/pr49-followup/swift-fresh-results.tsv",
+      "sha256": "b63a4fc54ff69456da040bb8917d13857051a34e59954b07c22edf46850a0f77"
+    },
+    {
+      "file": "swift-toolchains.json",
+      "originalPath": "notes/synthesis/pr49-followup/swift-toolchains.json",
+      "sha256": "acd3532121be1130467effa0f9871ed36387091ee3521436392815bcaa2777d5"
+    },
+    {
+      "file": "static-api-audit.json",
+      "originalPath": "notes/synthesis/pr49-followup/part9-static-audit.json",
+      "sha256": "a06a88d8a119e22ff04223d1b20559053cd691f71c73a995d1443ec218f3bda5"
+    },
+    {
+      "file": "wheel-source-hashes.json",
+      "originalPath": "notes/synthesis/coreai-030-refresh/wheel-source-hashes.json",
+      "sha256": "0226aca2cafc6168c45efedfd1c3cdb5d7800508b1814cfff41ba29955bdf022"
+    }
+  ]
+}

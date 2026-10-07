@@ -343,25 +343,13 @@ you are measuring a different system. Note the caveat from [§14](#14-errors-the
 — permissive guardrails reportedly do not apply to `Generable`/structured output, and Book Tracker
 uses this model for `@Generable` output anyway, so do not read its presence as proof that it helps.
 
-> ✅ **VERIFIED at the call site — a bare `String` does reach `instructions:` and `respond(to:)`.**
-> Book Tracker declares `static let instructions = """…"""` — a plain `String` — and passes it
-> straight into `LanguageModelSession(model:instructions:)` (`BookTaggingService.swift:13-45`).
-> Origami calls `session.respond(to: body, generating: ExtractedTerms.self)` where `body` is a
-> `String` — the same value is fed to `body.range(of:options:)` later in the same function
-> (`TermExtractor.swift:32-39`, `:48-51`). Both projects compile against the 27.0 SDK, so overloads
-> accepting a string value exist for both parameters. Use them without hesitation.
->
-> ✅ **RESOLVED — the declarations behind them, from the 26.5 SDK interface.** They are **direct,
-> `String`-specific overloads, each marked `@_disfavoredOverload`** — not generic over the
-> `Representable` protocols: `@_disfavoredOverload convenience init(model:tools:instructions: String? = nil)`
-> (`FoundationModels-26.5-macos.swiftinterface:338`) and
-> `@_disfavoredOverload …respond(to prompt: String, options:) async throws -> Response<String>`
-> (`:357`), plus a matching `String` overload of `respond(to:generating:)` / `respond(to:schema:)` /
-> `streamResponse(to:…)` for every output shape. ✅ **VERIFIED in the 26.5 SDK interface**; stable into
-> 27 unless noted. `@_disfavoredOverload` is why a bare string binds to these while a value that also
-> satisfies something more specific resolves the way you expect; your own `PromptRepresentable` /
-> `InstructionsRepresentable` type binds through the `Prompt { }` / `Instructions { }` builders or the
-> `Prompt(_:)` / `Instructions(_:)` value initializers instead.
+> ✅ **SDK-verified — bare `String` arguments work for `instructions:` and `respond(to:)`.**
+> The 26.5 interface declares direct `String` overloads marked `@_disfavoredOverload`:
+> `LanguageModelSession(model:tools:instructions: String? = nil)` and `respond(to prompt: String,
+> options:)`, with matching schema, generating, and streaming forms
+> (`FoundationModels-26.5-macos.swiftinterface:338,357`). Book Tracker and Origami exercise these
+> calls on 27.0. Custom `InstructionsRepresentable` and `PromptRepresentable` values use the
+> respective builders or value initializers.
 
 ### 2.3 Rehydrating from a saved transcript
 
@@ -797,28 +785,13 @@ form in `Origami/Tutorial/Intelligence/OrigamiInstructions.swift:11-31` and
 `Origami/Coach/CoachInstructions.swift:12-36`. ✅ **VERIFIED**. Pick whichever reads better; there is
 no semantic difference visible from the call site.
 
-> 🔴 **GAP — can a plain `Instructions { }` block contain `Tool` values?** It can in a
-> `@DynamicInstructionsBuilder` body: Apple's `DynamicInstructions` sample puts `ListPhotosTool()` and
-> `AddPhotoTool()` directly in the `body` (✅ **VERIFIED**), and Origami does the same — `CalculatePaperSize()`,
-> `ConvertMeasurement()` and `MovePhotoToStepTool(orchestrator:)` sit in `CoachInstructions.body`
-> alongside an `Instructions { … }` value (✅ **VERIFIED** — `CoachInstructions.swift:12-36`). But
-> note *where* they sit: as **siblings of** the `Instructions` block inside the
-> `@DynamicInstructionsBuilder` body, never **inside** it. Every tool in every 2026 sample is placed
-> that way, which is weak evidence that the 26.0 `@InstructionsBuilder` does *not* accept a bare
-> `Tool` — but nobody states it either way. `foundation-models-utilities`' `Skill` initializer 4
-> documents that *"the closure may include `Instructions` content as well as `Tool` values"*, which
-> is about that package's own builder.
->
-> ✅ **RESOLVED (2026-07-29), and the answer is no.** The 27.0 interface shows exactly what each
-> builder accepts. `InstructionsBuilder.buildExpression` has two live overloads — `Instructions` and
-> `some InstructionsRepresentable` — plus a catch-all marked `@available(*, unavailable, message:
-> "Only 'Instructions' and 'InstructionsRepresentable' are supported.")` — ✅ **SDK-verified**
-> (`FoundationModels-27.0-macos.swiftinterface:2923-2932`). `Tool` does not conform to
-> `InstructionsRepresentable` anywhere in the interface, so a bare `Tool` in a plain
-> `Instructions { }` block is a **compile error** by design. `DynamicInstructionsBuilder`, by
-> contrast, has explicit `buildExpression` overloads for a single `Tool` *and* for `[any Tool]`
-> (`:671-680`). Tools-in-builders is a `@DynamicInstructionsBuilder`-only feature, which is why
-> every sample places them exactly where it does.
+> ✅ **SDK-verified — plain `Instructions { }` does not accept `Tool` values.**
+> `InstructionsBuilder.buildExpression` accepts `Instructions` and `some InstructionsRepresentable`;
+> its unavailable catch-all diagnoses other values
+> (`FoundationModels-27.0-macos.swiftinterface:2923-2932`). `DynamicInstructionsBuilder` explicitly
+> accepts a `Tool` and `[any Tool]` (`:671-680`). Place tools alongside the `Instructions` block in a
+> dynamic body, as Apple's sample and Origami do. The utilities package's own builder is a separate
+> contract.
 
 ---
 
@@ -891,25 +864,14 @@ task to keep the UI responsive.
 `init(includeSchemaInPrompt:reasoningLevel:)` and the property *"Inject the schema into the prompt to
 bias the model."* If you are migrating, that is where your flag went.
 
-> ✅ **RESOLVED for the 18 non-metadata forms; the `metadata:` family stays 27-only.** The whole
-> `schema:` family (`respond(to:schema:includeSchemaInPrompt:options:)`,
-> `respond(schema:…prompt:)`, and their `String` and `streamResponse` counterparts) is now read
-> **verbatim in the 26.5 SDK interface**: it takes a `schema: GenerationSchema` and returns
-> `Response<GeneratedContent>` (the dynamic-runtime-schema path), and every `schema:`/`generating:`
-> form carries `includeSchemaInPrompt: Bool = true`. Each output shape also has a `String`-prompt
-> `@_disfavoredOverload`. ✅ **RESOLVED (2026-07-29): the `metadata:` / `contextOptions:` family is
-> now read verbatim in the 27.0 interface** — nine `streamResponse` forms
-> (`FoundationModels-27.0-macos.swiftinterface:2064-2088`) and nine `respond` forms (`:2126-2178`),
-> mirroring the 26.x axes exactly. All are `@available(iOS 27.0, macOS 27.0, visionOS 27.0,
-> watchOS 27.0)`; each takes `options: GenerationOptions = GenerationOptions(),
-> contextOptions: ContextOptions = ContextOptions(), metadata: [String : any
-> ConvertibleToGeneratedContent] = [:]` (beta 5 retyped `metadata:` from
-> `[String : any Sendable & Codable & Equatable]`, checked 2026-08-23), and the
-> `schema:`/`generating:` forms default
-> `contextOptions: ContextOptions(includeSchemaInPrompt: true)` — confirming that the
-> `includeSchemaInPrompt` knob moved into `ContextOptions` (`:3132-3136`). The `schema:` forms in
-> this family are `@_disfavoredOverload`, so an ambiguous call resolves to the 26.x declarations.
-> It still appears at no call site in any of the three 27.0 sample projects.
+> ✅ **SDK-verified — schema/generating forms exist on 26.5; `metadata:` / `contextOptions:` require
+> 27.0.**
+> The `schema: GenerationSchema` forms return `Response<GeneratedContent>` and, like `generating:`,
+> default `includeSchemaInPrompt` to `true`; each output shape has a `String` overload. The 27.0
+> family mirrors these axes with `ContextOptions` and `[String : any ConvertibleToGeneratedContent]`
+> metadata (`FoundationModels-27.0-macos.swiftinterface:2064-2088,2126-2178`). `includeSchemaInPrompt`
+> moves into `ContextOptions`; the schema forms are `@_disfavoredOverload`. The older beta metadata
+> type was `Sendable & Codable & Equatable`; do not carry that signature into current code.
 
 ### 5.2 Plain text
 

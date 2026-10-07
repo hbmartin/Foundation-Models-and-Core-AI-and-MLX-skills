@@ -23,6 +23,15 @@ says who measured it.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-models:issue:49](https://github.com/apple/coreai-models/issues/49) <!-- defect-ref:apple.coreai-models:issue:49 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 The thesis first, because everything else follows from it:
@@ -1321,6 +1330,7 @@ literal sense, **irreplaceable** — the machine that could make another one has
 
 ### 4.5 ⚠️ The lesson: the export host's OS version is an input to the model's performance
 
+<!-- callout-id: callout-875f54069f82b233 -->
 > ⚠️ ⚠️ **THE LESSON OF THIS GUIDE**
 >
 > ### The export host's OS version is an input to the model's performance.
@@ -2544,6 +2554,7 @@ The full breaking-change list, ✅ verified verbatim from the same document:
 
 #### ⚠️ The upgrade doc names two modules that do not exist in the package
 
+<!-- callout-id: callout-3c792332f6f97577 -->
 > ⚠️ **SILENT FAILURE — the migration document's own "Breaking Changes" section is stale.**
 >
 > `upgrade.md`'s Breaking Changes section says, verbatim: *"For most users who were using the default

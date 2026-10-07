@@ -3692,8 +3692,6 @@ Read **in part** (line ranges cited inline where used):
   relevant passages quoted in §11).
 - `notes/01-lead-agent-repo-spotchecks.md` — the product-description table and the convergence
   observation.
-- `notes/CORRECTIONS-PENDING.md` — **C4** (guided generation unavailable on the fast BYO path) and
-  **C5** (prefix reuse) applied in §11.
 - `guides/README.md` — series conventions.
 
 ### Not read, and therefore not claimed

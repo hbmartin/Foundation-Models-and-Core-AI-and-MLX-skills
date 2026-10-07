@@ -1,5 +1,7 @@
 # Part 3 — Context, profiles, and agentic sessions
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** the conceptual material starts at **26.0** (`LanguageModelSession`, `Transcript`,
 `Tool` — watchOS only from 27.0), and the two introspection APIs it leans on, `SystemLanguageModel.contextSize`
 and `tokenCount(for:)`, are **26.4** — of which only `contextSize` back-deploys. **Everything else in this

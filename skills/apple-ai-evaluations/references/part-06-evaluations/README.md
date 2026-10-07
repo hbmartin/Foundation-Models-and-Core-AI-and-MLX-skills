@@ -1,5 +1,7 @@
 # Part 6 — Evaluations
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** the `Evaluations` framework is **new in the 27 cycle and does not back-deploy**. Every
 symbol is **iOS 27.0 · iPadOS 27.0 · Mac Catalyst 27.0 · macOS 27.0 · visionOS 27.0 · watchOS 27.0**, the
 whole index is tagged **Beta**, and **there is no tvOS**. You need **Xcode 27** — the `.evaluates` trait

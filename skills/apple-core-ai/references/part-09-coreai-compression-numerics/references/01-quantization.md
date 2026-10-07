@@ -16,7 +16,7 @@ The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includ
 Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
 `torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
 and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
-recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/synthesis/coreai-030-refresh/README.md).
+recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
 
@@ -31,6 +31,15 @@ signature below carries its source. Where the session transcript and the shipped
 and they do, three times — the source wins and the guide says so.
 
 ---
+
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-torch:pull:41](https://github.com/apple/coreai-torch/pull/41) <!-- defect-ref:apple.coreai-torch:pull:41 --> | MERGED (2026-10-07) | not-in-verified-release (0.4.3) | unverified | merged-unreleased |
+<!-- current-defects:end -->
 
 ## What this covers
 

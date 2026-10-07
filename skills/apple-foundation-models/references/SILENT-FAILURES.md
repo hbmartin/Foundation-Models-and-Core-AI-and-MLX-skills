@@ -1,8 +1,8 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**396 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**394 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -17,7 +17,7 @@
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
 | [Version drift](#version-drift) | 31 |
-| [Docs vs reality](#docs-vs-reality) | 40 |
+| [Docs vs reality](#docs-vs-reality) | 38 |
 | [API footguns](#api-footguns) | 70 |
 | [General cautions](#general-cautions) | 55 |
 
@@ -322,7 +322,7 @@
 - [availability == .available says nothing about quota — the most common real failure is invisible to every check.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#54-️-silent-failure--availability-is-not-a-health-check) — 4.1 🔇
 - [PCC in the Simulator throws a content-free error that reads as your bug — a known issue per Apple engineering.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#55-️-the-simulator-does-not-run-pcc) — 4.1
 - [This executor never throws rateLimited/contextSizeExceeded/timeout — a 429 arrives as generic httpError with raw bytes.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#27-the-errors-you-will-actually-see) — 4.2
-- [MLX never emits updateUsage — token usage reads absent or zero by design, a compile-vs-runtime symbol mismatch.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
+- [The cited beta adapter omits usage to avoid a missing symbol; verify stable behavior before token accounting.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
 - [A backend is not obliged to use the typed error vocabulary — and Apple's own executor mostly doesn't.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#64-the-rest-of-the-error-vocabulary) — 4.2
 - [Comparison table: MLX may report token usage absent or zero — the deliberate omission documented in §3.9.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#82-the-comparison-that-actually-decides-it) — 4.2
 - [Heading: Apple's own executor throws none of the typed LanguageModelError cases.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#113-️-apples-own-executor-throws-none-of-them) — 4.3
@@ -431,8 +431,6 @@
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache detection to 243, which never names it; the current written documentation supplies the metric.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-current-token-metrics) — 5.1
-- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK lacks PCC, reasoning, and attachments; stable fm no longer supplies the beta PCC route.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2

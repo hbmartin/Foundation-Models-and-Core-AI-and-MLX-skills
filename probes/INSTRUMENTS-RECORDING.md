@@ -1,13 +1,7 @@
 # Instruments 27 UI capture — the one manual GUI session
 
 **Goal.** Confirm the documented lane order and capture the detail-pane columns, labels, colors,
-and error badges of the **Foundation Models** template; transcribe the still-unknown lane and metric
-names of the **Core AI** template. This is the last original evidence gap on this machine that needs
-no new hardware (`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3): rendered instrument details
-**stream from the recording target at attach time** — they are not on disk — and headless `xcrun
-xctrace record` against the booted simulator **hangs for every template on this 26.5 host** (measured
-2026-07-31; `--no-prompt` set, `.trace` frozen at 52 KB). So: a human, the Instruments GUI, and a live
-Foundation Models workload.
+and error badges of the **Foundation Models** template, and capture the still-open Core AI lane and metric names. Foundation Models names resolved: Session, Request, Instructions, Model Inference, Tool, and Model Loading. Core AI still open. Rendered detail panes need a manual recording; the current selected Xcode supplies both templates.
 
 The workload is `InstrumentsWorkloadProbes.testInstrumentsRecordingWorkload` — an
 env-gated XCTest that loops four narrated phases designed to light up the known lanes
@@ -25,9 +19,9 @@ captures UI details the written page does not enumerate.
    xcrun simctl boot "iPhone 17 Pro" 2>/dev/null; open -a Simulator
    ```
    (Create the device first with `xcrun simctl create` if it does not exist.)
-2. Open the **beta** Instruments — the release Instruments has no 27 templates:
+2. Open Instruments from the selected Xcode:
    ```bash
-   open /Applications/Xcode-beta.app/Contents/Applications/Instruments.app
+   open "$(xcode-select -p)/../Applications/Instruments.app"
    ```
    Verify via Instruments ▸ About that this is the 27.0 build.
 
@@ -39,7 +33,7 @@ captures UI details the written page does not enumerate.
    directory:
 
    ```bash
-   export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+   export DEVELOPER_DIR="$(xcode-select -p)"
    PROBE_INSTRUMENTS_WORKLOAD=1 \
    PROBE_WORKLOAD_SECONDS=600 \
    PROBE_WORKLOAD_ATTACH_SECONDS=20 \
@@ -92,7 +86,7 @@ If attaching to the XCTest runner misbehaves, use the self-contained workload bi
 
 ```bash
 cd probes/Workload
-export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+export DEVELOPER_DIR="$(xcode-select -p)"
 xcrun -sdk iphonesimulator swiftc -target arm64-apple-ios27.0-simulator \
     -parse-as-library -O ../Sources/ProbeSupport/ProbeSupport.swift \
     fmworkload.swift -o fmworkload
@@ -117,7 +111,7 @@ deadline. Recheck the printed availability line on later runtimes.
 2. `guides/part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md`
    §3 — the Core AI template's lane/metric/column names (names only; live Core AI events
    remain a DEVICE-27 item).
-3. `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 → ✅ RESOLVED, with method + date, once both
-   the Foundation Models UI details and Core AI names have been captured.
+3. Close this task only after both recordings establish the remaining detail labels.
+
 4. `probes/README.md` — flip the two Instruments rows in the SKIPPED table to answered,
    pointing here.

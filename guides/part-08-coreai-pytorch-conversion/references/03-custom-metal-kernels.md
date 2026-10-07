@@ -2554,7 +2554,7 @@ what the headers do and do not contain.
 |---|---|
 | Session 330 narrates `MTLTensor` **scale planes** with `blockFactors` and an auxiliary plane map | **Corroborated by Xcode 27.** The older negative result came from Xcode 26.x headers and the pinned MLX implementation; in-kernel cooperative-tensor dequantization remains the fallback for 26.x and custom formats. §11.4[^xcode27-scale-planes] |
 | Session 330 says int2, FP4, FP8 and E8M0 tensor types are new in iOS/macOS 27 | **Corroborated by Xcode 27.** The 26.0/26.1/26.3/26.4 ladder still describes earlier TensorOps capabilities; the new low-bit formats form a distinct OS 27 tier. §11.4[^xcode27-scale-planes] |
-| CORRECTIONS-PENDING C3 said TensorOps availability is a blanket **26.2** | **Superseded** by Tech Talk 111432's ladder (26.0/26.1/26.3/26.4). Both the ladder and the 26.2 *symbol* macro are printed, as separate facts. §11.4 |
+| Earlier TensorOps research said TensorOps availability is a blanket **26.2** | **Superseded** by Tech Talk 111432's ladder (26.0/26.1/26.3/26.4). Both the ladder and the 26.2 *symbol* macro are printed, as separate facts. §11.4 |
 | `MetalParameter`'s keyword names | Community-cited only; **guide uses the verified positional form**. §4.6 |
 | Community dtype map omits `int16`; Apple's test parametrizes over it and passes | Apple's test wins; both stated. §5.5 |
 | Docs example writes `TYPE sum = 0.0f;` under templating; Apple's own tests specialize the literal per dtype | Tests win — the docs example is float-only. §10.1 |

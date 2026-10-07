@@ -586,16 +586,19 @@ def parse_table(lines: list[str]) -> tuple[tuple[str, ...], list[str]]:
 
 
 def parse_part_readme(page: GuidePage, text: str) -> PartRouter:
-    """Parse a part README ordinally, refusing anything it does not recognize.
-
-    Structure varies more than it looks: seven parts carry a '⚠️ Read this
-    before …' H2 ahead of 'Why this part exists', part 12 suffixes its reading
-    order heading, part 14 uses the singular 'The guide in this part', and part
-    17 has no audience paragraph, no reading order, a 'five-minute triage'
-    heading, and a triage table whose columns are reordered. Prefix-match the
-    headings that vary and hard-error on anything unknown, so a future guide
-    edit fails here rather than silently dropping content from a skill.
-    """
+    """Read declared section roles while preserving their public heading anchors."""
+    marker = re.findall(r"<!-- part-router: (.+) -->", text)
+    if len(marker) != 1:
+        raise SkillError(f"{page.relative}: expected one part-router declaration")
+    try:
+        roles = json.loads(marker[0])
+    except json.JSONDecodeError as error:
+        raise SkillError(f"{page.relative}: invalid part-router declaration") from error
+    if (not isinstance(roles, dict) or not {"triage", "guides"}.issubset(roles)
+            or set(roles) - {"triage", "guides", "reading"}
+            or not all(isinstance(value, str) and value for value in roles.values())
+            or len(set(roles.values())) != len(roles)):
+        raise SkillError(f"{page.relative}: invalid part-router roles")
     preamble, sections = split_sections(text)
     title_match = PART_TITLE.match(preamble[0] if preamble else "")
     if not title_match or int(title_match.group(1)) != page.part:
@@ -618,14 +621,14 @@ def parse_part_readme(page: GuidePage, text: str) -> PartRouter:
             # The pre-"Why" H2s are evidence caveats, and they are routinely the
             # most load-bearing content in the part. Keep them addressable.
             warnings.append((heading, slugify(heading)))
-        elif heading.startswith("Read this first"):
+        elif heading == roles["triage"]:
             triage_anchor = slugify(heading)
             triage_header, triage_rows = parse_table(body)
             if not triage_rows:
                 raise SkillError(f"{page.relative}: '{heading}' has no triage table")
-        elif re.fullmatch(r"The guides? in this part", heading):
+        elif heading == roles["guides"]:
             cards = parse_cards(page, body)
-        elif heading.startswith("Reading order"):
+        elif heading == roles.get("reading"):
             pass
         elif heading in (
             "What this part deliberately does not cover",
@@ -638,6 +641,9 @@ def parse_part_readme(page: GuidePage, text: str) -> PartRouter:
                 "parse_part_readme rather than letting its content vanish from the skill."
             )
 
+    declared = {heading for heading, _ in sections}
+    if not set(roles.values()).issubset(declared):
+        raise SkillError(f"{page.relative}: declared router section is missing")
     if not seen_why:
         raise SkillError(f"{page.relative}: missing '## Why this part exists'")
     if not triage_anchor:

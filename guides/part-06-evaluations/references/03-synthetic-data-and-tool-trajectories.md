@@ -1676,29 +1676,13 @@ An ordered expectation lists the calls you require. Real transcripts often conta
 > documentation's `anyOrder` example passes **`false`**. The Book Tracker sample passes **`true`**
 > (`SearchBooks.swift:140-154`). Both compile; they encode different intentions.
 
-> ✅ **SDK-verified — the default is `true`** (`allowsAdditionalToolCalls: Bool = true`,
-> `Evaluations-27.0-macos.swiftinterface:258`, checked 2026-07-29), so an ordered expectation that
-> omits the parameter is *permissive*: unlisted calls are tolerated. Two adjacent facts from the
-> same declaration: the stored property behind the label is spelled **`allowsAdditionalCalls`** — no
-> "Tool" — so that is the name you read back when inspecting an expectation (`:257`); and the
-> parameter exists only on the `ordered:unordered:` initialiser, never alongside `disallowed:`
-> (§13.1).
->
-> ✅ **Probe-verified, 2026-07-31 — `false` IS enforced.** (was 🔴 still-open; `probes/`
-> `eval.allowsAdditionalCalls-false`, run on the 27.0 sim runtime with canned transcripts.) A
-> trajectory containing an unexpected extra call under `allowsAdditionalToolCalls: false` **fails
-> `allPass`** (control `allPass=1.0`, with-extra-call `allPass=0.0`) and **halves
-> `percentagePass`** (1.0 → 0.5) — the flag is a real prohibition, not advisory. The finer reading
-> question — whether an extra call *outside* the listed span is treated differently from one
-> interleaved between listed calls — was not separately distinguished by the probe; if that
-> distinction matters to your suite, test your own shape.
->
-> **The habit still worth keeping: write it explicitly wherever the distinction matters.** Omission
-> means `true` — but an explicit value documents your intent to the next reader. Use `true` when
-> you are asserting "these steps happened in this order" and `false` when you are asserting "this
-> is the whole trajectory and nothing else belongs in it" — the second being much stronger, much
-> more brittle, and appropriate mainly for cost-sensitive or safety-sensitive flows — and now known
-> to actually bite.
+> ✅ **SDK-verified — `allowsAdditionalToolCalls` defaults to `true`.**
+> The initializer label differs from the stored property `allowsAdditionalCalls`; it belongs to
+> `ordered:unordered:`, not `disallowed:`. The dated simulator probe
+> `eval.allowsAdditionalCalls-false` enforces `false`: an extra call changed `allPass` from 1.0 to 0.0
+> and `percentagePass` from 1.0 to 0.5 (2026-07-31). It did not separately test outside-span versus
+> interleaved extras. Set the flag explicitly: `true` asserts a required subsequence; `false` asserts
+> the complete trajectory.
 
 ```swift prelude:guide-context
 // "Search, then fetch details. The model may also do other things." — permissive.
@@ -1821,28 +1805,12 @@ deterministic, free, and self-documenting. Reach for `.naturalLanguage` when the
 
 ### 15.2 The value-wrapping footgun
 
-> ⚠️ **Two spellings of the same argument value appear in Apple's own material** — the
-> `/documentation/evaluations/trajectoryexpectation` page writes
-> `.exact(argumentName: "location", value: "Paris, France")` (a bare string), while the
-> `evaluating-language-model-responses` article and the Book Tracker sample write
-> `.exact(argumentName: "letter", value: .string("r"))` (a wrapped case).
->
-> ✅ **SDK-verified — both compile, and the GAP is closed (2026-07-29).** The matcher's value type is
-> **`ArgumentValue`**, an enum with exactly four cases — `.string`, `.int`, `.double`, `.bool` —
-> conforming to `ExpressibleByStringLiteral`, `ExpressibleByIntegerLiteral`,
-> `ExpressibleByFloatLiteral` and `ExpressibleByBooleanLiteral`
-> (`Evaluations-27.0-macos.swiftinterface:15-81`). So the doc page's bare `"Paris, France"` is
-> legal — the string-literal conformance does the wrapping, and `42`, `3.5` and `true` literals work
-> the same way. **`StructuredValue` is a different, richer type** — seven cases including `.null`,
-> `.array` and `.dictionary` (`:82-100`) — which `ArgumentValue` bridges *into* via its
-> `structuredValue` property (`:22-24`); an earlier revision of this guide conflated the two. There
-> is no `.array` or `.dictionary` matcher value: an argument you can match on is a string, an int, a
-> double or a bool.
->
-> **House style stays with the wrapped form**, `.string("gothic")` — it is what all sixteen of the
-> sample's trajectory expectations use, and it survives being moved into a context where literal
-> inference does not apply. But the bare literal is not an error, and `.int` / `.double` / `.bool`
-> are SDK-verified cases, not inferences — merely unexercised in Apple's archive.
+> ✅ **SDK-verified — `ArgumentValue` accepts literals and explicit enum cases.**
+> Its four cases are `.string`, `.int`, `.double`, and `.bool`, with matching literal conformances
+> (`Evaluations-27.0-macos.swiftinterface:15-81`). Thus both `value: "Paris, France"` and `value:
+> .string("r")` compile. `StructuredValue` is a separate, richer type with arrays, dictionaries, and
+> null; its bridge does not add those matcher cases. Prefer explicit cases when moving values between
+> contexts where literal inference may differ.
 
 Note also that `.range(argumentName:minimum:maximum:)` takes bare numbers in the sample
 (`minimum: 1, maximum: 3`) rather than wrapped values — so the wrapping convention is per-case, not

@@ -20,6 +20,25 @@ is tagged with which of the two it came from.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1446](https://github.com/ml-explore/mlx-lm/issues/1446) <!-- defect-ref:ml-explore.mlx-lm:issue:1446 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1470](https://github.com/ml-explore/mlx-lm/issues/1470) <!-- defect-ref:ml-explore.mlx-lm:issue:1470 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1480](https://github.com/ml-explore/mlx-lm/issues/1480) <!-- defect-ref:ml-explore.mlx-lm:issue:1480 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1493](https://github.com/ml-explore/mlx-lm/issues/1493) <!-- defect-ref:ml-explore.mlx-lm:issue:1493 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1497](https://github.com/ml-explore/mlx-lm/issues/1497) <!-- defect-ref:ml-explore.mlx-lm:issue:1497 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1500](https://github.com/ml-explore/mlx-lm/issues/1500) <!-- defect-ref:ml-explore.mlx-lm:issue:1500 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:312](https://github.com/ml-explore/mlx-swift-lm/issues/312) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:425](https://github.com/ml-explore/mlx-swift-lm/issues/425) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:425 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 mlx-lm is the layer where MLX stops being an array framework and starts being an LLM runtime. WWDC26
@@ -3063,8 +3082,8 @@ cross-checks; source of the four-layer stack, the batchability gate cross-check,
 concurrency defaults.
 `notes/web/mlx-docs-site.md` (5,465 lines) — the MLX documentation crawl; consulted for
 `mlx.launch` invocation forms.
-`notes/CORRECTIONS-PENDING.md` — C5 (prefix reuse and hybrid architectures) and C10.4 (distributed
-hostfile shape) are applied in §5.1 and §2.9.
+`notes/repos/john-rocky-models.md` — prefix-cache constraints;
+`notes/transcripts/missing-sessions.md` — distributed hostfile shape.
 
 **Evidence class 3 — project-published measurements.** `mlx_lm/BENCHMARKS.md`, measured on a 64 GB
 M4 Max with mlx 0.29.2.dev, mlx-lm 0.28.2, macOS 26.1. Attributed as project-published, not

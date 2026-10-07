@@ -22,6 +22,18 @@ at all.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.python-apple-fm-sdk:issue:16](https://github.com/apple/python-apple-fm-sdk/issues/16) <!-- defect-ref:apple.python-apple-fm-sdk:issue:16 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:issue:5](https://github.com/apple/python-apple-fm-sdk/issues/5) <!-- defect-ref:apple.python-apple-fm-sdk:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:issue:6](https://github.com/apple/python-apple-fm-sdk/issues/6) <!-- defect-ref:apple.python-apple-fm-sdk:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## ⚠️ Read this before you read anything else: the evidence here is the weakest in Parts 1–6
 
 Every other guide in Parts 1–6 rests on at least one of: a shipping Apple sample project, an SDK
@@ -301,67 +313,10 @@ Measuring is Evaluations' job (Part 6) or the Python SDK's (§15).
 
 ### 2.4 `fm respond` and its options — semantic names only
 
-> ✅ **VERIFIED** (spoken, `334:48-49`): *"When you'd rather have **inline responses, like in
-> scripts**, use the command `fm respond` instead. Run `fm respond` with a prompt in a terminal, and
-> you'll receive the response from the model as output."*
-
-Four options were then described. **Every one of them was named semantically — "the model option",
-"the image option" — and none was ever spelled out on screen or in the transcript.**
-
-| Spoken as | Purpose (Apple's words) | Flag spelling |
-|---|---|---|
-| *"the **model** option"* | *"lets you prompt the Private Cloud Compute model"* (`334:50`) | 🟠 `--model pcc` |
-| *"the **image** option"* | *"to include an image in your prompt"* (`334:51`) | 🟠 `--image <path>` |
-| *"the **schema** option"* | use a schema built by `fm schema object` for structured output (`334:53`, `334:82`) | 🟠 `--schema <file>` |
-| *"the **help** option"* | *"To check out all the options, use the help option"* (`334:55`) | 🟠 `--help` |
-| *(instructions)* | *"passing my **instructions** and my prompt"* (`334:79`) — described as a thing passed, never as an option | 🔴 **UNKNOWN** — see below |
-
-> 🟠 **Suggestive, 2026-08-02 — three spellings have two-source command evidence, and one has
-> a single help artifact** (all five were 🔴 **UNKNOWN** until this date). Nuthalapati
-> (English, macOS 27 developer beta)[^fm-nuthalapati] and Hack-Log (Japanese, macOS 27)[^fm-hacklog]
-> independently demonstrate `--model`, `--image`, and `--schema` with values. Agarwal's pasted
-> top-level help separately establishes the conventional `--help` spelling:
->
-> ```bash
-> fm respond "prompt text"
-> fm respond "prompt" --schema schema.json
-> fm respond "prompt" --model pcc
-> fm respond "prompt" --image screenshot.png --model pcc
-> ```
->
-> **`--model` takes a value, and the attested value is `pcc`** — it is *not* the boolean switch
-> this box previously allowed for. **`--image` takes a file path**; neither source demonstrates
-> repeating it, so treat multi-image as unattested. **`--schema` takes a path to a JSON file**
-> produced by `fm schema object` (§2.5).
->
-> **`--instructions` stays 🔴.** Nuthalapati lists it as existing but **does not demonstrate it**,
-> and no source shows whether it is an option, a second positional, or a file path. Do not write
-> it into a script.
->
-> **Why 🟠 and not ✅:** the three value-taking flags come from two blog posts, `--help` comes
-> from one third-party paste, there is no first-party option reference, and nobody on this project
-> ran the commands. Nuthalapati also flags the tool as beta software whose flags may change before
-> release.
-
-The conventional guesses were `--model`, `--image`, `--schema`, `--help`, `--instructions`, and
-this guide's own research index records them in that form. **Four of the five spellings now have
-positive evidence**, but only the first three have two-source command examples; `--help` has one
-help artifact, and none of that is retroactive evidence for `--instructions`. One Apple-adjacent
-data point is still worth showing precisely because of who said it:
-
-[^fm-nuthalapati]: Varun Nuthalapati, "Local AI in Your Terminal: Scripting with Apple's New fm CLI
-    and MLX", 2026-06, `https://nuthalapativarun.github.io/mlx-whisper-article/terminal-fm-mlx.html`
-    (a non-paywalled GitHub Pages mirror of a Medium post). States "macOS 27 developer beta".
-
-[^fm-hacklog]: Hack-Log, "Local AI becomes standard with the `fm` command in macOS 27", 2026-06-09,
-    `https://note.com/hacklog_stealth/n/ne3c55b94af3f`. Japanese; the shell commands are
-    reproduced verbatim in the archived analysis and are independent of [^fm-nuthalapati].
-
-> 🟡 **Historical evidence note.** On `apple/python-apple-fm-sdk` issue #13, the *reporter* (not
-> Apple) proposed
-> `subprocess.check_output(["fm", "respond", query, "--model", "pcc"], text=True)`, and Apple did not
-> answer that follow-up. The issue was not evidence by itself; the two independent command examples
-> above are what now corroborate the spelling and value.
+Use the managed stable help in `notes/sdk-interfaces/fm-help-27.0.txt`. `respond` documents
+`--instructions`, `--model`, `--schema`, and `--image`; stable model selection advertises
+`system`. Schema files come from `fm schema object`. Check the installed binary's help before
+using an option added by a later point release. Beta commands selecting `pcc` are historical.
 
 ### 2.5 The beta default was on-device, and PCC was metered
 
@@ -379,66 +334,13 @@ The session's claim that PCC is *better at hard problems* is a quality argument,
 
 ### 2.6 `fm serve` — the one written sentence, and why it matters most
 
-This is the highest-grade evidence about `fm` in the entire corpus, and it did not come from a WWDC
-session. It came from an Apple engineer closing a GitHub issue.
+Stable `fm serve` provides a Chat Completions endpoint over TCP or a Unix socket. The managed
+help documents `/health`, `/v1/models`, and `/v1/chat/completions`; it advertises the system
+model. Validate the actual request options and authentication before exposing the endpoint.
 
-> ✅ **VERIFIED — written, by an Apple member.** `apple/python-apple-fm-sdk` issue #13, *"Plans for
-> Server models?"*, closed 2026-07-12. Reply from **@rxwei (MEMBER)**, verbatim:
->
-> *"Hi @Cactys12, we do not currently plan to add support for Private Cloud Compute in this Python
-> SDK. You can access Private Cloud Compute via the `fm` CLI in macOS Golden Gate, and **`fm serve`
-> lets you serve it easily as a Chat Completions endpoint**."*
-
-Four separate facts fall out of one sentence:
-
-1. **`fm serve` exists** — none of the sessions mention it.
-   **Independently corroborated 2026-08-02:** it appears in the `fm --help` paste in §2.2 as
-   `serve   Start a Chat Completions API server`, which matches @rxwei's description almost word
-   for word. See the box below for a source that disputes this.
-2. It exposes an **OpenAI-compatible Chat Completions endpoint**. That is a very large deal: any
-   Chat Completions client — the `openai` Python package, LangChain, a `curl` one-liner, your own
-   HTTP code — can in principle talk to Apple's models through it. It is also the exact protocol
-   that Foundation Models' own `ChatCompletionsLanguageModel` speaks in the other direction
-   (Part 4), so the ecosystem closes a loop here.
-3. **PCC was reachable through it on the beta-era surface described by the Apple member.** Stable
-   macOS 27 advertises only `system`, so this is historical evidence, not a current Python route.
-4. **PCC in the Python SDK is not a "not yet" — it is a "not planned."** "We do not currently plan
-   to add support" is as clear as Apple gets. Do not architect around it arriving.
-
-> 🔴 **GAP — everything else about `fm serve`.** Port, bind address, authentication (if any), which
-> Chat Completions fields are honoured (`temperature`? `tools`? `response_format`? streaming via
-> SSE?), how the model is selected per-request versus per-process, whether it daemonises, and what
-> happens when the PCC quota runs out mid-request. **All unknown, and unchanged by the 2026-08-02
-> harvest** — the third-party sources that corroborate the subcommand's *existence* attest none of
-> its behaviour. Resolving this needs `fm serve --help` and one `curl` against a running instance
-> on macOS 27.
->
-> **Safe default meanwhile:** if you need a serving endpoint *today* from Python, use `mlx_lm.server`
-> or another local OpenAI-compatible server (Part 12), and keep the client code protocol-generic so
-> that pointing it at `fm serve` later is a base-URL change.
->
-> ⚠️ **One source claims `fm serve` does not exist. It is wrong, and the way it is wrong is
-> instructive.** A community write-up[^fm-chatforest] prints a self-correction retracting its own
-> earlier `fm serve` claim, and argues the subcommand does not exist on the grounds that *"That
-> claim does not appear in Apple's own WWDC26 session"*.
->
-> **That is an argument from absence in a transcript, which proves nothing** — it is the same
-> reasoning this series refuses everywhere else (absence from a beta SDK means "not present in that
-> interface", never "does not exist"). Against it stand two positive artefacts: an Apple engineer
-> naming the subcommand in writing (above), and a `--help` paste from a named macOS 27.0 build
-> (§2.2). The post has also already been wrong once on this exact point, by its own admission.
->
-> **Treat `fm serve` as existing.** Keep the 🔴 above for everything about *how* it behaves.
-
-[^fm-chatforest]: ChatForest builders-log,
-    `https://chatforest.com/builders-log/apple-fm-cli-python-sdk-fm-serve-openai-compatible-psotu-wwdc-2026/`.
-    Logged as an unreliable source in `notes/web/2026-08-02-harvest/gap-closures-and-corrections.md`
-    §8. Its Python-SDK claims may still be usable but are outranked by the cloned repository read
-    in §5 onward.
-
-One incidental find in that quote: **"macOS Golden Gate"** is Apple's internal codename for the
-macOS release that ships `fm`. It corresponds to macOS 27. You will occasionally see it in Apple
-staff replies; it is not a separate product.
+Apple member @rxwei's reply on `apple/python-apple-fm-sdk` #13 describes the earlier beta
+PCC-serving route and states that PCC support was not planned for the Python SDK. That reply
+is source history for the SDK boundary, not a stable PCC CLI recommendation.
 
 ### 2.7 What `fm` is *for*, in Apple's framing
 
@@ -455,140 +357,26 @@ case study.
 
 ## 3. ✅ The `fm` help surface, captured on macOS 27
 
-> ⚠️ **STABLE DRIFT, verified 2026-09-16.** The capture below remains valuable beta evidence, but
-> stable macOS 27 build `26A428` has **seven**, not eight, top-level commands: `available`, `chat`,
-> `count-tokens`, `license`, `respond`, `schema`, and `serve`. Stable help removed
-> `quota-usage`, advertises only the `system` model, and no longer accepts the beta-documented
-> `--model pcc` choice. Do not copy beta PCC commands into stable automation. This describes the
-> public CLI surface only; it does not claim the Foundation Models PCC API was removed.
+The stable macOS 27 capture is in `notes/sdk-interfaces/fm-help-27.0.txt`; its date, host build,
+and hash are recorded in `notes/sdk-interfaces/capture-manifest.json`. Current commands are
+`available`, `chat`, `count-tokens`, `license`, `respond`, `schema`, and `serve`.
 
-> ✅ **RESOLVED 2026-08-17 on macOS 27 beta 5 (`26A5406e`).** `/usr/bin/fm` was run by this
-> project. `fm --help` plus every revealed help page is captured in
-> `notes/sdk-interfaces/fm-help-27.0.txt` under the SDK evidence manifest. The eight top-level
-> commands are `available`, `chat`, `count-tokens`, `license`, `quota-usage`, `respond`, `schema`,
-> and `serve`. The earlier third-party `token-count` spelling is wrong for this seed.
->
-> The capture also resolves the flag and schema grammar: `respond` supports instructions, model,
-> schema, text/image/label attachments, built-in OCR/barcode tools, transcript resume/save,
-> streaming control, greedy sampling, verbose output, use cases, and guardrail levels;
-> `schema object` supports boolean/double/integer/string properties, nested objects, `anyOf`,
-> arrays, descriptions, and optionality; and `serve` exposes `/health`, `/v1/models`, and
-> `/v1/chat/completions` over TCP or a Unix socket. `fm --version` is not supported.
+`respond` documents instructions, schema, attachments, built-in OCR/barcode tools, transcript
+resume/save, streaming, greedy sampling, use cases, and guardrails. `schema object` supports
+scalar properties, nested objects, arrays, optionality, descriptions, and `anyOf`. Serving
+supports TCP and Unix sockets. `fm --version` is unsupported; identify the OS and managed help
+instead.
 
-The historical gap analysis below is retained to show which claims were previously third-party,
-but its command-spelling questions are superseded by the managed beta-5 capture.
-
-This box is the most important thing in the first half of this guide. It is deliberately not
-softened, and it deliberately contains no guesses.
-
-> ✅ **HISTORICAL GAP — closed 2026-08-17 by the beta-5 capture above.**
->
-> **This box was written when the corpus had only Apple's narration. On 2026-08-02 three
-> third-party write-ups by people who did run it were found, and items 1–3 below are now
-> substantially narrowed (🟠, see §2.1–2.4). The headline sentence is unchanged and remains the
-> point: reported-by-strangers is not run-by-us, and the residue below is still real.**
->
-> **What we have:** spoken narration from two WWDC26 sessions, in which the presenter names four
-> options *semantically* ("the model option", "the image option", "the schema option", "the help
-> option"), names three subcommands plus "and more", and demonstrates two `fm chat` slash commands
-> out of "a number of commands". Plus one written sentence from an Apple engineer establishing that
-> `fm serve` exists and speaks Chat Completions. Plus, since 2026-08-02, one `fm --help` paste from
-> macOS 27.0 build `26A5378n` and two independent sets of worked `fm respond` invocations.
->
-> **What we do not have, and will not invent:**
->
-> 1. **~~The full subcommand list.~~** 🟠 **Narrowed 2026-08-02** — reported as seven
->    (`available`, `chat`, `quota-usage`, `respond`, `schema`, `serve`, `token-count`; §2.2).
->    **Residue:** the paste is truncated mid-line on `token-count`, so a subcommand sorting after
->    it cannot be excluded, and no sub-subcommand list exists for any of the seven.
-> 2. **~~Any flag spelling.~~** 🟠 **Narrowed 2026-08-02** — `--model pcc`, `--image <path>`,
->    `--schema <file>`, `--help` (§2.4). **Residue:** `--instructions` is still 🔴 unattested;
->    no short forms are known; whether `--image` repeats for multiple images is unknown; and no
->    source shows the flag set for any subcommand other than `respond`.
-> 3. **`fm schema object`'s argument grammar.** Still the biggest single hole, but 🟠 **narrowed
->    2026-08-02**. Two independent sources show the same shape — a **flag-per-property builder**,
->    not a DSL, with output redirected to a file:
->
->    ```bash
->    fm schema object --name AppsIdentified --string app_names --array > schema.json
->    fm schema object --name ActionItems   --string items      --array > schema.json
->    fm respond "…" --image Screenshot.png --model pcc --schema schema.json
->    ```
->
->    So: `--name <TypeName>`, then `--<type> <propertyName>`, with `--array` modifying the property
->    immediately before it; **the schema goes to stdout** (both examples redirect it), and
->    `fm respond --schema` takes the resulting *file path*. That answers "JSON on stdout vs. a file
->    vs. a handle" — it is JSON on stdout.
->    **Residue, all still 🔴:** only `--string` is attested — `--int`/`--float`/`--bool` are
->    presumed by symmetry and are **not** evidence; nesting, optionality, descriptions, and any
->    constraint syntax (an `.anyOf` equivalent, a numeric range) are entirely unknown; and neither
->    source builds the two-field schema the session narrates, so multi-property ordering is
->    inferred from the flag order alone.
-> 4. **`fm chat` slash commands beyond `/model` and `/save`.** Presumably `/load` or similar exists
->    to complement `/save`, and presumably there is a `/quit` and a `/help`. **Presumably is not
->    evidence and none of those are written into this guide.**
->
->    ⚠️ **A contamination hazard worth naming.** `manjunathshiva/fmx` is a third-party **macOS 26**
->    CLI that deliberately imitates the not-yet-shipped `fm`, and its README says it "will
->    eventually defer to the native `fm` command coming in macOS 27". It documents a full slash-command
->    set (`/help`, `/save <path>`, `/load <path>`, `/clear`, `/system <text>`, `/model`, `/exit`)
->    and flags (`-i`, `--stream`, repeatable `--image`, `-t`, `--max-tokens`). **That is `fmx`'s own
->    design, not Apple's.** Because `/save` and `/model` appear in both, it is easy to absorb the
->    whole set as attested `fm` surface. It is not. Its README explicitly does not document Apple's
->    grammar.
-> 5. **Everything about serving.** Port, auth, protocol coverage, lifecycle. See §2.6.
-> 6. **Exit codes, stdout/stderr discipline, and streaming behaviour.** Whether `fm respond` streams
->    tokens to a TTY, whether it buffers when piped, what exit code a guardrail refusal produces, and
->    whether errors land on stderr — all unknown, and all load-bearing for scripting.
-> 7. **Whether `fm` is affected by the Apple Intelligence enablement gate**, including the
->    Siri-enablement defect Apple has acknowledged (Part 1).
->
-> **What would resolve it:** a Mac running macOS 27 and roughly ninety seconds:
->
-> ```bash
-> fm --help
-> fm respond --help
-> fm chat --help
-> fm schema --help
-> fm schema object --help
-> fm serve --help
-> which fm && fm --version
-> ```
->
-> That is the entire remediation. There is no substitute for it — not the documentation (no `fm`
-> documentation page exists in this corpus), not the session (it showed the screen and described it
-> in prose), not the forums.
->
-> **Status check, 2026-07-29:** the shortcut everyone hopes for — that `fm` might ride along with
-> the Xcode 27 beta on a macOS 26 machine — is now **eliminated**. On a macOS 26.5.2 host with
-> Xcode 27.0 beta (27A5228h) installed, `xcrun --find fm` fails and an exhaustive search of
-> `Xcode-beta.app` finds no `fm` binary. `fm` is not part of the Xcode 27.0 beta toolchain;
-> per Apple's sessions it ships with **macOS 27 itself**, so the ninety-second run above genuinely
-> requires a machine on the OS beta. Every flag table in §2 keeps its attested-only status.
->
-> **Safe default until then:** treat `fm` as an *interactive exploration tool* and keep it out of
-> automation you cannot babysit. If you must automate now, write the wrapper described in §4.3 —
-> one function, one place to fix when you learn the real flags — and pin the behaviour with a smoke
-> test that runs before the rest of the script.
+<!-- callout-id: callout-17ea252c5980d820 -->
+⚠️ **Stable versus beta:** `quota-usage` and `--model pcc` belonged to the captured beta
+surface. Do not use them in stable automation. This CLI boundary does not imply removal of
+the Swift PCC API. Interactive slash commands and runtime refusal/exit behavior still need
+separate validation; help text does not establish them.
 
 ### 3.1 Why this gap is worse than it looks
 
-A missing flag name in a guide is normally a small thing; you look it up. Two properties of this
-particular situation make it worth a full section.
-
-**Plausible-looking CLI flags are the easiest thing in the world to hallucinate.** `--model`,
-`--image`, `--schema`, `--temperature`, `--max-tokens`, `--json`, `--system` — every one of those
-reads as obviously correct, six of them were never mentioned by anyone, and a coding assistant asked
-to "write an fm script" will emit them without hesitation. An earlier batch of guides in this series
-was audited against Apple's real sample code and the audit found a **completely fabricated code
-listing** that had looked entirely plausible. CLI flags are that failure mode's natural habitat.
-
-**A wrong flag may not fail loudly.** Many argument parsers treat an unrecognised trailing token as a
-positional argument. If `--schema` is really `--response-schema`, a command like
-`fm respond --schema "$SCHEMA" "$FILES"` might not error — it might quietly send the *schema text
-itself* to the model as part of the prompt and return unconstrained prose, which your `jq` then
-fails to parse, thirty lines later, with a message about the wrong thing. Which brings us to the
-callout that governs the entire automation pattern.
+Validate structured results before a script acts on them. A documented option does not prove
+that every runtime response satisfies your business rules.
 
 > ⚠️ **SILENT FAILURE — a shell pipeline cannot tell "the model declined" from "the model answered
 > in prose".** `fm respond` writes to stdout. If a schema is not applied — wrong flag, malformed

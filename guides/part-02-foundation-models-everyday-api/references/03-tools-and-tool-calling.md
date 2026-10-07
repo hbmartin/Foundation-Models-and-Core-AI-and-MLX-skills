@@ -2107,31 +2107,14 @@ Apple labels that attachment so it has a stable identity.
 > Write any code that touches these outputs generically against `PromptRepresentable`; there is no
 > concrete type to name.
 
-> ✅ **RESOLVED (2026-07-29) — the associated types, read from the overlay interface.** The earlier
-> dump missed them because the symbols live in the `_Vision_FoundationModels` **cross-import
-> overlay** (activated by importing both parents), not in `Vision.swiftinterface` — the parent
-> capture's emptiness was correct, not a failure. What the overlay declares
-> (`_Vision_FoundationModels-27.0-macos.swiftinterface:14-47`, `:49-83`), identically shaped for
-> both tools:
->
-> - **`Arguments`** — a real nested struct, `Generable` by extension (`:43-45`, `:81-83`), with the
->   full macro surface emitted: `static var generationSchema: GenerationSchema`,
->   `var generatedContent: GeneratedContent`, a nested `PartiallyGenerated : Identifiable,
->   ConvertibleFromGeneratedContent` (`id: GenerationID`), and `init(_ content: GeneratedContent)
->   throws`. Note what the interface does **not** emit: any named argument property. The
->   model-facing field names surface only through `generationSchema` at runtime, and the only public
->   initialiser is from `GeneratedContent` — these are types the *model* instantiates, not you.
-> - **`Output`** — `@_opaqueReturnTypeOf` the tool's own `call`; i.e. the opaque
->   `some PromptRepresentable` above. You cannot name it; the associated-type question is answered
->   "write generic code against `PromptRepresentable`".
-> - `nonisolated(nonsending) func call(arguments:) async throws -> some PromptRepresentable`
->   (`:34`, `:70`).
->
-> Still true, and still the reason this section is short: **neither `OCRTool` nor `BarcodeReaderTool`
-> appears anywhere in Origami, Book Tracker or the hiking-trails app**, despite Origami being the sample
-> that does image analysis. The multimodal-prompting article's six lines remain the only published call
-> site in existence, and **no `OCRTool()` call site exists anywhere in the corpus** — its `init` is
-> now SDK-verified, but nobody's shipping code exercises it.
+> ✅ **SDK-verified — import both `Vision` and `FoundationModels` for these tools.**
+> The `_Vision_FoundationModels` cross-import overlay declares `BarcodeReaderTool` and `OCRTool`
+> (`:14-47,49-83`). Each nested `Arguments` struct is `Generable`, exposes `generationSchema`,
+> `generatedContent`, `PartiallyGenerated`, and `init(_ content: GeneratedContent) throws`, but no
+> named public argument properties. Model-facing fields come from its runtime schema.
+> `call(arguments:)` is `nonisolated(nonsending) async throws -> some PromptRepresentable`; its
+> `Output` is opaque, so use generic `PromptRepresentable` code. The captured sample corpus contains
+> no `OCRTool()` call site; the initializer is verified by the interface.
 
 ### The third built-in tool, and a caution
 

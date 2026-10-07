@@ -1,5 +1,7 @@
 # Part 5 — Prototyping, profiling, and non-Swift access
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** four different floors live in this part and confusing them wastes days. `#Playground`
 and the scheme's availability simulation are **Xcode 26.0**. The playground canvas's Input/Response token
 counts, `tokenCount(for:)` and `contextSize` are **26.4**. The Foundation Models instrument in its 2026

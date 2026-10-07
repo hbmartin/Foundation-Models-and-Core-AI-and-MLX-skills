@@ -1,16 +1,15 @@
 # Notes index
 
-Start here for current project state. Dated research files preserve what was known when they were
-written; operational files below are the maintained source of truth for what to run next.
+Start here for current project state and maintained instructions. Stable releases lead; beta-only changes are labelled separately.
 
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-10-06**, the corpus has 60 reference guides in 17 parts, 1785 classified callouts (1425 concrete silent failures), 1210 indexed symbols, and 10 generated skills.
+**As of 2026-10-07**, the corpus has 60 reference guides in 17 parts, 1782 classified callouts (1423 concrete silent failures), 1206 indexed symbols, and 10 generated skills.
 
 Snippet verification covers 1360 fences: 486 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 677 `PRELUDE-NEEDED`, 193 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.
 
-Installed: macOS 27.0 (26A428), Xcode 27.0 (27A266a), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A428). Latest observed: Xcode 27.2 beta 2 (27B5028f), iOS 27.2 beta 3 (24B5099f), and macOS 27.2 beta 3 (26B5101f); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-10-06), indexes=current (2026-10-06), skills=current (2026-10-06). Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
+Installed: macOS 27.0 (26A428), Xcode 27.0 (27A266a), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A428). Latest observed: Xcode 27.2 beta 2 (27B5028f), iOS 27.2 beta 3 (24B5099f), and macOS 27.2 beta 3 (26B5101f); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-10-07), indexes=current (2026-10-07), skills=current (2026-10-07). Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
 <!-- current-state:notes:end -->
 
 Historical evidence and open writing work remain in the dated notes and
@@ -22,32 +21,37 @@ Historical evidence and open writing work remain in the dated notes and
 
 | File | Use it for |
 |---|---|
-| [`FRESHNESS-RUNBOOK.md`](FRESHNESS-RUNBOOK.md) | Daily, weekly, and release-event evidence refreshes; includes the known defect-state parser false positives. |
+| [`FRESHNESS-RUNBOOK.md`](FRESHNESS-RUNBOOK.md) | Report-only daily checks, weekly maintenance, and release-event evidence refreshes. |
 | [`NEXT-BETA-CHECKLIST.md`](NEXT-BETA-CHECKLIST.md) | Exact Xcode/SDK/interface/snippet/probe ritual for a new beta or host update. |
-| [`NEEDED-FROM-A-MACOS-27-MACHINE.md`](NEEDED-FROM-A-MACOS-27-MACHINE.md) | The sole remaining original machine-dependent item (manual Instruments UI) and the closed-run record. |
 | [`PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`](PLATFORM-UPGRADE-VALIDATION-2026-09-16.md) | Promoted Mac/device findings, environment identity, freshness-job outcome, and remaining boundaries from the macOS/iOS upgrade run. |
-| [`FOLLOWUP-BACKLOG.md`](FOLLOWUP-BACKLOG.md) | Open writing work carried forward from the 2026-08-02 harvest — evidence already on disk, guides not yet updated. Preserves the now-superseded ordinal re-keying trap as history. |
+| [`FOLLOWUP-BACKLOG.md`](FOLLOWUP-BACKLOG.md) | Open writing work carried forward from the 2026-08-02 harvest — evidence already on disk, guides not yet updated. Uses stable identities for current maintenance. |
 | [`snippet-verification/README.md`](snippet-verification/README.md) | Canonical marker grammar and verifier CLI behavior. |
 | [`snippet-verification/report.md`](snippet-verification/report.md) | Latest exact toolchain identities and per-guide verification totals. |
 | [`sdk-interfaces/README.md`](sdk-interfaces/README.md) | Capture-manifest contract and safe interface-evidence promotion workflow. |
-| [`CORRECTIONS-PENDING.md`](CORRECTIONS-PENDING.md) | Historical correction register; despite the retained filename, all twelve items are applied. |
 
-## Research and historical planning
+## Evidence and decisions
 
-- [`synthesis/RESEARCH-INDEX.md`](synthesis/RESEARCH-INDEX.md) maps the grounded transcript,
-  documentation, forum, repository, and synthesis corpus and states its remaining evidence bounds.
-- [`synthesis/PROPOSED-GUIDE-TOPICS.md`](synthesis/PROPOSED-GUIDE-TOPICS.md) and the three
-  lens-specific proposals are historical planning artifacts. Their dated counts are not current
-  completion state; use `guides/` as the authoritative content tree.
-- [`SNIPPET-COMPILE-VERIFICATION-PROPOSAL.md`](SNIPPET-COMPILE-VERIFICATION-PROPOSAL.md) is now an
-  implementation record. The canonical live contract is the snippet-verification README above.
-- `transcripts/`, `web/`, `forums/`, and `repos/` are evidence snapshots. Preserve dated findings
-  even when later work closes them; add a status banner or superseding note instead of rewriting
-  the historical observation as though it had always been known.
+- [Research index](synthesis/RESEARCH-INDEX.md) maps primary evidence and remaining boundaries.
+- [Current decisions](CURRENT-DECISIONS.md) retains distinctions that affect implementation.
+- [Defect registry](defects.json) owns explicitly typed current issue, pull request, and discussion claims.
+- [Core AI evidence](evidence/core-ai/README.md) retains current native results, immutable pins, hashes, and regression controls.
+- [Instruments recording](../probes/INSTRUMENTS-RECORDING.md) owns the remaining manual UI task.
+- Retain a dated snapshot only when it supports a current claim, supported-version migration, a workaround, or a distinct regression. Remove completed proposals and superseded review narratives; Git retains their history.
 
 ## Maintenance rule
 
 Update `current-state.json` and render the generated status blocks. Regenerate verifier and index
-artifacts through their scripts. For issue/PR freshness, inspect the cited sentence before editing;
-the reporter bounds state parsing and marks uncertain claims AMBIGUOUS, but its verdicts remain
-review leads rather than edit instructions.
+artifacts through their scripts. For defect freshness, review the registry record and cited evidence
+before changing recommendations. The reporter compares recorded state to live GitHub state;
+closure alone never establishes remediation.
+
+`defects.json` schema version 1 records a stable ID, typed GitHub URL, affected-version boundary,
+guide file/anchor targets, and observed state/date. Unknown version boundaries remain explicit.
+Resolution records keep disposition, release availability, demonstrated remediation, evidence URLs,
+date, and rationale separate. A demonstrated fix requires reproduction evidence; a merge may remain
+outside the verified release. Active registered claims use `defect-ref` ID markers in generated
+guide blocks; ordinary historical citations remain source links.
+
+After reviewing a registry edit, run `scripts/render-defects.py --write` and regenerate indexes and
+skills. `--check` rejects drift. The defect reporter preserves its CLI flags, version-2 JSON fields,
+and TSV columns; failed lookups also appear in `unreachableReferences` under `--changed-only`.

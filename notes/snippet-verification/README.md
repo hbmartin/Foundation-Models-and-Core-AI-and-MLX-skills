@@ -89,8 +89,7 @@ failure/error states documented in the report; unselected target columns use `-`
 `--rekey-only <prior-results.tsv>` updates lines and anchors without invoking a compiler. It carries
 a verdict only when both semantic ID and content hash match. New or edited fences become
 `NEEDS-VERIFICATION` and make the command fail; changed code is never vouched for by ordinal
-alignment. Use `python3 scripts/migrate-stable-identities.py snippets --write` only for the initial
-v1-to-v2 conversion.
+alignment. The committed records already use v2 identities.
 
 ## Rhythm
 

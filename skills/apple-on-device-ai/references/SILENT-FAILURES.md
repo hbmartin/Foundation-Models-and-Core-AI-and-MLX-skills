@@ -1,8 +1,8 @@
 # Silent-failure index — Apple on-device AI: choosing a stack and getting the gates right
 
-**1785 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**1782 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -18,9 +18,9 @@
 | [Precision loss](#precision-loss) | 18 |
 | [Misleading signals](#misleading-signals) | 157 |
 | [Version drift](#version-drift) | 100 |
-| [Docs vs reality](#docs-vs-reality) | 158 |
+| [Docs vs reality](#docs-vs-reality) | 156 |
 | [API footguns](#api-footguns) | 259 |
-| [General cautions](#general-cautions) | 360 |
+| [General cautions](#general-cautions) | 359 |
 
 ## Wrong output
 
@@ -1160,7 +1160,7 @@
 - [availability == .available says nothing about quota — the most common real failure is invisible to every check.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#54-️-silent-failure--availability-is-not-a-health-check) — 4.1 🔇
 - [PCC in the Simulator throws a content-free error that reads as your bug — a known issue per Apple engineering.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#55-️-the-simulator-does-not-run-pcc) — 4.1
 - [This executor never throws rateLimited/contextSizeExceeded/timeout — a 429 arrives as generic httpError with raw bytes.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#27-the-errors-you-will-actually-see) — 4.2
-- [MLX never emits updateUsage — token usage reads absent or zero by design, a compile-vs-runtime symbol mismatch.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
+- [The cited beta adapter omits usage to avoid a missing symbol; verify stable behavior before token accounting.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
 - [A backend is not obliged to use the typed error vocabulary — and Apple's own executor mostly doesn't.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#64-the-rest-of-the-error-vocabulary) — 4.2
 - [Comparison table: MLX may report token usage absent or zero — the deliberate omission documented in §3.9.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#82-the-comparison-that-actually-decides-it) — 4.2
 - [Heading: Apple's own executor throws none of the typed LanguageModelError cases.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#113-️-apples-own-executor-throws-none-of-them) — 4.3
@@ -1535,8 +1535,6 @@
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache detection to 243, which never names it; the current written documentation supplies the metric.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-current-token-metrics) — 5.1
-- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK lacks PCC, reasoning, and attachments; stable fm no longer supplies the beta PCC route.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -1684,7 +1682,7 @@
 - ['8K context on iOS 27' is retired third-party provenance; Apple's TN3193 states 4096 tokens per session](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
 - [No .coreaimodel, .aiasset or coreai-torch convert exist; real spellings are .aimodel/.aimodelc, both directories](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#27-mlmodel--mlmodelc--aimodel--aimodelc--and-both-are-directories) — 17.5
 - [upgrade.md tells you to import MLXLMHuggingFace or MLXEmbeddersHuggingFace; neither module exists in the package](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
-- [The migration doc's own Breaking Changes fix is stale: grep confirms neither named HuggingFace module exists](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6 🔇
+- [At the inspected revision, migration docs name missing modules; check Package.swift and use MLXHuggingFace.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6 🔇
 - [The utilities README's install line cannot resolve; only prerelease tags exist](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-silent-failure-3) — 17.6
 - [README says .package(from: 1.0.0) but only 1.0.0-beta1 and beta3 tags exist; SwiftPM's from: excludes prereleases](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-silent-failure-3) — 17.6 🔇
 
@@ -2100,7 +2098,6 @@
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2
 - [Judge calls are model calls — guardrails, context, availability apply; 12% failed calls silently corrupt the…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/02-model-judges-and-alignment.md#198-️-judge-inferences-inherit-every-foundation-models-failure-mode) — 6.2
 - [TOC: ToolCallEvaluator requires ModelSubject(value:transcript:); omitting the transcript throws missingTranscript…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#contents) — 6.3
-- [Apple writes .exact values bare ('Paris, France') and wrapped (.string('r')); both compile via literal conformances.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#152-the-value-wrapping-footgun) — 6.3
 - [ToolCallEvaluator needs ModelSubject(value:transcript:) — without the transcript no trajectory can be scored.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass) — 6.3
 - [ModelSubject(value:) without transcript: still builds; ToolCallEvaluator throws missingTranscript — loud but…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#172-the-line-everyone-forgets) — 6.3
 - [The 58%-to-100% tool-eval lift is Apple's 12-sample letter-counting demo — a framework demo, not an expected benchmark.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#174-what-tool-evaluation-buys-with-a-number) — 6.3

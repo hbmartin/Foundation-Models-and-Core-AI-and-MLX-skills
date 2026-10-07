@@ -562,29 +562,11 @@ Earlier drafts of this guide presented 4096-vs-8192 as an equal-weight conflict.
 Apple's technote states the documented platform value plainly; the single unverified 8192 comment
 is retired historical provenance, not an active alternative.
 
-> ✅ **VERIFIED** — Apple Technical Note **TN3193**, *Managing the on-device foundation model's
-> context window*
-> (`/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window`,
-> fetched 2026-07-27): the on-device model has a context window of **4096 tokens per
-> `LanguageModelSession`**, covering instructions, prompt, tools, schemas, transcript history *and*
-> the response. Note the scoping word: **per session**, not per app and not per device.
->
-> Corroborated by: the context-window article (*"a context window of 4096 tokens per session"*), the
-> PCC comparison table (4K), WWDC26 session 319's spoken table (4K), and Apple's own DTS engineer on
-> forum thread 790736 — *"You are correct that currently the token limit for Foundation Models
-> framework is **around 4,000**."*
->
-> ✅ **Fifth Apple channel, and the one that names iOS 27 explicitly (2026-08-02).** Apple's
-> published Q&A summary for WWDC26 Group Lab **8121** records a question about the on-device
-> context window in iOS 27 and whether input plus output share one budget. The written summary
-> gives **4096 tokens as the on-device shared budget**, illustrates that a 4,000-token input leaves
-> roughly 96 tokens for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab-8121]
->
-> Two things this adds that TN3193 does not. First, **it is scoped to iOS 27 by the question
-> itself**, which is what the noema comment claims changed. That makes 4096 Apple's documented
-> iOS 27 platform value and retires the alleged device-specific 8192 observation from active guidance.
-> Second, it states the **shared input+output budget** as an arithmetic rule with a worked example,
-> which is the framing §4 depends on.
+> ✅ **Documented context budget — 4096 tokens per on-device session, shared by input and output.**
+> TN3193 includes instructions, prompts, tools, schemas, transcript history, and the response. WWDC26
+> Group Lab 8121 explicitly confirms the iOS 27 budget and illustrates a 4000-token input leaving
+> about 96 tokens for output; PCC has a 32K shared budget (chapter `0:08:11`).[^ctx-grouplab-8121]
+> Read the model's runtime `contextSize` and budget tool definitions alongside user text.
 
 [^ctx-grouplab-8121]: WWDC26 Group Lab **8121**, *"Coding Intelligence, Machine Learning & AI Group
     Lab"*, `https://developer.apple.com/videos/play/wwdc2026/8121/`. ⚠️ Apple publishes **no

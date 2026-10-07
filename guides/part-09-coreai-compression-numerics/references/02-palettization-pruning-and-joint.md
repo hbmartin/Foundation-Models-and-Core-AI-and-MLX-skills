@@ -16,7 +16,7 @@ The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includ
 Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
 `torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
 and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
-recorded separately in [the refresh evidence](../../../notes/synthesis/coreai-030-refresh/README.md).
+recorded separately in [the refresh evidence](../../../notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
 

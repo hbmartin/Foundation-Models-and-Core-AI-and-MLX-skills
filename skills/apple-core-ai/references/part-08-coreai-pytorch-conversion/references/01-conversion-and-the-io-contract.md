@@ -24,6 +24,18 @@ no-reconvert recovery.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:21](https://github.com/apple/coreai-torch/issues/21) <!-- defect-ref:apple.coreai-torch:issue:21 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
+| [apple.coreai-torch:issue:51](https://github.com/apple/coreai-torch/issues/51) <!-- defect-ref:apple.coreai-torch:issue:51 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 Five lines of Python turn a `torch.nn.Module` into an on-device artifact:

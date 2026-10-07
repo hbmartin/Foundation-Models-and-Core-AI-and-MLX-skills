@@ -21,6 +21,21 @@ this guide describes. Where that matters, the text says so.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-lm:pull:1585](https://github.com/ml-explore/mlx-lm/pull/1585) <!-- defect-ref:ml-explore.mlx-lm:pull:1585 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3665](https://github.com/ml-explore/mlx/issues/3665) <!-- defect-ref:ml-explore.mlx:issue:3665 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:issue:3887](https://github.com/ml-explore/mlx/issues/3887) <!-- defect-ref:ml-explore.mlx:issue:3887 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:issue:3915](https://github.com/ml-explore/mlx/issues/3915) <!-- defect-ref:ml-explore.mlx:issue:3915 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 Two jobs that look unrelated and are not. **Adapting a model you already have** (LoRA, DoRA, full
@@ -2298,7 +2313,7 @@ And remember §3.7: on the `run()` path your own callback is discarded.
 `step()` calls `average_gradients(grad)` before the optimizer update (✅ `trainer.py:134-137`,
 `254`). Launch it under `mlx.launch`.
 
-> ✅ **VERIFIED** — `notes/CORRECTIONS-PENDING.md` C10.4, from a WWDC26 session:
+> ✅ **VERIFIED** — `notes/transcripts/missing-sessions.md` (MLX distributed session), from a WWDC26 session:
 > `mlx.launch --hostfile <f> -- /remote/path/to/<exe> <args>`; the hostfile is a **JSON array of
 > `{ssh, ips[], rdma[]}`** where `rdma` is a positional adjacency matrix with `null` on the
 > diagonal; configured via
@@ -2894,7 +2909,7 @@ it only implements basic security checks."* (✅ `notes/repos/mlx-lm.md` §2.6.)
 - **To Core AI** — `./fused-bf16` is the input a converter wants.
   [Part 14](../../part-14-bridges-between-stacks/README.md).
 - **Behind a `LanguageModelSession`** — point `ChatCompletionsLanguageModel` at
-  `http://localhost:8080/v1`. [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), and note C4:
+  `http://localhost:8080/v1`. [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), and the backend logits constraint:
   guided generation needs logits, which not every backend exposes.
 
 ---

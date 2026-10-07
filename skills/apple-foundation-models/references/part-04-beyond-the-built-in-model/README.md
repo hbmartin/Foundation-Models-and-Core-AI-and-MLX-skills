@@ -1,5 +1,7 @@
 # Part 4 — Beyond the built-in model
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** everything here is **27.0 and only 27.0** — the `LanguageModel` /
 `LanguageModelExecutor` pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`,
 `LanguageModelCapabilities`, the generation channel (and, until Xcode 27 beta 5 dropped it from the

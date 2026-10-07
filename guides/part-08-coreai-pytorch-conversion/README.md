@@ -1,5 +1,7 @@
 # Part 8 — Core AI: converting a model from PyTorch
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** use `coreai-torch` **0.4.3** with `coreai-core==1.0.0b3` for the current pipeline. The historical compatibility
 floor remains 0.4.1 for assets that must load on OS 27 beta 2 and later, but 0.4.1's separate
 `AIProgram.optimize()` workflow must not be copied into a 0.4.3 pipeline. The package requires
@@ -27,6 +29,15 @@ every contract you define here — `AIModel`, `InferenceFunction.run`, state bin
 > tests, and signatures here are **more often 🟡 RECONSTRUCTED than in Parts 1–6**. Each one says which it is.
 
 ---
+
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
+<!-- current-defects:end -->
 
 ## Why this part exists
 

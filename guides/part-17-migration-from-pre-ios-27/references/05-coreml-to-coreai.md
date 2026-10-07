@@ -23,6 +23,15 @@ every OS you already support. That asymmetry is the whole subject of this guide.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
+<!-- current-defects:end -->
+
 ## What this covers
 
 The move from `MLModel` to `AIModel`, told as a *decision* rather than a *procedure*.

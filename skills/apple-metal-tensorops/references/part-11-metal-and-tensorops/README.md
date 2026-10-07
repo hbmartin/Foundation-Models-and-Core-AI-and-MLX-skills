@@ -1,5 +1,7 @@
 # Part 11 — Metal and TensorOps
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** the original TensorOps surface is **26.x**, while multiplane quantized tensors are
 **27.0**. TensorOps shipped in **26.0**; `bfloat` element types in **26.1**;
 cooperative tensors as `matmul2d` **inputs** in **26.3** (the header's own gate macro says **26.2** —

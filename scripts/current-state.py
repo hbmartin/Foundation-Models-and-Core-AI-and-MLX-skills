@@ -19,6 +19,7 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / "notes/current-state.json"
 TARGETS = {
+    "guides": ROOT / "guides/README.md",
     "notes": ROOT / "notes/README.md",
     "runbook": ROOT / "notes/FRESHNESS-RUNBOOK.md",
     "next-beta": ROOT / "notes/NEXT-BETA-CHECKLIST.md",
@@ -92,6 +93,21 @@ def load_manifest(path: pathlib.Path) -> dict:
     ):
         raise SystemExit("error: current-state manifest is not schema version 1")
     require_iso_date(value["asOf"], "current-state asOf")
+    if "stableReleases" in value:
+        releases = value["stableReleases"]
+        if not isinstance(releases, list):
+            raise SystemExit("error: stableReleases must be a list")
+        seen = set()
+        for release in releases:
+            if not isinstance(release, dict) or set(release) != {"component", "version", "released", "checkedAt", "sourceUrl"}:
+                raise SystemExit("error: invalid stable release record")
+            if any(not isinstance(release[key], str) or not release[key].strip() for key in release):
+                raise SystemExit("error: stable release values must be nonempty strings")
+            if release["component"] in seen or not release["sourceUrl"].startswith("https://") or "beta" in release["version"].lower() or " rc" in release["version"].lower():
+                raise SystemExit("error: stable releases require unique components and stable versions")
+            seen.add(release["component"])
+            require_iso_date(release["released"], "stable release date")
+            require_iso_date(release["checkedAt"], "stable release check date")
 
     def require_object(container: dict, key: str, fields: set[str]) -> dict:
         item = container.get(key)
@@ -278,6 +294,8 @@ def load_manifest(path: pathlib.Path) -> dict:
             or not isinstance(collection["observedAt"], str)
         ):
             raise SystemExit("error: current-state collection status is invalid")
+        if "generatedOutputsChecked" in collection and not isinstance(collection["generatedOutputsChecked"], bool):
+            raise SystemExit("error: generatedOutputsChecked must be boolean")
         try:
             dt.datetime.fromisoformat(collection["observedAt"].replace("Z", "+00:00"))
         except ValueError as error:
@@ -468,7 +486,7 @@ def pending_reasons(installed: dict, latest: dict) -> list[str]:
     ]
 
 
-def collect(manifest: dict) -> dict:
+def collect(manifest: dict, skip_generated_checks: bool = False) -> dict:
     value = json.loads(json.dumps(manifest))
     value["asOf"] = dt.datetime.now(dt.timezone.utc).date().isoformat()
     value["corpus"] = corpus_state()
@@ -476,11 +494,14 @@ def collect(manifest: dict) -> dict:
         manifest["environment"]["installed"]
     )
     value["environment"]["installed"] = installed
-    generated_outputs, generated_blockers = generated_output_state()
+    generated_outputs, generated_blockers = (
+        (value["generatedOutputs"], []) if skip_generated_checks else generated_output_state()
+    )
     value["generatedOutputs"] = generated_outputs
     blockers.extend(generated_blockers)
     value["collection"] = {
         "complete": not blockers,
+        "generatedOutputsChecked": not skip_generated_checks,
         "blockers": blockers,
         "observedAt": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
         .replace("+00:00", "Z"),
@@ -523,7 +544,21 @@ def render_blocks(state: dict) -> dict[str, str]:
     fm_version = installed["fm"]["version"] or (
         f"no independent version; macOS build {installed['fm']['build']}"
     )
+    stable = ", ".join(f"{item['component']} {item['version']}" for item in state.get("stableReleases", []))
+    stable_note = f" Observed stable releases: {stable}. Release availability does not attest untested runtime behavior." if stable else ""
     return {
+        "guides": (
+            f"**Current snapshot ({state['asOf']}):** {corpus['parts']} parts, "
+            f"{corpus['referenceGuides']} reference guides, {corpus['symbols']} indexed symbols, "
+            f"and {corpus['callouts']['total']:,} classified warnings "
+            f"({corpus['callouts']['concreteSilentFailures']:,} concrete silent failures). "
+            f"Installed verification environment: macOS {installed['os']['version']} "
+            f"({installed['os']['build']}), Xcode {installed['xcode']['version']} "
+            f"({installed['xcode']['build']}). Stable-release guidance leads; beta-only APIs "
+            "and measurements carry their own evidence dates and platform identity. "
+            "See [current state](../notes/current-state.json) for latest observed releases, "
+            "validation dates, and destination-specific baselines." + stable_note
+        ),
         "notes": (
             f"**As of {state['asOf']}**, the corpus has {corpus['referenceGuides']} reference guides "
             f"in {corpus['parts']} parts, {corpus['callouts']['total']} classified callouts "
@@ -595,6 +630,8 @@ def main() -> int:
     parser.add_argument("--manifest", type=pathlib.Path, default=DEFAULT_MANIFEST)
     subparsers = parser.add_subparsers(dest="command", required=True)
     collect_parser = subparsers.add_parser("collect")
+    collect_parser.add_argument("--skip-generated-checks", action="store_true",
+        help="retain prior generated-output validation dates; observe environment without rerunning consistency checks")
     collect_parser.add_argument("--output", type=pathlib.Path, required=True)
     render_parser = subparsers.add_parser("render")
     mode = render_parser.add_mutually_exclusive_group(required=True)
@@ -607,7 +644,7 @@ def main() -> int:
             raise SystemExit(
                 f"error: collect output is tracked: {args.output}; collect into artifacts/ or /tmp"
             )
-        observed = collect(manifest)
+        observed = collect(manifest, args.skip_generated_checks)
         atomic_text(args.output, json.dumps(observed, indent=2, sort_keys=True) + "\n")
         print(f"Collected current state in {args.output}")
         return 0

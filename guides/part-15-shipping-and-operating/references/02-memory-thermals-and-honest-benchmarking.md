@@ -2820,7 +2820,6 @@ note attributes a number to a file inside a repository, that inner citation is g
 | `notes/repos/issues-coreai-stack.md` | `std::bad_alloc` as a jetsam signature and the entitlement fix (#112); the iPad Flux2 wedge, the 3.85 GB heap request, and the per-call `InferenceFunction` leak (#77, #110). |
 | `notes/repos/apple-coreai-models.md` | Apple-published platform guidance: iOS "keep models under 2 GB", macOS "leave at least 6 GB of RAM headroom", use `os_proc_available_memory()`, prefer `.default` specialization options. |
 | `notes/transcripts/evals-mlx.md` | WWDC26 session 232: *"Agentic sessions usually comprise hundreds of thousands of tokens and most of those are not generated."* |
-| `notes/CORRECTIONS-PENDING.md` | Checked for items naming Part 15. None apply directly; C5's prefix-cache/hybrid constraint and C4's `@Generable`-needs-logits constraint are cross-referenced where they bear on measurement (§9.4) and backend choice (§8.1). |
 
 [^background-inference-entitlement]: Apple’s entitlement reference specifies the background Neural
     Engine requirement for Core AI, Core ML, and MPS Graph:

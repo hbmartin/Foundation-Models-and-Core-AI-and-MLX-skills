@@ -37,6 +37,27 @@ documentation, and the issue tracker. Where a claim comes from source, the file 
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-models:issue:66](https://github.com/apple/coreai-models/issues/66) <!-- defect-ref:apple.coreai-models:issue:66 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:10](https://github.com/apple/coreai-torch/issues/10) <!-- defect-ref:apple.coreai-torch:issue:10 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:11](https://github.com/apple/coreai-torch/issues/11) <!-- defect-ref:apple.coreai-torch:issue:11 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:2](https://github.com/apple/coreai-torch/issues/2) <!-- defect-ref:apple.coreai-torch:issue:2 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:21](https://github.com/apple/coreai-torch/issues/21) <!-- defect-ref:apple.coreai-torch:issue:21 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
+| [apple.coreai-torch:issue:5](https://github.com/apple/coreai-torch/issues/5) <!-- defect-ref:apple.coreai-torch:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:51](https://github.com/apple/coreai-torch/issues/51) <!-- defect-ref:apple.coreai-torch:issue:51 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:6](https://github.com/apple/coreai-torch/issues/6) <!-- defect-ref:apple.coreai-torch:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:issue:9](https://github.com/apple/coreai-torch/issues/9) <!-- defect-ref:apple.coreai-torch:issue:9 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:pull:22](https://github.com/apple/coreai-torch/pull/22) <!-- defect-ref:apple.coreai-torch:pull:22 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:pull:41](https://github.com/apple/coreai-torch/pull/41) <!-- defect-ref:apple.coreai-torch:pull:41 --> | MERGED (2026-10-07) | not-in-verified-release (0.4.3) | unverified | merged-unreleased |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the debugging guide for **conversion failures** — and, more importantly, for **conversions
@@ -1107,6 +1128,7 @@ composite, you get the unmatched-class `UserWarning`, and you ship without the c
 The resolution order is documented and worth memorising, because passing a redundant argument
 silently does nothing:
 
+<!-- callout-id: callout-356886e0d7764b53 -->
 > ✅ **VERIFIED** — `docs/api/composite-ops/rope.md`: *"1. If `cos` and `sin` are both provided, use
 > them directly. 2. Else, build `cos`/`sin` from `position_ids` and `freqs`."* And on the arguments:
 > *"`position_ids` … **Ignored if `cos` and `sin` are provided.**"*, *"`freqs` … **Ignored if `cos`

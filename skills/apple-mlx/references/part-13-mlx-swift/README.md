@@ -1,5 +1,7 @@
 # Part 13 — MLX in Swift
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** `mlx-swift-lm` **3.x** — pin `.upToNextMajor(from: "3.31.3")`; latest release
 **3.31.4** (2026-06-30). The package declares `swift-tools-version: 6.1` and platforms **macOS 14 /
 iOS 17 / tvOS 17 / visionOS 1** — low floors, and not the ones that bite. The floors that bite are

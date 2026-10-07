@@ -20,6 +20,15 @@ hardware path is a fast path, not a requirement.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the advanced kernel-authoring guide for Metal TensorOps. Guide 01 in this part covers the

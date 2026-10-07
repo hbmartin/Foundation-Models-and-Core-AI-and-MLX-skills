@@ -4,7 +4,19 @@
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## Version floor
+
+Current stable MLX is **0.32.3** ([release](https://github.com/ml-explore/mlx/releases/tag/v0.32.3), checked 2026-10-07). The API descriptions below retain their inspected revision; verify version-specific behavior against the installed wheel.
 
 **MLX is a pip package, not an OS framework, and its floor is much lower than the rest of this
 series.** Everything in this guide targets **MLX 0.32.x**. The checkout this guide was written

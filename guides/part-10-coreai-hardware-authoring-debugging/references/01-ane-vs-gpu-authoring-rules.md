@@ -504,6 +504,7 @@ rank 5:
 2. **Fold trailing axes into the channel.** `(B*nH, ws, nW, ws, C)` → `(B*nH, ws, nW, ws*C)`, then
    permute, then unfold. Correct as long as the two folded axes stay adjacent and in order.
 
+<!-- callout-id: callout-5292ca5a3accb7ab -->
 > ⚠️ **SILENT FAILURE — the rank-6 palettisation trap.**
 > This one is worth its own callout because it does not come from your model code at all, it comes
 > from your *compression config*, and it produces a model that runs perfectly and burns your battery.

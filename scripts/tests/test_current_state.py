@@ -27,6 +27,20 @@ STATE = load_module()
 
 
 class CurrentStateTests(unittest.TestCase):
+    def test_stable_release_records_reject_beta_and_duplicate_components(self):
+        manifest = STATE.load_manifest(STATE.DEFAULT_MANIFEST)
+        for kind in ('beta', 'duplicate'):
+            candidate = json.loads(json.dumps(manifest))
+            if kind == 'beta':
+                candidate['stableReleases'][0]['version'] = '27.2 beta 3'
+            else:
+                candidate['stableReleases'].append(candidate['stableReleases'][0])
+            with tempfile.TemporaryDirectory() as directory:
+                path = pathlib.Path(directory) / 'state.json'
+                path.write_text(json.dumps(candidate))
+                with self.subTest(kind=kind), self.assertRaises(SystemExit):
+                    STATE.load_manifest(path)
+
     def test_checked_in_blocks_are_current(self) -> None:
         result = subprocess.run([SCRIPT, "render", "--check"], cwd=ROOT, text=True,
                                 capture_output=True, check=False)
@@ -135,7 +149,7 @@ class CurrentStateTests(unittest.TestCase):
             old_targets = STATE.TARGETS
             try:
                 STATE.TARGETS = {}
-                for name in ("notes", "runbook", "next-beta", "probes"):
+                for name in old_targets:
                     path = root / f"{name}.md"
                     path.write_text(
                         f"<!-- current-state:{name}:start -->\nstale\n"
@@ -305,6 +319,15 @@ class CurrentStateTests(unittest.TestCase):
         xcode_reason = next(reason for reason in reasons if "Xcode" in reason)
         self.assertIn("differs from observed build", xcode_reason)
         self.assertNotIn("trails", xcode_reason)
+
+    def test_daily_collection_skips_checks_without_redating_prior_results(self):
+        manifest = STATE.load_manifest(ROOT / "notes/current-state.json")
+        with mock.patch.object(STATE, "installed_environment", return_value=(manifest["environment"]["installed"], [])), mock.patch.object(STATE, "generated_output_state") as checks:
+            observed = STATE.collect(manifest, skip_generated_checks=True)
+        checks.assert_not_called()
+        self.assertEqual(manifest["generatedOutputs"], observed["generatedOutputs"])
+        self.assertFalse(observed["collection"]["generatedOutputsChecked"])
+        self.assertTrue(observed["collection"]["complete"])
 
     def test_atomic_output_preserves_existing_mode(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

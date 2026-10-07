@@ -2355,7 +2355,7 @@ constraint rather than a footnote.
 > local backend can therefore lose Apple's flagship structured-generation feature.
 >
 > **Community-measured** — `notes/repos/john-rocky-models.md`, via
-> `notes/CORRECTIONS-PENDING.md` C4. Attribute it as such; it is not an Apple statement.
+> `notes/repos/john-rocky-models.md`. Attribute it as such; it is not an Apple statement.
 >
 > The failure is at least *typed*: a well-behaved provider throws
 > `LanguageModelError.unsupportedCapability(.guidedGeneration)` rather than returning malformed JSON,

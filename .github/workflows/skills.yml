@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # This job runs repository-controlled code on pull_request; it only
-          # reads, so it has no use for a persisted token. pages.yml does the same.
+          # reads, so it has no use for a persisted token.
           persist-credentials: false
 
       # No setup-python or setup-node actions here. The ubuntu-24.04 image ships
@@ -64,7 +64,8 @@ jobs:
       - name: Report the toolchain in use
         run: python3 --version && node --version && npm --version
 
-      - name: Test the generator
+      - name: Test the generator for standalone scheduled runs
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: python3 -m unittest discover -s scripts/tests -p 'test_skills.py' -v
 
       - name: Verify the committed tree

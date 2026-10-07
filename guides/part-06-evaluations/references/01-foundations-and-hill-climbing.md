@@ -25,26 +25,13 @@ evaluate a 26.0-era feature, but you can only *run* the evaluation on 27.
 > Python, Apple's guidance is the Python Foundation Models SDK plus your own scoring code — covered in
 > [`../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`](../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md).
 
-> ✅ **VERIFIED — distribution.** The framework ships **inside Xcode, not in the OS SDK** (Xcode 27
-> beta, checked 2026-07-29). The macOS 27.0 and iOS 27.0 beta SDKs contain no public `Evaluations`
-> module anywhere (`System/Library/Frameworks`, `SubFrameworks`, `usr/lib/swift`); the framework
-> lives at `<Xcode>/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`
-> — the same location and mechanism as `XCTest.framework` and Swift Testing's `Testing.framework`,
-> and consistent with session 299's *"new in Xcode 27"* phrasing. It is present for every platform
-> in the availability list and absent for AppleTVOS; its `.swiftinterface` annotates symbols
-> `@available(anyAppleOS 27.0, *)` / `@available(tvOS, unavailable)` and imports `Testing`. Two
-> practical consequences: `import Evaluations` resolves in **test targets** by default — a
-> non-test target (Book Tracker ships two command-line tools that use the framework) has to reach
-> the same platform `Developer/Library/Frameworks` directory through its search paths, as with
-> XCTest — and if you go looking for the framework under `xcrun --show-sdk-path`, you will not
-> find it. That absence is expected, not evidence the framework is missing.
->
-> **Interface pass, 2026-07-29:** that captured interface (885 lines, checked into this repo at
-> `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface`) has now been read end-to-end
-> against all three guides in this part. Claims marked ✅ **SDK-verified**
-> (`Evaluations-27.0-macos.swiftinterface:<lines>`) cite it. An interface settles spellings,
-> signatures, defaults, availability and case lists; it cannot settle runtime behaviour, and
-> absence from it means "not present in the Xcode 27 beta interface", never "does not exist".
+> ✅ **SDK-verified — Evaluations ships in Xcode's platform developer frameworks.**
+> Its location is
+> `<Xcode>/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`,
+> alongside testing frameworks rather than under the OS SDK. Test targets resolve it by default;
+> non-test tools need that framework search path. The captured interface imports `Testing`, requires
+> OS 27, and marks tvOS unavailable. See `notes/sdk-interfaces/capture-manifest.json` for the current
+> stable capture; interface evidence establishes declarations, not runtime behavior.
 
 ---
 
@@ -2357,7 +2344,7 @@ which of your five expectations has no metric behind it.
 > and fixture length. A clean error summary alone does not prove that ignored scores or
 > dropped loader rows covered the complete fixture. Model-free failure probes are in
 > `probes/Tests/ProbesTests/EvaluationsProbes.swift`; their observed outcomes are recorded in
-> [the final-SDK evidence note](../../../notes/synthesis/pr49-followup/README.md).
+> [the final-SDK evidence note](../../../notes/evidence/core-ai/README.md).
 
 ```swift compile:27 imports:Evaluations
 func requireCompleteScoring(_ result: EvaluationResult, metric: Metric, expectedRows: Int) {

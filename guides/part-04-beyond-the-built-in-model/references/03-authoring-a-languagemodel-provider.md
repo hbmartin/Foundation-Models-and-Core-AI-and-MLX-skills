@@ -860,34 +860,14 @@ command-buffer assertion abort — that is a process crash, not a catchable Swif
 
 **And it has a default no-op implementation** — which is where the footgun lives.
 
-> ⚠️ **SILENT FAILURE — the near-miss `prewarm` signature.** `prewarm(model:transcript:)` ships with a
-> default no-op extension. If your implementation's signature does not match the requirement
-> **exactly**, it does not fail to compile and it does not warn: it simply becomes an ordinary method
-> on your type that nothing ever calls, and the framework's no-op default binds as the witness
-> instead. `session.prewarm()` then does nothing, forever, silently.
->
-> Three independent sources say so, one of them about Apple's own code:
->
-> - ✅ **VERIFIED** — `MLXLanguageModel.swift:902-906`: *"This is the protocol witness for
->   `LanguageModelExecutor`'s `prewarm(model:transcript:)`. **The signature must match the requirement
->   *exactly* — concrete `Transcript`, not a generic `some Collection<Transcript.Entry>` — otherwise
->   it fails to bind as the witness and the framework's no-op default silently wins instead.**"*
-> - **Community-measured**, `fm-provider.md:183-186` (verified 2026-06-11, macOS 27 beta, M4 Max):
->   *"Implement `prewarm(model:transcript:)` **exactly** — implement `prewarm(transcript:)` and it
->   compiles but is never called. **Apple's own adapter has this today**, which is why
->   `session.prewarm()` does nothing for Core AI models: do your own warm-up (a 1-token generate after
->   load)."*
-> - The community `ZooExecutor.swift:68-70` carries the same warning in a comment: *"the protocol
->   ships a default no-op, so a near-miss compiles and is silently never called."*
->
-> **How to defend against it.** There is no compiler diagnostic to enable. Write a test: give your
-> executor a counter (an `atomic`, a `Mutex<Int>`, an `actor`), call `session.prewarm()` through the
-> real `LanguageModelSession` API, and assert the counter moved. That test takes ten lines and is the
-> only thing standing between you and a warm-up path that has never once executed.
->
-> The temptation to write the generic form is real, because `Transcript` *is* a
-> `Collection<Transcript.Entry>` and `some Collection<Transcript.Entry>` looks more idiomatic. Resist
-> it here.
+<!-- callout-id: callout-1a1c4dd293489c09 -->
+> ⚠️ **SILENT FAILURE — the near-miss `prewarm` signature.**
+> Use exactly `prewarm(model:transcript:)` with concrete `Transcript`. A generic collection or omitted
+> model parameter compiles as an ordinary method while the protocol's default no-op remains the
+> witness. The MLX adapter (`MLXLanguageModel.swift:902-906`) and community `ZooExecutor.swift:68-70`
+> document the trap. Verify a counter or breakpoint advances when called through
+> `LanguageModelSession.prewarm()`. The beta-era report about Apple's adapter is a dated observation,
+> not a current stable-runtime finding.
 
 One more subtlety, from the implementation that thought hardest about it: **loading weights is not
 warming up.**
@@ -1839,37 +1819,14 @@ Two operational rules fall out of that paragraph:
 
 ### 8.6 ⚠️ The silent failure hiding in every one of these switches
 
-> ⚠️ **SILENT FAILURE — an unhandled entry or segment disappears, and the model answers anyway.**
-> Look at the three catch-alls above:
->
-> - `ChatCompletionsLanguageModel.swift:555-556` — `@unknown default: continue`
-> - `TranscriptConverter.swift:107-112` — `default: … return nil`
-> - Apple's Core AI adapter — same shape
->
-> All three *silently drop* the entry. Nothing throws. The request goes out one message short, the
-> model answers confidently from incomplete context, and the developer sees a plausible wrong answer
-> with no error anywhere in the stack. The failure mode is invisible in exactly the way that makes it
-> expensive: it only manifests as quality regression, and only for the users whose transcripts happen
-> to contain the entry you dropped.
->
-> There is a real instance of this class already in the corpus: Apple's Core AI adapter *"skips tool
-> entries and never declares the capability"* (community-measured, `fm-provider.md:79-87`), so a
-> `LanguageModelSession` built on a Core AI model with tools registered simply behaves as if the
-> tools did not exist.
->
-> **Three defences, in increasing order of strength:**
-> 1. **Log every drop, at `warning` not `debug`.** MLX does this for empty entries and it is the only
->    reason such bugs are ever found in the field.
-> 2. **Throw `unsupportedTranscriptContent` for content you genuinely cannot represent**, the way the
->    segment switch does for `.custom`. A thrown error is a bug report; a silent drop is a support
->    ticket about "the AI being dumb."
-> 3. **Assert on entry counts in a test.** Build a transcript with all six entry types, run your
->    translator, and assert the output message count. A `default: continue` will pass every test you
->    write about behaviour and fail this one.
->
-> The one legitimate use of a silent drop is a *deliberate* one, and MLX shows how to write it: an
-> explicit `case .reasoning: return nil` with a comment explaining the intent, so the catch-all
-> never sees it and a future SDK entry type surfaces in review rather than being absorbed.
+<!-- callout-id: callout-c7fd386fb5fbcdcd -->
+> ⚠️ **SILENT FAILURE — dropping unsupported transcript content can yield plausible wrong answers.**
+> The cited Chat Completions (`:555-556`) and MLX converters (`TranscriptConverter.swift:107-112`) use
+> catch-all drops. The cited Core AI adapter also omits tool entries and does not declare the
+> capability. These source observations apply to the inspected revisions.
+> Log dropped content at warning level, throw `unsupportedTranscriptContent` for content the backend
+> cannot represent, and test translation of every supported entry kind. Intentional exclusions such as
+> `.reasoning` should use an explicit case with rationale rather than a catch-all.
 
 ### 8.7 Dialects do not transfer between model families
 
@@ -2776,28 +2733,14 @@ Three practical rules:
 
 ### 13.2 Custom segments — the extension point for new modalities
 
-> 🔴 **NOT PRESENT IN THE 27.0 BETA 5 INTERFACE (noted 2026-08-23).** Everything in this section
-> describes a surface the recaptured beta 5 `FoundationModels-27.0-macos.swiftinterface` no longer
-> declares: it contains **zero occurrences of `CustomSegment`** — no `Transcript.CustomSegment`
-> protocol, no `Transcript.Segment.custom(_:)` case (`Segment` is now `.text` / `.structure` /
-> `.attachment`, `27.0:2288-2297`), and no `.updateCustomSegment(_:)` response action
-> (`Response.Action`'s statics are now `appendText` / `replaceTextSegment` / `addAttachmentSegment`
-> / `removeAttachmentSegment` / `updateMetadata` / `updateUsage`, `27.0:1857-1864`). All three were
-> in the 2026-07-29 beta capture; the removal happened between that capture and beta 5, while WWDC
-> session 339, the provider SKILL.md, and the docs index still teach the surface. **Do not build a
-> provider contract on `.updateCustomSegment(...)` against the beta 5 SDK — it does not compile.**
-> The section is retained below, re-scoped as the pre-beta-5 design, because it is the best
-> statement of the *intent* Apple has published and the surface may return in a later beta.
->
-> 🔴 **GAP — no declared successor.** What is unknown: whether the removal is final, and what (if
-> anything) replaces provider-defined structured segments. What would resolve it: a later beta's
-> interface, or release notes. **Safe default:** ship structured payloads through the surfaces that
-> *are* in the beta 5 interface — `.updateMetadata(_:)` (now typed
-> `[String : any ConvertibleToGeneratedContent]`, `27.0:1862`) attached to a text segment, or
-> attachment segments for media (`27.0:1860-1861`) — which is also the lower-lock-in design this
-> section's own portability warning already recommended. `Transcript.Segment.structure(_:)` still
-> exists in transcripts (`27.0:2290`), but the beta 5 channel offers **no response action that
-> emits one**.
+> 🔴 **Migration-only surface — `CustomSegment` is absent from the current 27.0 interface.**
+> The earlier beta declared `Transcript.CustomSegment`, `.custom(_:)`, and `.updateCustomSegment(_:)`;
+> none appears in the stable capture in `notes/sdk-interfaces/`. The retained examples below explain
+> that earlier design and must not be copied into a current provider contract.
+> Current segments are `.text`, `.structure`, and `.attachment`; response actions include text
+> replacement/appending, attachment add/remove, metadata, and usage. Use `[String : any
+> ConvertibleToGeneratedContent]` metadata on text or attachments for media. No declared response
+> action emits a structured segment. A successor for provider-defined segments remains undocumented.
 
 This was the most forward-looking API in the session, and the one thing in the protocol that let a
 third party extend the *framework's* vocabulary rather than just consume it.

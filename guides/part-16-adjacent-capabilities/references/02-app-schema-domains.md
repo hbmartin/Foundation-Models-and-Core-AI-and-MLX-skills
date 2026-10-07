@@ -3640,7 +3640,6 @@ strong evidence, but because in this area they are frequently the *only* evidenc
   published code samples reproduced
 - `notes/forums/forum-pain-points.md` (1,538 lines) — the thread inventory and the undocumented
   error/limit table
-- `notes/CORRECTIONS-PENDING.md` — items C8, C10.3 and C10.6, applied in §8.2, §14.1 and §16
 - `transcripts/wwdc2026-{240,343,344,345}.txt` — the raw session prose
 
 [^app-dependency-registration]: Apple,

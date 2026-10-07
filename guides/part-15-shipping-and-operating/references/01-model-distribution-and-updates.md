@@ -734,7 +734,7 @@ is considerable ambiguity about *how*, and the next section is about that.
 > **What would resolve it:** the "Discover Apple-Hosted Background Assets" transcript (WWDC25),
 > the current `developer.apple.com/documentation/backgroundassets` reference, and — decisively —
 > any Apple sample project that ships a model this way. Apple's sample-code index for `coreai`
-> currently returns **zero projects** (✅ VERIFIED, `notes/CORRECTIONS-PENDING.md:245`), so this is
+> currently returns **zero projects** (✅ VERIFIED, `notes/CURRENT-DECISIONS.md`), so this is
 > not an oversight in our research; the sample does not exist yet.
 >
 > **SAFE DEFAULT:** build your feature against a **delivery protocol you own** (§3.4), implement it
@@ -3717,8 +3717,7 @@ unless the user has enabled Siri (forum threads 835211, 836760). **An Apple Fram
 confirmed on thread 836760 that this is a bug** — verbatim: *"The Foundation Models framework
 **should be available in Europe even if Siri AI is not enabled**. Please file a bug report via
 Feedback Assistant and be sure to include a sysdiagnose to help us investigate."* ✅ VERIFIED
-(`notes/forums/forum-pain-points.md:607-614`, reclassified per
-`notes/CORRECTIONS-PENDING.md:10-27`). Unresolved as of 2026-07-27. Expect to hit it on betas; do
+(`notes/forums/forum-pain-points.md:607-614`). Unresolved as of 2026-07-27. Expect to hit it on betas; do
 not build permanent UX around requiring Siri.
 
 ### 12.3 The four realistic strategies
@@ -3754,8 +3753,7 @@ broadly, the *AOT optimisation* does not. Devices outside the AOT envelope get t
 routinely discovered too late: **grammar-constrained decoding needs access to engine logits, and
 GPU-pipelined Core AI bundles never expose them.** Consequence: an app that brings its own model
 **loses Apple's flagship structured-generation feature exactly when it selects the fastest
-backend.** Community-measured (`notes/repos/john-rocky-models.md`, per
-`notes/CORRECTIONS-PENDING.md:113-121`). This is a first-class architectural constraint, not a
+backend.** Community-measured (`notes/repos/john-rocky-models.md`). This is a first-class architectural constraint, not a
 footnote — factor it into the decision before you build the delivery pipeline, not after.
 
 **Strategy 3 — check availability before anyone pays.** The Apple Designer's advice on 836810, and

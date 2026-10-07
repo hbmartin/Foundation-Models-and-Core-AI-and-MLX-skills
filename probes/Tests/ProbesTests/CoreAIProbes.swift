@@ -21,7 +21,7 @@
 //    --output …` or `xcrun coreai-build compile|package …` — coreai-build ships
 //    in the optional Metal Toolchain component (`xcodebuild -downloadComponent
 //    MetalToolchain`; resolve it via `xcrun --no-cache --find coreai-build`) —
-//    see notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 2 (resolved 2026-07-31).
+//    the selected SDK does not provide a simulator CoreAI module.
 
 #if canImport(CoreAI)
 import CoreAI

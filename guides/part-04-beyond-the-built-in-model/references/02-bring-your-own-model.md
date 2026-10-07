@@ -1353,28 +1353,16 @@ The framework's `prewarm` hook calls the full version:
 
 Collected, because each of these costs an hour the first time.
 
-> ⚠️ **SILENT FAILURE — token usage may be absent or zero, by design, on this SDK.** MLX's adapter
-> deliberately does **not** send `updateUsage` events at all. The reason is a compile-versus-runtime
-> symbol mismatch, and the comment explaining it (`MLXLanguageModel.swift:729-761`) is worth reading
-> in full because it is the sharpest beta-era hazard in the corpus:
->
-> > ✅ **VERIFIED (repo source, verbatim)** — *"the FM-27 beta `.swiftinterface` declares
-> > `Response.Action.updateUsage(input:output:metadata: = [:])` (three parameters), but the **shipping
-> > FoundationModels dylib only exports the older two-parameter
-> > `Response.Action.updateUsage(input:output:)`**. Because our call relies on the `metadata:`
-> > default, the compiler resolves it to the three-parameter symbol, **which does not exist at
-> > runtime.** dyld cannot bind it: under **chained-fixups linking (the arm64 default) the reference
-> > aborts the process the moment the image loads**, and under lazy binding it **faults through null
-> > (SIGSEGV at 0x0)** the instant this send executes — crashing every `respond()` path right after
-> > generation completes. **A runtime `dlsym` guard cannot save this**: the compiled reference to the
-> > missing symbol is enough to abort at launch regardless of any surrounding check. The only safe
-> > option is to **not reference the symbol at all**."*
->
-> The stated consequence for you: *"consumer-visible usage for these responses may be absent or
-> zero."* So **do not build a token-accounting or cost-display feature on `response.usage` against
-> this backend on this SDK**, and do not conclude your prompts are free. Two lessons generalise: a
-> beta `.swiftinterface` can advertise symbols the dylib does not export, and the failure mode is a
-> **launch-time abort**, not a graceful error.
+<!-- callout-id: callout-9f6befd531a050ab -->
+> ⚠️ **Beta-only workaround — the cited MLX adapter omits token-usage events.**
+> `MLXLanguageModel.swift:729-761` documents a beta interface/runtime mismatch: the interface's
+> three-parameter `Response.Action.updateUsage(input:output:metadata:)` had no matching dylib symbol.
+> A compiled reference could abort at image load or crash on lazy binding; a runtime `dlsym` guard
+> could not remove that reference. The adapter consequently omitted usage events, leaving
+> `response.usage` absent or zero.
+> This is evidence for that adapter/SDK snapshot, not a verified stable-27 defect. Verify the
+> installed adapter and runtime before using usage for accounting. Zero usage does not establish that
+> generation consumed no tokens.
 
 > ⚠️ **SILENT FAILURE — the executor cache key is the model id and nothing else.**
 > `MLXLanguageModel.Executor.Configuration` is verified as

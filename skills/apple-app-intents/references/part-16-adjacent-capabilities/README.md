@@ -1,5 +1,7 @@
 # Part 16 — Adjacent capabilities
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** deliberately mixed, and this is the part where version confusion costs the most. The
 *new* material floors at **iOS · iPadOS · macOS · visionOS 27 with Xcode 27** —
 `CaptureInputSequenceProvider`, `AnalyzerInputConverter`, `LongRunningIntent`, `ExecutionTargets`,

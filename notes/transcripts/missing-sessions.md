@@ -2767,7 +2767,7 @@ Verbatim, and this is the passage the brief was really after:
 
 ### What this does to our existing claims
 
-Our `notes/CORRECTIONS-PENDING.md` C3 says, from header verification against the Xcode 26.6 SDK:
+The original Xcode 26.6 header research records, from header verification against the Xcode 26.6 SDK:
 *"**Availability is 26.2**, not 27."*
 
 **Verdict: the headline conclusion — "26.x, not 27" — is STRONGLY CORROBORATED. The specific number

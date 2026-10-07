@@ -1806,6 +1806,7 @@ The community-side ladder agrees on the bars and adds an investigation trigger:
 
 ### 10.6 ⚠️ The limit of a similarity metric
 
+<!-- callout-id: callout-12c5dd42c27f434c -->
 > ⚠️ **SILENT FAILURE — an all-green sync-point board can coexist with a model that generates
 > different text.** This is the sharpest warning in this guide for anyone shipping an LLM.
 >

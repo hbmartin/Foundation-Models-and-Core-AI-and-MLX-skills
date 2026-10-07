@@ -1,8 +1,8 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**73 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**72 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -14,7 +14,7 @@
 | [Misleading signals](#misleading-signals) | 11 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
 | [API footguns](#api-footguns) | 8 |
-| [General cautions](#general-cautions) | 20 |
+| [General cautions](#general-cautions) | 19 |
 
 ## Wrong output
 
@@ -138,7 +138,6 @@
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2
 - [Judge calls are model calls — guardrails, context, availability apply; 12% failed calls silently corrupt the…](part-06-evaluations/references/02-model-judges-and-alignment.md#198-️-judge-inferences-inherit-every-foundation-models-failure-mode) — 6.2
 - [TOC: ToolCallEvaluator requires ModelSubject(value:transcript:); omitting the transcript throws missingTranscript…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#contents) — 6.3
-- [Apple writes .exact values bare ('Paris, France') and wrapped (.string('r')); both compile via literal conformances.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#152-the-value-wrapping-footgun) — 6.3
 - [ToolCallEvaluator needs ModelSubject(value:transcript:) — without the transcript no trajectory can be scored.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass) — 6.3
 - [ModelSubject(value:) without transcript: still builds; ToolCallEvaluator throws missingTranscript — loud but…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#172-the-line-everyone-forgets) — 6.3
 - [The 58%-to-100% tool-eval lift is Apple's 12-sample letter-counting demo — a framework demo, not an expected benchmark.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#174-what-tool-evaluation-buys-with-a-number) — 6.3

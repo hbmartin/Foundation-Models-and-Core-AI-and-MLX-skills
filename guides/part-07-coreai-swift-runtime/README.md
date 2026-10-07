@@ -1,5 +1,7 @@
 # Part 7 — Core AI: the Swift runtime
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** everything here is **27.0 and only 27.0**. `import CoreAI` requires **iOS · iPadOS ·
 macOS · Mac Catalyst · tvOS · visionOS · watchOS 27.0**, and **every symbol is Beta**. Core AI is a *new
 framework* in the 27 cycle, not a rename of Core ML: nothing back-deploys, no `@available(iOS 26, *)`

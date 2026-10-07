@@ -1,5 +1,7 @@
 # Part 17 — Migration from pre-iOS 27
 
+<!-- part-router: {"guides": "The guides in this part", "triage": "Read this first: the five-minute triage"} -->
+
 **Version floor:** you have a shipping app or pipeline built against **iOS/macOS 26.x**, **Xcode 26**,
 `coreai-torch` ≤ 0.4.x, or `mlx-swift-lm` 2.x, and you are moving to **iOS/macOS 27** and **Xcode 27**.
 

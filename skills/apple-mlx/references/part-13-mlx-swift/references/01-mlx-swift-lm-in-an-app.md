@@ -33,6 +33,15 @@ migration table.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-swift-lm:issue:312](https://github.com/ml-explore/mlx-swift-lm/issues/312) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the "get it into a shipping app" guide. It assumes you have decided to run a model with MLX
@@ -3809,7 +3818,6 @@ evidence class.
   note refer to `ml-explore/mlx-swift-lm`.
 - `notes/repos/coreai-models-nonllm.md` — consulted for the cross-stack EXIF finding in §7.4, where
   it **conflicts** with the `mlx-swift-examples` evidence. The conflict is reported, not resolved.
-- `notes/CORRECTIONS-PENDING.md` — reviewed; no entry names Part 13.
 
 ### Declared gaps
 

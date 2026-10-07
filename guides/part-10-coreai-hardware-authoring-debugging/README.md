@@ -1,5 +1,7 @@
 # Part 10 — Core AI: hardware authoring, debugging, and LLM deployment
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** everything here is **27.0 and only 27.0**. `apple/coreai-models` pins
 `platforms: [.macOS("27.0"), .iOS("27.0")]` and requires **Xcode 27.0+**; the Python side is
 `coreai-core==1.0.0b3` (a *beta* wheel), `coreai-torch==0.4.3`, `coreai-opt==0.3.0`, a pinned

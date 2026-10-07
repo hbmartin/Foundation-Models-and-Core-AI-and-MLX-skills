@@ -137,7 +137,7 @@ and the `PROBE-RESULT` contract are documented in [`probes/README.md`](probes/RE
 
 ### MkDocs publishing
 
-The [documentation Pages workflow](.github/workflows/pages.yml) is the publishing source of truth.
+The [tests and documentation workflow](.github/workflows/tests.yml) is the publishing source of truth.
 It tests the render-only Markdown hook, builds the site with warnings as errors, verifies the main
 routes and search index, and checks that the source guides were not modified. The generated site is
 disposable and is not committed.
@@ -155,7 +155,7 @@ stack uses Python only; it does not install Swift or fetch a separate renderer.
 
 ### Freshness and research mirrors
 
-GitHub issue and pull-request states cited by the guides can be checked with:
+Current GitHub defect records in `notes/defects.json` can be checked with:
 
 ```bash
 ./scripts/refresh-defect-statuses.sh --changed-only
@@ -194,3 +194,11 @@ for the stack map and platform gates. Use the [API and symbol index](guides/API-
 coverage by identifier, or the [silent-failure index](guides/SILENT-FAILURES.md) to troubleshoot by
 observed symptom. For the cloud-to-device path, read
 [Remote GPU training to an iOS app](guides/workflows/remote-training-to-ios.md).
+
+### Current-first cleanup
+
+Retain historical evidence only for supported-version migration, a workaround, or distinct regression proof. Render current defect blocks with `python3 scripts/render-defects.py --write`; validate them with `--check`. The reporter reads explicit records and never infers state from prose or treats closure as remediation.
+
+Daily collection uses `scripts/current-state.py collect --skip-generated-checks` and retains earlier generated-output check dates. Weekly and CI validation still run the full checks.
+
+Inspect local cleanup with `python3 scripts/cleanup-local-artifacts.py`. Add `--apply` to remove only eligible ignored directories. Inactive caches have a seven-day threshold; completed runs have a thirty-day threshold. References, unresolved failures, unknown completion, current lanes, automation state, locks, environments and model assets are retained.

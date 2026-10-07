@@ -484,28 +484,14 @@ zero hits. §6 traces where the README's token language came from.
 
 **(2) The trailing entry must be a `.prompt`, or the whole thing is a no-op.**
 
-> ⚠️ **SILENT FAILURE — summarisation skips itself on tool-output continuations and tells you
-> nothing.** The `onPrompt` hook fires on every generation, including the continuation after a tool
-> returns. On those iterations `history.last` is a `.toolOutput`, the second `guard` fails, and the
-> modifier returns without summarising, without logging, and without any observable difference from
-> a successful run.
->
-> ✅ **VERIFIED** — Apple's test `only summarizes on prompts, not on tool-output continuations`
-> (`SummarizeHistoryTests.swift:155-189`), comment verbatim (`:178-184`): *"The single respond
-> produces: prompt -> tool call -> tool output -> response. By the time summarization's hook runs on
-> the tool-output continuation, the history count (3) already exceeds the threshold (2), but the most
-> recent entry is a tool output rather than a prompt. Because summarization only acts when the last
-> entry is a prompt, it is skipped."*
->
-> **Consequence for agentic apps:** in a session where most generations are tool-loop iterations
-> rather than fresh user prompts, the threshold you configured is not the threshold you get.
-> A `.required` tool-calling loop (see Part 2's tool guide §7) can run many inferences per user
-> turn, and summarisation will fire on at most one of them. Budget for the transcript growing to
-> `entryThreshold + (entries added during the longest tool loop)` before anything compresses.
->
-> Apple's own skill document states the rule correctly, and it is one of the places that document is
-> right: *"`summarizeHistory` requires the trailing entry to be `.prompt`. It is a no-op for any
-> other trailing entry kind."* (✅ `skills/foundation-models-utilities/SKILL.md`, pitfalls list.)
+<!-- callout-id: callout-3a858a45400c4640 -->
+> ⚠️ **SILENT FAILURE — summarisation skips tool-output continuations.**
+> The `onPrompt` hook runs for each generation, but Apple's modifier returns unless `history.last` is
+> `.prompt`. `SummarizeHistoryTests.swift:155-189` verifies that a tool-output continuation does not
+> summarize even after crossing the threshold; the package skill documents the same requirement.
+> A long tool loop can therefore grow past `entryThreshold` before the next user prompt triggers
+> compression. Budget for the threshold plus entries added by the longest tool loop, and test this
+> continuation shape explicitly.
 
 **(3) The result is one entry. Not "the old entries plus a summary" — one entry.** The assignment at
 `:153` replaces the entire history array with a single `.prompt`. Everything else — the instructions

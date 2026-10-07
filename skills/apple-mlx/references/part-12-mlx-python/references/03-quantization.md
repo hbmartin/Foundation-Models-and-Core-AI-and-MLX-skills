@@ -20,6 +20,21 @@ read this session and carries an evidence marker.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1585](https://github.com/ml-explore/mlx-lm/pull/1585) <!-- defect-ref:ml-explore.mlx-lm:pull:1585 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:issue:3887](https://github.com/ml-explore/mlx/issues/3887) <!-- defect-ref:ml-explore.mlx:issue:3887 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:pull:3757](https://github.com/ml-explore/mlx/pull/3757) <!-- defect-ref:ml-explore.mlx:pull:3757 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 Quantization in MLX is not one feature. It is four things wearing the same name, and confusing
@@ -2042,16 +2057,16 @@ arithmetic — it produces no arithmetic at all**, leaving output rows unwritten
 the recycled Metal buffer last held. Sometimes that is obviously garbage. Sometimes it is
 coincidentally plausible. That is the whole problem.
 
-**Status legend.** Every entry below is marked with its state *as of 2026-08-03* (re-checked
-against live GitHub via `gh` on 2026-08-03; the notes behind this section were taken 2026-07-27).
-Statuses move. Check the issue before you rely on this table.
+**Current state:** the registry block above records GitHub state, released source, and local
+remediation separately. The table identifies each defect's scope; historical reproductions
+remain relevant when supporting older releases.
 
-| # | Defect | Issue / PR | Status 2026-08-03 | Affects |
+| # | Defect | Issue / PR | Recorded disposition | Affects |
 |---|---|---|---|---|
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **closed completed**, fix PR **merged 2026-08-26** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** → PR **#3922** | issue **closed completed 2026-09-07**, fix PR **merged 2026-08-26** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
-| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
+| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **MERGED 2026-09-11**; source fix included in 0.32.3 | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
 | 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** → PR **#3757** | **CLOSED** 2026-08-05; fix merged 2026-08-04, ships in **0.32.1** — on ≤ 0.32.0 it **throws**, does not corrupt | nvfp4 on Apple silicon, mlx ≤ 0.32.0 |
@@ -2256,12 +2271,12 @@ assumes "a group is at least as large as a block" is wrong for `nvfp4` and only 
 is a structural hazard, not a one-off, and it is a reason to treat `nvfp4` on Metal as the least
 mature of the four modes — a judgement that §9.7 independently supports.
 
-This one is **merged**, so an mlx build from after 2026-07-22 has it. It is in the table because
+This PR is **merged**; verify that the installed release contains its commit before relying on the fix. It is in the table because
 its *shape* — a mode-specific block-size assumption — is the kind of defect that recurs.
 
 ### 9.4 fp quantized matmul when the quantized dim is not a multiple of 32 — PR #3912
 
-**Status: OPEN as of 2026-07-29, opened 2026-07-24.**
+**Current record:** PR #3912 merged 2026-09-11, and its merge commit is contained in stable MLX 0.32.3. Local remediation is unverified; reproduce the shape below on the installed release before removing a workaround.
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1994`: PR **3912**, 2026-07-24, OPEN:
 > *"Fix fp quantized matmul corruption when the quantized dim is not a multiple of 32"*. Also
@@ -2279,7 +2294,7 @@ this is the fp modes' analogue of §9.2.
 > correctly — *"a model can decode perfectly and corrupt during prefill."* **Not NAX-only:** the
 > PR's reproducer is an M3 Pro. Magnitude in that reproducer: max |err| ≈ 40, **72% of outputs
 > wrong**, versus ~1e-3 on the aligned/CPU/vector paths.
-> **Safe default until the PR merges:** keep dimensions that are *already* multiples of 64 aligned;
+> **For releases without the bounded-tail fix:** keep dimensions that are *already* multiples of 64 aligned;
 > for a legal non-aligned NVFP4 model, either pin a revision containing #3912's bounded-tail fix,
 > route the affected matrix operation to the verified CPU path, or pad only after measuring the
 > graph-wide cost. The PR's own `K = 1040` reproducer would need padding to 1088: 48 extra reduction
@@ -2853,13 +2868,14 @@ LADDER       M = 1        qmv
 FIXED MAIN   #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
              #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
                     -> both fixed by #3922 (`d73eb752`); v0.32.2 predates the merge
-OPEN BUGS    #3912  fp quantized matmul, quantized dim % 32 != 0
-             #3924  tile_matmad_nax missing else, odd tile shapes
-             (#3912/#3924 OPEN; #3854 nvfp4 split-K is MERGED)
+RELEASED     #3912  bounded fp quantized matmul tail; fix in v0.32.3
+             #3922  gathered-row fixes; also contained in v0.32.3
+UNVERIFIED   Local remediation on the installed wheel; run the reproducer.
+DECLINED     #3924  tile_matmad_nax missing else, closed unmerged
 
 MITIGATION   Prefer native K % 64 == 0; otherwise pin a fixed revision, use a
              safe fallback, or measure padding. Pad gathered rows to 64 while
-             the row-tail bugs remain open.
+             the installed release still reproduces the row-tail bug.
 
 ENV          MLX_ENABLE_TF32 defaults to 1. Set it to 0 BEFORE the first matmul
              or it silently does nothing. Metal: gen-17 + macOS 26.2 only.
@@ -3012,9 +3028,6 @@ Everything in this guide traces to one of these. Nothing was written from model 
 
 **Series corrections applied:**
 
-- `notes/CORRECTIONS-PENDING.md` — item **C3** correctly identified `fp8_e8m0` / `fp8_e4m3` /
-  `fp4_e2m1` as MLX's own structs but overgeneralized a 26.6 negative header search. §2.4 now
-  distinguishes MLX's pinned implementation from Xcode 27's documented multiplane tensor API.
 
 **A note on precedence.** Where the brief for this guide and the research notes disagreed, the
 notes won and the difference is reported inline — most visibly in §7.4, where the community

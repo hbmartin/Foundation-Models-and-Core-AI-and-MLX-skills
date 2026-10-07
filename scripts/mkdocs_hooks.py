@@ -498,3 +498,17 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Any) -> str:
         config["repo_url"],
         branch,
     )
+
+
+def verify_site_routes(docs_dir: Path, site_dir: Path) -> None:
+    """Require one rendered route per canonical Markdown page, including README routes."""
+    expected = set()
+    for source in docs_dir.rglob("*.md"):
+        relative = source.relative_to(docs_dir)
+        route = relative.parent / "index.html" if source.name == "README.md" else relative.with_suffix("") / "index.html"
+        expected.add(route.as_posix())
+    actual = {path.relative_to(site_dir).as_posix() for path in site_dir.rglob("index.html")}
+    if not expected or expected != actual:
+        raise ValueError(f"site route mismatch: missing={sorted(expected - actual)}, unexpected={sorted(actual - expected)}")
+    if not (site_dir / "search/search_index.json").is_file():
+        raise ValueError("site search index missing")

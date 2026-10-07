@@ -600,7 +600,7 @@ existing 🔴.
 > Organizer section. What remains true is the narrower claim below: it does not close the
 > *lane-names* gap.
 
-**Checked specifically against `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 (Instruments lane
+**Checked specifically against `probes/INSTRUMENTS-RECORDING.md` (Instruments lane
 names) and the Core AI Debugger question.**
 
 **It does not mention:** Instruments templates for AI workloads, the Foundation Models or Core AI

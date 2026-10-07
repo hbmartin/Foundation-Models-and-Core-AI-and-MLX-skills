@@ -2684,7 +2684,6 @@ unanswered**. The one genuinely useful technical answer in the cluster came from
 - `notes/transcripts/missing-sessions.md` (3,216 lines) — the session pass, including Apple's
   published code samples reproduced verbatim. §1.1, §3, §4 and §6 are largely its §1.11–§1.14.
 - `notes/forums/forum-pain-points.md` (1,538 lines) — the forum cluster, §3.45–§3.46 and Cluster H.
-- `notes/CORRECTIONS-PENDING.md` — items C1, C8, C9, C10.3 and C10.6 as applied above.
 
 ### How to re-verify anything in this guide
 

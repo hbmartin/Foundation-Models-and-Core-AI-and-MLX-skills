@@ -1,5 +1,7 @@
 # Part 12 — MLX in Python
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order, and what you can defer", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** MLX **0.32.x** (the tree declares `MLX_VERSION 0.32.1` at commit `973e27f`; the docs site
 served the 0.32.0 build) and **mlx-lm 0.31.3**, plus `main` at `e5baded` (2026-07-26). MLX is a **pip package,
 not an OS framework**, and its floor sits far below the rest of this series: **Apple silicon, a native `arm`
@@ -15,6 +17,18 @@ served, or spread across four Macs. Swift is [Part 13](../part-13-mlx-swift/); C
 [Part 14](../part-14-bridges-between-stacks/).
 
 ---
+
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:issue:3860](https://github.com/ml-explore/mlx/issues/3860) <!-- defect-ref:ml-explore.mlx:issue:3860 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+<!-- current-defects:end -->
 
 ## ⚠️ Pin your versions. Every date in this part is suspect.
 

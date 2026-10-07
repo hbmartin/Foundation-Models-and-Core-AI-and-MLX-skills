@@ -1028,7 +1028,7 @@ Three things to take from it:
 >
 > 🔴 **GAP — this does not settle the deletion contradiction below.** The tools clear the cache
 > *before* any `AIModel` exists, so they never exercise the disputed case: deleting an entry that a
-> live `AIModel` is pinning. `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7 stands.
+> live `AIModel` is pinning. The live-model cache-deletion case still needs a controlled device probe.
 
 ---
 
@@ -2022,6 +2022,7 @@ enum CompiledAsset {
 
 This is the AOT footgun, and it is exactly the shape this series exists to document.
 
+<!-- callout-id: callout-92f4050c93903353 -->
 > ⚠️ **SILENT FAILURE — `coreai-build compile` exits 0 for architectures the device will reject.**
 >
 > **Community-measured, device-validated 2026-06-10** (`john-rocky`; single-author community

@@ -26,6 +26,17 @@ true and they are about different things — §4.2 gives the full story. Build f
     [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor)
     and [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx:issue:3860](https://github.com/ml-explore/mlx/issues/3860) <!-- defect-ref:ml-explore.mlx:issue:3860 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the guide about **where MLX stops being a portable array library and starts being a program
@@ -750,6 +761,7 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.3 ⚠️ SILENT FAILURE: precision you did not choose, with no runtime signal
 
+<!-- callout-id: callout-17c8d8203e6a6232 -->
 > ⚠️ **SILENT FAILURE — `float32` matmul at TF32-class precision.**
 >
 > **What happens.** On an M5-class Mac running macOS ≥ 26.2, `a @ b` with `a` and `b` of dtype

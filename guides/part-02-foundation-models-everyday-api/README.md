@@ -1,5 +1,7 @@
 # Part 2 — Foundation Models: the everyday API
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** the framework itself is **26.0** on iOS, iPadOS, Mac Catalyst, macOS and visionOS —
 **no watchOS until 27.0**. Everything genuinely new here (`LanguageModelError`, `ToolCallingMode`,
 mutable `transcript`, `Attachment`, `SpotlightSearchTool`, `Response.usage`, `ContextOptions`) is

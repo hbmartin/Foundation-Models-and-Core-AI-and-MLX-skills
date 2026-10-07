@@ -2,8 +2,9 @@
 
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
-**Series status:** 17 parts · 77 guides · verified against the macOS 26.5 and 27.0-beta SDK
-interfaces on 2026-07-29 — [full verification details](#verification-and-series-status).
+<!-- current-state:guides:start -->
+**Current snapshot (2026-10-07):** 17 parts, 60 reference guides, 1206 indexed symbols, and 1,782 classified warnings (1,423 concrete silent failures). Installed verification environment: macOS 27.0 (26A428), Xcode 27.0 (27A266a). Stable-release guidance leads; beta-only APIs and measurements carry their own evidence dates and platform identity. See [current state](../notes/current-state.json) for latest observed releases, validation dates, and destination-specific baselines. Observed stable releases: iOS 27.0.1, macOS 27.0.1, ml-explore/mlx 0.32.3, ml-explore/mlx-lm 0.32.0, ml-explore/mlx-swift 0.32.3, ml-explore/mlx-swift-lm 3.32.3, apple/python-apple-fm-sdk 0.2.1. Release availability does not attest untested runtime behavior.
+<!-- current-state:guides:end -->
 
 Seventeen parts covering Apple's 2026 on-device AI stack end to end — from a three-line
 `LanguageModelSession` call down to a hand-written Metal matmul kernel, and back up through
@@ -71,11 +72,10 @@ dual-SDK builds.
 
 **Two cross-cutting indexes:**
 
-- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series (1,785,
-  of which 1,425 describe a concrete silent failure), in one page, sorted by the symptom you
+- **[The silent-failure index](SILENT-FAILURES.md)** — every warning callout in the series, in one page, sorted by the symptom you
   observe: wrong output, empty output, performance cliff, version drift, …
-- **[The API & symbol index](API-INDEX.md)** — ~1,200 symbols → the guides that cover them, with
-  presence flags against the captured 26.5 / 27.0-beta SDK interfaces.
+- **[The API & symbol index](API-INDEX.md)** — symbols → the guides that cover them, with
+  presence flags against the captured SDK interfaces.
 
 ---
 
@@ -91,7 +91,7 @@ part-NN-<slug>/
 ```
 
 Read a part's `README.md` first. It tells you which reference guides you actually need and in
-what order; most readers need two or three of them, not all.
+what order; most readers need two or three of them, not all.[^series-scope]
 
 ---
 
@@ -328,55 +328,17 @@ and the guide says so.
 
 ## Known gaps, and what would close them
 
-The series ships **~470 `🔴 GAP` callouts** — roughly 664 lines carry a `🔴` gap marker of some
-form. That number is a feature, not a defect: a `🔴 GAP` box is a *refusal to guess*. It names the
-exact thing that is unknown, why it could not be verified from the corpus, and what it would take
-to resolve — a header to read, a command to run, a device to test on. Nothing inside one is
-invented, and no gap has been quietly papered over with a plausible-looking identifier.
-
-The single largest cluster has one cause: **this series was written on macOS 26.5.2 / Xcode 26.6.**
-Some questions require a macOS 27 runtime (`fm --help`, empirical Instruments 27 UI details, and
-Core AI lane and metric names); others require the Xcode 27 SDK or one of its separately installed
-components. The `CoreAI` and
-`FoundationModels` interfaces were captured from Xcode 27.0 beta on 2026-07-29. `coreai-build` was
-captured on the same host on 2026-07-31 after installing the optional **Metal Toolchain component**
-with `xcodebuild -downloadComponent MetalToolchain`; it is not part of the Xcode app bundle and
-does not require upgrading the host OS merely to inspect its CLI. The affected guides carry dated
-resolution notes and the capture lives at `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`.
-
-[`../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`](../notes/NEEDED-FROM-A-MACOS-27-MACHINE.md) is the
-precise shopping list: seven independent items, each with the literal commands to run and the guides
-they would close. If you have a macOS 27 / Xcode 27 machine, working through that file is the
-highest-leverage contribution available to this series.
-
----
+A 🔴 GAP names an unresolved question and the evidence needed to close it. Use each guide's current gap ledger; closed investigation history is not an active backlog. The remaining manual UI task is [Instruments recording](../probes/INSTRUMENTS-RECORDING.md).
 
 ## Verification and series status
 
-**17-part published corpus, scope-audited as of 2026-07-28; SDK-verification pass 2026-07-29.**
-All 77 guides exist (17 part READMEs + 60 reference guides), and each contents list is expected
-to name only sections present in its file. Declared evidence gaps remain explicit rather than
-being counted as unwritten sections.[^series-scope]
-
-On 2026-07-29 the series was verified against the real macOS **26.5 and 27.0-beta SDK Swift
-interfaces** (Xcode 27.0 beta `27A5228h`, captured in `notes/sdk-interfaces/` — including the
-Core AI SubFrameworks, the `_Vision_FoundationModels` / `_CoreSpotlight_FoundationModels`
-cross-import overlays, and Xcode-bundled `Evaluations`), and every GitHub-tracked defect status
-was re-checked live. The 2026-07-31 refresh workflow also binds each stable SDK-named artifact to
-its Xcode, SDK, and Metal-component identity in a hashed manifest, refuses a
-same-SDK/different-Xcode overwrite, and runs ordinary drift checks from a temporary capture. CLI
-evidence follows the same rule, including the separately installed
-`coreai-build` surface.[^capture-workflow]
+The generated snapshot above records the current corpus and installed environment. SDK captures bind each artifact to its Xcode, SDK, and optional Metal Toolchain identity. Runtime measurements remain destination-specific, and unavailable SDK targets retain their earlier verification date.[^capture-workflow]
 
 ---
 
 ## Corpus
 
-The research behind this series lives in [`../notes/`](../notes/) — roughly 90,000 lines across
-46 files, indexed at [`../notes/synthesis/RESEARCH-INDEX.md`](../notes/synthesis/RESEARCH-INDEX.md).
-Primary sources: 16 WWDC26 / Meet-with-Apple transcripts, 6 Apple documentation articles, 4 Apple
-Developer Forums topic captures, 16 pinned repository checkouts, the MetalPerformancePrimitives
-headers shipped in the Xcode SDK, and a crawl of the MLX documentation site.[^repository-snapshots]
+The research behind this series lives in [the notes index](../notes/README.md) and [research map](../notes/synthesis/RESEARCH-INDEX.md). Retained primary captures and immutable repository pins support current claims, migration decisions, and regression comparisons.[^repository-snapshots]
 
 [^series-scope]: The inventory in [Every guide in the series](#every-guide-in-the-series) links
     every part and reference. The intentionally shorter MLX

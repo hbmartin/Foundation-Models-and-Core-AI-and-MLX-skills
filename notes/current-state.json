@@ -1,16 +1,16 @@
 {
-  "asOf": "2026-10-06",
+  "asOf": "2026-10-07",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1425,
-      "total": 1785
+      "concreteSilentFailures": 1423,
+      "total": 1782
     },
-    "externalLinks": 197,
+    "externalLinks": 232,
     "generatedSkills": 10,
     "guideMarkdownFiles": 82,
     "parts": 17,
     "referenceGuides": 60,
-    "symbols": 1210
+    "symbols": 1206
   },
   "environment": {
     "installed": {
@@ -101,17 +101,17 @@
   "generatedOutputs": {
     "currentStateBlocks": {
       "checkCommand": "./scripts/current-state.py render --check",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "status": "current"
     },
     "indexes": {
       "checkCommand": "python3 -m unittest scripts.tests.test_repository_indexes.RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "status": "current"
     },
     "skills": {
       "checkCommand": "python3 -m unittest scripts.tests.test_skills.CommittedSkillsTests.test_committed_skills_match_clean_generation",
-      "checkedAt": "2026-10-06",
+      "checkedAt": "2026-10-07",
       "status": "current"
     }
   },
@@ -123,28 +123,14 @@
     "value": true
   },
   "probeBaselines": {
-    "app-hosted-ios27-beta5-simulator": {
-      "contextSize": 0,
-      "destination": "generated DeviceProbes app",
-      "device": "Simulator",
-      "exceptions": "The 2026-09-04 app-hosted pass returned 0; this now agrees with the latest tool-hosted pass but not its earlier 4096 result.",
-      "failures": 0,
-      "hostingMode": "app-hosted",
-      "osBuild": "24A5408d",
-      "osVersion": "27.0 beta 5",
-      "platform": "iOS Simulator",
-      "skipped": 19,
-      "tests": 39,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
     "device-hosted-iphone15pro-ios27-24A435": {
       "contextSize": 4096,
       "destination": "wired physical device",
       "device": "iPhone 15 Pro (D83AP; h16p)",
-      "exceptions": "46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.",
+      "exceptions": "Last recorded physical-device pass, 2026-09-16; refresh pending device availability. 46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.",
       "failures": 0,
       "hostingMode": "device-hosted",
+      "observedAt": "2026-09-16",
       "osBuild": "24A435",
       "osVersion": "27.0",
       "platform": "iOS",
@@ -153,102 +139,95 @@
       "xcodeBuild": "27A5237l",
       "xcodeVersion": "27.0 beta 5"
     },
-    "device-hosted-iphone15pro-ios27-beta5": {
-      "contextSize": 4096,
-      "destination": "wired physical device",
-      "device": "iPhone 15 Pro (iPhone16,1; D83AP)",
-      "exceptions": "Offline/static pass; a separate asset pass ran four tests with zero failures.",
-      "failures": 0,
-      "hostingMode": "device-hosted",
-      "osBuild": "24A5408d",
-      "osVersion": "27.0 beta 5",
-      "platform": "iOS",
-      "skipped": 4,
-      "tests": 11,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
-    "tool-hosted-ios27-beta5-simulator": {
-      "contextSize": 0,
-      "destination": "iPhone 17 Pro, OS=27.0",
-      "device": "Simulator",
-      "exceptions": "The 2026-09-05 tool-hosted pass returned 0, while the 2026-08-17 pass returned 4096 on the same recorded builds; treat this value as volatile. Build-keyed model skips are active.",
-      "failures": 0,
-      "hostingMode": "tool-hosted",
-      "osBuild": "24A5408d",
-      "osVersion": "27.0 beta 5",
-      "platform": "iOS Simulator",
-      "skipped": 19,
-      "tests": 39,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
-    "tool-hosted-ios27-xcode27-final-bounded": {
-      "contextSize": 0,
-      "destination": "iPhone 18 Pro, OS=27.0",
-      "device": "Simulator",
-      "exceptions": "2026-10-06 bounded independent lane; Spotlight direct call excluded after a retained 60-second timeout. First saved iPhone 17 Pro destination unavailable. Model-free error-counter probes agree with host.",
-      "failures": 0,
-      "hostingMode": "tool-hosted",
-      "osBuild": "24A5408d",
-      "osVersion": "27.0",
-      "platform": "iOS Simulator",
-      "skipped": 22,
-      "tests": 39,
-      "xcodeBuild": "27A266a",
-      "xcodeVersion": "27.0 final"
-    },
-    "tool-hosted-macos27-beta5": {
+    "tool-hosted-current-host": {
       "contextSize": 4096,
       "destination": "local arm64 host",
-      "device": "Mac host",
-      "exceptions": "Reverified 2026-09-05; build-keyed model, attachment, and unreachable-generator skips are active.",
+      "device": "Mac14,12",
+      "exceptions": "2026-10-07 default bounded lane; model-backed opt-ins, PCC and interactive Instruments excluded.",
       "failures": 0,
       "hostingMode": "tool-hosted",
-      "osBuild": "26A5406e",
-      "osVersion": "27.0 beta 5",
-      "platform": "macOS",
-      "skipped": 23,
-      "tests": 46,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
-    "tool-hosted-macos27-stable": {
-      "contextSize": 4096,
-      "destination": "local arm64 host",
-      "device": "Mac host",
-      "exceptions": "Default lane: 46 tests, 26 skips, 0 failures. Across bounded opt-in lanes, 44 of 46 safe tests ran and passed; PCC and interactive Instruments were intentionally excluded. Selected Xcode remains beta 5.",
-      "failures": 0,
-      "hostingMode": "tool-hosted",
-      "osBuild": "26A428",
-      "osVersion": "27.0",
-      "platform": "macOS",
-      "skipped": 26,
-      "tests": 46,
-      "xcodeBuild": "27A5237l",
-      "xcodeVersion": "27.0 beta 5"
-    },
-    "tool-hosted-macos27-xcode27-final": {
-      "contextSize": 4096,
-      "destination": "local arm64 host",
-      "device": "Mac host",
-      "exceptions": "2026-10-06 default lane; model-backed opt-ins, PCC and interactive Instruments excluded. New model-free error-counter probes pass.",
-      "failures": 0,
-      "hostingMode": "tool-hosted",
+      "observedAt": "2026-10-07",
       "osBuild": "26A428",
       "osVersion": "27.0",
       "platform": "macOS",
       "skipped": 26,
       "tests": 47,
       "xcodeBuild": "27A266a",
-      "xcodeVersion": "27.0 final"
+      "xcodeVersion": "27.0"
+    },
+    "tool-hosted-current-simulator": {
+      "contextSize": 0,
+      "destination": "iPhone 18 Pro, OS=27.0",
+      "device": "iPhone 18 Pro",
+      "exceptions": "2026-10-07 default bounded lane; model-backed opt-ins, PCC and interactive Instruments excluded. Spotlight direct-call excluded after its previously retained simulator timeout.",
+      "failures": 0,
+      "hostingMode": "tool-hosted",
+      "observedAt": "2026-10-07",
+      "osBuild": "24A5408d",
+      "osVersion": "27.0",
+      "platform": "iOS Simulator",
+      "skipped": 22,
+      "tests": 39,
+      "xcodeBuild": "27A266a",
+      "xcodeVersion": "27.0"
     }
   },
   "schemaVersion": 1,
+  "stableReleases": [
+    {
+      "checkedAt": "2026-10-07",
+      "component": "iOS",
+      "released": "2026-09-28",
+      "sourceUrl": "https://developer.apple.com/news/releases/",
+      "version": "27.0.1"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "macOS",
+      "released": "2026-09-28",
+      "sourceUrl": "https://developer.apple.com/news/releases/",
+      "version": "27.0.1"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "ml-explore/mlx",
+      "released": "2026-09-29",
+      "sourceUrl": "https://pypi.org/project/mlx/0.32.3/",
+      "version": "0.32.3"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "ml-explore/mlx-lm",
+      "released": "2026-10-01",
+      "sourceUrl": "https://pypi.org/project/mlx-lm/0.32.0/",
+      "version": "0.32.0"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "ml-explore/mlx-swift",
+      "released": "2026-09-30",
+      "sourceUrl": "https://github.com/ml-explore/mlx-swift/releases/tag/0.32.3",
+      "version": "0.32.3"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "ml-explore/mlx-swift-lm",
+      "released": "2026-09-30",
+      "sourceUrl": "https://github.com/ml-explore/mlx-swift-lm/releases/tag/3.32.3",
+      "version": "3.32.3"
+    },
+    {
+      "checkedAt": "2026-10-07",
+      "component": "apple/python-apple-fm-sdk",
+      "released": "2026-06-29",
+      "sourceUrl": "https://pypi.org/project/apple-fm-sdk/0.2.1/",
+      "version": "0.2.1"
+    }
+  ],
   "verification": {
     "blocker": "SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.",
     "errors": 0,
-    "freshPartialResult": "notes/synthesis/pr49-followup/swift-fresh-results.tsv",
+    "freshPartialResult": "notes/evidence/core-ai/swift-final-results.tsv",
     "lastAvailableRun": "2026-10-06",
     "lastFullRun": "2026-08-02",
     "snippetFences": 1360,

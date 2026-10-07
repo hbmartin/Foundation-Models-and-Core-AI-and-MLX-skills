@@ -74,7 +74,7 @@ Covered in full in `wwdc2026-8121-ml-ai-group-lab.md` §1. Summary of the edit s
 |---|---|---|
 | `part-17/01-what-changed-checklist.md` | 180–183 | 🟡 "Apple has not corroborated 8192 anywhere we can find" → **Apple has now corroborated 4096**, WWDC26 Group Lab 8121 ch. 0:08:11 |
 | `part-17/01-what-changed-checklist.md` | 2571 | Same row in the summary table |
-| `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` | item 7 | Keep the device test; **downgrade its priority** — it is now a check against an explicit Apple statement, not an open question |
+| Historical device context-window task | contextSize | Keep the device test; **downgrade its priority** — it is now a check against an explicit Apple statement, not an open question |
 
 New, additive: the budget is **shared across input and output** with Apple's worked example
 ("feed in 4000 tokens, the response can use the remaining ~96"), and **tool definitions and
@@ -140,7 +140,7 @@ Three of these land directly on guide text:
   rollback are *semantically significant* guided-decoding features, not refactors.
 - **`--clear-coreai-cache`** → Part 7.2 (`02-specialization-caching-and-aot.md`). A new escape
   hatch for the specialization cache; also relevant to the `AIModelCache` deletion-semantics
-  question in `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7.
+  question in the dated device context-window question.
 - **`LLMAsset` terminology removed as deprecated** → grep the guides for `LLMAsset`; any occurrence
   is now stale nomenclature.
 
@@ -173,7 +173,7 @@ fold the `deprecated: 27` sweep from §3 into that pass.
 |---|---|---|
 | What changed in **Speech** for iOS 27? | 5 queries across community blogs, Argmax/WhisperKit, MacStories, forums | **The community has written nothing about Speech in 27.** Every result is WWDC25/iOS 26 material. The SDK diff (§3) is the only source. |
 | `maximumReservedLocales` **value** | web + SDK | Interface declares `public static var maximumReservedLocales: Swift::Int` — a **computed property**, so the value is not in the interface. Still a runtime probe. Guide's 🔴 at `:1243` stands. |
-| Instruments 27 **lane names** / Core AI Debugger | session 258 fetched in full | The AI-specific lane names and Core AI Debugger are absent, so `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3 remains open. The session does contain a substantial Organizer/Instruments section, including Top Functions. |
+| Instruments 27 **lane names** / Core AI Debugger | session 258 fetched in full | The AI-specific lane names and Core AI Debugger are absent, so `../probes/INSTRUMENTS-RECORDING.md` remains open. The session does contain a substantial Organizer/Instruments section, including Top Functions. |
 | Does system **generated-subtitles** expose a Speech API? | session 256 fetched in full | **No.** System-level, automatic, `MediaAccessibility`-styled only. |
 | LoRA-vs-DoRA-vs-full **quality** ablation | mlx-lm, mlx-lm-lora, mlx-tune, awesome-mlx sweep | None was found in the named project documentation or index surveyed. Part 12.6 records that scoped negative. |
 | `fm serve` existence and endpoint family | Apple-member statement + help output | **Verified.** The Apple member says it serves the model as a Chat Completions endpoint, and a pasted `--help` from build `26A5378n` independently lists the subcommand. Port, binding, authentication, accepted fields, streaming, and quota behaviour remain unknown. |

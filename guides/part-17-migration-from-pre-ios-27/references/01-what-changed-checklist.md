@@ -171,6 +171,7 @@ func contextBudget() -> Int {
 }
 ```
 
+<!-- callout-id: callout-ce7d86e192f8cd67 -->
 > ✅ **VERIFIED** — Apple Technical Note **TN3193**, *"Managing the on-device foundation model's
 > context window"*, states **4096 tokens per `LanguageModelSession`** plainly, and confirms that
 > `tokenCount(for:)` covers *instructions, prompts, tools, schemas and transcript entries*.

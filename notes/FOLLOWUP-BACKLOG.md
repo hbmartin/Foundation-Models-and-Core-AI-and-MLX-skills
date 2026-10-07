@@ -5,25 +5,9 @@ Evidence for every item is already on disk under `notes/web/2026-08-02-harvest/`
 *writing* tasks, not research tasks, unless marked otherwise.
 
 **Companion files.** Machine-gated evidence lives in
-[`NEEDED-FROM-A-MACOS-27-MACHINE.md`](NEEDED-FROM-A-MACOS-27-MACHINE.md); per-beta ritual lives in
+[`../probes/INSTRUMENTS-RECORDING.md`](../probes/INSTRUMENTS-RECORDING.md); per-beta ritual lives in
 [`NEXT-BETA-CHECKLIST.md`](NEXT-BETA-CHECKLIST.md); recurring refreshes in
 [`FRESHNESS-RUNBOOK.md`](FRESHNESS-RUNBOOK.md). This file is only for the harvest residue.
-
----
-
-## 0. What the 2026-08-02 pass already closed
-
-Recorded so nobody re-does it. Detail in
-[`web/2026-08-02-harvest/README.md`](web/2026-08-02-harvest/README.md).
-
-| Closed | Where |
-|---|---|
-| `fm` CLI surface raised from "no attested flags" to 🟠 seven subcommands + four flag spellings + the `schema object` builder grammar | `part-05` ref 02 §2.1–2.4, §2.6, §3, §17.5 |
-| `contextSize` 4096 recorded as Apple's documented iOS 27 platform value (Group Lab 8121 written Q&A); alleged device-specific 8192 result retired as unreproduced historical provenance; shared input+output budget documented | `part-17` ref 01 §1.1, `part-03` ref 01 §3.3, `part-01` ref 01 §3.1 |
-| Gap **G6** — `withTaskCancellationShield` is SE-0504 (Swift 6.4 stdlib), needs Apple OS 27 runtime support, and does not back-deploy; compatibility helper renamed to stop it shadowing | `part-16` ref 01 §9.4 |
-| `ConstrainedGenerationSession` rollback / jump-forward / bitmask-fill; `--clear-coreai-cache`; upstream drift incl. the `.llmasset` rename | `part-07` refs 04 §7.3.1 and 02 §7.1, `part-10` ref 03 §18.1 |
-| Third-party MLX training layer mapped; the three fine-tuning 🔴 checked against named project documentation | `part-12` ref 06 §13 |
-| Six transcripts installed (328, 253, 297, 375, 310, 258) | `transcripts/` — 23 → 29 files |
 
 ---
 
@@ -148,7 +132,7 @@ Organizer additions relevant to shipping: a **Storage metric** that breaks out *
 
 > Correction on record: this file's first draft said 258 had no Instruments content. That came from
 > a truncated fetch and was wrong. What remains true is narrower — **258 does not name the
-> AI-specific Instruments lanes** (`NEEDED-FROM-A-MACOS-27-MACHINE.md` item 3). Apple's current
+> AI-specific Instruments lanes** (`../probes/INSTRUMENTS-RECORDING.md`). Apple's current
 > runtime-performance page later closed the six Foundation Models names; Core AI names and empirical
 > UI details remain open. Do not re-fetch 258 hoping for them.
 
@@ -285,38 +269,6 @@ with that reasoning attached.
 
 ---
 
-## 5. Method notes for the next editor
+## Maintenance
 
-> **Superseded 2026-09-05.** The paragraph, warning, command sequence, and hardcoded-count reminder
-> below preserve the failure mode that motivated the stable-identity migration; do not follow them
-> as current instructions. Callouts are now keyed by `(file, callout_id)` with a content hash,
-> snippets carry the equivalent stable fields, and corpus counts render from
-> `notes/current-state.json`. Use the root README and `notes/FRESHNESS-RUNBOOK.md` for the live
-> sequence. Edited semantic content still requires review or real compiler verification.
-
-**Editing a guide shifts every callout below the edit**, and `notes/synthesis/callout-classifications/*.tsv`
-are keyed on `(file, line, anchor, kind)`. `scripts/build-indexes.sh` refuses to build until they are
-re-keyed. For the manual re-keying step, match on `(file, anchor, kind)` + ordinal within the group.
-
-> ⚠️ **The ordinal trap, which bit once in this pass.** Inserting a callout *above* an existing one
-> in the same anchor+kind group silently slides that group's blurbs down by one — every row still
-> matches, so the tooling reports success while a description now sits on the wrong callout. It
-> happened in `part-16` §9.4 and was caught only by reading the re-keyed rows back against the
-> source lines. **Do that read-back.**
-
-Full sequence after any guide edit:
-
-```bash
-SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) ./scripts/build-indexes.sh   # re-key TSVs first
-./scripts/build-skills.sh          # skills embed the indexes; a test asserts byte-equality
-./scripts/verify-snippets.sh --out notes/snippet-verification   # results.tsv is keyed on (file,line) too
-python3 scripts/mdlinks.py
-python3 -m unittest discover -s scripts/tests -p 'test_*.py'
-```
-
-Then bump the hardcoded callout count at `guides/README.md:74-75`
-(**1,777 / 1,415** as of 2026-08-20).
-
-**A new ```swift fence with no marker lands as `UNCLASSIFIED`.** Declaration fragments — a bare
-`public mutating func …` with no enclosing type — want `illustrative`; they cannot compile
-standalone.
+Callouts and snippets use semantic identities plus content hashes. Line-only movement preserves reviewed metadata; changed content requires review or real compiler verification. Regenerate indexes and skills through their scripts, then run the portable checks documented in the root README.
