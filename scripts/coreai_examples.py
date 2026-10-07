@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import tokenize
 
-from scripts.mdlinks import FENCE, iter_lines
+from scripts.mdlinks import FENCE, fence_opener, iter_lines
 
 PARTS = (7, 8, 9, 10, 17)
 MARKER = re.compile(r"<!-- coreai-example: (.+) -->")
@@ -70,7 +70,7 @@ def python_fences(text: str, path: Path = Path("<fixture>")) -> list[Example]:
                 raise ValueError(f"{path}:{i + 1}: invalid historical exemption")
             i += 1
             continue
-        match = FENCE.match(line)
+        match = fence_opener(line)
         if not match:
             if pending is not None and line.strip():
                 raise ValueError(f"{path}:{i + 1}: metadata must immediately precede a fence")
@@ -163,6 +163,22 @@ def section(text: str, heading: str) -> str:
     return "".join(line + newline for line, newline, _ in lines[start:end]).removesuffix("\n")
 
 
+def prose_segments(text: str, *, contrast: bool = False) -> list[str]:
+    """Keep wrapped prose together, but stop predicates at sentence/list boundaries."""
+    boundary = r"[;!?]|\.(?=\s|$)|\n(?=\s*(?:>\s*)*(?:[-*+] |\d+[.)] ))"
+    if contrast:
+        boundary += r"|\b(?:and|while|whereas|but)\b"
+    return re.split(boundary, text, flags=re.I)
+
+
+def negated_predicate(prefix: str) -> bool:
+    # Limit negation to the predicate's verb phrase, including passive auxiliaries.
+    return bool(re.search(
+        r"(?:\b(?:not|never|no|cannot)|\b\w+n['’]t)"
+        r"(?:\s+(?:yet|still|currently|silently|automatically|ever|been|be|being|have|has|had|will|do|does|did))*"
+        r"[\s`*]*$", prefix, re.I))
+
+
 def contract_errors(text: str, contract: str) -> list[str]:
     """Semantic checks scoped by callers to the relevant heading/defect row."""
     errors = []
@@ -176,13 +192,37 @@ def contract_errors(text: str, contract: str) -> list[str]:
             if "with module:" not in text:
                 errors.append("rewrite assigned to AIProgram rather than module context")
     elif contract == "issue49":
-        # Status association is checked corpus-wide by the offline defect reader.
-        # This small native helper has no dependency on the reporting toolchain.
-        if "square" in text.lower() and "17×23" in text and re.search(r"\bhid(?:es)?\b", text, re.I):
-            errors.append("square/rectangular #49 explanation reversed")
+        square = r"\b(?:square|equal[- ]length)\b"
+        rectangular = r"(?:\b(?:rectangular|unequal(?:[- ]length)?)\b|17\s*[×x]\s*23)"
+        success = r"\b(?:hid(?:e[sn]?|den)?|passed|passes|correct|unaffected)\b"
+        failure = r"\b(?:exposed?|exposes|failed|fails|miscompil(?:e[sd]?|ing))\b"
+        if not re.search(square, text, re.I) or not re.search(rectangular, text, re.I):
+            return errors
+        for clause in prose_segments(text, contrast=True):
+            shapes = list(re.finditer(rf"{square}|{rectangular}", clause, re.I))
+            for predicate in re.finditer(rf"{success}|{failure}", clause, re.I):
+                if negated_predicate(clause[:predicate.start()]):
+                    continue
+                if not shapes:
+                    continue
+                shape = min(shapes, key=lambda m: min(abs(m.end() - predicate.start()),
+                                                      abs(predicate.end() - m.start())))
+                if min(abs(shape.end() - predicate.start()), abs(predicate.end() - shape.start())) > 120:
+                    continue
+                square_shape = bool(re.fullmatch(square, shape.group(), re.I))
+                success_predicate = bool(re.fullmatch(success, predicate.group(), re.I))
+                if square_shape == success_predicate:
+                    errors.append("square/rectangular #49 explanation reversed")
+                    return errors
     elif contract == "overwrite":
-        if re.search(r"\b(?:not|never|won['’]t)\b[^\n.;]*\boverwrite\b|\bwill fail\b[^\n.;]*\bexists?\b", text, re.I):
-            errors.append("b3 overwrite behavior incorrect")
+        for sentence in prose_segments(text):
+            for predicate in re.finditer(r"\b(?:overwrites?|overwritten)\b", sentence, re.I):
+                if negated_predicate(sentence[:predicate.start()]):
+                    errors.append("b3 overwrite behavior incorrect")
+                    return errors
+            if re.search(r"\bwill\s+fail\b.*?\b(?:exists?|existing)\b", sentence, re.I | re.S):
+                errors.append("b3 overwrite behavior incorrect")
+                return errors
     else:
         raise ValueError(f"unknown contract: {contract}")
     return errors

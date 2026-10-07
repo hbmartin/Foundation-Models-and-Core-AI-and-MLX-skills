@@ -23,21 +23,39 @@ FROZEN_NOEMA_URL = (
 
 
 def current_issue49_errors(root: Path) -> list[str]:
-    """Check every confidently mapped sighting, with historical dates kept explicit."""
+    """Check #49 claims locally; unresolved references require qualification."""
     errors = []
-    parts = ("guides/part-08-", "guides/part-10-", "guides/part-17-")
+    parts = tuple(f"guides/part-{part:02d}-" for part in (7, 8, 9, 10, 17))
     for row in defects.extract(root):
-        if (not row["file"].startswith(parts) or row["repository"] != "apple/coreai-torch"
-                or row["number"] != 49 or row["referenceKind"] != "issue-or-pr"):
+        if (not row["file"].startswith(parts) or row["number"] != 49
+                or row["referenceKind"] != "issue-or-pr"):
             continue
-        historical = row["claimDate"] is not None and row["claimDate"] < "2026-10-02"
-        historical |= bool(re.search(r"\bhistorical(?:ly)?\b", row["context"], re.I)
-                           and re.search(r"\b0\.4\.[012]\b", row["context"])
-                           and not re.search(r"\b(?:remains|still)\s+open\b", row["context"], re.I))
-        if row["claimedState"] == "OPEN" and not historical:
-            errors.append(f'{row["file"]}:{row["line"]}: coreai-torch#49 incorrectly reported open')
-        errors.extend(f'{row["file"]}:{row["line"]}: {error}'
-                      for error in contract_errors(row["context"], "issue49"))
+        if row["repository"] is None:
+            errors.append(f'{row["file"]}:{row["line"]}: qualify #49 with its repository')
+            continue
+        if row["repository"] != "apple/coreai-torch":
+            continue
+        claim = re.sub(r'"[^"]*"', "", row["claimText"])
+        scopes = defects.ParagraphClaims(claim).matching_scopes(row["repository"], row["number"])
+        for scope in scopes:
+            after = scope.after.lstrip(" `*()[]")
+            dated = row["claimDate"] is not None and row["claimDate"] < "2026-10-02"
+            past = bool(re.match(r"(?:(?:silently|still|currently)\s+)*(?:was|were|had|miscompiled|failed)\b",
+                                 after, re.I))
+            past |= bool(re.search(r"\b(?:was|were|had)\s+(?:(?:not|never|yet|been|still|currently)\s+)*"
+                                   r"(?:open|closed)\s+(?:issues?\s*)?$", scope.before, re.I))
+            historical = dated or (bool(re.search(r"\b0\.4\.[012]\b", scope.claim_text)) and past)
+            words = scope.state_words()
+            stale = any((state == "OPEN" and not negated) or (state == "CLOSED" and negated)
+                        for _, state, negated in words)
+            if stale and not historical:
+                errors.append(f'{row["file"]}:{row["line"]}: coreai-torch#49 incorrectly reported open')
+            if not historical and re.match(
+                    r"(?:(?:is|are)\s+)?(?:(?:still|currently|silently)\s+)*"
+                    r"(?:miscompiles|miscompiling|fails|failing)\b", after, re.I):
+                errors.append(f'{row["file"]}:{row["line"]}: qualify the historical #49 behavior')
+            errors.extend(f'{row["file"]}:{row["line"]}: {error}'
+                          for error in contract_errors(scope.claim_text, "issue49"))
     return errors
 
 
@@ -408,6 +426,10 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             ("apple/coreai-torch#49 remains OPEN", True),
             ("coreai-torch#49 is not OPEN", False),
             ("coreai-torch#49 isn't open", False),
+            ("coreai-torch#49 isn't currently open", False),
+            ("coreai-torch#49 isn’t currently still open", False),
+            ("coreai-torch#49 isn't yet closed", True),
+            ("coreai-torch#49 isn’t yet closed", True),
             ("coreai-torch#49 is no longer open", False),
             ("coreai-torch#49 is not currently OPEN", False),
             ("coreai-torch has no open issues #49, #51", False),
@@ -417,10 +439,36 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             ("Historical 0.4.1: coreai-torch#49 was open", False),
             ("Historical 0.4.1 bug: coreai-torch#49 remains open", True),
             ("as of 2026-10-02 coreai-torch#49 remains open", True),
+            ("Issue #49 remains open", True),
+            ("Issue #49 miscompiles on square/equal-length inputs", True),
+            ("coreai-torch#49 miscompiles on square/equal-length inputs", True),
+            ("Historical 0.4.1 notes describe old behavior; coreai-torch#49 is open", True),
+            ("Historical 0.4.1 notes describe old behavior. coreai-torch#49 is open", True),
+            ("Historical 0.4.1 reports were different: coreai-torch#49 is currently open", True),
+            ("Historical 0.4.1 reports were different: coreai-torch#49 isn't yet closed", True),
+            ("Historical 0.4.1: coreai-torch#9 was open; coreai-torch#49 is open", True),
+            ("coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open", True),
+            ("coreai-torch#49 silently miscompiles on square inputs", True),
+            ("coreai-torch#49 is still miscompiling on square inputs", True),
+            ("https://github.com/apple/coreai-torch/issues/49 miscompiles on square inputs", True),
+            ("https://github.com/apple/coreai-torch/issues/49 is still miscompiling", True),
+            ("Historical 0.4.1: https://github.com/apple/coreai-torch/issues/49 was open", False),
+            ("Historical 0.4.1: coreai-torch#9 and coreai-torch#49 were open", False),
+            ("As of 2026-08-01, coreai-torch#9 and coreai-torch#49 remain open", False),
+            ("Historical 0.4.1: coreai-torch#9 was open and https://github.com/apple/coreai-torch/issues/49 is open", True),
+            ("coreai-torch#49 hasn't been closed", True),
+            ("coreai-torch#49 hasn’t been closed", True),
+            ("coreai-torch#49 has not yet been closed", True),
+            ("coreai-torch#49 has never been closed", True),
+            ("- As of 2026-07-29 coreai-torch#9 was open\n- coreai-torch#49 is open", True),
+            ("coreai-torch#49 is not silently miscompiling", False),
+            ('coreai-torch#49 ("silently miscompiles on square inputs") is closed', False),
+            ("coreai-models#49 remains open", False),
+            ("https://github.com/apple/coreai-torch/discussions/49 is open", False),
         )
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for part in (8, 10, 17):
+            for part in (7, 8, 9, 10, 17):
                 path = root / f"guides/part-{part:02d}-fixture/references/other-page.md"
                 path.parent.mkdir(parents=True)
                 for prose, stale in fixtures:

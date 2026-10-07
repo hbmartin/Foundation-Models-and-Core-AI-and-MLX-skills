@@ -13,10 +13,13 @@
     "actionability": "already-fixed",
     "confidence": 0.99,
     "evidence": [
-      "Current guide and generated skill describe successful module-exit rewriting; reviewed line3132 said NO passes.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "At the pre-followup base, guide and generated skill describe successful module-exit rewriting; reviewed line3132 said NO passes.",
+      "Fix history: 2711181edf1e24cca867060c19abe937e28df444 (before-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Quick reference missed conversion-contract refresh."
+    "root_cause": "Quick reference missed conversion-contract refresh.",
+    "fix_origin": "before-this-followup",
+    "fix_commit_sha": "2711181edf1e24cca867060c19abe937e28df444",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-02",
@@ -32,10 +35,13 @@
     "actionability": "already-fixed",
     "confidence": 0.99,
     "evidence": [
-      "Current section9.3 still says open unmerged; GitHub merged_at2026-09-25T21:53:28Z and current register says merged outside0.4.3.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "At the pre-followup base, section9.3 still says open unmerged; GitHub merged_at2026-09-25T21:53:28Z and pre-followup register says merged outside0.4.3.",
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Section narrative and defect register refreshed independently."
+    "root_cause": "Section narrative and defect register refreshed independently.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-03",
@@ -51,10 +57,13 @@
     "actionability": "already-fixed",
     "confidence": 0.99,
     "evidence": [
-      "Current Contents and headings fixed6-7/8/9; stage9 arrow column14 versus stem15 remains.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "At the pre-followup base, Contents and headings fixed6-7/8/9; stage9 arrow column14 versus stem15 remains.",
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Stage-number repair left ASCII alignment unchanged."
+    "root_cause": "Stage-number repair left ASCII alignment unchanged.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-04",
@@ -70,10 +79,13 @@
     "actionability": "already-fixed",
     "confidence": 0.99,
     "evidence": [
-      "Reviewed footer has stray at the commits recorded fragment; current footer is one balanced italic paragraph retaining sources.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Reviewed footer has stray at the commits recorded fragment; pre-followup footer is one balanced italic paragraph retaining sources.",
+      "Fix history: 2711181edf1e24cca867060c19abe937e28df444 (before-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Partial paragraph replacement."
+    "root_cause": "Partial paragraph replacement.",
+    "fix_origin": "before-this-followup",
+    "fix_commit_sha": "2711181edf1e24cca867060c19abe937e28df444",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-05",
@@ -89,10 +101,13 @@
     "actionability": "already-fixed",
     "confidence": 0.95,
     "evidence": [
-      "Current passage is a verbatim historical issue7 quote about automatic detection;0.3.0 supports explicit ignored_ops, and Part9 explains the distinction.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "At the pre-followup base, passage is a verbatim historical issue7 quote about automatic detection;0.3.0 supports explicit ignored_ops, and Part9 explains the distinction.",
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Historical source excerpt lacks nearby current-version qualification."
+    "root_cause": "Historical source excerpt lacks nearby current-version qualification.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-06",
@@ -109,9 +124,12 @@
     "confidence": 0.95,
     "evidence": [
       "Native0.3.0 eager retie reproduces missing right_inverse RuntimeError; op_state_spec module-name override remainsint4 for both forward orders; pinned StateSpecResolver honors priorities.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Separate limitations incorrectly dismissed as one historical bundle."
+    "root_cause": "Separate limitations incorrectly dismissed as one historical bundle.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-07",
@@ -128,9 +146,12 @@
     "confidence": 0.95,
     "evidence": [
       "required_composites defaults empty; body checks only supplied names; model-specific names needed, so require explicit caller selection rather than universal composites.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Generic gate silently disables structural checks by default."
+    "root_cause": "Generic gate silently disables structural checks by default.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-08",
@@ -147,9 +168,12 @@
     "confidence": 0.99,
     "evidence": [
       "Guide composite_fixture requires convert_and_compare callback; only native runner defines composite_compare, no standalone guide invocation/helper.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Verifier orchestration dependency omitted from copying instructions."
+    "root_cause": "Verifier orchestration dependency omitted from copying instructions.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-09",
@@ -166,9 +190,12 @@
     "confidence": 0.99,
     "evidence": [
       "verify_state_asset uses assert2<=length<=32 as application boundary; optimized runner rejection protects harness but not copied function.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Application validation implemented as test assertion."
+    "root_cause": "Application validation implemented as test assertion.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-10",
@@ -184,10 +211,13 @@
     "actionability": "already-fixed",
     "confidence": 0.95,
     "evidence": [
-      "Reproducer Outer fenced Python comment truncates before optimizer call; current three guarded scopes match fence-aware boundaries, so claimed current truncation not observed.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Reproducer Outer fenced Python comment truncates before optimizer call; pre-followup three guarded scopes match fence-aware boundaries, so claimed pre-followup truncation not observed.",
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Section reader lacks Markdown fence state."
+    "root_cause": "Section reader lacks Markdown fence state.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-11",
@@ -204,9 +234,12 @@
     "confidence": 0.99,
     "evidence": [
       "x=\u2026 rejected as ERRORTOKEN on3.11, accepted NAME by fence reader on3.12/3.14; ast rejects all.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Token acceptance assumed identifier lexical validity."
+    "root_cause": "Token acceptance assumed identifier lexical validity.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-12",
@@ -223,9 +256,12 @@
     "confidence": 0.99,
     "evidence": [
       "Mocked migration-only main with missing coreai-opt raises PackageNotFoundError before try/finally and leaves no JSON.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Unconditional package metadata collection before recording failure lifecycle."
+    "root_cause": "Unconditional package metadata collection before recording failure lifecycle.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-13",
@@ -242,9 +278,12 @@
     "confidence": 0.99,
     "evidence": [
       "issue49 remains open passes; is not OPEN fails; Note: b3 will overwrite fails; status guard scoped only register row.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Narrow scan and unbounded regex lack case/negation/reference semantics."
+    "root_cause": "Narrow scan and unbounded regex lack case/negation/reference semantics.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-14",
@@ -260,10 +299,13 @@
     "actionability": "already-fixed",
     "confidence": 0.99,
     "evidence": [
-      "Reviewed saved identical program twice; current replacement savesA plus sentinel then differentB, removes sentinel and validatesB; both pinned profiles recordedPASS.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Reviewed saved identical program twice; pre-followup replacement savesA plus sentinel then differentB, removes sentinel and validatesB; both pinned profiles recordedPASS.",
+      "Fix history: 2711181edf1e24cca867060c19abe937e28df444 (before-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Nonmutation assertion conflated with replacement proof."
+    "root_cause": "Nonmutation assertion conflated with replacement proof.",
+    "fix_origin": "before-this-followup",
+    "fix_commit_sha": "2711181edf1e24cca867060c19abe937e28df444",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   },
   {
     "comment_id": "pasted-coreai-20261006-15",
@@ -280,8 +322,11 @@
     "confidence": 0.99,
     "evidence": [
       "Native comparison proves no-op cast passes same original assertions; standard cast yieldsfp16exp and excluded cast yieldsfp32exp withfp32/fp16boundarycasts unasserted.",
-      "Implemented or preserved at 2367dc31; item-specific actions and fresh validation recorded in notes/synthesis/pr50-followup/README.md. Both native profiles pass 31 fixtures; portable controls pass on Python 3.11/3.12/3.14."
+      "Fix history: 2367dc31a7c02ccf0f80f54454a35f5015d73234 (in-this-followup); status and actionability are evaluated at the recorded current_head_sha 2367dc31a7c02ccf0f80f54454a35f5015d73234, not at the PR base. Item-specific repair and validation are documented in notes/synthesis/pr50-followup/README.md."
     ],
-    "root_cause": "Fixture asserts unchanged original metadata rather than differential transformation."
+    "root_cause": "Fixture asserts unchanged original metadata rather than differential transformation.",
+    "fix_origin": "in-this-followup",
+    "fix_commit_sha": "2367dc31a7c02ccf0f80f54454a35f5015d73234",
+    "observation_revision": "8972e4abeea713f233e55dd7e9b39073b4e90ada"
   }
 ]

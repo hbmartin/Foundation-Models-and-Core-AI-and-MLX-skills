@@ -2846,10 +2846,13 @@ async def compare_units(asset_path: Path, inputs_np: dict[str, np.ndarray]) -> N
 asyncio.run(compare_units(Path("model.aimodel"), {"image": np.random.randn(1, 3, 224, 224).astype(np.float16)}))
 ```
 
-> ⚠️ **Design your gate inputs to break symmetry.** Issue #49 miscompiles on square/equal-length
-> inputs and is *correct* on 17×23. Issue #9's cast round-trip is an identity on values that happen
-> to be integral. A gate that only ever sees `torch.randn(1, 3, 224, 224)` will miss both. **Use
-> asymmetric shapes, values that straddle zero, values above 10 (§9.1's threshold), and integer
+<!-- callout-id: callout-46ddd6cac4576e39 -->
+> ⚠️ **Exercise both square and asymmetric gate inputs.** In coreai-torch 0.4.1,
+> `apple/coreai-torch#49` silently miscompiled square/equal-length results; the tested 17×23 control
+> passed. The issue closed after the tested 0.4.3/1.0.0b3 path no longer reproduced the failure;
+> 0.4.2 remains unverified. `apple/coreai-torch#9`'s cast round-trip is an identity on values that
+> happen to be integral. A gate using only one shape and value distribution can miss these classes.
+> **Use square and asymmetric shapes, values that straddle zero, values above 10 (§9.1's threshold), and integer
 > tensors large enough to overflow int32 (§9.4) where your model actually has them.**
 
 ### 10.3 Which tool finds which class

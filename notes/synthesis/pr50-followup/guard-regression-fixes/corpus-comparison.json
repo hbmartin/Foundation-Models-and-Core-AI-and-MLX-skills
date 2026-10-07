@@ -1,0 +1,785 @@
+{
+  "baseRevision": "4714a9a4aeb91a8984dc8b8f9dcb12f518c5e1cb",
+  "reviewedRevision": "406b8dbc1aeb4e3420754dcfcb8f9f2998ca675e",
+  "implementationRevision": "893624e9a09adf991d87c191b91795986a82b422",
+  "sourceInput": "same guide tree at implementation revision for both readers",
+  "sightingCount": 1002,
+  "groupCount": 413,
+  "referenceOrderAndKeysPreserved": true,
+  "restoredRegressions": [
+    {
+      "file": "guides/part-12-mlx-python/references/03-quantization.md",
+      "line": 542,
+      "repository": "ml-explore/mlx",
+      "number": 3757,
+      "before406b8db": {
+        "claimedState": "MERGED",
+        "claimDate": null
+      },
+      "after": {
+        "claimedState": "MERGED",
+        "claimDate": "2026-08-23"
+      }
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/01-core-fundamentals.md",
+      "line": 2117,
+      "repository": "ml-explore/mlx-lm",
+      "number": 1444,
+      "before406b8db": {
+        "claimedState": null,
+        "claimDate": null
+      },
+      "after": {
+        "claimedState": "CLOSED",
+        "claimDate": null
+      }
+    }
+  ],
+  "sightingChanges": [
+    {
+      "file": "guides/part-12-mlx-python/references/01-core-fundamentals.md",
+      "line": 2116,
+      "repository": "ml-explore/mlx",
+      "number": 3828,
+      "form": "repo-adjacent",
+      "changes": {
+        "claimedState": [
+          "CLOSED",
+          null
+        ],
+        "confidence": [
+          0.9,
+          0.95
+        ]
+      },
+      "reason": "CLOSED directly prefixes mlx-lm#1444, so it is no longer borrowed by the preceding PR #3828.",
+      "claimText": "getting this wrong was a real bug, fixed by mlx PR **#3828** (\"Fix captured random state in compile\"), which per the issue notes"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/03-quantization.md",
+      "line": 2931,
+      "repository": "ml-explore/mlx",
+      "number": 3856,
+      "form": "repo-adjacent",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ],
+        "confidence": [
+          0.95,
+          0.9
+        ]
+      },
+      "reason": "The explicit paired reference list shares its CLOSED/OPEN predicate; historical/current claims now conflict just as the neighboring #3887 claims already did.",
+      "claimText": "`mlx#3856` and `mlx#3887` are closed.** > Both `"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/03-quantization.md",
+      "line": 2932,
+      "repository": "ml-explore/mlx",
+      "number": 3856,
+      "form": "repo-adjacent",
+      "changes": {
+        "claimedState": [
+          null,
+          "OPEN"
+        ],
+        "confidence": [
+          0.95,
+          0.9
+        ]
+      },
+      "reason": "The explicit paired reference list shares its CLOSED/OPEN predicate; historical/current claims now conflict just as the neighboring #3887 claims already did.",
+      "claimText": "mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+      "line": 633,
+      "repository": null,
+      "number": 1447,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ]
+      },
+      "reason": "The five-issue list shares its explicit CLOSED predicate. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "a marker's trailing `>` being merged with the following byte).\"* That single change closed five separate issues (#1373, #1447, #1406, #1336, #1160)"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+      "line": 634,
+      "repository": null,
+      "number": 1160,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ]
+      },
+      "reason": "The five-issue list shares its explicit CLOSED predicate. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "a marker's trailing `>` being merged with the following byte).\"* That single change closed five separate issues (#1373, #1447, #1406, #1336, #1160)"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+      "line": 634,
+      "repository": null,
+      "number": 1336,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ]
+      },
+      "reason": "The five-issue list shares its explicit CLOSED predicate. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "a marker's trailing `>` being merged with the following byte).\"* That single change closed five separate issues (#1373, #1447, #1406, #1336, #1160)"
+    },
+    {
+      "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+      "line": 634,
+      "repository": null,
+      "number": 1406,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ]
+      },
+      "reason": "The five-issue list shares its explicit CLOSED predicate. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "a marker's trailing `>` being merged with the following byte).\"* That single change closed five separate issues (#1373, #1447, #1406, #1336, #1160)"
+    },
+    {
+      "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+      "line": 2540,
+      "repository": null,
+      "number": 434,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "MERGED"
+        ]
+      },
+      "reason": "The coordinated list shares landed in July. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially past it.** Several fixes this guide describes \u2014 #434, #435, #439, #455, #456, #464 \u2014 landed in July"
+    },
+    {
+      "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+      "line": 2540,
+      "repository": null,
+      "number": 435,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "MERGED"
+        ]
+      },
+      "reason": "The coordinated list shares landed in July. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially past it.** Several fixes this guide describes \u2014 #434, #435, #439, #455, #456, #464 \u2014 landed in July"
+    },
+    {
+      "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+      "line": 2540,
+      "repository": null,
+      "number": 439,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "MERGED"
+        ]
+      },
+      "reason": "The coordinated list shares landed in July. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially past it.** Several fixes this guide describes \u2014 #434, #435, #439, #455, #456, #464 \u2014 landed in July"
+    },
+    {
+      "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+      "line": 2540,
+      "repository": null,
+      "number": 455,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "MERGED"
+        ]
+      },
+      "reason": "The coordinated list shares landed in July. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially past it.** Several fixes this guide describes \u2014 #434, #435, #439, #455, #456, #464 \u2014 landed in July"
+    },
+    {
+      "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+      "line": 2540,
+      "repository": null,
+      "number": 456,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "MERGED"
+        ]
+      },
+      "reason": "The coordinated list shares landed in July. Repository remains unresolved, so the report stays AMBIGUOUS.",
+      "claimText": "That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially past it.** Several fixes this guide describes \u2014 #434, #435, #439, #455, #456, #464 \u2014 landed in July"
+    },
+    {
+      "file": "guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md",
+      "line": 3929,
+      "repository": null,
+      "number": 7,
+      "form": "bare",
+      "changes": {
+        "claimedState": [
+          null,
+          "CLOSED"
+        ]
+      },
+      "reason": "The two numbered gaps share closed. Repository remains unresolved, so this remains an ambiguous bare reference.",
+      "claimText": "closed gaps #5 and #7 and confirmed the API-absence half of"
+    }
+  ],
+  "groupChanges": [
+    {
+      "key": [
+        "?@guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+        "issue-or-pr",
+        1160
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "CLOSED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+        "issue-or-pr",
+        1336
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "CLOSED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+        "issue-or-pr",
+        1406
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "CLOSED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-12-mlx-python/references/05-serving-and-distributed.md",
+        "issue-or-pr",
+        1447
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "CLOSED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+        "issue-or-pr",
+        434
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "MERGED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+        "issue-or-pr",
+        435
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "MERGED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+        "issue-or-pr",
+        439
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "MERGED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
+        "issue-or-pr",
+        455
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "MERGED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "?@guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md",
+        "issue-or-pr",
+        7
+      ],
+      "changes": {
+        "claims": [
+          [],
+          [
+            "CLOSED"
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "AMBIGUOUS",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    },
+    {
+      "key": [
+        "ml-explore/mlx",
+        "issue-or-pr",
+        3828
+      ],
+      "changes": {
+        "claims": [
+          [
+            "CLOSED"
+          ],
+          []
+        ],
+        "confidence": [
+          0.9,
+          0.95
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "STATE-CHANGED",
+          "after": "UNCHANGED"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "UNCHANGED",
+          "after": "UNCHANGED"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "STATE-CHANGED",
+          "after": "UNCHANGED"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "UNCHANGED",
+          "after": "UNCHANGED"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "UNCHANGED",
+          "after": "UNCHANGED"
+        }
+      ]
+    },
+    {
+      "key": [
+        "ml-explore/mlx",
+        "issue-or-pr",
+        3856
+      ],
+      "changes": {
+        "claims": [
+          [
+            "CLOSED"
+          ],
+          [
+            "CLOSED",
+            "OPEN"
+          ]
+        ],
+        "diagnostics": [
+          [],
+          [
+            {
+              "code": "conflicting-guide-claims",
+              "message": "Sightings claim multiple states: CLOSED, OPEN."
+            }
+          ]
+        ]
+      },
+      "verdictMatrix": [
+        {
+          "kind": "issue",
+          "liveState": "OPEN",
+          "before": "STATE-CHANGED",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "issue",
+          "liveState": "CLOSED",
+          "before": "UNCHANGED",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "OPEN",
+          "before": "STATE-CHANGED",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "CLOSED",
+          "before": "UNCHANGED",
+          "after": "AMBIGUOUS"
+        },
+        {
+          "kind": "PR",
+          "liveState": "MERGED",
+          "before": "UNCHANGED",
+          "after": "AMBIGUOUS"
+        }
+      ]
+    }
+  ],
+  "verdictComparison": "Deterministic valid issue/PR state matrix; no fresh live GitHub status is asserted.",
+  "groupOrderAndKeysPreserved": true
+}

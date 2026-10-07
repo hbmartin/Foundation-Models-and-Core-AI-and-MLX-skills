@@ -15,7 +15,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdslug import slugify, unique_slug
-from mdlinks import is_site_only_guide
+from mdlinks import is_site_only_guide, valid_fence_opener
 from stable_identity import content_hash, semantic_id
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
@@ -119,7 +119,7 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                     fence_len = 0
                     i += 1
                     continue
-            elif fm and (fm.group(1)[0] == '~' or '`' not in fm.group(2)):
+            elif valid_fence_opener(line, fm):
                 fence_character = fm.group(1)[0]
                 fence_len = len(fm.group(1))
                 fence_line = i + 1

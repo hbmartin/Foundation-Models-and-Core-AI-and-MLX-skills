@@ -1804,10 +1804,12 @@ async def composite_runtime(path, sample):
         assert np.isfinite(sample.numpy()).all()
         result = await fn(inputs={"x": NDArray(sample.numpy())})
         assert set(result) == {"y"}
-        return result["y"].numpy().copy()
+        actual = result["y"].numpy().copy()
+        assert np.isfinite(actual).all()
+        return actual
 
 
-def composite_fixture(work):
+def composite_reference():
     torch.manual_seed(43)
     model = CompositeModel().eval()
     sample = torch.randn(1, 64) / 4
@@ -1823,12 +1825,15 @@ def composite_fixture(work):
     finalized = q.finalize()
     ep = torch.export.export(finalized, (sample,)).run_decompositions(get_decomp_table())
     subprograms = _subexport_and_restore(model, ep)
-    program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
-        .add_exported_program(ep, input_names=["x"], output_names=["y"],
-                              _externalized_exported_programs=subprograms).to_coreai())
-    assert "rms_norm" in str(program) and "blockwise_shift_scale" in str(program)
-    path = Path(work) / "composite-quantized.aimodel"
-    program.save_asset(path)
+    return ep, subprograms, sample, expected, dense
+
+
+def compare_composite_asset(path, reference=None):
+    # Reconstruct the deterministic compressed reference without replacing the asset.
+    if reference is None:
+        _, _, sample, expected, dense = composite_reference()
+    else:
+        sample, expected, dense = reference
     actual = asyncio.run(composite_runtime(path, sample))
     assert actual.shape == expected.shape == dense.shape
     assert np.isfinite(actual).all() and np.isfinite(expected).all() and np.isfinite(dense).all()
@@ -1836,6 +1841,17 @@ def composite_fixture(work):
     np.testing.assert_allclose(actual, expected, atol=1e-2, rtol=1e-3)
     return {"conversion_max_abs": float(np.max(np.abs(actual - expected))),
             "compression_quality_max_abs": float(np.max(np.abs(expected - dense)))}
+
+
+def composite_fixture(work):
+    ep, subprograms, sample, expected, dense = composite_reference()
+    program = (TorchConverter(mode=TorchConverter.Mode.RELEASE)
+        .add_exported_program(ep, input_names=["x"], output_names=["y"],
+                              _externalized_exported_programs=subprograms).to_coreai())
+    assert "rms_norm" in str(program) and "blockwise_shift_scale" in str(program)
+    path = Path(work) / "composite-quantized.aimodel"
+    program.save_asset(path)
+    return compare_composite_asset(path, (sample, expected, dense))
 
 
 if __name__ == "__main__":
@@ -3781,8 +3797,12 @@ async def fixture_runtime(path, sample):
         assert list(fn.desc.input_names) == ["x"]
         assert list(fn.desc.output_names) == ["y"]
         assert list(fn.desc.state_names) == []
+        assert np.isfinite(sample.numpy()).all()
         out = await fn(inputs={"x": NDArray(sample.numpy())})
-        return out["y"].numpy().copy()
+        assert set(out) == {"y"}
+        actual = out["y"].numpy().copy()
+        assert np.isfinite(actual).all()
+        return actual
 
 
 def convert_fixture(finalized, sample, path, expected, dense):
@@ -3933,16 +3953,38 @@ def compression_fixtures(work):
                 return torch.log1p(torch.exp(x))
 
         value = torch.tensor([[15.0]])
+        baseline = export(StableResult(), value)
+        baseline_result = baseline.module()(value)
+        assert torch.isfinite(baseline_result).all() and baseline_result.dtype == torch.float32
         overflow, safe = export(StableResult(), value), export(StableResult(), value)
         cast_fp32_to_fp16(overflow)
         cast_fp32_to_fp16(safe, ignored_ops={torch.ops.aten.exp, torch.ops.aten.log1p})
+        for target in (torch.ops.aten.exp.default, torch.ops.aten.log1p.default):
+            ordinary = next(n for n in overflow.graph.nodes if n.target == target)
+            protected = next(n for n in safe.graph.nodes if n.target == target)
+            assert ordinary.meta["val"].dtype == torch.float16, "overflow graph computation was not lowered"
+            assert protected.meta["val"].dtype == torch.float32, "overflow graph exclusion was ignored"
+        protected_exp = next(n for n in safe.graph.nodes if n.target == torch.ops.aten.exp.default)
+        protected_log = next(n for n in safe.graph.nodes if n.target == torch.ops.aten.log1p.default)
+        entry = protected_exp.args[0]
+        assert entry.target == torch.ops.aten._to_copy.default and entry.kwargs["dtype"] == torch.float32, "overflow entry cast incorrect"
+        assert entry.args[0].meta["val"].dtype == torch.float16, "overflow entry input was not lowered"
+        assert protected_log.args[0] is protected_exp, "protected overflow ops are disconnected"
+        exits = list(protected_log.users)
+        assert len(exits) == 1, "overflow log1p must have exactly one user"
+        exit_cast = exits[0]
+        assert exit_cast.target == torch.ops.aten._to_copy.default and exit_cast.kwargs["dtype"] == torch.float16, "overflow exit cast incorrect"
+        for graph in (overflow, safe):
+            placeholder = next(n for n in graph.graph.nodes if n.op == "placeholder")
+            assert placeholder.meta["val"].dtype == torch.float16
         ordinary_result = overflow.module()(value.half())
         safe_result = safe.module()(value.half())
         assert torch.isinf(ordinary_result).all(), "standard overflow control did not overflow"
         assert torch.isfinite(safe_result).all()
-        torch.testing.assert_close(safe_result.float(), StableResult()(value), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(safe_result.float(), baseline_result, atol=1e-3, rtol=1e-3)
         return {"standard_exp_dtype": str(ordinary_exp.meta["val"].dtype),
                 "excluded_exp_dtype": str(exp.meta["val"].dtype), "boundary_casts": True,
+                "fp32_baseline": float(baseline_result.item()), "overflow_graph_dtypes": True,
                 "standard_overflow": True, "excluded_result": float(safe_result.item())}
 
     def block_activation():

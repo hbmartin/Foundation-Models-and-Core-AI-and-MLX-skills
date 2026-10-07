@@ -1,0 +1,33 @@
+{
+  "implementation_revision": "7380762be9609969b16db7aef97b613597090c72",
+  "runs": [
+    {
+      "suite": "full discovery",
+      "interpreter": "python3.14",
+      "tests": 343,
+      "seconds": 54.138,
+      "outcome": "PASS"
+    },
+    {
+      "suite": "focused four suites",
+      "interpreter": "python3.11",
+      "tests": 68,
+      "seconds": 8.367,
+      "outcome": "PASS"
+    },
+    {
+      "suite": "focused four suites",
+      "interpreter": "python3.12",
+      "tests": 68,
+      "seconds": 7.912,
+      "outcome": "PASS"
+    },
+    {
+      "suite": "focused four suites",
+      "interpreter": "python3.14",
+      "tests": 68,
+      "seconds": 8.059,
+      "outcome": "PASS"
+    }
+  ]
+}
