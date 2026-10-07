@@ -10,8 +10,8 @@ watchOS, tvOS, visionOS, or Mac Catalyst product (✅ VERIFIED, `Package.swift:1
 commit **`5ed9981`** (2026-07-23). It describes that package's implementation policy, not a promise that
 the Core AI framework will route every similarly named model the same way.
 
-This is the missing non-language-model half of Part 7. Apple's package ships three non-LLM
-runtime products relevant here (✅ VERIFIED, `Package.swift:14-41`, `:49-117`):
+Use the package's three non-LLM products for segmentation, detection, and diffusion (✅ VERIFIED,
+`Package.swift:14-41`, `:49-117`):
 
 - `CoreAISegmentation` / module `CoreAIImageSegmenter`
 - `CoreAIObjectDetection` / module `CoreAIObjectDetector`

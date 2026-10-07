@@ -24,67 +24,17 @@ Two floors *inside* that floor matter here:
   `Package.swift:57-63`). Adding `CoreAILM` to your app target
   pulls a C++ dependency in whether or not you ever call `@Generable`.
 
-> ⚠️ **Core AI has zero Apple sample-code projects.** Verified this cycle: **0 `sampleCode` entries
-> across all 312 indexed Core AI symbols**, and `/documentation/updates/coreai` 404s. Unlike
-> Foundation Models, there is no first-party compiling Xcode project to read. The strongest evidence
-> available for this guide is the **shipped source of `apple/coreai-models`**, which is on disk and
-> was read line-by-line for this guide at commit **`5ed9981` "Move away from deprecated FM API
-> (#123)"**, authored **2026-07-23**, on `main`. Every `path:LINE` citation below is against that
-> checkout. Where a claim comes from a WWDC transcript instead, it is marked 🟡 RECONSTRUCTED, and
-> where nobody has run the thing, this guide says 🔴 GAP rather than guessing.
+Package implementation citations below retain the inspected `coreai-models` revision `5ed9981` (2026-07-23). They describe that source snapshot. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 ---
 
 ## What this covers
 
-Reference 01 taught you `AIModel` → `InferenceFunction` → `NDArray`. Reference 03 taught you states
-and pipelined execution. This guide is the layer **above** all of that: the part where a raw
-`.aimodel` becomes something you can ship, and where Apple's own Swift package turns "I have a
-converted Qwen3" into `LanguageModelSession(model:)`.
-
-Three things, and they are more coupled than they look:
-
-**The bundle format.** A `.aimodel` alone is not a deployable LLM — it has no tokenizer, no context
-length, no vocabulary size, and a diffusion model is seven of them in a trench coat. So Apple's
-export recipes emit a **resource folder**: a directory with `metadata.json` at schema version `0.2`,
-an `assets` map from role names to filenames, and whatever sidecars the family needs. Apple's
-documentation never specifies this format. Its four writers and its two readers are in the repo, and
-this guide reconstructs the schema from both ends and reports where they disagree.
-
-**The engines.** `CoreAILanguageModels` ships **three** LLM inference engines plus a VLM engine, and
-picks one for you by looking at the *function names inside your model*. The choice is not a tuning
-knob — it determines which compute unit you land on, whether you can do multi-turn prefix reuse,
-whether you can run an evaluation harness, and whether Apple's flagship structured-output feature
-works at all.
-
-**Grammar-constrained decoding.** The genuinely undocumented insight of this whole layer:
-`@Generable` on a non-Apple model is implemented by compiling the JSON schema into a **formal
-grammar** that **masks the sampler's logits** so an invalid token cannot be emitted. Both Apple's
-`coreai-models` and `ml-explore/mlx-swift-lm` independently vendor **`mlc-ai/xgrammar`** to do it,
-and there is source-level evidence that the `CoreAI` framework itself ships a third copy. No WWDC
-session and no documentation page says any of this.
-
-And the constraint that falls out of the three together, which is the single most consequential
-architectural fact in Part 7:
-
-> **Constrained decoding needs per-step logits. The GPU-pipelined engine never exposes them. It is
-> also the engine auto-selected for every macOS dynamic export.** So the default fast path and
-> `@Generable` are mutually exclusive, and the failure arrives at generation time, not load time.
+Package model assets with metadata and tokenizer sidecars, choose an engine from its actual function contract, and enable grammar-constrained generation where logits are available. The optional `coreai-models` package supplies these policies; they are separate from the Core AI framework contract.
 
 ## What this does *not* cover
 
-- **`coreai-torch`, `torch.export`, and how the `.aimodel` got made.** Part 8.
-- **Compression, palettization, quantization recipes and their numerics.** Part 9.
-- **Neural-Engine authoring rules** (BC1S layout, `-40000.0` masks, rank ≤ 5). Part 10.
-- **Authoring your own `LanguageModel` conformance from scratch.** Part 4 reference 03 does that at
-  length, using `ChatCompletionsLanguageModel` and `MLXLanguageModel` as the worked examples;
-  `CoreAILanguageModel` is the third conformance and is dissected here only where it differs.
-- **Specialization, the model cache and `xcrun coreai-build`.** Part 7 reference 02 — though §2.10
-  below covers the one bundle-format consequence of AOT compilation that bites everybody.
-- **Non-LLM runtime engines** (`CoreAISegmentation`, `CoreAIObjectDetection`, `CoreAIDiffusion`)
-  beyond what their bundle layouts teach about the format. They now have an owning guide in
-  [Part 7 reference 05](05-non-llm-engines-bundles-warmup-and-caching.md). `CoreAISpeech` remains in
-  [Part 16](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md).
+Related references: [Part 7 reference 05](05-non-llm-engines-bundles-warmup-and-caching.md), [Part 16](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md).
 
 ## What you need
 

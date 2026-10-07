@@ -27,65 +27,17 @@ know before you read anything else:
 > (`docs/guides/custom-op-lowering.ipynb`, cell 0.) A `coreai-core` wheel bump can break every
 > custom lowering you wrote. Pin it.
 
-**Evidence standard for this guide.** Core AI ships **zero Apple sample-code projects** — verified:
-0 `sampleCode` entries across all 312 indexed Core AI symbols, and `/documentation/updates/coreai`
-404s. So unlike Parts 1–6, there is no first-party compiling reference project to check against.
-What there *is*, and what this guide leans on, is stronger than it sounds: the **shipped source of
-`apple/coreai-torch` at commit `4529671` (version 0.4.1)** and **`apple/coreai-models`**, both read
-directly off disk this session, plus Apple's own agent skills in `coreai-models`, the package's
-documentation, and the issue tracker. Where a claim comes from source, the file and line are named.
+The overload inventory and custom-lowering citations retain the inspected `coreai-torch` 0.4.1 revision `4529671`. Current conversion uses 0.4.3; historical defect demonstrations remain labelled. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 ---
 
 ## What this covers
 
-This is the debugging guide for **conversion failures** — and, more importantly, for **conversions
-that succeed but should not have**.
-
-`TorchConverter` gives you an error message for the easy case: an op it cannot lower. The error is
-good, it names the ops, and it tells you the fix. That case is five minutes of work. The cases that
-cost you a week are the other three: an op that *is* supported but not in the overload your
-decomposition path produced; a decomposition table that quietly changed shape under you; and a
-lowering that ran, produced a correctly-shaped tensor, and got the arithmetic wrong.
-
-- **Op coverage and the overload rule.** `docs/api/supported-aten-ops.md` lists every ATen operator
-  `TorchConverter` lowers out of the box, in FX qualified-name form `op_name.overload`. Coverage is
-  **per-overload, not per-op**, and which overload you get depends on your decomposition path. This
-  is the single highest-value fact in the guide and it is stated once, in one sentence, in Apple's
-  docs. §2.
-- **Reading the two validator errors.** They are different errors with different fixes and they are
-  easy to confuse. Plus the third error, which fires *later*, from a different code path, with a
-  different message. §3.
-- **A worked diagnosis procedure** for "supported op, unsupported overload" — the failure mode with
-  no error message that says so. §4.
-- **Composite ops as a library you author models from**, not merely a conversion detail. All fifteen
-  documented composites, both categories, the attribute schemas, and the three traps. §5.
-- **The unadvertised capability**: `gather-mm` is Mixture-of-Experts expert dispatch and
-  `gated-delta-update` is a modern linear-attention / state-space update (Qwen3-Next class). Core AI
-  therefore has **first-class MoE and SSM support in the IR**. Nobody said this out loud. §6 also
-  says exactly how far that support does *not* extend up the stack, which matters more.
-- **Custom lowerings**: `register_torch_lowering()`, `allow_override=True` to replace a built-in, the
-  six-way dispatch ladder, the registration-ordering rule, and `generate_composite_decl` for
-  emitting a *composite* from your own lowering — with Apple's own shipping example. §7.
-- **Externalization**: `ExternalizeSpec` and `externalize_modules`, the five-phase pipeline, and the
-  real motivations from Apple's own agent skill. §8.
-- **Four live silent-miscompile defects on 0.4.1**, all verified against the shipped source in this
-  session, all with open-or-closed-unmerged fixes as of 2026-07-29. §9.
-- **A diagnostic checklist**: given a symptom, which of the four failure classes is it, and which
-  tool finds it. §10.
+Diagnose unsupported operator overloads, choose composite ops or custom lowerings, and externalize parameters when required. Coverage depends on the decomposed graph and exact overload; a successful conversion still needs numerical comparison.
 
 ## What this does *not* cover
 
-- **The basic conversion pipeline** — `torch.export` → `run_decompositions` → `TorchConverter` →
-  automatic module rewrite → `save_asset()`. See [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md).
-- **Compression and numeric formats** — `coreai-opt`, quantization, palettization, fp16 casting. That
-  is [Part 9](../../part-09-coreai-compression-numerics/README.md).
-- **The Core AI Debugger app, `coreai_torch.debugging`, and the ANE/GPU hardware rules** — that is
-  [Part 10](../../part-10-coreai-hardware-authoring-debugging/README.md), and this guide cross-links to it at
-  every point where a diagnosis needs a tool.
-- **Custom Metal kernels** (`TorchMetalKernel`). A kernel is a different escape hatch from a
-  lowering, with a different failure surface; it belongs with the hardware-authoring material in
-  Part 10.
+Related references: [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md), [Part 9](../../part-09-coreai-compression-numerics/README.md), [Part 10](../../part-10-coreai-hardware-authoring-debugging/README.md).
 
 ## What you need
 

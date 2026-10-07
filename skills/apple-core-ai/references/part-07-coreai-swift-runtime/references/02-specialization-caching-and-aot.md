@@ -2,81 +2,19 @@
 
 **Part 7 · Core AI: the Swift runtime · Reference 02**
 
-**Version floor: everything in this guide is 27.0 and only 27.0.** Core AI shipped as a brand-new
-framework in the 27 cycle — **iOS 27.0 · iPadOS 27.0 · Mac Catalyst 27.0 · macOS 27.0 · tvOS 27.0 ·
-visionOS 27.0 · watchOS 27.0**, every symbol flagged **Beta**. There is no 26.x back-deployment
-story, no `@available(iOS 26, *)` fallback, and no Core AI release-notes page to diff against —
-`/documentation/updates/coreai` returns **404**, and the word "Core AI" does not appear anywhere on
-Apple's Updates hub. Build with **Xcode 27**, and install the **Metal Toolchain** separately (§15)
-or your build will not compile at all. The command-line half of this guide — `xcrun coreai-build` —
-runs on **macOS 27** hosts.
+**Requirements:** Core AI requires OS 27.0 and Xcode 27, including the separately installed Metal Toolchain (§15). The `coreai-build` command runs on macOS 27. Specialization is hardware- and OS-specific; keep device validation separate from source inspection.
 
-> ⚠️ **Core AI has zero Apple sample-code projects.** Verified this cycle: 0 `sampleCode` entries
-> across all **312** indexed Core AI symbols. Unlike Foundation Models, there is no first-party
-> compiling reference you can open in Xcode and read. The strongest evidence available is Apple's
-> documentation prose, Apple's shipped repositories (`apple/coreai-models`, `apple/coreai-torch`,
-> `apple/coreai-optimization`) including the agent skills Apple wrote for those repos, and the
-> WWDC26 transcripts. Every claim below carries a marker saying which of those it came from, and
-> where nobody has run the thing, this guide says so instead of guessing.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-The single largest source of first-launch stalls, wedged loads and mysterious disk growth in a
-Core AI app.
-
-A `.aimodel` is **portable source**. It is not executable. Before it can run, Core AI must
-**specialize** it — compile it for *this* device's hardware **and this OS version** — and that
-process is expensive enough that Apple's own session says, in as many words, *"It is recommended
-you avoid having model specialization occur within user interactive flows."* On a 3 GB model on an
-iPhone that first load has been community-measured at **194 seconds**.
-
-What follows:
-
-- **What specialization actually does**, in the two phases Apple describes — and which one is the
-  expensive one. This is the fact that makes everything else make sense.
-- **The cache API**: `AIModelCache.default`, and `model(for:options:)` — which returns `nil` when
-  nothing is cached and **never specializes**. That is the gating primitive for a "Preparing…"
-  screen, and it is the most important three lines in the framework.
-- **The cache key** — `(source asset, SpecializationOptions)` — and how varying options silently
-  leaves you with two multi-gigabyte cache entries where you expected one.
-- **`AIModel.specialize(contentsOf:options:cache:cachePolicy:)`**: specializing *without* loading,
-  at a moment you choose. It controls **when**, not **how much**.
-- **`AIModelCache.Policy`**: `.default` vs `.persistent`, the two purge conditions, and the one
-  purge that no policy can prevent.
-- **Deleting entries** — and the fact that Apple's reference page and Apple's article **give
-  opposite answers** about what happens when you delete an entry a live `AIModel` is using. Both
-  are quoted; the conflict is marked as an open gap with a device test that would settle it.
-- **App groups**: `AIModelCache(appGroup:)` plus the entitlement, so an app and its extension
-  don't each pay for the same specialization.
-- **Bookmarks**: `bookmarkData` → persist → `AIModel(resolvingBookmark:)`. This is what lets you
-  **delete the source `.aimodel`** and keep running. It also fails in three ways, and one of them
-  is an OS update.
-- **`SpecializationOptions`** in practice, including the real reason to reach for `.cpuOnly` and
-  the undocumented `expectFrequentReshapes` flag, whose behaviour is entirely inferred and which
-  has an incident-grade community failure attached to it.
-- **Ahead-of-time compilation** with `xcrun coreai-build compile`: what it emits, how the
-  per-architecture artifacts are matched at runtime with `AIModel.deviceArchitectureName`, the
-  hardware gate that excludes every pre-A17-Pro iPhone, and the residual specialization that AOT
-  does *not* remove.
-- **Xcode integration**: `.aimodel` in Compile Sources, and the Metal Toolchain download whose
-  absence fails your build with a missing-Metal-compiler error.
-- **Numbers**, all attributed: Apple-published where Apple published them, community-measured
-  where a person with a phone measured them, and clearly labelled as such.
+Prepare models outside interactive flows. Use `AIModelCache` to distinguish a cache hit from specialization, select cache policy and options, persist bookmarks, and package architecture-specific AOT artifacts. Keep an OS-update recovery path.
 
 ## What this does *not* cover
 
-- **The `AIModel` / `InferenceFunction` / `NDArray` API itself** — descriptors, views, ownership,
-  `preferredStrides`. That is reference 01 of this part.
-- **States and pipelined execution** — KV caches as Core AI states, `ComputeStream`, `AsyncValue`.
-  Reference 03.
-- **Producing the `.aimodel` in the first place** — `coreai-torch`, op coverage, custom Metal
-  kernels. Part 8.
-- **Compression** — quantization, palettization, which of the 35 `ScalarType` cases[^scalar-type-count] you can
-  actually reach. Part 9.
-- **The Core AI Debugger, the debug gauge and the Instruments template** in depth. Part 10. They
-  appear here only where they are the way you *see* specialization happening.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 

@@ -2,96 +2,32 @@
 
 **Part 7 · Core AI: the Swift runtime · Reference 03**
 
-**Version floor:** everything in this guide is **27.0 and only 27.0** — iOS 27.0, iPadOS 27.0,
-macOS 27.0, Mac Catalyst 27.0, tvOS 27.0, visionOS 27.0, watchOS 27.0, all marked **Beta**. Core AI
-did not exist before the 27 cycle; there is no back-deployment story, no `@available` fallback that
-buys you anything on 26.x, and **no Core AI release-notes page** to diff against
-(`/documentation/updates/coreai` returns 404, and the word "coreai" does not appear anywhere in
-Apple's Updates hub). Build with **Xcode 27**, and install the **Metal Toolchain** separately or any
-target containing a `.aimodel` fails to build with a missing-Metal-compiler error.
+**Requirements:** Core AI starts at OS 27.0. Build model-containing targets with Xcode 27 and its Metal Toolchain component; the framework does not back-deploy to OS 26.
 
 Three carve-outs inside that floor matter for *this* guide specifically, because the pipelining half
 of it is built on Metal:
 
-- **`ComputeStream.init(commandQueue:)` is unavailable on watchOS.** So are
-  `InferenceFunction.AsyncValue.init(unsafeBuffer:…)` and `NDArray.RawView.init(metalBuffer:…)`.
-  The plain `ComputeStream()` initializer and `currentWorkCompleted()` *do* include watchOS.
+- **The captured documentation omits watchOS** for `ComputeStream.init(commandQueue:)`,
+  `InferenceFunction.AsyncValue.init(unsafeBuffer:…)`, and `NDArray.RawView.init(metalBuffer:…)`,
+  while the captured SDK interface declares watchOS 27.0. Check the exact destination SDK; see
+  [the documentation/interface discrepancy](01-runtime-and-ndarray.md#163-open-questions--updated-2026-07-29-against-the-sdk-interface-dump).
 - **`.aimodel` is a directory**, not a file, and it must appear in your target's **Compile Sources**
   build phase.
 - Every symbol page in Apple's docs omits macOS from `metadata.platforms` even though the framework
   page lists it. That is a documentation-generation bug — `coreai-build`, the Core AI Debugger and
   the Instruments template are all macOS-hosted — but do not be surprised by it.
 
-⚠️ **Evidence weighting for all of Part 7.** Core AI ships **zero Apple sample-code projects** —
-verified against Apple's own index: 0 `sampleCode` entries across all 312 indexed Core AI symbols.
-Unlike Parts 1–6 there is no first-party compiling reference to check a signature against. The
-strongest evidence available is, in order: Apple's reference documentation (which for Core AI is
-unusually complete — full declarations, parameter docs, discussion sections), the shipped
-`apple/coreai-models` Swift package and its agent skills, `apple/coreai-torch`'s test suite, and
-then WWDC26 session narration. Community repositories are labelled as such every time. Where a
-signature below is reconstructed rather than quoted, it says so.
+See the [shared evidence conventions](../../README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-A transformer decode loop written the naive way gets slower every step. In Apple's own WWDC26
-walkthrough this shows up as a game that visibly slows down and, in the Core AI instrument, as
-**inference intervals that grow along the timeline**. The fix is the single highest-leverage
-technique in the Core AI runtime: **states** — function arguments that the model both *reads* and
-*writes in place* during inference.
-
-This guide teaches states across all three layers they touch, because they are one feature with
-three separate spellings and a mistake at any layer produces a model that converts fine and then
-misbehaves:
-
-1. **Authoring (PyTorch).** `torch.register_buffer` plus in-place mutation inside `forward()`. The
-   buffer becomes a *mutable buffer* in the exported program, which Core AI turns into a state.
-2. **Conversion (Python).** `state_names=` on the converter call, its ordering rule, and the three
-   ways to get it silently wrong.
-3. **Runtime (Swift).** Holding the cache `NDArray`s yourself, building an
-   `InferenceFunction.MutableViews` collection, and passing it as the `states:` argument of
-   `InferenceFunction.run`.
-
-Then the tier above `run()`: **pipelined execution**. `InferenceFunction.encode(…, to:)` is
-`throws`, not `async throws` — it returns as soon as work is *encoded* onto a `ComputeStream`, so
-the CPU can encode step *n+1* while the GPU is still computing step *n*. This guide covers
-`AsyncValue`, `AsyncMutableValue`, `AsyncMutableViews`, the automatic data-dependency serialization
-`ComputeStream` provides, and a real pipelined decode loop read out of Apple's shipping engine —
-pipeline depth, buffer rotation, backpressure, and an empty-command-buffer completion sentinel.
-
-It also covers, honestly:
-
-- **The fixed max-context tradeoff.** Apple's Snake example allocates its caches at the maximum
-  possible context length, up front, forever. That is a real memory decision and there is a
-  spectrum of alternatives with names.
-- **Four silent failures** around states, one of which — a copy-on-write trap that copies the entire
-  KV cache on every single decode step — costs tens of megabytes of memcpy per token and produces no
-  error, no warning, and no crash.
-- **A community-documented beta bug** in which Apple's own documented fixed-shape/ANE decode recipe
-  converts successfully and then dies at load or first execute, differently on three platforms, plus
-  two workarounds, one of which is genuinely clever.
-- **What pipelining is actually worth**, with the widely-repeated 3.5× figure attributed to the
-  comparison it was actually measured against — which is *not* the sequential engine.
-- **Prefix reuse**, where trimming a KV cache turns out to be a single integer assignment worth
-  ~101× on turn-2 time-to-first-token, and why linear-attention and hybrid models forfeit it
-  entirely.
+Author mutable buffers in PyTorch, preserve their names during conversion, and pass owned state arrays to Swift inference. Then pipeline decode work with `ComputeStream`, buffer rotation, and backpressure. The worked examples cover cache layout, reset, prefix reuse, and numerical failures.
 
 ## What this does *not* cover
 
-- **`AIModel`, `NDArray`, views, spans and the memory model.** States are `NDArray`s and the whole
-  guide assumes you can allocate, write and read one. See
-  [`01-runtime-and-ndarray.md`](01-runtime-and-ndarray.md).
-- **Specialization, `AIModelCache`, and `coreai-build`.** Everything here happens *after* a model is
-  specialized and loaded. See
-  [`02-specialization-caching-and-aot.md`](02-specialization-caching-and-aot.md).
-- **Model bundles, the four LLM engines and guided decoding.** The `apple/coreai-models` Swift
-  package wraps most of this guide in a higher-level API; when you should use it instead of writing
-  your own loop is that guide's question, not this one. See
-  [`04-bundles-engines-and-guided-decoding.md`](04-bundles-engines-and-guided-decoding.md).
-- **Authoring the PyTorch side properly** — ANE-vs-GPU layout rules, chunked prefill, the mask
-  conventions. Part 8 and Part 10 own those. This guide covers exactly the slice of authoring that
-  produces a *state*.
+Related references: [`01-runtime-and-ndarray.md`](01-runtime-and-ndarray.md), [`02-specialization-caching-and-aot.md`](02-specialization-caching-and-aot.md), [`04-bundles-engines-and-guided-decoding.md`](04-bundles-engines-and-guided-decoding.md).
 
 ## What you need
 
@@ -3194,42 +3130,12 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 
 ### Standing gaps declared in this guide
 
-| § | Gap | What would resolve it |
-|---|---|---|
-| 6 | `--dynamic-sized-kvcache-gpu` appears only in Swift error strings; no such flag exists in `apple/coreai-models`' Python exporters | `uv run coreai.llm.export --help` on a current install |
-| 7 | The Python runtime cannot drive a stateful asset (`run_aimodel` has no `state=`); it is unclear whether that is a binding limitation or one library's omission | a Core AI Python API reference (none exists), or `help()` on an installed `coreai.runtime` |
-| 8.3 | Whether Swift's `NDArray` initializers zero their storage is undocumented | a documented guarantee; a single empirical observation would not settle it |
-| 10 | `ComputeStream` ordering is specified only as "serialized as needed based on the values read/written" — no guidance on concurrent streams or interaction with `run()`'s implicit stream | Apple doc revision, or a two-stream Instruments trace |
-| 12 | **No controlled sequential-vs-pipelined measurement exists.** Every published Core AI LLM number is a pipelined number | `llm-benchmark` run twice with `--inference-engine-variant coreai-sequential` and `coreai-pipelined`, same device, release build |
-| 13 | Status of FB23024751 / `apple/coreai-models` #5 is unknown; the input-mask escape is verified only on the beta Mac GPU | check the Feedback and the issue; re-isolate on iPhone GPU and ANE |
-| 14 | The pipelined `trimKVCache` path is implemented but unverified (blocked on a `GrowingLogitsBuffer` SIGTRAP) | a multi-turn pipelined device harness |
-| 4 | The full `CorePasses` enum could not be enumerated; the historical 0.4.1 three-pass list is known | `coreai-core` installed locally |
+The unresolved limits and safe defaults are kept with the affected advice: dynamic-cache flags (§6), Python state bindings (§7), storage initialization (§8.3), stream ordering (§10), controlled pipeline comparisons (§12), KV-write workarounds (§13), and multi-turn prefix reuse (§14). Use those sections and their dated evidence when choosing a deployment path.
 
 ### Claims deliberately *not* made
 
-Because they are in circulation and are wrong:
-
-- **Not** ".coreaimodel" or ".aiasset". The extensions are **`.aimodel`** (a directory), **`.aimodelc`**
-  (AOT-compiled, one per device architecture) and **`.aimodelintermediates`** (a debug reference run).
-- **Not** "`coreai-torch convert`". There is no such CLI. Conversion is a Python API
-  (`TorchConverter`); the only Core AI CLI is `xcrun coreai-build compile`.
-- **Not** "iOS 20 / macOS 17". The releases are **iOS 27 / macOS 27**.
-- **Not** "on-device LoRA training". No such API shipped; Core AI is an inference framework.
-- **Not** "the pipelined engine is 3.5× the sequential engine." See §12 for what that figure measures.
-- **Not** "a KV cache makes decode constant-time." See §2 for Apple's own hedge.
+Use `.aimodel` for portable assets, `.aimodelc` for architecture-specific compiled assets, and `.aimodelintermediates` for debug references. Core AI conversion is a Python API; `coreai-build` compiles assets. States do not make decode constant-time (§2), and the published 3.5× figure is not a controlled pipeline comparison (§12).
 
 ### One-paragraph summary
 
-A state is an argument the model reads and writes in place. You create one by registering a buffer in
-PyTorch and mutating it inside `forward()`; you name it with `state_names` at conversion (**and you
-must verify named states after the automatic rewrite**); you feed it at runtime by holding
-the `NDArray` yourself and inserting it into an `InferenceFunction.MutableViews` collection that you
-`consume` into `run(inputs:states:outputViews:)`. Every state must be supplied, every time. Doing this
-converts a decode loop from quadratic-per-call to linear-per-call — *not* constant, and Apple says so.
-Above `run` sits `encode(…, to: ComputeStream)`, which returns as soon as work is queued and lets the
-CPU stay a few steps ahead of the GPU; it costs you logits, and therefore guided generation and
-`forcedContinuation` evaluation, and it needs backpressure or it will exhaust the Metal allocator.
-Beyond that, the largest remaining win in a multi-turn app is not in the decode loop at all: it is
-rewinding the cache to the longest common prefix, which is one integer assignment and was measured at
-~101× on turn-2 time-to-first-token — and which linear-attention and hybrid architectures cannot do at
-all, because a running scan has no row to drop.
+For the authoring, conversion, and Swift state contract, use the [quick reference](#16-quick-reference). For engine selection and its output/evaluation constraints, use [bundles and engines](04-bundles-engines-and-guided-decoding.md).

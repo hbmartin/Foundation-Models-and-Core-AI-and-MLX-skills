@@ -18,7 +18,7 @@
 | `MetalParameter` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `MetalPerformancePrimitives` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `MetalPerformancePrimitives.framework` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
-| `MTL4MachineLearningCommandEncoder` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md), [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
+| `MTL4MachineLearningCommandEncoder` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `MTLSize` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `MTLTensor` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.README](part-11-metal-and-tensorops/README.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `MTLTensor.auxiliaryPlanes` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
@@ -40,8 +40,8 @@
 | `LeftOperandType` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
 | `NaN` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `OtherIterator` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
-| `QuantizationSpec` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
-| `QuantizedLinear` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
+| `QuantizationSpec` |  |  | [11.README](part-11-metal-and-tensorops/README.md) |
+| `QuantizedLinear` |  |  | [11.README](part-11-metal-and-tensorops/README.md) |
 | `RightElementType` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `RightOperandType` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
 | `SrcElementType` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md) |
@@ -50,4 +50,4 @@
 | `TorchMetalKernel` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md), [11.README](part-11-metal-and-tensorops/README.md) |
 | `TypeError` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
 | `ValueError` |  |  | [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
-| `Xcode.app` |  |  | [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.README](part-11-metal-and-tensorops/README.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |
+| `Xcode.app` |  |  | [11.README](part-11-metal-and-tensorops/README.md), [11.1](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md), [11.2](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md) |

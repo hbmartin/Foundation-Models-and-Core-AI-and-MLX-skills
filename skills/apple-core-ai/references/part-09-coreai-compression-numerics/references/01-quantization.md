@@ -19,91 +19,17 @@ and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fix
 recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
-
-⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
-indexed Core AI symbols, and `/documentation/updates/coreai` 404s. Unlike Parts 1–6, there is no
-first-party compiling Xcode project to check a signature against. The strongest evidence available
-for this guide is, in order: the **shipped source of `apple/coreai-optimization`**, **Apple's own
-agent skills** vendored in `apple/coreai-models` (Apple engineers' empirical rules, written for
-machine consumption and therefore unusually literal), the **`coreai-opt` documentation site**, the
-**GitHub issue and PR threads** where Apple maintainers answer, and **WWDC26 session 325**. Every
-signature below carries its source. Where the session transcript and the shipped source disagree —
-and they do, three times — the source wins and the guide says so.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-`coreai-opt` is where size, quality and latency are actually traded. Everything upstream of it
-(re-authoring, conversion) changes *what* runs; everything downstream (specialization, compilation)
-changes *where* it runs. This is the only stage where you deliberately throw information away.
-
-The framing Apple gave it on stage is worth holding onto, because the whole API follows from it:
-
-> ✅ **VERIFIED** — WWDC26 session 325, *"Dive into Core AI model authoring and optimization"*
-> (Sachin, Core AI), 325:64–68:
-> *"`coreai-opt` enables **config-driven model compression**, you describe **what to compress and
-> what to leave alone**. It supports **various optimization schemes**, from which you can choose one
-> to **optimize differently for macOS versus iOS**, as an example. It also supports **int4, int8, FP4
-> and FP8** weight compression with **flexible granularity**. `coreai-opt` includes quantization APIs
-> that you can either use with a **small amount of calibration data**, or perform **quantization
-> aware training on larger data sets**."*
-
-Four claims, four sections of this guide. All four are verifiable in the shipped source, and this
-guide verifies each one rather than repeating it.
-
-What follows:
-
-- **The compressor lifecycle** — `__init__` → `prepare` → (`calibration_mode` | `training_mode`) →
-  `finalize`, the four-method contract that quantization, palettization and pruning all share, and
-  the two places it mutates your model irreversibly.
-- **Presets**, and exactly what each one expands to. `presets.w4()` is one line; knowing which
-  eleven fields it sets is the difference between using it and debugging it.
-- **The config hierarchy** — three levels of scope (name → type → global), three groups of tensors
-  (`op_input_spec` / `op_output_spec` / `op_state_spec`), and the single most load-bearing rule in
-  the whole package: **`None` means "leave this alone", and it is not the same as omitting the
-  field.**
-- **The scoping mechanisms** — `module_name_configs` is matched with `re.fullmatch`,
-  `module_type_configs` requires **fully-qualified** class names, and there are chainable
-  `only_for` / `without` helpers with one sharp edge each.
-- **`QuantizationSpec`, field by field** — nine fields, nine supported dtypes, three qschemes, two
-  formulations, and the scale/zero-point formula for each combination, straight from the class
-  docstring.
-- **Granularity** — per-tensor, per-channel, per-block; the per-module-type default axis table; and
-  ⚠️ the fact that a block size your weight isn't divisible by produces a **warning and an
-  uncompressed layer**, not an error.
-- **GRAPH vs EAGER** — a real structural split, not a flag. The source tree has separate `_graph/`
-  and `_eager/` implementations with different capabilities, different config vocabularies and
-  different failure modes. This section tells you which one to reach for and why the transcript's
-  advice and the repo's default disagree.
-- **Activation quantization** — why it needs GRAPH mode, what `calibration_mode()` actually toggles
-  (it is not what you would guess), the six ops whose qscheme the framework overrides behind your
-  back, and the shared-observer correctness constraint that landed as a fix three days before this
-  guide was written.
-- **PTQ vs QAT** — data-free, calibration-based and fine-tuning-based workflows, with Apple's own
-  cost and accuracy guidance for each, and the **`QATSchedule`** three-integer state machine with
-  its validation rules and its two conflict-resolution policies.
-- **The SAM3 story** — the best teaching narrative available for this material: 3 GB → ~430 MB with
-  `presets.w4()` applied uniformly, an occluded flower that stops being detected, a diagnosis that
-  lands in a block holding **4% of the parameters**, and the config change that recovers baseline
-  quality at a fraction of the size.
-- **`coreai_opt.casting`** — the fp16/int16 helper, why it runs on the `ExportedProgram` and not the
-  `nn.Module`, the compress-then-cast ordering rule, and the activation overflow hazard addressed by explicit exclusions in 0.3.0.
-- **`coreai_opt.coreai_utils`** — compressing an **already-converted** Core AI program instead of a
-  PyTorch one, when that is the right call, and Apple's own "this is not the recommended path"
-  caveat.
+Choose a quantization scheme and granularity, configure exclusions, and compare activation and output quality. The recipes cover supported formats, calibration, model inspection, and device/runtime constraints.
 
 ## What this does *not* cover
 
-- **Palettization** (`KMeansPalettizer`) beyond the comparisons needed here. Palettization is
-  eager-only, weight-only, and has its own granularity vocabulary; it gets its own guide in this
-  part. It appears below only in the SAM3 story and the joint-compression ordering rule.
-- **Pruning** (`MagnitudePruner`) — same reason.
-- **The Core AI Debugger** — the tool that produced the SAM3 diagnosis. Its workspace, sync points,
-  PSNR metric and `save_intermediates` reference-capture API are Part 10's material. §13 uses its
-  *output* and cross-links.
-- **Conversion** — `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic module rewriting,
-  `save_asset()`. That is Part 8. This guide starts with an `nn.Module` and hands back an `nn.Module`.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 

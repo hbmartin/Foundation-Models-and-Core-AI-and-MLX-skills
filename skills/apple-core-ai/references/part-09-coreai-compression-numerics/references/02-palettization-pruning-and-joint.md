@@ -19,70 +19,17 @@ and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fix
 recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
-
-⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
-indexed Core AI symbols, and `/documentation/updates/coreai` 404s. There is no first-party compiling
-Xcode project to check a signature against. The evidence ladder for this guide, strongest first:
-**the shipped source of `apple/coreai-optimization`**; **Apple's own agent skills** vendored in
-`apple/coreai-models` (written by Apple engineers for machine consumption, and therefore unusually
-literal and unusually rule-shaped); **the shipped export recipes in `apple/coreai-models`**; the
-**`coreai-opt` documentation site**; and **WWDC26 session 325**. Community measurements appear in
-§17 and are labelled as such every single time.
-
-Two of this guide's four topics — **pruning** and **mixed precision** — got **zero seconds of stage
-time** in any WWDC26 session. They are fully implemented and fully documented in the repo. That
-asymmetry is the reason this guide exists.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-Guide 01 in this part covered quantization: an affine map from float to a small integer grid,
-`scale` and `zero_point`, per-tensor / per-channel / per-block. This guide covers the other three
-things `coreai-opt` does, and the two ways of combining them.
-
-- **Palettization** — lookup-table compression. Instead of a formula that maps floats onto a
-  uniform grid, you fit **k-means centroids** to the weights you actually have and store an *index*
-  per weight plus a small **palette** (the LUT). Three documented schemes: **scalar per-tensor**,
-  **scalar per-grouped-channel**, and **vector** (`cluster_dim > 1`, which gets you *fractional*
-  bits per weight). The API deliberately mirrors quantization — `KMeansPalettizer(model, config)` →
-  `prepare()` → `finalize()` — so if you read guide 01 you already know the shape.
-- **Why Apple points iOS at palettization specifically.** Session 325's exact words are
-  *"well-suited for power efficiency on iOS"*, and the shipped iOS export presets in
-  `apple/coreai-models` are palettization presets while the macOS ones are quantization presets.
-  §1.2 explains the hardware reason.
-- **⚠️ The ANE rank-5 ceiling**, and the fact that one palettization option — `enable_per_channel_
-  scale=True` — pushes the lowered LUT to **rank 6**, which the Neural Engine **rejects**, silently
-  moving your model to the GPU. This is documented in a docstring inside Apple's own SAM3 export
-  pipeline and appears nowhere in any session. It is the single highest-value footgun in this guide.
-- **Pruning** — `MagnitudePruner`, unstructured and channel-structured **schemes**, constant and
-  polynomial-decay **schedules**, and the mask arithmetic. Also the honest answer to "should I?",
-  which Apple's own documentation gives more bluntly than most vendors would.
-- **Joint compression** — palettize weights, then quantize activations on the palettized model.
-  A first-class documented workflow with a **mandatory ordering**, a **mandatory LUT quantization**
-  if you want the fast execution path, and a hard restriction: **it finalizes only to Core AI.**
-- **Mixed precision** — different bit-widths for different layers, driven by a per-layer sensitivity
-  sweep. This is the direct answer to the problem guide 01's SAM3 story ends on: *which layers
-  tolerate compression?* Apple ships mixed-precision YAML configs for Qwen3 on iOS, publishes
-  perplexity for them, and ships an agent skill that automates the sweep.
-- **Apple's PSNR acceptance gates** — four numbers from the `model-authoring` skill that function as
-  the de-facto standard for "did my compression work". Reproduced in §16 and used throughout.
-- **The worked examples the repo ships** — `edsr`, `resnet50`, the toy models, and **four MNIST
-  notebooks** (quantization / palettization / pruning / palettization + activation quantization).
-  These are the fastest route to intuition and most readers should start there.
+Apply palettization, pruning, or combined compression through the supported configuration APIs. Validate each stage and the exported model; storage reduction alone does not establish runtime speed or retained quality.
 
 ## What this does *not* cover
 
-- **Quantization itself.** `QuantizerConfig`, `QuantizationSpec`, GRAPH vs EAGER, observers,
-  calibration, QAT, KV-cache quantization: all in
-  [guide 01](01-quantization.md). This guide assumes it. Where the two interact — joint compression,
-  `lut_qspec`, mixed precision — the interaction is spelled out here.
-- **The Core AI Debugger.** Sync points, the PSNR metric, `save_intermediates`, the comparison
-  workspace — Part 10. §15.5 hands off to it explicitly, because the Debugger is how you *find* the
-  layer that needs a different bit-width.
-- **Conversion.** `torch.export`, `get_decomp_table()`, `TorchConverter`, automatic module rewriting,
-  `save_asset()` — Part 8. This guide starts with an `nn.Module` and hands back an `nn.Module`.
-- **The Swift runtime.** Loading and running the resulting `.aimodel` — Part 7.
+Related references: [guide 01](01-quantization.md).
 
 ## What you need
 

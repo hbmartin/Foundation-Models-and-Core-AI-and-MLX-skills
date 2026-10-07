@@ -2,31 +2,17 @@
 
 **Part 8 · Core AI: converting from PyTorch · Reference 01**
 
-**Version floor.** The Core AI *runtime* you are producing an artifact for is **27.0 and only 27.0** —
-`AIModel`, `AIModelAsset`, `InferenceFunction`, `NDArray`, `SpecializationOptions` and
-`ComputeUnitKind` are all documented as *"Available on: iOS 27.0+ Beta, iPadOS 27.0+ Beta,
-Mac Catalyst 27.0+ Beta, macOS 27.0+ Beta, tvOS 27.0+ Beta, visionOS 27.0+ Beta, watchOS 27.0+ Beta."*
-Nothing here back-deploys to 26.x. On the Python side the floor is **Python 3.11**, **PyTorch 2.8.0**
-(validated up to 2.13.0), **`coreai-torch` 0.4.3** and **`coreai-core==1.0.0b3`**. Version 0.4.1 is
-retained below as historical evidence and as the asset-compatibility floor;
-`apple/coreai-models` additionally requires **macOS/iOS 27.0+ and Xcode 27.0+**. And one hard gate you
-must read before anything else: **`.aimodel` assets converted with `coreai-torch` v0.4.0 fail to
-load or specialize on device from OS 27 beta 2 onward** — §2.3 covers both the reconvert and the
-no-reconvert recovery.
+**Requirements:** Runtime assets target OS 27.0 and Xcode 27. Conversion requires Python ≥3.11 and torch ≥2.8.0; the current inspected converter is `coreai-torch` 0.4.3 with beta `coreai-core==1.0.0b3`. The package's compatibility warning boundary is torch 2.13.0, not a record that every version was tested here. [Native evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) records the actual Torch 2.9 and 2.11 profiles.
 
-> ⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
-> indexed Core AI symbols, and `/documentation/updates/coreai` 404s. Unlike Parts 1–6, there is no
-> first-party compiling reference project to check a signature against. The strongest evidence in
-> this guide is, in order: source files in the shipped repos (`apple/coreai-torch`,
-> `apple/coreai-models`, `apple/coreai-optimization`), **Apple's own agent skills** vendored in
-> `apple/coreai-models/skills/`, the package documentation, Apple-staff answers on the repos' issue
-> trackers, and WWDC26 session 325. Every signature below carries its evidence marker and its file.
+Assets from converter 0.4.0 fail to load/specialize from OS 27 beta 2 onward. Reconvert with 0.4.1 or later; §2.3 retains the compatibility and recovery evidence. The optional `coreai-models` package additionally requires macOS/iOS 27 and Xcode 27.
+
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-Five lines of Python turn a `torch.nn.Module` into an on-device artifact:
+Export and decompose a PyTorch module, convert it, and save an asset with explicit IO and state names. Validate dynamic shapes, multi-function entrypoints, and numerical equivalence before writing a Swift caller.
 
 ```python
 ep = torch.export.export(model, args=(torch.randn(1, 3, 224, 224),))
@@ -35,45 +21,9 @@ converter = TorchConverter().add_exported_program(ep)
 program = converter.to_coreai()
 ```
 
-Those four conversion lines are strictly sequential, each one has a failure mode, and **three can fail
-silently** — they produce an artifact that loads, runs, returns tensors of the right shape, and is
-wrong or slow. This guide is about the contract each line establishes.
-
-- **§3–§4** — `torch.export` and the decomposition table. Why `get_decomp_table()` exists, exactly
-  which twelve ops it preserves (the README's "three" is a subset — §4.2), and the precise boundary
-  between the loud failure (skipping decomposition entirely) and the silent one (using PyTorch's
-  default table and quietly losing the fast attention path).
-- **§5** — the two input forms. `add_exported_program()` for a decomposed `ExportedProgram`, versus
-  `add_pytorch_module()` — which is the *only* door to externalization and composite-op marking, and
-  which session 325 never mentions.
-- **§6** — in 0.4.3, `to_coreai()` performs conversion and the pre-compilation rewrite. What it folds,
-  with IR evidence, plus the closed 0.4.1 defect where the separate optimizer deleted a
-  broadcasting-significant axis move.
-- **§7** — **the IO contract.** `input_names` / `output_names` are the dictionary keys your Swift or
-  Python caller types. Omit them and you inherit FX placeholder names, which Apple's own
-  documentation says are *not a stable PyTorch contract*.
-- **§8** — `dynamic_shapes=` on `torch.export`, so a traced sequence length does not get baked into
-  the asset, plus the SymInt sharp edges that are specific to this converter.
-- **§9** — `state_names=`: mutable buffers and in-place-mutated inputs become Core AI *states*, with
-  no opt-out, in an order that is itself an observed-behaviour assumption.
-- **§10** — multi-function assets: one `TorchConverter`, N exported programs, N entrypoint names.
-  Session 325 sells this as a latency trick. Apple's optional `coreai-models` Swift loader also uses
-  recognized entrypoint sets to select **that package's** Neural Engine preference; direct Core AI
-  callers choose their own specialization options.[^sample-routing-policy]
-- **§11** — the Python-side verification gate: load both models, run the same input, assert a small
-  delta. Core AI specializes and runs natively from Python via a `name -> numpy` dict, so this costs
-  you nothing and catches every silent failure in this guide.
-- **§12** — why the converter preserves source locations and PyTorch module stacks, and the causal
-  link from that metadata to the Core AI Debugger's source viewer and group-by-module navigator.
-
 ## What this does *not* cover
 
-- **Compression.** `coreai-opt` (`Quantizer`, `KMeansPalettizer`, presets, calibration, QAT) is Part 9.
-  This guide converts an already-compressed-or-not module; it never quantizes one.
-- **Custom lowerings, `TorchMetalKernel`, and model re-authoring for the ANE.** Part 10.
-- **The Swift side of the artifact** — `AIModel`, `InferenceFunction.run`, states, `MutableViews`,
-  `ComputeStream`. Part 7.
-- **`coreai-build`**, the ahead-of-time compiler that turns `.aimodel` into `.aimodelc`. Part 15.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 

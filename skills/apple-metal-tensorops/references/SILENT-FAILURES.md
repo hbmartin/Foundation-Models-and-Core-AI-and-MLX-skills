@@ -1,17 +1,17 @@
 # Silent-failure index — Metal TensorOps and Performance Primitives for ML kernels
 
-**42 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**40 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 20 |
+| [Wrong output](#wrong-output) | 19 |
 | [Performance cliffs](#performance-cliffs) | 2 |
 | [Version drift](#version-drift) | 2 |
 | [Docs vs reality](#docs-vs-reality) | 5 |
 | [API footguns](#api-footguns) | 5 |
-| [General cautions](#general-cautions) | 8 |
+| [General cautions](#general-cautions) | 7 |
 
 ## Wrong output
 
@@ -24,7 +24,6 @@
 - [Verified: set() on a masked element is a no-op and get() returns zero; operator[] is entirely unchecked.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#64-️-silent-failure-masked-elements-and-the-method-name-that-does-not-exist) — 11.1 🔇
 - [reduce_rows' identity defaults to sum_identity (zero) regardless of the operation you pass.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#72-️-silent-failure-the-identity-default-is-sum_identity-regardless-of-the-operation) — 11.1
 - [Naked exp() in a hand-written softmax overflows above ~88 fp32 / ~11 fp16; subtract the running max first.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#73-map_iterator-and-is_iterator_compatible) — 11.1
-- [The guide's central trap: the default reduction identity silently clamps every negative row max to zero.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#what-this-covers) — 11.2
 - [TOC: cooperative tensors are not zero-initialised; they hold undefined register data.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2
 - [TOC: the reduce_rows identity default silently computes max(0,row).](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2
 - [Skip the is_compatible_as_left_input check and an incompatible layout converts undiagnosed - wrong data, no error.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#43-is_compatible_as_left_input--a-runtime-bool-you-must-branch-on) — 11.2 🔇
@@ -77,7 +76,6 @@
 **Part 11**
 
 - [Scope note: session 330 material and circulating names diverge from shipped headers; verify against the SDK first.](part-11-metal-and-tensorops/README.md#️-read-this-before-you-start-especially-if-you-arrived-from-wwdc26-session-330) — 11.README
-- [The Metal toolchain cryptex path embeds a build-specific token; resolve it with xcrun, never paste it into scripts.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#01-the-three-evidence-bases) — 11.1
 - [The 4-bit path is a pointer cast to tensor<int4b_format>; the 26.x matmul2d op does the unpacking itself.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#56-declaring-tensors) — 11.1
 - [MLX writes cooperative tensors through unchecked operator[] and never calls is_valid_element, relying on known layouts.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#67-mlxs-cooperative-tensor-usage-annotated) — 11.1
 - [TOC: NAX is new and still settling; expect churn.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2

@@ -19,53 +19,19 @@ the portable one is **`.aimodel`**. Both are *directories*.
 > `db63a2d8` (inspected 2026-10-06). Deployment-target display in Xcode: WWDC26 session 326, lines 78-93.
 
 
-Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
-`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
-These model-export constraints are narrower than the standalone compression requirements in Part 9.
+The `coreai-models` export profile also requires `torchao<0.18`; it is narrower than standalone compression in [Part 9](../../part-09-coreai-compression-numerics/README.md).
 
 ---
 
 ## ⚠️ Read this before you trust a signature in this guide
 
-**Core AI has zero Apple sample-code projects.** A crawl of Apple's tutorials index found **0
-`sampleCode` entries across all 312 indexed Core AI symbols**, and `/documentation/updates/coreai`
-returns 404. Unlike Parts 1–6 of this series — which are backed by compiling Apple sample projects
-— there is **no first-party Xcode project you can open and diff this guide against**.
+Use the cited SDK declarations and pinned Apple package implementations for signatures. The [native evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) identifies the exact converter, compression profile, and fixture tested; it does not attest the complete LLM deployment path on every device.
 
-So the evidence ladder here is different, and it is stated explicitly at every claim:
-
-1. **Shipping repo source on disk** — `apple/coreai-models`, `apple/coreai-torch`,
-   `apple/coreai-optimization`, read file-by-file with line numbers. Strongest evidence available.
-2. **Apple's own agent skills** inside `apple/coreai-models/skills/` — `working-with-coreai`,
-   `model-authoring`, `model-compression-exploration`. These are Apple engineers' *empirical* rules
-   (layouts, forbidden ops, PSNR gates) written for coding agents, and they are unusually specific.
-3. **Apple documentation pages and articles.**
-4. **WWDC26 session transcripts** — 324 (*Meet Core AI*), 325 (*Dive into Core AI model authoring
-   and optimization*), 326 (*Integrate on-device AI models in your app*), 330 (*Optimize custom ML
-   operations with Metal tensors*). Spoken narration; several claims here are already superseded by
-   the shipped code, and each such conflict is flagged.
-5. **Community repositories** — always labelled as such, never as Apple-official.
-
-Two names are worth stating plainly because they recur: **`john-rocky` / `coreai-model-zoo`** is a
-single-author community project (Daisuke Majima). Its measurements are frequently the *only* public
-numbers for a given path, and they are genuinely valuable — but the repo self-declares that its
-benchmark table is *"NOT a controlled-environment benchmark — background load and heat show up here
-as real-world variance."* Every number sourced from it below is marked **community-measured** with
-hardware and date. **`lucasnewman/mlx2coreai`** is a separate MIT-licensed community bridge, covered
-in §15.
-
-Anything this guide could not verify appears as a 🔴 **GAP** box that names what is unknown, what
-would resolve it, and what to do meanwhile. There are no guesses inside GAP boxes.
-
----
+`john-rocky/coreai-model-zoo` and `lucasnewman/mlx2coreai` are community projects. Their performance figures are observations with uncontrolled load and thermal conditions, not universal capacity or speed guarantees. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 ## What this covers
 
-The capstone of the Core AI parts: **one continuous path from `Qwen/Qwen3-0.6B` on Hugging Face to
-`try await session.respond(to:)` in a Swift app**, with every stage's inputs, outputs, gates and
-failure modes.
-
-The path has nine stages, and the guide walks them in order:
+Take an LLM from checkpoint to a Swift session: acquire, re-author for the selected compute unit, compare to an oracle, compress, export states, package sidecars, and prepare the device artifact. Prefer an existing export recipe when its model and runtime contract fit.
 
 ```
 acquire weights → re-author (or use a repo primitive) → verify against an oracle
@@ -74,35 +40,9 @@ acquire weights → re-author (or use a repo primitive) → verify against an or
     → load in Swift → LanguageModelSession
 ```
 
-Specifically:
-
-- **The easy road first.** `apple/coreai-models` ships a **22-model catalog** with per-model export
-  recipes and a discovery CLI. For ten LLM presets you type one command and skip stages 2–8
-  entirely. §2 is that command, its full flag list, and the six ways it exits non-zero.
-- **The hard road, as two divergent targets.** The same checkpoint produces **two different
-  artifacts**: macOS/GPU (dynamic shapes, `nn.Linear`, fused SDPA, stateful KV) and iOS/ANE (static
-  shapes, `Conv2d` projections, BC1S layout, fp16-only, externalised embeddings, four entrypoints).
-  This is not a build flag — it is a different PyTorch implementation. §3–§9.
-- **The gates.** Apple's PSNR ladder and the community's cosine-plus-token-exactness ladder measure
-  different failures, and a model can pass one while failing the other. §6.
-- **The community porting playbook**, reproduced as a runnable checklist and positioned against
-  Apple's `model-authoring` skill — they are complementary, not competing. §12.
-- **The hybrid/SSM wall.** Qwen3.5 GatedDeltaNet, LFM2.5 and Granite 4 Mamba2 bundles **fail at
-  load** on the stock pipelined engine, and forfeit prefix caching even when patched. §13.
-- **Performance context**, community-measured and clearly attributed, including the
-  `COREAI_CHUNK_THRESHOLD` dial where Apple's own CLI hint is backwards on a big-RAM Mac. §14.
-- **The alternative bridge**: `mlx2coreai`'s `convert-mlx-lm-stateful`, which reaches the same
-  bundle shape from an MLX checkpoint without touching PyTorch. §15.
-
 ## What this does *not* cover
 
-- **The Swift runtime in depth** — `AIModel`, `InferenceFunction`, `NDArray`, states,
-  `SpecializationOptions`, `AIModelCache`. See Part 7.
-- **PyTorch → Core AI conversion mechanics in general** (non-LLM graphs, custom lowerings,
-  `TorchMetalKernel`). See Part 8 and Part 11.
-- **Compression theory and the full `coreai-opt` config surface.** See Part 9. This guide uses
-  compression as a pipeline stage and states only the LLM-specific rules.
-- **MLX itself.** See Parts 12–13; the MLX→Core AI bridge in §15 cross-links Part 14.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 

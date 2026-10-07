@@ -11,8 +11,8 @@ implementation on a macro spelled `__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_26_2`,
 target ≥ 26.2**. Both statements are true and they are not the same statement. §1 reconciles them
 and tells you which number to put in your build settings. The original TensorOps surface is 26.x;
 Xcode 27 adds host-side multiplane tensors and the int2, FP4, FP8, and E8M0 data types described in
-session 330 — and, as of the **macOS 27.0 beta SDK** (checked 2026-07-29), the same formats land
-*shader-side* in the MPP headers themselves, together with a blockwise ue8m0 scale-plane path and a
+session 330 — and the **macOS 27.0 final SDK** (inspected 2026-10-07) includes those formats
+*shader-side* in the MPP headers, together with a blockwise ue8m0 scale-plane path and a
 second deployment gate, `…_DEPLOYMENT_TARGET_27_0`. §0.2 and §1.2 carry the
 citations.[^metal27-multiplane]
 
@@ -23,8 +23,7 @@ session and a header disagree, the header wins and the guide says so.
 
 ## What this covers
 
-TensorOps is the Metal Shading Language layer that both Core AI and MLX stand on. It is two
-libraries stacked:
+Write TensorOps matmul and convolution kernels using the actual SDK descriptors, execution scopes, and operand types. The examples cover tensor construction, cooperative storage, packed formats, multiplane scales, and precision limits.
 
 ```
 mpp::tensor_ops::         matmul2d · matmul2d_descriptor · convolution2d
@@ -35,44 +34,9 @@ metal::                   tensor · cooperative_tensor · execution_simdgroups<N
   (the Metal *language* headers, in the Metal toolchain — a different place entirely)
 ```
 
-You are here because you want to write a matmul kernel by hand, or because you want to know what
-Apple's 4-bit and 8-bit tensor support actually buys you. Both answers are more specific — and more
-constrained — than the marketing.
-
-Read this guide for:
-
-- **`matmul2d_descriptor`'s seven positional arguments**, in order, with the default that will
-  silently ruin a K-loop (§3).
-- **The complete execution-scope vocabulary** — four names, one of which everybody writes and which
-  **does not exist** (§4).
-- **The three tensor construction paths** — `tensor_handle`, `tensor_offset`, `tensor_inline` —
-  and a structural correction to how they are usually described (§5).
-- **Cooperative tensors**: owning, thread-private, implementation-defined layout; the three getters
-  whose template parameters differ *in kind*; and the masked-element API, whose real spelling is
-  **not** what Apple's own doc comment says (§6).
-- **The Xcode 26.6 element types.** Thirteen shader-side types, including `int8_t`, `uint8_t`,
-  `metal::int4b_format`, and `metal::uint4b_format` (the complete `__tensor_ops_datatype` enum is
-  transcribed in `notes/repos/mlx-tensorops-kernels.md` §8). Xcode 27's host-side `MTLTensorDataType`
-  separately adds int2, FP4, FP8, and E8M0 formats — and the macOS 27.0 beta SDK's MPP headers add
-  the matching *shader-side* element types: `metal::int2b_format` / `uint2b_format`,
-  `metal::metal_fp4_e2m1_format`, `metal::metal_fp8_e4m3_format` / `…_e5m2_format` as operands, and
-  `metal::metal_fp8_ue8m0_format` as a scale dtype (§0.2).[^metal27-dtypes]
-
 ## What this does *not* cover
 
-- **`convolution2d`.** `MPPTensorOpsConvolution2d.h` (177 lines) and its 4,914-line implementation
-  ship in the same framework. MLX does not use them and this guide does not either.
-- **Host-side `MTLTensor` / `MTL4MachineLearningCommandEncoder`.** Covered by this part's Metal-4
-  guide. This guide is about the *shader-side* API. The two are different types with confusingly
-  similar names — see §2.
-- **MLX's public Python/Swift quantization API** (`mx.quantize`, `QuantizedLinear`, the `mode=`
-  argument). [Part 12](../../part-12-mlx-python/) and [Part 13](../../part-13-mlx-swift/). This
-  guide reads MLX's *kernels*, not its user-facing API.
-- **Core AI compression** — `coreai-opt`, palettization, `QuantizationSpec`.
-  [Part 9](../../part-09-coreai-compression-numerics/).
-- **How to register a Metal kernel with a Core AI model.**
-  [Part 8, guide 3](../../part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md).
-  This guide establishes only the shader-side building blocks; the Part 8 guide is the tutorial.
+Related references: [Part 12](../../part-12-mlx-python/), [Part 13](../../part-13-mlx-swift/), [Part 9](../../part-09-coreai-compression-numerics/), [Part 8, guide 3](../../part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md).
 
 ## What you need
 
@@ -115,88 +79,25 @@ version actually inspected and uses Apple's current API reference for the 27.0 a
 
 ### 0.1 The three evidence bases
 
-Everything in this guide comes from one of three places, in this order of authority.
+Locate the public TensorOps headers in the SDK's `MetalPerformancePrimitives.framework/Headers`: `MPPTensorOpsMatMul2d.h` and `MPPTensorOpsConvolution2d.h`. The `__impl` headers define availability, types, traits, and implementation constraints. Metal language headers (`metal_tensor`, `metal_cooperative_tensor`, `metal_packed_numeric`, and execution units) belong to the separately installed Metal toolchain.
 
-**1. Apple's shipping headers, read on disk.** The complete, commented, normative TensorOps
-declarations ship inside Xcode:
+Resolve the compiler with `xcrun`; its mount token and location vary. If a newly installed component is not found, retry with `xcrun --no-cache`.
+
+The original comparisons used Xcode 26.6 (17F113), 2026-07-27, and Xcode 27 beta's Metal component (27A5228f), 2026-07-31. Those captures remain the provenance for historical compile results. Inspection on 2026-10-07 of Xcode 27 final (27A266a), macOS SDK 27.0 (26A425), confirms that the public matmul header includes int2/uint2, FP4/FP8 operands, and the `__is_unqualified_v` getter constraints. This is source inspection; individual deployment and compile requirements remain in §0.2, §1, and §5.4.
+
+MLX kernels provide concrete call sites. Header declarations and those call sites take precedence over transcript spellings; see the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ```
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
   MacOSX.sdk/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/
 ```
 
-| File | Lines | Role |
-|---|---:|---|
-| `MetalPerformancePrimitives.h` | 12 | umbrella; includes the two op headers |
-| `MPPTensorOpsMatMul2d.h` | 642 | **the public API**, including ~320 lines of Apple prose and four worked examples |
-| `MPPTensorOpsConvolution2d.h` | 177 | public API for `convolution2d` |
-| `__impl/MPPTensorOpsAvailability.h` | 12 | the deployment-target macro |
-| `__impl/MPPTensorOpsTypes.h` | 150 | `__tensor_ops_datatype`, address-space enum, descriptor-type enum |
-| `__impl/MPPTensorOpsTraits.h` | 135 | type traits and the include list that reveals the language dependencies |
-| `__impl/MPPTensorOpsUtility.h` | 106 | element-type → datatype mapping |
-| `__impl/MPPTensorOpsMatMul2dImpl.h` | 8,963 | implementation; the exhaustive dtype dispatch and every `static_assert` that will bite you |
-| `__impl/MPPTensorOpsConvolution2dImpl.h` | 4,914 | implementation |
-
-> ✅ **VERIFIED** — enumerated by listing that directory on Xcode 26.6 (Build 17F113), 2026-07-27.
-> The same framework is present under `iPhoneOS.sdk`, `iPhoneSimulator.sdk`,
-> `AppleTVSimulator.sdk`, and `/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk`.
-
-> ✅ **27.0-BETA DELTA** — the same directory in the **macOS 27.0 beta SDK** (Xcode 27 beta, checked
-> 2026-07-29) keeps the identical file set but grows exactly where the new formats land:
-> `MPPTensorOpsMatMul2d.h` 642 → **664** lines — the growth is 22 new rows in the dtype
-> support-matrix comment, and the only compiled change in the file is a SFINAE substitution on the
-> cooperative-tensor getters, `__is_thread_addrspace_v<…>` → `__is_unqualified_v<…>` (seven
-> clauses; noted where §6.3 quotes the 26.6 spelling) — plus
-> `__impl/MPPTensorOpsMatMul2dImpl.h` 8,963 → **16,754** lines, `MPPTensorOpsTypes.h` 150 → 180,
-> `MPPTensorOpsTraits.h` 135 → 198, `MPPTensorOpsAvailability.h` 12 → 13 (one new macro — §1.2).
-> `MPPTensorOpsConvolution2d.h` and `MPPTensorOpsConvolution2dImpl.h` are unchanged apart from a
-> one-token diff. §0.2 and §1 read the contents of that delta.
-
-If you searched for this framework and failed, you probably looked under `Toolchains/`. It is not
-there. It is under `Platforms/…/SDKs/…/System/Library/Frameworks/`, like any other SDK framework.
-
-**2. The Metal *language* headers**, which are in a completely different place — a cryptex-mounted
-Metal toolchain that is not inside `Xcode.app` at all:
 
 ```bash
 xcrun -sdk macosx --find metal
 # → /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.iAeIa2/
 #      Metal.xctoolchain/usr/bin/metal
 ```
-
-The headers sit under `…/Metal.xctoolchain/usr/metal/<ver>/lib/clang/<ver>/include/metal/`:
-
-| File | Lines | Role |
-|---|---:|---|
-| `metal_tensor` | 2,204 | `metal::tensor`, the three descriptor/tag structs, `slice`, the `is_*_v` traits |
-| `metal_cooperative_tensor` | 584 | `metal::cooperative_tensor`, iterators, `map_iterator`, `is_valid_element`, `get_capacity` |
-| `metal_packed_numeric` | 119 | **`int4b_format`, `uint4b_format`, `packed_numeric_type<Format,N>`** |
-| `__exec/units.h` | ~190 | `execution_threads<N>`, `execution_simdgroups<N>`, and the aliases |
-
-> ⚠️ **The cryptex path contains a build-specific token** (`MetalToolchain-v17.6.109.0.iAeIa2`).
-> It **will** differ on your machine. Resolve it with `xcrun`; never paste it into a script.
-
-> ✅ **27-ERA TOOLCHAIN DELTA (2026-07-31)** — the Metal Toolchain component for Xcode 27.0 beta
-> (27A5228h; component build 27A5228f, `Apple metal version 32023.921`) was installed and probed
-> for this guide. Two changes of note. First, the mount moved: `xcrun -sdk macosx --find metal` now
-> resolves under `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/…`
-> rather than a `com.apple.security.cryptexd` path — the never-hardcode rule above pays for itself.
-> Second, the language headers grow: the include tree is now 71 files, `metal_tensor` 2,204 →
-> **6,264** lines (the templated `slice` overloads move to `:4875-5001`), `metal_packed_numeric`
-> 119 → **314**, and `metal_tensor:325-379` gains the multiplane machinery — `tensor_plane_scales`
-> and `tensor_blockwise<PlaneTag, ElementType, BlockSizes...>`, all inside
-> `#if defined(__HAVE_TENSOR_MULTIPLANE__)`. §2.2 and §5.4 carry this toolchain's compile-probe
-> results. One installation trap: the first `xcrun … metal` after installing the component can
-> still fail with *"cannot execute tool 'metal' due to missing Metal Toolchain"* from a stale xcrun
-> cache — run it once with `xcrun --no-cache` and the cache refreshes.
-
-**3. MLX's shipping kernels**, in `ml-explore/mlx` — a real, compiling, in-production call site
-written by Apple against the same headers. When a header says something is possible and MLX does it,
-that is as close to proof as static analysis gets.
-
-Below those three: WWDC/Tech-Talk transcripts (narration, subject to ASR error and sometimes
-describing a newer SDK generation than the local headers), then community repositories, always
-attributed as such.
 
 ### 0.2 Quantized multiplane tensors: 26.x fallback and Xcode 27 native surface
 

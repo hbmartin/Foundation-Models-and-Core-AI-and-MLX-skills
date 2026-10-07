@@ -2,11 +2,9 @@
 
 **Part 7 · Core AI: the Swift runtime · Reference 01**
 
-**Version floor: everything in this guide is 27.0 and only 27.0.** `import CoreAI` requires
-**iOS 27.0 · iPadOS 27.0 · macOS 27.0 · Mac Catalyst 27.0 · tvOS 27.0 · visionOS 27.0 ·
-watchOS 27.0**, all marked **Beta** in Apple's documentation as of this writing (2026-07-27).
-There is no back-deployment: Core AI is a *new framework* in the 27 cycle, not a rename of
-Core ML, and nothing here exists on a 26.x SDK.
+**Requirements:** Core AI starts at OS 27.0 on iOS, iPadOS, macOS, Mac Catalyst, tvOS, visionOS, and watchOS. Build with Xcode 27 and install its Metal Toolchain component. There is no Core AI framework in the 26.x SDKs.
+
+Inspection on 2026-10-07 of Xcode 27 final (27A266a) still finds Core AI in the device SDK and absent from the iPhone Simulator SDK. Gate shared targets with `#if canImport(CoreAI)` and use Mac or device checks for Core AI behavior. The dated beta probe below remains its original runtime provenance.
 
 > ⚠️ **No Simulator destination in this beta.** ✅ **Probe-verified, 2026-07-31** (`probes/`
 > package, Xcode 27.0 beta): `CoreAI.framework` and all six of its SubFrameworks are present in
@@ -24,55 +22,16 @@ Build with **Xcode 27**, and install the **Metal Toolchain** (see §0.3) or your
 
 ## What this covers
 
-This is the object-model primer that every other Core AI guide in this series assumes. Four types
-carry the whole framework:
+Load a `.aimodel`, specialize it into an `AIModel`, obtain an `InferenceFunction`, and supply `NDArray` values. The sections below cover descriptor-driven IO, borrowed views and ownership, image inputs, output buffers, concurrency, and errors.
 
 ```
 .aimodel  ──specialize──▶  AIModel  ──loadFunction──▶  InferenceFunction  ──run──▶  NDArray
 (portable source)          (device-specific)           (one compute graph)          (your data)
 ```
 
-Read this guide to learn:
-
-- **What a `.aimodel` actually is** — a portable *source* representation, and a directory, not a
-  file — and why that single fact explains the shape of the loading API.
-- **Why `AIModel.init(contentsOf:options:)` is `async`.** Not because I/O is slow. Because
-  specialization has to finish before a valid `AIModel` can exist.
-- **`loadFunction(named:)` returns an Optional *and* throws**, and the two failure modes mean
-  completely different things. Most first-draft Core AI code gets this backwards.
-- **`InferenceFunction` is `Sendable`** — you can call the same function from many tasks — and the
-  memory that quietly costs you.
-- **Runtime introspection**: `InferenceFunctionDescriptor` → `InferenceValue.Descriptor` →
-  `NDArrayDescriptor`, and the reason Apple built it: so your app can adapt to a model whose
-  signature changes between deployments *without changing code*.
-- **`NDArray` in depth.** This is the part readers find hardest, and it is hard for a real reason:
-  Core AI is one of the heaviest adopters of Swift's non-escapable-types machinery in the whole
-  SDK. `Span`, `MutableSpan`, `RawSpan`, `InlineArray`, value generics (`<let rank: Int>`),
-  `consuming`/`borrowing`, typed throws — all of them show up in `NDArray`'s signatures. Section 7
-  teaches what non-escapable means, why Apple used it here, and what it buys you.
-- **The three low-level performance APIs** WWDC26 session 324 lists and barely explains: querying
-  the preferred memory layout and allocating to match; pre-allocating output buffers; and
-  `AsyncValue` + `ComputeStream` pipelining.
-- **Image-typed inputs and outputs** — `CVMutablePixelBuffer`, `ImageDescriptor` — and the fact
-  that image orientation is *entirely your problem*, which Apple's own repository demonstrates by
-  getting it wrong two different ways.
-- **The error-type answer** — settled against the macOS 27.0 beta SDK interface: the runtime's
-  throws are untyped, `AssetError` is the only public error type, and §13 shows the `catch` block
-  that follows from that.
-
 ## What this does *not* cover
 
-- **Specialization scheduling, `AIModelCache`, bookmarks and AOT compilation.** Covered by the
-  specialization-and-caching guide in this part. This guide touches specialization only where it
-  explains an API shape (§3).
-- **States / KV caching as a modelling technique.** `states:` appears here as a `run` parameter
-  (§10); the authoring side, cache growth strategies and prefix reuse live in this part's states
-  guide and in [Part 3](../../part-03-context-profiles-agentic/).
-- **Converting a PyTorch model.** [Part 8](../../part-08-coreai-pytorch-conversion/).
-- **Scalar types, quantization and palettization** — why `NDArray.ScalarType` has `uint1` through
-  `uint7` and `float8e8m0fn`. [Part 9](../../part-09-coreai-compression-numerics/).
-- **The Debugger, the debug gauge and the Instruments template.**
-  [Part 10](../../part-10-coreai-hardware-authoring-debugging/).
+Related references: [Part 3](../../part-03-context-profiles-agentic/), [Part 8](../../part-08-coreai-pytorch-conversion/), [Part 9](../../part-09-coreai-compression-numerics/), [Part 10](../../part-10-coreai-hardware-authoring-debugging/).
 
 ## What you need
 
@@ -91,43 +50,9 @@ Read this guide to learn:
 
 ## ⚠️ Read this before you trust a single signature below
 
-Core AI has **zero Apple sample-code projects.** This is not a research gap on our side; it is
-verified:
+Use the SDK declarations for API spelling and the pinned `apple/coreai-models` source for package behavior. Reconstructed examples remain labelled. Some documentation examples need corrections (§16.2).
 
-> ✅ **VERIFIED** — Apple's own documentation index at
-> `https://developer.apple.com/tutorials/data/index/coreai` enumerates **312 symbol and page
-> entries** (1 module, 7 articles, 2 collections, 31 structs, 6 enums, 3 classes, 3 protocols, 100
-> properties, 56 methods, 53 cases, 42 inits, 8 subscripts). Filtering that index for
-> `type == "sampleCode"` returns **zero entries**. Separately,
-> `https://sosumi.ai/documentation/updates/coreai` returns **HTTP 404** — there is no Core AI
-> release-notes page at all, and the `/documentation/updates` hub contains zero `coreai` mentions.
-> Harvested 2026-07-27.
-
-For Parts 1–6 of this series, the strongest evidence class was a *compiling Apple sample project*.
-Here there is none. So the evidence ladder used in this guide is, strongest first:
-
-1. **Shipping source on disk** — the Swift in `apple/coreai-models`, which is Apple-authored code
-   that calls these APIs for real. When Apple's own package and Apple's own prose disagree, the
-   package wins, because the package compiles.
-2. **Apple's agent skills** in `apple/coreai-models/skills/` — Apple's own empirical rules,
-   written for coding agents, and unusually blunt.
-3. **Apple documentation pages**, including the raw DocC JSON, which preserves content that the
-   rendered pages and Markdown mirrors drop.
-4. **WWDC26 session transcripts** — 324 *"Meet Core AI"* and 326 *"Core AI app features"*. Spoken
-   narration over code that is on screen but not in the transcript. Useful for *intent*, weak for
-   spelling.
-5. **Community repositories and issue threads**, always labelled as such.
-
-Two consequences you should hold onto while reading:
-
-- **Apple's own documentation code samples do not all compile.** Three of them are demonstrably
-  broken (§16.2). Where this guide reproduces one, it says so and gives the corrected form.
-- **Every marker in this guide is load-bearing.** ✅ VERIFIED means quoted from a source read this
-  session, with the citation attached. 🟡 RECONSTRUCTED means the concept is attested but the exact
-  spelling is inferred. 🔴 GAP means we could not verify it and are telling you rather than
-  guessing — and every GAP box ends with a safe default you can ship today.
-
----
+[Recorded native checks](../../../notes/evidence/core-ai/README.md) cover their named fixtures and profiles, not every API or device. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## Contents
 
