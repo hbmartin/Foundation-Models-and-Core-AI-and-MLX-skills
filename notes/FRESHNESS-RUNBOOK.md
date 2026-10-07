@@ -34,7 +34,9 @@ report_dir="artifacts/freshness/daily-defects/$run_id"
 
 Stop on installed-contract drift. The observation report records `collection.complete=false` and
 the exact blockers when a host tool cannot be queried; preserved prior values are not fresh
-observations. This daily lane remains report-only.
+observations. Generated-output checks are skipped explicitly in the daily lane; prior validation
+dates are preserved. Default collection and weekly runs perform the full checks. This daily lane
+remains report-only.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 

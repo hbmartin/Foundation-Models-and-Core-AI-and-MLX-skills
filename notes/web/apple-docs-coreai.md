@@ -53,7 +53,7 @@ Available on: iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta,
 
 > "Core AI also integrates with Xcode and the developer toolchain. The Core AI debug gauge and Core AI instrument help you monitor and profile inference performance in your app. You can also compile models ahead of time with the `coreai-build` command-line tool."
 
-> "If your app uses model types other than neural networks, such as decision trees or tabular feature engineering, see [Core ML](/documentation/CoreML)."
+> "If your app uses model types other than neural networks, such as decision trees or tabular feature engineering, see [Core ML](https://developer.apple.com/documentation/coreml)."
 
 **External URLs cited by Apple on this page:**
 - `https://apple.github.io/coreai-optimization` — Core AI Optimization

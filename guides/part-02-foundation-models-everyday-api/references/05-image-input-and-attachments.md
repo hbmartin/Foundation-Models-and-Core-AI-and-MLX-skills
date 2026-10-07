@@ -11,7 +11,8 @@
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
-| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:issue:17](https://github.com/apple/python-apple-fm-sdk/issues/17) <!-- defect-ref:apple.python-apple-fm-sdk:issue:17 --> | CLOSED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
+| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
 <!-- current-defects:end -->
 
 ## What this covers
@@ -1685,7 +1686,7 @@ is a link error, not a Python exception.
 > ⚠️ **SILENT FAILURE — image attachments can retain file descriptors in Python sessions.**
 > `apple/python-apple-fm-sdk` #17 reported failure after 240–250 sequential image calls with `OSError:
 > [Errno 9] Bad file descriptor`. PR #18 added native composed-prompt release on three `respond()`
-> paths. Its merge alone does not establish which installed release contains the change.
+> paths. The current 0.2.1 tag does not contain that merge; a patched source revision needs separate verification.
 > Transcript history also retains attachments for the session lifetime. Inspection of the cited source
 > found unmatched composed-prompt ownership in `stream_response()` and
 > `SystemLanguageModel.token_count()`; those residual leaks were not runtime-verified. For image-heavy

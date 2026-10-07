@@ -29,9 +29,10 @@ at all.
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
 | [apple.python-apple-fm-sdk:issue:16](https://github.com/apple/python-apple-fm-sdk/issues/16) <!-- defect-ref:apple.python-apple-fm-sdk:issue:16 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:issue:17](https://github.com/apple/python-apple-fm-sdk/issues/17) <!-- defect-ref:apple.python-apple-fm-sdk:issue:17 --> | CLOSED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
 | [apple.python-apple-fm-sdk:issue:5](https://github.com/apple/python-apple-fm-sdk/issues/5) <!-- defect-ref:apple.python-apple-fm-sdk:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.python-apple-fm-sdk:issue:6](https://github.com/apple/python-apple-fm-sdk/issues/6) <!-- defect-ref:apple.python-apple-fm-sdk:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
 <!-- current-defects:end -->
 
 ## ⚠️ Read this before you read anything else: the evidence here is the weakest in Parts 1–6

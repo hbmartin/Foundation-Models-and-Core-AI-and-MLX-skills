@@ -28,9 +28,13 @@ read this session and carries an evidence marker.
 |---|---|---|---|---|
 | [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:pull:1585](https://github.com/ml-explore/mlx-lm/pull/1585) <!-- defect-ref:ml-explore.mlx-lm:pull:1585 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3762](https://github.com/ml-explore/mlx/issues/3762) <!-- defect-ref:ml-explore.mlx:issue:3762 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
 | [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
 | [ml-explore.mlx:issue:3887](https://github.com/ml-explore/mlx/issues/3887) <!-- defect-ref:ml-explore.mlx:issue:3887 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:pull:3757](https://github.com/ml-explore/mlx/pull/3757) <!-- defect-ref:ml-explore.mlx:pull:3757 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3911](https://github.com/ml-explore/mlx/issues/3911) <!-- defect-ref:ml-explore.mlx:issue:3911 --> | CLOSED (2026-10-07) | released (0.32.1) | unverified | unknown |
+| [ml-explore.mlx:pull:3757](https://github.com/ml-explore/mlx/pull/3757) <!-- defect-ref:ml-explore.mlx:pull:3757 --> | MERGED (2026-10-07) | released (0.32.1) | unverified | unknown |
+| [ml-explore.mlx:pull:3804](https://github.com/ml-explore/mlx/pull/3804) <!-- defect-ref:ml-explore.mlx:pull:3804 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
+| [ml-explore.mlx:pull:3854](https://github.com/ml-explore/mlx/pull/3854) <!-- defect-ref:ml-explore.mlx:pull:3854 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
 | [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
 <!-- current-defects:end -->

@@ -384,6 +384,7 @@ def group_references(
             "repository": repository,
             "number": number,
             "referenceKind": "discussion" if reference_kind == "discussion" else "issue-or-pr",
+            "githubKind": reference_kind,
             "registryId": group[0].get("registryId"),
             "claims": claims,
             "latestClaimDate": claim_date,

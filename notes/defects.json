@@ -671,9 +671,12 @@
         "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
         "confidence": 1.0,
         "releaseAvailability": {
-          "status": "unknown",
-          "version": null,
-          "evidenceUrls": []
+          "status": "not-in-verified-release",
+          "version": "0.2.1",
+          "evidenceUrls": [
+            "https://github.com/apple/python-apple-fm-sdk/compare/e868e60811aa0706feb2ccb33cfe7e27626287b7...v0.2.1",
+            "https://pypi.org/project/apple-fm-sdk/0.2.1/"
+          ]
         },
         "remediation": {
           "status": "unverified",
@@ -747,9 +750,11 @@
         "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
         "confidence": 1.0,
         "releaseAvailability": {
-          "status": "unknown",
-          "version": null,
-          "evidenceUrls": []
+          "status": "released",
+          "version": "0.32.1",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/compare/a79332de6982cc32725b8d84ba80c4fdcbd481f1...v0.32.1"
+          ]
         },
         "remediation": {
           "status": "unverified",
@@ -1500,6 +1505,198 @@
           "status": "unknown",
           "version": null,
           "evidenceUrls": []
+        },
+        "remediation": {
+          "status": "unverified",
+          "version": null,
+          "evidenceUrls": []
+        }
+      }
+    },
+    {
+      "id": "apple.python-apple-fm-sdk:issue:17",
+      "url": "https://github.com/apple/python-apple-fm-sdk/issues/17",
+      "kind": "issue",
+      "title": "Native `FMComposedPrompt` Pointer and File Descriptor Leak in `LanguageModelSession._respond_with_schema_from_json()`",
+      "affectedVersions": "The 0.2.1 tag lacks PR #18; patched respond paths and remaining streaming/token-count ownership need separate verification.",
+      "guideRefs": [
+        {
+          "file": "guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md",
+          "anchor": "113-the-file-descriptor-leak--the-sharpest-image-specific-bug-in-the-corpus"
+        },
+        {
+          "file": "guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md",
+          "anchor": "132-the-fd-leak-and-why-the-fix-is-not-in-any-release"
+        },
+        {
+          "file": "guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md",
+          "anchor": "135-the-leaks-that-remain"
+        }
+      ],
+      "claimedState": "CLOSED",
+      "asOf": "2026-10-07",
+      "resolution": {
+        "disposition": "unknown",
+        "evidenceUrls": [
+          "https://github.com/apple/python-apple-fm-sdk/issues/17"
+        ],
+        "evidenceDate": "2026-10-07",
+        "rationale": "State verified; installed-release remediation requires its own evidence.",
+        "confidence": 1.0,
+        "releaseAvailability": {
+          "status": "not-in-verified-release",
+          "version": "0.2.1",
+          "evidenceUrls": [
+            "https://github.com/apple/python-apple-fm-sdk/compare/e868e60811aa0706feb2ccb33cfe7e27626287b7...v0.2.1",
+            "https://pypi.org/project/apple-fm-sdk/0.2.1/"
+          ]
+        },
+        "remediation": {
+          "status": "unverified",
+          "version": null,
+          "evidenceUrls": []
+        }
+      }
+    },
+    {
+      "id": "ml-explore.mlx:issue:3911",
+      "url": "https://github.com/ml-explore/mlx/issues/3911",
+      "kind": "issue",
+      "title": "[Metal] NVFP4 tensor-scale (global_scale) not implemented \u2014 throws runtime error on Metal backend",
+      "affectedVersions": "Metal global_scale throws on releases <=0.32.0; source fix is contained in 0.32.1. Local runtime remediation remains unverified.",
+      "guideRefs": [
+        {
+          "file": "guides/part-12-mlx-python/references/03-quantization.md",
+          "anchor": "97-nvfp4-global_scale-on-metal--mlx3911"
+        }
+      ],
+      "claimedState": "CLOSED",
+      "asOf": "2026-10-07",
+      "resolution": {
+        "disposition": "unknown",
+        "evidenceUrls": [
+          "https://github.com/ml-explore/mlx/issues/3911"
+        ],
+        "evidenceDate": "2026-10-07",
+        "rationale": "State verified; installed-release remediation requires its own evidence.",
+        "confidence": 1.0,
+        "releaseAvailability": {
+          "status": "released",
+          "version": "0.32.1",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/compare/a79332de6982cc32725b8d84ba80c4fdcbd481f1...v0.32.1"
+          ]
+        },
+        "remediation": {
+          "status": "unverified",
+          "version": null,
+          "evidenceUrls": []
+        }
+      }
+    },
+    {
+      "id": "ml-explore.mlx:pull:3854",
+      "url": "https://github.com/ml-explore/mlx/pull/3854",
+      "kind": "pull",
+      "title": "Fix incorrect nvfp4 quantized_matmul through the split-K path",
+      "affectedVersions": "Exact affected-release boundary not established; verify the cited reproducer before retiring an older-release workaround.",
+      "guideRefs": [
+        {
+          "file": "guides/part-12-mlx-python/references/03-quantization.md",
+          "anchor": "93-nvfp4-split-k--fixed-and-the-reason-is-instructive--pr-3854"
+        }
+      ],
+      "claimedState": "MERGED",
+      "asOf": "2026-10-07",
+      "resolution": {
+        "disposition": "unknown",
+        "evidenceUrls": [
+          "https://github.com/ml-explore/mlx/pull/3854"
+        ],
+        "evidenceDate": "2026-10-07",
+        "rationale": "State verified; installed-release remediation requires its own evidence.",
+        "confidence": 1.0,
+        "releaseAvailability": {
+          "status": "released",
+          "version": "0.32.3",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/compare/6c0ea7fb012be4ac55ea7c1c73334e3c9d247f56...v0.32.3",
+            "https://github.com/ml-explore/mlx/releases/tag/v0.32.3"
+          ]
+        },
+        "remediation": {
+          "status": "unverified",
+          "version": null,
+          "evidenceUrls": []
+        }
+      }
+    },
+    {
+      "id": "ml-explore.mlx:pull:3804",
+      "url": "https://github.com/ml-explore/mlx/pull/3804",
+      "kind": "pull",
+      "title": "Fix fp quantized matvec for output dim < 8",
+      "affectedVersions": "Exact affected-release boundary not established; verify the cited reproducer before retiring an older-release workaround.",
+      "guideRefs": [
+        {
+          "file": "guides/part-12-mlx-python/references/03-quantization.md",
+          "anchor": "95-fp-quantized-matvec-with-output-dim--8--pr-3804"
+        }
+      ],
+      "claimedState": "MERGED",
+      "asOf": "2026-10-07",
+      "resolution": {
+        "disposition": "unknown",
+        "evidenceUrls": [
+          "https://github.com/ml-explore/mlx/pull/3804"
+        ],
+        "evidenceDate": "2026-10-07",
+        "rationale": "State verified; installed-release remediation requires its own evidence.",
+        "confidence": 1.0,
+        "releaseAvailability": {
+          "status": "released",
+          "version": "0.32.3",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/compare/1700b39a1dc05611dc6792f4453458d379997037...v0.32.3",
+            "https://github.com/ml-explore/mlx/releases/tag/v0.32.3"
+          ]
+        },
+        "remediation": {
+          "status": "unverified",
+          "version": null,
+          "evidenceUrls": []
+        }
+      }
+    },
+    {
+      "id": "ml-explore.mlx:issue:3762",
+      "url": "https://github.com/ml-explore/mlx/issues/3762",
+      "kind": "issue",
+      "title": "Metal fp_qmv_impl: out_vec_size < 8 branch uses raw scale byte instead of dequantize_scale \u2192 wrong mxfp4 matvec for output dim < 8",
+      "affectedVersions": "Exact affected-release boundary not established; verify the cited reproducer before retiring an older-release workaround.",
+      "guideRefs": [
+        {
+          "file": "guides/part-12-mlx-python/references/03-quantization.md",
+          "anchor": "95-fp-quantized-matvec-with-output-dim--8--pr-3804"
+        }
+      ],
+      "claimedState": "CLOSED",
+      "asOf": "2026-10-07",
+      "resolution": {
+        "disposition": "unknown",
+        "evidenceUrls": [
+          "https://github.com/ml-explore/mlx/issues/3762"
+        ],
+        "evidenceDate": "2026-10-07",
+        "rationale": "State verified; installed-release remediation requires its own evidence.",
+        "confidence": 1.0,
+        "releaseAvailability": {
+          "status": "released",
+          "version": "0.32.3",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/compare/1700b39a1dc05611dc6792f4453458d379997037...v0.32.3",
+            "https://github.com/ml-explore/mlx/releases/tag/v0.32.3"
+          ]
         },
         "remediation": {
           "status": "unverified",

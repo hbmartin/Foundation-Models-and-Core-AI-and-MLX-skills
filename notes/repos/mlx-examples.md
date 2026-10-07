@@ -12,7 +12,7 @@
 From root `README.md`:
 
 > This repo contains a variety of standalone examples using the [MLX framework](https://github.com/ml-explore/mlx).
-> The [MNIST](mnist) example is a good starting point to learn how to use MLX. … **Check-out [MLX LM](https://github.com/ml-explore/mlx-lm) for a more fully featured Python package for LLMs with MLX.**
+> The [MNIST](https://github.com/ml-explore/mlx-examples/tree/796f5b53cab69a3d48a44233ce21aae889e94a08/mnist) example is a good starting point to learn how to use MLX. … **Check-out [MLX LM](https://github.com/ml-explore/mlx-lm) for a more fully featured Python package for LLMs with MLX.**
 
 **Critical structural fact:** `mlx_lm` was *removed* from this repo. `llms/README.md` is now a single move notice:
 

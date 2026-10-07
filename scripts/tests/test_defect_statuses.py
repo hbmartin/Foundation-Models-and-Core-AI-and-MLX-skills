@@ -112,6 +112,10 @@ class DefectRegistryTests(unittest.TestCase):
         with mock.patch.object(reporter, 'gh_json', return_value=(None, 'offline')) as query:
             self.assertEqual(reporter.lookup('owner/repo', 19, 'issue'), {'error': 'offline'})
         query.assert_called_once_with('api', 'repos/owner/repo/issues/19')
+        collision = dict(data, pull_request={'url': self.record['url']})
+        with mock.patch.object(reporter, 'gh_json', return_value=(collision, None)):
+            result = reporter.lookup('owner/repo', 19, 'issue')
+        self.assertIn('registry declares an issue', result['error'])
 
     def test_cli_atomic_json_and_legacy_tsv_columns(self):
         output = self.root / 'report.json'; output.write_text('old'); output.chmod(0o640)

@@ -426,7 +426,7 @@ Verified against `docs/Run AI models in your app on Apple silicon.md` framework 
 Note watchOS and tvOS are in the list. (324:187: "Core AI is available on all Apple Silicon to help you build cutting edge AI experiences on all Apple platforms.")
 
 **Relationship to Core ML** — VERBATIM `docs/Run AI models in your app on Apple silicon.md:26`:
-> "If your app uses model types other than neural networks, such as decision trees or tabular feature engineering, see [Core ML](/documentation/CoreML)."
+> "If your app uses model types other than neural networks, such as decision trees or tabular feature engineering, see [Core ML](https://developer.apple.com/documentation/coreml)."
 
 → **Core AI = neural networks. Core ML remains for trees / tabular / classical ML.** This is the cleanest statement of the Core AI ↔ Core ML boundary I found; it is *not* stated in either transcript.
 
