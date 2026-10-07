@@ -2908,81 +2908,24 @@ forever, but it is the rate today.
 
 Things this guide could not verify, what would resolve them, and what to do meanwhile.
 
-> 🔴 **GAP 1 — the return arity of `mx.quantize` for non-affine modes.**
-> The published signature says `-> tuple[array, array, array]`, but the mode table says `mxfp4`,
-> `mxfp8` and `nvfp4` have **no bias**, and `dequantize`'s `biases` is `Optional`. Whether those
-> modes return a 2-tuple, a 3-tuple ending in `None`, or a 3-tuple with a dummy array is not
-> settled by the notes.
-> **Resolution:** `python/tests/test_quantized.py`, or one line at a REPL.
-> **Safe default:** unpack defensively (`q[2] if len(q) > 2 else None`) and pass `biases=None`
-> explicitly for the fp modes, as every listing in this guide does.
->
-> 🔴 **GAP 2 — no way to ask which quantized kernel ran.**
-> There is no MLX API, env var or attribute that reports the dispatch decision. The gates live in
-> `quantized.cpp` behind the Python boundary.
-> **Resolution:** an upstream diagnostic hook, or a Metal capture in Instruments where the kernel
-> names are readable (the NAX variants are separately named).
-> **Safe default:** benchmark the shapes you care about (§6.5), use `transpose=True`, and preserve
-> native 64-alignment where it exists. For a non-aligned K, compare a pinned fix or safe fallback
-> against measured padding rather than changing the graph unconditionally.
->
-> ✅ **GAP 3 — RESOLVED 2026-07-29 — PR #3912's trigger, scope and magnitude.**
-> The PR body was read live via `gh` on 2026-07-29 (PR still **OPEN**): trigger `K % 32 == 16`,
-> legal only for `nvfp4` (group size 16); affected kernels `fp_qmm_t_impl` and siblings in
-> `fp_quantized.h`, GPU matrix path only (CPU and vector/decode kernels correct); **not**
-> NAX-gated — reproduced on an M3 Pro; magnitude max |err| ≈ 40 with 72% of outputs wrong in the
-> reproducer. Full detail now in §9.4.
-> **Safe default:** keep already-aligned dimensions aligned. For legal non-aligned NVFP4 dimensions,
-> pin a revision containing the fix or use a verified fallback; pad only after measuring the
-> graph-wide overhead.
->
-> 🔴 **GAP 4 — `gather_qmm`'s index dtype and rank contract.**
-> "Flat indices along the batch dimensions" is the whole published description. The permitted dtype
-> (int32 vs uint32), the permitted rank, and the semantics when `lhs_indices` and `rhs_indices` are
-> both supplied are not pinned down.
-> **Resolution:** `mlx/ops.cpp`'s validation for `gather_qmm`, or `python/tests/test_quantized.py`.
-> **Safe default:** 1-D `int32` `rhs_indices` of length `n`, `lhs_indices=None` — the MoE-decode
-> shape mlx-lm's `SwitchLinear` exercises.
->
-> ✅ **RESOLVED ON MAIN — `mlx#3922` merged 2026-08-26; `mlx#3856` and `mlx#3887` are closed.**
-> Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
-> `mlx-lm#1585` (downstream
-> padding workaround) also open. A **2026-07-31** re-check still found all three open; that is now
-> historical. On **2026-08-26**, `mlx#3922` merged with a focused regression test and `mlx#3856`
-> closed.
-> Release v0.32.2 (2026-08-25) predates that merge. On 2026-09-07, `mlx#3887` closed completed
-> after maintainers confirmed #3922 covers its reported affine and MXFP ragged-K cases.
-> **Resolution:** pin `d73eb752` or later, or use a release that contains that commit.
-> **Safe default:** preserve native 64-alignment and keep the gathered-row workaround on ≤0.32.2
-> while needed, but re-measure and remove padding after a fix; both forms of padding consume memory
-> and compute even when the underlying bug is gone.
->
-> 🔴 **GAP 6 — quality numbers for MLX's quantization modes specifically.**
-> The corpus contains no MLX-measured perplexity or benchmark table comparing affine-4 against
-> `mxfp4` against `nvfp4` on the same model. The quality claims in §3.2 and §7.5 are
-> **community-measured on Core AI bundles**, not on MLX, and the schemes do not map one-to-one
-> (Core AI's "sym8" is symmetric-linear with a per-K-block-32 scale; MLX's affine-8 is asymmetric
-> with a bias). The *mechanisms* transfer; the exact rankings may not.
-> **Resolution:** run `mlx_lm.evaluate` (§8.8) across modes on one model and publish it.
-> **Safe default:** treat §3.2 as directional and run your own §10 checks.
->
-> 🔴 **GAP 7 — the `nn.quantize` / `mlx_lm` interaction with `quantize_input=True`.**
-> The docstring says `quantize_input=True` is "only supported for `nvfp4` and `mxfp8` modes and
-> `Linear` layers", and mlx-lm's `-qa` path raises on a bias term. What happens when
-> `quantize_input=True` meets a model containing a mix of eligible and ineligible layers — silent
-> skip, or raise — is not recorded.
-> **Resolution:** `python/mlx/nn/layers/quantized.py` read directly.
-> **Safe default:** apply a `class_predicate` that selects only the layers you have verified are
-> eligible, rather than relying on the default predicate to do the filtering.
->
-> 🔴 **GAP 8 — the poisoning technique's reliability.**
-> §10.4's allocator-seeding code is a reconstruction. Whether `mx.full` + `del` reliably places a
-> buffer of the right size class into the recycle pool depends on allocator internals; the only
-> supporting facts are the reuse window `[size, size + 2·page_size)` and the fact that
-> `mx.clear_cache()` drains the pool.
-> **Resolution:** upstream PR #3922 now includes the focused regression in `python/tests/test_quantized.py`.
-> **Safe default:** treat a zero result from §10.4 as inconclusive and fall back to §10.3, which
-> makes no allocator assumptions.
+> 🔴 **Remaining quantization questions require versioned source or runtime checks.**
+> The published `mx.quantize` signature describes three outputs while non-affine modes have no bias.
+> Verify installed return arity or unpack defensively with `q[2] if len(q) > 2 else None` and pass
+> `biases=None` for the fp modes.
+> No recorded public diagnostic identifies the selected quantized kernel. Use Metal capture or
+> measured shapes; preserve native alignment and compare pinned fixes/fallbacks before adding padding.
+> The reported NVFP4 `K % 32 == 16` matrix-path corruption also affected M3 Pro, so it was not
+> NAX-specific (§9.4).
+> For ragged gathered-K cases, upstream #3922 added a regression and merged at `d73eb752`. Release
+> 0.32.2 predates that merge; 0.32.3 contains it. Issue closure does not establish remediation in an installed wheel: pin
+> a containing revision/release, verify the reproducer, then remove padding after measuring overhead.
+> The allocator-poisoning example remains reconstructed; a zero result is inconclusive, so prefer the
+> upstream regression or §10.3.
+> `gather_qmm` index dtype/rank and paired-index semantics are not fully specified here; the exercised
+> MoE shape uses one-dimensional int32 `rhs_indices` with `lhs_indices=None`. Select verified eligible
+> Linear layers explicitly for `quantize_input=True` rather than assuming mixed-layer behavior.
+> Finally, Core AI quantization quality rankings are not MLX measurements; compare modes on the same
+> model with `mlx_lm.evaluate`.
 
 **One thing that is emphatically *not* a gap:** the pinned MLX implementation does not use native
 scale planes. Its kernels hand-dequantize into threadgroup memory (§2.4). The older negative header

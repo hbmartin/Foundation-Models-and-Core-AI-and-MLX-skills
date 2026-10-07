@@ -303,7 +303,7 @@
 | `NotImplementedError` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [14.README](part-14-bridges-between-stacks/README.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `NSClassFromString` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `@Observable` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
-| `Optional` | ✓ | ✓ | [12.3](part-12-mlx-python/references/03-quantization.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `Optional` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `Output` | ✓ | ✓ | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `Package.resolved` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `@ParameterInfo` |  |  | [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |

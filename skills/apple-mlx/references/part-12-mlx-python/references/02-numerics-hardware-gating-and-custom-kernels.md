@@ -762,34 +762,14 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 ### 3.3 ⚠️ SILENT FAILURE: precision you did not choose, with no runtime signal
 
 <!-- callout-id: callout-17c8d8203e6a6232 -->
-> ⚠️ **SILENT FAILURE — `float32` matmul at TF32-class precision.**
->
-> **What happens.** On an M5-class Mac running macOS ≥ 26.2, `a @ b` with `a` and `b` of dtype
-> `float32` computes at reduced internal precision by default. The result is a `float32` array of
-> the right shape with plausible values. Relative error against a `float64` reference is roughly
-> **three orders of magnitude worse** than a real `float32` matmul (§3.4).
->
-> **What you see.** Nothing. No exception, no warning, no `stderr` line, no flag on the array, no
-> field in `mx.device_info()`. `x.dtype` still says `float32`, because it *is* `float32` — the
-> storage is fp32 and only the multiply-accumulate is relaxed.
->
-> **How you find out.** A test that was green on your M3 goes red on an M5; or an
-> `mx.allclose(..., rtol=1e-5)` assertion starts failing; or an `argmax` over near-ties flips; or a
-> user files a bug you cannot reproduce.
->
-> **Why it is like this.** The kernel-side `relaxed_precision = true` (§3.1) is unconditional, so the
-> host-side flag is the *only* precision control, and upstream has now settled on keeping it that way.
-> Docs PR **mlx#3894 merged 2026-08-04** (`docs/src/usage/precision.rst`) — but reduced to what "holds
-> independently of backend and hardware generation", so it names no generation, no gate and no numbers;
-> §3.2 and §3.4 remain your only source for scope and magnitude. On the strength of it **mlx#3860 was
-> closed as completed** the same day, `zcbenz` declining a runtime opt-out — *"having a programmable
-> switch would be nice … there is no necessarility"*. Warn-once **#3883** stays **closed unmerged**.
->
-> **Safe default.** In any test suite, set `MLX_ENABLE_TF32=0` **before importing mlx**. That is
-> exactly what MLX's own test harness does — `python/tests/mlx_tests.py` sets
-> `os.environ["MLX_ENABLE_TF32"] = "0"` with the comment *"Use regular fp32 precision for tests"*
-> (✅ VERIFIED). In production, leave it on if you want the speed, but write your numerical
-> tolerances against measured gen-17 behaviour, not against IEEE fp32.
+> ⚠️ **SILENT FAILURE — fp32 storage can conceal reduced matmul precision.**
+> On the documented M5/macOS ≥26.2 path, fp32 matmul defaults to relaxed internal precision while
+> retaining fp32 output dtype. The cited measurements show roughly three orders of magnitude worse
+> relative error against fp64; no array flag or warning reports the change.
+> For numerical tests, set `MLX_ENABLE_TF32=0` before importing MLX, as its own test harness does. For
+> production speed, measure tolerances on the actual hardware; dtype alone does not establish full
+> fp32 accumulation. Documentation PR #3894 and closure of #3860 concern documentation/policy, not
+> demonstrated removal of relaxed precision; the warning proposal #3883 closed unmerged.
 
 ### 3.4 What it measures out at
 
