@@ -40,38 +40,7 @@ implementation detail. Nothing described here can be back-deployed to 26.0, 26.1
 
 ## What this covers
 
-The two feature areas of `apple/foundation-models-utilities` that change how you think about a
-transcript — and the exact ways the shipped documentation for both is wrong.
-
-- **How to actually depend on the package.** The README's dependency line resolves to nothing. §1.
-- **The three history modifiers**, with their complete signatures, every parameter, every default,
-  and every default that Apple's own agent skill claims exists but does not:
-  `droppingCompletedToolCalls()`, `rollingWindow(entries:)` / `rollingWindow(size:)`, and
-  `summarizeHistory(entryThreshold:model:instructions:summaryPostamble:)`.
-- **Application order**, resolved precisely: modifiers wrap inside-out and *execute* outside-in, so
-  the last modifier you write is the first one that runs.
-- ⚠️ **The inert-composition trap.** Every composed example shipped in the repository — four call
-  sites — pairs an `entryThreshold` with a `rollingWindow` size that makes summarisation
-  mathematically unreachable. Nothing throws. Nothing warns.
-- ⚠️ **The "5000 tokens" ghost.** The README says summarisation triggers on a token count. The API
-  has no token awareness anywhere; the gate is `history.count > entryThreshold`, an entry count.
-- ⚠️ **`rollingWindow` is a known-buggy modifier that Apple shipped anyway**, with a test whose own
-  comment says *"in practice it crashes partway through."*
-- **What these modifiers actually mutate** — and why that is the *lossy, session-wide*
-  `@SessionProperty(\.history)` path rather than the lossless per-profile `historyTransform(_:)` that
-  session 242 tells you to prefer. This is the most consequential thing in the guide and nobody says
-  it out loud.
-- **Skills** — the best worked example of KV-cache economics in the entire corpus. Why a prompt-based
-  skill preserves the key/value cache and an instructions-based skill destroys it, established from
-  the one line of source that decides it, plus the three transcript diagrams from Apple's README.
-- The synthesized `ToggleSkillTool`: the `activate_skill` / `toggle_skill` naming rule, the three
-  rendering states (including `[on demand]`, which is not documented as a state anywhere else),
-  `strictSchema`, and the `defer` that makes the tool's own verb read backwards.
-- ⚠️ **`SkillActivations` stopped conforming to `RandomAccessCollection` at beta 3**, and both the
-  README and Apple's own agent skill still ship a `ForEach` snippet that no longer compiles.
-- **`ChatCompletionsLanguageModel`** in brief, with a pointer to Part 4 for the full treatment.
-- The `skills/foundation-models-utilities/SKILL.md` audit: a beta-1 document with **eight** verified
-  wrong claims, including a SwiftPM trait system that does not exist.
+Integrate Skills and history transforms from foundation-models-utilities. Apply modifiers in the correct order, budget activation instructions, and check the inert-composition and rolling-window pitfalls.
 
 ## What you need
 

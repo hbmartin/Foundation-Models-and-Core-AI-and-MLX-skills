@@ -1,13 +1,6 @@
 # 2.4 — Local RAG with `SpotlightSearchTool`, plus OCR and barcodes
 
-**What this covers.** Apple's 2026 answer to "how do I do RAG on device without a vector
-database": `SpotlightSearchTool`, a `Tool` conformer that lets a language model write and execute
-queries against your app's own Core Spotlight index. This guide covers the whole surface from
-WWDC26 session 246 **and from Apple's shipping sample project for it** — configuration, the
-index-delegate hydration hook, the batched `SearchReply` stream, the two-channel results pattern,
-guidance profiles, the contact resolver, and custom `Generable` pipeline stages — and then covers,
-honestly, the three ways it is currently known to fail. It closes with the two Vision-backed system
-tools, `OCRTool` and `BarcodeReaderTool`.
+**What this covers.** Use SpotlightSearchTool to retrieve indexed app content, hydrate search results, and guide a response. OCRTool and BarcodeReaderTool cover the Vision-backed system-tool paths.
 
 **Version floor.** `SpotlightSearchTool` is **27.0** — **iOS 27, iPadOS 27, macOS 27, visionOS 27**.
 **There is no watchOS support**; Apple's platform sentence omits it and nothing in the corpus

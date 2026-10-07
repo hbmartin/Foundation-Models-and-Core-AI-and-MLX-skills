@@ -22,34 +22,7 @@ visionOS 27.0, *)`. Two different floors in one file is the normal shape of this
 
 ## What this covers
 
-You have decided not to use `SystemLanguageModel`. This guide is the **consumer** side of that
-decision: how to put a different model behind the same `LanguageModelSession` API, with real
-initializers, real failure modes, and the one architectural trade that should change which backend
-you pick.
-
-- **Path 1 — `ChatCompletionsLanguageModel`.** The one that works today, on hardware you already
-  own, without the 27 SDK's model packages. Point it at `mlx_lm.server`, Ollama, LM Studio or vLLM
-  and any Hugging Face checkpoint is behind `LanguageModelSession`. Including the confirmed,
-  as-of-today unfixed URL-versioning defect, its verified workaround, and the malformed URL in
-  Apple's own README.
-- **Path 2 — `MLXLanguageModel`.** Where `MLXFoundationModels` actually lives (this is the direct
-  answer to Developer Forums thread **836264**), the double gate that makes it vanish silently, the
-  `#huggingFaceLanguageModel` macro, the explicit initializer, and why the `capabilities:` array you
-  pass is load-bearing rather than decorative.
-- **Path 3 — `CoreAILanguageModel`.** One line to load a converted bundle, what it detects about
-  your model without asking you, and what the Foundation Models path does *not* expose.
-- **The constraint that deserves its own section:** grammar-constrained decoding — the mechanism
-  behind `@Generable` — needs engine **logits**. The fastest local backend never surfaces them. A
-  bring-your-own-model app therefore **loses Apple's flagship structured-generation feature exactly
-  when it selects the fastest backend.** This should change your backend choice, not merely inform
-  it.
-- **Capability declaration** as the actual contract between you and the framework, and the errors
-  the framework throws on your behalf when a backend under-declares.
-- **The privacy obligation** from session 339, which applies to you as a *consumer* of a model
-  package, not only to the people who ship them.
-
-Authoring a `LanguageModel` conformance of your own is **guide 03** in this part. This guide stops
-at the boundary: you are choosing and configuring somebody else's.
+Configure an OpenAI-compatible endpoint, MLX model, or Core AI bundle behind LanguageModelSession. Choose capabilities carefully: guided generation requires logits, which the pipelined Core AI engine does not expose.
 
 ## What you need
 

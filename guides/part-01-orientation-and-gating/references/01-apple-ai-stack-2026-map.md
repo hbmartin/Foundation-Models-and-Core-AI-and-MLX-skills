@@ -6,16 +6,7 @@
 
 ## What this covers
 
-The structural change that happened at WWDC26, and the decision it replaced. In 2025 you chose a
-*framework*: Foundation Models, or Core ML, or MLX. In 2026 Foundation Models grew a public
-`LanguageModel` / `LanguageModelExecutor` protocol pair, Apple shipped conformers backed by Core AI
-and by MLX, and the question became **which backend runs behind one session API**. This guide maps
-the layers, walks the five shipping conformers and exactly when each is right, says where Core ML
-still belongs, gives a decision table keyed on constraints you actually have (privacy, offline,
-cost, model choice, context size, latency, energy, app size, eligibility) plus the two feature
-cliffs a bring-your-own model can fall off — `@Generable` and prefix reuse — presents the measured
-performance picture with full attribution — including the places where the ranking *inverts*
-depending on what you measure — and carries the series' known-bad-claims reference.
+Choose a model backend behind LanguageModelSession by privacy, connectivity, context size, structured output, hardware, and deployment constraints. Core AI, MLX, and Metal provide the execution layers underneath.
 
 ## Version floor
 

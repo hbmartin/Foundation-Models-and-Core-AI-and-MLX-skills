@@ -1,6 +1,6 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**72 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**71 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -14,7 +14,7 @@
 | [Misleading signals](#misleading-signals) | 11 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
 | [API footguns](#api-footguns) | 8 |
-| [General cautions](#general-cautions) | 19 |
+| [General cautions](#general-cautions) | 18 |
 
 ## Wrong output
 
@@ -132,7 +132,6 @@
 - [ScoreDimension text differs between production and calibration on purpose — 'same evaluator' means same type, not same…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-round-trip) — 6.1
 - [Give the judge only a few alignment examples; a longer list overfits the alignment score and hides misalignment…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#rule-4--three-iterations-and-what-each-one-taught) — 6.1
 - [A broken evaluation still produces a number — the number you decided to trust; the catalogue below runs worst-first.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#17-️-the-silent-failures) — 6.1
-- [Overview: judge-alignment silent failures — unvalidated positional join, ?? 0 phantom ratings, undefined kappa read as…](part-06-evaluations/references/02-model-judges-and-alignment.md#what-this-covers) — 6.2
 - [TOC: silent failures in judge alignment (section 19).](part-06-evaluations/references/02-model-judges-and-alignment.md#contents) — 6.2
 - [numeric(_:) takes [Double: String]; Apple's sample writes integer literals that coerce — both work, dumps say Double.](part-06-evaluations/references/02-model-judges-and-alignment.md#5-scoringscale-numeric-passfail-custom) — 6.2
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2

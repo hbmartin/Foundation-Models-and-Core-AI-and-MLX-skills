@@ -14,32 +14,7 @@ not transfer.
 
 ## What this covers
 
-How the Foundation Models framework turns a Swift type into something a language model can invoke, and
-how you keep control of the loop once it can:
-
-- The `Tool` protocol member by member — which members are actually required (fewer than the docs page
-  implies), `name` and why it is optional to implement, `description`, `parameters`,
-  `includesSchemaInInstructions`, the `Arguments`/`Output` associated types, and `call(arguments:)`.
-- The `@Generable` arguments struct as the *contract between model and tool*, why Apple's own
-  evaluation sample makes every argument optional, and what `.anyOf` does **not** do.
-- **Tool-as-consent-request** — how Apple's Origami sample turns a tool call into a Yes/No question for
-  a human without blocking the loop.
-- What a tool call looks like inside a `Transcript`: `ToolDefinition`, `ToolCalls`, `ToolCall`,
-  `ToolOutput`, and the six-entry anatomy of a single tool-using turn.
-- Writing descriptions and instructions the model will actually honour.
-- `toolCallingMode` — `.allowed` / `.disallowed` / `.required` — in both places it can be set, with the
-  precedence rule between them.
-- **The silent failures.** `.required` is an unbounded `while` loop that you must terminate; a
-  tool mentioned in your instructions text but missing from the toolset produces an infinite loop with
-  **no thrown error at all** (the bug WWDC26's Instruments session is built around); and a turn whose
-  only output is a tool call streams **zero** partials, which hangs any first-token spinner.
-- Transcript rollback on a thrown tool error, and `transcriptErrorHandlingPolicy`.
-- The built-in Vision-backed tools (`OCRTool`, `BarcodeReaderTool`) — their real declarations, now
-  SDK-verified from the `_Vision_FoundationModels` cross-import overlay (import both parents or the
-  symbols do not exist), the watchOS asymmetry between them, the ⚠️ attachment label they silently
-  require, and the opaque `Output` you cannot name.
-- Why tool-calling reliability is a *per-model* property, evidenced by the ten distinct wire formats
-  `mlx-swift-lm` has to parse.
+Define tools and argument schemas, select a tool-calling mode, obtain user consent, and handle tool output and errors. The required-mode loop needs an explicit stopping policy.
 
 ## What you need
 

@@ -6,13 +6,7 @@ back out.
 
 ## What this covers
 
-Every initializer form, seeding a session with hand-authored history, the instructions-vs-prompts
-trust boundary and why it is the framework's security model rather than an ergonomic detail,
-`Instructions` / `Prompt` and their result builders, `respond(to:)` and `respond(to:generating:)`,
-`streamResponse` — including the stream that finishes without yielding anything —
-`prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`,
-`Response.usage`, and the six-case `Transcript` data model. It ends with a complete, copyable SwiftUI
-screen that streams a response and cancels it cleanly.
+Create and seed sessions, separate instructions from prompts, generate or stream responses, manage transcripts, and read token usage. The complete SwiftUI example shows cancellation and response handling.
 
 ## Version floor
 
@@ -42,18 +36,7 @@ documentation at the time of writing (harvest date 2026-07-27).
 
 ## Evidence markers used here
 
-> ✅ **VERIFIED** — quoted from an Apple documentation page, a compiling Apple sample-code project,
-> a shipping source file in `apple/foundation-models-utilities`, or an Apple-staff forum answer.
-> The citation follows.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested but the exact spelling is inferred, usually from
-> spoken WWDC narration.
->
-> 🔴 **GAP** — we could not verify it and are saying so instead of guessing.
-
-Precedence when sources disagree, in this guide: **compiling Apple sample code** > Apple docs >
-Apple-staff forum answers > shipping source in `foundation-models-utilities` > WWDC transcripts.
-Several transcript-era spellings in circulation are **already superseded** and are called out below.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Sample platform floors are recorded below.
 
 Three sample projects are cited throughout, all built against the 27.0 SDK:
 
@@ -1228,23 +1211,7 @@ final var isResponding: Bool { get }
 
 Apple's own sample, verbatim:
 
-```swift compile:27 imports:FoundationModels,SwiftUI
-struct ShopView: View {
-    @State var session = LanguageModelSession()
-    @State var joke = ""
-
-    var body: some View {
-        Text(joke)
-        Button("Generate joke") {
-            Task {
-                assert(!session.isResponding, "It should not be possible to tap this button while the model is responding")
-                joke = try await session.respond(to: "Tell me a joke").content
-            }
-        }
-        .disabled(session.isResponding) // Prevent concurrent calls to respond
-    }
-}
-```
+See the [canonical example](06-availability-errors-and-guardrails.md#33-languagemodelsessionerror--this-one-is-your-bug).
 
 That `.disabled(session.isResponding)` line is the whole reason `LanguageModelSession` conforms to
 `Observable`: the property is observable, so SwiftUI re-renders the button when it flips. Outside
@@ -2437,24 +2404,7 @@ Full treatment is a separate guide in this part; here is the minimum you need to
 **There are three error types**, and an Apple Frameworks Engineer gave the canonical catch order
 verbatim on forum thread 831404:
 
-```swift compile:27 imports:FoundationModels
-let session = LanguageModelSession()
-let stream = session.streamResponse(to: "Tell me about origami.")
-
-do {
-    for try await partialResponse in stream {
-
-    }
-} catch let error as LanguageModelError {
-
-} catch let error as LanguageModelSession.Error {
-
-} catch let error as LanguageModelSession.GenerationError {
-   // Deprecated in 27.0
-} catch {
-
-}
-```
+See the [canonical example](06-availability-errors-and-guardrails.md#37-catch-order-and-the-pattern-matching-bug).
 
 That ladder is missing a rung, and Apple's shipping code shows which one. **Two independent 27.0
 samples ship a near-identical `Error+DisplayMessage.swift` that checks `SystemLanguageModel.Error`

@@ -7,17 +7,7 @@
 
 ## What this covers
 
-The 2026 release gave the on-device model eyes. You put an image into a prompt the same way you put
-a string into a prompt — `Attachment(image)` inside a `Prompt { }` builder — and the model can answer
-questions about it. This guide covers the whole surface: the `Attachment` type and every source it
-accepts, orientation (which is *your* problem and is the single most common way to get silently wrong
-answers), labels and `ImageReference` for keying structured output back to specific images, the
-transcript types that images turn into, the Python SDK's parallel API, and the platform asymmetry
-that bites you the moment your Swift code leaves Darwin.
-
-The most useful section is **§9 — what the model cannot do with pixels**. The model reliably *names*
-what is in an image and unreliably *locates* it. Spatial work belongs to Vision or to a real
-detection/segmentation model. If you read only one section, read that one.
+Attach and label images, handle orientation, and connect structured results to their source image. Use Vision or a detection model for spatial measurements; the language model’s image descriptions do not establish pixel coordinates.
 
 ## Version floor
 
@@ -256,24 +246,7 @@ WWDC26 session 241 read out a longer list — the same four, plus `UIImage` and 
 And the `UIImage` / `NSImage` claim is not just narration — Apple's Origami sample passes them
 directly:
 
-```swift prelude:guide-context
-// Origami/Models/DataModels/Photo.swift:77-91 — Apple sample source, verbatim
-func toPrompt() async throws -> Prompt {
-    #if canImport(UIKit)
-    guard let image = UIImage(data: data) else {
-        return Prompt {}
-    }
-    #elseif canImport(AppKit)
-    guard let image = NSImage(data: data) else {
-        return Prompt {}
-    }
-    #endif
-    let idImage = Attachment(image).label(idString)
-    return Prompt {
-        idImage
-    }
-}
-```
+See the [canonical example](05-image-input-and-attachments.md#62-the-mechanism-end-to-end).
 
 Three things to steal from those fifteen lines:
 
@@ -983,32 +956,7 @@ standard compaction tool has a sharp edge:
 Here is Apple's canonical transcript-rendering switch, from the `Transcript` documentation page —
 note that it covers `Entry`, so it does *not* itself show the `.attachment` **segment** case:
 
-```swift prelude:guide-context
-struct HistoryView: View {
-    let session: LanguageModelSession
-
-    var body: some View {
-        ScrollView {
-            ForEach(session.transcript) { entry in
-                switch entry {
-                case let .instructions(instructions):
-                    MyInstructionsView(instructions)
-                case let .prompt(prompt):
-                    MyPromptView(prompt)
-                case let .reasoning(reasoning):
-                    MyReasoningView(reasoning)
-                case let .toolCalls(toolCalls):
-                    MyToolCallsView(toolCalls)
-                case let .toolOutput(toolOutput):
-                    MyToolOutputView(toolOutput)
-                case let .response(response):
-                    MyResponseView(response)
-                }
-            }
-        }
-    }
-}
-```
+See the [canonical example](01-sessions-and-prompting.md#124-rendering-a-transcript).
 
 Inside `MyPromptView`, you now need a second switch over `prompt.segments` that handles
 `.text`, `.structure`, `.attachment(let attachment)` and `.custom`, with `@unknown default`.
@@ -1091,27 +1039,7 @@ Two `Tool` implementations provided by the Vision framework, new in 27.0:
 > WWDC26 241 adds the rationale: *"Both enhance a model's ability to reason about visual information
 > **in ways it can't natively**."*
 
-```swift compile:27 imports:FoundationModels,Vision
-func analyzeBarcodeImage(_ image: CGImage) async {
-    do {
-        let session = LanguageModelSession(tools: [BarcodeReaderTool()])
-        let response = try await session.respond {
-            """
-            Scan this image for any barcodes. For each barcode found, describe \
-            its symbology type and explain what the encoded content means or \
-            represents.
-            """
-
-            Attachment(image)
-                .label("barcode-image")
-        }.content
-
-        print("The model response: \(response)")
-    } catch {
-        // Handle the error.
-    }
-}
-```
+See the [canonical example](04-spotlight-rag-and-system-tools.md#17-ocrtool-and-barcodereadertool).
 
 Note the label on the attachment — that is the stable handle by which a tool can identify the image.
 A generic-tool device probe showed that an unlabeled attachment does not universally suppress tool

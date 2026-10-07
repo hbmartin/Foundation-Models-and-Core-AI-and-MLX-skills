@@ -17,62 +17,15 @@ spellings changed between beta 1 and beta 3, and each one is flagged where it ma
 
 ## What this covers
 
-You are writing the Swift package that lets an app developer type
+Implement a LanguageModel provider and executor so apps can use your inference backend through LanguageModelSession. Preserve configuration identity, capability declarations, streaming, cancellation, and tool/schema handling.
 
 ```swift illustrative
 let session = LanguageModelSession(model: YourModel(…))
 ```
 
-and get your inference engine — a local runtime, an OpenAI-compatible endpoint, your company's
-frontier API — behind Apple's own session API, with dynamic profiles, tool calling, guided
-generation, transcripts and Instruments support arriving for free.
-
-This is the best-evidenced deep topic in the whole series, because Apple ships a **815-line agent
-skill** on exactly this question (`skills/foundation-models-language-model-protocol/SKILL.md` in
-`apple/foundation-models-utilities`) plus **two complete worked conformances you can read
-line-by-line** — `ChatCompletionsLanguageModel` (953 lines, Apple, in the same repo) and
-`MLXLanguageModel` (~2,900 lines, Apple/MLX, in `ml-explore/mlx-swift-lm`). A third, Apple's
-`CoreAILanguageModel`, and a fourth, the community `ZooLanguageModel`, corroborate every member.
-
-What follows:
-
-- **The four steps from WWDC26 session 339** — packaging, implementing the protocol, authentication,
-  customization — in Apple's own order, with the transcript's recommendations checked against what
-  Apple's own shipping code actually does. They disagree in three places, and this guide says so.
-- **Both protocols verbatim**, the associated-type machinery that links them, and why the split
-  exists: `Configuration` is a cache key, and the framework — not you — owns executor lifetime.
-- **`LanguageModelCapabilities`**: four capabilities, two initializers, and why declaring one you
-  don't strictly support is a routing bug rather than a documentation error.
-- **All seven fields of `LanguageModelExecutorGenerationRequest`** — including the three that Apple's
-  own shipped conformance ignores entirely.
-- **`ContextOptions` versus `GenerationOptions`** — what goes *into the prompt* versus what drives
-  *the decoder loop*. This split is the single most useful mental model in the API and it is taught
-  explicitly here.
-- **Transcript translation**: six entry types in, your model's roles out, with two complete worked
-  translators that disagree about what to do with prior reasoning.
-- **The generation channel**: three top-level events, every action, `entryID` hygiene, the
-  consecutive-only coalescing rule, and the *prescribed event order* — plus the beta-verified reason
-  not to follow it literally.
-- **Errors**: nine built-in `LanguageModelError` cases with construction examples, the
-  approximate-or-throw rule, and the uncomfortable fact that Apple's own `ChatCompletions` executor
-  throws none of them.
-- **Authentication**: why `init(apiKey: String)` is the wrong primary path, and what to offer instead.
-- **Customization**: response metadata, custom segments as the extension point for entirely new
-  modalities, attachment segments, and the three-level server-side-tools disclosure pattern.
-- **Testing**, in the three layers Apple prescribes, with the one detail that makes assertions
-  compile.
-
 ## What this does *not* cover
 
-Two provider topics are large enough to have their own guide, and this one only points at them:
-
-- **The executor store, transcript diffing and KV reuse across turns** — how `Configuration` hashing
-  produces executor sharing, how to diff the transcript you get on every call against the one you
-  saw last time, and what that is worth (community-measured: turn-2 latency flat at ~0.33 s instead
-  of growing with history). See
-  [`04-executor-lifecycle-and-kv-reuse.md`](04-executor-lifecycle-and-kv-reuse.md).
-- **Choosing a backend as an app developer** rather than authoring one. See
-  [`02-bring-your-own-model.md`](02-bring-your-own-model.md).
+Related references: [`04-executor-lifecycle-and-kv-reuse.md`](04-executor-lifecycle-and-kv-reuse.md), [`02-bring-your-own-model.md`](02-bring-your-own-model.md).
 
 ## What you need
 

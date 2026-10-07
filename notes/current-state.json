@@ -2,15 +2,15 @@
   "asOf": "2026-10-07",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1413,
-      "total": 1769
+      "concreteSilentFailures": 1407,
+      "total": 1760
     },
     "externalLinks": 202,
     "generatedSkills": 10,
     "guideMarkdownFiles": 82,
     "parts": 17,
     "referenceGuides": 60,
-    "symbols": 1204
+    "symbols": 1203
   },
   "environment": {
     "installed": {
@@ -237,12 +237,12 @@
     "freshPartialResult": "notes/evidence/core-ai/swift-final-results.tsv",
     "lastAvailableRun": "2026-10-06",
     "lastFullRun": "2026-08-02",
-    "snippetFences": 1360,
+    "snippetFences": 1347,
     "statusCounts": {
-      "ILLUSTRATIVE": 486,
+      "ILLUSTRATIVE": 483,
       "MIGRATION-PROVEN": 2,
-      "PRELUDE-NEEDED": 677,
-      "VERIFIED": 193,
+      "PRELUDE-NEEDED": 673,
+      "VERIFIED": 187,
       "XFAIL-PROVEN": 2
     },
     "targetProvenance": "notes/snippet-verification/target-provenance.json",

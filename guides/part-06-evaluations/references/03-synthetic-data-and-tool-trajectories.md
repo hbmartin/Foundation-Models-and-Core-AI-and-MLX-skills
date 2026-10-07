@@ -27,31 +27,7 @@ be granted. The `@Guide(.count(3...8))` constraint used throughout the examples 
 
 ## What this covers
 
-The second half of an evaluation practice: getting *enough* data to evaluate on, and evaluating the
-*path* your feature takes rather than only its final answer.
-
-- **Synthetic datasets.** The two entry points — the `makeSamples(_:targetCount:sessionProvider:validator:)`
-  array method and the `SampleGenerator` actor — what each one's parameters really mean, and why
-  `targetCount: 100` over 13 seeds produces **87** new samples and not 100.
-- **`sessionProvider` is a factory, not a session.** It can be called more than once in a single run, and
-  the replacement session starts with no memory of the first. Instructions that assume one invocation
-  quietly stop applying halfway through your dataset.
-- **What a `validator` can and cannot see.** It runs on one sample in isolation. "Reviews must be at
-  least 100 characters" is checkable there; "reviews should vary in length" is not, and writing the
-  second one produces a validator that returns `true` for everything.
-- **The finding that justifies the whole exercise:** expanding Book Tracker's dataset from 13 to 100
-  samples made the quality scores **drop**. The feature was never as good as the small dataset said. A
-  score drop on expansion is a *signal*, and this guide enumerates the four things it can mean.
-- **Tool trajectories.** `TrajectoryExpectation` in all four of its initialiser forms, `ToolExpectation`,
-  `.anyOrder(_:)`, `allowsAdditionalToolCalls`, `disallowed`, and the complete nine-case
-  `ArgumentMatcher` vocabulary — including `.naturalLanguage(argumentName:criteria:)`, which puts a
-  language model in charge of deciding whether the argument the model passed satisfies a prose criterion.
-- **The wiring people get wrong:** `ToolCallEvaluator(allPass:percentagePass:)` inspects
-  `ModelSubject.transcript`, and that transcript only exists if *you* passed
-  `session.transcript.structuredTranscript` into `ModelSubject(value:transcript:)` inside `subject(from:)`.
-- **Synthesising tool-evaluation datasets**, which works because `ToolExpectation` and `ArgumentMatcher`
-  are themselves `Generable` — and the one thing that makes it fail: the generating model has never heard
-  of your tools.
+Expand seed datasets with SampleGenerator, validate individual samples, and evaluate tool trajectories as well as final answers. Session providers are factories; validators cannot assess diversity across the full dataset.
 
 ## What you need
 

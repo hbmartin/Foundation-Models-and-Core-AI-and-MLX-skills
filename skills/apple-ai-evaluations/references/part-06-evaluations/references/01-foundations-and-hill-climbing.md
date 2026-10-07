@@ -37,39 +37,7 @@ evaluate a 26.0-era feature, but you can only *run* the evaluation on 27.
 
 ## What this covers
 
-The bottom of Part 6: why a probabilistic feature cannot be unit-tested, what the Evaluations framework
-puts in its place, and the working discipline — **hill climbing** — that the framework is shaped around.
-
-- **Why the same input producing different outputs breaks the contract every unit test depends on**,
-  in Apple's own words, and what "insufficient" actually means in practice.
-- That Evaluations is **not an LLM framework**. It is a harness for any stochastic system — Apple names
-  classifiers and linear regression models explicitly.
-- **The five steps**, each mapped to exact API: `subject(from:)` → `dataset` → `evaluators` + `Metric` →
-  `aggregateMetrics(using:)` → a Swift Testing `@Test`.
-- The **corrected spellings**. `ModelSubject<T>` is the return type of `subject(from:)` and was absent
-  from every reconstruction in circulation; `Evaluator` takes a **two-argument** closure collected in
-  `var evaluators: Evaluators`; metric results come from `.passing()` / `.failing()` / `.scoring(_:)` /
-  `.ignore()`, not from a `.pass` enum.
-- **Swift Testing integration** — `@Suite`, `@Test`, the `.evaluates(_:)` / `.evaluates(_:info:)` trait,
-  `EvaluationContext.current.result`, and `#expect` over an aggregate. Including the two things about
-  the test body that are counter-intuitive: it runs *after* the whole dataset, and it never iterates
-  samples.
-- **The Xcode 27 Evaluations report** — where it lives, what the assistant editor shows per sample, and
-  the **Compare** button that makes run-to-run diffing possible.
-- **The attachment trick.** An evaluation run records its full generated data as an Xcode attachment.
-  Session 335 reads that attachment back to build a *meta*-evaluation of its own judge. This is the
-  single technique that makes judge calibration possible, and almost nobody knows it is there.
-- **Hill climbing / evaluation-driven development** — develop → run → check → analyse → repeat, run as
-  a controlled experiment: control vs experimental, **one variable at a time**, and the backport step
-  that most people skip.
-- The **non-prompt** hill-climb: adding a book-lookup tool to the tagging service, and the API-design
-  move (`tools: [any Tool] = []`) that let the existing evaluation keep compiling.
-- **Why any of this is structural.** There is no model version pinning API. An eval suite is the only
-  defence you have when Apple ships a new on-device model in a point release.
-
-Model judges, `ScoreDimension`, judge drift and Cohen's kappa, synthetic datasets with
-`SampleGenerator`, and `ToolCallEvaluator` / `TrajectoryExpectation` each get their own guide elsewhere
-in Part 6. This one gives you the frame they hang on, and names them where they belong.
+Build an evaluation dataset, map inputs to ModelSubject, combine evaluators and metrics, aggregate results, and run the checks through Swift Testing. Use repeatable comparisons to improve a stochastic feature.
 
 ## What you need
 

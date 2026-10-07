@@ -24,28 +24,7 @@ canvas is a **26.4** feature, so a reader on 26.0–26.3 will look for it and no
 
 ## What this covers
 
-Foundation Models is a non-deterministic runtime with no useful `XCTAssertEqual`, and — this is the part
-that catches people — **most of its defects do not throw**. The framework will happily run a broken
-feature forever and report success. This guide is the observability story for that: three tools, used in
-a fixed order, that between them cover prototyping, unhappy paths, and production-shaped latency.
-
-- **`#Playground`** — the fastest prompt-iteration loop there is (no build, no run, full access to your
-  project's types), what its canvas shows you, and the one thing it is silently bad at.
-- **`#Playground` as Apple's official bug channel.** The thumbs-up icon next to a response in the canvas
-  is the documented way to report a bad model output, per Apple's own pinned (and locked) forum thread.
-  The programmatic equivalent, `logFeedbackAttachment(sentiment:issues:desiredOutput:)`, for feedback
-  you collect from real users.
-- **Scheme simulation** — *Product ▸ Scheme ▸ Edit Scheme ▸ Run ▸ Options ▸ "Simulated Apple Foundation
-  Models Availability"*, which is how you reach `.unavailable(.appleIntelligenceNotEnabled)` and
-  *Quota Usage Limit Reached* without owning four devices and burning a real PCC quota.
-- **The Foundation Models instrument in Xcode 27** — how to launch it, ⚠️ **why the trace file is a
-  sensitive artefact**, all six documented lanes, the tree detail view, and the Info column.
-- **The canonical worked bug**, reproduced end to end: a tool referenced in the *instructions text* but
-  absent from the *toolset*. The model loops, keeps calling tools, and never throws. This is the bug
-  Apple built an entire WWDC session around, and it is the archetype for the whole class.
-- **Three session metrics** — Time to First Token, Tokens per Second, Total Latency — plus the four
-  current token metrics: Total, Consumed, Generated, and Cached. The KV-caching page supplies the
-  cache-hit formula and the interpretation of a low rate between turns.
+Prototype with #Playground, simulate unhappy paths through the scheme, then inspect Foundation Models traces in Instruments. Runtime measurements remain tied to the host or device that executes inference.
 
 ## What you need
 

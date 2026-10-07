@@ -5,9 +5,9 @@ Start here for current project state and maintained instructions. Stable release
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-10-07**, the corpus has 60 reference guides in 17 parts, 1769 classified callouts (1413 concrete silent failures), 1204 indexed symbols, and 10 generated skills.
+**As of 2026-10-07**, the corpus has 60 reference guides in 17 parts, 1760 classified callouts (1407 concrete silent failures), 1203 indexed symbols, and 10 generated skills.
 
-Snippet verification covers 1360 fences: 486 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 677 `PRELUDE-NEEDED`, 193 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.
+Snippet verification covers 1347 fences: 483 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 673 `PRELUDE-NEEDED`, 187 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.
 
 Installed: macOS 27.0 (26A428), Xcode 27.0 (27A266a), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A428). Latest observed: Xcode 27.2 beta 2 (27B5028f), iOS 27.2 beta 3 (24B5099f), and macOS 27.2 beta 3 (26B5101f); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-10-07), indexes=current (2026-10-07), skills=current (2026-10-07). Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
 <!-- current-state:notes:end -->

@@ -24,50 +24,11 @@ at all.
 
 ## ⚠️ Read this before you read anything else: the evidence here is the weakest in Parts 1–6
 
-Every other guide in Parts 1–6 rests on at least one of: a shipping Apple sample project, an SDK
-header on disk, or an Apple documentation page. This guide's two halves sit at opposite ends of the
-corpus:
-
-| Half of the guide | Evidence class | Grade |
-|---|---|---|
-| **Python SDK** | The **actual Apple-authored repository, cloned and read file by file** — 15 Python modules, an 1,831-line Swift shim, a 146-line C header, 17 test files, the Sphinx docs, plus the full GitHub issue and PR history. | **Strong.** Comparable to reading a header. Better than a transcript. |
-| **`fm` CLI** | Apple narration and engineer statements, a full project-run beta-5 help capture, and a second project-run comparison against stable macOS 27 (`26A428`, 2026-09-16). | **Strong for beta-versus-stable command grammar.** Runtime semantics still need focused calls. |
-
-So the two halves are written differently on purpose. The Python sections carry file-and-line
-citations and describe bugs down to the assignment that causes them. The `fm` sections tell you
-what the tool *does*, tell you what third parties report typing — marked 🟠, never ✅ — and hand
-you an exact procedure for finding out in ninety seconds on a real Mac.
-
-If you take one instruction from this guide: **match scripts to the running OS's help surface.**
-The canonical file `notes/sdk-interfaces/fm-help-27.0.txt` is a beta-5 capture, not a stable
-contract. The canonical beta-versus-stable command comparison is [§3](#3--the-fm-help-surface-captured-on-macos-27);
-stable macOS 27 advertises only `system`, so no current non-Swift PCC route is established.
-
----
+Match CLI scripts to the running OS’s help surface. `notes/sdk-interfaces/fm-help-27.0.txt` retains beta-5 grammar; [§3](#3--the-fm-help-surface-captured-on-macos-27) compares it with stable macOS 27. Stable help advertises only `system`, so no current non-Swift PCC route is established. Python API descriptions retain their cited source revision; runtime probes have separate dates.
 
 ## What this covers
 
-- **The `fm` CLI** — what ships, the three subcommands anyone has named, the beta-era `fm chat`
-  slash commands, `fm respond`'s options *as semantic concepts*, `fm serve`, historical PCC support,
-  and a prominent, unhedged 🔴 GAP box listing exactly what is unknown and what resolves it.
-- **The shell-automation pattern**, which *is* attested even though the flags are not: model output
-  constrained to a schema, emitted as JSON on stdout, parsed by `jq`, driving real file operations.
-  Plus the defensive scaffolding such a script needs, which the session did not show.
-- **The Python SDK end to end** — the three-layer ctypes/C/Swift sandwich; installation and the
-  preflight ladder that rejects Command Line Tools; `fm.SystemLanguageModel()` and the
-  `(bool, reason)` tuple that replaces Swift's availability enum; `context_size` and `token_count`;
-  `LanguageModelSession`; `respond()` and its five dispatch paths; streaming snapshots;
-  `@fm.generable` and `fm.guide()`; the raw JSON-Schema path that consumes a schema exported from
-  your Swift app; tools; image attachments.
-- **The cross-language workflow** the session underplayed and the README states outright:
-  **export a `Transcript` from your Swift app, analyse it in Python.** Round trip, resumption
-  caveat, and the 350-line example Apple ships for it.
-- **Memory management across the Python/Swift boundary** — a documented, measured hazard with a
-  merged fix that is *not in any released version*, a file-descriptor exhaustion at ~240–250 image
-  calls, and a way to "clean up" that crashes the interpreter.
-- **The evaluation-pipeline pattern** from session 334 — pandas, matplotlib, a judge model, three
-  prompt variants — and its genuinely counter-intuitive result.
-- **Every known bug, in one place**, separated into "will throw" and "will not throw".
+Use the stable fm command surface or the Python SDK for generation, schemas, tools, images, and transcript analysis. Match CLI scripts to the running OS; the Python wrapper has its own availability and ownership limitations.
 
 ## What you need
 

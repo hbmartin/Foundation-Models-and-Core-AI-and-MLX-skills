@@ -4,19 +4,7 @@
 
 ## What this covers
 
-Everything that can go wrong between "I called `session.respond(to:)`" and "the user saw something
-useful", organised as a taxonomy: **symptom → cause → fix**. Availability gating — proactive and
-reactive, because Apple's 2026 samples quietly abandoned the first — the four error enums that
-replaced one in 2026 plus the fifth error type that is in none of them, the *two distinct refusal
-mechanisms* that almost everyone conflates, guardrail configuration and its documented blind spot
-(which Apple's own sample code falls into), context-window overflow, the
-undocumented error domains people are actually hitting in the betas, Private Cloud Compute quota
-handling, and how to file a bug that Apple will act on. It ends with a complete, copyable
-error-handling function.
-
-This is the largest and longest-running pain cluster in the Apple Developer Forums — threads span
-June 2025 to July 2026 with no resolution. It blocks more readers than any API gap, which is why it
-sits early in Part 2 rather than at the end.
+Diagnose availability, generation errors, refusals, guardrails, context overflow, and PCC quota failures. Use the symptom/cause/fix tables and the complete error-handling function.
 
 ## What you need
 
@@ -1816,16 +1804,7 @@ the last (most recent context):
 
 > ✅ **VERIFIED (Apple docs)**:
 
-```swift compile:27 imports:FoundationModels
-func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
-    let allEntries = originalSession.transcript
-    let condensedEntries = [allEntries.first, allEntries.last].compactMap { $0 }
-    let condensedTranscript = Transcript(entries: condensedEntries)
-    let newSession = LanguageModelSession(transcript: condensedTranscript)
-    newSession.prewarm()
-    return newSession
-}
-```
+See the [canonical example](../../part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#123-apples-documented-recovery-verbatim).
 
 > *"The first transcript entry often contains important instructions and the last entry contains the
 > most recent context. By preserving the first and last entry, you maintain continuity while

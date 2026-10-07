@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1769 of them, 1413 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1760 of them, 1407 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -17,20 +17,20 @@ Start from the symptom column that matches what you observe. Within each section
 | Symptom | Entries | What it means |
 |---|---:|---|
 | [Wrong output](#wrong-output) | 173 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
-| [Empty output / no-op](#empty-output--no-op) | 62 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
+| [Empty output / no-op](#empty-output--no-op) | 61 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
 | [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
 | [Ignored input](#ignored-input) | 110 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
-| [Data & artifact loss](#data--artifact-loss) | 41 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
+| [Data & artifact loss](#data--artifact-loss) | 40 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
 | [Compiles but unavailable](#compiles-but-unavailable) | 87 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
-| [Performance cliffs](#performance-cliffs) | 147 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
+| [Performance cliffs](#performance-cliffs) | 146 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
 | [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 96 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 155 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
-| [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 356 | Warnings and considerations that are not themselves silent failures. |
+| [Version drift](#version-drift) | 95 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Docs vs reality](#docs-vs-reality) | 154 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [API footguns](#api-footguns) | 258 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
+| [General cautions](#general-cautions) | 353 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -285,7 +285,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [summarizeHistory fires only when the last entry is a .prompt — after tool turns it silently skips; Apple's test says so.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#134-summarizehistory--the-most-aggressive-one) — 3.2 🔇
 - [Heading: the composition rule — and why Apple's own examples never fire.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#135-️-the-composition-rule--and-why-apples-own-examples-never-fire) — 3.2
 - [rollingWindow(10) before summarizeHistory(threshold:10): 10>10 is false forever — summarisation can never run.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#135-️-the-composition-rule--and-why-apples-own-examples-never-fire) — 3.2 🔇
-- [Scope note: every composed call site the repo ships is inert — the thresholds can never trip.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: every composed example in the repository is inert.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [On tool-output continuations the summarise guard fails and the modifier returns — no log, no observable difference.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#33-summarizehistory--the-nuclear-option) — 3.3 🔇
 - [Heading: every composed history-modifier example in the repository is inert.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#5-️-every-composed-example-in-the-repository-is-inert) — 3.3
@@ -659,7 +658,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Policy table: rollingWindow is known-buggy — it can orphan a response — and invalidates the cache when it fires.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#123-step-3--choose-a-compaction-policy-before-you-need-one) — 3.1
 - [Policy table: summarizeHistory collapses history to one entry, losing tool structure, and totally invalidates the cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#123-step-3--choose-a-compaction-policy-before-you-need-one) — 3.1
 - [Apple's own test: rollingWindow's naive trim orphans a response — 'in practice it crashes partway through.'](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#133-rollingwindowentries--apple-ships-a-known-bug) — 3.2 🔇
-- [Scope note: rollingWindow ships known-buggy — Apple's own test documents the orphaned-response outcome.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: rollingWindow splits prompt/response pairs — and Apple knows.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: rollingWindow splits prompt/response pairs — and Apple knows.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#7-️-rollingwindow-splits-promptresponse-pairs--and-apple-knows) — 3.3
 - [Apple's test comment verbatim: the naive trim orphans a response and 'in practice it crashes partway through.'](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#7-️-rollingwindow-splits-promptresponse-pairs--and-apple-knows) — 3.3 🔇
@@ -879,7 +877,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 3**
 
 - [Cache invalidation never throws — a reordering transform or time-interpolated instructions makes every turn O(N) again.](part-03-context-profiles-agentic/README.md#31--token-budgeting-transcript-anatomy-and-kv-cache-economics) — 3.README 🔇
-- [Scope note: linear-attention and hybrid architectures cannot prefix-cache — every turn re-prefills the transcript.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#what-this-covers) — 3.1
 - [Contents entry: architectures that cannot prefix-cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#contents) — 3.1
 - [Cache invalidation's only symptom is a longer prefill bar in Instruments — no error, no log line exists.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#84-taking-the-training-wheels-off) — 3.1 🔇
 - [Model switching re-prefills the shared transcript on the new engine — 2.35 s switch-in measured; KV reuse is per-model.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#89-profile-switching-is-a-deliberate-reset) — 3.1
@@ -1418,7 +1415,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1
 - [Beta 5 retyped history to Transcript.HistoryView; suffix trims survive, but Int indexing breaks.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
-- [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
 - [Apple documents 4096 as the iOS 27 platform value; a retired unreproduced report claimed 8K — still read contextSize…](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
@@ -1559,7 +1555,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Docs still list four Segment cases; the beta 5 interface declares three — .custom is not present.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#23-segments-the-second-dimension) — 3.1
 - [Session 242 defers to 243 for detecting cache invalidation — 243 never mentions a cache metric; only the docs do.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#51-the-cache-hit-rate) — 3.1
 - [Profile(model:) { } appears in conference write-ups, never in Apple code — the model is applied as a modifier.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#32-the-model-is-a-modifier-not-an-initialiser-label) — 3.2
-- [Scope note: the README's '5000 tokens' summarisation trigger doesn't exist — the API threshold counts entries.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: the '5000 tokens' ghost.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [The README's .package(from:"1.0.0") can never resolve — only prerelease tags exist and from: excludes prereleases.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#11-the-dependency-line-in-the-readme-does-not-work) — 3.3 🔇
 - [Apple's SKILL.md claims summarizeHistory defaults model: — the shipping source has no default; you must pass one.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#3-the-three-history-modifiers-signature-by-signature) — 3.3
@@ -1798,7 +1793,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Mutating the transcript mid-response is caller misuse with a typed error — guard every assignment on isResponding.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#144-️-the-mutable-transcript-has-a-dedicated-session-error) — 3.2
 - [Add one skill with allowsDeactivation and the tool renames to toggle_skill — instructions citing activate_skill break.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#141-the-tool-is-named-toggle_skill-or-activate_skill-and-you-do-not-choose) — 3.3 🔇
 - [Prompt skills never register as active — isActive(promptSkillName) is false forever, by deliberate design.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#143-defer--oncallskill---why-the-verb-reads-backwards) — 3.3 🔇
-- [Scope note: .required is an unbounded while loop — Apple documents exactly two exits and you must wire one.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#what-this-covers) — 3.4
 - [Contents entry: .required is a while loop and you supply the exit.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#contents) — 3.4
 - [Heading: the baton tool you named but never registered.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#27-️-silent-failure--the-baton-tool-you-named-but-never-registered) — 3.4
 - [The handoff tool named only in instructions loops forever with no error — session 243 is built around this bug.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#27-️-silent-failure--the-baton-tool-you-named-but-never-registered) — 3.4 🔇
@@ -2093,7 +2087,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The 1044→700 token saving is Apple's demo on unspecified hardware — reuse the shape of the claim, not the numbers.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#101-the-measured-effect) — 2.2
 - [Heading: three Python-side silent failures, led by options= being dropped when generating= is passed.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#123-️-three-python-side-silent-failures) — 2.2
 - [Apple verbatim: recordings capture and store all Foundation Models prompts and responses — guard your traces.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#133-debugging-a-structured-output-problem) — 2.2
-- [Scope note: covers the OCR/barcode watchOS asymmetry and the attachment label image tools silently require.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#what-this-covers) — 2.3
 - [The tool-calling Instruments template records prompts and responses — treat .trace files as user data; never commit.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#84-how-to-spot-it) — 2.3
 - [Community-measured: small models emit tool JSON the framework rejects (decodingFailure) — in-tool baton-pass is shaky.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#113-small-models-make-different-mistakes) — 2.3
 - [The 27.0 SDK declares exactly four Attachment image inits — CGImage, CIImage, CVPixelBuffer, imageURL; no UIImage.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#32-what-you-can-hand-it) — 2.5
@@ -2136,7 +2129,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 5**
 
-- [The instrument's trace file is a sensitive artefact: it captures prompt and response data in the clear.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-this-covers) — 5.1
 - [No one here ran Xcode 27 Instruments; UI claims trace to the session or preserved direct Apple documentation.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
 - [The code-along targets macOS Tahoe/Xcode 26 — treat its Playground UI details as 'at least true in 26', not 27.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#21-the-macro-the-canvas-and-the-refresh-button) — 5.1
 - [LanguageModelFeedback attachments carry the full session transcript — consent, no auto-upload, scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) — 5.1
@@ -2155,7 +2147,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [ScoreDimension text differs between production and calibration on purpose — 'same evaluator' means same type, not same…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-round-trip) — 6.1
 - [Give the judge only a few alignment examples; a longer list overfits the alignment score and hides misalignment…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#rule-4--three-iterations-and-what-each-one-taught) — 6.1
 - [A broken evaluation still produces a number — the number you decided to trust; the catalogue below runs worst-first.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#17-️-the-silent-failures) — 6.1
-- [Overview: judge-alignment silent failures — unvalidated positional join, ?? 0 phantom ratings, undefined kappa read as…](part-06-evaluations/references/02-model-judges-and-alignment.md#what-this-covers) — 6.2
 - [TOC: silent failures in judge alignment (section 19).](part-06-evaluations/references/02-model-judges-and-alignment.md#contents) — 6.2
 - [numeric(_:) takes [Double: String]; Apple's sample writes integer literals that coerce — both work, dumps say Double.](part-06-evaluations/references/02-model-judges-and-alignment.md#5-scoringscale-numeric-passfail-custom) — 6.2
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2

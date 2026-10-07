@@ -1,12 +1,6 @@
 # 1.2 — Every version, hardware, entitlement and runtime-surface gate
 
-**What this covers.** Every gate that sits between the code you write and a feature that actually
-runs: the four OS version floors (**26.0**, **26.2**, **26.4**, **27.0**), the Xcode/SDK split
-(**Xcode 26** vs **Xcode 27**), the Apple Intelligence hardware floor (**A17 Pro / M1 / M2**), the
-two on-device model tiers, per-package minimums, the `com.apple.developer.private-cloud-compute`
-entitlement and the three *business* conditions behind it, the full
-`SystemLanguageModel.default.availability` surface, and the places a Foundation Models call is
-simply not allowed to live.
+**What this covers.** Check SDK, OS, hardware, entitlement, package, and runtime-surface gates before enabling an AI feature. The matrices distinguish build-time availability from runtime support.
 
 **What you need.** Nothing to read this. To *act* on it: Xcode 27 for anything marked 27.0, an
 Apple-Intelligence-capable physical device (the Simulator is not a substitute — see
@@ -690,7 +684,7 @@ people, so it is worth stating loudly: **`python-apple-fm-sdk` still targets mac
 |---|---|---|---|
 | **`apple/foundation-models-utilities`** | `.macOS("27.0")`, `.iOS("27.0")`, `.visionOS("27.0")`, `.watchOS("27.0")` — **no tvOS** | swift-tools **6.2**, `swiftLanguageModes: [.v6]` | ✅ **VERIFIED** — `Package.swift:19-22`, `:13`, `:63`. Zero dependencies. README also claims "Apple platforms and select Linux distributions like Ubuntu" — see caveat below. |
 | **`apple/coreai-models`** | `.macOS("27.0")`, `.iOS("27.0")` | swift-tools **6.0**, `swiftLanguageModes: [.v6]`, `cxxLanguageStandard: .cxx17` | ✅ **VERIFIED** — `Package.swift`. README requirements section says **"macOS and iOS 27.0+, Xcode 27.0+"**. |
-| **`ml-explore/mlx-swift-lm`** | `.macOS(.v14)`, `.iOS(.v17)`, `.tvOS(.v17)`, `.visionOS(.v1)` | swift-tools **6.1** | ✅ **VERIFIED** — `Package.swift:62-67`. **The package floor is low on purpose.** The FM adapter inside it is separately gated at 27.0 via the `FoundationModelsIntegration` trait plus `canImport(FoundationModels, _version: 2)`. You can use `MLXLLM` / `MLXLMCommon` / `MLXEmbedders` on macOS 14. |
+| **`ml-explore/mlx-swift-lm`** | `.macOS(.v14)`, `.iOS(.v17)`, `.tvOS(.v17)`, `.visionOS(.v1)` | swift-tools **6.2** for mlx-swift-lm 3.32.3; its MLX 0.32.3 dependency declares **6.3** | ✅ **SOURCE-INSPECTED** — [mlx-swift-lm release manifest](https://github.com/ml-explore/mlx-swift-lm/blob/3b339ad6e3b3f44c8121ecff5131c7fd55e075e6/Package.swift), checked 2026-10-07. The FM adapter inside it is separately gated at 27.0 via the `FoundationModelsIntegration` trait plus `canImport(FoundationModels, _version: 2)`. You can use `MLXLLM` / `MLXLMCommon` / `MLXEmbedders` on macOS 14. |
 | **`apple/python-apple-fm-sdk`** | macOS **26.0+**, Python **3.10+**, Apple silicon, Apple Intelligence enabled | **Xcode 26.0+**, and you must open Xcode once to accept the Xcode and Apple SDKs agreement | ✅ **VERIFIED** — `README.md:25-30`. Its embedded Swift shim declares `platforms: [.macOS(.v26), .iOS(.v26), .visionOS(.v26)]`. |
 
 ### 6.1 Package-level gotchas that look like version problems
