@@ -398,7 +398,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             root = Path(folder)
             (root / "notes").mkdir()
             (root / "guides").mkdir()
-            (root / "guides/test.md").write_text("# Test\n## Current\nHistorical #49 was open.\n")
+            (root / "guides/test.md").write_text("# Test\n## Current\n<!-- defect-ref:apple.coreai-torch:issue:49 -->\nHistorical #49 was open.\n")
             for changes, stale in (({}, False), ({"claimedState": "OPEN"}, True), ({"affectedVersions": "0.4.2 fixed"}, True)):
                 record = copy.deepcopy(current)
                 record["guideRefs"] = [{"file": "guides/test.md", "anchor": "current"}]

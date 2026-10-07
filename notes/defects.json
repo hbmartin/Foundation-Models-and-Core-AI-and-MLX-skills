@@ -6,15 +6,11 @@
       "url": "https://github.com/apple/coreai-models/issues/49",
       "kind": "issue",
       "title": "Swift package fails to compile for the iOS Simulator (no such module 'CoreAI')",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md",
           "anchor": "and-one-that-is-not-about-architectures-at-all"
-        },
-        {
-          "file": "guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md",
-          "anchor": "sdk-interfaces-and-toolchain-probes-evidence-class-2--capturedrun-2026-07-29-xcode-270-beta-27a5228h"
         }
       ],
       "claimedState": "OPEN",
@@ -25,7 +21,7 @@
           "https://github.com/apple/coreai-models/issues/49"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -43,8 +39,8 @@
       "id": "apple.coreai-models:issue:66",
       "url": "https://github.com/apple/coreai-models/issues/66",
       "kind": "issue",
-      "title": "Composite RoPE partial-rotary mode pairs contiguously \u2014 incompatible with transformers partial/proportional rotary (partial_rotary_factor models)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "title": "Composite RoPE partial-rotary mode pairs contiguously — incompatible with transformers partial/proportional rotary (partial_rotary_factor models)",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -59,7 +55,7 @@
           "https://github.com/apple/coreai-models/issues/66"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -78,7 +74,7 @@
       "url": "https://github.com/apple/coreai-torch/issues/1",
       "kind": "issue",
       "title": "externalize: SDPA submodule re-export drops the upper bound on the key-length dim with a static query + dynamic KV context",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
@@ -86,7 +82,7 @@
         },
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "87-\ufe0f-the-four-silent-failures-in-externalization"
+          "anchor": "87-️-the-four-silent-failures-in-externalization"
         }
       ],
       "claimedState": "OPEN",
@@ -97,7 +93,7 @@
           "https://github.com/apple/coreai-torch/issues/1"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -116,11 +112,11 @@
       "url": "https://github.com/apple/coreai-torch/issues/2",
       "kind": "issue",
       "title": "Runtime MPSGraph null-deref (mlir::FloatType::getWidth) executing 2+ GatedDeltaUpdate layers + an attention layer with dynamic KV context",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "63-\ufe0f-how-far-that-support-does-not-extend"
+          "anchor": "63-️-how-far-that-support-does-not-extend"
         }
       ],
       "claimedState": "OPEN",
@@ -131,7 +127,7 @@
           "https://github.com/apple/coreai-torch/issues/2"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -150,7 +146,7 @@
       "url": "https://github.com/apple/coreai-torch/issues/5",
       "kind": "issue",
       "title": "Contribution Proposal: Add stable softplus, mish, and logsumexp conversion support",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -165,7 +161,7 @@
           "https://github.com/apple/coreai-torch/issues/5"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -184,11 +180,11 @@
       "url": "https://github.com/apple/coreai-torch/issues/6",
       "kind": "issue",
       "title": "ANECompiler crash (ANECPlistInterface::addOpToNetwork EXC_BAD_ACCESS) at AIModel.load when slice_update begin/end indices are runtime values",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "63-\ufe0f-how-far-that-support-does-not-extend"
+          "anchor": "63-️-how-far-that-support-does-not-extend"
         }
       ],
       "claimedState": "OPEN",
@@ -199,7 +195,7 @@
           "https://github.com/apple/coreai-torch/issues/6"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -217,8 +213,8 @@
       "id": "apple.coreai-torch:issue:9",
       "url": "https://github.com/apple/coreai-torch/issues/9",
       "kind": "issue",
-      "title": "Converter folds float\u2192int\u2192float cast round-trips, dropping truncation semantics (CPU too)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "title": "Converter folds float→int→float cast round-trips, dropping truncation semantics (CPU too)",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -233,7 +229,7 @@
           "https://github.com/apple/coreai-torch/issues/9"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -252,7 +248,7 @@
       "url": "https://github.com/apple/coreai-torch/issues/10",
       "kind": "issue",
       "title": "GPU delegate executes aten.floor/trunc/ceil as identity; round uses away-from-zero ties; div(x,1,floor) folds to identity",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -267,7 +263,7 @@
           "https://github.com/apple/coreai-torch/issues/10"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -286,7 +282,7 @@
       "url": "https://github.com/apple/coreai-torch/issues/11",
       "kind": "issue",
       "title": "Runtime clobbers an unrelated live tensor when an int64-comparison bool mask chain executes (deformable-attention sampler pattern)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -301,7 +297,7 @@
           "https://github.com/apple/coreai-torch/issues/11"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -319,12 +315,12 @@
       "id": "apple.coreai-torch:issue:21",
       "url": "https://github.com/apple/coreai-torch/issues/21",
       "kind": "issue",
-      "title": "softplus, mish, logsumexp, logcumsumexp overflow in fp16 on ANE \u2014 missing stable decompositions",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "title": "softplus, mish, logsumexp, logcumsumexp overflow in fp16 on ANE — missing stable decompositions",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
-          "anchor": "44-\ufe0f-silent-failure--using-pytorchs-default-table-instead-of-apples"
+          "anchor": "44-️-silent-failure--using-pytorchs-default-table-instead-of-apples"
         },
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -339,7 +335,7 @@
           "https://github.com/apple/coreai-torch/issues/21"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -358,7 +354,7 @@
       "url": "https://github.com/apple/coreai-torch/pull/22",
       "kind": "pull",
       "title": "Add numerically stable softplus, mish, and logsumexp converters for fp16 safety",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -377,7 +373,7 @@
           "https://github.com/apple/coreai-torch/pull/22"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -439,17 +435,9 @@
       "id": "apple.coreai-torch:issue:49",
       "url": "https://github.com/apple/coreai-torch/issues/49",
       "kind": "issue",
-      "title": "AIProgram.optimize() removes broadcasting-significant axis moves and silently miscompiles N\u00d7N distance expressions",
+      "title": "AIProgram.optimize() removes broadcasting-significant axis moves and silently miscompiles N×N distance expressions",
       "affectedVersions": "Affected 0.4.1; 0.4.2 unverified; fixed in the tested 0.4.3 path.",
       "guideRefs": [
-        {
-          "file": "guides/part-08-coreai-pytorch-conversion/README.md",
-          "anchor": "sources-for-this-part"
-        },
-        {
-          "file": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
-          "anchor": "145-related-guides"
-        },
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
           "anchor": "97-the-register"
@@ -493,7 +481,7 @@
       "url": "https://github.com/apple/coreai-torch/issues/51",
       "kind": "issue",
       "title": "[ANE] FP16 numerical discrepancy in MobileNetV3 (2D MatMul + Hardswish)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
@@ -512,7 +500,7 @@
           "https://github.com/apple/coreai-torch/issues/51"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -531,15 +519,11 @@
       "url": "https://github.com/apple/python-apple-fm-sdk/issues/5",
       "kind": "issue",
       "title": "Add support for `LanguageModelFeedback` and `logFeedbackAttachment`",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md",
           "anchor": "32-the-non-swift-hole"
-        },
-        {
-          "file": "guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md",
-          "anchor": "16-sources"
         },
         {
           "file": "guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md",
@@ -558,7 +542,7 @@
           "https://github.com/apple/python-apple-fm-sdk/issues/5"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -576,8 +560,8 @@
       "id": "apple.python-apple-fm-sdk:issue:6",
       "url": "https://github.com/apple/python-apple-fm-sdk/issues/6",
       "kind": "issue",
-      "title": "Build fails with Command Line Tools only \u2014 Xcode.app should not be required",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "title": "Build fails with Command Line Tools only — Xcode.app should not be required",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md",
@@ -592,7 +576,7 @@
           "https://github.com/apple/python-apple-fm-sdk/issues/6"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -611,7 +595,7 @@
       "url": "https://github.com/apple/python-apple-fm-sdk/issues/16",
       "kind": "issue",
       "title": "Should add a missing space in error message",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md",
@@ -626,7 +610,7 @@
           "https://github.com/apple/python-apple-fm-sdk/issues/16"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -645,7 +629,7 @@
       "url": "https://github.com/apple/python-apple-fm-sdk/pull/18",
       "kind": "pull",
       "title": "Native `FMComposedPrompt` Pointer and File Descriptor Leak in `LanguageModelSession._respond_with_schema_from_json()`",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md",
@@ -668,7 +652,7 @@
           "https://github.com/apple/python-apple-fm-sdk/pull/18"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "not-in-verified-release",
@@ -690,7 +674,7 @@
       "url": "https://github.com/ml-explore/mlx/issues/3665",
       "kind": "issue",
       "title": "[BUG] MLX doesn't publish iOS-compatible wheels",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
@@ -705,7 +689,7 @@
           "https://github.com/ml-explore/mlx/issues/3665"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -724,7 +708,7 @@
       "url": "https://github.com/ml-explore/mlx/pull/3757",
       "kind": "pull",
       "title": "Add gather_qqmm",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
@@ -732,7 +716,7 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "9-\ufe0f-the-corruption-bugs"
+          "anchor": "9-️-the-corruption-bugs"
         },
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
@@ -747,7 +731,7 @@
           "https://github.com/ml-explore/mlx/pull/3757"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "released",
@@ -777,10 +761,6 @@
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
           "anchor": "91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856"
-        },
-        {
-          "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "13-declared-gaps"
         },
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
@@ -817,7 +797,7 @@
       "url": "https://github.com/ml-explore/mlx/issues/3860",
       "kind": "issue",
       "title": "[BUG] fp32 matmul silently defaults to TF32-class precision (`MLX_ENABLE_TF32=1`), undocumented on both backends",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/README.md",
@@ -825,7 +805,7 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md",
-          "anchor": "33-\ufe0f-silent-failure-precision-you-did-not-choose-with-no-runtime-signal"
+          "anchor": "33-️-silent-failure-precision-you-did-not-choose-with-no-runtime-signal"
         },
         {
           "file": "guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md",
@@ -840,7 +820,7 @@
           "https://github.com/ml-explore/mlx/issues/3860"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -859,7 +839,7 @@
       "url": "https://github.com/ml-explore/mlx/pull/3875",
       "kind": "pull",
       "title": "Round MLX_SDPA_BLOCKS up to a multiple of 32",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md",
@@ -878,7 +858,7 @@
           "https://github.com/ml-explore/mlx/pull/3875"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -897,7 +877,7 @@
       "url": "https://github.com/ml-explore/mlx/pull/3883",
       "kind": "pull",
       "title": "Warn once when float32 ops silently run at TF32 precision",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md",
@@ -909,7 +889,7 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md",
-          "anchor": "33-\ufe0f-silent-failure-precision-you-did-not-choose-with-no-runtime-signal"
+          "anchor": "33-️-silent-failure-precision-you-did-not-choose-with-no-runtime-signal"
         }
       ],
       "claimedState": "CLOSED",
@@ -920,7 +900,7 @@
           "https://github.com/ml-explore/mlx/pull/3883"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -941,10 +921,6 @@
       "title": "[BUG] gather_qmm sorted-rhs path corrupt for K % 64 != 0 on M5/NAX: !align_K tail bounds the load with BK instead of the K remainder (affine + mxfp4)",
       "affectedVersions": "Retain the cited workaround for earlier affected releases; MLX 0.32.3 contains the upstream fix, but the local reproducer was not rerun.",
       "guideRefs": [
-        {
-          "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "13-declared-gaps"
-        },
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
           "anchor": "53-what-qlora-costs-you"
@@ -988,7 +964,7 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "\ufe0f-read-this-before-you-trust-a-flag-name-below"
+          "anchor": "️-read-this-before-you-trust-a-flag-name-below"
         },
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -1025,7 +1001,7 @@
       "url": "https://github.com/ml-explore/mlx/issues/3915",
       "kind": "issue",
       "title": "CMake cannot build Metal kernels for iOS",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
@@ -1040,7 +1016,7 @@
           "https://github.com/ml-explore/mlx/issues/3915"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1067,15 +1043,11 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "9-\ufe0f-the-corruption-bugs"
+          "anchor": "9-️-the-corruption-bugs"
         },
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
           "anchor": "91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856"
-        },
-        {
-          "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "13-declared-gaps"
         },
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
@@ -1112,7 +1084,7 @@
       "url": "https://github.com/ml-explore/mlx/pull/3924",
       "kind": "pull",
       "title": "Add a tile-shape static_assert to tile_matmad_nax",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/01-core-fundamentals.md",
@@ -1120,7 +1092,7 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "\ufe0f-read-this-before-you-trust-a-flag-name-below"
+          "anchor": "️-read-this-before-you-trust-a-flag-name-below"
         },
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -1139,7 +1111,7 @@
           "https://github.com/ml-explore/mlx/pull/3924"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1158,7 +1130,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1446",
       "kind": "issue",
       "title": "mlx_lm.server speculative decoding fails on Qwen 35B target: ArraysCache is not trimmable",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1173,7 +1145,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1446"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1192,7 +1164,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1470",
       "kind": "issue",
       "title": "speculative_generate_step diverges from plain generation at temp=0 with num_draft_tokens=4 (dense model, no hybrid layers)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1207,7 +1179,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1470"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1226,7 +1198,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1480",
       "kind": "issue",
       "title": "MLX/Metal OOM during long-context prefill for Qwen3.6/Qwen3.5 hybrid MoE despite only 10 KV-cache layers",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1241,7 +1213,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1480"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1260,7 +1232,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1493",
       "kind": "issue",
       "title": "mlx_lm.server: generation hangs at 0% CPU right after prompt processing on ~22-26k-token streaming requests (gemma-4-26b-a4b, 0.31.3)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1279,7 +1251,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1493"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1298,7 +1270,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1497",
       "kind": "issue",
       "title": "N-gram self-speculative decoding for hybrid GDN/SA models",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1313,7 +1285,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1497"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1332,7 +1304,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1500",
       "kind": "issue",
       "title": "`mlx_lm.server` pins a CPU core at ~100% while idle (generation worker busy-polls the request queue with `get_nowait()`)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1347,7 +1319,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1500"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1366,12 +1338,8 @@
       "url": "https://github.com/ml-explore/mlx-lm/pull/1585",
       "kind": "pull",
       "title": "switch_layers: pad sorted gather rows to a multiple of 64 (silent quantized-MoE corruption, mlx#3856)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
-        {
-          "file": "guides/part-12-mlx-python/references/03-quantization.md",
-          "anchor": "13-declared-gaps"
-        },
         {
           "file": "guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md",
           "anchor": "53-what-qlora-costs-you"
@@ -1385,7 +1353,7 @@
           "https://github.com/ml-explore/mlx-lm/pull/1585"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1404,7 +1372,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1587",
       "kind": "issue",
       "title": "QuantizedKVCache shows higher peak memory than fp16 KVCache (worse at longer contexts)",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/03-quantization.md",
@@ -1427,7 +1395,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1587"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1446,11 +1414,11 @@
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/312",
       "kind": "issue",
       "title": "[BUG] maybeQuantizeKVCache silently corrupts context mid-generation",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "96-\ufe0f-silent-failure--the-swift-ports-cache-bugs-because-you-will-hit-them-from-a-mac-app"
+          "anchor": "96-️-silent-failure--the-swift-ports-cache-bugs-because-you-will-hit-them-from-a-mac-app"
         },
         {
           "file": "guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md",
@@ -1465,7 +1433,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/312"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1484,7 +1452,7 @@
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/425",
       "kind": "issue",
       "title": "Prompt-lookup (n-gram) speculative decoding: draft-model-free speedup for repetition-heavy generation",
-      "affectedVersions": "Exact affected-version boundary not established; the cited guide records the inspected revision and supported-version workaround.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -1499,7 +1467,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/425"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state checked; closure alone does not demonstrate a released fix.",
+        "rationale": "GitHub state verified; remediation unverified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1562,7 +1530,7 @@
       "id": "ml-explore.mlx:issue:3911",
       "url": "https://github.com/ml-explore/mlx/issues/3911",
       "kind": "issue",
-      "title": "[Metal] NVFP4 tensor-scale (global_scale) not implemented \u2014 throws runtime error on Metal backend",
+      "title": "[Metal] NVFP4 tensor-scale (global_scale) not implemented — throws runtime error on Metal backend",
       "affectedVersions": "Metal global_scale throws on releases <=0.32.0; source fix is contained in 0.32.1. Local runtime remediation remains unverified.",
       "guideRefs": [
         {
@@ -1672,7 +1640,7 @@
       "id": "ml-explore.mlx:issue:3762",
       "url": "https://github.com/ml-explore/mlx/issues/3762",
       "kind": "issue",
-      "title": "Metal fp_qmv_impl: out_vec_size < 8 branch uses raw scale byte instead of dequantize_scale \u2192 wrong mxfp4 matvec for output dim < 8",
+      "title": "Metal fp_qmv_impl: out_vec_size < 8 branch uses raw scale byte instead of dequantize_scale → wrong mxfp4 matvec for output dim < 8",
       "affectedVersions": "Exact affected-release boundary not established; verify the cited reproducer before retiring an older-release workaround.",
       "guideRefs": [
         {
@@ -1709,7 +1677,7 @@
       "id": "apple.coreai-models:issue:5",
       "url": "https://github.com/apple/coreai-models/issues/5",
       "kind": "issue",
-      "title": "Official iOS static-shape decode path crashes at runtime on the macOS 27 / iOS 27 beta \u2014 MPSGraph can't lower the data-indexed KV-cache slice_update",
+      "title": "Official iOS static-shape decode path crashes at runtime on the macOS 27 / iOS 27 beta — MPSGraph can't lower the data-indexed KV-cache slice_update",
       "affectedVersions": "Reported on macOS/iOS 27 betas, macOS build 26A5353q, Xcode 27A5194q, coreai-torch 0.4.0 and coreai-core 1.0.0b1. The maintainer suggested beta 4; installed stable runtime remediation is unverified.",
       "guideRefs": [
         {
@@ -1717,12 +1685,8 @@
           "anchor": "13-the-mpsgraph-in-graph-kv-write-bug"
         },
         {
-          "file": "guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md",
-          "anchor": "standing-gaps-declared-in-this-guide"
-        },
-        {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "63-\ufe0f-how-far-that-support-does-not-extend"
+          "anchor": "63-️-how-far-that-support-does-not-extend"
         }
       ],
       "claimedState": "CLOSED",
@@ -1735,7 +1699,7 @@
           "https://github.com/apple/coreai-models/issues/5#issuecomment-5517141007"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1754,7 +1718,7 @@
       "url": "https://github.com/apple/coreai-models/issues/84",
       "kind": "issue",
       "title": "Monolithic stateful dynamic prefill becomes nondeterministic above 16 tokens",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
@@ -1769,7 +1733,7 @@
           "https://github.com/apple/coreai-models/issues/84"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1792,7 +1756,7 @@
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "63-\ufe0f-how-far-that-support-does-not-extend"
+          "anchor": "63-️-how-far-that-support-does-not-extend"
         },
         {
           "file": "guides/part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md",
@@ -1866,7 +1830,7 @@
           "https://github.com/apple/coreai-torch/compare/c89f6a44713249a12a84beec9f3e0cf2206ecc38...v0.4.3"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "released",
@@ -1887,7 +1851,7 @@
       "url": "https://github.com/apple/coreai-torch/pull/45",
       "kind": "pull",
       "title": "int-reduce-int64-narrowing-overflow: fix sum/prod int64 accumulator narrowing",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
@@ -1914,7 +1878,7 @@
           "https://github.com/apple/coreai-torch/pull/45"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1933,7 +1897,7 @@
       "url": "https://github.com/ml-explore/mlx/issues/3897",
       "kind": "issue",
       "title": "Batched (padded/masked) attention diverges from single-sequence on M5, not on M3 Max",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/01-core-fundamentals.md",
@@ -1988,7 +1952,7 @@
           "https://github.com/ml-explore/mlx/issues/3897"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2006,8 +1970,8 @@
       "id": "ml-explore.mlx:issue:3910",
       "url": "https://github.com/ml-explore/mlx/issues/3910",
       "kind": "issue",
-      "title": "[BUG] JACCL MeshImpl::recv spins forever on peer loss \u2014 silent hang, no timeout (UC)",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "[BUG] JACCL MeshImpl::recv spins forever on peer loss — silent hang, no timeout (UC)",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -2022,7 +1986,7 @@
           "https://github.com/ml-explore/mlx/issues/3910"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2041,7 +2005,7 @@
       "url": "https://github.com/ml-explore/mlx/issues/3777",
       "kind": "issue",
       "title": "[BUG] JACCL segfaults in ibv_reg_mr (null PD) when RDMA absent; distributed_config says \"RDMA not enabled\" despite rdma_ctl status=enabled, survives cold boot (macOS 26.5.1 / 25F80)",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -2056,7 +2020,7 @@
           "https://github.com/ml-explore/mlx/issues/3777"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2074,8 +2038,8 @@
       "id": "ml-explore.mlx:issue:3755",
       "url": "https://github.com/ml-explore/mlx/issues/3755",
       "kind": "issue",
-      "title": "[BUG]  ring and jaccl both fail to connect (error 60/65) on 4-node M3 Ultra cluster \u2014 IP network verified routable, full mesh confirmed",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "[BUG]  ring and jaccl both fail to connect (error 60/65) on 4-node M3 Ultra cluster — IP network verified routable, full mesh confirmed",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -2090,7 +2054,7 @@
           "https://github.com/ml-explore/mlx/issues/3755"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2108,8 +2072,8 @@
       "id": "ml-explore.mlx:issue:3862",
       "url": "https://github.com/ml-explore/mlx/issues/3862",
       "kind": "issue",
-      "title": "[BUG] distributed ring: SocketThread dies silently on transient connection reset \u2014 all ranks wedge forever in Event::wait",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "[BUG] distributed ring: SocketThread dies silently on transient connection reset — all ranks wedge forever in Event::wait",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -2124,7 +2088,7 @@
           "https://github.com/ml-explore/mlx/issues/3862"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2142,8 +2106,8 @@
       "id": "ml-explore.mlx:issue:3876",
       "url": "https://github.com/ml-explore/mlx/issues/3876",
       "kind": "issue",
-      "title": "[CUDA] distributed all_sum barrier hangs in cu::AtomicEvent::wait on Blackwell (sm_121/sm_110) during warmup \u2014 ring sockets healthy",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "[CUDA] distributed all_sum barrier hangs in cu::AtomicEvent::wait on Blackwell (sm_121/sm_110) during warmup — ring sockets healthy",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -2158,7 +2122,7 @@
           "https://github.com/ml-explore/mlx/issues/3876"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2176,7 +2140,7 @@
       "id": "ml-explore.mlx-lm:issue:1472",
       "url": "https://github.com/ml-explore/mlx-lm/issues/1472",
       "kind": "issue",
-      "title": "mlx_lm.server: generation thread dies with TypeError ('NoneType' object is not iterable) when a batch mixes requests with and without logits processors \u2014 server then hangs forever",
+      "title": "mlx_lm.server: generation thread dies with TypeError ('NoneType' object is not iterable) when a batch mixes requests with and without logits processors — server then hangs forever",
       "affectedVersions": "Reported on mlx-lm 0.31.3. The boundary for current 0.32.0 runtime behavior is not demonstrated locally.",
       "guideRefs": [
         {
@@ -2196,7 +2160,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1472"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2235,7 +2199,7 @@
           "https://github.com/ml-explore/mlx-lm/compare/14e89f1add2a47e9c4f5298710f5d1d6d23b7ee2...v0.32.0"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "released",
@@ -2271,7 +2235,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1505"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2310,7 +2274,7 @@
           "https://github.com/ml-explore/mlx-lm/blob/v0.32.0/mlx_lm/server.py"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "not-in-verified-release",
@@ -2332,7 +2296,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1494",
       "kind": "issue",
       "title": "Prompt-cache reuse can return KV state that doesn't match the keyed prefix (windowed-cache trim contract)",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2344,11 +2308,11 @@
         },
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "93-\ufe0f-silent-failure--sampler-parameters-that-do-nothing"
+          "anchor": "93-️-silent-failure--sampler-parameters-that-do-nothing"
         },
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
-          "anchor": "93-\ufe0f-the-architectures-that-forfeit-prefix-reuse-entirely"
+          "anchor": "93-️-the-architectures-that-forfeit-prefix-reuse-entirely"
         },
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2363,7 +2327,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1494"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2382,7 +2346,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1495",
       "kind": "issue",
       "title": "LRUPromptCache: one-token prefixes never match in PromptTrie.search; eviction ignores fetch recency (FIFO, not LRU)",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2401,7 +2365,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1495"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2420,7 +2384,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1395",
       "kind": "issue",
       "title": "`fetch_nearest_cache` deep-copies the cached KV, doubling peak memory exactly when a cached conversation is reused",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2439,7 +2403,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1395"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2458,7 +2422,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1390",
       "kind": "issue",
       "title": "`mlx_lm.server` aborts with Metal OOM after prompt cache grows to ~23-26 GB",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2477,7 +2441,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1390"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2496,7 +2460,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/issues/1566",
       "kind": "issue",
       "title": "quantized_kv_start default (0) in generate_step silently tanks decode throughput vs the CLI's own recommended default (5000)",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2519,7 +2483,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1566"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2558,7 +2522,7 @@
           "https://github.com/ml-explore/mlx-lm/blob/v0.32.0/mlx_lm/models/cache.py"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2578,8 +2542,8 @@
       "id": "ml-explore.mlx-lm:issue:1573",
       "url": "https://github.com/ml-explore/mlx-lm/issues/1573",
       "kind": "issue",
-      "title": "RotatingKVCache.to_quantized() raises NotImplementedError \u2014 blocks --kv-bits on Gemma 4's sliding-window attention layers",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "RotatingKVCache.to_quantized() raises NotImplementedError — blocks --kv-bits on Gemma 4's sliding-window attention layers",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2602,7 +2566,7 @@
           "https://github.com/ml-explore/mlx-lm/issues/1573"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2645,7 +2609,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/compare/38927f5f3da6d4720ac952f4d97f88d4424f11aa...3.32.3"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "released",
@@ -2666,7 +2630,7 @@
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/424",
       "kind": "issue",
       "title": "RotatingKVCache becomes untrimmable once the window wraps: speculative-decoding rollback silently no-ops, and prompt-cache prefix reuse is defeated",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2693,7 +2657,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/424"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2711,8 +2675,8 @@
       "id": "ml-explore.mlx-swift-lm:issue:406",
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/406",
       "kind": "issue",
-      "title": "KVCacheSimple.offset (Swift Int) breaks MLX.compile() decode \u2014 cache write position frozen across steps",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "KVCacheSimple.offset (Swift Int) breaks MLX.compile() decode — cache write position frozen across steps",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2727,7 +2691,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/406"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2746,7 +2710,7 @@
       "url": "https://github.com/ml-explore/mlx-swift-lm/pull/419",
       "kind": "pull",
       "title": "Fix prefill LMOutput.State being dropped on TokenIterator's .logits path",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2761,7 +2725,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/pull/419"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2780,7 +2744,7 @@
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/420",
       "kind": "issue",
       "title": "Qwen2.5-VL / Qwen3-VL: M-RoPE state is dropped across ChatSession turns, so warm continuations run at wrong positions",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2795,7 +2759,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/420"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2813,8 +2777,8 @@
       "id": "ml-explore.mlx-swift-lm:issue:443",
       "url": "https://github.com/ml-explore/mlx-swift-lm/issues/443",
       "kind": "issue",
-      "title": "`savePromptCache` / `loadPromptCache` drop `LMOutput.State` \u2014 a disk-restored VLM prompt cache decodes at wrong M-RoPE positions",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "title": "`savePromptCache` / `loadPromptCache` drop `LMOutput.State` — a disk-restored VLM prompt cache decodes at wrong M-RoPE positions",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-13-mlx-swift/references/02-generation-tools-and-caching.md",
@@ -2833,7 +2797,7 @@
           "https://github.com/ml-explore/mlx-swift-lm/issues/443"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2868,7 +2832,7 @@
           "https://github.com/ml-explore/mlx-lm/blob/v0.32.0/mlx_lm/models/cache.py"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2889,7 +2853,7 @@
       "url": "https://github.com/ml-explore/mlx-lm/pull/1513",
       "kind": "pull",
       "title": "Keep the server generation loop alive when a batched request fails",
-      "affectedVersions": "Exact affected-version boundary not established; the linked report and guide describe the inspected revision and workaround. Current stable remediation remains unverified.",
+      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
@@ -2908,7 +2872,7 @@
           "https://github.com/ml-explore/mlx-lm/pull/1513"
         ],
         "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report\u2019s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",

@@ -32,15 +32,6 @@ and they do, three times — the source wins and the guide says so.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-torch:pull:41](https://github.com/apple/coreai-torch/pull/41) <!-- defect-ref:apple.coreai-torch:pull:41 --> | MERGED (2026-10-07) | not-in-verified-release (0.4.3) | unverified | merged-unreleased |
-<!-- current-defects:end -->
-
 ## What this covers
 
 `coreai-opt` is where size, quality and latency are actually traded. Everything upstream of it
@@ -3401,10 +3392,6 @@ the configured one.
 
 ### 17.6 A negative `axis` used to land on the wrong dimension
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:pull:41 -->
-<!-- current-defect-refs:end -->
-
 Covered at §8.5 (`apple/coreai-torch#24`, MERGED 2026-07-08). The failure had **no shape error** when
 the channel and its neighbour shared a size. **Avoid permanently:** write non-negative axes.
 
@@ -3421,6 +3408,7 @@ A second historical instance, fixed in 0.3.0:
 
 And a third, in the converter:
 
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
 > ⚠️ **SILENT FAILURE in the 0.4.3 tag.** ✅ **SOURCE-INSPECTED** — `apple/coreai-torch#41`
 > merged 2026-09-25, after that tag; the release lacks the fix:
 > `SubbyteTensor.__torch_dispatch__`'s `aten.cat` branch reads `dim` via `fill_defaults` but **never

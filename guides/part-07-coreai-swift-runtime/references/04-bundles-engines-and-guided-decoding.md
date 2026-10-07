@@ -35,15 +35,6 @@ Two floors *inside* that floor matter here:
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 Reference 01 taught you `AIModel` → `InferenceFunction` → `NDArray`. Reference 03 taught you states
@@ -1552,10 +1543,7 @@ An unknown string throws with the valid set spelled out (`:116-119`):
 is the subject of the rest of this section.
 
 ### 5.3 `CoreAISequentialEngine` — dynamic, CPU-side sampling, logits available
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-models:issue:118 -->
-<!-- current-defect-refs:end -->
 
 Current [upstream source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift), inspected 2026-10-07, accepts:
 
@@ -2166,10 +2154,7 @@ comment: *"KV-only (no recurrent state) — always safe; no clearing needed sinc
 never reads positions ≥ the retained offset before they're rewritten."*
 
 ### 6.4 The negative result that changes model selection
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-models:issue:118 -->
-<!-- current-defect-refs:end -->
 
 The pipelined implementation carries one guard, and it is the most interesting line in the patch:
 

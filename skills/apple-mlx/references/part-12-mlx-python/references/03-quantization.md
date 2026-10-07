@@ -20,28 +20,6 @@ read this session and carries an evidence marker.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx-lm:issue:1566](https://github.com/ml-explore/mlx-lm/issues/1566) <!-- defect-ref:ml-explore.mlx-lm:issue:1566 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx-lm:pull:1584](https://github.com/ml-explore/mlx-lm/pull/1584) <!-- defect-ref:ml-explore.mlx-lm:pull:1584 --> | CLOSED (2026-10-07) | unknown | not-remediated (0.32.0) | unknown |
-| [ml-explore.mlx-lm:pull:1585](https://github.com/ml-explore/mlx-lm/pull/1585) <!-- defect-ref:ml-explore.mlx-lm:pull:1585 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:issue:3762](https://github.com/ml-explore/mlx/issues/3762) <!-- defect-ref:ml-explore.mlx:issue:3762 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3887](https://github.com/ml-explore/mlx/issues/3887) <!-- defect-ref:ml-explore.mlx:issue:3887 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:issue:3911](https://github.com/ml-explore/mlx/issues/3911) <!-- defect-ref:ml-explore.mlx:issue:3911 --> | CLOSED (2026-10-07) | released (0.32.1) | unverified | unknown |
-| [ml-explore.mlx:pull:3757](https://github.com/ml-explore/mlx/pull/3757) <!-- defect-ref:ml-explore.mlx:pull:3757 --> | MERGED (2026-10-07) | released (0.32.1) | unverified | unknown |
-| [ml-explore.mlx:pull:3804](https://github.com/ml-explore/mlx/pull/3804) <!-- defect-ref:ml-explore.mlx:pull:3804 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:pull:3854](https://github.com/ml-explore/mlx/pull/3854) <!-- defect-ref:ml-explore.mlx:pull:3854 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 Quantization in MLX is not one feature. It is four things wearing the same name, and confusing
@@ -536,11 +514,8 @@ These are the exact strings `mlx/ops.cpp` raises. Knowing them saves a debugging
 
 ### 2.6 `global_scale` is CUDA/CPU only, and that has a real cost on Metal
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3757 -->
-<!-- current-defect-refs:end -->
-
 `nvfp4` supports an optional per-tensor scale on top of the per-block scale. On Metal it throws on
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 mlx ≤ 0.32.0; PR **#3757** (merged 2026-08-04, first shipped in **0.32.1**, released 2026-08-18)
 removed the rejection and added basic Metal support — see the closure context below. The section
 title is kept for anchor stability; read "is CUDA/CPU only" as the ≤ 0.32.0 state this section
@@ -2060,11 +2035,6 @@ between runs; a corrupted kernel is not.
 
 ## 9. ⚠️ The corruption bugs
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3757 -->
-<!-- defect-ref:ml-explore.mlx:pull:3922 -->
-<!-- current-defect-refs:end -->
-
 This is why the guide exists.
 
 Between 2026-06 and 2026-07-27 the MLX quantized-matmul kernels accumulated a cluster of
@@ -2079,12 +2049,14 @@ remain relevant when supporting older releases.
 
 | # | Defect | Issue / PR | Recorded disposition | Affects |
 |---|---|---|---|---|
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **closed completed**, fix PR **merged 2026-08-26** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** → PR **#3922** | issue **closed completed 2026-09-07**, fix PR **merged 2026-08-26** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
 | 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **MERGED 2026-09-11**; source fix included in 0.32.3 | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 | 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** → PR **#3757** | **CLOSED** 2026-08-05; fix merged 2026-08-04, ships in **0.32.1** — on ≤ 0.32.0 it **throws**, does not corrupt | nvfp4 on Apple silicon, mlx ≤ 0.32.0 |
 
 Read the last column carefully. **Five of the seven are M5-generation-only.** On an M1 through M4
@@ -2093,13 +2065,10 @@ machine most of this section is history rather than a hazard — but "most" is n
 
 ### 9.1 The bad one: affine `gather_qmm` leaves rows unwritten — mlx#3856
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3856 -->
 <!-- defect-ref:ml-explore.mlx:pull:3922 -->
-<!-- current-defect-refs:end -->
-
 **Status: issue closed completed and fix PR #3922 merged, 2026-08-26.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
 > ✅ **VERIFIED** — mlx#3856 (closed completed 2026-08-26; 9 comments), summarised at
 > `notes/repos/issues-mlx-stack.md:379-427`.
 >
@@ -2265,10 +2234,7 @@ native K is not aligned, padding is a correctness workaround with memory and com
 it rather than describing it as a free conversion setting.[^k64-tradeoff]
 
 ### 9.3 `nvfp4` split-K — fixed, and the reason is instructive — PR #3854
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx:pull:3854 -->
-<!-- current-defect-refs:end -->
 
 **Status: MERGED 2026-07-22.**
 
@@ -2329,13 +2295,10 @@ this is the fp modes' analogue of §9.2.
 
 ### 9.5 fp quantized matvec with output dim < 8 — PR #3804
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3762 -->
-<!-- defect-ref:ml-explore.mlx:pull:3804 -->
-<!-- current-defect-refs:end -->
-
 **Status: MERGED.**
 
+<!-- defect-ref:ml-explore.mlx:pull:3804 -->
+<!-- defect-ref:ml-explore.mlx:issue:3762 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:1043`: PR **#3804** "Fix fp quantized matvec
 > for output dim < 8 (issue **#3762**: `fp_qmv_impl` used the raw scale byte instead of
 > `dequantize_scale` → **wrong mxfp4 matvec for `out_vec_size < 8`**)."
@@ -2373,13 +2336,10 @@ written down.** As long as you use MLX's own instantiations (tiles fixed at 64/6
 these headers — Part 11 territory — you are not, and you should assume the assert is not there yet.
 
 ### 9.7 `nvfp4` `global_scale` on Metal — mlx#3911
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 <!-- defect-ref:ml-explore.mlx:issue:3911 -->
-<!-- defect-ref:ml-explore.mlx:pull:3757 -->
-<!-- current-defect-refs:end -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 **Status: CLOSED 2026-08-05 — fixed by PR #3757 (merged 2026-08-04), shipped in mlx 0.32.1, as of
 2026-08-23.** Covered in §2.6, including the closure context. It stays in this table for
 completeness and as the counterexample: on ≤ 0.32.0, an unimplemented feature that raises
@@ -2390,16 +2350,12 @@ yet).
 
 ### 9.8 Adjacent: two more silent-corruption knobs worth knowing
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- defect-ref:ml-explore.mlx:pull:3875 -->
-<!-- current-defect-refs:end -->
-
 Neither is quantization, but both will contaminate a quantization investigation, so rule them out
 first.
 
 **`MLX_SDPA_BLOCKS` must be a multiple of 32.**
 
+<!-- defect-ref:ml-explore.mlx:pull:3875 -->
 > ✅ **VERIFIED** — mlx PR **#3875** (MERGED 2026-07-22), `notes/repos/issues-mlx-stack.md:262-274`.
 > The env var was added in #3455 and validated only for `> 0`, but pass-2 in `sdpa_vector.h`
 > iterates `blocks / BN` with `BN = 32` and integer division:
@@ -2416,6 +2372,7 @@ first.
 
 **Batch-versus-single equivalence is not achievable on gen-17, in any dtype.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 > ✅ **VERIFIED** — mlx#3897 (closed 2026-08-09; 7 comments at snapshot), M5 base
 > `applegpu_g17g` 32 GB, macOS 26.5.2 /
 > 25F84, reproduced on mlx 0.31.2 **and** 0.32.0; M3 Max clean.
@@ -2751,10 +2708,7 @@ print("Any nonzero row count means the kernel did not write those rows.")
 > are safe** — fall back to check 3, which needs no allocator assumptions at all.
 
 ### 10.5 What to put in CI
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
-<!-- current-defect-refs:end -->
 
 A pragmatic split:
 
@@ -2778,16 +2732,12 @@ And two hygiene rules that make all of the above meaningful:
 
 ## 11. KV-cache quantization is a different thing
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
-<!-- defect-ref:ml-explore.mlx-lm:pull:1584 -->
-<!-- current-defect-refs:end -->
-
 Four facts, so you do not conflate weight quantization with cache quantization. Each has a pointer
 to where the real coverage lives.
 
 **1. It costs decode speed and, today, *raises* prefill peak memory.**
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
 > ✅ **VERIFIED** — mlx-lm#1587 (OPEN, 11 comments), reported on Llama-3.2-3B-Instruct-4bit,
 > **M4 Max 128 GB, macOS 27.0**, `notes/repos/issues-mlx-stack.md:498-505`:
 >
@@ -2820,6 +2770,7 @@ The conclusion from that thread is worth memorising:
 
 **3. `RotatingKVCache` cannot be quantized — and `hasattr` will not save you.**
 
+<!-- defect-ref:ml-explore.mlx-lm:pull:1584 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:580-596`:
 > ```python
 > def to_quantized(self, group_size: int = 64, bits: int = 4) -> QuantizedKVCache:
@@ -2956,13 +2907,6 @@ forever, but it is the rate today.
 ---
 
 ## 13. Declared gaps
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx-lm:pull:1585 -->
-<!-- defect-ref:ml-explore.mlx:issue:3856 -->
-<!-- defect-ref:ml-explore.mlx:issue:3887 -->
-<!-- defect-ref:ml-explore.mlx:pull:3922 -->
-<!-- current-defect-refs:end -->
 
 Things this guide could not verify, what would resolve them, and what to do meanwhile.
 

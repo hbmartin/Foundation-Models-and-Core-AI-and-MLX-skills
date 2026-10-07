@@ -20,15 +20,6 @@ hardware path is a fast path, not a requirement.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 This is the advanced kernel-authoring guide for Metal TensorOps. Guide 01 in this part covers the
@@ -1990,10 +1981,6 @@ Two practical notes:
 
 ### 8.3 Step 3 — QK transpose into a cooperative tensor
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3883 -->
-<!-- current-defect-refs:end -->
-
 ✅ **VERIFIED**, session 330 at 330:91:
 
 > *"We'll use a **cooperative tensor to store the intermediate matrix so that we can use it as an
@@ -2060,6 +2047,7 @@ call, and noted in this series' correction register at `nax.h:406` — and that 
 gates the whole accelerated path on `MLX_ENABLE_TF32` for float32 inputs
 (`mlx/utils.h:195-197`, `matmul.cpp:916-918`). One feature, two halves. If you set
 `relaxed_precision = true` in your own kernel, you are opting into the same trade and you should
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
 expose the same escape hatch to your callers. Upstream PR **#3883** ("Warn once when float32 ops
 silently run at TF32 precision", closed unmerged 2026-08-03) was opened because MLX's users were
 surprised by it — which is a good reason to make yours explicit.

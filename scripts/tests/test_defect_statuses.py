@@ -23,7 +23,7 @@ class DefectRegistryTests(unittest.TestCase):
         self.root = Path(self.folder.name)
         (self.root / 'notes').mkdir()
         (self.root / 'guides').mkdir()
-        (self.root / 'guides/test.md').write_text('# Test\n\n## Current\n\nAn unrelated #19 was open.\n')
+        (self.root / 'guides/test.md').write_text('# Test\n\n## Current\n\n<!-- defect-ref:owner.repo:issue:19 -->\nAn unrelated #19 was open.\n')
         self.record = {'id': 'owner.repo:issue:19', 'url': 'https://github.com/owner/repo/issues/19',
                        'kind': 'issue', 'affectedVersions': 'Version boundary not established.',
                        'guideRefs': [{'file': 'guides/test.md', 'anchor': 'current'}],
@@ -38,7 +38,7 @@ class DefectRegistryTests(unittest.TestCase):
         (self.root / 'notes/defects.json').write_text(json.dumps({'schemaVersion': 1, 'defects': records}))
 
     def test_extraction_uses_only_registry_claims(self):
-        (self.root / 'guides/test.md').write_text('# Test\n## Current\n#999 is CLOSED, not open.\n')
+        (self.root / 'guides/test.md').write_text('# Test\n## Current\n<!-- defect-ref:owner.repo:issue:19 -->\n#999 is CLOSED, not open.\n')
         rows = reporter.extract(self.root)
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]['number'], rows[0]['claimedState'], rows[0]['line']), (19, 'OPEN', 2))
@@ -50,6 +50,8 @@ class DefectRegistryTests(unittest.TestCase):
         pull = copy.deepcopy(self.record)
         pull.update(id='owner.repo:pull:19', kind='pull', url='https://github.com/owner/repo/pull/19')
         self.write([self.record, discussion, pull])
+        guide = self.root / 'guides/test.md'
+        guide.write_text(guide.read_text() + '<!-- defect-ref:owner.repo:discussion:19 -->\n<!-- defect-ref:owner.repo:pull:19 -->\n')
         refs = reporter.group_references(reporter.extract(self.root), False, 0)
         self.assertEqual(len(refs), 3)
         self.assertEqual(len({r['registryId'] for r in refs}), 3)
@@ -135,24 +137,33 @@ class DefectRegistryTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(output.is_file())
 
-    def test_canonical_registry_and_generated_blocks_match(self):
+    def test_canonical_registry_and_inline_markers_match(self):
         self.assertTrue(reporter.load_registry(ROOT))
-        result = subprocess.run([sys.executable, ROOT / 'scripts/render-defects.py', '--check'], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_guide_defect_markers_require_registered_ids(self):
-        command = [sys.executable, ROOT / 'scripts/render-defects.py', '--source-root', self.root]
-        self.assertEqual(subprocess.run(command + ['--write'], capture_output=True).returncode, 0)
+    def test_missing_unknown_duplicate_and_misplaced_markers_fail(self):
         guide = self.root / 'guides/test.md'
-        guide.write_text(guide.read_text() + '\n<!-- defect-ref:unknown -->\n')
-        result = subprocess.run(command + ['--check'], capture_output=True, text=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('unknown or misplaced defect ID', result.stderr)
-        guide.write_text(guide.read_text().replace('<!-- defect-ref:unknown -->', '')
-                         + '\n## Unrelated\n<!-- defect-ref:owner.repo:issue:19 -->\n')
-        result = subprocess.run(command + ['--check'], capture_output=True, text=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('unknown or misplaced defect ID', result.stderr)
+        original = guide.read_text()
+        marker = '<!-- defect-ref:owner.repo:issue:19 -->'
+        for text, error in (
+            (original.replace(marker, ''), 'missing defect markers'),
+            (original + '\n<!-- defect-ref:unknown -->\n', 'unknown or misplaced'),
+            (original + '\n' + marker, 'duplicate defect marker'),
+            (original.replace(marker, '') + '\n## Unrelated\n' + marker, 'unknown or misplaced'),
+        ):
+            with self.subTest(error=error):
+                guide.write_text(text)
+                with self.assertRaisesRegex(ValueError, error):
+                    reporter.load_registry(self.root)
+
+    def test_fenced_marker_examples_do_not_register_claims(self):
+        guide = self.root / 'guides/test.md'
+        original = guide.read_text()
+        guide.write_text(original + '\n```md\n<!-- defect-ref:unknown -->\n```\n')
+        self.assertEqual(len(reporter.load_registry(self.root)), 1)
+        guide.write_text(original.replace('<!-- defect-ref:owner.repo:issue:19 -->', '')
+                         + '\n~~~md\n<!-- defect-ref:owner.repo:issue:19 -->\n~~~\n')
+        with self.assertRaisesRegex(ValueError, 'missing defect markers'):
+            reporter.load_registry(self.root)
 
 
 if __name__ == '__main__':

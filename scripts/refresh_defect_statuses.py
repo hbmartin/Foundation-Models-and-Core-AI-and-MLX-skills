@@ -24,8 +24,10 @@ from typing import Any
 
 try:
     from scripts.mdslug import collect_headings
+    from scripts.mdlinks import iter_lines
 except ModuleNotFoundError:
     from mdslug import collect_headings
+    from mdlinks import iter_lines
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 RE_URL = re.compile(r"https?://github\.com/([\w.-]+/[\w.-]+)/(?P<route>issues|pull|discussions)/(\d+)")
@@ -168,6 +170,35 @@ def load_registry(source_root: pathlib.Path) -> list[dict[str, Any]]:
             if key in seen_locations:
                 raise ValueError("duplicate guide reference")
             seen_locations.add(key)
+    expected = {
+        (location["file"], location["anchor"], record["id"])
+        for record in payload["defects"] for location in record["guideRefs"]
+    }
+    found = set()
+    for guide in sorted((source_root / "guides").rglob("*.md")):
+        text = guide.read_text(encoding="utf-8")
+        headings = iter(collect_headings(text))
+        heading = next(headings, None)
+        anchor = None
+        relative = guide.relative_to(source_root).as_posix()
+        for number, (line, _newline, fenced) in enumerate(iter_lines(text), 1):
+            if fenced:
+                continue
+            while heading and heading.line <= number:
+                anchor = heading.anchor
+                heading = next(headings, None)
+            for identifier in re.findall(r"<!--\s*defect-ref:([^\s]+)\s*-->", line):
+                key = (relative, anchor, identifier)
+                if key not in expected:
+                    raise ValueError(f"{relative}:{number}: unknown or misplaced defect ID {identifier}")
+                if key in found:
+                    raise ValueError(f"{relative}:{number}: duplicate defect marker {identifier}")
+                found.add(key)
+    missing = expected - found
+    if missing:
+        raise ValueError("missing defect markers: " + ", ".join(
+            f"{file}#{anchor}: {identifier}" for file, anchor, identifier in sorted(missing)
+        ))
     return payload["defects"]
 
 

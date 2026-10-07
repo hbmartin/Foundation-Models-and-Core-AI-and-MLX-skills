@@ -33,16 +33,6 @@ signature below is reconstructed rather than quoted, it says so.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-models:issue:5](https://github.com/apple/coreai-models/issues/5) <!-- defect-ref:apple.coreai-models:issue:5 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 A transformer decode loop written the naive way gets slower every step. In Apple's own WWDC26
@@ -1363,10 +1353,7 @@ Hold that thought until §13, where a masked blend turns out to be the *only* wa
 on the WWDC26 betas for one class of model.
 
 ### Argument ordering is load-bearing
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-models:issue:118 -->
-<!-- current-defect-refs:end -->
 
 > ✅ **VERIFIED** — `lucasnewman/mlx2coreai`, `_convert_mlx_lm_stateful.py`:
 > `_reorder_graph_inputs(graph, [input_name, position_ids_name, key_cache_name, value_cache_name])`
@@ -2478,16 +2465,13 @@ So the decision is not "pipelined is faster, use pipelined." It is:
 
 ## 13. The MPSGraph in-graph KV-write bug
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-models:issue:5 -->
-<!-- current-defect-refs:end -->
-
 Everything above assumes that writing a KV column from inside the graph works. On the WWDC26 betas,
 one reported model path failed. This section retains the beta regression and its diagnostic method;
 it does not establish a defect in the installed stable runtime. The failure is a textbook
 example of the silent-then-loud failure mode this framework specialises in: **conversion succeeds; it
 is load and execute that die.**
 
+<!-- defect-ref:apple.coreai-models:issue:5 -->
 <!-- callout-id: callout-35dd041d3fcd0313 -->
 > ⚠️ **Community-measured throughout this section.** Source: john-rocky,
 > `knowledge/coreai-beta-mpsgraph-kvwrite-bug.md`, filed as Apple Feedback **FB23024751** and
@@ -3209,10 +3193,6 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 | `frozen Noema 3.5 snapshot` (MIT) | the copy-on-write state trap and the placeholder fix; `fedTokens`; prefill shape bucketing; host-cache detection; the pipelined cross-turn-reuse limitation; the Debug-build slowdown | **community, shipping app** |
 
 ### Standing gaps declared in this guide
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-models:issue:5 -->
-<!-- current-defect-refs:end -->
 
 | § | Gap | What would resolve it |
 |---|---|---|

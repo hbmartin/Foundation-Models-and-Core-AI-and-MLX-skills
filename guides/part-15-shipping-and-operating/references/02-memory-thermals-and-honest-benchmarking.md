@@ -21,15 +21,6 @@ even mean.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx-lm:issue:1390](https://github.com/ml-explore/mlx-lm/issues/1390) <!-- defect-ref:ml-explore.mlx-lm:issue:1390 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 This is the guide about the gap between a demo that works on your desk and an app that survives a
@@ -1504,10 +1495,6 @@ resource.
 
 ### 6.1 The forum report: ~40 GiB of "other allocations"
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx-lm:issue:1390 -->
-<!-- current-defect-refs:end -->
-
 ⚠️ **Community-reported, status unknown.** Apple Developer Forums thread **824753**:
 
 > "MPS backend reports ~**40 GiB 'other allocations'** on a **48 GB M5 Pro** under **macOS 26.4.1**,
@@ -1525,6 +1512,7 @@ describes is structural**, and the corpus contains several independent instances
 | Instance | What ran out | Where |
 |---|---|---|
 | MPS reports ~40 GiB "other allocations" on 48 GB, blocking large tensor ops | someone else's allocator | forum 824753, macOS 26.4.1, M5 Pro |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1390 -->
 | `mlx_lm.server` aborts: `Insufficient Memory (kIOGPUCommandBufferCallbackErrorOutOfMemory)` after the **prompt cache grew to 23.35 GB / 26.28 GB** | your own cache, unbounded | mlx-lm#1390, 48 GB, macOS 27.0 (26A5353q), mlx-lm 0.31.3 |
 | Two images totalling 8140 pads requested a **single 33.9 GB Metal buffer**, past `maxBufferLength` on a 48 GB M4 Pro | one allocation, quadratic in inputs | `notes/repos/issues-mlx-stack.md` §, VLM attention mask |
 | Use-after-free under memory pressure: buffer-cache trim freed an `MTLBuffer` still used by an in-flight command buffer (`kIOGPUCommandBufferCallbackErrorInvalidResource`) | the allocator's own reclaim path | mlx#3689 (CLOSED) |

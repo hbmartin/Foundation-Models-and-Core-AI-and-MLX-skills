@@ -4,17 +4,6 @@
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## Version floor
 
 Current stable MLX is **0.32.3** ([release](https://github.com/ml-explore/mlx/releases/tag/v0.32.3), checked 2026-10-07). The API descriptions below retain their inspected revision; verify version-specific behavior against the installed wheel.
@@ -130,13 +119,10 @@ Two markers you will see constantly:
 
 ### Freshness warning, and it is sharp
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3912 -->
-<!-- defect-ref:ml-explore.mlx:pull:3924 -->
-<!-- current-defect-refs:end -->
-
 The clone's HEAD is `973e27f` ("[CUDA] Fix grid overflow in gemm conv unfold kernels…", PR #3893).
 **Three NAX correctness fix PRs opened in the three days before 2026-07-27, and none is in
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
 this checkout: #3912/#3922 still open, #3924 closed unmerged, on a 2026-08-03
 `gh` re-check:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
 multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary handling), and **#3924** — one of which
@@ -2878,10 +2864,6 @@ def bench(fn, *args, warmup: int = 10, iters: int = 100) -> float:
 
 ### 10.6 Querying the device
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
-
 ```python
 import mlx.core as mx
 
@@ -2916,6 +2898,7 @@ The `architecture` string is worth understanding because it drives real dispatch
 | `d` | Ultra | 50 | 50 |
 | other | default | 40 | 40 |
 
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 > ✅ **VERIFIED (the table)** — `mlx/backend/metal/device.cpp` heuristics, per the repo notes.
 > Both columns are overridable with `MLX_MAX_OPS_PER_BUFFER` / `MLX_MAX_MB_PER_BUFFER`, and the
 > architecture string itself can be forced with `MLX_METAL_GPU_ARCH`.

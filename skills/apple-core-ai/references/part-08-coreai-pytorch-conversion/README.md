@@ -30,15 +30,6 @@ every contract you define here — `AIModel`, `InferenceFunction.run`, state bin
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
-<!-- current-defects:end -->
-
 ## Why this part exists
 
 Apple's own README makes conversion look like five lines — `torch.export.export`, `run_decompositions`,
@@ -249,10 +240,6 @@ already hit a genuinely unsupported op.
 ---
 
 ## Sources for this part
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:49 -->
-<!-- current-defect-refs:end -->
 
 Strongest first. **Apple source read directly off disk this session:** `apple/coreai-torch` at `main`, HEAD
 `4529671`, version **0.4.1** — `converter.py` (1,082 lines), `_decomp.py`, `_validate.py`, `_utils.py`,

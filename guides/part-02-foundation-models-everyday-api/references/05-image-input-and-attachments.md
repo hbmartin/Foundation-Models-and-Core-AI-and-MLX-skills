@@ -5,16 +5,6 @@
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.python-apple-fm-sdk:issue:17](https://github.com/apple/python-apple-fm-sdk/issues/17) <!-- defect-ref:apple.python-apple-fm-sdk:issue:17 --> | CLOSED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
-| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 The 2026 release gave the on-device model eyes. You put an image into a prompt the same way you put
@@ -1682,11 +1672,8 @@ is a link error, not a Python exception.
 
 ### 11.3 The file-descriptor leak — the sharpest image-specific bug in the corpus
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
 <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
-<!-- current-defect-refs:end -->
-
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
 <!-- callout-id: callout-701cb12d4cb87d42 -->
 > ⚠️ **SILENT FAILURE — image attachments can retain file descriptors in Python sessions.**
 > `apple/python-apple-fm-sdk` #17 reported failure after 240–250 sequential image calls with `OSError:

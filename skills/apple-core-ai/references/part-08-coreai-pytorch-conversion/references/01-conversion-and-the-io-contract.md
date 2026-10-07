@@ -24,21 +24,6 @@ no-reconvert recovery.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-models:issue:84](https://github.com/apple/coreai-models/issues/84) <!-- defect-ref:apple.coreai-models:issue:84 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:21](https://github.com/apple/coreai-torch/issues/21) <!-- defect-ref:apple.coreai-torch:issue:21 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
-| [apple.coreai-torch:issue:51](https://github.com/apple/coreai-torch/issues/51) <!-- defect-ref:apple.coreai-torch:issue:51 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:pull:45](https://github.com/apple/coreai-torch/pull/45) <!-- defect-ref:apple.coreai-torch:pull:45 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 Five lines of Python turn a `torch.nn.Module` into an on-device artifact:
@@ -615,10 +600,6 @@ The second validator shape, for ops that *are* decomposed but have no lowering:
 
 ### 4.4 ⚠️ SILENT FAILURE — using PyTorch's default table instead of Apple's
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:21 -->
-<!-- current-defect-refs:end -->
-
 This is the real trap, and it is not "skipping the line." It is writing the line with the wrong
 argument:
 
@@ -674,6 +655,7 @@ decomposes to a slice/concat construction instead of the single `coreai.pad`).
 There is a further, nastier consequence of the same design. Ops **not** on the preserve list get
 PyTorch's naïve decomposition, and some of those decompositions are numerically unsafe at fp16:
 
+<!-- defect-ref:apple.coreai-torch:issue:21 -->
 > ✅ **VERIFIED** — `coreai-torch#21` (OPEN as of 2026-07-29), which names the mechanism precisely:
 > *"In `_decomp.py`, the decomposition table preserves only 6 ops … When `softplus` is not in this
 > list, PyTorch decomposes it to `log(1 + exp(x))`, where `exp(x)` overflows fp16 (max 65,504) for
@@ -1369,10 +1351,7 @@ and they come back out through the runtime descriptor:
 > `attention_mask`, `logits`, `image`.
 
 ### 7.5 Name your outputs the way your consumer wants to read them
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-models:issue:118 -->
-<!-- current-defect-refs:end -->
 
 Two facts from the runtime side make output naming a design decision rather than a formality.
 
@@ -1530,10 +1509,6 @@ conversion package — it is ~15 lines — or write the `Dim` objects out longha
 
 ### 8.3 The SymInt sharp edges specific to this converter
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:pull:45 -->
-<!-- current-defect-refs:end -->
-
 Dynamic shapes turn concrete Python `int`s into `torch.SymInt`s that flow through the graph as real
 graph nodes. `coreai-torch` has had a run of fixes in exactly this area, and the resulting behaviours
 are things you can trip over.
@@ -1556,6 +1531,7 @@ are things you can trip over.
 
 **64-bit dtypes are narrowed everywhere.**
 
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
 > ✅ **VERIFIED** — `_utils.py:305`:
 >
 > ```python
@@ -1596,13 +1572,10 @@ remaining risk is concentrated:
 
 ### 8.4 Externalization + dynamic shapes: a known open bug
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:1 -->
-<!-- current-defect-refs:end -->
-
 If you combine composite-op externalization (§5.3) with a *mixed* static/dynamic shape policy, there
 is an open bug with a precise trigger:
 
+<!-- defect-ref:apple.coreai-torch:issue:1 -->
 > ✅ **VERIFIED** — `coreai-torch#1` (OPEN), *"externalize: SDPA submodule re-export drops the upper
 > bound on the key-length dim with a static query + dynamic KV context"*:
 >
@@ -1633,10 +1606,6 @@ is a coreai-torch bug. Please report it."* in it.
 
 ### 8.5 The shape policy table
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-models:issue:84 -->
-<!-- current-defect-refs:end -->
-
 Assembled from Apple's shipped exports and from reproducers in the issue tracker. **Every row is a
 verified observation, and the middle rows are why "just make everything dynamic" is not obviously
 wrong advice:**
@@ -1647,6 +1616,7 @@ wrong advice:**
 | **static** | dynamic | SDPA externalize re-export fails (`coreai-torch#1`); 2+ `GatedDeltaUpdate` layers crash MPSGraph (`coreai-torch#2`) |
 | static | static, **runtime-value** `slice_update` begin/end | `ANECompiler` `addOpToNetwork` `EXC_BAD_ACCESS` at `AIModel.load` (`coreai-torch#6`); maintainer says fixed in beta 4 |
 | static | static, **constant** `slice_update` begin/end | Works — the sliding-window workaround |
+<!-- defect-ref:apple.coreai-models:issue:84 -->
 | dynamic monolithic stateful | prefill chunk > 16 tokens | Nondeterministic (`coreai-models#84`, not reproduced by Apple) |
 
 > ✅ **VERIFIED** — rows assembled from the named issues in `apple/coreai-torch` and
@@ -2512,10 +2482,6 @@ xcrun coreai-build inspect model.aimodel   # function signatures, inputs/outputs
 
 ### 11.6 The three-way compute-unit A/B
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:51 -->
-<!-- current-defect-refs:end -->
-
 The last gate, and the one that catches delegate-specific bugs (the ANE fp16 issues in §4.4, the
 GPU `floor` identity in §6.4):
 
@@ -2536,6 +2502,7 @@ out_gpu = (await model_gpu.load_function("main")({"image": nd_in}))["logits"].nu
 out_ane = (await model_ane.load_function("main")({"image": nd_in}))["logits"].numpy()
 ```
 
+<!-- defect-ref:apple.coreai-torch:issue:51 -->
 > ✅ **VERIFIED** — this exact API surface is confirmed by the reproducer in `coreai-torch#51`:
 > `SpecializationOptions.cpu_only()`, `.from_preferred_compute_unit_kind(...)`,
 > `ComputeUnitKind.gpu()` / `.neural_engine()`, `await AIModel.load(path, specialization_options=...)`
@@ -3121,10 +3088,6 @@ Two more, inherited from the corpus and worth carrying:
   and do your own preprocessing, exactly as Apple's `ImagePreprocessor` does in `CoreAIShared`.
 
 ### 14.5 Related guides
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:49 -->
-<!-- current-defect-refs:end -->
 
 - **Part 7 — Core AI: the Swift runtime.** The other side of every contract in §7, §9 and §10:
   `AIModel`, `InferenceFunction.run`, `MutableViews`, state binding, and the caller-side cache §10.5

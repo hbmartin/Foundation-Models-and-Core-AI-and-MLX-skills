@@ -21,21 +21,6 @@ this guide describes. Where that matters, the text says so.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx-lm:pull:1585](https://github.com/ml-explore/mlx-lm/pull/1585) <!-- defect-ref:ml-explore.mlx-lm:pull:1585 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:issue:3665](https://github.com/ml-explore/mlx/issues/3665) <!-- defect-ref:ml-explore.mlx:issue:3665 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3887](https://github.com/ml-explore/mlx/issues/3887) <!-- defect-ref:ml-explore.mlx:issue:3887 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3915](https://github.com/ml-explore/mlx/issues/3915) <!-- defect-ref:ml-explore.mlx:issue:3915 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 Two jobs that look unrelated and are not. **Adapting a model you already have** (LoRA, DoRA, full
@@ -1305,13 +1290,6 @@ it explicitly unfreezes `keys=["scales", "biases"]`.)
 
 ### 5.3 What QLoRA costs you
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx-lm:pull:1585 -->
-<!-- defect-ref:ml-explore.mlx:issue:3856 -->
-<!-- defect-ref:ml-explore.mlx:issue:3887 -->
-<!-- defect-ref:ml-explore.mlx:pull:3922 -->
-<!-- current-defect-refs:end -->
-
 Three effects, in decreasing order of how often they bite:
 
 1. **Memory: a large win.** The base weights are ~4× smaller, and they dominate the resident set
@@ -1324,6 +1302,10 @@ Three effects, in decreasing order of how often they bite:
    adapter. If your evaluation shows the fine-tune is worse than expected, re-run the *baseline*
    evaluation on the quantized base before blaming the adapter.
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:issue:3887 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1585 -->
 > ⚠️ **A quantization correctness caveat you must know about if you are on M5 or A19.**
 > `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (closed completed 2026-08-26;
 > open at research time): affine
@@ -1341,11 +1323,8 @@ Three effects, in decreasing order of how often they bite:
 
 ### 5.4 The NAX caveat, stated sharply
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3924 -->
-<!-- current-defect-refs:end -->
-
 Three NAX (neural-accelerator) correctness fix PRs opened against `ml-explore/mlx` in the **three
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
 days** before 2026-07-27 — `#3912`, `#3922`, `#3924`; the first two **still open**, #3924 **closed
 unmerged 2026-08-02**, on a 2026-08-03 `gh` re-check — including a **missing `else` in `tile_matmad_nax` that silently
 miscompiles odd tile shapes**. NAX is the newest code path in the stack and it is sharp-edged.
@@ -1952,11 +1931,6 @@ on `active + cache` as above. No code or docs change landed at closure.
 
 ### 8.6 What OOM looks like — on a Mac, and why not on a phone
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3665 -->
-<!-- defect-ref:ml-explore.mlx:issue:3915 -->
-<!-- current-defect-refs:end -->
-
 **On a Mac, there are four distinct failures and they mean different things.**
 
 | Symptom | What it is | First thing to try |
@@ -2008,6 +1982,8 @@ stays; the mitigations above are the whole toolbox.
 
 **On a phone: you cannot hit any of this, because you cannot get there.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3665 -->
+<!-- defect-ref:ml-explore.mlx:issue:3915 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md` §10:
 > **mlx#3665 (OPEN)** — *"MLX doesn't publish iOS-compatible wheels."* Filed by a CPython core
 > developer who authored PEP 730 (iOS support) and maintains Briefcase; as of Python 3.14, Python

@@ -53,7 +53,7 @@ The reporter reads explicit current records in `notes/defects.json`; it does not
 | **AMBIGUOUS** | Resolve identity/evidence diagnostics before proposing edits. |
 | **UNREACHABLE** | Preserve the exact failure and retry independently. |
 
-The semantic dispositions remain `fixed`, `fixed-with-residual`, `merged-unreleased`, `closed-unfixed`, `closed-unmerged`, `superseded`, `consolidated`, and `unknown`. Updates need dated evidence and rationale. Regenerate marked current defect blocks through `scripts/render-defects.py`; the daily lane never writes the registry or guides.
+The semantic dispositions remain `fixed`, `fixed-with-residual`, `merged-unreleased`, `closed-unfixed`, `closed-unmerged`, `superseded`, `consolidated`, and `unknown`. Updates need dated evidence and rationale. Validate inline registry references with `scripts/refresh_defect_statuses.py --extract-only`; the daily lane never writes the registry or guides.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 

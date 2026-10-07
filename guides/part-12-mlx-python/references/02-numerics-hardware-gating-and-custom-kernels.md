@@ -26,18 +26,6 @@ true and they are about different things — §4.2 gives the full story. Build f
     [`MTLTensorAuxiliaryPlaneDescriptor`](https://developer.apple.com/documentation/metal/mtltensorauxiliaryplanedescriptor)
     and [`MTLTensorDescriptor.auxiliaryPlanes`](https://developer.apple.com/documentation/metal/mtltensordescriptor/auxiliaryplanes).
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx:issue:3860](https://github.com/ml-explore/mlx/issues/3860) <!-- defect-ref:ml-explore.mlx:issue:3860 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 This is the guide about **where MLX stops being a portable array library and starts being a program
@@ -356,10 +344,6 @@ on an M1 Max versus an M3 Ultra / M5, traced to the FMA chain in the Metal `erfi
 
 ### 1.4 `float16` vs `bfloat16` — the decision that actually matters
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
-
 Both are 2 bytes. They differ in how they spend those 16 bits, and this is the whole decision:
 
 | | exponent bits | mantissa bits | dynamic range | relative precision |
@@ -399,6 +383,7 @@ is one of several reasons the fused primitive is better than your hand-composed 
 single-sequence attention in `float16` / `bfloat16` traces to the **NAX attention kernel's masked
 reduction at 64-aligned head dims** — and `MLX_ENABLE_TF32=0` does **nothing** about it, because the
 TF32 gate's third clause (`dtype != float32`) is satisfied regardless. The only lever that moves it
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 is forcing a different architecture string. Source: mlx#3897 (closed 2026-08-09; 7 comments at
 the research snapshot), M5 base
 `applegpu_g17g`, 32 GB, macOS 26.5.2 / build 25F84, reproduced on both mlx 0.31.2 and 0.32.0; M3 Max
@@ -766,11 +751,8 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.3 ⚠️ SILENT FAILURE: precision you did not choose, with no runtime signal
 
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx:issue:3860 -->
 <!-- defect-ref:ml-explore.mlx:pull:3883 -->
-<!-- current-defect-refs:end -->
-
 <!-- callout-id: callout-17c8d8203e6a6232 -->
 > ⚠️ **SILENT FAILURE — fp32 storage can conceal reduced matmul precision.**
 > On the documented M5/macOS ≥26.2 path, fp32 matmul defaults to relaxed internal precision while
@@ -783,10 +765,7 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.4 What it measures out at
 
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx:issue:3860 -->
-<!-- current-defect-refs:end -->
-
 All of the following are **community-measured**, from the mlx#3860 thread (**closed as completed
 2026-08-04**, 9 comments), by `pierre427` and `mabaeyens`. Not Apple figures. Attribution is per row.
 
@@ -819,10 +798,7 @@ independent confirmation that MLX is genuinely selecting `CUBLAS_COMPUTE_32F_FAS
 doing something of its own.
 
 ### 3.5 Three mechanics that cost people days
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
 
 These are the parts that make bisection hard. All three are community-established on mlx#3860 and
 consistent with the source quoted in §3.1–§3.2.
@@ -874,16 +850,13 @@ subject to the TF32 gate**. So the two silent failures in this guide compose.
 
 ### 3.6 The blast radius, downstream
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
-
 Community-measured consequences, each attributed:
 
 - **Signal processing, CUDA sm_120** (mlx#3860): a fitting workload flipped near-tie `argmax` results
   on **1.4–2.5 % of spectra**, costing roughly **9 dB PSNR** — *"while every op-level parity test
   passed."* That last clause is the lesson: op-level tolerance tests did not catch a
   decision-boundary failure.
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 - **`mlx-lm/tests/test_generate.py`** (mlx#3860, mlx#3897): **8 of 28 tests fail on gen-17** —
   `test_batch_matches_single`, `test_batch_sliding_window`, `test_batch_continued_generation*`,
   `test_stream_generate_input_embeddings*` — all of them batch-versus-single equivalence assertions
@@ -909,10 +882,6 @@ write:
 
 ### 3.7 What to actually do
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
-
 A short, opinionated policy:
 
 1. **In tests: `MLX_ENABLE_TF32=0`, set before `import mlx`.** Copy MLX's own harness. If you cannot
@@ -920,6 +889,7 @@ A short, opinionated policy:
    the shell, and assert it with a §4.5-style probe.
 2. **In production: leave it on, and stop asserting bit equality.** A strict `rtol=1e-5`
    batch-equivalence assertion **cannot hold on gen-17, in any dtype** (community conclusion,
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
    mlx#3897). Decide what your product actually needs — usually "the argmax is stable and the
    loss curve matches within noise", not "the bits match."
 3. **Never compare numbers across two different Macs and call the difference a regression** without
@@ -1153,10 +1123,6 @@ MLX PR **#3083** is titled as enabling the NAX matmul path for `gen >= 18` phone
 
 ### 4.5 A probe you can run, and an A/B switch
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
-
 Python does not expose `is_nax_available()` or `get_architecture_gen()`. What it *does* expose is
 the architecture string, via `mx.device_info()`:
 
@@ -1229,6 +1195,7 @@ This pair is the single most useful diagnostic in this guide. Their **difference
 - If `MLX_ENABLE_TF32=0` fixes it → it is the fp32 TF32 path (§3).
 - If only `MLX_METAL_GPU_ARCH=applegpu_g16s` fixes it → it is a NAX kernel behaviour affecting
   `bfloat16`/`float16`, which the TF32 flag cannot reach (§3.2's bottom rows). This is exactly how
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
   mlx#3897 separated its two mechanisms.
 - If **neither** fixes it → it is not NAX. On mlx#3702, neither did, and even forcing
   `can_use_nax = false` in the backend left the output corrupted — which is what redirected that
@@ -1716,10 +1683,6 @@ Padding costs bandwidth proportional to the padding ratio. 72→80 is +11 %; 96�
 
 ### 5.7 Two adjacent SDPA traps
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:pull:3875 -->
-<!-- current-defect-refs:end -->
-
 **Trap A — `MLX_SDPA_BLOCKS` must be a multiple of 32.**
 
 `MLX_SDPA_BLOCKS` is a new-in-0.32.0 override for the Metal SDPA block size (✅ VERIFIED,
@@ -1732,6 +1695,7 @@ for (int b = 0; b < blocks / BN; ++b) {
 }
 ```
 
+<!-- defect-ref:ml-explore.mlx:pull:3875 -->
 > ⚠️ **SILENT FAILURE — a non-multiple-of-32 `MLX_SDPA_BLOCKS` silently corrupts attention.**
 > Quoting the PR: *"Any other value silently corrupts the attention output on every decode step —
 > **no error, no clamp**."* Fixed by **mlx PR #3875 (MERGED 2026-07-22)**, which rounds the override
@@ -1905,10 +1869,7 @@ directly — the fused path is then not in question.
 > assume inference-time speedups are real.
 
 ### 6.3 `rope`
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:ml-explore.mlx:issue:3897 -->
-<!-- current-defect-refs:end -->
 
 ✅ **VERIFIED** — `python/src/fast.cpp`:
 

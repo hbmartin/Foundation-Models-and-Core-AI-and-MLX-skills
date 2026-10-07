@@ -37,31 +37,6 @@ documentation, and the issue tracker. Where a claim comes from source, the file 
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-models:issue:5](https://github.com/apple/coreai-models/issues/5) <!-- defect-ref:apple.coreai-models:issue:5 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-models:issue:66](https://github.com/apple/coreai-models/issues/66) <!-- defect-ref:apple.coreai-models:issue:66 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:10](https://github.com/apple/coreai-torch/issues/10) <!-- defect-ref:apple.coreai-torch:issue:10 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:11](https://github.com/apple/coreai-torch/issues/11) <!-- defect-ref:apple.coreai-torch:issue:11 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:2](https://github.com/apple/coreai-torch/issues/2) <!-- defect-ref:apple.coreai-torch:issue:2 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:21](https://github.com/apple/coreai-torch/issues/21) <!-- defect-ref:apple.coreai-torch:issue:21 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
-| [apple.coreai-torch:issue:5](https://github.com/apple/coreai-torch/issues/5) <!-- defect-ref:apple.coreai-torch:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:51](https://github.com/apple/coreai-torch/issues/51) <!-- defect-ref:apple.coreai-torch:issue:51 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:6](https://github.com/apple/coreai-torch/issues/6) <!-- defect-ref:apple.coreai-torch:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:issue:9](https://github.com/apple/coreai-torch/issues/9) <!-- defect-ref:apple.coreai-torch:issue:9 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:pull:22](https://github.com/apple/coreai-torch/pull/22) <!-- defect-ref:apple.coreai-torch:pull:22 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.coreai-torch:pull:32](https://github.com/apple/coreai-torch/pull/32) <!-- defect-ref:apple.coreai-torch:pull:32 --> | MERGED (2026-10-07) | released (0.4.3) | unverified | unknown |
-| [apple.coreai-torch:pull:41](https://github.com/apple/coreai-torch/pull/41) <!-- defect-ref:apple.coreai-torch:pull:41 --> | MERGED (2026-10-07) | not-in-verified-release (0.4.3) | unverified | merged-unreleased |
-| [apple.coreai-torch:pull:45](https://github.com/apple/coreai-torch/pull/45) <!-- defect-ref:apple.coreai-torch:pull:45 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 This is the debugging guide for **conversion failures** — and, more importantly, for **conversions
@@ -1275,17 +1250,11 @@ Apple's own MoE work shows up as measured throughput:
 
 ### 6.3 ⚠️ How far that support does *not* extend
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-models:issue:118 -->
-<!-- defect-ref:apple.coreai-models:issue:5 -->
-<!-- defect-ref:apple.coreai-torch:issue:2 -->
-<!-- defect-ref:apple.coreai-torch:issue:6 -->
-<!-- current-defect-refs:end -->
-
 This is the part that will save you a month, so it gets more space than the good news.
 
 **Check IR, engine and delegate support separately.** Current [upstream Swift source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift), inspected 2026-10-07, accepts **2–4 states** and binds optional persistent hybrid states. That source change does not establish end-to-end model parity on a shipping device.
 
+<!-- defect-ref:apple.coreai-models:issue:118 -->
 Issue #118 documented the older two-state guard at source commit `04a3fd6cfe9bfae9cf05b1f246cf915d930d1c0a`. Its 16 KB no-weights reproduction used `keyCache`, `valueCache`, `convState`, and `recState`; it failed before inference with `Expected 2 states (KV cache), got 4`. The issue closed on 2026-08-05. Retain that case as migration and regression evidence; do not apply the old refusal to current source.
 
 **KV-only rewind is unsafe for recurrent states.** Current upstream resets and replays the prompt when a hybrid session rewinds; recurrent checkpoints would require their own implementation and verification.
@@ -1323,6 +1292,7 @@ Issue #118 documented the older two-state guard at source commit `04a3fd6cfe9bfa
 
 And the crash that follows from exactly that combination:
 
+<!-- defect-ref:apple.coreai-torch:issue:2 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#2** (open), author `scndls`. Crash:
 > `EXC_BAD_ACCESS (code=1, address=0x0)` at
 > `MetalPerformanceShadersGraph mlir::FloatType::getWidth() + 16`. The decision table, verbatim:
@@ -1342,6 +1312,8 @@ And the crash that follows from exactly that combination:
 **The escape route (static export) is blocked by a third bug.** This is the trap that makes hybrid
 models genuinely hard right now, and the reporter mapped it out precisely:
 
+<!-- defect-ref:apple.coreai-torch:issue:6 -->
+<!-- defect-ref:apple.coreai-models:issue:5 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#6** (open), verbatim: *"This is the third member of a bug
 > family that currently blocks the natural export paths for hybrid DeltaNet models (Qwen3.5/3.6,
 > Qwen3-Next): dynamic context dims trip #1 (SDPA externalize re-export) and #2 (MPSGraph
@@ -2246,10 +2218,6 @@ Transformers."*
 
 ### 8.7 ⚠️ The four silent failures in externalization
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:1 -->
-<!-- current-defect-refs:end -->
-
 **(a) An unmatched `target_class` warns; it does not raise.**
 
 > ✅ **VERIFIED** — `coreai_torch/externalize.py:391-399`, the exact text:
@@ -2307,6 +2275,7 @@ Transformers."*
 
 **(d) The SDPA externalize re-export drops a dimension bound.**
 
+<!-- defect-ref:apple.coreai-torch:issue:1 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#1** (open), author `scndls`. Error, verbatim:
 >
 > ```text
@@ -2347,15 +2316,12 @@ None of them throws. Three of them are wrong on *every* backend, because the def
 lowering — upstream of any delegate.
 
 ### 9.1 fp16 overflow in `softplus`, `mish`, `logsumexp`, `logcumsumexp`
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:21 -->
-<!-- defect-ref:apple.coreai-torch:issue:5 -->
-<!-- defect-ref:apple.coreai-torch:pull:22 -->
 <!-- defect-ref:apple.coreai-torch:pull:32 -->
-<!-- current-defect-refs:end -->
 
+<!-- defect-ref:apple.coreai-torch:issue:5 -->
+<!-- defect-ref:apple.coreai-torch:issue:21 -->
 **Status:** `apple/coreai-torch` issue **#21** open; proposal **apple/coreai-torch#5** open;
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
 implementation PR **apple/coreai-torch#22** open, unmerged.
 
 **Verified live.** Grep of `coreai_torch/_aten_to_core.py` and `coreai_torch/_decomp.py` at HEAD:
@@ -2458,10 +2424,7 @@ dynamic-overflow calibration was added after 0.3.0 and is not a released capabil
 
 ### 9.2 Integer true-divide truncates instead of promoting to float
 
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-torch:pull:32 -->
-<!-- current-defect-refs:end -->
-
 **Status:** `apple/coreai-torch#32` merged 2026-07-29.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:3591-3592` and `:3722`:
@@ -2528,12 +2491,9 @@ as current HEAD.
 > ```
 
 ### 9.3 `cat` on packed sub-byte tensors always concatenates on dim 0
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:pull:41 -->
 <!-- defect-ref:apple.coreai-torch:pull:45 -->
-<!-- current-defect-refs:end -->
 
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
 **Status:** `apple/coreai-torch#41` merged 2026-09-25; its fix is outside the 0.4.3 tag.
 
 **Verified live.** `coreai_torch/_compression/_intx.py:380-382`, `__torch_dispatch__`:
@@ -2579,10 +2539,7 @@ if func is torch.ops.aten.slice.Tensor:
 
 ### 9.4 int64 accumulator narrowing in `sum` and `prod`
 
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-torch:pull:45 -->
-<!-- current-defect-refs:end -->
-
 **Status:** `apple/coreai-torch#45` **closed without merge**. The defect stands.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:2692-2701`, `replace_sum_dim_intlist`:
@@ -2638,12 +2595,9 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 
 ### 9.5 Two more you must know, though they are not in `coreai-torch`'s lowerings
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:51 -->
-<!-- current-defect-refs:end -->
-
 **MobileNetV3 / ANE fp16: a 2D matmul feeding `Hardswish`.**
 
+<!-- defect-ref:apple.coreai-torch:issue:51 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#51** (open, 0 comments), author `zli96`, 2026-07-23.
 > Environment: **macOS 27 beta 3, `coreai-torch` v0.4.1**. Reporter-measured, FP16 NPU vs GPU on the
 > *same* `.aimodel`:
@@ -2704,11 +2658,8 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > the shipped-asset parity gate in §10 rather than trying to construct an unoptimized arm.
 
 ### 9.6 Recovering 0.4.0 artifacts without re-converting
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.coreai-torch:pull:32 -->
 <!-- defect-ref:apple.coreai-torch:pull:45 -->
-<!-- current-defect-refs:end -->
 
 Not a miscompile, but the version gate from the top of this guide has a documented escape hatch that
 is easy to miss.
@@ -2745,28 +2696,25 @@ is easy to miss.
 
 ### 9.7 The register
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-models:issue:66 -->
-<!-- defect-ref:apple.coreai-torch:issue:10 -->
-<!-- defect-ref:apple.coreai-torch:issue:11 -->
-<!-- defect-ref:apple.coreai-torch:issue:49 -->
-<!-- defect-ref:apple.coreai-torch:issue:9 -->
-<!-- defect-ref:apple.coreai-torch:pull:22 -->
-<!-- defect-ref:apple.coreai-torch:pull:41 -->
-<!-- current-defect-refs:end -->
-
 Nine defects, in one table, so you can check your own model against it:
 
 | # | Defect | Wrong on | Fix status 2026-10-02 | Cheap workaround |
 |---|---|---|---|---|
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
 | 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` merged 2026-09-25; fix outside the 0.4.3 tag | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
 | 5 | 0.4.1 optimizer drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate |
+<!-- defect-ref:apple.coreai-torch:issue:9 -->
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
+<!-- defect-ref:apple.coreai-torch:issue:10 -->
 | 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
+<!-- defect-ref:apple.coreai-torch:issue:11 -->
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
+<!-- defect-ref:apple.coreai-models:issue:66 -->
 | 9 | Partial-rotary RoPE pairs contiguously, not half-split | every backend | `apple/coreai-models#66` open, known | Precompute `cos`/`sin` (§5.7) |
 
 Two workarounds from that table are worth spelling out because they are non-obvious.

@@ -22,19 +22,6 @@ at all.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.python-apple-fm-sdk:issue:16](https://github.com/apple/python-apple-fm-sdk/issues/16) <!-- defect-ref:apple.python-apple-fm-sdk:issue:16 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.python-apple-fm-sdk:issue:17](https://github.com/apple/python-apple-fm-sdk/issues/17) <!-- defect-ref:apple.python-apple-fm-sdk:issue:17 --> | CLOSED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
-| [apple.python-apple-fm-sdk:issue:5](https://github.com/apple/python-apple-fm-sdk/issues/5) <!-- defect-ref:apple.python-apple-fm-sdk:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.python-apple-fm-sdk:issue:6](https://github.com/apple/python-apple-fm-sdk/issues/6) <!-- defect-ref:apple.python-apple-fm-sdk:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [apple.python-apple-fm-sdk:pull:18](https://github.com/apple/python-apple-fm-sdk/pull/18) <!-- defect-ref:apple.python-apple-fm-sdk:pull:18 --> | MERGED (2026-10-07) | not-in-verified-release (0.2.1) | unverified | unknown |
-<!-- current-defects:end -->
-
 ## ⚠️ Read this before you read anything else: the evidence here is the weakest in Parts 1–6
 
 Every other guide in Parts 1–6 rests on at least one of: a shipping Apple sample project, an SDK
@@ -575,10 +562,6 @@ Line numbers refer to that commit.
 
 ### 5.1 It is not a Python implementation of anything
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
-<!-- current-defect-refs:end -->
-
 > ✅ **VERIFIED** — repository structure, read on disk. The package is a **three-layer sandwich**:
 >
 > ```
@@ -616,6 +599,7 @@ Package facts, all ✅ verified from the repo:
 
 That last line deserves a note, because it is stale in a useful direction:
 
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
 > ✅ **VERIFIED** — the README says contributions are not being taken, yet
 > **`apple/python-apple-fm-sdk` PRs #7 through #18 were
 > merged**, several from non-Apple contributors. The FD-leak fix in §13 came from an outside
@@ -820,10 +804,6 @@ A debug build is worth knowing about: when you are chasing a crash inside the sh
 
 ### 6.2 The preflight ladder, and the two error strings that identify it
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:16 -->
-<!-- current-defect-refs:end -->
-
 Before compiling anything the backend runs five checks, each raising `SwiftToolingError`:
 
 > ✅ **VERIFIED** — `build_backend.py:65-134`, in this order:
@@ -855,6 +835,7 @@ Check 3 is the one everyone hits, and it is an **open issue in Apple's repositor
 
 A diagnostic gift, and it is genuinely useful:
 
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:16 -->
 > ✅ **VERIFIED** — `apple/python-apple-fm-sdk#16` (open): `build_backend.py:99-100` concatenates two Python string
 > literals without a space and emits **`"…Then open Xcodeat least once…"`**. Cosmetic — but
 > `Xcodeat` is a perfect **fingerprint**. If that string is in a stack trace, you are looking at
@@ -1091,10 +1072,6 @@ is a defect with an acknowledgement, not a documented gate. Full treatment in
 
 ### 7.2 The constructor: use case and guardrails
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
-<!-- current-defect-refs:end -->
-
 > ✅ **VERIFIED** — `core.py`:
 >
 > ```python
@@ -1125,6 +1102,7 @@ Two caveats carried over from the Swift side, both of which people hit:
 property reported by developers on the forums, and a Python user has already reported it in this
 repository:
 
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
 > ✅ **VERIFIED** — `apple/python-apple-fm-sdk#5` (open), @andrewgleave: *"I have a suite of test cases running against FM,
 > many of which are triggering **erroneous guardrail violations even when configured with
 > `PERMISSIVE_CONTENT_TRANSFORMATIONS`**."* That issue is primarily about the missing feedback API
@@ -2699,13 +2677,10 @@ something is created on the native side and no Python object owns it.
 
 ### 13.2 The FD leak, and why the fix is not in any release
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
-<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
-<!-- current-defect-refs:end -->
-
 This is the best bug report in the corpus, and it comes with measurements.
 
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
 > ✅ **VERIFIED** — `apple/python-apple-fm-sdk` issue **#17** (2026-07-03, @dmkharlamov), fixed by PR
 > **#18** (merged 2026-07-07, commit `e868e60` — **the repository's HEAD**).
 >
@@ -2811,10 +2786,7 @@ async def classify_images(paths: list[Path], instructions: str) -> list[str]:
 > then sleeps 0.1 s *"to allow native resources to be released."*
 
 ### 13.5 The leaks that remain
-
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
-<!-- current-defect-refs:end -->
 
 Read from the source at HEAD; **UNVERIFIED at runtime, but structurally unambiguous**:
 
@@ -2920,10 +2892,6 @@ to unit-test code that wraps the SDK without needing Apple Intelligence:
 
 ## 14. What the Python SDK cannot do
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
-<!-- current-defect-refs:end -->
-
 Consolidated so you can check feasibility before writing code. Every ❌ below was established by
 reading `__all__` and the C header, not by failing to find something in the docs.
 
@@ -2947,6 +2915,7 @@ reading `__all__` and the C header, not by failing to find something in the docs
 | **`toolCallingMode`** | ❌ | Absent from `GenerationOptions`. |
 | **`session.prewarm()`** | ❌ | Not in `__all__`. So the first call pays full model-load latency, every process. |
 | **Adapters** | ❌ | Not present. (Also: custom adapters are dead in the 27 generation — Part 1.) |
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
 | **`LanguageModelFeedback` / `logFeedbackAttachment`** | ❌ | `apple/python-apple-fm-sdk#5`, **open** |
 | `Response` wrapper (`.rawContent`, `.transcriptEntries`, `.usage`) | ❌ | Bare values only. §5.4 |
 | `Instructions` / `@PromptBuilder` builders | ❌ | Instructions are a plain `str`. |
@@ -3263,12 +3232,9 @@ throw** are the ones that cost days.
 
 ### 16.1 It throws, and the message names the cause
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:6 -->
-<!-- current-defect-refs:end -->
-
 | Symptom | Cause | § |
 |---|---|---|
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:6 -->
 | `SwiftToolingError: The active developer directory is set to Command Line Tools …` | `pip install` with CLT only; needs full Xcode.app. **Open issue `apple/python-apple-fm-sdk#6`.** | §6.2 |
 | `…Then open Xcodeat least once…` (note the missing space) | Fingerprint of `apple-fm-sdk` ≤ 0.2.1's build backend | §6.2 |
 | `macOS version {v} found, but version 26.0 or higher is required` | Build preflight, check 1 | §6.2 |

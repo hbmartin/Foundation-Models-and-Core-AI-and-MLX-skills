@@ -36,7 +36,7 @@ The conceptual primer the other five assume, built on five ideas: unified memory
 
 ### 12.2 — Numerics, hardware gating, and writing custom Metal kernels from Python
 
-<!-- current-defect-refs:start --> <!-- defect-ref:ml-explore.mlx:issue:3860 --> <!-- defect-ref:ml-explore.mlx:pull:3883 --> <!-- current-defect-refs:end --> Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
+Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
 
 **Local reference:** [part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md)
 
@@ -60,7 +60,7 @@ The conceptual primer the other five assume, built on five ideas: unified memory
 
 ### 12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs
 
-<!-- current-defect-refs:start --> <!-- defect-ref:ml-explore.mlx:issue:3856 --> <!-- defect-ref:ml-explore.mlx:pull:3922 --> <!-- current-defect-refs:end --> Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather tile constant of `BK = 64`), and a calibration procedure.
+Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather tile constant of `BK = 64`), and a calibration procedure.
 
 **Local reference:** [part-12-mlx-python/references/03-quantization.md](part-12-mlx-python/references/03-quantization.md)
 

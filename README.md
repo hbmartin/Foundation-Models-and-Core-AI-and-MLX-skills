@@ -197,7 +197,7 @@ observed symptom. For the cloud-to-device path, read
 
 ### Current-first cleanup
 
-Retain historical evidence only for supported-version migration, a workaround, or distinct regression proof. Render current defect blocks with `python3 scripts/render-defects.py --write`; validate them with `--check`. The reporter reads explicit records and never infers state from prose or treats closure as remediation.
+Retain historical evidence only for supported-version migration, a workaround, or distinct regression proof. Validate inline defect references with `python3 scripts/refresh_defect_statuses.py --extract-only`. The reporter reads explicit records and never infers state from prose or treats closure as remediation.
 
 Daily collection uses `scripts/current-state.py collect --skip-generated-checks` and retains earlier generated-output check dates. Weekly and CI validation still run the full checks.
 

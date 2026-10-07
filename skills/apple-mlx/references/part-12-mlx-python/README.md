@@ -18,18 +18,6 @@ served, or spread across four Macs. Swift is [Part 13](../part-13-mlx-swift/READ
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx:issue:3856](https://github.com/ml-explore/mlx/issues/3856) <!-- defect-ref:ml-explore.mlx:issue:3856 --> | CLOSED (2026-10-07) | released (0.32.3) | unverified | unknown |
-| [ml-explore.mlx:issue:3860](https://github.com/ml-explore/mlx/issues/3860) <!-- defect-ref:ml-explore.mlx:issue:3860 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx:pull:3922](https://github.com/ml-explore/mlx/pull/3922) <!-- defect-ref:ml-explore.mlx:pull:3922 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
-<!-- current-defects:end -->
-
 ## ⚠️ Pin your versions. Every date in this part is suspect.
 
 **MLX moves weekly, and the clone behind these guides was shallow (`--depth 50`)** — `git log` on most paths
@@ -110,17 +98,14 @@ Apple's own warning makes **a build artefact, not an archive**.
 
 ### [12.2 — Numerics, hardware gating, and writing custom Metal kernels from Python](references/02-numerics-hardware-gating-and-custom-kernels.md)
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3860 -->
-<!-- defect-ref:ml-explore.mlx:pull:3883 -->
-<!-- current-defect-refs:end -->
-
 Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
 Three coupled themes: the dtype inventory (including the CPU-only one, and why fp8/fp4 are ops and storage
 formats rather than dtypes); the hardware gate, **one feature in two halves** — `relaxed_precision = true` is
 hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENABLE_TF32`; and
 `mx.fast.metal_kernel` end to end, JIT-compiled from a Python string with no Xcode and no build step.
 
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
 > ⚠️ **SILENT FAILURE — TF32 you did not choose (§3.3).** Community measurements in mlx#3860 put M5 `float32`
 > matmul error at **2^-10.4** versus **2^-19.8** with `MLX_ENABLE_TF32=0`; `x.dtype` still says `float32`,
 > because it is — only the multiply-accumulate is relaxed. **Set `MLX_ENABLE_TF32=0` before importing mlx in any
@@ -138,11 +123,6 @@ hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENAB
 
 ### [12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs](references/03-quantization.md)
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx:issue:3856 -->
-<!-- defect-ref:ml-explore.mlx:pull:3922 -->
-<!-- current-defect-refs:end -->
-
 Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or
 `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a
 biases array), a kernel-dispatch problem (`K % 64 == 0`, `transpose=True`, a gather tile constant of `BK = 64`),
@@ -150,6 +130,8 @@ and a calibration procedure. Covers the full array and module API, `gather_qmm` 
 are worth multiples rather than percentages, the four learned-quantization pipelines with their real argparse
 defaults, and a pre-ship verification recipe.
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
 > ⚠️ **SILENT FAILURE — §9 is why this guide exists.** Seven quantized-matmul defects with status as of
 > 2026-07-29; **five are M5-generation-only**. The worst (mlx#3856, closed completed after fix PR
 > mlx#3922 merged 2026-08-26) is an `int16`

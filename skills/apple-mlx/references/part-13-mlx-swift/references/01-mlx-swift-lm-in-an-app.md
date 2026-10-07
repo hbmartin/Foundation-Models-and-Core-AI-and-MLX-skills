@@ -33,17 +33,6 @@ migration table.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [ml-explore.mlx-swift-lm:issue:312](https://github.com/ml-explore/mlx-swift-lm/issues/312) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx-swift-lm:issue:424](https://github.com/ml-explore/mlx-swift-lm/issues/424) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-| [ml-explore.mlx-swift-lm:pull:453](https://github.com/ml-explore/mlx-swift-lm/pull/453) <!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 --> | MERGED (2026-10-07) | released (3.32.3) | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 This is the "get it into a shipping app" guide. It assumes you have decided to run a model with MLX
@@ -3645,12 +3634,6 @@ any test that asserts on output text flaky.
 
 ### 10.1 The failures that do not throw
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 -->
-<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
-<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
-<!-- current-defect-refs:end -->
-
 Collected from every section, ordered by how long they take to diagnose. Each is marked with its
 evidence class.
 
@@ -3683,7 +3666,9 @@ evidence class.
     MLX's own source. §7.7.
 11. **`maybeQuantizeKVCache` replaces array *elements*, not objects**, so the caller's `[KVCache]`
     keeps stale references and the model loses all context generated after the quantisation
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 -->
     threshold. Community-reported in `mlx-swift-lm` issue **#312**, still open on 2026-10-07.
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
     Typed-configuration PR #453 is included in 3.32.3, but that source inclusion does not
     demonstrate this caller-state failure is remediated. Verify output across the quantization
     threshold on the release and cache topology you ship.
@@ -3692,6 +3677,7 @@ evidence class.
     `temperature == 0`** — setting a seed to "make it deterministic" while temperature is already 0
     does nothing and misleads the next reader.
 13. **`RotatingKVCache` becomes untrimmable once its window wraps**, silently breaking speculative
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
     rollback and prompt-cache prefix reuse. Community-reported, issue **#424**. Gemma-family sliding
     windows are small enough (e.g. 512) that one long reply is enough.
 14. **`ModelRegistry` is a deprecated typealias in *both* `MLXLLM` and `MLXVLM`** — ambiguous if you

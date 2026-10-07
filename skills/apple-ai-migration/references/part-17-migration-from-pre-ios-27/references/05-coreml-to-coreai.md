@@ -23,15 +23,6 @@ every OS you already support. That asymmetry is the whole subject of this guide.
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
-<!-- current-defects:end -->
-
 ## What this covers
 
 The move from `MLModel` to `AIModel`, told as a *decision* rather than a *procedure*.
@@ -1672,15 +1663,12 @@ snippets have not.
 
 ### 5.4 Beta status, open bugs, and one tooling gap you will hit immediately
 
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.coreai-torch:issue:49 -->
-<!-- current-defect-refs:end -->
-
 Every Core AI symbol is flagged **Beta**. That is not a formality here; the corpus contains a
 substantial list of reproduced defects across the converter, compiler and model repository. A
 representative sample follows; use the linked register for current status:
 
 - **Silent miscompiles** — the historical 0.4.1 optimizer dropping broadcasting-significant axis moves
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
   (`coreai-torch` #49, closed after a 0.4.3 retest); the GPU delegate executing `floor`/`trunc`/`ceil` as identity (#10); float→int→float
   cast round-trips folded away, dropping truncation semantics (#9).
 - **Numeric instability on the ANE** — fp16 overflow in `softplus`, `mish`, `logsumexp`,

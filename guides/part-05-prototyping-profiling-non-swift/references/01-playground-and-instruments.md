@@ -22,15 +22,6 @@ canvas is a **26.4** feature, so a reader on 26.0–26.3 will look for it and no
 
 ---
 
-
-<!-- current-defects:start -->
-**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
-
-| Reference | Recorded state/date | Verified release | Remediation | Disposition |
-|---|---|---|---|---|
-| [apple.python-apple-fm-sdk:issue:5](https://github.com/apple/python-apple-fm-sdk/issues/5) <!-- defect-ref:apple.python-apple-fm-sdk:issue:5 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
-<!-- current-defects:end -->
-
 ## What this covers
 
 Foundation Models is a non-deterministic runtime with no useful `XCTAssertEqual`, and — this is the part
@@ -590,10 +581,7 @@ final class FeedbackCollector {
 
 ### 3.2 The non-Swift hole
 
-<!-- current-defect-refs:start -->
 <!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
-<!-- current-defect-refs:end -->
-
 > ✅ **VERIFIED** — community-tracked, `python-apple-fm-sdk` issue **#5** (OPEN as of 2026-07-29,
 > one comment, no activity since 2026-03-07):
 > feedback submission — `LanguageModelFeedback` and `logFeedbackAttachment` — **is Swift-only and is not
@@ -2067,10 +2055,6 @@ at anywhere above.
 ---
 
 ## 16. Sources
-
-<!-- current-defect-refs:start -->
-<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
-<!-- current-defect-refs:end -->
 
 **Primary — Apple sample code (strongest evidence class).** Downloaded archives, read this session:
 

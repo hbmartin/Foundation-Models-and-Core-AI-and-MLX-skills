@@ -49,10 +49,10 @@ closure alone never establishes remediation.
 guide file/anchor targets, and observed state/date. Unknown version boundaries remain explicit.
 Resolution records keep disposition, release availability, demonstrated remediation, evidence URLs,
 date, and rationale separate. A demonstrated fix requires reproduction evidence; a merge may remain
-outside the verified release. Active registered claims use `defect-ref` ID markers in generated
-guide blocks and at each registered section; markers outside their registered file/anchor are rejected.
+outside the verified release. Each active registered section has one `defect-ref` ID marker beside its warning; missing, duplicate,
+unknown, or misplaced markers are rejected.
 Ordinary historical citations remain source links.
 
-After reviewing a registry edit, run `scripts/render-defects.py --write` and regenerate indexes and
-skills. `--check` rejects drift. The defect reporter preserves its CLI flags, version-2 JSON fields,
+After reviewing a registry edit, validate it with `scripts/refresh_defect_statuses.py --extract-only`
+and regenerate indexes and skills. The defect reporter preserves its CLI flags, version-2 JSON fields,
 and TSV columns; failed lookups also appear in `unreachableReferences` under `--changed-only`.
