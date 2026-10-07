@@ -25,85 +25,11 @@ same conference, carry documented availability *"iOS 27.0+ Beta, macOS 27.0+ Bet
 
 ## What this covers
 
-**This guide exists to answer two questions that Apple has not answered.**
-
-Both are live threads on the Apple Developer Forums. Both are from working developers who followed
-the documentation exactly. One got a reply from an Apple DTS engineer that routed the question to
-Feedback Assistant **without answering it**. The other got zero replies in three weeks and 205
-views. The one genuinely useful technical answer in the whole cluster came from **another
-developer**, not from Apple.
-
-- **Thread 837249** (haozes, 8 July 2026, 0 replies): a hiking/cycling app wants Siri to answer
-  *"how much farther to the destination?"* mid-activity. The developer's custom `AppEntity` and
-  `EntityQuery` **execute**, but Siri answers from on-screen text — *"Distance: 0.21 mi"* — and
-  cannot see data on other tabs. Conclusion drawn: *"Siri seems to be reading the screen directly
-  rather than retrieving data from the provided `AppEntity`."*
-- **Thread 838329** (FrankSchlegel, 17 July 2026, 4 replies, radar **FB23813341**): an app renders
-  an image on screen and wants *"send this to Bubbles"* to work. Plain custom `AppEntity` +
-  `Transferable` + `.appEntityIdentifier` produces *"I can't attach the image directly from your
-  screen."* The developer instrumented `entities(for:)` with a logger. **It never fired.**
-
-Those two threads look like different problems. They are the **same** problem seen from two sides,
-and the finding that unifies them is the most useful thing in this guide:
-
-> **There are two on-screen paths, not one.** Descriptive requests — *"describe this"*, *"create a
-> note for this"* — take a **screenshot / OCR** path and **never call your `entities(for:)`**.
-> Only **hand-off** requests — *"send this to X"* — enter true entity resolution. Most developers
-> debugging "Siri can't see my content" are **testing path 1 while instrumenting path 2**, and
-> everything they observe is therefore uninformative.
-
-Get that wrong and you can spend a week building entity plumbing for a request class that will
-never consult it. That is exactly what happened in thread 837249.
-
-Around that finding, this guide covers:
-
-- **§1 — The two paths**, with the instrumented evidence table from thread 838329, a
-  request-phrasing → path map, and a logging recipe that tells you in one utterance which path you
-  are on.
-- **§2 — `EntityIdentifier`**, the single type every mechanism in this guide routes through, and
-  the five subsystems that consume it.
-- **§3 — The four annotation shapes** — `NSUserActivity`, `.appEntityIdentifier(_:)`,
-  `.appEntityIdentifier(forSelectionType:_:)`, and canvas annotation — with Apple's own selection
-  rule, complete code for each, and the UIKit/AppKit equivalents.
-- **§4 — `displayRepresentations(for:requestedComponents:)`**, the hot-path resolution hook, and
-  the ⚠️ performance trap that turns on-screen awareness into a stall. This is the callout the
-  session buries after the API tour and it is the most actionable item in the whole area.
-- **§5 — The verified working hand-off recipe.** `@AppEntity(schema: .files.file)` +
-  `FileEntityIdentifier.file(url:)` + **`FileRepresentation`** — not `DataRepresentation` —
-  confirmed on device on iOS 27 by a developer who is not Apple. Draft identifiers can represent
-  an unmaterialized document, but the verified transfer recipe still needs a real file payload;
-  §5.5 separates identity from export and provides the write-out pattern.[^file-identifier-api]
-- **§6 — Beyond the screen.** The same `EntityIdentifier` attaches to notifications, Now Playing
-  and AlarmKit. Three surfaces, one pattern, one API asymmetry, one hard ban.
-- **§7 — Adoption order** — Apple's own five-step prioritisation from session 343 — and a
-  diagnostic playbook for when it does not work.
-- **§8 — Eight silent failures.** None of them throw.
-- **§9 — A complete worked integration** — entity, transfer representation, query, list screen,
-  detail screen and notification, assembled from verified fragments.
-- **§10–§12 — What is still open**, the gap register, and sources.
+Expose visible entities with the on-screen identifier and choose the appropriate descriptive or action path. The recipes cover file hand-off, query resolution, logging, and the community workaround in §5; custom entity behavior remains unresolved where indicated.
 
 ## What this does *not* cover
 
-- **The schema domains themselves.** Which of the 23 domains exist, what each contains, which app
-  categories have no domain at all, and `.system.searchInApp` as the escape hatch: all of that is
-  [Part 16 guide 02](02-app-schema-domains.md). This guide assumes you have picked a domain or
-  established that none applies. §5 leans hard on guide 02's discovery-versus-action framing and
-  cites it rather than restating it.
-- **Indexing.** `IndexedEntity`, `CSSearchableIndex.indexAppEntities(_:)`, `@Property(indexingKey:)`
-  and the one-index/three-consumers architecture are
-  [Part 16 guide 04](04-entities-spotlight-and-foundation-models.md). Indexing and on-screen
-  awareness are **different mechanisms for different request classes** and confusing them is its
-  own failure mode — §1.7 draws the line.
-- **Query protocols in general.** `EntityStringQuery`, `IntentValueQuery`, `EnumerableEntityQuery`,
-  `UniqueAppEntityQuery` and when to use each are guide 02 §10. This guide covers only the two
-  `EntityQuery` requirements that on-screen awareness actually calls: `entities(for:)` and
-  `displayRepresentations(for:requestedComponents:)`.
-- **The new execution model.** `LongRunningIntent`, `ExecutionTargets`, `EntityCollection`,
-  `@UnionValue`, `SyncableEntity`: guide 02 §13.
-- **Foundation Models.** There is no `AppIntent`-to-`LanguageModelSession` bridge; the connection
-  between your entities and your own on-device model runs through the Spotlight semantic index and
-  `SpotlightSearchTool`, which is guide 04 and
-  [Part 2 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md).
+Related references: [Part 16 guide 02](02-app-schema-domains.md), [Part 16 guide 04](04-entities-spotlight-and-foundation-models.md), [Part 2 guide 04](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md).
 
 ## What you need
 
@@ -126,53 +52,9 @@ Around that finding, this guide covers:
 
 ## ⚠️ Read this before you trust a symbol name below
 
-Three things about the evidence in this guide, because the evidence quality here is unusually
-uneven and pretending otherwise would make the guide dangerous.
+The `.files.file` workaround (§5) is community evidence from forum thread 838329, reported working on an iOS 27 device; it is not a documented Apple contract. Whether plain custom `AppEntity` plus `Transferable` should work remains unanswered (§5.7). Keep a fallback and validate on your target device.
 
-**First: there is no sample-code project for this topic in our corpus.** The strongest evidence
-class in this series — a compiling first-party Apple sample — does not exist for on-screen
-awareness. Sessions 343 and 240 name three sample apps (**CosmoTunes**, **UnicornChat**,
-**CometCal**) and Apple publishes them, but they were not obtained. So the top of the evidence
-ladder here is **Apple's own published code-sample blocks on the session pages**, which are
-verbatim Apple text but are excerpts, not projects. Anything marked ✅ VERIFIED with a
-`@ <timestamp>` citation is one of those blocks.
-
-**Second: the single most actionable recipe in this guide is community evidence, and we are not
-going to dress it up.** The `.files.file` hand-off in §5 comes from forum thread 838329, posted by
-a developer (`J0hn`), marked as the recommended answer, and reported as *confirmed working on
-device on iOS 27*. It is **not** in Apple's documentation. Apple's own documentation points a
-different direction. We lead with it anyway, because it is the only route anyone has reported
-working — and we say exactly where it came from every time it appears.
-
-**Third: the architectural question underneath §5 is open, and Apple deflected it.** The developer
-who found the problem asked whether custom `AppEntity` + `Transferable` is *supposed* to work.
-Apple's DTS engineer replied by routing the whole thread to Feedback Assistant without answering.
-Meanwhile Apple's documentation says schema application is *"optional but recommended,"* which
-contradicts the observed behaviour. Both statements appear in §5.7, side by side, unreconciled.
-That is the honest state of this API and it is more useful to you than a confident answer would be.
-
-Markers used throughout:
-
-> ✅ **VERIFIED** — quoted from an Apple documentation page, an Apple-published code sample on a
-> WWDC26 session page, a session transcript, or a forum post. The citation follows the claim.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested but the exact spelling is inferred, usually
-> because it reached us through narration or summarisation rather than published text.
->
-> 🔴 **GAP** — could not verify. The box says what is unknown, what would resolve it, and what to
-> ship in the meantime. A gap box in this series never contains a guess.
->
-> ⚠️ **SILENT FAILURE** — it does not throw, it does not log, and the symptom appears somewhere
-> other than where the defect is. This guide has eight; they are collected in §8.
-
-**Measurement attribution.** There is exactly one quantitative claim available for this entire
-topic and it is qualitative: session 343 says that if Siri cannot understand your on-screen
-entities *"quickly enough"* it may ask to clarify or act on the wrong thing. **No latency budget,
-no timeout value, and no benchmark is published by Apple for on-screen entity resolution, and we
-have no community measurement of one either.** Every performance statement in §4 is therefore
-mechanism-based, not number-based, and says so.
-
----
+Apple's session excerpts establish API shapes, not a complete locally tested app. No entity-resolution latency budget is published here. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 ## Contents
 
@@ -1197,21 +1079,7 @@ representations"* **first**, ahead of indexing, ahead of annotation, ahead of ev
 
 The enriched initializer:
 
-```swift prelude:guide-context
-// ✅ VERIFIED (Apple code sample, WWDC26 343 @ 4:26)
-// Enhanced DisplayRepresentation
-@AppEntity(schema: .audio.song)
-struct SongEntity {
-
-    var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(
-            title: "\(title)",
-            subtitle: "\(artistName)",
-            image: artworkImage
-        )
-    }
-}
-```
+See the [canonical example](02-app-schema-domains.md#113-displayrepresentation--the-highest-leverage-thing-you-can-customize).
 
 Note the tension this creates, and resolve it deliberately: **the synchronous property should be
 rich** (it feeds result cards, Spotlight rows and disambiguation UI, where an image is worth having)

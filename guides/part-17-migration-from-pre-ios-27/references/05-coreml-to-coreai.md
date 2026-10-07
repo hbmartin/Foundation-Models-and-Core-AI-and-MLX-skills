@@ -25,53 +25,11 @@ every OS you already support. That asymmetry is the whole subject of this guide.
 
 ## What this covers
 
-The move from `MLModel` to `AIModel`, told as a *decision* rather than a *procedure*.
-
-- **§1 — Should you migrate at all.** Where the Core AI / Core ML boundary sits, what Apple actually
-  committed to, and what "narrowed, not deprecated" means for a shipping app.
-- **§2 — The translation table.** The single most useful artifact here: the concept-by-concept map
-  from the Core ML mental model to the Core AI one. `MLModel` → `AIModel`, `MLMultiArray` →
-  `NDArray`, compute-unit selection → `SpecializationOptions`, compilation → specialization plus
-  caching, feature providers → a plain named dictionary, and the file extensions — including the
-  fact that `.aimodel` and `.aimodelc` are **directories**, not files.
-- **§3 — What does not announce itself.** Five silent failures specific to *this* migration, headed
-  by the big one: adopt the optional `coreai-models` loader without reading its policy and a
-  converted model can load, run, produce correct numbers, and quietly execute on a compute unit
-  you did not intend.
-- **§4 — What genuinely improves, and why.** States (KV caches as first-class in-place inputs),
-  multi-function assets (including how recognized names select the optional `coreai-models`
-  loader’s Neural Engine preference), the Core AI Debugger's sync points and PSNR comparison
-  against a PyTorch reference run, ahead-of-time compilation, and a memory-safe Swift API built on
-  non-escapable views.
-- **§5 — What you give up, honestly.** A decade of samples, Stack Overflow answers and blog posts —
-  and the hard fact that **Core AI ships with zero Apple sample-code projects**. Plus the gap that
-  bites first: **no documented error types**, so you cannot write precise `catch` blocks yet.
-- **§6 — The conversion path.** `coremltools` versus `coreai-torch`, and the structural fact that
-  decides your project plan: the real input to `coreai-torch` is a **`torch.export.ExportedProgram`**,
-  so a model you hold only as a `.mlmodel` may have to go back to source.
-- **§7 — A decision table for "don't migrate yet."** Five concrete reasons to stay, written down so
-  you can point at one in a planning meeting.
-- **§8 — The incremental strategy.** Run both. Migrate one model. Measure. Keep the Core ML path as
-  the fallback for older OSes — because you have to anyway.
+Decide whether Core AI solves a requirement that Core ML does not. Use the concept mapping and migration checklist for model IO, specialization, states, and deployment; account for the tooling and compatibility costs before committing.
 
 ## What this does *not* cover
 
-- **The Core AI runtime API in depth.** `AIModel`, `InferenceFunction`, `NDArray`, views, ownership,
-  `preferredStrides` — that is
-  [Part 7 reference 01](../../part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md).
-  Specialization, the cache and AOT are
-  [Part 7 reference 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md).
-- **The conversion mechanics.** Op coverage, decomposition tables, dynamic shapes, the IO contract —
-  [Part 8](../../part-08-coreai-pytorch-conversion/). This guide tells you *whether* to start and
-  *what shape* the project has; Part 8 tells you how to do it.
-- **Compression.** Quantization, palettization, the numeric formats —
-  [Part 9](../../part-09-coreai-compression-numerics/).
-- **Artifact and toolchain compatibility** — the `coreai-torch` 0.4.0 IR incident, the macOS 26 → 27
-  export-lowering regression, cache invalidation on OS update. That is
-  [17.6](06-toolchain-and-asset-compatibility.md), and if you are re-converting an existing pipeline
-  you should read it *before* you trust a benchmark.
-- **Core ML's own 2026 changes.** We hold no Core ML documentation harvest — see the gap declared in
-  §2 before you rely on any cell in the left column.
+Related references: [Part 7 reference 01](../../part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [Part 7 reference 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [Part 8](../../part-08-coreai-pytorch-conversion/), [Part 9](../../part-09-coreai-compression-numerics/), [17.6](06-toolchain-and-asset-compatibility.md).
 
 ## What you need
 
@@ -91,35 +49,7 @@ The move from `MLModel` to `AIModel`, told as a *decision* rather than a *proced
 
 ## Evidence markers, and one standing caveat about the left column
 
-This guide follows the series convention: ✅ **VERIFIED** (quoted from a header, SDK, shipping
-source file, or Apple documentation page, with the citation attached), 🟡 **RECONSTRUCTED** (concept
-attested, exact spelling inferred), 🔴 **GAP** (unverified, with what would resolve it and a safe
-default).
-
-One caveat applies to this guide specifically and is important enough to state before the first
-table rather than after it:
-
-> 🔴 **GAP — the Core ML side of every comparison in this guide is unverified against a 2026 SDK.**
->
-> **What is unknown:** our research corpus contains a complete harvest of the **Core AI**
-> documentation (312 indexed symbols, every declaration read) and **no Core ML harvest at all**. The
-> only Apple statement about Core ML anywhere in the corpus is the single routing sentence quoted at
-> the top of this guide. Every Core ML type name, method name and behaviour below therefore comes
-> from general familiarity with a long-stable framework, not from a source anyone re-read this cycle.
->
-> **What would resolve it:** a documentation pass over `/documentation/coreml` on the 27 doc set,
-> plus a `.swiftinterface` dump of `CoreML` from the Xcode 27 SDK.
->
-> **Safe default meanwhile:** treat the Core ML column as a **memory aid for the concept**, not as
-> API you can paste. Every Core ML identifier in this guide is marked 🟡. Before you write the Core
-> ML half of a bridging protocol, open the header in Xcode and confirm the spelling. The **Core AI**
-> column is ✅ and is safe to rely on to the extent any Beta API is.
-
-That asymmetry is uncomfortable, and pretending otherwise would be the exact failure mode this
-series exists to avoid. It also has a silver lining: the direction of travel in this guide is
-*toward* the verified column.
-
----
+See the [shared evidence conventions](../../README.md#evidence-conventions). The Core ML column is a conceptual migration aid: this research pass did not harvest its 2026 SDK or documentation. Confirm Core ML spellings against your SDK before writing bridge code. The Core AI column cites its captured interface and source; those citations do not establish behavior on every device.
 
 ## Contents
 

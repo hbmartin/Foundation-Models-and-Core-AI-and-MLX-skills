@@ -36,63 +36,11 @@ on 2026-07-27; recorded in `notes/web/apple-docs-fm-evals-speech.md` §1, §3, �
 
 ## What this covers
 
-The complete 26 → 27 error migration for the Foundation Models framework, written for someone who
-has a shipping app and a `catch` ladder they wrote a year ago.
-
-- **The seven error types** that can now come out of a `LanguageModelSession` call, what each one
-  means, which OS version introduced it, and which of them a `catch let e as LanguageModelError`
-  clause will *never* see.
-- **`LanguageModelError`'s nine cases**, reconciled across three independent sources that give
-  three different-length lists — Apple's documentation (9), Apple's own repo-shipped agent skill
-  (9, with payload field names), and two compiling Apple sample projects (5). Plus why the enum is
-  **non-frozen** and why `@unknown default` beats the `default: break` that Apple's samples use.
-- **The mapping table**: every deprecated `GenerationError` case, its new home, and the four that
-  changed *type* rather than name — including the one whose successor is **not an error enum at
-  all** (`decodingFailure` → `GeneratedContent.ParsingError`, per the SDK's own deprecation
-  message).
-- **The coexistence problem.** Apple's own Technical Note TN3193 names the context-overflow error
-  `LanguageModelSession.GenerationError.exceededContextWindowSize(_:)` while Apple's 2026 sample
-  code catches `LanguageModelError.contextSizeExceeded`. Both spellings are live, both are correct
-  for their respective SDK, and reading only one of them will send you down the wrong path.
-- **The two refusal mechanisms** — the distinction almost everyone gets wrong. A **guardrail
-  violation** is a classifier decision about content going into or out of the model. A **model-level
-  refusal** is the model itself declining, *downstream of the classifier*. They are different
-  mechanisms with different remedies, and **27 shifted traffic between them.** The reproduction
-  case is a shipping health app that summarised the user's own glucose and cycle data, worked in
-  production on 26.x for months, and had every prompt refused on iOS 27 beta 2.
-- **`SystemLanguageModel(guardrails: .permissiveContentTransformations)`** — the escape hatch, now
-  confirmed in Apple sample code rather than only in a forum post — and the documented limitation
-  that makes it a **silent no-op on the guided-generation path**, which is exactly the path Apple's
-  own sample uses it on.
-- **Errors in the wild that are none of the above**: `com.apple.SensitiveContentAnalysisML error 15`
-  from an entirely innocuous prompt, `com.apple.UnifiedAssetFramework Code=5000` from a bare
-  `SpotlightSearchTool()`, `ModelManagerServices.ModelManagerError Code=1046`, and the notorious
-  `FoundationModels.LanguageModelError error -1` that matches no documented case.
-- **A complete, correctly-ordered catch ladder** you can paste into a project, with imports, that
-  handles all seven types, cancellation, and the unknown-case future.
-- **A regression-test recipe** built on the Evaluations framework, because *there is no model
-  version pinning API*, Apple can update guardrails outside the OS release cycle, and the only
-  way to learn about a refusal shift before your users do is to measure it on every build.
+Migrate a Foundation Models catch ladder from `GenerationError` to the current error types. Use the case mapping, separate refusals from guardrail violations, handle non-frozen enums, and preserve the 26.x fallback where that SDK remains supported.
 
 ## What this does *not* cover
 
-- **The everyday error-handling story for a greenfield 27 app.** That is
-  [Part 2, reference 06](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md),
-  which teaches the taxonomy from scratch rather than as a diff. If you have no 26.x code, start there.
-- **Context-window management as a discipline** — budgeting, `tokenCount(for:)`, compaction,
-  `historyTransform`, `summarizeHistory`. §12 covers only the *error* and the retry shape around it;
-  the full treatment is
-  [Part 3, reference 01](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md)
-  and [Part 3, reference 03](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md).
-- **Authoring a `LanguageModel` provider** and deciding which `LanguageModelError` cases *your*
-  executor should throw. §8 covers only what a consuming app must catch.
-  [Part 4, reference 03](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
-  covers the authoring side.
-- **The Evaluations framework itself.** §16 is a single applied recipe. The framework is
-  [Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/README.md).
-- **Building one source tree against both the 26 and 27 SDKs.** That is
-  [reference 04 of this part](04-dual-sdk-builds.md). This guide assumes you are moving *to* 27 and
-  can stop compiling against 26.
+Related references: [Part 2, reference 06](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [Part 3, reference 01](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [Part 3, reference 03](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md), [Part 4, reference 03](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [Part 6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/README.md), [reference 04 of this part](04-dual-sdk-builds.md).
 
 ## What you need
 
@@ -220,24 +168,7 @@ third.**
 When a developer asked on the Developer Forums how to pattern-match these errors from a response
 stream, a Frameworks Engineer replied with this, verbatim:
 
-```swift compile:27 imports:FoundationModels
-let session = LanguageModelSession()
-let stream = session.streamResponse(to: "Tell me about origami.")
-
-do {
-    for try await partialResponse in stream {
-
-    }
-} catch let error as LanguageModelError {
-
-} catch let error as LanguageModelSession.Error {
-
-} catch let error as LanguageModelSession.GenerationError {
-   // Deprecated in 27.0
-} catch {
-
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#37-catch-order-and-the-pattern-matching-bug).
 
 ✅ **VERIFIED** — Apple Developer Forums thread **831404**, Frameworks Engineer (Apple), reproduced
 verbatim in `notes/forums/forum-pain-points.md` §3.14.
@@ -986,16 +917,7 @@ case .contextSizeExceeded:
 And then you open the `managing-the-context-window` article on developer.apple.com and find a third
 presentation, using the *new* spelling:
 
-```swift prelude:guide-context
-do {
-    // Perform a request that exceeds the context window.
-    let response = try await session.respond(to: prompt)
-} catch LanguageModelError.contextSizeExceeded(let context) {
-    // Handle exceeding the context window size by creating a new session.
-} catch {
-    // Handle other errors that are thrown.
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#61-the-error-and-the-budget-it-refers-to).
 
 ✅ **VERIFIED** — `/documentation/foundationmodels/managing-the-context-window`, harvested 2026-07-27.
 
@@ -1967,22 +1889,7 @@ was already an inference-backed accessor, not a field. Reading it is a second in
 Apple's usage example, reproduced (written against the **deprecated** two-value spelling — §5.3 —
 with the `explanation` handling corrected to read `.content` from the `Response<String>`):
 
-```swift compile:27 imports:FoundationModels
-do {
-    let session = LanguageModelSession()
-    let topic = ""  // A sensitive topic.
-    let response = try await session.respond(
-        to: "List five key points about: \(topic)",
-        generating: [String].self
-    )
-} catch LanguageModelSession.GenerationError.refusal(let refusal, _) {
-    // Generate an explanation for the refusal.
-    if let response = try? await refusal.explanation {
-        let message = response.content
-        // Display the refusal message.
-    }
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#44-what-a-thrown-refusal-looks-like).
 
 ✅ **VERIFIED** — reproduced from Apple's safety article with the correction noted above. The 27 rewrite:
 
@@ -2133,16 +2040,7 @@ interface does not say otherwise: all five overloads appear unchanged in the 27.
 
 ### 12.3 Apple's documented recovery, verbatim
 
-```swift prelude:guide-context
-do {
-    // Perform a request that exceeds the context window.
-    let response = try await session.respond(to: prompt)
-} catch LanguageModelError.contextSizeExceeded(let context) {
-    // Handle exceeding the context window size by creating a new session.
-} catch {
-    // Handle other errors that are thrown.
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#61-the-error-and-the-budget-it-refers-to).
 
 ```swift compile:27 imports:FoundationModels
 func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
@@ -2304,16 +2202,7 @@ content message. Do **not** conclude your prompt was blocked.
 
 ### 13.2 `com.apple.UnifiedAssetFramework Code=5000` — the model catalog
 
-```swift compile:27
-import CoreSpotlight
-import FoundationModels
-
-let tool = SpotlightSearchTool()
-
-let session = LanguageModelSession(tools: [tool])
-
-let response = try await session.respond(to: "What hikes have I gone on?")
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#3-the-cross-import-overlay-and-the-two-line-version).
 
 →
 
@@ -3439,10 +3328,4 @@ SpeechAnalyzer sample are **WWDC25 / iOS 26 leftovers, never refreshed**
 
 ---
 
-*Guide last revised 2026-09-16, against Xcode 27 beta-5 interfaces plus stable macOS 27 and
-physical iOS 27 runtime probes — including the compiler-emitted `FoundationModels.swiftinterface` from **both** sides of the
-migration (26.5 and the 27.0 beta), which closed four of this guide's thirteen ledger gaps
-outright, narrowed two more to their behavioural halves, and made §4's mapping table symmetric. Every Foundation Models symbol above carries an evidence marker;
-where a marker says 🔴 GAP, nobody in this corpus has run the thing, and the guide says so rather
-than guessing. The physical device ran build `24A435`, which does not match Apple's public-final
-`24A437`; it is therefore a stable-era runtime observation, not a public-final-device baseline.*
+*The 2026-09-16 capture compared interfaces from SDK 26.5 and Xcode 27 beta-5. Its physical-device probe used iOS build `24A435`, rather than public-final `24A437`; that remains a dated stable-era observation. Current compiler evidence is in [snippet verification](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/snippet-verification/report.md). Unresolved runtime limits remain beside the affected advice.*

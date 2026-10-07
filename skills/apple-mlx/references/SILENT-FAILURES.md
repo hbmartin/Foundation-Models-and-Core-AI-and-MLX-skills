@@ -1,6 +1,6 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**329 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**328 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -20,7 +20,7 @@
 | [Version drift](#version-drift) | 8 |
 | [Docs vs reality](#docs-vs-reality) | 13 |
 | [API footguns](#api-footguns) | 59 |
-| [General cautions](#general-cautions) | 67 |
+| [General cautions](#general-cautions) | 66 |
 
 ## Wrong output
 
@@ -446,7 +446,6 @@
 - [Apple's distributed speedup comes with its own caveat - it depends on setup; quote the caveat with the number.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [180 to 600 tok/s are the session's only absolute figures; every other distributed claim is a ratio.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [The RDMA port forum report is community-reported with unknown status and no replies captured.](part-12-mlx-python/references/05-serving-and-distributed.md#251-the-community-rdma-port-report) — 12.5
-- [Every file:line cite pins commit e5baded; on any other commit expect line numbers to have drifted.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#evidence-ladder-used-in-this-guide) — 12.6
 - [--mlx-path must not already exist and there is no --force; delete the previous output directory first.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#51-there-is-no---qlora-flag) — 12.6
 - [Dropout fires only in training mode; train() and evaluate() toggle it, so know which mode your loop left the model in.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#65-dropout) — 12.6
 - [The memory-constrained path's loader accepts only .jsonl with a text field (or one alternate); other formats fail.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#86-what-oom-looks-like--on-a-mac-and-why-not-on-a-phone) — 12.6

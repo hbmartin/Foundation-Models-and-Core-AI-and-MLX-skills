@@ -1,6 +1,6 @@
 # API & symbol index — App Intents, Siri schema domains, and Spotlight entity indexing
 
-**165 symbols, of 1203 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**164 symbols, of 1201 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -11,7 +11,7 @@
 | `FoundationModels` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `@Generable` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `Guide` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
-| `LanguageModelSession` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `LanguageModelSession` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `LanguageModelSession.ToolCallError` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `SystemLanguageModel` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `SystemLanguageModel.default.availability` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
@@ -48,7 +48,7 @@
 | `AppEntityContext` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `AppEntityUIElement` |  | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `@AppEnum` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
-| `AppIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
+| `AppIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `@AppIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `AppIntentError.init(description:)` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `AppIntents` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
@@ -58,20 +58,20 @@
 | `DisplayRepresentation` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `DisplayRepresentation.Components` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `DisplayRepresentation.Image` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
-| `EntityCollection` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
-| `EntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
+| `EntityCollection` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
+| `EntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `EntityQuery.entities(for:)` | ✓ | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
-| `ExecutionTargets` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `ExecutionTargets` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `IndexedEntity` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `IndexedEntityQuery` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
-| `LongRunningIntent` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `LongRunningIntent` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `OwnershipProvidingEntity` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `RelevantEntities` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `RelevantEntities.shared` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `SnippetIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `StringSearchCriteria` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md) |
-| `SyncableEntity` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
-| `@UnionValue` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `SyncableEntity` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
+| `@UnionValue` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `UnionValue` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `ValueRepresentation` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.README](part-16-adjacent-capabilities/README.md) |
 
@@ -80,12 +80,12 @@
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
 | `CSSearchableIndex` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
-| `CSSearchableIndex.indexAppEntities(_:)` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
+| `CSSearchableIndex.indexAppEntities(_:)` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `CSSearchableIndex.indexAppEntities(_:priority:)` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `CSSearchableIndexDelegate` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `CSSearchableItem` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `CSSearchableItemAttributeSet` | ✓ | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
-| `SpotlightSearchTool` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `SpotlightSearchTool` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `SpotlightSearchTool.Configuration` |  | ✓ | [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 
 ## Vision  <sub>2 symbols</sub>
@@ -123,7 +123,7 @@
 | `URLError` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `UUID` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## other  <sub>91 symbols</sub>
+## other  <sub>90 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -157,8 +157,8 @@
 | `EmptySnippetIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `EntityIdentifier` | ✓ | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.README](part-16-adjacent-capabilities/README.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `EntityOwnership` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
-| `EntityStringQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
-| `EnumerableEntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
+| `EntityStringQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
+| `EnumerableEntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `Equatable` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `Error` | ✓ | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `EventEntity` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
@@ -179,7 +179,7 @@
 | `IntentExecutionTargets` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `IntentModes` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `IntentParameter` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
-| `IntentParameter.valueState` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.README](part-16-adjacent-capabilities/README.md) |
+| `IntentParameter.valueState` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `IntentPerson` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `IntentResult` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `IntentValueQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
@@ -212,7 +212,6 @@
 | `TransientAppEntity` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [16.4](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md) |
 | `UIKit` |  |  | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `UndoableIntent` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
-| `UniqueAppEntityQuery` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `UNMutableNotificationContent.appEntityIdentifiers` |  |  | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `UserActionRequired` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `UTType` | ✓ | ✓ | [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |

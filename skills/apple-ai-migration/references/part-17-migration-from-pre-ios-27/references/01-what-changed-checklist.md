@@ -24,52 +24,11 @@ single most expensive sentence in this guide.
 
 ## What this covers
 
-The exhaustive 26 → 27 diff for Apple's on-device AI stack, organised by framework, with **every
-item labelled**:
-
-| Label | Meaning | What it costs you |
-|---|---|---|
-| **ADDITIVE** | New surface. Nothing you wrote stops working. | Time to learn, if you want it. |
-| **BEHAVIOURAL** | Same source, different runtime behaviour. | The dangerous one. Your diff is empty. |
-| **RENAMED** | Old spelling deprecated or superseded; usually both spellings coexist for a cycle. | A rebuild, and a decision about which to catch. |
-| **WITHDRAWN** | Gone, with no drop-in replacement. | A feature redesign. |
-
-Specifically:
-
-- **The version-floor table**, first, because it resolves more phantom bugs than anything else here.
-  Including the separate **TensorOps ladder** and the reason a header can say "26.2" while Apple's
-  narration says "26.1 / 26.3 / 26.4" and *both be true*.
-- **Everything additive**, from image input on the on-device model through to the `fm` CLI — with
-  the two system tools that live in **Vision, not FoundationModels**, which is where most people
-  look first and fail.
-- **Everything behavioural** — the rebuilt on-device model, the guardrail changes, the refusal
-  traffic that moved between two different error mechanisms, and Apple's own samples quietly
-  abandoning proactive availability gating.
-- **A known defect, not a design**: `SystemLanguageModel.default.availability` returning
-  `.appleIntelligenceNotEnabled` unless the user has Siri turned on. An Apple Frameworks Engineer
-  said on the record that this should not happen. Do **not** build permanent UX around it.
-- **The renames**, including the one that is the migration in miniature: Apple's own Technical Note
-  and Apple's own 2026 sample code name *different* errors for the same failure, and both are current.
-- **What was withdrawn** — custom LoRA adapters — summarised here and owned by guide 17.2.
-- **The Python SDK generation lag**, stated plainly: `apple/python-apple-fm-sdk` is a **26-generation
-  artifact** and does not expose the 27 feature set.
-- **A toolchain-breakage table** for the build failures that are not your code's fault.
-- **A migration checklist** you can work down in order.
+Audit an OS 26 app before adopting OS 27 APIs. The framework checklist separates additive changes, runtime behavior changes, renamed APIs, and withdrawn features, then links to the detailed migration procedures.
 
 ## What this does *not* cover
 
-- **The error mapping in detail** — old case to new case, which `catch` fires when, and the
-  regression-test recipe. That is [guide 17.3](03-error-taxonomy-migration.md); this guide gives you
-  the summary and the version story.
-- **The adapter sunset in detail** — what to do about a shipped `.fmadapter`. That is
-  [guide 17.2](02-adapter-sunset.md).
-- **Dual-SDK compilation technique** — `#if canImport(FoundationModels, _version: 2)` versus
-  `@available` versus SDK checks. That is [guide 17.4](04-dual-sdk-builds.md); this guide names the
-  symbols that are hard 27-only so you know what needs it.
-- **Core ML → Core AI.** [Guide 17.5](05-coreml-to-coreai.md).
-- **Build-artifact compatibility** — `.aimodel` assets, wheel pinning, `mlx-swift-lm` 2.x → 3.x.
-  [Guide 17.6](06-toolchain-and-asset-compatibility.md).
-- **How to *use* any of the new APIs.** Parts 2, 3, 4 and 6 do that. This is a diff, not a tutorial.
+Related references: [guide 17.3](03-error-taxonomy-migration.md), [guide 17.2](02-adapter-sunset.md), [guide 17.4](04-dual-sdk-builds.md), [Guide 17.5](05-coreml-to-coreai.md), [Guide 17.6](06-toolchain-and-asset-compatibility.md).
 
 ## What you need
 

@@ -33,27 +33,7 @@ Related references: [Part 13](../../part-13-mlx-swift/), [Part 14](../../part-14
 
 ## Evidence ladder used in this guide
 
-Ranked strongest first, and every claim below carries a marker.
-
-1. **Source read on disk this session** — the `ml-explore/mlx-lm` and `ml-explore/mlx` clones. For
-   MLX this outranks everything, including MLX's own documentation site, because the package moves
-   weekly and the docs lag it. Citations are `path:line`, valid at commit `e5baded`.
-2. **The MLX documentation site crawl**, for `mlx.core` / `mlx.optimizers` surface that mlx-lm only
-   *calls*.
-3. **Apple documentation, WWDC26 transcripts, and Apple-staff Developer Forums answers** — used
-   here only for §0, the adapter sunset.
-4. **GitHub issues/PRs with maintainer replies**, always cited by number.
-5. **Community measurements**, always labelled as such.
-
-> ✅ **VERIFIED** — quoted from a file read this session, citation attached.
-> 🟡 **RECONSTRUCTED** — the mechanism is attested but the exact spelling or number is inferred.
-> 🔴 **GAP** — not verified. The box says what is unknown, what would resolve it, and what to do
-> in the meantime.
-
-⚠️ **Line numbers drift.** Every `file:line` below is from commit `e5baded`. If you are on a
-different checkout, grep for the symbol, not the line.
-
----
+Source/API citations below retain mlx-lm revision `e5baded`; search for the symbol when using another revision, because line numbers drift. Current package requirements are stated above. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## Contents
 

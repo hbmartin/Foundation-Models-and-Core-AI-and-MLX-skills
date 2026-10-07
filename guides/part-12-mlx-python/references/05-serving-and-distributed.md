@@ -254,16 +254,7 @@ trust_remote_code (#1385)"*. Before that commit, a `model_file` key in a downloa
 `config.json` caused `load_model` to import and execute an arbitrary Python file **from the model
 directory**, on a plain `load()`, with no opt-out. The fix, verbatim from `utils.load_model`:
 
-```python
-if (model_file := config.get("model_file")) is not None:
-    if not trust_remote_code:
-        raise ValueError(
-            f"The model at {model_path} requires importing and running a "
-            f"custom module ({model_file!r}) to build its architecture. This "
-            "is disabled by default. Pass trust_remote_code=True if you "
-            "trust this model."
-        )
-```
+See the [canonical example](04-mlx-lm-cli-generation-and-caching.md#21-all-18-entry-points).
 
 `--trust-remote-code` is present on the **model-loading** mlx-lm commands, and it gates two different
 things there: remote *tokenizer* code and the *architecture* file. It is intentionally absent from
@@ -832,18 +823,7 @@ Under the hood `BatchGenerator` maps each regular cache class onto a batched one
 `KVCache → BatchKVCache`, `RotatingKVCache → BatchRotatingKVCache`, `CacheList` recursing — using
 a left-padding convention documented verbatim in `BatchKVCache`'s docstring:
 
-```
-E.g. the following prompts:
-    [1, 3, 5]
-    [7]
-    [2, 6, 8, 9]
-Should be padded like so:
-    [0, 1, 3, 5]
-    [0, 0, 0, 7]
-    [2, 6, 8, 9]
-And ``left_padding`` specifies the amount of padding for each.
-In this case, ``left_padding = [1, 3, 0]``.
-```
+See the [canonical example](04-mlx-lm-cli-generation-and-caching.md#83-how-batching-constrains-your-cache-choices).
 
 PR **#1072** added the asymmetry that makes mixed-length agent traffic efficient — ✅ VERIFIED,
 verbatim: *"right padding for prefill, left padding for decode"* so finished sequences stop early:

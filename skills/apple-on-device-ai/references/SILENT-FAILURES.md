@@ -1,6 +1,6 @@
 # Silent-failure index — Apple on-device AI: choosing a stack and getting the gates right
 
-**1746 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**1733 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,19 +8,19 @@
 |---|---:|
 | [Wrong output](#wrong-output) | 172 |
 | [Empty output / no-op](#empty-output--no-op) | 61 |
-| [Truncation & limits](#truncation--limits) | 28 |
+| [Truncation & limits](#truncation--limits) | 27 |
 | [Ignored input](#ignored-input) | 109 |
 | [Stale state](#stale-state) | 39 |
-| [Data & artifact loss](#data--artifact-loss) | 40 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 87 |
-| [Performance cliffs](#performance-cliffs) | 144 |
-| [Resource growth](#resource-growth) | 41 |
+| [Data & artifact loss](#data--artifact-loss) | 39 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 84 |
+| [Performance cliffs](#performance-cliffs) | 143 |
+| [Resource growth](#resource-growth) | 40 |
 | [Precision loss](#precision-loss) | 18 |
 | [Misleading signals](#misleading-signals) | 157 |
-| [Version drift](#version-drift) | 95 |
+| [Version drift](#version-drift) | 94 |
 | [Docs vs reality](#docs-vs-reality) | 154 |
-| [API footguns](#api-footguns) | 258 |
-| [General cautions](#general-cautions) | 343 |
+| [API footguns](#api-footguns) | 257 |
+| [General cautions](#general-cautions) | 339 |
 
 ## Wrong output
 
@@ -377,7 +377,6 @@
 **Part 16**
 
 - [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
-- [TOC: cancelling the display task drops the final results — the tail of every recording is silently lost](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#what-this-covers) — 16.1
 - [Contents: the cancellation shield — the guard against losing each recording's final phrase](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#contents) — 16.1
 - [Code comment: without the shield you lose the tail of every recording](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#64-complete-microphone-capture-end-to-end) — 16.1
 - [The cancellation shield: stop reading at cancel time and the final updates — the recording's tail — are lost](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) — 16.1
@@ -667,7 +666,6 @@
 
 **Part 15**
 
-- [TOC: bookmarks quietly die — init?(resolvingBookmark:) returns nil, not an error, once the entry is purged](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A stored bookmark quietly stops working — purge or invalidation makes resolve return nil, not an error](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) — 15.1
 - [bookmarkData doesn't pin the entry; resolvingBookmark returns nil, not an error — failure lands in an else branch](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#82-the-defect) — 15.1 🔇
 - [Code comment marks the silent branch: a well-formed bookmark whose entry is gone resolves to nil](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#84-the-fix-persist-a-record-never-a-bare-bookmark) — 15.1
@@ -781,7 +779,6 @@
 
 - [compile exits 0 for any arch; codes track device ids, not names — green CI, invalidCompiledModel in users' hands](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/README.md#151--shipping-models-background-assets-per-architecture-variants-and-updates) — 15.README 🔇
 - [AOT compilation has a far narrower hardware floor than the framework — AOT assets exclude devices the framework supports](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#shipping-models-background-assets-per-architecture-variants-and-updates) — 15.1
-- [TOC: coreai-build compile succeeds for architectures the device will reject — only a device load validates](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A green compile the device rejects — exit 0 proves nothing; the failure is invalidCompiledModel in the field](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#5-️-silent-failure-a-green-compile-that-the-device-rejects) — 15.1
 - [xcrun coreai-build compile exits 0 for architectures the device will reject — only a device load validates](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#51-the-defect) — 15.1 🔇
 - [A bad app-group entitlement silently drops to the per-bundle cache — specialization cost and storage double](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#103-️-the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror) — 15.1
@@ -806,11 +803,9 @@
 - [BarcodeReaderTool lists watchOS but OCRTool does not; a watchOS target reaching for OCR finds nothing](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#46-additive--system-tools-and-the-one-that-isnt-where-youd-look) — 17.1
 - [Copying 2026 samples' reactive-only gating means users discover Apple Intelligence is unavailable only after tapping](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#64-behavioural--apples-samples-dropped-proactive-availability-gating) — 17.1 🔇
 - [No App Store required-device-capability exists for Apple Intelligence; incapable devices can always install your app](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#65-behavioural--the-siri-enablement-gate-is-a-defect-not-a-design) — 17.1
-- [On GPU-pipelined bundles you lose @Generable entirely; constrained decoding needs logits they never expose](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#what-this-covers) — 17.2
 - [@Generable needs logits the GPU-pipelined Core AI engine never returns; the fastest backend cannot do guided generation](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2
 - [The GPU-pipelined engine samples on-GPU and returns no logits; @Generable fails at runtime, not at build time](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2 🔇
 - [Path table: @Generable works on FM and via MLXGuidedGeneration but not on GPU-pipelined Core AI bundles](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#122-the-three-paths-at-a-glance) — 17.2
-- [An SDK-interface/dylib symbol mismatch crashes at load before main; no runtime guard can intercept it](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the load-time crash from an interface/dylib mismatch that no runtime guard can catch](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [The load-time failure no guard can catch: interface/dylib mismatch SIGSEGVs before main](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4
 - [The FM-27 beta interface declared a symbol the dylib lacked; respond() SIGSEGVed emitting usage until mlx fix #439](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4 🔇
@@ -995,7 +990,6 @@
 **Part 16**
 
 - [A [Entity] parameter fully resolves every element before perform() — hidden N-query stall; EntityCollection passes ids](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#133-️-entitycollection--the-parameter-resolution-performance-cliff) — 16.2
-- [TOC: the performance trap that turns on-screen awareness into a stall](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#what-this-covers) — 16.3
 - [Code comment: the naive displayRepresentations is correct but slow enough to break awareness](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [The naive implementation compiles and is correct — and stalls long enough to break the feature](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [A naive displayRepresentations turns awareness into a stall — it is called for every entity](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#81-️-silent-failure--a-naive-displayrepresentations-turns-awareness-into-a-stall) — 16.3
@@ -1062,7 +1056,6 @@
 **Part 15**
 
 - [A successful load is not a fit test — first inference adds activations and KV, and compute unit moves headroom 2×](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/README.md#152--memory-jetsam-thermals-energy-and-measuring-honestly) — 15.README 🔇
-- [TOC: two slightly different options structs silently create two multi-gigabyte specializations](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [Prewarming a graph with static-shape host KV I/O allocates the whole cache up front — a net loss; gate your prewarm](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#62-the-three-levers) — 15.1
 - [SpecializationOptions is part of the cache key — two variants mean two multi-gigabyte specializations](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) — 15.1
 - [Slightly different SpecializationOptions from two code paths silently double the multi-GB cache and re-stall first load](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#91-the-defect) — 15.1 🔇
@@ -1448,7 +1441,6 @@
 - [Revised: Xcode 27 now emits adapter deprecation warnings, and hard obsolete errors once you target OS 27](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
 - [MLXFoundationModels compiles only when the trait and the 27-SDK canImport both hold; otherwise it is an empty library](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#82-where-mlxfoundationmodels-actually-is) — 17.2
 - [GenerationError was deprecated, not deleted: catch clauses compile but stop firing once you rebuild with Xcode 27](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#error-taxonomy-migration-generationerror--languagemodelerror) — 17.3 🔇
-- [MLXFoundationModels builds green on the 26 SDK yet compiles to an empty library; the FM adapter is not in the binary](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the empty library — a green 26-SDK build of MLXFoundationModels contains nothing](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [MLXFoundationModels on the 26 SDK: builds successfully and contains nothing](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4
 - [Apple states it twice in-repo: on the 26 SDK MLXFoundationModels builds successfully as an empty library](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4 🔇
@@ -1943,7 +1935,6 @@
 - [Per-row annotation loses selected and scrolled-off entities — annotate the container with forSelectionType](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#82-️-silent-failure--per-row-annotation-loses-selected-and-scrolled-off-entities) — 16.3
 - [TransientAppEntity forecloses three system integrations — silently, via the type choice](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#85-️-silent-failure--transientappentity-forecloses-three-system-integrations) — 16.3
 - [Now Playing identifiers in the wrong order resolve the wrong entity — the order is semantic](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#87-️-silent-failure--now-playing-identifiers-in-the-wrong-order) — 16.3
-- [TOC: the hydration hook is a nonisolated completion-handler method — not the async throwing shape you'd write](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#what-this-covers) — 16.4
 - [Index into a named CSSearchableIndex while other code uses the default and the corpus silently splits](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#32-why-a-named-index) — 16.4
 - [beginBatch/endBatch is not a transaction — partial writes persist; clientState is for resume, not rollback](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#34-batching-and-the-client-state-pattern) — 16.4
 - [CSCustomAttributeKey's init is failable — a nil key means the attribute silently never reaches the index](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#43-binding-your-properties-to-spotlight-keys) — 16.4
@@ -1979,7 +1970,6 @@
 - [FM macro expansions need six imports at the call site; missing one yields 'cannot find type' inside generated code](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
 
 ## General cautions
-- [Most defects do not throw; expect silence, plausible wrong numbers, and quiet degradation.](README.md#silent-failure-callouts) — root 🔇
 
 **Part 1**
 
@@ -2243,7 +2233,6 @@
 - [Apple's distributed speedup comes with its own caveat - it depends on setup; quote the caveat with the number.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [180 to 600 tok/s are the session's only absolute figures; every other distributed claim is a ratio.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [The RDMA port forum report is community-reported with unknown status and no replies captured.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/05-serving-and-distributed.md#251-the-community-rdma-port-report) — 12.5
-- [Every file:line cite pins commit e5baded; on any other commit expect line numbers to have drifted.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#evidence-ladder-used-in-this-guide) — 12.6
 - [--mlx-path must not already exist and there is no --force; delete the previous output directory first.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#51-there-is-no---qlora-flag) — 12.6
 - [Dropout fires only in training mode; train() and evaluate() toggle it, so know which mode your loop left the model in.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#65-dropout) — 12.6
 - [The memory-constrained path's loader accepts only .jsonl with a text field (or one alternate); other formats fail.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/references/06-finetuning-and-porting-models.md#86-what-oom-looks-like--on-a-mac-and-why-not-on-a-phone) — 12.6
@@ -2317,7 +2306,6 @@
 - [Session 345 explicitly does not cover UndoableIntent, IntentModes or SnippetIntent — don't cite it for them](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#13-the-new-execution-model) — 16.2
 - [Session 344 published no code block — every listing attributed to it is transcript reconstruction](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#primary--wwdc26-sessions) — 16.2
 - [Symbol-name trust note for this guide — verify before porting names](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3
-- [Marker definition: these silent failures neither throw nor log, and symptoms appear far from the defect — eight here](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3 🔇
 - [Draft identity exists, but a verified hand-off still needs a real file payload — materialize first](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3
 - [Whether .appEntityIdentifier takes an optional is unverified — but the compiler tells you; explicitly not silent](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3 🔇
 - [In-memory content must be written to a file before the FileRepresentation hand-off — the step stays necessary](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#58-what-to-do-today) — 16.3
@@ -2331,7 +2319,6 @@
 - [Consumer surface note: the demo's consumer was the Fitness app's suggested-playlists list](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#122-the-api) — 16.4
 - [Donate only UI-originated interactions, never Siri-originated — the rule against feeding the ranking loop back](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#124-apples-three-way-decision-rule) — 16.4
 - [Get plain indexing working and verified before building consumers — everything downstream depends on it](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#142-the-sequence) — 16.4
-- [Marker definition: these do not throw — this guide catalogues five](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#evidence-markers-used-in-this-guide) — 16.5 🔇
 - [Treat the six performance numbers as documentation claims, not citable measurements](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#the-one-workflow-where-the-answer-is-unambiguously-yes) — 16.5
 - [All images must share H×W×C — mismatches raise DNIKitException; differing sizes need a custom Producer](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#57-the-producers-and-sample-assets-apple-ships) — 16.5
 

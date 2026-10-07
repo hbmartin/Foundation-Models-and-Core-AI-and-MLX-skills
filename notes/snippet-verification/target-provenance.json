@@ -313,31 +313,6 @@
       }
     },
     {
-      "content_hash": "6406988c6439cdf7e0dca2de87fa50680e2fd9db118f5c1a9d4220715286fa1c",
-      "file": "part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md",
-      "snippet_id": "snippet-56eab245837a0a40",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
       "content_hash": "61fe32a13f6bc418badd916b2591f64309b1eeef0df6d069353443f1833b76fd",
       "file": "part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md",
       "snippet_id": "snippet-b8d6df6233a6d690",
@@ -416,31 +391,6 @@
       "content_hash": "953cc79022db37476d95ba35c565f392d6f439705ff1ce8293f9a9240affd649",
       "file": "part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md",
       "snippet_id": "snippet-215c8ddef0a5b182",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
-      "content_hash": "8526e20c12f431c56df2326874ad261f264d3ee7013dc2a79bd6ff975b0b856a",
-      "file": "part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md",
-      "snippet_id": "snippet-28f1717d4b8bbf26",
       "targets": {
         "27": {
           "checkedAt": "2026-10-06",
@@ -641,56 +591,6 @@
       "content_hash": "6c3fcc525657958940659c9b3788c263d41767673a3fa913993ad49b0846c729",
       "file": "part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md",
       "snippet_id": "snippet-f529252fa2872f32",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
-      "content_hash": "8526e20c12f431c56df2326874ad261f264d3ee7013dc2a79bd6ff975b0b856a",
-      "file": "part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md",
-      "snippet_id": "snippet-42b2ff1418fe7a8f",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
-      "content_hash": "9fc31333fba81b7b36c04952fccb5b64972cd97bdccc9b054b6a5af6ed707e5d",
-      "file": "part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md",
-      "snippet_id": "snippet-603e187b5b0c0782",
       "targets": {
         "27": {
           "checkedAt": "2026-10-06",
@@ -1088,31 +988,6 @@
       }
     },
     {
-      "content_hash": "a5d1d5dbfee8888a7957d326f387e6c9e1e25d67aef4744ba7fd541df7bd0a29",
-      "file": "part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md",
-      "snippet_id": "snippet-88013f2d66520b53",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
       "content_hash": "6406988c6439cdf7e0dca2de87fa50680e2fd9db118f5c1a9d4220715286fa1c",
       "file": "part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md",
       "snippet_id": "snippet-f55e9383235b4ee3",
@@ -1241,31 +1116,6 @@
       "content_hash": "fa22145325502f3ebec4d632838cea58264a56d954e3c53b44e06b75eb41511a",
       "file": "part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md",
       "snippet_id": "snippet-7a70806b20ab675a",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
-      "content_hash": "6d4f783e2eb1096f7e834d82b7bfd9b96c0fe4167a48060424de8308311dbc0d",
-      "file": "part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md",
-      "snippet_id": "snippet-c447e29e7288afe4",
       "targets": {
         "27": {
           "checkedAt": "2026-10-06",
@@ -4140,31 +3990,6 @@
       }
     },
     {
-      "content_hash": "8526e20c12f431c56df2326874ad261f264d3ee7013dc2a79bd6ff975b0b856a",
-      "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
-      "snippet_id": "snippet-0e69b652f41414a5",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
       "content_hash": "e02682d1fa92f94b20c33fbc19a8db83617116c6154842704e4e949abc643914",
       "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
       "snippet_id": "snippet-942336fa31791db6",
@@ -4417,31 +4242,6 @@
       }
     },
     {
-      "content_hash": "fa565cd51261f9f5fadbd9e752c06335c068b53ed5943c88b9fdc82a910b0b2c",
-      "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
-      "snippet_id": "snippet-034ec934360f5ae9",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
       "content_hash": "80aaba3cbaf6459d132d7329d2008ad86eb58abf7811ebebfc190e77fa5c2065",
       "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
       "snippet_id": "snippet-f6ee012c369f8256",
@@ -4470,31 +4270,6 @@
       "content_hash": "6d4f783e2eb1096f7e834d82b7bfd9b96c0fe4167a48060424de8308311dbc0d",
       "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
       "snippet_id": "snippet-34bb881a70648697",
-      "targets": {
-        "27": {
-          "checkedAt": "2026-10-06",
-          "kind": "fresh",
-          "toolchain": {
-            "developer_dir": "/Applications/Xcode.app/Contents/Developer",
-            "framework_dirs": [
-              "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks"
-            ],
-            "name": "27",
-            "sdk_build": "26A425",
-            "sdk_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk",
-            "sdk_version": "27.0",
-            "triple": "arm64-apple-macos27.0",
-            "xcode_build": "27A266a",
-            "xcode_version": "27.0"
-          },
-          "verdict": "pass"
-        }
-      }
-    },
-    {
-      "content_hash": "68c09e672ef3e5316fe6f94d963265ad8acf538d7f83134ede56453d112b8dbd",
-      "file": "part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md",
-      "snippet_id": "snippet-54959e830c1c7350",
       "targets": {
         "27": {
           "checkedAt": "2026-10-06",

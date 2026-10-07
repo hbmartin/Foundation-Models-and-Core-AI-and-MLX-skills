@@ -37,72 +37,11 @@ Nothing in this guide requires Apple Intelligence to be *enabled*, and nothing h
 
 ## What this covers
 
-This is the operational guide: **how a model actually reaches a user's device, and how it gets
-replaced later.** It is the guide you need after the model works on your desk and before you press
-Submit for Review.
-
-The motivating constraint is a size problem, and it is worth stating in Apple's own words before
-anything else. In WWDC26 session 326, the presenter is building a language-learning feature on top
-of SAM 3 (segmentation) plus Qwen3 0.6B (card generation), shipping it as an update to an existing
-app, and hits this:
-
-> "My first-run experience gives me a natural place to explain the feature and prepare for a smooth
-> first launch. But **I'd been assuming the models would just be bundled with the app and when I
-> checked, they're adding over 1 GB to my download size. That hits everyone who updates, even
-> people who'll never touch this feature.**"
-
-✅ VERIFIED — WWDC26 session 326, transcript lines 140-149, captured in
-`notes/transcripts/coreai-intro.md:1680`.
-
-That single sentence is the spine of this guide. Two sub-1B-class models bundled into an app binary
-cost over a gigabyte of download, charged to every updater including the ones who will never open
-the feature. Everything below is the machinery for not doing that.
-
-Sections:
-
-- **§1 — The size problem.** Why bundling is the wrong default for an optional AI feature, what
-  "over 1 GB" was actually made of, and what the alternative costs you in complexity.
-- **§2 — The feature-introduction screen.** The UI pattern Apple's own session arrives at, why it
-  exists for three separate reasons at once, and how it becomes the place you hide specialization
-  latency.
-- **§3 — Background Assets.** What Apple actually says about using it for model files, what we can
-  verify about the API surface, and — honestly — what we cannot. Includes a design that keeps your
-  Core AI code independent of the delivery mechanism.
-- **§4 — Per-architecture variants.** `coreai-build compile`, the `.aimodelc` output naming
-  convention, `AIModel.deviceArchitectureName`, and the arch-code enumeration problem.
-- **§5 — ⚠️ SILENT FAILURE: a green compile that the device rejects.** `coreai-build compile`
-  exits 0 for architectures no device will load. The failure surfaces in a user's hands.
-- **§6 — Specialization after download.** The cache, the policies, `specialize(...)`, and why the
-  first-run screen is where this belongs.
-- **§7 — Updating a model.** The full replace sequence, asset versioning, and keeping the app
-  working while an update is in flight.
-- **§8 — ⚠️ SILENT FAILURE: the bookmark that quietly stops working.** `init?(resolvingBookmark:)`
-  returns `nil`, does not throw, and the recovery path is a multi-gigabyte re-download. Persist a
-  record, never a bare bookmark.
-- **§9 — ⚠️ SILENT FAILURE: two options structs, two multi-gigabyte specializations.**
-  `SpecializationOptions` is part of the cache key and has a mutable property. The fix is
-  structural.
-- **§10 — App groups.** Sharing one specialization across an app and its extensions with
-  `AIModelCache(appGroup:)`.
-- **§11 — Storage hygiene.** Cache policies, when the system may reclaim, deleting the source
-  asset, and how to report model storage to the user.
-- **§12 — The App Store reality.** There is no Required Device Capability for Apple Intelligence.
-  What Apple's own staff recommend instead, and what that means for pricing and review.
-- **§13 — Checklist and declared gaps.**
+Deliver models only to users who need them, prepare specialization outside interactive flows, and ship recoverable updates. The workflows cover Background Assets, downloaded bundles, AOT architectures, bookmarks, storage, integrity, and rollback.
 
 ## What this does *not* cover
 
-- **Converting a PyTorch model to `.aimodel`.** That is
-  [Part 8](../../part-08-coreai-pytorch-conversion/). This guide starts from an `.aimodel` bundle
-  that already exists and already runs.
-- **The Core AI runtime API** — `AIModel` → `InferenceFunction` → `NDArray`, states, views.
-  [Part 7](../../part-07-coreai-swift-runtime/).
-- **Compression and quantization**, which is the other half of the size story and often the larger
-  half. [Part 9](../../part-09-coreai-compression-numerics/).
-- **Profiling specialization** with the Core AI instrument and debug gauge.
-  [Part 10](../../part-10-coreai-hardware-authoring-debugging/).
-- **Apple's own `SystemLanguageModel`**, which ships with the OS and has no distribution story at
-  all — that is exactly why it is attractive and exactly why §12 exists.
+Related references: [Part 8](../../part-08-coreai-pytorch-conversion/), [Part 7](../../part-07-coreai-swift-runtime/), [Part 9](../../part-09-coreai-compression-numerics/), [Part 10](../../part-10-coreai-hardware-authoring-debugging/).
 
 ## What you need
 
@@ -133,26 +72,7 @@ Sections:
 
 ## Evidence markers used in this guide
 
-Per the series conventions:
-
-> ✅ **VERIFIED** — quoted from an Apple documentation page, a header, a shipping source file, or
-> an Apple-staff forum answer. The citation follows the claim.
-
-> 🟡 **RECONSTRUCTED** — the concept is attested, but the exact spelling is inferred. Treat the
-> shape as right and the identifiers as provisional.
-
-> 🔴 **GAP** — we could not verify this and are saying so rather than guessing. Each gap box names
-> what is unknown, what would resolve it, and gives a safe default.
-
-One class of evidence deserves a standing caveat before §4. A large amount of what is *known* about
-per-architecture compilation comes from a **community archive** (`notes/repos/john-rocky-models.md`,
-`notes/repos/issues-coreai-stack.md`) whose measurements were taken by one person on one Mac and one
-iPhone, on beta OSes, and from GitHub issues on `apple/coreai-models`. Those are cited as
-**community-measured** throughout, with hardware and date. They are not Apple statements. They are
-also, in several places, the *only* source that exists — Apple's documentation names an
-architecture flag without ever printing a single architecture value.
-
----
+See the [shared evidence conventions](../../README.md#evidence-conventions). Architecture and startup measurements below retain their original community source, hardware, beta OS, and observation date; they are not Apple guarantees.
 
 ## 1. The size problem
 
@@ -637,25 +557,7 @@ This is the API that makes `refreshState()` safe to call on every appearance of 
 For comparison, Apple's documentation ships a much shorter form of the same idea, and it is worth
 reading because it shows the intended shape without the state machine:
 
-```swift illustrative
-func loadModel(from modelURL: URL) async throws -> AIModel {
-    // The default cache stores all specialized assets for your app bundle.
-    let cache = AIModelCache.default
-
-    // A non-`nil` result means the model was previously specialized and cached.
-    if let model = try cache.model(for: modelURL, options: .default) {
-        return model
-    }
-
-    // No cached specialization exists. Inform the person and specialize now.
-    Task { @MainActor in
-        informUser("Preparing AI features. This may take a while…")
-    }
-
-    // This call performs specialization, caches the result, and returns the model.
-    return try await AIModel(contentsOf: modelURL, options: .default)
-}
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-one-method-that-matters-most).
 
 ✅ VERIFIED verbatim — Apple's *Managing model specialization and caching* article, captured at
 `notes/web/apple-docs-coreai.md:1264-1282`.
@@ -1830,17 +1732,7 @@ guard CoreAIDecoder.hostCacheCapacity(in: descriptor) == nil else {
 
 Apple's documented pre-specialization pattern, verbatim:
 
-```swift prelude:guide-context
-guard let localModelURL = try await downloadModel(forFeature: feature) else {
-    throw AppError.failedToDownloadModel(feature)
-}
-
-// Specialize the model so it's ready before the person needs it.
-try await AIModel.specialize(contentsOf: localModelURL, options: .default)
-
-// The model is now specialized and cached. Future loads skip specialization.
-let model = try await AIModel(contentsOf: localModelURL, options: .default)
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#5-aimodelspecialize--controlling-when-not-how-much).
 
 ✅ VERIFIED verbatim (`notes/web/apple-docs-coreai.md:1289-1299`), with the NOTE: *"Calling
 `specialize` multiple times with the same model URL and options returns the cached result without
@@ -2066,25 +1958,7 @@ route on filename, split on path components and compare exactly.
 Apple ships the canonical update flow as four lines, and the ordering of those four lines is the
 whole lesson:
 
-```swift prelude:guide-context
-func downloadAndUpdateModel(from remoteURL: URL, localModelURL: URL) async throws {
-    let tempURL = try await downloadLatestModel(from: remoteURL)
-
-    // Delete cached assets for the old model.
-    let cache = AIModelCache.default
-    try cache.deleteEntries(for: localModelURL)
-
-    // Replace the old model with the new one.
-    try FileManager.default.replaceItemAt(localModelURL, withItemAt: tempURL)
-
-    // Specialize the updated model.
-    try await AIModel.specialize(
-        contentsOf: localModelURL,
-        options: .default,
-        cachePolicy: .persistent
-    )
-}
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#7-deleting-entries--and-apples-contradiction).
 
 ✅ VERIFIED verbatim — Apple's *Managing model specialization and caching* article
 (`notes/web/apple-docs-coreai.md:1320-1337`).
@@ -2416,34 +2290,9 @@ cannot name. The bookmark is the alternate key.
 
 Apple's three-step workflow, verbatim:
 
-```swift prelude:guide-context
-// Specialize and keep a reference to the model.
-let model = try await AIModel.specialize(
-    contentsOf: llmURL,
-    options: .default,
-    cachePolicy: .persistent
-)
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-full-workflow-apples-code).
 
-// Save bookmark data to restore access after the app exits.
-let bookmarkData = model.bookmarkData
-UserDefaults.standard.set(bookmarkData, forKey: "llm.bookmark")
-```
-
-```swift illustrative
-if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
-    do {
-        if let model = try AIModel(resolvingBookmark: bookmarkData) {
-            // Use the model.
-            return model
-        }
-        // The model can't be found or was invalidated by an OS update.
-    } catch {
-        // The bookmark data is invalid.
-    }
-}
-
-// Download and specialize the model again.
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-full-workflow-apples-code).
 
 ```swift prelude:guide-context
 // Delete the source model to reclaim storage.
@@ -3073,21 +2922,7 @@ init?(appGroup groupIdentifier: String)
 
 Apple's usage examples, verbatim:
 
-```swift prelude:guide-context
-// Get the app group cache.
-guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
-    fatalError("Invalid group identifier or entitlement.")
-    return
-}
-
-// Specialize into the shared cache.
-try await AIModel.specialize(
-    contentsOf: sharedModelURL,
-    options: .default,
-    cache: groupCache,
-    cachePolicy: .persistent
-)
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#8-sharing-a-cache-across-an-app-group).
 
 ```swift prelude:guide-context
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {

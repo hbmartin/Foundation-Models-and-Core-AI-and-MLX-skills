@@ -2586,12 +2586,7 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 
 ---
 
-*Guide last revised 2026-09-16, against the captured Xcode 27 beta-5 interface plus stable macOS 27
-and iOS build `24A435` runtime probes. The selected SDK is still beta-era; re-verify signatures
-against a coherent shipping Xcode before relying on them.*
-
-[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates 35 cases:
-    [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).
+*The 2026-09-16 source/runtime capture used Xcode 27 beta-5 interfaces and iOS build `24A435`. Current compiler evidence uses Xcode 27 final; see [snippet verification](../../../notes/snippet-verification/report.md). Device behavior retains its original observation date.*
 
 [^sample-routing-policy]: The classifier and preferences are source code in the optional
     `apple/coreai-models` package’s pinned

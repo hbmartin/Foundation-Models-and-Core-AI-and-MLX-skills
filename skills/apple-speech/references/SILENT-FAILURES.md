@@ -1,13 +1,13 @@
 # Silent-failure index — SpeechAnalyzer: live and file-based transcription
 
-**42 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**41 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
 | [Empty output / no-op](#empty-output--no-op) | 4 |
-| [Truncation & limits](#truncation--limits) | 6 |
+| [Truncation & limits](#truncation--limits) | 5 |
 | [Ignored input](#ignored-input) | 2 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 5 |
 | [Version drift](#version-drift) | 2 |
@@ -29,7 +29,6 @@
 **Part 16**
 
 - [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
-- [TOC: cancelling the display task drops the final results — the tail of every recording is silently lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#what-this-covers) — 16.1
 - [Contents: the cancellation shield — the guard against losing each recording's final phrase](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#contents) — 16.1
 - [Code comment: without the shield you lose the tail of every recording](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#64-complete-microphone-capture-end-to-end) — 16.1
 - [The cancellation shield: stop reading at cancel time and the final updates — the recording's tail — are lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) — 16.1

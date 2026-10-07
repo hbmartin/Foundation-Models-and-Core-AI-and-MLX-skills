@@ -431,24 +431,7 @@ public protocol TokenizerLoader: Sendable {
 
 `Libraries/MLXLMCommon/Tokenizer.swift:6-21`:
 
-```swift illustrative
-public protocol Tokenizer: Sendable {
-    func encode(text: String, addSpecialTokens: Bool) -> [Int]
-    func decode(tokenIds: [Int], skipSpecialTokens: Bool) -> String
-    func convertTokenToId(_ token: String) -> Int?
-    func convertIdToToken(_ id: Int) -> String?
-
-    var bosToken: String? { get }
-    var eosToken: String? { get }
-    var unknownToken: String? { get }
-
-    func applyChatTemplate(
-        messages: [[String: any Sendable]],
-        tools: [[String: any Sendable]]?,
-        additionalContext: [String: any Sendable]?
-    ) throws -> [Int]
-}
-```
+See the [canonical example](02-generation-tools-and-caching.md#61-the-protocol-is-nine-methods-and-it-returns-token-ids).
 
 Defaults in the protocol extension (`Tokenizer.swift:23-54`) supply `encode(text:)` with
 `addSpecialTokens: true`, `decode(tokenIds:)` with `skipSpecialTokens: **false**`, and computed
@@ -1728,30 +1711,7 @@ that compiles against 2026 toolchains. **What would resolve it:** `Source/MLX/GP
 
 The canonical app idiom, ✅ VERIFIED — the whole of `Applications/LLMBasic/LLMBasicApp.swift`:
 
-```swift prelude:external-module
-// Copyright © 2025 Apple Inc.
-
-import MLX
-import MLXLLM
-import MLXLMCommon
-import SwiftUI
-
-@main
-struct LLMBasicApp: App {
-
-    init() {
-        Memory.cacheLimit = 20 * 1024 * 1024
-    }
-
-    @State var loader = ModelLoader()
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView(loader: loader)
-        }
-    }
-}
-```
+See the [canonical example](../../part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#52-the-verified-memory-surface).
 
 What Apple actually ships, per app (✅ VERIFIED from the research note's survey):
 
@@ -3379,20 +3339,7 @@ defines the gate, it will happen in yours.
 The toolchain-selection shell is short enough to copy into your own CI (✅ VERIFIED,
 `.github/workflows/integration_tests.yml:21-42`):
 
-```bash
-dev=""
-for app in /Applications/Xcode_27*.app /Applications/Xcode-27*.app /Applications/Xcode.app; do
-  [ -d "$app" ] || continue
-  v=$("$app/Contents/Developer/usr/bin/xcodebuild" -version 2>/dev/null | head -1)
-  case "$v" in "Xcode 27"*) dev="$app/Contents/Developer" ;; esac
-  [ -n "$dev" ] && break
-done
-if [ -n "$dev" ]; then
-  echo "DEVELOPER_DIR=$dev" >> "$GITHUB_ENV"
-else
-  echo "FoundationModels tests will be compiled out (macOS 27 SDK required)."
-fi
-```
+See the [canonical example](03-fm-bridge-and-guided-generation.md#13-what-ci-does-about-it-and-why-you-should-copy-it).
 
 The split is explicit and worth reproducing in your own test plan:
 

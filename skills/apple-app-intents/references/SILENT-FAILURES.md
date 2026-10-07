@@ -1,6 +1,6 @@
 # Silent-failure index — App Intents, Siri schema domains, and Spotlight entity indexing
 
-**96 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**93 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -11,12 +11,12 @@
 | [Ignored input](#ignored-input) | 1 |
 | [Stale state](#stale-state) | 4 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 3 |
-| [Performance cliffs](#performance-cliffs) | 5 |
+| [Performance cliffs](#performance-cliffs) | 4 |
 | [Misleading signals](#misleading-signals) | 3 |
 | [Version drift](#version-drift) | 1 |
 | [Docs vs reality](#docs-vs-reality) | 18 |
-| [API footguns](#api-footguns) | 23 |
-| [General cautions](#general-cautions) | 21 |
+| [API footguns](#api-footguns) | 22 |
+| [General cautions](#general-cautions) | 20 |
 
 ## Wrong output
 
@@ -73,7 +73,6 @@
 **Part 16**
 
 - [A [Entity] parameter fully resolves every element before perform() — hidden N-query stall; EntityCollection passes ids](part-16-adjacent-capabilities/references/02-app-schema-domains.md#133-️-entitycollection--the-parameter-resolution-performance-cliff) — 16.2
-- [TOC: the performance trap that turns on-screen awareness into a stall](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#what-this-covers) — 16.3
 - [Code comment: the naive displayRepresentations is correct but slow enough to break awareness](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [The naive implementation compiles and is correct — and stalls long enough to break the feature](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [A naive displayRepresentations turns awareness into a stall — it is called for every entity](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#81-️-silent-failure--a-naive-displayrepresentations-turns-awareness-into-a-stall) — 16.3
@@ -135,7 +134,6 @@
 - [Per-row annotation loses selected and scrolled-off entities — annotate the container with forSelectionType](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#82-️-silent-failure--per-row-annotation-loses-selected-and-scrolled-off-entities) — 16.3
 - [TransientAppEntity forecloses three system integrations — silently, via the type choice](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#85-️-silent-failure--transientappentity-forecloses-three-system-integrations) — 16.3
 - [Now Playing identifiers in the wrong order resolve the wrong entity — the order is semantic](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#87-️-silent-failure--now-playing-identifiers-in-the-wrong-order) — 16.3
-- [TOC: the hydration hook is a nonisolated completion-handler method — not the async throwing shape you'd write](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#what-this-covers) — 16.4
 - [Index into a named CSSearchableIndex while other code uses the default and the corpus silently splits](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#32-why-a-named-index) — 16.4
 - [beginBatch/endBatch is not a transaction — partial writes persist; clientState is for resume, not rollback](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#34-batching-and-the-client-state-pattern) — 16.4
 - [CSCustomAttributeKey's init is failable — a nil key means the attribute silently never reaches the index](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#43-binding-your-properties-to-spotlight-keys) — 16.4
@@ -154,7 +152,6 @@
 - [Session 345 explicitly does not cover UndoableIntent, IntentModes or SnippetIntent — don't cite it for them](part-16-adjacent-capabilities/references/02-app-schema-domains.md#13-the-new-execution-model) — 16.2
 - [Session 344 published no code block — every listing attributed to it is transcript reconstruction](part-16-adjacent-capabilities/references/02-app-schema-domains.md#primary--wwdc26-sessions) — 16.2
 - [Symbol-name trust note for this guide — verify before porting names](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3
-- [Marker definition: these silent failures neither throw nor log, and symptoms appear far from the defect — eight here](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3 🔇
 - [Draft identity exists, but a verified hand-off still needs a real file payload — materialize first](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3
 - [Whether .appEntityIdentifier takes an optional is unverified — but the compiler tells you; explicitly not silent](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3 🔇
 - [In-memory content must be written to a file before the FileRepresentation hand-off — the step stays necessary](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#58-what-to-do-today) — 16.3

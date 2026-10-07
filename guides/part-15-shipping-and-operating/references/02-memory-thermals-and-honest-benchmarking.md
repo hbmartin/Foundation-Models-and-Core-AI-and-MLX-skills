@@ -23,45 +23,11 @@ even mean.
 
 ## What this covers
 
-This is the guide about the gap between a demo that works on your desk and an app that survives a
-week on someone else's phone. It has the highest crash-avoidance value in the series, and almost
-none of it is about writing better inference code. It is about four things that the frameworks do
-not tell you and that no error message will announce:
-
-- **§1–§3 — Memory and jetsam.** iOS does not hand you an allocation failure. It kills you. This
-  section covers the two OS signals that tell you how much room you actually have, why the
-  arithmetic "model is 4 GB, phone has 8 GB, therefore fine" is wrong in at least five separate
-  ways, and two documented real failures where a model *loaded successfully* and then died.
-- **§4–§6 — Living inside the budget.** What a shipping multi-backend app actually does about
-  memory pressure: a hysteretic governor, a background unload policy, verified unloads. Then the
-  MLX-specific dials — the buffer cache limit, the memory limit, wired-memory tickets — and the
-  unified-memory hazard nobody warns you about: **another framework's allocator can starve yours**.
-- **§7–§8 — Thermals and energy.** The section most benchmarks omit entirely. A19 prefill
-  throughput moves ~40% purely on DVFS clock ramp, with thermals eliminated as the cause. And
-  throughput and energy produce *different rankings* from the same device on the same day, so
-  "fastest" and "best battery" are frequently different answers.
-- **§9–§10 — Honest benchmarking.** A real methodology section, built out of measurement failures
-  that other people paid for: the harness that manufactured an 80%-vs-20% quality gap, the
-  identical recipe that produced a 2.2× throughput difference depending on which macOS built it,
-  and the "speed knob" that was actually a memory dial. Closing with a checklist you can paste into
-  a benchmark harness.
+Budget peak memory, respond to pressure and thermal state, and measure the exact artifact and process you ship. Use the governor, allocator controls, and benchmarking checklist to separate sustained performance from one-run throughput.
 
 ## What this does *not* cover
 
-- **Model distribution, Background Assets, asset packs, on-demand download and storage
-  reclamation.** That is [Part 15 guide 1](../). This guide picks up after the bytes are on disk.
-- **KV cache mechanics, prefix reuse and context-window management.** Covered in
-  [Part 3](../../part-03-context-profiles-agentic/) (Foundation Models) and
-  [Part 7](../../part-07-coreai-swift-runtime/) (Core AI states). This guide only cares about the
-  *bytes* those caches occupy.
-- **Quantization choices.** [Part 9](../../part-09-coreai-compression-numerics/). Quantization is
-  the single largest lever on all the numbers here, and it gets its own treatment.
-- **The MLX Swift package setup, concurrency model and `ModelContainer`.** That is
-  [Part 13 guide 1](../../part-13-mlx-swift/). §5 here covers only the memory-limit APIs and how to
-  refcount them, and cross-links.
-- **Evaluations and model quality.** [Part 6](../../part-06-evaluations/). §9 covers benchmark
-  *methodology* for latency, throughput, memory and energy, and touches quality only where a
-  quality harness bug masqueraded as a runtime difference.
+Related references: [Part 15 guide 1](../), [Part 3](../../part-03-context-profiles-agentic/), [Part 7](../../part-07-coreai-swift-runtime/), [Part 9](../../part-09-coreai-compression-numerics/), [Part 13 guide 1](../../part-13-mlx-swift/), [Part 6](../../part-06-evaluations/).
 
 ## What you need
 
@@ -112,25 +78,7 @@ not tell you and that no error message will announce:
 
 ## A note on evidence, before any numbers
 
-Almost every number in this guide is **community-measured**. There is very little Apple-published
-performance data for on-device LLM inference, and what exists is not on the axes that matter here
-(sustained throughput, energy per token, memory under pressure). The corpus this guide draws on
-contains two exceptionally good community sources — a shipping App Store app with six inference
-backends behind one enum, and a model-porting project that publishes its own negative results — and
-both are attributed as community throughout.
-
-Three standing caveats apply to every table below:
-
-1. **Beta OSes.** Most of these measurements were taken on iOS 27 and macOS 27 betas during
-   mid-2026. Betas move. §9.5 documents a case where the *build machine's OS version* changed
-   throughput by 2.2× with everything else held constant.
-2. **One device, one day.** Where a source measured a same-session control and found the device
-   running ~16% faster than in a previous session, this guide says so rather than smoothing it.
-3. **Some rows are unverified at source.** The energy table in §8.1 is cited by a repository to a
-   report file that is **not present in that repository**. That is stated at the table, not in a
-   footnote.
-
----
+The performance tables are attributed community measurements, largely from mid-2026 beta OSes and individual devices. They do not predict sustained performance on another build. §9.5 isolates an export-host OS effect; §8.1 identifies the missing source report behind the energy table. Keep those limitations with any comparison.
 
 ## 1. The jetsam model
 

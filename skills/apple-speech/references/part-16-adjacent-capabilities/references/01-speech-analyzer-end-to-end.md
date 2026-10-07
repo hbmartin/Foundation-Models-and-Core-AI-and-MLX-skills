@@ -20,92 +20,17 @@ text-to-speech API. The other is a sample project demonstrating the 2026 APIs.
 
 ## Evidence markers used in this guide
 
-> ✅ **VERIFIED** — quoted from an Apple documentation page or a compiling Apple sample project
-> that we read this session. The citation follows the claim.
->
-> ✅ **SDK-verified** — read directly from the Speech framework's `.swiftinterface` in a real SDK.
-> Citations look like (`Speech-27.0-macos.swiftinterface:120-134`) and point into
-> `notes/sdk-interfaces/`.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested in an Apple source, but the exact spelling, type
-> or default is inferred. Treat the shape as right and the identifier as provisional.
->
-> 🔴 **GAP** — we could not verify it and are saying so rather than inventing it. Every gap box
-> names what is unknown, what would resolve it, and a safe default.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Swift-native signature citations retain the 2026-07-29 captures `Speech-26.5-macos.swiftinterface` and `Speech-27.0-macos.swiftinterface` in `notes/sdk-interfaces/`. Those macOS interfaces do not enumerate Objective-C APIs, so absence is not proof that `SFSpeechRecognizer` or a device-only symbol is unavailable.
 
-**Checked 2026-07-29:** every Swift-native Speech symbol in this guide was verified against two
-SDK interface dumps — `Speech-26.5-macos.swiftinterface` (macOS 26.5 SDK) and
-`Speech-27.0-macos.swiftinterface` (the real macOS 27.0 beta SDK). That is now the **strongest**
-evidence class here: it settles spellings, signatures, availability floors and enum cases that
-documentation prose could not. Two honesty caveats. First, a `.swiftinterface` shows only the
-Swift-native surface — the framework's Objective-C API (`SFSpeechRecognizer`,
-`SFSpeechLanguageModel`, the legacy request types) does not appear in it, so ObjC-side claims keep
-their documentation-grade markers and are *not* downgraded by absence from the interface. Second,
-absence of a symbol from the 27.0 dump means "not present in the macOS 27.0 beta SDK interface",
-never "does not exist".
-
-The strongest *documentation* evidence remains Apple's own article
-*"Recognizing speech in live audio"* (`/documentation/speech/recognizing-speech-in-live-audio`,
-fetched 2026-07-27), which is marked **iOS 27.0+ Beta, iPadOS 27.0+ Beta, Mac Catalyst 27.0+ Beta,
-Xcode 27.0+ Beta** and walks through the SpokenWord sample line by line. Nearly every code
-fragment in §2–§11 is quoted from it or from the framework reference pages it links.
-
-The **weakest** thing you can lean on here is the downloadable sample ZIP — see §1.2.
-
----
+Apple's “Recognizing speech in live audio” article was captured 2026-07-27. The downloadable sample has different API coverage (§1.2); do not assume it demonstrates every OS 27 addition.
 
 ## What this covers
 
-`SpeechAnalyzer` is the 2026 speech-to-text stack: an actor that owns a set of analysis
-**modules**, accepts a single asynchronous sequence of time-coded audio, and hands each module's
-output back to you as its own `AsyncSequence`. Nothing about it looks like `SFSpeechRecognizer`.
-There is no delegate, no recognition *request* object, no authorization dance in the common path,
-and — critically — **no accumulated transcript**. The framework gives you a stream of results, each
-stamped with the range of audio it describes, and expects *you* to assemble the document.
-
-This guide covers:
-
-- **§1 — Two warnings.** No TTS API; the sample project is a WWDC25 leftover.
-- **§2 — The shape of the pipeline.** Analyzer, modules, results; Apple's eight-step canonical
-  flow; what "finished" actually means.
-- **§3 — Choosing a transcriber.** `SpeechTranscriber` vs `DictationTranscriber`, the platform
-  matrix, and the one-line rule Apple gives for falling back.
-- **§4 — Presets and content hints.** Both full preset matrices, how to modify a preset without
-  breaking it, and `customizedLanguage(modelConfiguration:)`.
-- **§5 — Assets.** Why `AssetInventory` exists, the reservation quota, and the three things that
-  break silently if you skip it.
-- **§6 — Input, the headline change.** `CaptureInputSequenceProvider` replaces the hand-installed
-  audio-engine tap. Complete code for microphone capture, file playback, and the hand-rolled
-  fallback with `AnalyzerInputConverter`.
-- **§7 — Running the analysis.** `analyzeSequence(_:)` → last audio time → `finalizeAndFinish(through:)`,
-  and why terminating your input stream is *not* how you stop.
-- **§8 — Result merging.** The subtle part. Two documented strategies, the trade between them, and
-  the attribute-option trap that makes the first one silently no-op.
-- **§9 — The cancellation shield.** ⚠️ The signature silent failure of this API: the display task
-  must be shielded from cancellation or you lose the last words of every recording.
-- **§10 — A complete worked example**, assembled from Apple's fragments with every gap marked.
-- **§11 — Custom vocabulary.** The `SFCustomLanguageModelData` result-builder DSL, the offline
-  build step, and `prepareCustomLanguageModel(for:configuration:)`.
-- **§12 — `SpeechDetector`**, and why its `Result` stream is not what you think.
-- **§13 — Resource limits, model retention, prewarming.**
-- **§14 — The other path.** `apple/coreai-models` ships a `CoreAISpeech` product with a Whisper
-  encoder/decoder on Core AI. Completely different trade-offs. Cross-links Part 7.
-- **§15/§16 — Declared gaps and a silent-failure checklist.**
+Build speech-to-text with `SpeechAnalyzer`: select modules, reserve assets, provide time-coded audio, consume results, and finalize the stream. The examples cover microphone capture, files, legacy fallbacks, permissions, and transcript assembly.
 
 ## What this does *not* cover
 
-- **Text-to-speech / speech synthesis.** There is no new API (§1.1). AVFoundation's speech
-  synthesis is out of scope for this series.
-- **The legacy `SFSpeechRecognizer` stack** (`SFSpeechAudioBufferRecognitionRequest`,
-  `SFSpeechRecognitionTask`, `SFTranscription`, `SFVoiceAnalytics`, …). It still ships and is
-  still documented. If you are maintaining it, the only 2026-relevant facts are that
-  `DictationTranscriber` uses *the same models* as on-device `SFSpeechRecognizer`, and that the
-  custom-vocabulary types are shared between the two stacks.
-- **Speaker diarization, translation, or audio classification.** Not in the Speech framework.
-- **Feeding transcripts into Foundation Models.** That is a `LanguageModelSession` problem;
-  see [Part 2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/README.md). The one thing worth saying here is
-  that transcript results are `AttributedString`, and you will want
-  `String(result.text.characters)` before you put anything in a `Prompt`.
+Related references: [Part 2](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-02-foundation-models-everyday-api/README.md).
 
 ## What you need
 

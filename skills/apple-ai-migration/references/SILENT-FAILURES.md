@@ -1,6 +1,6 @@
 # Silent-failure index — Migrating an Apple AI integration from 26 to 27
 
-**173 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**170 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -11,12 +11,12 @@
 | [Ignored input](#ignored-input) | 10 |
 | [Stale state](#stale-state) | 2 |
 | [Data & artifact loss](#data--artifact-loss) | 8 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 15 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 13 |
 | [Performance cliffs](#performance-cliffs) | 6 |
 | [Resource growth](#resource-growth) | 4 |
 | [Precision loss](#precision-loss) | 1 |
 | [Misleading signals](#misleading-signals) | 23 |
-| [Version drift](#version-drift) | 25 |
+| [Version drift](#version-drift) | 24 |
 | [Docs vs reality](#docs-vs-reality) | 12 |
 | [API footguns](#api-footguns) | 19 |
 | [General cautions](#general-cautions) | 36 |
@@ -86,11 +86,9 @@
 - [BarcodeReaderTool lists watchOS but OCRTool does not; a watchOS target reaching for OCR finds nothing](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#46-additive--system-tools-and-the-one-that-isnt-where-youd-look) — 17.1
 - [Copying 2026 samples' reactive-only gating means users discover Apple Intelligence is unavailable only after tapping](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#64-behavioural--apples-samples-dropped-proactive-availability-gating) — 17.1 🔇
 - [No App Store required-device-capability exists for Apple Intelligence; incapable devices can always install your app](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#65-behavioural--the-siri-enablement-gate-is-a-defect-not-a-design) — 17.1
-- [On GPU-pipelined bundles you lose @Generable entirely; constrained decoding needs logits they never expose](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#what-this-covers) — 17.2
 - [@Generable needs logits the GPU-pipelined Core AI engine never returns; the fastest backend cannot do guided generation](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2
 - [The GPU-pipelined engine samples on-GPU and returns no logits; @Generable fails at runtime, not at build time](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2 🔇
 - [Path table: @Generable works on FM and via MLXGuidedGeneration but not on GPU-pipelined Core AI bundles](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#122-the-three-paths-at-a-glance) — 17.2
-- [An SDK-interface/dylib symbol mismatch crashes at load before main; no runtime guard can intercept it](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the load-time crash from an interface/dylib mismatch that no runtime guard can catch](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [The load-time failure no guard can catch: interface/dylib mismatch SIGSEGVs before main](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4
 - [The FM-27 beta interface declared a symbol the dylib lacked; respond() SIGSEGVed emitting usage until mlx fix #439](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4 🔇
@@ -167,7 +165,6 @@
 - [Revised: Xcode 27 now emits adapter deprecation warnings, and hard obsolete errors once you target OS 27](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
 - [MLXFoundationModels compiles only when the trait and the 27-SDK canImport both hold; otherwise it is an empty library](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#82-where-mlxfoundationmodels-actually-is) — 17.2
 - [GenerationError was deprecated, not deleted: catch clauses compile but stop firing once you rebuild with Xcode 27](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#error-taxonomy-migration-generationerror--languagemodelerror) — 17.3 🔇
-- [MLXFoundationModels builds green on the 26 SDK yet compiles to an empty library; the FM adapter is not in the binary](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the empty library — a green 26-SDK build of MLXFoundationModels contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [MLXFoundationModels on the 26 SDK: builds successfully and contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4
 - [Apple states it twice in-repo: on the 26 SDK MLXFoundationModels builds successfully as an empty library](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4 🔇

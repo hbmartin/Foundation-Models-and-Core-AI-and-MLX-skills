@@ -1,6 +1,6 @@
 # API & symbol index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**384 symbols, of 1203 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**384 symbols, of 1201 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -83,7 +83,7 @@
 | `NDArray.init(descriptor:)` |  | ✓ | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 | `NDArray.InterleaveLayout` |  | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 | `NDArray.MutableView` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) |
-| `NDArray.ScalarType` |  | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) +1 more |
+| `NDArray.ScalarType` |  | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [9.README](part-09-coreai-compression-numerics/README.md) |
 | `NDArray.ScalarType.type` |  | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 | `NDArray.strides` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 | `NDArray.View` |  | ✓ | [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |

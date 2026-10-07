@@ -3,7 +3,7 @@
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
 <!-- current-state:guides:start -->
-**Current snapshot (2026-10-07):** 17 parts, 60 reference guides, 1203 indexed symbols, and 1,746 classified warnings (1,403 concrete silent failures). Installed verification environment: macOS 27.0 (26A428), Xcode 27.0 (27A266a). Stable-release guidance leads; beta-only APIs and measurements carry their own evidence dates and platform identity. See [current state](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/current-state.json) for latest observed releases, validation dates, and destination-specific baselines. Observed stable releases: Xcode 27, iOS 27.0.1, macOS 27.0.1, ml-explore/mlx 0.32.3, ml-explore/mlx-lm 0.32.0, ml-explore/mlx-swift 0.32.3, ml-explore/mlx-swift-lm 3.32.3, apple/python-apple-fm-sdk 0.2.1. Release availability does not attest untested runtime behavior.
+**Current snapshot (2026-10-07):** 17 parts, 60 reference guides, 1201 indexed symbols, and 1,733 classified warnings (1,394 concrete silent failures). Installed verification environment: macOS 27.0 (26A428), Xcode 27.0 (27A266a). Stable-release guidance leads; beta-only APIs and measurements carry their own evidence dates and platform identity. See [current state](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/current-state.json) for latest observed releases, validation dates, and destination-specific baselines. Observed stable releases: Xcode 27, iOS 27.0.1, macOS 27.0.1, ml-explore/mlx 0.32.3, ml-explore/mlx-lm 0.32.0, ml-explore/mlx-swift 0.32.3, ml-explore/mlx-swift-lm 3.32.3, apple/python-apple-fm-sdk 0.2.1. Release availability does not attest untested runtime behavior.
 <!-- current-state:guides:end -->
 
 Seventeen parts covering Apple's 2026 on-device AI stack end to end — from a three-line
@@ -254,34 +254,11 @@ always know which is which.
 
 ### Evidence markers
 
-Every non-obvious API claim carries one of these:
-
-> ✅ **VERIFIED** — quoted from a header, SDK, shipping source file, or Apple documentation page.
-> The citation follows the claim.
-
-> 🟡 **RECONSTRUCTED** — the concept is attested (usually from a WWDC session), but the exact
-> spelling is inferred. Treat the shape as right and the identifiers as provisional.
-
-> 🟠 **Suggestive, \<date\>** — measured, but not on the target configuration: a dated probe run
-> on the simulator or partial hardware (cited by `probes/` probe ID), or a community measurement
-> (spelled **COMMUNITY-MEASURED**). Directional evidence only; each box names the clean
-> MAC-27/DEVICE-27 pass that would promote or retire it.
-
-> 🔴 **GAP** — we could not verify this and are telling you so rather than inventing it. The
-> callout names exactly what is unknown and what it would take to resolve.
-
-A `🔴 GAP` box never contains a guess. If a guide needs `fm --help` output and nobody has run
-`fm` on macOS 27, the guide says that.
+See [Evidence conventions](#evidence-conventions) for source, reconstruction, uncertainty, and measurement labels. `Suggestive` evidence was measured outside the target configuration and requires a dated target check before promotion.
 
 ### Silent-failure callouts
 
-> ⚠️ **SILENT FAILURE** — the defining property of this stack is that most defects *do not throw*.
-
-Every guide carries at least one of these where applicable. Known examples, so you know what
-kind of thing to expect: a `@Guide(.anyOf:)` that doesn't constrain; the historical 0.4.1 `AIProgram.optimize()` defect
-deleting broadcasting-significant axis moves; fused SDPA falling back without a warning;
-`reduce_rows` defaulting its identity to zero regardless of the reduction operation; a tool named
-in your instructions but absent from the toolset, producing an infinite loop and no error.
+A `SILENT FAILURE` callout identifies a problem that produces no useful error. Use the [silent-failure index](SILENT-FAILURES.md) to find the symptom and the owning guide.
 
 ### Version floor
 
@@ -332,7 +309,7 @@ and the guide says so.
 
 ## Known gaps, and what would close them
 
-A 🔴 GAP names an unresolved question and the evidence needed to close it. Use each guide's current gap ledger; closed investigation history is not an active backlog. The remaining manual UI task is [Instruments recording](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/probes/INSTRUMENTS-RECORDING.md).
+A 🔴 GAP names an unresolved question and the evidence needed to close it. Keep material uncertainty beside the affected advice; closed investigations remain in Git history. The remaining manual UI task is [Instruments recording](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/probes/INSTRUMENTS-RECORDING.md).
 
 ## Verification and series status
 

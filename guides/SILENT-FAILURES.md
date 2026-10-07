@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1746 of them, 1403 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1733 of them, 1394 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -18,19 +18,19 @@ Start from the symptom column that matches what you observe. Within each section
 |---|---:|---|
 | [Wrong output](#wrong-output) | 172 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
 | [Empty output / no-op](#empty-output--no-op) | 61 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
-| [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
+| [Truncation & limits](#truncation--limits) | 27 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
 | [Ignored input](#ignored-input) | 109 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
-| [Data & artifact loss](#data--artifact-loss) | 40 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
-| [Compiles but unavailable](#compiles-but-unavailable) | 87 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
-| [Performance cliffs](#performance-cliffs) | 144 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
-| [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
+| [Data & artifact loss](#data--artifact-loss) | 39 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
+| [Compiles but unavailable](#compiles-but-unavailable) | 84 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
+| [Performance cliffs](#performance-cliffs) | 143 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
+| [Resource growth](#resource-growth) | 40 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 95 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Version drift](#version-drift) | 94 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
 | [Docs vs reality](#docs-vs-reality) | 154 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
-| [API footguns](#api-footguns) | 258 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 343 | Warnings and considerations that are not themselves silent failures. |
+| [API footguns](#api-footguns) | 257 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
+| [General cautions](#general-cautions) | 339 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -399,7 +399,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 16**
 
 - [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
-- [TOC: cancelling the display task drops the final results — the tail of every recording is silently lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#what-this-covers) — 16.1
 - [Contents: the cancellation shield — the guard against losing each recording's final phrase](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#contents) — 16.1
 - [Code comment: without the shield you lose the tail of every recording](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#64-complete-microphone-capture-end-to-end) — 16.1
 - [The cancellation shield: stop reading at cancel time and the final updates — the recording's tail — are lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) — 16.1
@@ -701,7 +700,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 15**
 
-- [TOC: bookmarks quietly die — init?(resolvingBookmark:) returns nil, not an error, once the entry is purged](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A stored bookmark quietly stops working — purge or invalidation makes resolve return nil, not an error](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) — 15.1
 - [bookmarkData doesn't pin the entry; resolvingBookmark returns nil, not an error — failure lands in an else branch](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#82-the-defect) — 15.1 🔇
 - [Code comment marks the silent branch: a well-formed bookmark whose entry is gone resolves to nil](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#84-the-fix-persist-a-record-never-a-bare-bookmark) — 15.1
@@ -819,7 +817,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [compile exits 0 for any arch; codes track device ids, not names — green CI, invalidCompiledModel in users' hands](part-15-shipping-and-operating/README.md#151--shipping-models-background-assets-per-architecture-variants-and-updates) — 15.README 🔇
 - [AOT compilation has a far narrower hardware floor than the framework — AOT assets exclude devices the framework supports](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#shipping-models-background-assets-per-architecture-variants-and-updates) — 15.1
-- [TOC: coreai-build compile succeeds for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A green compile the device rejects — exit 0 proves nothing; the failure is invalidCompiledModel in the field](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#5-️-silent-failure-a-green-compile-that-the-device-rejects) — 15.1
 - [xcrun coreai-build compile exits 0 for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#51-the-defect) — 15.1 🔇
 - [A bad app-group entitlement silently drops to the per-bundle cache — specialization cost and storage double](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#103-️-the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror) — 15.1
@@ -844,11 +841,9 @@ Start from the symptom column that matches what you observe. Within each section
 - [BarcodeReaderTool lists watchOS but OCRTool does not; a watchOS target reaching for OCR finds nothing](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#46-additive--system-tools-and-the-one-that-isnt-where-youd-look) — 17.1
 - [Copying 2026 samples' reactive-only gating means users discover Apple Intelligence is unavailable only after tapping](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#64-behavioural--apples-samples-dropped-proactive-availability-gating) — 17.1 🔇
 - [No App Store required-device-capability exists for Apple Intelligence; incapable devices can always install your app](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#65-behavioural--the-siri-enablement-gate-is-a-defect-not-a-design) — 17.1
-- [On GPU-pipelined bundles you lose @Generable entirely; constrained decoding needs logits they never expose](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#what-this-covers) — 17.2
 - [@Generable needs logits the GPU-pipelined Core AI engine never returns; the fastest backend cannot do guided generation](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2
 - [The GPU-pipelined engine samples on-GPU and returns no logits; @Generable fails at runtime, not at build time](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2 🔇
 - [Path table: @Generable works on FM and via MLXGuidedGeneration but not on GPU-pipelined Core AI bundles](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#122-the-three-paths-at-a-glance) — 17.2
-- [An SDK-interface/dylib symbol mismatch crashes at load before main; no runtime guard can intercept it](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the load-time crash from an interface/dylib mismatch that no runtime guard can catch](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [The load-time failure no guard can catch: interface/dylib mismatch SIGSEGVs before main](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4
 - [The FM-27 beta interface declared a symbol the dylib lacked; respond() SIGSEGVed emitting usage until mlx fix #439](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4 🔇
@@ -1037,7 +1032,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 16**
 
 - [A [Entity] parameter fully resolves every element before perform() — hidden N-query stall; EntityCollection passes ids](part-16-adjacent-capabilities/references/02-app-schema-domains.md#133-️-entitycollection--the-parameter-resolution-performance-cliff) — 16.2
-- [TOC: the performance trap that turns on-screen awareness into a stall](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#what-this-covers) — 16.3
 - [Code comment: the naive displayRepresentations is correct but slow enough to break awareness](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [The naive implementation compiles and is correct — and stalls long enough to break the feature](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [A naive displayRepresentations turns awareness into a stall — it is called for every entity](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#81-️-silent-failure--a-naive-displayrepresentations-turns-awareness-into-a-stall) — 16.3
@@ -1108,7 +1102,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 15**
 
 - [A successful load is not a fit test — first inference adds activations and KV, and compute unit moves headroom 2×](part-15-shipping-and-operating/README.md#152--memory-jetsam-thermals-energy-and-measuring-honestly) — 15.README 🔇
-- [TOC: two slightly different options structs silently create two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [Prewarming a graph with static-shape host KV I/O allocates the whole cache up front — a net loss; gate your prewarm](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#62-the-three-levers) — 15.1
 - [SpecializationOptions is part of the cache key — two variants mean two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) — 15.1
 - [Slightly different SpecializationOptions from two code paths silently double the multi-GB cache and re-stall first load](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#91-the-defect) — 15.1 🔇
@@ -1506,7 +1499,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Revised: Xcode 27 now emits adapter deprecation warnings, and hard obsolete errors once you target OS 27](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
 - [MLXFoundationModels compiles only when the trait and the 27-SDK canImport both hold; otherwise it is an empty library](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#82-where-mlxfoundationmodels-actually-is) — 17.2
 - [GenerationError was deprecated, not deleted: catch clauses compile but stop firing once you rebuild with Xcode 27](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#error-taxonomy-migration-generationerror--languagemodelerror) — 17.3 🔇
-- [MLXFoundationModels builds green on the 26 SDK yet compiles to an empty library; the FM adapter is not in the binary](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the empty library — a green 26-SDK build of MLXFoundationModels contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [MLXFoundationModels on the 26 SDK: builds successfully and contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4
 - [Apple states it twice in-repo: on the 26 SDK MLXFoundationModels builds successfully as an empty library](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4 🔇
@@ -2009,7 +2001,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Per-row annotation loses selected and scrolled-off entities — annotate the container with forSelectionType](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#82-️-silent-failure--per-row-annotation-loses-selected-and-scrolled-off-entities) — 16.3
 - [TransientAppEntity forecloses three system integrations — silently, via the type choice](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#85-️-silent-failure--transientappentity-forecloses-three-system-integrations) — 16.3
 - [Now Playing identifiers in the wrong order resolve the wrong entity — the order is semantic](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#87-️-silent-failure--now-playing-identifiers-in-the-wrong-order) — 16.3
-- [TOC: the hydration hook is a nonisolated completion-handler method — not the async throwing shape you'd write](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#what-this-covers) — 16.4
 - [Index into a named CSSearchableIndex while other code uses the default and the corpus silently splits](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#32-why-a-named-index) — 16.4
 - [beginBatch/endBatch is not a transaction — partial writes persist; clientState is for resume, not rollback](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#34-batching-and-the-client-state-pattern) — 16.4
 - [CSCustomAttributeKey's init is failable — a nil key means the attribute silently never reaches the index](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#43-binding-your-properties-to-spotlight-keys) — 16.4
@@ -2049,10 +2040,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 *Warnings and considerations that are not themselves silent failures.*
 
-
-**Series**
-
-- [Most defects do not throw; expect silence, plausible wrong numbers, and quiet degradation.](README.md#silent-failure-callouts) — root 🔇
 
 **Part 1**
 
@@ -2316,7 +2303,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Apple's distributed speedup comes with its own caveat - it depends on setup; quote the caveat with the number.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [180 to 600 tok/s are the session's only absolute figures; every other distributed claim is a ratio.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [The RDMA port forum report is community-reported with unknown status and no replies captured.](part-12-mlx-python/references/05-serving-and-distributed.md#251-the-community-rdma-port-report) — 12.5
-- [Every file:line cite pins commit e5baded; on any other commit expect line numbers to have drifted.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#evidence-ladder-used-in-this-guide) — 12.6
 - [--mlx-path must not already exist and there is no --force; delete the previous output directory first.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#51-there-is-no---qlora-flag) — 12.6
 - [Dropout fires only in training mode; train() and evaluate() toggle it, so know which mode your loop left the model in.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#65-dropout) — 12.6
 - [The memory-constrained path's loader accepts only .jsonl with a text field (or one alternate); other formats fail.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#86-what-oom-looks-like--on-a-mac-and-why-not-on-a-phone) — 12.6
@@ -2390,7 +2376,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Session 345 explicitly does not cover UndoableIntent, IntentModes or SnippetIntent — don't cite it for them](part-16-adjacent-capabilities/references/02-app-schema-domains.md#13-the-new-execution-model) — 16.2
 - [Session 344 published no code block — every listing attributed to it is transcript reconstruction](part-16-adjacent-capabilities/references/02-app-schema-domains.md#primary--wwdc26-sessions) — 16.2
 - [Symbol-name trust note for this guide — verify before porting names](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3
-- [Marker definition: these silent failures neither throw nor log, and symptoms appear far from the defect — eight here](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3 🔇
 - [Draft identity exists, but a verified hand-off still needs a real file payload — materialize first](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3
 - [Whether .appEntityIdentifier takes an optional is unverified — but the compiler tells you; explicitly not silent](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3 🔇
 - [In-memory content must be written to a file before the FileRepresentation hand-off — the step stays necessary](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#58-what-to-do-today) — 16.3
@@ -2404,7 +2389,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Consumer surface note: the demo's consumer was the Fitness app's suggested-playlists list](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#122-the-api) — 16.4
 - [Donate only UI-originated interactions, never Siri-originated — the rule against feeding the ranking loop back](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#124-apples-three-way-decision-rule) — 16.4
 - [Get plain indexing working and verified before building consumers — everything downstream depends on it](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#142-the-sequence) — 16.4
-- [Marker definition: these do not throw — this guide catalogues five](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#evidence-markers-used-in-this-guide) — 16.5 🔇
 - [Treat the six performance numbers as documentation claims, not citable measurements](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#the-one-workflow-where-the-answer-is-unambiguously-yes) — 16.5
 - [All images must share H×W×C — mismatches raise DNIKitException; differing sizes need a custom Producer](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#57-the-producers-and-sample-assets-apple-ships) — 16.5
 

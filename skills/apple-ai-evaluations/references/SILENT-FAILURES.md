@@ -1,6 +1,6 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**71 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**70 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -14,7 +14,7 @@
 | [Misleading signals](#misleading-signals) | 11 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
 | [API footguns](#api-footguns) | 8 |
-| [General cautions](#general-cautions) | 18 |
+| [General cautions](#general-cautions) | 17 |
 
 ## Wrong output
 
@@ -146,7 +146,6 @@
 **Part 16**
 
 - [Read-first: two planning-level facts gate everything in this part — learn them before scoping work](part-16-adjacent-capabilities/README.md#️-two-things-to-learn-before-you-plan-anything) — 16.README
-- [Marker definition: these do not throw — this guide catalogues five](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#evidence-markers-used-in-this-guide) — 16.5 🔇
 - [Treat the six performance numbers as documentation claims, not citable measurements](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#the-one-workflow-where-the-answer-is-unambiguously-yes) — 16.5
 - [All images must share H×W×C — mismatches raise DNIKitException; differing sizes need a custom Producer](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#57-the-producers-and-sample-assets-apple-ships) — 16.5
 
