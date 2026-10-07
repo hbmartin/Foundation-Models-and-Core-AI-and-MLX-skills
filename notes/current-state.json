@@ -2,15 +2,15 @@
   "asOf": "2026-10-07",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1422,
-      "total": 1781
+      "concreteSilentFailures": 1413,
+      "total": 1769
     },
-    "externalLinks": 269,
+    "externalLinks": 202,
     "generatedSkills": 10,
     "guideMarkdownFiles": 82,
     "parts": 17,
     "referenceGuides": 60,
-    "symbols": 1206
+    "symbols": 1204
   },
   "environment": {
     "installed": {

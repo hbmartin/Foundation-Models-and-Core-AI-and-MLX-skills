@@ -2,80 +2,23 @@
 
 **Part 12 · MLX in Python · Reference 03**
 
-**Version floor.** Everything in this guide was read against **mlx `0.32.1`** (the declared
-version in the tree; latest tag in the shallow clone is `v0.32.0`) and **mlx-lm `0.31.3`**, which
-pins `mlx >= 0.31.2` on Darwin. macOS wheels require **Apple silicon, native Python ≥ 3.10, and
-macOS ≥ 14.0**. That is the floor for *using* quantization at all.
+**Current releases:** MLX **0.32.3** and mlx-lm **0.32.0**, checked 2026-10-07. Detailed examples retain the inspected MLX 0.32.1 / mlx-lm 0.31.3 snapshots. MLX wheels require Apple silicon, native Python ≥ 3.10, and macOS ≥ 14.0; current mlx-lm requires Python ≥ 3.11 and MLX ≥ 0.32.2 on Darwin.
 
 There is a **second, much higher floor** for the fast kernels. MLX's NAX quantized matmuls — the
 ones that run on the M5-generation neural accelerators — require **Metal 4, macOS SDK ≥ 26.2, a
 deployment target ≥ 26.2**, and at runtime **`__builtin_available(macOS 26.2, iOS 26.2, tvOS 26.2,
 visionOS 26.2)` plus GPU architecture generation ≥ 17 (≥ 18 on `'p'` parts)**. Below that line you
-get the older Metal kernels, silently. Above it you get more speed and, as of **2026-07-27**, a
-cluster of **open correctness bugs that silently corrupt quantized model output**. Both halves of
-that sentence are the reason this guide exists.
-
-Nothing here is written from memory. Every API name, flag and number comes from a research note
-read this session and carries an evidence marker.
+get the older Metal kernels, silently. Above it, validate output against a reference implementation: source fixes and target-hardware remediation are tracked separately in the relevant kernel sections.
 
 ---
 
 ## What this covers
 
-Quantization in MLX is not one feature. It is four things wearing the same name, and confusing
-them is how people ship broken models:
-
-1. **A numeric format** — affine at 2/3/4/5/6/8 bits, or one of the three block-float modes
-   (`mxfp4`, `mxfp8`, `nvfp4`). Choosing one is a size/quality decision.
-2. **A memory layout** — packed `uint32` weights plus a separate scales array plus (for affine) a
-   separate biases array. Three arrays, not one. Every API in this guide takes all three.
-3. **A kernel dispatch problem** — whether your shapes hit the fast path is decided by
-   `K % 64 == 0`, by `transpose=True`, and for the gather path by a tile constant of `BK = 64`.
-   Miss those and nothing warns you; you just get slower, or on one hardware generation, wrong.
-4. **A calibration procedure** — plain round-to-nearest, or one of mlx-lm's four data-aware
-   pipelines (AWQ, GPTQ, DWQ, dynamic). This is where the quality actually comes from at 3 bits
-   and below.
-
-Read this guide to learn:
-
-- **The verified mode inventory** and what each mode's scale encoding actually is — including the
-  fact that `fp8_e8m0`, `fp8_e4m3` and `fp4_e2m1` are **MLX's own C++ structs**, not Metal types,
-  and that MLX builds the whole MX/NV story in software on top of plain integer operands.
-- **The bits-per-weight arithmetic**, so you can predict a checkpoint's size before you convert it
-  and recognise when MLX's reported number disagrees with your expectation (it usually should).
-- **The complete API**: `mx.quantize`, `mx.dequantize`, `mx.quantized_matmul`, `mx.gather_qmm`,
-  `mx.qqmm`, `nn.quantize`, `nn.QuantizedLinear`, `nn.QuantizedEmbedding`, `nn.QQLinear`.
-- **The gates** that decide kernel selection, what happens when you miss them, and why the failure
-  is invisible.
-- **`gather_qmm`** — the op that makes Mixture-of-Experts decode tractable, why reading only the
-  routed experts is worth multiples rather than percentages, and community measurements of exactly
-  that.
-- **Learned quantization** — what AWQ, GPTQ, DWQ and dynamic quantization each actually do in
-  mlx-lm's implementation, their real argparse defaults, their hard limits, and when the extra
-  compute pays for itself.
-- **⚠️ The corruption bugs.** Four separate defects in quantized matmul paths, with issue numbers
-  and precise status as of 2026-07-29. One of them leaves output rows **unwritten**, exposing
-  recycled Metal allocator memory — which is sometimes coincidentally plausible, which is why it
-  went unnoticed.
-- **A verification recipe** you should run before every ship: quantized versus unquantized, one
-  fixed prompt, greedy sampling, and a buffer-poisoning trick that turns "sometimes wrong" into
-  "always caught".
+Choose a quantization mode, group size, and compute path; validate numerical accuracy and check the corruption pitfalls before deploying.
 
 ## What this does *not* cover
 
-- **KV-cache quantization** (`--kv-bits`, `QuantizedKVCache`, `quantized_kv_start`). It shares the
-  word "quantization" and almost nothing else: it is an *activation* cache format, its failure
-  modes are different, and it deserves its own guide. §11 gives you the four facts you need so you
-  don't conflate the two.
-- **LoRA / QLoRA / DoRA on quantized bases.** That is the fine-tuning guide in this part.
-- **Distributed and sharded quantized layers** (`QuantizedAllToShardedLinear`,
-  `QuantizedShardedToAllLinear`). See the distributed guide.
-- **Core AI's compression story** (palettization, `.aimodel` numeric formats). Different framework,
-  different file format, different tooling —
-  [Part 9](../../part-09-coreai-compression-numerics/).
-- **Metal kernel authoring against MetalPerformancePrimitives.**
-  [Part 11](../../part-11-metal-and-tensorops/) covers what TensorOps does and does not give you;
-  §2.4 here summarises the one conclusion that changes how you read MLX's quantized kernels.
+Related references: [Part 9](../../part-09-coreai-compression-numerics/), [Part 11](../../part-11-metal-and-tensorops/).
 
 ## What you need
 
@@ -93,33 +36,7 @@ Read this guide to learn:
 
 ## ⚠️ Read this before you trust a number below
 
-Three sourcing rules apply to everything that follows.
-
-**First: the MLX clone behind these notes is shallow (`--depth 50`).** `git log` on most paths
-returns the graft boundary, not real history. No date in this guide should be read as "this is
-when the feature landed" unless it is attached to a specific PR number that the notes recorded with
-a date. Where I know a date, I give it; where I do not, I say so.
-
-**Second: the NAX quantized path is new and actively churning.** Three correctness fix PRs touching
-NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**; on a
-2026-08-03 `gh` re-check the first two were still open and #3924 was closed unmerged 2026-08-02
-— including a *missing `else`* in `tile_matmad_nax` that silently compiles to nothing for odd tile
-shapes and produces garbage. The research note that found it puts it plainly:
-
-> ✅ **VERIFIED** — "There is an **active stream of correctness fixes** as of the last week before
-> this investigation (3912, 3922, 3924, all within 72 hours). The NAX path is **new and still
-> settling**. A guide should not present it as mature."
-> — `notes/repos/mlx-tensorops-kernels.md:2003-2005`
-
-Treat every M5-generation quantized number in this guide as a moving target, and pin your mlx
-version in production.
-
-**Third: community measurements are labelled as such, every time.** The MoE throughput numbers in
-§7.4 come from a community model zoo, not from Apple. They are unique — nobody else has published
-them — and they are not Apple-official. Where a number is community-measured, the hardware and the
-source file are named inline.
-
----
+Pin MLX and verify quantized output on the target hardware. The NAX restrictions and current source/release observations are documented beside the affected kernels; community throughput measurements retain their hardware and source.
 
 ## Contents
 

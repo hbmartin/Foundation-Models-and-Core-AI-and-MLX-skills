@@ -79,40 +79,11 @@ _version: 2)`, not just `if #available(...)`.
 
 ## What this covers
 
-1. **The two gates** — the `FoundationModelsIntegration` SwiftPM trait and
-   `canImport(FoundationModels, _version: 2)` — and the four-cell matrix of what you get.
-2. **Both construction paths**, complete and copyable: the `#huggingFaceLanguageModel` macro, and
-   the direct `MLXLanguageModel(configuration:capabilities:configurationResolver:weightsLocation:load:)`
-   initializer the macro expands into.
-3. **Capabilities** — the four cases, what each actually switches on inside the executor, and why
-   the adapter refuses to infer them.
-4. **Availability, preload, prewarm, eviction** — the model-cache actor, the `.downloading` state,
-   and the disk-space pre-flight.
-5. **A file-by-file walk of the implementation**, because the file layout maps one-to-one onto the
-   protocol's demands. This is the concrete companion to
-   [Part 4 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md),
-   which teaches the protocol abstractly.
-6. **`MLXGuidedGeneration`** — how a JSON Schema becomes a token mask, the zone-based budget policy,
-   fast-forward tokens, and the standalone API you can use without Foundation Models.
-7. **The convergent design**: Apple's own `apple/coreai-models` and `ml-explore/mlx-swift-lm`
-   independently chose the same third-party library — `mlc-ai/xgrammar` — for constrained decoding.
-   Two teams, one answer, documented in no Apple material.
-8. **The architectural constraint that follows**: constrained decoding needs engine logits, and
-   GPU-pipelined Core AI bundles never expose them.
-9. **Failure modes**, including six silent ones, and the SDK-drift log from the 27 betas.
+Use MLXFoundationModels to provide an MLX backend for LanguageModelSession, with SDK gating and guided-generation requirements.
 
 ## What this does *not* cover
 
-- **The `LanguageModel` protocol itself** — its members, the executor store, the generation channel,
-  the request type. That is
-  [Part 4 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md)
-  and [Part 4 guide 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md).
-  This guide assumes you know what `respond(to:model:streamingInto:)` is for and shows you a real one.
-- **MLX generation, tool-call formats, KV caches, `ChatSession`.** That is
-  [Part 13 guide 2](02-generation-tools-and-caching.md). This guide sits on top of it and cross-refers.
-- **Package setup, concurrency, wired memory, media input.** [Part 13 guide 1](01-mlx-swift-lm-in-an-app.md).
-- **Core AI's own guided decoding.** [Part 7 guide 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md).
-  Referenced here only for the convergence and the logits constraint.
+Related references: [Part 4 guide 3](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [Part 4 guide 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [Part 13 guide 2](02-generation-tools-and-caching.md), [Part 13 guide 1](01-mlx-swift-lm-in-an-app.md), [Part 7 guide 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md).
 
 ## What you need
 

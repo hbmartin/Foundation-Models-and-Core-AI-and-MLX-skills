@@ -1,26 +1,26 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**341 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**329 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 42 |
+| [Wrong output](#wrong-output) | 40 |
 | [Empty output / no-op](#empty-output--no-op) | 7 |
 | [Truncation & limits](#truncation--limits) | 5 |
 | [Ignored input](#ignored-input) | 30 |
 | [Stale state](#stale-state) | 7 |
 | [Data & artifact loss](#data--artifact-loss) | 6 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 9 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 6 |
 | [Performance cliffs](#performance-cliffs) | 34 |
 | [Resource growth](#resource-growth) | 6 |
 | [Precision loss](#precision-loss) | 8 |
 | [Misleading signals](#misleading-signals) | 33 |
-| [Version drift](#version-drift) | 12 |
+| [Version drift](#version-drift) | 8 |
 | [Docs vs reality](#docs-vs-reality) | 13 |
 | [API footguns](#api-footguns) | 59 |
-| [General cautions](#general-cautions) | 70 |
+| [General cautions](#general-cautions) | 67 |
 
 ## Wrong output
 
@@ -43,7 +43,6 @@
 - [ensure_row_contiguous=False with raw linear indexing reads strided buffers wrong: right shape, wrong contents, no error.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#91-strides-and-non-contiguous-inputs) — 12.2 🔇
 - [Custom-kernel outputs are uninitialized by default; without init_value, unwritten slots hold recycled buffer contents.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2 🔇
 - [A kernel weight captured by closure gets no gradient under custom_function; pass tensors as arguments instead.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2
-- [Overview: four quantized-matmul corruption defects with issue numbers, most reproducible only on M5-generation hardware.](part-12-mlx-python/references/03-quantization.md#what-this-covers) — 12.3
 - [TOC: the register of quantized-matmul corruption bugs.](part-12-mlx-python/references/03-quantization.md#contents) — 12.3
 - [Seven quantized-matmul defects, five exclusive to M5-generation hardware; the register with statuses.](part-12-mlx-python/references/03-quantization.md#9-️-the-corruption-bugs) — 12.3
 - [gather_qmm's unwritten rows aren't zeros: they hold recycled MTLBuffer contents, sometimes coincidentally plausible.](part-12-mlx-python/references/03-quantization.md#91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856) — 12.3 🔇
@@ -57,7 +56,6 @@
 - [A VLM factory processor-selection gotcha produces wrong output rather than an error](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#72-the-processor-pipeline) — 13.1
 - [Dropped EXIF orientation feeds the model a rotated photo — wrong answers, no error; Apple fixed it in their own sample](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) — 13.1
 - [An empty assistant placeholder passed to UserInput(chat:) closes the turn — garbage or empty output blamed on the model](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#76-the-third-bug-in-the-same-commit-trailing-empty-assistant-message) — 13.1
-- [Template resolution has a silent failure mode: a wrong template degrades output with no error (§6)](part-13-mlx-swift/references/02-generation-tools-and-caching.md#what-this-covers) — 13.2
 - [Dropping LMOutput.State between turns drifts M-RoPE positions on VLMs — degraded multi-turn output, no error](part-13-mlx-swift/references/02-generation-tools-and-caching.md#43-state-and-the-m-rope-trap) — 13.2
 - [A trailing empty assistant message closes the turn — fresh user turn or instant EOS on the raw UserInput path](part-13-mlx-swift/references/02-generation-tools-and-caching.md#53-chatmessage) — 13.2
 - [The chat template is the contract and nothing checks it — mismatches produce fluent, degraded output](part-13-mlx-swift/references/02-generation-tools-and-caching.md#64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it) — 13.2
@@ -175,11 +173,8 @@
 **Part 12**
 
 - [rich and regex are imported at module level but undeclared; a bare pip install crashes at import.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#what-you-need) — 12.4
-- [The server imports undeclared packages at module level; a clean install crashes before serving anything.](part-12-mlx-python/references/05-serving-and-distributed.md#11-three-steps-and-the-two-packages-nobody-tells-you-about) — 12.5
 - [macOS 26.2 is the hard gate for RDMA-over-Thunderbolt distributed inference; older machines simply can't join.](part-12-mlx-python/references/05-serving-and-distributed.md#14-the-four-layer-distributed-stack) — 12.5
 - [mlx_lm.lora imports two more packages at module scope that setup.py never declares; bare installs crash.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#what-you-need) — 12.6
-- [rich and regex must be installed by hand; they're imported at module scope but undeclared in setup.py.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#11-the-install-line) — 12.6
-- [On a bare pip install, mlx_lm.lora dies at import: cli_ui pulls rich at module scope (ModuleNotFoundError).](part-12-mlx-python/references/06-finetuning-and-porting-models.md#11-the-install-line) — 12.6
 
 **Part 13**
 
@@ -314,14 +309,10 @@
 **Part 12**
 
 - [export_function is experimental; .mlxfn files from older MLX versions may not load in future ones.](part-12-mlx-python/references/01-core-fundamentals.md#126-export_function--import_function--the-mlxfn-format) — 12.1
-- [Three NAX correctness PRs within three days (#3912 quant corruption, #3922 gather_qmm bounds); pin and re-verify.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#️-read-this-before-you-trust-a-signature-below) — 12.2
-- [mlx-lm 0.31.0 was pulled from PyPI for BatchKV cache cross-contamination; know exactly which version you run.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#mlx-lm-the-cli-surface-the-generation-api-and-kv-caching) — 12.4
-- [PyPI's mlx-lm (0.31.3, April) trails main by months of fixes; 0.31.0 was yanked for BatchKV cross-contamination.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#12-versions-on-disk-and-the-pypi-gap) — 12.6
 
 **Part 13**
 
 - [3.x main is a breaking major: download and tokenization become protocols you must implement yourself](part-13-mlx-swift/README.md#part-13--mlx-in-swift) — 13.README
-- [mlx-swift-lm main is a breaking 3.x major — code written against 2.x loading APIs no longer applies](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#mlx-swift-lm-in-an-app-setup-concurrency-memory-and-media-input) — 13.1
 - [The GPU cache API was renamed and both spellings circulate — verify which your version exports](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#62-️-the-gpu-cache-api-changed-name--and-both-spellings-are-in-the-wild) — 13.1
 - [Two ticket(...) spellings for wired memory exist in the repo and one is stale](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#65-wired-memory-the-part-with-a-dedicated-reference) — 13.1
 - [27-beta SDK churn: an interface/dylib mismatch escalates from silent drift to a SIGSEGV process abort](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#93-the-27-beta-sdk-churns-and-one-of-the-drifts-is-a-sigsegv) — 13.1
@@ -445,7 +436,6 @@
 - [Scope note: quantization numbers below carry mixed provenance; check each one's sourcing before quoting.](part-12-mlx-python/references/03-quantization.md#️-read-this-before-you-trust-a-number-below) — 12.3
 - [The routed-only read numbers are community-measured (john-rocky, partly agent-generated repo), not Apple-published.](part-12-mlx-python/references/03-quantization.md#74-what-routed-only-reads-are-worth--community-measurements) — 12.3
 - [Scope note: flag names below were verified against argparse declarations, not the docs.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4
-- [Marker for this guide's register of six silent failures; none of them throw.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4 🔇
 - [Scope note: server signatures verified from source at a pinned commit; PyPI lags main by months.](part-12-mlx-python/references/05-serving-and-distributed.md#️-read-this-before-you-trust-a-signature-below) — 12.5
 - [Freshness: NAX code paths are new and moving, with three correctness fixes within days of writing.](part-12-mlx-python/references/05-serving-and-distributed.md#101-the-m5-neural-accelerators) — 12.5
 - [--host 0.0.0.0 exposes a server with no authentication; anyone on the network can drive your model.](part-12-mlx-python/references/05-serving-and-distributed.md#113-xcode-27--the-one-most-readers-will-use) — 12.5
@@ -472,8 +462,6 @@
 - [Streams always end with a .info event carrying stopReason and timings — rely on it, but don't copy llm-tool's fatalError](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#58-throwing-versus-non-throwing-streams) — 13.1
 - [Evidence on the EXIF fix conflicts between research passes — reported as conflicting, not smoothed over](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) — 13.1
 - [Scope note: trust no signature below without the stated verification caveats](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2
-- [Four items were not read this session and are deliberately not asserted](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2
-- [Marker definition: SILENT FAILURE means it does not throw — this guide catalogues nine](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2 🔇
 - [Returning a string for an unknown tool (not throwing) is the right default — the model can read the failure and retry](part-13-mlx-swift/references/02-generation-tools-and-caching.md#77-the-end-to-end-loop-both-ways) — 13.2
 - [keep:4 attention sinks make rotating caches unquantizable/unmergeable in Python; the Swift guard is unverified](part-13-mlx-swift/references/02-generation-tools-and-caching.md#84-where-the-cache-actually-gets-created) — 13.2
 - [gpt-oss attention sinks are incompatible with quantized SDPA — a family-specific hard stop](part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) — 13.2

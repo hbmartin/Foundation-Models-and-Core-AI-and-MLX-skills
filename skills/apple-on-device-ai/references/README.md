@@ -3,7 +3,7 @@
 **Covers:** iOS 27 · iPadOS 27 · macOS 27 · watchOS 27 · visionOS 27 · tvOS 27 · Xcode 27
 **Frameworks:** Foundation Models · Core AI · MLX · Evaluations · Speech · Metal Performance Primitives
 <!-- current-state:guides:start -->
-**Current snapshot (2026-10-07):** 17 parts, 60 reference guides, 1206 indexed symbols, and 1,781 classified warnings (1,422 concrete silent failures). Installed verification environment: macOS 27.0 (26A428), Xcode 27.0 (27A266a). Stable-release guidance leads; beta-only APIs and measurements carry their own evidence dates and platform identity. See [current state](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/current-state.json) for latest observed releases, validation dates, and destination-specific baselines. Observed stable releases: Xcode 27, iOS 27.0.1, macOS 27.0.1, ml-explore/mlx 0.32.3, ml-explore/mlx-lm 0.32.0, ml-explore/mlx-swift 0.32.3, ml-explore/mlx-swift-lm 3.32.3, apple/python-apple-fm-sdk 0.2.1. Release availability does not attest untested runtime behavior.
+**Current snapshot (2026-10-07):** 17 parts, 60 reference guides, 1204 indexed symbols, and 1,769 classified warnings (1,413 concrete silent failures). Installed verification environment: macOS 27.0 (26A428), Xcode 27.0 (27A266a). Stable-release guidance leads; beta-only APIs and measurements carry their own evidence dates and platform identity. See [current state](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/current-state.json) for latest observed releases, validation dates, and destination-specific baselines. Observed stable releases: Xcode 27, iOS 27.0.1, macOS 27.0.1, ml-explore/mlx 0.32.3, ml-explore/mlx-lm 0.32.0, ml-explore/mlx-swift 0.32.3, ml-explore/mlx-swift-lm 3.32.3, apple/python-apple-fm-sdk 0.2.1. Release availability does not attest untested runtime behavior.
 <!-- current-state:guides:end -->
 
 Seventeen parts covering Apple's 2026 on-device AI stack end to end — from a three-line
@@ -78,6 +78,10 @@ dual-SDK builds.
   presence flags against the captured SDK interfaces.
 
 ---
+
+## Evidence conventions
+
+`VERIFIED` identifies the cited source or recorded check; it does not imply every device or release was tested. `RECONSTRUCTED` marks an inferred composition or spelling. `GAP` marks an unresolved limitation and its safe default. Runtime claims retain their toolchain, destination, and observation date; community measurements retain their attribution. GitHub closure, released source, and demonstrated remediation are separate observations.
 
 ## How the series is organized
 

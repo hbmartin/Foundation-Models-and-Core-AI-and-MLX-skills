@@ -2,11 +2,7 @@
 
 **Part 13 · MLX in Swift · Reference 01**
 
-**Version floor: `mlx-swift-lm` 3.x — pin `.upToNextMajor(from: "3.31.3")`.** The package declares
-`swift-tools-version: 6.1` and platforms `.macOS(.v14)`, `.iOS(.v17)`, `.tvOS(.v17)`,
-`.visionOS(.v1)` — ✅ **VERIFIED**, read from `Package.swift:1-14` this session. Those floors are the
-*library's*, and they are low. The floors that will actually bite you are higher and are three
-different numbers:
+**Current release:** mlx-swift-lm **3.32.3** ([release manifest](https://github.com/ml-explore/mlx-swift-lm/blob/3b339ad6e3b3f44c8121ecff5131c7fd55e075e6/Package.swift), checked 2026-10-07). It requires Swift tools **6.2** and declares macOS 14 / iOS 17 / tvOS 17 / visionOS 1. Its MLX 0.32.x dependency has its own toolchain requirements; MLX 0.32.3 declares Swift tools **6.3**. Detailed API examples retain the `3cbf928` snapshot. SDK/platform gates below are separate from package versions.
 
 - **`MLXFoundationModels` requires the macOS / iOS / visionOS 27.0 SDK** to compile at all, and its
   public API is `@available(iOS 27.0, macOS 27.0, visionOS 27.0, *)`. On the 26 SDK the whole target
@@ -16,64 +12,17 @@ different numbers:
 - **`@Generable` — the Foundation Models macro you will use with the bridge — is 26.0.** The two
   floors are different and the repo's own README shows them nested. ✅ VERIFIED (§9.4).
 
-⚠️ **READ THIS BEFORE YOU ADD THE DEPENDENCY.** The `main` branch of `mlx-swift-lm` is a **new major
-version, 3.x**, and it broke the API. Apple's README says so in a callout, verbatim:
-
-> The `main` branch is a _new_ major version number: 3.x. In order to decouple from tokenizer and
-> downloader packages some breaking changes were introduced. See
-> [upgrading documentation](https://swiftpackageindex.com/ml-explore/mlx-swift-lm/main/documentation/mlxlmcommon/upgrade)
-> for detailed instructions on upgrading.
-
-— ✅ VERIFIED, `README.md:5-8`, read from the clone at HEAD `3cbf928` (2026-07-24).
-
-**Do not track `main`.** Pin to a version. Every tutorial, blog post and coding-agent memory written
-before roughly April 2026 describes the 2.x API (`loadModelContainer(hub:configuration:)`,
-`HubApi`, `perform { model, tokenizer in }`) and **none of it compiles against 3.x**. §2.6 is the
-migration table.
+The released 3.x API separates tokenizer/download implementations from model loading. Existing 2.x integrations need the [upgrade guide](https://swiftpackageindex.com/ml-explore/mlx-swift-lm/main/documentation/mlxlmcommon/upgrade) and §2.6’s migration table. Pin a release or immutable revision.
 
 ---
 
 ## What this covers
 
-This is the "get it into a shipping app" guide. It assumes you have decided to run a model with MLX
-in Swift and now have to make it survive contact with an iPhone: a real memory budget, a real
-`@MainActor`, a real photo picker, and a CI that has to build on two SDKs.
-
-Five things, in the order they will hurt you:
-
-- **§1–§3 — Setup.** What the nine library products are, which ones you need, and the **three
-  integration styles** the package offers for tokenizers and downloaders. This is not busywork:
-  3.x deliberately has *no* dependency on Hugging Face, and choosing wrong here is the single most
-  common reason a first build fails.
-- **§4 — Model loading.** `ModelContainer` / `ModelContext`, download with progress, exactly where
-  weights land on disk, and how to ship or sideload your own weights so the app never touches the
-  network.
-- **§5 — Concurrency.** Why `ModelContainer` is *not* an actor, what `SendableBox` is for, why
-  `MLXArray` is not `Sendable`, and which of these types you may share between tasks. The package
-  ships an agent skill whose `concurrency.md` is the closest thing to an official statement; it is
-  quoted here and corrected where it is stale.
-- **§6 — Memory.** The longest section, and the one that decides whether your app ships. Wired
-  memory policies and tickets, `Memory.cacheLimit` / `Memory.memoryLimit`, the
-  `com.apple.developer.kernel.increased-memory-limit` entitlement, what jetsam looks like, and a
-  production memory-governor design taken from a shipping third-party iOS app.
-- **§7 — Media input for VLMs.** The processor pipeline, image and video handling, and the
-  **EXIF orientation bug** that Apple fixed in their own sample on 2026-06-16 — plus the
-  cross-stack finding that this is not an MLX quirk.
-- **§8–§9 — SwiftUI and SDK compatibility.** Streaming tokens without dropping frames, cancellation
-  that doesn't crash on backgrounding, and building against both the macOS 26 and 27 SDKs.
+Integrate mlx-swift-lm into an app: select package products, load models, manage concurrency and memory, prepare media, and stream results through SwiftUI.
 
 ## What this does *not* cover
 
-- **Porting a model architecture to Swift.** `MLXLMCommon`'s `porting.md` is 777 lines and deserves
-  its own guide. Cross-referenced in §10.
-- **The `MLXFoundationModels` bridge in depth** — building an `MLXLanguageModel` and handing it to
-  `LanguageModelSession` is [Part 4](../../part-04-beyond-the-built-in-model/). §9 covers only the
-  *compilation* consequences of that target existing.
-- **KV-cache tuning, quantized KV, speculative decoding.** Named here where they touch memory;
-  taught in this part's cache guide.
-- **LoRA training on device.** `LoRATrain` exists in `MLXLLM`; it is a separate guide.
-- **The Python side.** [Part 12](../../part-12-mlx-python/) — and note the Swift port has
-  *different* bugs, several of which are worse.
+Related references: [Part 4](../../part-04-beyond-the-built-in-model/), [Part 12](../../part-12-mlx-python/).
 
 ## What you need
 
@@ -88,14 +37,7 @@ Five things, in the order they will hurt you:
 
 ## Evidence base
 
-Unless marked otherwise, everything here was read this session from the `mlx-swift-lm` working tree
-at HEAD `3cbf928b5eb24190e8952725699ae6a3bb02824d` — *"Integration tests: build on both macOS 26 and
-27 SDKs (#464)"*, authored 2026-07-24 by Charlie Le \<charlie_le@apple.com\> — plus research notes
-covering `mlx-swift-examples` at HEAD `378f244` (2026-06-16), a GitHub issue/PR mining pass over the
-MLX stack, and a deep read of a shipping third-party iOS app. Community sources are labelled as such
-every time they appear.
-
----
+API details retain source revision `3cbf928b5eb24190e8952725699ae6a3bb02824d`; sample idioms retain `mlx-swift-examples` revision `378f244`. Community sources are labelled beside their claims.
 
 ## Contents
 

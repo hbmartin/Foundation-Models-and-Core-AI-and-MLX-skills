@@ -2,9 +2,7 @@
 
 **Part 12 · MLX in Python · Reference 02**
 
-**Version floor.** This guide targets **MLX 0.32.x** — `v0.32.0` was tagged **2026-07-07** and the dev
-line carries `MLX_VERSION_MAJOR 0 / MINOR 32 / PATCH 1` → **0.32.1**
-(✅ **VERIFIED**, `mlx/version.h`, read in `notes/repos/mlx-core.md` §0). MLX itself has a *much*
+**Version floor.** Current stable MLX is **0.32.3** ([release](https://github.com/ml-explore/mlx/releases/tag/v0.32.3), checked 2026-10-07); detailed APIs retain the inspected **0.32.1** source snapshot. MLX itself has a *much*
 lower OS floor than the rest of this series: the macOS wheels require **Apple silicon, native Python
 ≥ 3.10, macOS ≥ 14.0** (✅ `docs/src/install.rst`). **Nothing in this guide requires iOS 27 or
 macOS 27.** The one place where the OS version becomes load-bearing is the **neural-accelerator
@@ -28,45 +26,11 @@ true and they are about different things — §4.2 gives the full story. Build f
 
 ## What this covers
 
-This is the guide about **where MLX stops being a portable array library and starts being a program
-running on one specific piece of Apple silicon.** Three themes, tightly coupled:
-
-1. **Numeric types** — `float32` / `float16` / `bfloat16` and which one is right when; the integer
-   family; what "complex support" actually means in MLX; and the one dtype that is CPU-only.
-2. **The hardware gate** — the single most consequential and least visible thing in MLX 0.32 on
-   M5-class hardware. `relaxed_precision = true` is **hardcoded** in MLX's NAX matmul kernel, and
-   the *host* compensates by gating `float32` through the `MLX_ENABLE_TF32` environment variable.
-   These are **one feature in two halves**, and if you only learn one of them you will draw wrong
-   conclusions. The consequence is stark: whether your `float32` matmul runs at reduced internal
-   precision depends on an environment variable that almost nobody sets, on hardware you may not
-   have tested on, **and there is no runtime signal at all.**
-3. **Custom Metal kernels from Python** — `mx.fast.metal_kernel`, the complete API, a complete
-   working example, and an honest account of when writing one is the right call versus composing
-   existing ops or reaching for `mx.compile`.
-
-Threaded through all three is the property this series exists to document: **almost none of these
-failures throw.** A `float32` matmul at TF32 precision returns a plausible array. A fused attention
-kernel that falls back to the unfused path returns the *correct* answer, just slower and with a
-gigabyte of transient allocation. A custom kernel with `ensure_row_contiguous=False` and no
-`elem_to_loc` call reads whatever memory the strides happen to land on. You find these with a
-profiler, a differential test, or a bug report from a user on different hardware.
+Use this reference to choose numeric types and hardware paths, then implement and validate custom Metal kernels through MLX.
 
 ## What this does *not* cover
 
-- **The MLX array model, lazy evaluation, `mx.compile`, transforms, `mlx.nn`, optimizers.** Those are
-  the other guides in [Part 12](../README.md). `mx.compile` appears here only where it explains *why*
-  `mx.fast`'s fused primitives exist (§6.1).
-- **Quantization as a modelling decision** — `mx.quantize`, `nn.QuantizedLinear`, the affine /
-  mxfp4 / mxfp8 / nvfp4 mode table. That is Part 12's quantization guide. Quantized dtypes appear
-  here only as consumers of the same NAX gate (§4.4).
-- **Writing Metal shaders in the TensorOps / cooperative-tensor style**, `mpp::tensor_ops::matmul2d`,
-  `metal::cooperative_tensor`, execution scopes. That is
-  [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md). §7 covers what you *can* reach from a
-  Python-authored kernel; the C++ extension path is out of scope for this reference.
-- **Distributed MLX**, `mlx.launch`, JACCL/RDMA. Part 12's distributed guide.
-- **MLX in Swift.** [Part 13](../../part-13-mlx-swift/README.md). Note in passing that fixes propagate
-  **mlx → mlx-c → mlx-swift → mlx-swift-lm / mlx-swift-examples**, four tag bumps, so Swift lags
-  everything here (community-observed, mlx-swift-examples#462).
+Related references: [Part 12](../README.md), [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md), [Part 13](../../part-13-mlx-swift/README.md).
 
 ## What you need
 
@@ -87,43 +51,7 @@ profiler, a differential test, or a bug report from a user on different hardware
 
 ## ⚠️ Read this before you trust a signature below
 
-MLX moves weekly. The clone this guide was written against is **shallow (50 commits)** and its HEAD
-is `973e27f`. That has two consequences you must hold onto:
-
-> 🔴 **GAP — dates from git history are UNVERIFIED.** `git log` on most MLX paths returns the
-> **graft boundary** (`ca60290`, "Fix docstring nits (#3758)"), not the introducing commit —
-> `git log --diff-filter=A` returns the same artificial root for every NAX file. Anywhere this guide
-> mentions when something landed, the *pull-request record* is the source, not the commit date.
-> To resolve: `git -C <mlx-repo> fetch --unshallow` and re-run.
-> Source: `notes/repos/mlx-tensorops-kernels.md` §13.
-
-> ⚠️ **The NAX path is new and actively being fixed.** Three NAX correctness pull requests opened in
-> the three days before **2026-07-27** — on a **2026-08-03 `gh` re-check** #3912/#3922 were still
-> open and #3924 was **closed unmerged 2026-08-02**: **#3912** (fp quantized matmul corruption
-> when the quantized dim is not a multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary
-> handling), **#3924** (a tile-shape `static_assert` for `tile_matmad_nax` — proposed because the
-> function has **no `else` branch**, so odd tile shapes compile to *nothing* and the GEMM produces
-> garbage). Treat every M5-specific behaviour in this guide as sharp-edged and version-sensitive.
-> Source: `notes/repos/mlx-tensorops-kernels.md` §13; `notes/repos/issues-mlx-stack.md` §11.
-
-The evidence ladder used throughout, strongest first:
-
-1. **MLX repository source read on disk** — headers, kernels, Python bindings, tests, CMake. For
-   MLX this outranks everything, including MLX's own documentation site, because the docs lag.
-2. **The MLX documentation site** (a 5,465-line crawl of `ml-explore.github.io/mlx`, serving the
-   0.32.0 build). Authoritative for prose and worked examples; occasionally behind the source.
-3. **Apple documentation, WWDC sessions and Tech Talks.** Tech Talk 111432 ("Accelerate your machine
-   learning workloads with the M5 and A19 GPUs") is the source for every Apple-published M5 number
-   here.
-4. **GitHub issues and pull requests with maintainer answers** (`angeloskath`, `zcbenz`,
-   `davidkoski`, `awni`). Quoted and attributed.
-5. **Community measurements** — always labelled as such, with hardware and OS.
-
-Every non-obvious claim carries ✅ **VERIFIED** (quoted from a source read this session, with the
-citation), 🟡 **RECONSTRUCTED** (concept attested, exact spelling or usage inferred), or 🔴 **GAP**
-(could not verify — the box says what is unknown, what would resolve it, and a safe default).
-
----
+Pin MLX before validating an NAX kernel. PR #3912 is included in 0.32.3; runtime remediation remains unverified. PR #3924 closed without merge, so verify odd tile shapes numerically. The detailed restrictions and sources are in §4.
 
 ## Contents
 

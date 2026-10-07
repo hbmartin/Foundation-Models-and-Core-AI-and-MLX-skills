@@ -2,57 +2,17 @@
 
 **Part 12 · MLX in Python · Reference 05**
 
-**Version floor.** Two halves, two floors. **Serving on one machine** needs
-**`mlx-lm` 0.31.3** on **`mlx` ≥ 0.31.2** (`setup.py`'s `MIN_MLX_VERSION`), Python **≥ 3.10 in
-practice** despite a declared 3.8, and **macOS ≥ 15** if you want the model's memory wired.
-Nothing on this half requires macOS 26 or 27 at all — `mlx_lm.server` has run on Apple silicon
-for years and now also runs on **CUDA and CPU** via the `mlx-lm[cuda13]` / `[cuda12]` / `[cpu]`
-extras. **Distributing across machines** is where the new gates are: **RDMA over Thunderbolt 5
-requires macOS 26.2**, and the **JACCL** backend that uses it needs a Thunderbolt cable between
-*every pair* of Macs. On the client side, **Xcode 27** is what added *Settings ▸ Intelligence ▸
-Add Chat Provider ▸ Locally Hosted*, and **`ChatCompletionsLanguageModel`** — the Foundation
-Models conformer that turns this server into a `LanguageModelSession` backend — is **iOS 27 /
-macOS 27**. The M5 prompt-processing story needs **M5 silicon** and no flags.
+**Current release:** mlx-lm **0.32.0** ([release manifest](https://github.com/ml-explore/mlx-lm/blob/a9bd8af5c02118882af735cef60705d2efce9fd0/pyproject.toml), checked 2026-10-07): Python ≥ 3.11, MLX ≥ 0.32.2 on Darwin, and `transformers ≥ 5.7.0`. MLX wheels require Apple silicon and macOS ≥ 14.0. RDMA over Thunderbolt 5 requires macOS 26.2 and the topology described in Part B. Foundation Models integration requires the OS-27 SDK.
 
 ---
 
 ## What this covers
 
-Two halves. First one machine, then many.
-
-**Serving one machine.** `mlx_lm.server` is an OpenAI chat-completions-compatible HTTP server
-with structured tool calling and reasoning-model support. Apple's framing in WWDC26 session 232
-is that it is *"a drop-in replacement for any cloud LLM API"* — which is close to true and worth
-a careful read of where it deviates. You will get: every CLI flag with its verified default;
-every endpoint; every request field the server actually parses; the response shape including the
-two fields most clients get wrong (`message.reasoning` and
-`usage.prompt_tokens_details.cached_tokens`); and **continuous batching**, which is the single
-feature that decides whether a swarm of parallel subagents runs concurrently or queues.
-
-**The local agent stack.** MLX → MLX-LM → MLX-LM Server → agent. The OpenCode configuration.
-The **Xcode 27** click-path, which is the one most readers of this series will actually use. The
-`ChatCompletionsLanguageModel` bridge that puts any Hugging Face checkpoint behind
-`LanguageModelSession` today (Part 4). And the reason prompt processing, not decode, is the
-number that matters for agents.
-
-**Serving many machines.** `mlx.launch`, the JSON hostfile and its positional RDMA adjacency
-matrix, `mlx.distributed_config`, the Thunderbolt-5 RDMA setup sequence, mesh vs ring, tensor vs
-pipeline parallelism, distributed fine-tuning, and Apple's measured numbers on four M3 Ultras.
-Plus the open bug cluster in the distributed backends, because this surface is weeks old and it
-shows.
+Serve an MLX model on one Mac or distribute inference across Macs. The recipes cover HTTP integration, health checks, prompt caching, RDMA, and backend failures.
 
 ## What this does *not* cover
 
-- **Loading, generating, sampling, and prompt caching in-process.** That is this part's
-  generation guide; here we only cover the server's use of those primitives.
-- **Quantization and fine-tuning mechanics.** `mlx_lm.convert`, `mlx_lm.lora`, DWQ/AWQ/GPTQ —
-  other guides in Part 12. Distributed *launching* of `mlx_lm.lora` is covered here; the
-  training itself is not.
-- **Swift.** `mlx-swift-lm`, `MLXFoundationModels`, and `DistributedGroup` are
-  [Part 13](../../part-13-mlx-swift/).
-- **Writing a `LanguageModel` conformer by hand.** [Part 4](../../part-04-beyond-the-built-in-model/)
-  guides 02 and 03. This guide only shows the wiring.
-- **Metal kernels and NAX.** [Part 11](../../part-11-metal-and-tensorops/).
+Related references: [Part 13](../../part-13-mlx-swift/), [Part 4](../../part-04-beyond-the-built-in-model/), [Part 11](../../part-11-metal-and-tensorops/).
 
 ## What you need
 
@@ -70,31 +30,7 @@ shows.
 
 ## ⚠️ Read this before you trust a signature below
 
-This guide's evidence is unusually good on one half and unusually thin on the other, and you
-should know which is which.
-
-**The serving half is class-1 evidence.** Everything about `mlx_lm.server` below was read out of
-the checked-out repository at
-`repos/ml-explore__mlx-lm` — `mlx_lm/server.py` (1,871 lines), `mlx_lm/SERVER.md`,
-`mlx_lm/generate.py`, `mlx_lm/models/cache.py` — in this session. Flag names, defaults, HTTP
-status codes and error strings are quoted, not remembered.
-
-**The distributed half rests on three sources that mostly agree.** In precedence order: the MLX
-repository's own Python (`python/mlx/_distributed_utils/{launch,config,common}.py`, read on disk),
-the MLX documentation site crawl, and WWDC26 session **233** *"Explore distributed inference and
-training with MLX"*. Where they disagree — and they disagree twice, on a flag name and on how you
-turn RDMA on — this guide says so and tells you which to trust.
-
-**MLX moves weekly and this surface is new.** The clone is `--depth 50`, so most `git log` output
-bottoms out at the graft boundary and no date in it should be treated as authoritative. Three NAX
-correctness fix PRs opened, none merged, in the three days before 2026-07-27. There is an open cluster of
-distributed-backend crash and hang reports (§24). Treat everything in Part B as sharp-edged.
-
-**Markers.** ✅ VERIFIED means quoted from a source read this session, with the citation attached.
-🟡 RECONSTRUCTED means the concept is attested but the exact spelling is inferred. 🔴 GAP means we
-could not verify it, and the box says what would resolve it and what to do meanwhile.
-
----
+Serving details retain the inspected mlx-lm source revision. Distributed recipes use the MLX launcher source and documentation; verify the selected backend on the actual topology before deployment.
 
 ## Contents
 
@@ -187,27 +123,13 @@ Apple's advice on step 2 is worth taking literally:
 > ✅ **VERIFIED** — 232:61–62: run it *"with a model that supports tool calling. **Starting with a
 > small model to test your set-up is always a good idea.**"*
 
-⚠️ **Two undeclared runtime dependencies.** ✅ VERIFIED from `setup.py` and the module sources at
-mlx-lm HEAD `e5baded`: `install_requires` is
-`["mlx>=0.31.2; platform_system == 'Darwin'", "numpy", "transformers>=5.7.0", "sentencepiece",
-"protobuf", "pyyaml", "jinja2"]` — and **`rich` and `regex` are not in it**, despite being imported
-at module scope. `mlx_lm/cli_ui.py` does `from rich.console import Console` and is pulled in by
-`chat.py`, `lora.py` and everything under `tuner/`. Every module in `mlx_lm/tool_parsers/` does
-`import regex as re`. A bare `pip install mlx-lm` therefore gives you a server that can start but
-a `mlx_lm.chat` that cannot import, and tool parsing that fails on the first tool-capable model.
+The mlx-lm 0.32.0 release manifest omits `rich` and `regex`, although `cli_ui.py` and the Gemma tool parser import them. Install them explicitly for chat, training, or tool workflows:
 
 ```bash
 pip install mlx-lm rich regex
 ```
 
-🔴 **GAP — whether the published PyPI wheel declares them.** The `setup.py` in this checkout omits
-both. Whether the wheel on PyPI for 0.31.3 carries them (e.g. via a different packaging path) was
-not verified. **Safe default:** install them explicitly; it is idempotent if they are already
-declared.
-
-Also note the declared Python floor is stale. ✅ VERIFIED: `python_requires=">=3.8"`, but
-`mlx_lm/quant/awq.py` and the tool parsers use PEP-604 `X | None` annotations and `cli_ui.py` uses
-`list[tuple[str, str]]`. **Use Python 3.10 or newer.**
+Use Python ≥ 3.11 for the current release.
 
 ### 1.2 The ecosystem claim
 
@@ -1219,16 +1141,13 @@ a 4K×4K matmul goes **2 s → 0.5 s → 0.33 s** across three kernel versions. 
 are reachable only through the newer kernel formulations, which is precisely why "MLX selects the
 best kernel" is the operative clause.
 
-⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Three
-correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
+<!-- callout-id: callout-33510d5464325061 -->
+⚠️ **NAX numerical validation.**
 <!-- defect-ref:ml-explore.mlx:pull:3912 -->
 <!-- defect-ref:ml-explore.mlx:pull:3924 -->
-`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912/#3922 still open, #3924
-closed unmerged 2026-08-02, on a 2026-08-03 `gh` re-check). Separately,
+MLX 0.32.3 includes PR #3912’s source fix; remediation on the target hardware remains unverified. PR #3924 closed without merge, so test odd tile shapes against a reference.
 <!-- defect-ref:ml-explore.mlx:issue:3897 -->
-mlx#3897 (closed 2026-08-09) reports that **batched vs single-sequence attention diverges numerically on M5**.
-If you are on M5 and chasing a correctness difference, update MLX before you debug anything else,
-and do not assert bit-equality between batched and unbatched paths.
+Issue #3897 reported batched/single-sequence attention divergence on M5 and closed on 2026-08-09. Closure does not establish bit equality; compare outputs for the shapes your application uses.
 
 🔴 **GAP — no M5 kernel-selection surface.** The M5 neural accelerator has **no API**. In MLX's
 own kernels the gate is inferred from `get_architecture_gen() >= 17` (18 for the `'p'` variants).

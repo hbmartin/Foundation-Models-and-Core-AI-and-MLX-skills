@@ -1,6 +1,6 @@
 # API & symbol index — MLX in Python and Swift, and bridges to Core AI
 
-**334 symbols, of 1206 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**331 symbols, of 1204 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,7 +8,7 @@
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
-| `ChatCompletionsLanguageModel` |  |  | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.README](part-12-mlx-python/README.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
+| `ChatCompletionsLanguageModel` |  |  | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.README](part-12-mlx-python/README.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `CoreAILanguageModel` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [14.README](part-14-bridges-between-stacks/README.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `CoreAILanguageModels` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [14.README](part-14-bridges-between-stacks/README.md) |
 | `DynamicProfile` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
@@ -16,12 +16,12 @@
 | `FoundationModels.LanguageModel` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `@Generable` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) +2 more |
 | `GeneratedContent` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `LanguageModel` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.README](part-13-mlx-swift/README.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) +2 more |
+| `LanguageModel` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) +2 more |
 | `LanguageModelError.unsupportedCapability` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `LanguageModelError.unsupportedGenerationGuide` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `LanguageModelExecutor` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.README](part-13-mlx-swift/README.md) |
 | `LanguageModelMacro` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `LanguageModelSession` | ✓ | ✓ | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) +4 more |
+| `LanguageModelSession` | ✓ | ✓ | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) +4 more |
 | `MLXLanguageModel` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md), [14.README](part-14-bridges-between-stacks/README.md) |
 | `Profile` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `SystemLanguageModel` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
@@ -30,7 +30,7 @@
 | `Transcript.Entry` | ✓ | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `TranscriptConverter` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 
-## CoreAI  <sub>15 symbols</sub>
+## CoreAI  <sub>14 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -39,10 +39,9 @@
 | `AIModelAsset` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `AIModelAsset.load` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `AIModelAsset.load(path)` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
-| `AIModelCache` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `CoreAI` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `CoreAI.framework` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
-| `InferenceFunction` |  | ✓ | [14.README](part-14-bridges-between-stacks/README.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
+| `InferenceFunction` |  | ✓ | [14.README](part-14-bridges-between-stacks/README.md) |
 | `InferenceFunction.MutableViews` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `NDArray` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
 | `SpecializationOptions` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
@@ -64,12 +63,12 @@
 | `MLXEmbedders.ModelConfiguration.nomic_text_v1_5` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `MLXEmbeddersHuggingFace` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MLXFast.scaledDotProductAttention` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
-| `MLXFoundationModels` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) +2 more |
+| `MLXFoundationModels` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) +1 more |
 | `MLXFoundationModelsTests` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `MLXGuidedGeneration` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `MLXHuggingFace` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
+| `MLXHuggingFace` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `MLXHuggingFaceMacros` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
-| `MLXLLM` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
+| `MLXLLM` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
 | `MLXLMCommon` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
 | `MLXLMCommon.generate(input:parameters:context:)` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `MLXLMHuggingFace` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
@@ -120,7 +119,7 @@
 | `Data` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `Foundation` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `Foundation.Progress` | ✓ | ✓ | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `FoundationModelsIntegration` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
+| `FoundationModelsIntegration` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `JSONEncoder` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `JSONSerialization` |  | ✓ | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `Sendable` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
@@ -134,7 +133,7 @@
 | `URLSession` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `URLSessionConfiguration.default` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 
-## other  <sub>244 symbols</sub>
+## other  <sub>242 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -161,8 +160,8 @@
 | `BundleKind` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `CacheList` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `CancellationError` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `Chat.Message` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `ChatSession` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) +1 more |
+| `Chat.Message` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
+| `ChatSession` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md) |
 | `ChunkedKVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.README](part-12-mlx-python/README.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `CompositeSampler` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `ComputeUnitKind` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
@@ -181,7 +180,6 @@
 | `DecodingError` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `DictAttr` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `DIFF` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
-| `DistributedGroup` |  |  | [12.README](part-12-mlx-python/README.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
 | `DLTensor` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `Documents` |  | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `DoRAEmbedding.from_base` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
@@ -238,13 +236,13 @@
 | `KeyError` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `KimiK2ToolCallParser` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `KVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [13.README](part-13-mlx-swift/README.md) +1 more |
-| `KVCacheSimple` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) |
+| `KVCacheSimple` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `KVCacheStrategy` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `KVCacheStrategy.auto` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `LanguageBundle` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `Linear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `Llama3ToolCallParser` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `LLMBasic` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md) |
+| `LLMBasic` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
 | `LLMEval` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
 | `LLMModelFactory._load` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `LLMRegistry` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
@@ -254,8 +252,8 @@
 | `Location` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `Logger` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `LoRAConfiguration` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
-| `LoRAContainer` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md), [13.README](part-13-mlx-swift/README.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `LoRATrain` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md), [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
+| `LoRAContainer` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md), [13.README](part-13-mlx-swift/README.md) |
+| `LoRATrain` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md), [13.README](part-13-mlx-swift/README.md) |
 | `LoRATrainingExample` |  |  | [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `LRUPromptCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
 | `LSSupportsOpeningDocumentsInPlace` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
@@ -271,7 +269,7 @@
 | `MemoryArguments` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MiniMaxM2ToolCallParser` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MistralToolCallParser` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
-| `Model` | ✓ | ✓ | [12.1](part-12-mlx-python/references/01-core-fundamentals.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
+| `Model` | ✓ | ✓ | [12.1](part-12-mlx-python/references/01-core-fundamentals.md) |
 | `ModelBundle` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `ModelBundle.ComponentKey` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `ModelBundle.verify()` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
@@ -293,7 +291,7 @@
 | `MovePhotoToStepTool` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MTPDrafterTypeRegistry.shared` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `MutableBuffers.buffer_mutation` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
-| `MutableViews` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
+| `MutableViews` |  | ✓ | [14.README](part-14-bridges-between-stacks/README.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `NaiveStreamingDetokenizer` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `NameError` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `NaN` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
@@ -316,7 +314,7 @@
 | `PythonicToolCallParser` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `QQLinear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `QuantizedEmbedding` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
-| `QuantizedKVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.3](part-12-mlx-python/references/03-quantization.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
+| `QuantizedKVCache` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
 | `QuantizedLinear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `QuantizedLinear._extra_repr` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `QuantizedSwitchLinear` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
@@ -334,7 +332,6 @@
 | `SerialAccessContainer` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
 | `SocketThread` |  |  | [12.README](part-12-mlx-python/README.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `SpeculativeTokenIterator` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.README](part-13-mlx-swift/README.md) |
-| `SpeculativeTokenIterator.speculateRound()` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md) |
 | `StableDiffusion` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `StopReason` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `SwiGLU` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
@@ -345,7 +342,7 @@
 | `TM` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `TN` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `TODO` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
-| `TokenIterator` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md) |
+| `TokenIterator` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md) |
 | `TokenIterator.init` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `Tokenizer` |  |  | [13.README](part-13-mlx-swift/README.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `TokenizerError.missingChatTemplate` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
@@ -372,7 +369,7 @@
 | `UIImage` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `UnboundLocalError` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `UserInput` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md) |
-| `UserInputProcessor` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
+| `UserInputProcessor` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `UserWarning` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `ValueError` |  |  | [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.1](part-12-mlx-python/references/01-core-fundamentals.md), [12.2](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md), [12.5](part-12-mlx-python/references/05-serving-and-distributed.md) |
 | `VisionConfig` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |

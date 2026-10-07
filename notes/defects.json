@@ -963,10 +963,6 @@
           "anchor": "freshness-warning-and-it-is-sharp"
         },
         {
-          "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "️-read-this-before-you-trust-a-flag-name-below"
-        },
-        {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
           "anchor": "101-the-m5-neural-accelerators"
         }
@@ -1089,10 +1085,6 @@
         {
           "file": "guides/part-12-mlx-python/references/01-core-fundamentals.md",
           "anchor": "freshness-warning-and-it-is-sharp"
-        },
-        {
-          "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "️-read-this-before-you-trust-a-flag-name-below"
         },
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
@@ -1416,10 +1408,6 @@
       "title": "[BUG] maybeQuantizeKVCache silently corrupts context mid-generation",
       "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
       "guideRefs": [
-        {
-          "file": "guides/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md",
-          "anchor": "96-️-silent-failure--the-swift-ports-cache-bugs-because-you-will-hit-them-from-a-mac-app"
-        },
         {
           "file": "guides/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md",
           "anchor": "101-the-failures-that-do-not-throw"

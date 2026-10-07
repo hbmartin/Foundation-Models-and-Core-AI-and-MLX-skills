@@ -2,62 +2,17 @@
 
 **Part 12 · MLX in Python · Reference 04**
 
-**Version floor: mlx-lm `0.31.3` on PyPI, plus main at commit `e5baded` (2026-07-26).** mlx-lm is a
-Python package, not an OS framework, so its version axis is the *package* version, not an iOS or
-macOS release — nothing in this guide is gated on iOS 27 or macOS 27. Where an OS floor does bite,
-it is called out inline: **memory wiring requires macOS 15 or later**, and **Thunderbolt RDMA for
-distributed runs requires macOS 26.2**. The package's own declared floors, read from `setup.py`
-this session: **`mlx >= 0.31.2`** (pinned only on Darwin), **`transformers >= 5.7.0`**,
-`numpy`, `sentencepiece`, `protobuf`, `pyyaml`, `jinja2`. The declared `python_requires=">=3.8"`
-is **stale** — the shipped source uses PEP-604 `X | None` unions and `list[tuple[str, str]]`
-annotations, so **Python 3.10 is the real floor**.
-
-⚠️ **The single most important version fact in this guide:** mlx-lm **0.31.0 was pulled from
-practical use for a `BatchKVCache` cross-contamination bug**, 0.31.3 (2026-04-22) is the newest
-PyPI release, and **`main` has moved substantially past it** — PRs merged through late July 2026
-that this guide describes are *not* in any release you can `pip install` today. Every claim below
-is tagged with which of the two it came from.
+**Current release:** mlx-lm **0.32.0** ([PyPI](https://pypi.org/project/mlx-lm/0.32.0/), checked 2026-10-07), requiring **Python ≥ 3.11**, **MLX ≥ 0.32.2 on Darwin**, and `transformers ≥ 5.7.0` ([release manifest](https://github.com/ml-explore/mlx-lm/blob/a9bd8af5c02118882af735cef60705d2efce9fd0/pyproject.toml)). Detailed signatures retain the earlier `e5baded` source snapshot. Memory wiring requires macOS 15; Thunderbolt RDMA requires macOS 26.2. A merge or release inclusion does not establish runtime remediation.
 
 ---
 
 ## What this covers
 
-mlx-lm is the layer where MLX stops being an array framework and starts being an LLM runtime. WWDC26
-session 232 describes it as the thing that *"provides everything you need to load, run, quantize,
-and fine-tune large language models… and gives you both CLI tools and a Python API."* That is
-accurate but undersells it: mlx-lm ships **18 command-line entry points**, a generation API with
-five public functions, and a **cache module with nine concrete KV-cache classes** whose differences
-decide whether your workload is fast, correct, or silently broken.
-
-This guide covers three things in depth and two in passing:
-
-- **§2 — The CLI surface.** All 18 entry points enumerated from `setup.py`'s `console_scripts`,
-  with the flags that matter and real invocations. Not placeholders: commands you can paste.
-- **§3 — The Python generation API.** `load`, `generate`, `stream_generate`, and the
-  `generate_step` generator underneath them; how samplers and logits processors compose, in what
-  order, and where the defaults disagree with each other. One complete, runnable script.
-- **§4–§6 — KV caching, the deepest section.** The nine concrete cache classes and what each one
-  is for; the trimmability contract that everything else depends on; prompt caching to disk and why
-  it changes the economics of long shared prefixes; quantized KV and the counter-intuitive fact
-  that it can *increase* peak memory.
-- **§7 — Speculative decoding.** How to run it, what makes a good draft model, and the
-  acceptance-rate arithmetic that decides whether it helps at all.
-- **§8 — Batch generation.** `batch_generate`, `BatchGenerator`, and how continuous batching
-  interacts with — and constrains — every cache decision from §4.
+Run generation through the CLI or Python API, choose a KV-cache policy, and verify prompt reuse, quantized caching, speculative decoding, and batching.
 
 ## What this does *not* cover
 
-- **Quantization: `convert`, AWQ, DWQ, GPTQ, dynamic quant.** §2 lists the commands and their
-  headline flags so you can find them; the algorithms, the bit-width tradeoffs and the recipes are
-  [Part 12 guide 03](03-quantization.md).
-- **Fine-tuning: `mlx_lm.lora`, `mlx_lm.fuse`, datasets, adapters.** Same treatment — enumerated
-  here, taught in [Part 12 guide 06](06-finetuning-and-porting-models.md).
-- **Putting `mlx_lm.server` behind `LanguageModelSession`.** The server is described here as a CLI
-  entry point and as a consumer of the prompt cache; wiring it to Foundation Models via
-  `ChatCompletionsLanguageModel` is [Part 4](../../part-04-beyond-the-built-in-model/).
-- **Distributed inference.** `mlx.launch`, hostfiles and RDMA are their own guide in this part.
-- **MLX Swift.** [Part 13](../../part-13-mlx-swift/) — and note that the Swift port has
-  *different* cache bugs, several of which are worse (§9.6).
+Related references: [Part 12 guide 03](03-quantization.md), [Part 12 guide 06](06-finetuning-and-porting-models.md), [Part 4](../../part-04-beyond-the-built-in-model/), [Part 13](../../part-13-mlx-swift/).
 
 ## What you need
 
@@ -66,7 +21,7 @@ This guide covers three things in depth and two in passing:
   supports. mlx-lm also targets **CUDA and CPU** now — `pip install "mlx-lm[cuda13]"`,
   `"[cuda12]"`, `"[cpu]"` — because the `mlx` requirement is pinned only under
   `platform_system == 'Darwin'`.
-- **Python 3.10+** despite what `setup.py` claims.
+- **Python 3.11+** for mlx-lm 0.32.0.
 - **`pip install mlx-lm`** or `conda install -c conda-forge mlx-lm`. Add `[train]` if you intend to
   fine-tune or run any learned-quantization CLI, `[evaluate]` for `mlx_lm.evaluate`.
 - ⚠️ **Two undeclared runtime dependencies.** `rich` and `regex` are imported at *module level* by
@@ -78,43 +33,7 @@ This guide covers three things in depth and two in passing:
 
 ## ⚠️ Read this before you trust a flag name below
 
-Three things about the evidence in this guide.
-
-**First: the strongest evidence class here is the repository itself.** Unlike the Core AI parts of
-this series, where the best available evidence was Apple documentation, mlx-lm is open source and
-the clone is on disk. Every signature, flag, default and error string in this guide was read out of
-`ml-explore/mlx-lm` at commit `e5baded8c1d286754edb479ffbde4655a68e2758` ("Support for Poolside
-LagunaXS open source coding model in nvfp4", 2026-07-26) in this session. That is evidence class 1.
-
-**Second: MLX moves weekly, and this clone is shallow.** It was cloned `--depth 50`, so `git log`
-on most paths returns only the graft boundary. **Do not treat any date in this guide as
-authoritative** beyond the HEAD commit date. Three NAX correctness fix PRs opened against mlx core
-<!-- defect-ref:ml-explore.mlx:pull:3912 -->
-<!-- defect-ref:ml-explore.mlx:pull:3924 -->
-in the three days before 2026-07-27 alone (#3912/#3922 still open, #3924 closed unmerged, on a
-2026-08-03 `gh` re-check). Anything described here as "new" should be re-read against
-`main` before you build on it.
-
-**Third: the docs disagree with the code in several documented places, and the code wins.** mlx-lm
-ships five Markdown files inside the package (`LORA.md`, `SERVER.md`, `LEARNED_QUANTS.md`,
-`MANAGE.md`, `BENCHMARKS.md`). At least four of them are stale in ways that will waste your
-afternoon — `LORA.md` documents an `mlx_lm.fuse --hf-path` flag that does not exist,
-`LEARNED_QUANTS.md`'s defaults disagree with the argparse defaults, `SERVER.md` documents a
-`top_logprobs` range the server does not enforce. Each is flagged where it appears.
-
-Markers used throughout:
-
-> ✅ **VERIFIED** — read from the repository, a header, or an Apple documentation page this
-> session. Citation attached: file and line, or an issue number.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested but the exact spelling or number is inferred.
->
-> 🔴 **GAP** — could not verify. The box says what is unknown, what would resolve it, and what to
-> ship in the meantime.
->
-> ⚠️ **SILENT FAILURE** — it does not throw. This guide has six.
-
----
+CLI signatures below retain the `e5baded8c1d286754edb479ffbde4655a68e2758` source snapshot. Check the installed command’s help before relying on a flag or default; package releases and runtime verification are separate observations.
 
 ## Contents
 
@@ -161,38 +80,17 @@ backend. `mlx_lm.server` is the shortest path from a Hugging Face checkpoint to 
 
 ### 1.2 The two versions you are running, and why you must know which
 
-There is a release-versus-`main` split in mlx-lm right now that is wide enough to change advice.
-
-> ✅ **VERIFIED** — `mlx_lm/_version.py` → `__version__ = "0.31.3"`. Release history from
-> `notes/repos/issues-mlx-stack.md:17-23`: latest PyPI release **0.31.3**, dated **2026-04-22**;
-> prior releases 0.31.2, 0.31.0, 0.30.7.
-
-Two facts about that history:
-
-- **0.31.0 was yanked in practice for "BatchKV cache cross-contamination."** The phrasing is the
-  reporter's, in mlx-lm#1425: *"I realize `0.31.0` was yanked for BatchKV cache cross-contamination,
-  so this is **not** a request to recommend 0.31.0."* If you have 0.31.0 pinned anywhere, unpin it.
-- **Multiple open issues explicitly distinguish "0.31.3 release" behaviour from "current main"
-  behaviour.** Several of the cache fixes described in §4 and §6 exist only as merged-to-`main` or
-  in-flight PRs.
-
-Check both versions at the top of any bug report you file or read:
+Use mlx-lm 0.32.0 as the current released baseline. Check the installed MLX and mlx-lm versions before reproducing a problem. Source snapshots and runtime-verification boundaries are stated beside affected examples; pin an immutable revision when using unreleased source.
 
 ```bash
 python -m mlx --version
 python -m mlx_lm --version
 ```
 
-> ✅ **VERIFIED** — `mlx_lm/cli.py` handles `--version` and prints `__version__`; `mlx_lm -h`
-> lists subcommands only.
-
-If you need `main`:
 
 ```bash
 pip install "mlx-lm @ git+https://github.com/ml-explore/mlx-lm@main"
 ```
-
-…and pin the commit hash in your lockfile, because "main" is not a version.
 
 ### 1.3 The deprecation banner you will see
 
@@ -2893,43 +2791,7 @@ from. You lose the caching benefit and keep correctness. Verify the effect by wa
 
 ### 9.6 ⚠️ SILENT FAILURE — the Swift port's cache bugs, because you will hit them from a Mac app
 
-Included here rather than in [Part 13](../../part-13-mlx-swift/) because the mechanism is the
-Python one seen through a value-type lens, and understanding it in Python is how you recognise it in
-Swift.
-
-**`maybeQuantizeKVCache` silently corrupts context mid-generation.**
-
-<!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 -->
-> ✅ **VERIFIED** — mlx-swift-lm#312 (OPEN, 6 comments), quoted verbatim:
-> *"`maybeQuantizeKVCache` is called on every step inside `TokenIterator`'s generation loop. When
-> the `quantizedKVStart` threshold is crossed mid-generation, it replaces elements in
-> `TokenIterator`'s local copy of the cache array with new `QuantizedKVCache` instances. Because the
-> function takes `cache: inout [KVCache]`, it **replaces array elements rather than mutating the
-> cache objects in place**. The caller's array (in `ChatSession`) still holds the original
-> `KVCacheSimple` references … **The model loses all context generated after the quantization
-> threshold.**"*
->
-> Fix landed: PR #453 merged 2026-08-05 (supersedes #358, closed unmerged); the reference-wrapper approach shipped as `KVCacheStorage`, a class boxing `[KVCache]`. #312 stays open as of 2026-08-07, and no release carries the fix (latest 3.31.4) — check your pin.
-
-Compare with §6.1: mlx-lm's Python `maybe_quantize_kv_cache` does *the same element replacement* —
-`prompt_cache[e] = c.to_quantized(...)` — and it is safe **only because Python lists are reference
-types and everyone shares the same list object.** Port that line to a value-semantics language
-without thinking and you get exactly this bug.
-
-**`trimPromptCache`'s return value discarded during speculative rewind.**
-
-> ✅ **VERIFIED** — mlx-swift-lm, via `notes/repos/issues-mlx-stack.md:947`:
-> `SpeculativeTokenIterator.speculateRound()` rewinds rejected drafts with
-> `trimPromptCache(mainCache, numTokens: numDraft - accepted)` **and discards the result**.
-> `trimPromptCache` guards on `canTrimPromptCache`, so **once one sliding layer wraps, the whole
-> rollback returns 0 silently** and generation continues on a transcript containing tokens that were
-> never emitted. On Gemma-family models the sliding window is small (e.g. 512), so a single long
-> reply is enough to trigger it.
-
-This is §4.2's "returns `0`, not an error" made concrete. **Check the return value of
-`trim_prompt_cache`.** Every time. In both languages.
-
----
+Swift array replacement and an ignored trim result can corrupt caller-held caches. See the [Swift cache mechanisms and mitigations](../../part-13-mlx-swift/references/02-generation-tools-and-caching.md#9-two-real-swift-side-cache-bugs); the Python list has different ownership semantics.
 
 ## 10. Decision tables, cross-links, and the gap register
 
