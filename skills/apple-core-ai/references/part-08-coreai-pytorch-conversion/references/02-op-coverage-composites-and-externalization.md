@@ -1135,34 +1135,17 @@ silently does nothing:
 > and `sin` are provided.**"*, and for `offset`: *"If a tensor is provided alongside the int
 > attribute, **the tensor wins**."*
 
-> ⚠️ **SILENT FAILURE — partial-rotary RoPE pairs the wrong dimensions.** Community-reported
-> (`apple/coreai-models` issue **#66**, author `kylejfrost`, 2026-07, acknowledged by maintainer
-> @stikves as *"a known issue"*), verbatim:
->
-> > *"The composite `RoPE` partial-rotary mode (`dims < head_dim`) pairs dimensions in a **contiguous
-> > block** (dim `i` ↔ `i + dims/2`, *inside* the first `dims` dims, passing the rest through).
-> > HuggingFace `transformers`' **partial / 'proportional' rotary** (any model with
-> > `partial_rotary_factor < 1`) instead pairs across the **full head_dim half-split** (dim `i` ↔
-> > `i + head_dim/2`), with only the first `rope_angles` frequencies non-zero (`inv_freq`
-> > zero-padded). The **frequencies are identical; only the dim pairing differs**, so the result is
-> > silently wrong."*
->
-> Community-measured, single reporter, uncontrolled conditions: full-rotary (sliding) layers came
-> out bit-exact (PSNR ∞); the global partial-rotary layer measured **PSNR ≈ 21.6 dB, max-abs ≈ 8.2**
-> on gemma-4-26B-A4B (`head_dim=512`, `partial_rotary_factor=0.25`). The reporter's framing of why
-> this is nasty: *"Generation stays coherent (global layers are ~1/6 of the stack), so it passes a
-> smoke test — but it isn't faithful to the reference, and it **breaks EAGLE/MTP speculative-draft
-> acceptance**."*
->
-> **Apple's stated workaround** (@stikves, verbatim): *"currently the workaround is **pre-computing
-> the sine/cosine tables** for RoPE embeddings"* — i.e. compute `cos`/`sin` yourself against the
-> reference convention and pass them in, which takes resolution rule 1 and bypasses the internal
-> pairing entirely. **Safe default:** if your model has `partial_rotary_factor < 1`, precompute
-> `cos`/`sin`; if it does not, the composite's own path is fine.
->
-> Second-order hazard from the same thread: *"If `inv_freq` is stored as a **registered buffer**,
-> `model.to(bfloat16)` downcasts it and bf16's ~3-digit mantissa corrupts the frequencies (cos error
-> ≈ 0.35 at position 200). Recomputing `inv_freq` in fp32 inside `forward` avoids it."*
+> ⚠️ **SILENT FAILURE — partial-rotary RoPE can pair the wrong dimensions.**
+> `apple/coreai-models` #66 reports that the composite pairs within the first `dims`, while
+> transformers proportional rotary pairs across `head_dim/2` with zero-padded frequencies. For
+> gemma-4-26B-A4B (`head_dim=512`, factor 0.25), the reporter measured about 21.6 dB PSNR and 8.2 max
+> absolute error; full-rotary layers were bit-exact. Coherent generation can conceal reference
+> mismatch and reduce speculative-draft acceptance.
+> The maintainer's workaround is precomputed sine/cosine tables using the reference convention. Apply
+> it to affected partial-rotary models and verify numerical output. The same report warns that bf16
+> conversion of a registered `inv_freq` buffer corrupts frequencies; recomputing in fp32 avoids that
+> reported secondary hazard. These are attributed community measurements, not a controlled project
+> benchmark.
 
 ---
 

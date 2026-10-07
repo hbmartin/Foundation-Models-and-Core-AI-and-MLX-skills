@@ -505,36 +505,14 @@ rank 5:
    permute, then unfold. Correct as long as the two folded axes stay adjacent and in order.
 
 <!-- callout-id: callout-5292ca5a3accb7ab -->
-> ⚠️ **SILENT FAILURE — the rank-6 palettisation trap.**
-> This one is worth its own callout because it does not come from your model code at all, it comes
-> from your *compression config*, and it produces a model that runs perfectly and burns your battery.
->
-> `coreai-opt`'s `PalettizationSpec` has a field `enable_per_channel_scale: bool = False`. Turning
-> it on looks like a free quality win — it normalises weights along output channels before
-> clustering. Apple's own SAM3 recipe deliberately leaves it off, and the reason is in the
-> config's docstring (✅ **VERIFIED** — `python/src/coreai_models/segmentation/pipeline.py:136-142`,
-> verbatim):
->
-> > *"Both encoders deliberately disable per-channel scale: `enable_per_channel_scale=True` lowers
-> > to `mps.dequantize_lut` ops with rank-6 LUTs, which ANE rejects (max tensor rank 5), forcing
-> > the runtime to fall back to GPU. Keeping it off keeps the asset ANE-compatible at the cost of a
-> > small PyTorch-side quality regression."*
->
-> **Nothing throws.** The export succeeds, the asset loads, inference produces correct numbers —
-> on the GPU, at GPU power draw, having discarded the entire reason you authored in BC1S. The only
-> symptom is energy and thermals.
->
-> **Detection:** compile with `xcrun coreai-build compile` and inspect residency (§4.16), or watch
-> for the model being much hotter than expected on device.
-> **Safe default:** leave `enable_per_channel_scale` at its default `False` and get your
-> per-channel behaviour from `PerGroupedChannelGranularity(axis=0, group_size=…)` instead, exactly
-> as Apple's shipped recipe does.
->
-> Note this is also a place where WWDC26 session 325 and the shipped code **disagree**: the talk
-> says (325:241) *"I apply 4-bit palettization **with per-channel scales** to the two encoders."*
-> The code sets the flag to `False` on purpose. Either the presenter was speaking loosely about
-> `PerGroupedChannelGranularity`, or the recipe changed after the talk was recorded. Follow the
-> code.
+> ⚠️ **SILENT FAILURE — per-channel palettization scales can force ANE fallback.**
+> Apple's SAM3 recipe disables `PalettizationSpec.enable_per_channel_scale`: enabling it lowers to
+> rank-6 LUTs in `mps.dequantize_lut`, beyond ANE's rank-5 limit (`segmentation/pipeline.py:136-142`).
+> Export and inference can succeed on GPU, hiding the power/residency change.
+> Follow the shipped recipe's default `False` and its `PerGroupedChannelGranularity(axis=0,
+> group_size=…)` configuration. Inspect residency and profile the target hardware. Session 325's
+> wording about per-channel scales differs from this recipe; the executable recipe explains the
+> compatibility constraint.
 
 ### 4.2 fp16, int8, int16 — and nothing else
 
@@ -1931,25 +1909,14 @@ and the base invocation (✅ **VERIFIED** — `working-with-coreai/SKILL.md:99`)
 xcrun coreai-build compile model.aimodel --platform iOS
 ```
 
-> 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.**
-> Apple's skill says *"compile and check residency"* but **no source in this corpus shows what the
-> residency output looks like on a real asset** — not the format, not whether it is per-op or
-> per-segment. Session 325 does not cover `coreai-build` at all. The `--help` run this box used to
-> ask for has now happened: the wrapper turned out to ship in the optional **Metal Toolchain
-> component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app — which is what
-> the 2026-07-29 "absent from the beta toolchain" check was actually seeing — and the full surface
-> is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The residency-shaped
-> surface it reveals: **`coreai-build inspect --compute`** (*"Show compute types"*, off by
-> default) and `inspect --ops` (operation distribution), with `--json` output. **What would still
-> resolve it:** that inspect output captured on a real compiled asset, or the Apple doc page
-> *"Compiling Core AI models ahead of time"* at
-> `developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time`.
-> **Safe default meanwhile:** use the **Core AI Debugger** instead. It is a standalone app
-> (`developer.apple.com/core-ai-debugger/`) that, per session 325, *"executes your model on specific
-> hardware for true runtime results"* and *"the structure viewer has updated to show me the model,
-> exactly as it would run on my Mac."* A model that has been segmented shows up there as a changed
-> graph. Failing that, `coreai_torch.debugging.benchmarker.benchmark_coreai_program` gives per-module
-> timings, and a segmentation point shows up as an implausibly expensive layer.
+> 🔴 **GAP — the residency report's real-asset format is not captured here.**
+> The managed help verifies `coreai-build inspect --compute`, `--ops`, and `--json`, but not whether
+> output is per-op or per-segment. Capture it on a compiled asset before scripting against it.
+> For runtime residency, use the Core AI Debugger (`developer.apple.com/core-ai-debugger/`), which
+> session 325 demonstrates on target hardware.
+> `coreai_torch.debugging.benchmarker.benchmark_coreai_program` supplies per-module timing;
+> unexpectedly expensive segments warrant further profiling. Install the optional Metal Toolchain to
+> access `coreai-build`.
 
 **The `--preferred-compute` default is `none`.** Now ✅ **tool-verified** (2026-07-31,
 `coreai-build compile --help`, `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`): values

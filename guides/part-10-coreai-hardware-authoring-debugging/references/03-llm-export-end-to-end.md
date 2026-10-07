@@ -2455,32 +2455,14 @@ coreai-build compile <input.aimodel> [--output <dir>]
     [--expect-frequent-reshapes]
 ```
 
-> ✅ **VERIFIED (the verb and the two flags Apple documents)** — `apple/coreai-models`
-> `models/README.md` and `skills/skills/model-authoring/references/common_issues.md` show
-> `xcrun coreai-build compile model.aimodel --platform iOS` and
-> `… --preferred-compute neural-engine`.
->
-> ✅ **Tool-verified (the full flag list) — 2026-07-31.** The synopsis above is now confirmed
-> flag-for-flag against `coreai-build compile --help` run on this machine (`coreai-build
-> 3600.79.1`; full capture in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`), including
-> the defaults: `--platform` defaults to **macOS**, `--min-deployment-version` to **27.0**,
-> `--preferred-compute` to **none**. The 2026-06-10 community capture
-> (`aot-and-specialization.md:73-77`) was accurate. Subcommands beyond `compile`: `package`,
-> `inspect`, `metadata`.
->
-> ⚠️ **Where the tool lives — resolved 2026-07-31, and it matters for CI:** `coreai-build` is
-> **not in Xcode-beta.app at all**; it ships in the optional **Metal Toolchain component**
-> (`xcodebuild -downloadComponent MetalToolchain`) and resolves via `xcrun --no-cache --find
-> coreai-build` to `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/
-> Metal.xctoolchain/usr/bin/coreai-build`. A 2026-07-29 check of Xcode beta `27A5228h` without that
-> optional component had found `xcrun --find coreai-build` failing and only
-> `Contents/Developer/usr/bin/aimodelc` present (command types `package`/`compile`, `--output`
-> required, no `--help`, binary embedding *"'aimodelc' is a tool used by the Xcode compiler"* and
-> *"Please use 'xcrun coreai-build' instead"*) — an accurate observation of an install without
-> the component. Naming resolved: **`xcrun coreai-build compile` is the verb; `aimodelc` is the
-> Xcode-internal stub *and* the compiled extension**. Output is
-> `modelName.architectureName.aimodelc`, matching the filename `ModelBundle.swift:103` tells you
-> to write into `metadata.json`.
+> ✅ **AOT tooling — use `xcrun coreai-build compile`.**
+> Apple's model-authoring sources document `--platform iOS` and `--preferred-compute neural-engine`.
+> The managed stable help records full options/defaults: platform macOS, deployment 27.0, and
+> preferred compute `none`; other subcommands are `package`, `inspect`, and `metadata`.
+> Install the optional Metal Toolchain component with `xcodebuild -downloadComponent MetalToolchain`,
+> then resolve through `xcrun --no-cache`. `aimodelc` is both the compiled extension and the name of
+> Xcode's internal stub. Output variants use `modelName.architectureName.aimodelc`; match those
+> filenames in `metadata.json` (`ModelBundle.swift:103`).
 
 Output is **one `.aimodelc` per requested architecture**, each roughly **2× the `.aimodel` size**
 (it embeds the precompiled graph). Ship them as Background Assets; the app detects its architecture

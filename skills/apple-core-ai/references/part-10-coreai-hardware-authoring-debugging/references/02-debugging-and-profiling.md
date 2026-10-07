@@ -614,30 +614,15 @@ Two inferences worth drawing from those strings, both of which change how you re
    specialization. If your model has a single `main` entrypoint and the trace shows several
    `func_NN` runs per inference, that is the specializer having split your graph, not a bug.
 
-> 🔴 **GAP — the on-screen lane and metric names in the Instruments UI are not confirmed by anyone
-> in this corpus.** Everything in §3.2–§3.5 comes from Apple's documentation prose, two `termList`s
-> recovered from raw DocC JSON, and screenshot alt-text. That is good evidence for *what exists* —
-> four instruments, four categories, three levels of track, these event-label formats — and weak
-> evidence for *what the strings look like on screen* in the Xcode 27 build you have. **Nobody here
-> has run Xcode 27's Instruments.** In particular: the detail-pane column set, whether there is a
-> per-compute-unit breakdown column for each Inference event, whether the template works against the
-> Simulator, and whether there is a cache-hit metric are all **unknown**.
->
-> **Narrowed 2026-07-29:** the template file itself was inspected in the Xcode 27.0 beta and its
-> four-instrument composition is now ✅ (see §3.2) — so *what exists* is settled. The on-screen
-> strings remain out of reach from the toolchain alone: Instruments streams instrument definitions
-> from the **recording target** at attach time (a sweep of the host Instruments.app finds none of
-> the known lane names), so no amount of host-side inspection produces them.
-> **Narrowed again 2026-07-31:** an OS 27 recording target now exists on this machine — the iOS
-> 27.0 Simulator runtime — but `xcrun xctrace record` against the booted simulator hangs for every
-> template on this macOS 26.5 host (measured with a Time Profiler control; `--no-prompt` set), so
-> headless capture is ruled out. Note also that **Core AI itself cannot run in the simulator** (the
-> CoreAI module is absent from the iPhoneSimulator27.0 SDK — guide 7.1), so even a GUI recording of
-> *this* template against the simulator would show the lane chrome but no Core AI events.
-> **Resolution:** one manual GUI Instruments recording — against the booted iOS 27.0 simulator for
-> the lane/metric *names*, or a real OS 27 device for names *and* live Core AI events. **Safe default meanwhile:** navigate by the four
-> category names above (they are Apple's own, and appear in event labels, not just legends), expand
-> every track to its function level, and do not script or automate against any string in the UI.
+> 🔴 **GAP — Core AI Instruments screen labels and detail columns still require a manual recording.**
+> Documentation, recovered DocC terms, and template inspection establish four instruments/categories
+> and event formats, but not the current UI strings, per-compute breakdown, cache-hit metric, or
+> simulator template behavior. The old macOS 26.5 headless capture hung even with a Time Profiler
+> control; that is dated evidence, not a current-host limitation.
+> Core AI executable events require supported real hardware; its module is absent from the
+> iPhoneSimulator SDK. Follow `probes/INSTRUMENTS-RECORDING.md` for one GUI recording on an OS 27
+> target. Navigate by documented categories and expand function tracks; defer UI-string automation
+> until the capture records actual labels.
 
 ---
 
@@ -1807,31 +1792,14 @@ The community-side ladder agrees on the bars and adds an investigation trigger:
 ### 10.6 ⚠️ The limit of a similarity metric
 
 <!-- callout-id: callout-12c5dd42c27f434c -->
-> ⚠️ **SILENT FAILURE — an all-green sync-point board can coexist with a model that generates
-> different text.** This is the sharpest warning in this guide for anyone shipping an LLM.
->
-> Sync points are computed on a **single forward pass**. A language model does not run a single
-> forward pass; it runs a decoding loop, and the loop's output at step *t* becomes its input at step
-> *t+1*. A per-step error small enough to score 42 dB — comfortably inside Apple's "compiled vs
-> torch ≥ 40 dB" bar — can flip one `argmax` at step 12, after which the two models are generating
-> **different sequences** and every subsequent comparison is meaningless. Nothing in the debugger
-> notices, because the debugger never ran step 12.
->
-> The community's stack calls this out explicitly and gates on something else entirely:
->
-> > 🟡 **Community-measured** — `notes/repos/john-rocky-models.md`, contrasting Apple's PSNR-based
-> > skill with the zoo's own gate: the zoo verifies LLMs with **per-token cosine ≥ 0.999 *and*
-> > greedy token-exact match**, and states *"Step 1 looking fine is not a gate; AR drift shows up
-> > late."* Its reading of the difference, flagged in the source as the author's own inference and
-> > not a claim by either party: *"a **PSNR ≥ 40 dB 'compiled vs torch' pass can coexist with a
-> > non-token-exact LLM**, which is the failure the zoo's gate is built to catch."* Also measured
-> > there: *"fp16 per-token decode drifts ~5–10 dB / 50 tokens"*, which is the same phenomenon seen
-> > from the other side.
->
-> **What to do:** treat the debugger's sync points as necessary and not sufficient for autoregressive
-> models. Add a decode-level gate to your pipeline — a deterministic prompt, greedy decoding, and a
-> token-for-token comparison against the source model — and run it on every conversion. §13 shows the
-> Python pieces; the gate itself is your code, and it is thirty lines.
+> ⚠️ **SILENT FAILURE — single-forward-pass numerical checks can miss autoregressive drift.**
+> A small per-step difference can flip a later greedy `argmax`, causing subsequent inputs and
+> generated tokens to diverge even when an earlier sync point passes the 40 dB PSNR bar. The community
+> evidence in `notes/repos/john-rocky-models.md` uses per-token cosine ≥0.999 plus greedy token-exact
+> match; these are that source's gates, not Apple's documented requirement.
+> Keep debugger sync-point checks and add a deterministic decode-level comparison against the source
+> model for every conversion. A passing first token or forward pass does not establish sequence
+> fidelity.
 
 ---
 

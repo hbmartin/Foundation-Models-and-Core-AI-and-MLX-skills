@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1782 of them, 1423 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1781 of them, 1422 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -28,7 +28,7 @@ Start from the symptom column that matches what you observe. Within each section
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
 | [Version drift](#version-drift) | 100 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 156 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [Docs vs reality](#docs-vs-reality) | 155 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
 | [General cautions](#general-cautions) | 359 | Warnings and considerations that are not themselves silent failures. |
 
@@ -1665,7 +1665,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Community audit counts 21 export recipes vs this guide's table; likely timing - run --list rather than trusting either.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#21-what-is-in-the-catalog) — 10.3
 - [coreai.llm.eval is declared in project.scripts but unconditionally errors with 'Evaluation support is coming soon'.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#26-three-gotchas-in-the-easy-road) — 10.3
 - [This contradicts WWDC26 325:241's 'with per-channel scales'; the shipped code sets it False and wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#77-the-exploration-loop-if-you-need-one) — 10.3
-- [coreai-build ships in the Metal Toolchain, not Xcode's app bundle; CI with only aimodelc cannot invoke it.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#102-the-compile-command) — 10.3
 - [COREAI_CHUNK_THRESHOLD is a memory dial and Apple's hint points the wrong way on a high-RAM Mac.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#143-️-coreai_chunk_threshold-is-a-memory-dial-and-apples-hint-is-backwards-on-a-big-mac) — 10.3
 - [Session 325:241's 'per-channel scales' conflicts with the shipped recipe; the shipped code wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#182-apple-spoken) — 10.3
 

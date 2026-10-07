@@ -309,26 +309,14 @@ something with no shading-language surface in the 26.x SDK.
 
 There is a matching community claim worth recording rather than repeating:
 
-> 🟡 **RECONSTRUCTED / community-cited.** A community research note in `john-rocky/coreai-model-zoo`
-> records as an open question whether `coreai-torch` can compile embedded MSL at `-std=metal4.1`,
-> saying *"blockwise scale plane `metal::tensor_blockwise` needs `__HAVE_TENSOR_MULTIPLANE__` = 4.1;
-> matmul2d + uniform int4 = 4.0."* Neither `tensor_blockwise` nor `__HAVE_TENSOR_MULTIPLANE__`
-> appeared in the Xcode 26.6 Metal toolchain inspected on 2026-07-27. Treat the spelling as unverified
-> for that snapshot; do not use it to deny Xcode 27's documented host-side multiplane API.
-> **Update (2026-07-29): both spellings are confirmed** — the macOS 27.0 beta SDK's
-> `MPPTensorOpsTraits.h:135-187` and `MPPTensorOpsMatMul2dImpl.h:6241-6316` use exactly
-> `metal::tensor_blockwise` and `__HAVE_TENSOR_MULTIPLANE__` (✅ block above).
-> ✅ **Toolchain-verified, 2026-07-31** (Metal compiler from Xcode 27.0 beta 27A5228h,
-> `metal 32023.921`): the "= 4.1" half is now measured fact — `__HAVE_TENSOR_MULTIPLANE__` is
-> defined at `-std=metal4.1` only, `__HAVE_TENSOR__` at `metal4.0` and `metal4.1` (probe table in
-> §2.2), and a `matmul2d` whose right operand is a
-> `tensor_blockwise<tensor_plane_scales, device metal_fp8_ue8m0_format, 32, 1>`-tagged
-> `metal_fp8_e4m3_format` tensor (right-transposed, per the asserts above) **compiles to AIR at
-> `-std=metal4.1`** and fails at `metal4.0` with `use of undeclared identifier
-> 'tensor_plane_scales'` — the scale-plane types themselves are 4.1-gated.
-> Same author's conclusion after building it: *"you can get block-32 scaling at Metal 4.0 by staging
-> the dequant in threadgroup memory"* — which is this guide's thesis, arrived at independently.
-> Attribute as **community-measured**, not Apple.
+> ✅ **Metal feature gates — tensor operations require 4.0; multiplane scale types require 4.1.**
+> The captured SDK headers declare `metal::tensor_blockwise` and `__HAVE_TENSOR_MULTIPLANE__`
+> (`MPPTensorOpsTraits.h:135-187`, `MPPTensorOpsMatMul2dImpl.h:6241-6316`). The dated compiler probe
+> (2026-07-31, metal 32023.921) enabled the multiplane macro only with `-std=metal4.1`, and compiled a
+> right-transposed blockwise fp8 operand to AIR there; Metal 4.0 rejected `tensor_plane_scales`.
+> Community staging of block-32 dequantization in threadgroup memory is a separate Metal-4.0
+> workaround. Header spelling and AIR compilation do not establish the Core AI embedded-kernel runtime
+> path.
 
 ### 0.3 The doc comments are not trustworthy either
 

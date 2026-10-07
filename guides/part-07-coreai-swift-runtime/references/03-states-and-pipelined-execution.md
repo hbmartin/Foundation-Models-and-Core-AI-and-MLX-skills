@@ -2382,30 +2382,15 @@ It is a real and useful number. It is not a pipelined-vs-sequential number.
 
 ### 🔴 GAP — nobody has measured pipelined vs sequential under control
 
-> 🔴 **GAP** — **No controlled sequential-engine-vs-pipelined-engine measurement exists in this
-> corpus.** Every published Core AI LLM throughput figure found — the whole M4 Max table (qwen3-0.6b
-> 484 tok/s, qwen3-4b 145.4, qwen3-8b 94.1, gemma3-4b-it 141.5, mistral-7b 101.7, gpt-oss-20b 78.1),
-> and the iPhone 17 Pro rows — is annotated **"pipelined"**. The sequential engine appears in the
-> corpus only as a *fallback* and as the engine you must use for logits.
->
-> **What is unknown:** how much of the gap between a well-written `run()` loop and the pipelined
-> engine is attributable to pipelining specifically, as opposed to GPU-side sampling, owned
-> `MTLBuffer`s, output views and buffer rotation — all of which the pipelined engine also does and a
-> sequential loop can also do.
->
-> **What would resolve it:** running `llm-benchmark` from `apple/coreai-models` on the same bundle
-> twice with `--inference-engine-variant coreai-sequential` and `coreai-pipelined`, release build, same
-> device, same thermal state. Both variants exist and both are selectable
-> (✅ verified: `EngineFactory` accepts `auto`, `coreai-sequential`, `coreai-pipelined`,
-> `static-shape`, and rejects anything else with *"Unknown variant '<x>'. Valid: auto,
-> coreai-sequential, coreai-pipelined, static-shape"*). This is a one-afternoon experiment that nobody
-> in the corpus has run.
->
-> **Safe default meanwhile:** if you need speed and do not need logits, use the pipelined engine —
-> Apple's `EngineFactory` already auto-selects it for dynamic-shape models, so the default is the fast
-> path. If you need logits, use the sequential engine and apply §9's output views and §5.2's preferred
-> strides; do not assume you are giving up 3.5×, because that figure was never measured against a
-> tuned sequential loop.
+> 🔴 **GAP — no controlled sequential-versus-pipelined throughput comparison is recorded.**
+> Published Core AI LLM throughput rows here use the pipelined engine. They do not isolate pipelining
+> from GPU-side sampling, owned buffers, output views, or buffer rotation.
+> Compare `llm-benchmark --inference-engine-variant coreai-sequential` and `coreai-pipelined` on one
+> bundle, release build, device, and thermal state. `EngineFactory` accepts these alongside `auto` and
+> `static-shape`.
+> Use the default pipelined path for supported dynamic-shape models when logits are unnecessary. Use
+> the sequential backend when logits are required, with output views and preferred strides; no
+> recorded comparison establishes a 3.5× penalty against a tuned sequential loop.
 
 ### What the published numbers do support
 

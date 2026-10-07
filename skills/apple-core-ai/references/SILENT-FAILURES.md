@@ -1,6 +1,6 @@
 # Silent-failure index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**525 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**524 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -18,7 +18,7 @@
 | [Precision loss](#precision-loss) | 9 |
 | [Misleading signals](#misleading-signals) | 42 |
 | [Version drift](#version-drift) | 19 |
-| [Docs vs reality](#docs-vs-reality) | 45 |
+| [Docs vs reality](#docs-vs-reality) | 44 |
 | [API footguns](#api-footguns) | 62 |
 | [General cautions](#general-cautions) | 119 |
 
@@ -508,7 +508,6 @@
 - [Community audit counts 21 export recipes vs this guide's table; likely timing - run --list rather than trusting either.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#21-what-is-in-the-catalog) — 10.3
 - [coreai.llm.eval is declared in project.scripts but unconditionally errors with 'Evaluation support is coming soon'.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#26-three-gotchas-in-the-easy-road) — 10.3
 - [This contradicts WWDC26 325:241's 'with per-channel scales'; the shipped code sets it False and wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#77-the-exploration-loop-if-you-need-one) — 10.3
-- [coreai-build ships in the Metal Toolchain, not Xcode's app bundle; CI with only aimodelc cannot invoke it.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#102-the-compile-command) — 10.3
 - [COREAI_CHUNK_THRESHOLD is a memory dial and Apple's hint points the wrong way on a high-RAM Mac.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#143-️-coreai_chunk_threshold-is-a-memory-dial-and-apples-hint-is-backwards-on-a-big-mac) — 10.3
 - [Session 325:241's 'per-channel scales' conflicts with the shipped recipe; the shipped code wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#182-apple-spoken) — 10.3
 
