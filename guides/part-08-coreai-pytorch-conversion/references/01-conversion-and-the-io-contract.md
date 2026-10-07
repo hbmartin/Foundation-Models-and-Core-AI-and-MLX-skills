@@ -30,10 +30,13 @@ no-reconvert recovery.
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
+| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-models:issue:84](https://github.com/apple/coreai-models/issues/84) <!-- defect-ref:apple.coreai-models:issue:84 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:21](https://github.com/apple/coreai-torch/issues/21) <!-- defect-ref:apple.coreai-torch:issue:21 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:49](https://github.com/apple/coreai-torch/issues/49) <!-- defect-ref:apple.coreai-torch:issue:49 --> | CLOSED (2026-10-07) | released (0.4.3) | demonstrated (0.4.3) | fixed |
 | [apple.coreai-torch:issue:51](https://github.com/apple/coreai-torch/issues/51) <!-- defect-ref:apple.coreai-torch:issue:51 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:pull:45](https://github.com/apple/coreai-torch/pull/45) <!-- defect-ref:apple.coreai-torch:pull:45 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 <!-- current-defects:end -->
 
 ## What this covers
@@ -611,6 +614,10 @@ The second validator shape, for ops that *are* decomposed but have no lowering:
 > (`test_user_lowering_bypasses_unsupported_check`).
 
 ### 4.4 ⚠️ SILENT FAILURE — using PyTorch's default table instead of Apple's
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:21 -->
+<!-- current-defect-refs:end -->
 
 This is the real trap, and it is not "skipping the line." It is writing the line with the wrong
 argument:
@@ -1363,6 +1370,10 @@ and they come back out through the runtime descriptor:
 
 ### 7.5 Name your outputs the way your consumer wants to read them
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+<!-- current-defect-refs:end -->
+
 Two facts from the runtime side make output naming a design decision rather than a formality.
 
 **Output dict key order is not deterministic.**
@@ -1392,12 +1403,11 @@ descriptor rather than hardcoding:
 
 For the LLM engines the contract is even tighter — positional, not by name:
 
-> ✅ **VERIFIED** — `CoreAISequentialEngine.swift:24–32` documents its expected model as *"2 inputs:
-> `input_ids` (Int32), `position_ids` (Int32); 1 output: `logits`; 2 states: `keyCache`,
-> `valueCache`"*, and the initializer validates `descriptor.inputNames.count == 2`,
-> `outputNames.count >= 1`, `stateNames.count == 2`, then reads them **positionally**
-> (`inputs[0]` = input_ids, `inputs[1]` = position_ids, `states[0]` = key, `states[1]` = value,
-> `outputs[0]` = logits). **Order matters as much as spelling** on that path.
+> ✅ **SOURCE CHECK (2026-10-07)** — current immutable [input layout](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/InputLayout.swift) resolves known input
+> names, and [state classification](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/StateHandlerFactory.swift) uses explicit metadata or shape/name heuristics.
+> The engine accepts two inputs, at least one output, **2–4 states**, and float16 logits.
+> `outputs[0]` still supplies logits. Positional consumers require their own declared input/KV order;
+> hybrid states require allocation, retention and reset. Device parity remains unverified.
 
 ### 7.6 A worked example: naming for a Swift consumer
 
@@ -1520,6 +1530,10 @@ conversion package — it is ~15 lines — or write the `Dim` objects out longha
 
 ### 8.3 The SymInt sharp edges specific to this converter
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
+<!-- current-defect-refs:end -->
+
 Dynamic shapes turn concrete Python `int`s into `torch.SymInt`s that flow through the graph as real
 graph nodes. `coreai-torch` has had a run of fixes in exactly this area, and the resulting behaviours
 are things you can trip over.
@@ -1582,6 +1596,10 @@ remaining risk is concentrated:
 
 ### 8.4 Externalization + dynamic shapes: a known open bug
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:1 -->
+<!-- current-defect-refs:end -->
+
 If you combine composite-op externalization (§5.3) with a *mixed* static/dynamic shape policy, there
 is an open bug with a precise trigger:
 
@@ -1614,6 +1632,10 @@ At least this one is loud. The failure is a `RuntimeError` at conversion time wi
 is a coreai-torch bug. Please report it."* in it.
 
 ### 8.5 The shape policy table
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:84 -->
+<!-- current-defect-refs:end -->
 
 Assembled from Apple's shipped exports and from reproducers in the issue tracker. **Every row is a
 verified observation, and the middle rows are why "just make everything dynamic" is not obviously
@@ -2490,6 +2512,10 @@ xcrun coreai-build inspect model.aimodel   # function signatures, inputs/outputs
 
 ### 11.6 The three-way compute-unit A/B
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:51 -->
+<!-- current-defect-refs:end -->
+
 The last gate, and the one that catches delegate-specific bugs (the ANE fp16 issues in §4.4, the
 GPU `floor` identity in §6.4):
 
@@ -3095,6 +3121,10 @@ Two more, inherited from the corpus and worth carrying:
   and do your own preprocessing, exactly as Apple's `ImagePreprocessor` does in `CoreAIShared`.
 
 ### 14.5 Related guides
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
+<!-- current-defect-refs:end -->
 
 - **Part 7 — Core AI: the Swift runtime.** The other side of every contract in §7, §9 and §10:
   `AIModel`, `InferenceFunction.run`, `MutableViews`, state binding, and the caller-side cache §10.5

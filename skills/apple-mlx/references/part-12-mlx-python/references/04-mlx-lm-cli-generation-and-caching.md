@@ -26,13 +26,25 @@ is tagged with which of the two it came from.
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1390](https://github.com/ml-explore/mlx-lm/issues/1390) <!-- defect-ref:ml-explore.mlx-lm:issue:1390 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1395](https://github.com/ml-explore/mlx-lm/issues/1395) <!-- defect-ref:ml-explore.mlx-lm:issue:1395 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1446](https://github.com/ml-explore/mlx-lm/issues/1446) <!-- defect-ref:ml-explore.mlx-lm:issue:1446 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1470](https://github.com/ml-explore/mlx-lm/issues/1470) <!-- defect-ref:ml-explore.mlx-lm:issue:1470 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1472](https://github.com/ml-explore/mlx-lm/issues/1472) <!-- defect-ref:ml-explore.mlx-lm:issue:1472 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1480](https://github.com/ml-explore/mlx-lm/issues/1480) <!-- defect-ref:ml-explore.mlx-lm:issue:1480 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1493](https://github.com/ml-explore/mlx-lm/issues/1493) <!-- defect-ref:ml-explore.mlx-lm:issue:1493 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1494](https://github.com/ml-explore/mlx-lm/issues/1494) <!-- defect-ref:ml-explore.mlx-lm:issue:1494 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1495](https://github.com/ml-explore/mlx-lm/issues/1495) <!-- defect-ref:ml-explore.mlx-lm:issue:1495 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1497](https://github.com/ml-explore/mlx-lm/issues/1497) <!-- defect-ref:ml-explore.mlx-lm:issue:1497 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1500](https://github.com/ml-explore/mlx-lm/issues/1500) <!-- defect-ref:ml-explore.mlx-lm:issue:1500 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1566](https://github.com/ml-explore/mlx-lm/issues/1566) <!-- defect-ref:ml-explore.mlx-lm:issue:1566 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1573](https://github.com/ml-explore/mlx-lm/issues/1573) <!-- defect-ref:ml-explore.mlx-lm:issue:1573 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1583](https://github.com/ml-explore/mlx-lm/issues/1583) <!-- defect-ref:ml-explore.mlx-lm:issue:1583 --> | OPEN (2026-10-07) | unknown | not-remediated (0.32.0) | unknown |
 | [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1513](https://github.com/ml-explore/mlx-lm/pull/1513) <!-- defect-ref:ml-explore.mlx-lm:pull:1513 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1584](https://github.com/ml-explore/mlx-lm/pull/1584) <!-- defect-ref:ml-explore.mlx-lm:pull:1584 --> | CLOSED (2026-10-07) | unknown | not-remediated (0.32.0) | unknown |
+| [ml-explore.mlx-lm:pull:1598](https://github.com/ml-explore/mlx-lm/pull/1598) <!-- defect-ref:ml-explore.mlx-lm:pull:1598 --> | CLOSED (2026-10-07) | not-in-verified-release (0.32.0) | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1826](https://github.com/ml-explore/mlx-lm/pull/1826) <!-- defect-ref:ml-explore.mlx-lm:pull:1826 --> | MERGED (2026-10-07) | released (0.32.0) | unverified | unknown |
 | [ml-explore.mlx-swift-lm:issue:312](https://github.com/ml-explore/mlx-swift-lm/issues/312) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-swift-lm:issue:425](https://github.com/ml-explore/mlx-swift-lm/issues/425) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:425 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
@@ -96,6 +108,11 @@ This guide covers three things in depth and two in passing:
 ---
 
 ## ⚠️ Read this before you trust a flag name below
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+<!-- current-defect-refs:end -->
 
 Three things about the evidence in this guide.
 
@@ -1428,6 +1445,10 @@ That table is the single best argument for reading this section before you reach
 
 ### 4.6 `ChunkedKVCache` — and a correctness caveat
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
+<!-- current-defect-refs:end -->
+
 `ChunkedKVCache(chunk_size)` keeps only the last `chunk_size` positions and tracks a
 `start_position`, which is why its trim clamps to `min(self.offset - self.start_position, n)`
 rather than `min(self.offset, n)`. It exists for chunked-attention architectures — Llama 4 is the
@@ -1441,6 +1462,10 @@ canonical consumer.
 > full silent-failure callout.
 
 ### 4.7 `ArraysCache` and `CacheList` — the hybrid-model story
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1480 -->
+<!-- current-defect-refs:end -->
 
 `ArraysCache(size, left_padding=None)` is not a KV cache. It is a list of `size` slots holding
 whatever recurrent state a layer needs: an SSM state matrix, a convolution window, a gated-delta
@@ -1641,6 +1666,13 @@ not match `prompt`'s prefix, and the slice will be wrong — silently, because
 
 ### 5.5 The server's prompt cache: `PromptTrie` and `LRUPromptCache`
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1390 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1395 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1495 -->
+<!-- current-defect-refs:end -->
+
 `mlx_lm.server` does the same thing automatically and in memory, keyed by token prefix.
 
 ```python
@@ -1702,7 +1734,7 @@ Three open defects and one administratively closed defect, all community-reporte
 | Issue | Symptom | Status |
 |---|---|---|
 | mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | Administratively closed without a fix 2026-08-21; repro script in-thread |
-| mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | OPEN |
+| mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | CLOSED; remediation unverified |
 | mlx-lm#1395 | `fetch_nearest_cache` **deep-copies** the cached KV, doubling peak memory exactly when a cached conversation is reused | OPEN |
 | mlx-lm#1390 | Server aborts with a Metal `Insufficient Memory` command-buffer failure after the prompt cache grew to **23.35 GB / 26.28 GB** | OPEN |
 
@@ -1717,6 +1749,10 @@ default `max_bytes` is `1 << 63` — effectively unbounded — and `--prompt-cac
 things. `--prompt-cache-bytes 8GB` is a much better guardrail than `--prompt-cache-size 20`.
 
 ### 5.6 Multi-turn caching in Python, without files
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1395 -->
+<!-- current-defect-refs:end -->
 
 The in-process version — this is `mlx_lm/examples/chat.py`, verbatim from the repo:
 
@@ -1823,6 +1859,11 @@ def maybe_quantize_kv_cache(prompt_cache, quantized_kv_start, kv_group_size, kv_
 
 ### 6.2 The counter-intuitive part: peak memory can go *up*
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
+<!-- current-defect-refs:end -->
+
 This is the finding that changes how you should use the flag, and it is one of the best-documented
 investigations in the mlx-lm tracker.
 
@@ -1888,6 +1929,10 @@ latency. The real fix is a fused quantized-SDPA Metal kernel.
 
 ### 6.3 Quality and speed: what `--kv-bits` actually buys
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
+<!-- current-defect-refs:end -->
+
 > ✅ **VERIFIED, community-measured** — mlx-lm#1573, cross-posted to mlx#3026 and mlx-lm#1587.
 > **Qwen3-32B-4bit, group_size 64, int8 KV versus fp16, paired runs:**
 
@@ -1912,6 +1957,12 @@ perplexity ratio within 0.1%. This is not a lossy-compression-you-will-regret si
 Use it when you are out of room, not when you want to go faster.
 
 ### 6.4 Four ways `--kv-bits` fails, three of them badly
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1583 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1584 -->
+<!-- current-defect-refs:end -->
 
 **(a) The library default and the CLI default disagree, and the library's is worse.**
 
@@ -1951,8 +2002,10 @@ method is defined. It just raises.
 > layers. On Gemma 4 26B-A4B that is **35 of 42 layers** in the reporter's configuration. Your
 > health check says the service is up. It is not.
 
-The in-flight fix is mlx-lm PR **#1584**, which adds `RotatingQuantizedKVCache` and
-`BatchRotatingQuantizedKVCache`. Validated in-thread on Gemma 4: layer census goes from
+The closed, unmerged proposal mlx-lm PR **#1584** adds `RotatingQuantizedKVCache` and
+`BatchRotatingQuantizedKVCache`. The 0.32.0 source still raises in both rotating-cache
+`to_quantized()` methods. The following in-thread result describes the experimental patch,
+not the released API. Validated in-thread on Gemma 4: layer census goes from
 `{'RotatingKVCache': 25, 'KVCache': 5}` to
 `{'RotatingQuantizedKVCache': 25, 'QuantizedKVCache': 5}`, `max_size=1024` preserved, and with a
 3,592-token prompt (3.5× the window) fp16 and kv8 produced **character-identical 60 tokens across
@@ -2009,7 +2062,7 @@ Do you have an attention-sink model (gpt-oss family)?
   → yes: --kv-bits is unusable. Stop.
 Does your model produce RotatingKVCache layers (sliding window, or you passed --max-kv-size)?
   → yes, and you are on a release: --kv-bits will crash on first request. Stop.
-  → yes, on main with #1584, and keep == 0: proceed.
+  → yes: use only a separately reviewed and tested rotating-quantization patch with keep == 0; stock 0.32.0 does not implement it.
   → yes, keep > 0: still raises. Stop.
 Are you memory-constrained on CONTEXT (not on weights)?
   → no: skip --kv-bits. It costs 2-7% decode and buys you nothing.
@@ -2102,6 +2155,10 @@ is below roughly 50%, speculative decoding is probably costing you time, and the
 draft model — not a larger `num_draft_tokens`.
 
 ### 7.3 The signature, and the constraints it enforces
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1446 -->
+<!-- current-defect-refs:end -->
 
 ```python
 def speculative_generate_step(
@@ -2247,6 +2304,10 @@ if n == num_draft:
 
 ### 7.5 "Lossless" is true up to floating-point tie-breaks
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1470 -->
+<!-- current-defect-refs:end -->
+
 A recurring bug report: speculative decoding at `temp=0` produces different text from plain greedy
 decoding. Three independent reproductions on three model families found the same signature.
 
@@ -2310,6 +2371,11 @@ mainstream path and what the mlx-lm CLI expects.
 > that is what happened. Check `from_draft`.
 
 ### 7.7 Two techniques that were measured and found not worth it
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1497 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:425 -->
+<!-- current-defect-refs:end -->
 
 Recording negative results, because they save you from re-deriving them.
 
@@ -2569,6 +2635,10 @@ with `stream_generate`.
 
 ### 8.4 The server's batchability gate — two ways to lose continuous batching
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1472 -->
+<!-- current-defect-refs:end -->
+
 ```python
 # mlx_lm/server.py:352-356
 is_batchable = draft_model is None
@@ -2604,10 +2674,18 @@ whole server, and nothing in the response tells them so.
 
 ### 8.5 Batch-generation defects worth knowing
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1493 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1500 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1513 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1598 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1826 -->
+<!-- current-defect-refs:end -->
+
 | Issue | Symptom |
 |---|---|
 | mlx-lm 0.31.0 | **yanked in practice** for `BatchKVCache` cross-contamination — output from one sequence leaking into another |
-| mlx-lm#1472 (MERGED-UNRELEASED 2026-09-04) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826) fixes the wedge by normalizing per-sequence samplers and processors, but affected releases still need the guard or a watchdog |
+| mlx-lm#1472 (CLOSED; source fix included in 0.32.0) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826) fixes the wedge by normalizing per-sequence samplers and processors, while affected older releases need the guard or a watchdog; local 0.32.0 runtime remediation is unverified |
 | mlx-lm#1493 (OPEN) | Server **livelock**: the batch keeps stepping and delivers zero chunks. `is_alive()` stays true; a naive per-iteration heartbeat would also tick |
 | mlx-lm#1500 (OPEN) | Idle server pins a core at 100% — the worker thread busy-polls with `get_nowait()` |
 
@@ -2625,11 +2703,10 @@ timeout, and `GET /v1/models` returned 200 throughout. Only a hard restart recov
 > queue for N seconds = stalled engine.**"*
 
 That is a good rule for any inference service you operate, not just this one. **Health-check what
-you deliver, not what you execute.** The fix in flight is PR #1598, a delivery-staleness watchdog
-with `--generation-stall-timeout` (default 60 s).
-
-> 🔴 **GAP — `--generation-stall-timeout` is not merged.** As of our read, PR #1598 is open and
-> stacked on #1513. **What would resolve it:** checking `mlx_lm.server --help` on `main`.
+you deliver, not what you execute.** PR #1598 proposed a delivery-staleness watchdog,
+but was closed without merge. The 0.32.0 server source has no `--generation-stall-timeout`
+flag. Run an external completion probe with a client-side timeout; the separately open
+exception-recovery PR #1513 does not establish a shipped fix.
 > **Safe default:** put your own watchdog in front of the server — track time since the last SSE
 > byte per request, and restart the process if it exceeds your timeout with requests in flight.
 
@@ -2796,6 +2873,10 @@ alone from Python is not.
 
 ### 9.3 ⚠️ SILENT FAILURE — sampler parameters that do nothing
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
+<!-- current-defect-refs:end -->
+
 Four of them, all reading as configured when they are not.
 
 **`temp=0` disables everything.** `make_sampler` short-circuits to
@@ -2884,6 +2965,10 @@ from. You lose the caching benefit and keep correctness. Verify the effect by wa
 `usage.prompt_tokens_details.cached_tokens` go to zero.
 
 ### 9.6 ⚠️ SILENT FAILURE — the Swift port's cache bugs, because you will hit them from a Mac app
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 -->
+<!-- current-defect-refs:end -->
 
 Included here rather than in [Part 13](../../part-13-mlx-swift/README.md) because the mechanism is the
 Python one seen through a value-type lens, and understanding it in Python is how you recognise it in

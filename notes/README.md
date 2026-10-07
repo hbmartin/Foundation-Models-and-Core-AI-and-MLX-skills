@@ -50,7 +50,8 @@ guide file/anchor targets, and observed state/date. Unknown version boundaries r
 Resolution records keep disposition, release availability, demonstrated remediation, evidence URLs,
 date, and rationale separate. A demonstrated fix requires reproduction evidence; a merge may remain
 outside the verified release. Active registered claims use `defect-ref` ID markers in generated
-guide blocks; ordinary historical citations remain source links.
+guide blocks and at each registered section; markers outside their registered file/anchor are rejected.
+Ordinary historical citations remain source links.
 
 After reviewing a registry edit, run `scripts/render-defects.py --write` and regenerate indexes and
 skills. `--check` rejects drift. The defect reporter preserves its CLI flags, version-2 JSON fields,

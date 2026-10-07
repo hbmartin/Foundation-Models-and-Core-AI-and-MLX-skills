@@ -43,6 +43,8 @@ documentation, and the issue tracker. Where a claim comes from source, the file 
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
+| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-models:issue:5](https://github.com/apple/coreai-models/issues/5) <!-- defect-ref:apple.coreai-models:issue:5 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-models:issue:66](https://github.com/apple/coreai-models/issues/66) <!-- defect-ref:apple.coreai-models:issue:66 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:1](https://github.com/apple/coreai-torch/issues/1) <!-- defect-ref:apple.coreai-torch:issue:1 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:10](https://github.com/apple/coreai-torch/issues/10) <!-- defect-ref:apple.coreai-torch:issue:10 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
@@ -55,7 +57,9 @@ documentation, and the issue tracker. Where a claim comes from source, the file 
 | [apple.coreai-torch:issue:6](https://github.com/apple/coreai-torch/issues/6) <!-- defect-ref:apple.coreai-torch:issue:6 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:issue:9](https://github.com/apple/coreai-torch/issues/9) <!-- defect-ref:apple.coreai-torch:issue:9 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [apple.coreai-torch:pull:22](https://github.com/apple/coreai-torch/pull/22) <!-- defect-ref:apple.coreai-torch:pull:22 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-torch:pull:32](https://github.com/apple/coreai-torch/pull/32) <!-- defect-ref:apple.coreai-torch:pull:32 --> | MERGED (2026-10-07) | released (0.4.3) | unverified | unknown |
 | [apple.coreai-torch:pull:41](https://github.com/apple/coreai-torch/pull/41) <!-- defect-ref:apple.coreai-torch:pull:41 --> | MERGED (2026-10-07) | not-in-verified-release (0.4.3) | unverified | merged-unreleased |
+| [apple.coreai-torch:pull:45](https://github.com/apple/coreai-torch/pull/45) <!-- defect-ref:apple.coreai-torch:pull:45 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 <!-- current-defects:end -->
 
 ## What this covers
@@ -1271,28 +1275,22 @@ Apple's own MoE work shows up as measured throughput:
 
 ### 6.3 ⚠️ How far that support does *not* extend
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+<!-- defect-ref:apple.coreai-models:issue:5 -->
+<!-- defect-ref:apple.coreai-torch:issue:2 -->
+<!-- defect-ref:apple.coreai-torch:issue:6 -->
+<!-- current-defect-refs:end -->
+
 This is the part that will save you a month, so it gets more space than the good news.
 
-**IR support is not runtime support.** The composite exists, the converter emits it, and the shipped
-Swift LLM runtime refuses to run the resulting model.
+**Check IR, engine and delegate support separately.** Current [upstream Swift source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift), inspected 2026-10-07, accepts **2–4 states** and binds optional persistent hybrid states. That source change does not establish end-to-end model parity on a shipping device.
 
-> ✅ **VERIFIED** — `apple/coreai-models` issue **#118**, *"[Swift runtime] `CoreAISequentialEngine`
-> rejects hybrid models with four persistent states"*. A 16 KB no-weights repro with the function
-> contract `inputs: input_ids, position_ids · output: logits · states: keyCache, valueCache,
-> convState, recState` fails at load with:
->
-> ```text
-> Expected 2 states (KV cache), got 4: states=["keyCache", "valueCache", "convState", "recState"], outputs=["logits"]
-> ```
->
-> Root cause is a `descriptor.stateNames.count == 2` guard. **Maintainer answer (@stikves),
-> verbatim — the definitive statement:** *"Thanks for the report. **The check for only 2 states is
-> deliberate. We currently do not have support for linear attention or similar hybrid state models.**
-> Keeping this open for potential future changes."* Filed as FB23893830. Still open 2026-07-29.
+Issue #118 documented the older two-state guard at source commit `04a3fd6cfe9bfae9cf05b1f246cf915d930d1c0a`. Its 16 KB no-weights reproduction used `keyCache`, `valueCache`, `convState`, and `recState`; it failed before inference with `Expected 2 states (KV cache), got 4`. The issue closed on 2026-08-05. Retain that case as migration and regression evidence; do not apply the old refusal to current source.
 
-**Prefix caching is forfeit for these architectures, and that is architectural, not a bug.**
+**KV-only rewind is unsafe for recurrent states.** Current upstream resets and replays the prompt when a hybrid session rewinds; recurrent checkpoints would require their own implementation and verification.
 
-> ✅ **VERIFIED** — `trimKVCache` returns `-1` (unsupported) whenever `extraStates` is non-empty.
+> ✅ **VERIFIED** — the community fork’s `trimKVCache` returns `-1` (unsupported) whenever `extraStates` is non-empty.
 > The reporter of #118 states the underlying reason cleanly: *"There is also a correctness issue with
 > KV-only prefix rewind. **Recurrent state is a summary of the full prefix and cannot be rewound by
 > changing a KV token cursor.** A safe implementation must replay the prompt or maintain recurrent
@@ -1370,7 +1368,7 @@ models genuinely hard right now, and the reporter mapped it out precisely:
 | In Apple's `_EXTERNALIZE_SPECS` | ✅ yes | ✅ yes |
 | Apple ships a working model using it | ✅ Qwen3-MoE, Mixtral, GPT-OSS | ❌ none — spec only |
 | Runs on GPU/ANE delegates | ✅ (Qwen3-MoE ships) | ⚠️ see #2 — combination-dependent |
-| Swift `CoreAISequentialEngine` accepts it | ✅ (2 states) | ❌ hard-rejected, deliberately (#118) |
+| Swift `CoreAISequentialEngine` descriptor gate | ✅ KV pair | Current source accepts 2–4 states; end-to-end hybrid parity is unverified (#118) |
 | Prefix caching / `trimKVCache` | ✅ | ❌ returns `-1` |
 
 The asymmetry between the two is visible in Apple's own repository, and it is stark:
@@ -2248,6 +2246,10 @@ Transformers."*
 
 ### 8.7 ⚠️ The four silent failures in externalization
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:1 -->
+<!-- current-defect-refs:end -->
+
 **(a) An unmatched `target_class` warns; it does not raise.**
 
 > ✅ **VERIFIED** — `coreai_torch/externalize.py:391-399`, the exact text:
@@ -2345,6 +2347,13 @@ None of them throws. Three of them are wrong on *every* backend, because the def
 lowering — upstream of any delegate.
 
 ### 9.1 fp16 overflow in `softplus`, `mish`, `logsumexp`, `logcumsumexp`
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:21 -->
+<!-- defect-ref:apple.coreai-torch:issue:5 -->
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
+<!-- current-defect-refs:end -->
 
 **Status:** `apple/coreai-torch` issue **#21** open; proposal **apple/coreai-torch#5** open;
 implementation PR **apple/coreai-torch#22** open, unmerged.
@@ -2449,6 +2458,10 @@ dynamic-overflow calibration was added after 0.3.0 and is not a released capabil
 
 ### 9.2 Integer true-divide truncates instead of promoting to float
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
+<!-- current-defect-refs:end -->
+
 **Status:** `apple/coreai-torch#32` merged 2026-07-29.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:3591-3592` and `:3722`:
@@ -2516,6 +2529,11 @@ as current HEAD.
 
 ### 9.3 `cat` on packed sub-byte tensors always concatenates on dim 0
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
+<!-- current-defect-refs:end -->
+
 **Status:** `apple/coreai-torch#41` merged 2026-09-25; its fix is outside the 0.4.3 tag.
 
 **Verified live.** `coreai_torch/_compression/_intx.py:380-382`, `__torch_dispatch__`:
@@ -2560,6 +2578,10 @@ if func is torch.ops.aten.slice.Tensor:
 > tensor that has already been through `inject_subbyte_tensors` or a palettizer `finalize()`.
 
 ### 9.4 int64 accumulator narrowing in `sum` and `prod`
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
+<!-- current-defect-refs:end -->
 
 **Status:** `apple/coreai-torch#45` **closed without merge**. The defect stands.
 
@@ -2615,6 +2637,10 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > ```
 
 ### 9.5 Two more you must know, though they are not in `coreai-torch`'s lowerings
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:51 -->
+<!-- current-defect-refs:end -->
 
 **MobileNetV3 / ANE fp16: a 2D matmul feeding `Hardswish`.**
 
@@ -2679,6 +2705,11 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 
 ### 9.6 Recovering 0.4.0 artifacts without re-converting
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
+<!-- current-defect-refs:end -->
+
 Not a miscompile, but the version gate from the top of this guide has a documented escape hatch that
 is easy to miss.
 
@@ -2713,6 +2744,16 @@ is easy to miss.
 > either behaviour.
 
 ### 9.7 The register
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:66 -->
+<!-- defect-ref:apple.coreai-torch:issue:10 -->
+<!-- defect-ref:apple.coreai-torch:issue:11 -->
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
+<!-- defect-ref:apple.coreai-torch:issue:9 -->
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
+<!-- current-defect-refs:end -->
 
 Nine defects, in one table, so you can check your own model against it:
 

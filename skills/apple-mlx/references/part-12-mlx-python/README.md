@@ -110,6 +110,11 @@ Apple's own warning makes **a build artefact, not an archive**.
 
 ### [12.2 — Numerics, hardware gating, and writing custom Metal kernels from Python](references/02-numerics-hardware-gating-and-custom-kernels.md)
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
+<!-- current-defect-refs:end -->
+
 Where MLX stops being a portable array library and becomes a program on one specific piece of Apple silicon.
 Three coupled themes: the dtype inventory (including the CPU-only one, and why fp8/fp4 are ops and storage
 formats rather than dtypes); the hardware gate, **one feature in two halves** — `relaxed_precision = true` is
@@ -132,6 +137,11 @@ hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENAB
 > nothing but a CMake warning.
 
 ### [12.3 — MLX quantization: modes, group sizes, gates, and the corruption bugs](references/03-quantization.md)
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
+<!-- current-defect-refs:end -->
 
 Quantization in MLX is four things wearing one name: a numeric format (affine at 2/3/4/5/6/8 bits, or
 `mxfp4`/`mxfp8`/`nvfp4`), a memory layout (**three arrays** — packed `uint32` weights, scales, and for affine a

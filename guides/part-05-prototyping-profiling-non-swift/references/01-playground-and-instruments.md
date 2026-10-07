@@ -590,6 +590,10 @@ final class FeedbackCollector {
 
 ### 3.2 The non-Swift hole
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
+<!-- current-defect-refs:end -->
+
 > ✅ **VERIFIED** — community-tracked, `python-apple-fm-sdk` issue **#5** (OPEN as of 2026-07-29,
 > one comment, no activity since 2026-03-07):
 > feedback submission — `LanguageModelFeedback` and `logFeedbackAttachment` — **is Swift-only and is not
@@ -2063,6 +2067,10 @@ at anywhere above.
 ---
 
 ## 16. Sources
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
+<!-- current-defect-refs:end -->
 
 **Primary — Apple sample code (strongest evidence class).** Downloaded archives, read this session:
 

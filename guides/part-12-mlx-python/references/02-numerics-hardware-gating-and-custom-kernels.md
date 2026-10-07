@@ -33,6 +33,7 @@ true and they are about different things — §4.2 gives the full story. Build f
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
 | [ml-explore.mlx:issue:3860](https://github.com/ml-explore/mlx/issues/3860) <!-- defect-ref:ml-explore.mlx:issue:3860 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3875](https://github.com/ml-explore/mlx/pull/3875) <!-- defect-ref:ml-explore.mlx:pull:3875 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3883](https://github.com/ml-explore/mlx/pull/3883) <!-- defect-ref:ml-explore.mlx:pull:3883 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 <!-- current-defects:end -->
@@ -354,6 +355,10 @@ on an M1 Max versus an M3 Ultra / M5, traced to the FMA chain in the Metal `erfi
 (community-reported, mlx#3568, referenced from mlx#3702's thread; unverified beyond that reference).
 
 ### 1.4 `float16` vs `bfloat16` — the decision that actually matters
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 Both are 2 bytes. They differ in how they spend those 16 bits, and this is the whole decision:
 
@@ -761,6 +766,11 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.3 ⚠️ SILENT FAILURE: precision you did not choose, with no runtime signal
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
+<!-- current-defect-refs:end -->
+
 <!-- callout-id: callout-17c8d8203e6a6232 -->
 > ⚠️ **SILENT FAILURE — fp32 storage can conceal reduced matmul precision.**
 > On the documented M5/macOS ≥26.2 path, fp32 matmul defaults to relaxed internal precision while
@@ -772,6 +782,10 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 > demonstrated removal of relaxed precision; the warning proposal #3883 closed unmerged.
 
 ### 3.4 What it measures out at
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- current-defect-refs:end -->
 
 All of the following are **community-measured**, from the mlx#3860 thread (**closed as completed
 2026-08-04**, 9 comments), by `pierre427` and `mabaeyens`. Not Apple figures. Attribution is per row.
@@ -805,6 +819,10 @@ independent confirmation that MLX is genuinely selecting `CUBLAS_COMPUTE_32F_FAS
 doing something of its own.
 
 ### 3.5 Three mechanics that cost people days
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 These are the parts that make bisection hard. All three are community-established on mlx#3860 and
 consistent with the source quoted in §3.1–§3.2.
@@ -856,6 +874,10 @@ subject to the TF32 gate**. So the two silent failures in this guide compose.
 
 ### 3.6 The blast radius, downstream
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
+
 Community-measured consequences, each attributed:
 
 - **Signal processing, CUDA sm_120** (mlx#3860): a fitting workload flipped near-tie `argmax` results
@@ -886,6 +908,10 @@ write:
 > about a *mechanism*."
 
 ### 3.7 What to actually do
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 A short, opinionated policy:
 
@@ -1126,6 +1152,10 @@ MLX PR **#3083** is titled as enabling the NAX matmul path for `gen >= 18` phone
 (referenced from mlx#3702's thread; **UNVERIFIED** beyond that reference).
 
 ### 4.5 A probe you can run, and an A/B switch
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 Python does not expose `is_nax_available()` or `get_architecture_gen()`. What it *does* expose is
 the architecture string, via `mx.device_info()`:
@@ -1686,6 +1716,10 @@ Padding costs bandwidth proportional to the padding ratio. 72→80 is +11 %; 96�
 
 ### 5.7 Two adjacent SDPA traps
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:pull:3875 -->
+<!-- current-defect-refs:end -->
+
 **Trap A — `MLX_SDPA_BLOCKS` must be a multiple of 32.**
 
 `MLX_SDPA_BLOCKS` is a new-in-0.32.0 override for the Metal SDPA block size (✅ VERIFIED,
@@ -1871,6 +1905,10 @@ directly — the fused path is then not in question.
 > assume inference-time speedups are real.
 
 ### 6.3 `rope`
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 ✅ **VERIFIED** — `python/src/fast.cpp`:
 

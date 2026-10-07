@@ -5,6 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 import re
 from refresh_defect_statuses import ROOT, load_registry, atomic_text
+from mdslug import collect_headings
 
 
 def render(root, write=False):
@@ -15,9 +16,11 @@ def render(root, write=False):
                 by_file[location['file']].append(record)
     stale = []
     pattern = re.compile(r'<!-- current-defects:start -->.*?<!-- current-defects:end -->', re.S)
+    scoped_pattern = re.compile(r'\n<!-- current-defect-refs:start -->.*?<!-- current-defect-refs:end -->\n', re.S)
     for path in sorted((root / 'guides').rglob('*.md')):
         relative = path.relative_to(root).as_posix()
         original = path.read_text()
+        clean = scoped_pattern.sub('', original)
         records = by_file.get(relative, [])
         block = ''
         if records:
@@ -31,22 +34,46 @@ def render(root, write=False):
                 rows.append(f"| [{record['id']}]({record['url']}) <!-- defect-ref:{record['id']} --> | {record['claimedState']} ({record['asOf']}) | {release_text} | {remediation_text} | {resolution['disposition']} |")
             rows.append('<!-- current-defects:end -->')
             block = '\n'.join(rows)
-        matches = pattern.findall(original)
+        matches = pattern.findall(clean)
         if len(matches) > 1:
             raise ValueError(f'{relative}: duplicate current defect blocks')
         if matches:
-            expected = pattern.sub(lambda match: block, original)
+            expected = pattern.sub(lambda match: block, clean)
         elif records:
-            position = original.find('\n## ')
+            position = clean.find('\n## ')
             if position < 0:
                 raise ValueError(f'{relative}: no section boundary for current defects')
-            expected = original[:position] + '\n\n' + block + '\n' + original[position:]
+            expected = clean[:position] + '\n\n' + block + '\n' + clean[position:]
         else:
-            expected = original
+            expected = clean
+        by_anchor = defaultdict(set)
+        for record in records:
+            for location in record['guideRefs']:
+                if location['file'] == relative:
+                    by_anchor[location['anchor']].add(record['id'])
+        lines = expected.splitlines(keepends=True)
+        for heading in reversed(collect_headings(expected)):
+            identifiers = by_anchor.get(heading.anchor)
+            if identifiers:
+                markers = ['\n<!-- current-defect-refs:start -->']
+                markers.extend(f'<!-- defect-ref:{identifier} -->' for identifier in sorted(identifiers))
+                markers.append('<!-- current-defect-refs:end -->\n')
+                lines.insert(heading.line, '\n'.join(markers))
+        expected = ''.join(lines)
         allowed = {record['id'] for record in records}
-        for identifier in re.findall(r'<!--\s*defect-ref:([^\s]+)\s*-->', expected):
-            if identifier not in allowed:
-                raise ValueError(f'{relative}: unknown or misplaced defect ID {identifier}')
+        locations = {record['id']: {location['anchor'] for location in record['guideRefs']
+                     if location['file'] == relative} for record in records}
+        scoped_text = pattern.sub('', expected)
+        headings = iter(collect_headings(scoped_text))
+        next_heading = next(headings, None)
+        anchor = None
+        for number, line in enumerate(scoped_text.splitlines(), 1):
+            while next_heading and next_heading.line <= number:
+                anchor = next_heading.anchor
+                next_heading = next(headings, None)
+            for identifier in re.findall(r'<!--\s*defect-ref:([^\s]+)\s*-->', line):
+                if identifier not in allowed or anchor not in locations[identifier]:
+                    raise ValueError(f'{relative}: unknown or misplaced defect ID {identifier}')
         if expected != original:
             stale.append(relative)
             if write:

@@ -40,6 +40,8 @@ migration table.
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
 | [ml-explore.mlx-swift-lm:issue:312](https://github.com/ml-explore/mlx-swift-lm/issues/312) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:424](https://github.com/ml-explore/mlx-swift-lm/issues/424) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:pull:453](https://github.com/ml-explore/mlx-swift-lm/pull/453) <!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 --> | MERGED (2026-10-07) | released (3.32.3) | unverified | unknown |
 <!-- current-defects:end -->
 
 ## What this covers
@@ -3643,6 +3645,12 @@ any test that asserts on output text flaky.
 
 ### 10.1 The failures that do not throw
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:312 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
+<!-- current-defect-refs:end -->
+
 Collected from every section, ordered by how long they take to diagnose. Each is marked with its
 evidence class.
 
@@ -3675,8 +3683,10 @@ evidence class.
     MLX's own source. §7.7.
 11. **`maybeQuantizeKVCache` replaces array *elements*, not objects**, so the caller's `[KVCache]`
     keeps stale references and the model loses all context generated after the quantisation
-    threshold. Community-reported, `mlx-swift-lm` issue **#312** (still OPEN 2026-08-07; fixed on
-    main by PR #453, merged 2026-08-05, but in no release). On 3.31.4 or earlier, verify your output.
+    threshold. Community-reported in `mlx-swift-lm` issue **#312**, still open on 2026-10-07.
+    Typed-configuration PR #453 is included in 3.32.3, but that source inclusion does not
+    demonstrate this caller-state failure is remediated. Verify output across the quantization
+    threshold on the release and cache topology you ship.
 12. **`temperature` defaults to `0.6`, not `0`.** ✅ VERIFIED, `Evaluate.swift:54-169`. Any test that
     asserts on generated text is flaky until you pass `temperature: 0`. And **`seed` is inert at
     `temperature == 0`** — setting a seed to "make it deterministic" while temperature is already 0

@@ -35,6 +35,15 @@ Two floors *inside* that floor matter here:
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 Reference 01 taught you `AIModel` → `InferenceFunction` → `NDArray`. Reference 03 taught you states
@@ -1544,31 +1553,22 @@ is the subject of the rest of this section.
 
 ### 5.3 `CoreAISequentialEngine` — dynamic, CPU-side sampling, logits available
 
-The model contract, ✅ VERIFIED verbatim from the doc comment
-(`CoreAISequentialEngine.swift:22-32`):
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+<!-- current-defect-refs:end -->
 
-```
-/// Clean Core AI inference engine built from scratch using only public APIs.
-///
-/// ## Model Contract
-///
-/// Expects a `.aimodel` with:
-/// - **2 inputs**: `input_ids` (Int32), `position_ids` (Int32)
-/// - **1 output**: `logits` (LogitsScalarType)
-/// - **2 states**: `keyCache`, `valueCache` — persistent across steps, updated in-place
-///
-/// KV cache NDArrays start small (256 tokens) and grow dynamically with 2× expansion.
-/// Passed as `states` on every forward pass; the model graph updates them in-place.
-```
+Current [upstream source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift), inspected 2026-10-07, accepts:
+
+- two model inputs and at least one output;
+- **2–4 states**, including the KV pair and optional persistent hybrid states;
+- additional-state allocation and reset through the shared state-handler factory.
+
+Model and device parity remain separate checks. Recurrent state requires reset/replay when a session rewinds.
 
 `public var supportsLogits: Bool { true }` (`:36`).
 
-⚠️ **Names are taken positionally from the descriptor, not matched by string.** The init validates
-`inputNames.count == 2`, `outputNames.count >= 1`, `stateNames.count == 2`, and that the logits
-scalar type is `.float16` (else `unsupportedLogitsType`) — then binds `inputs[0]` as `input_ids`,
-`inputs[1]` as `position_ids`, `states[0]` as key, `states[1]` as value, `outputs[0]` as logits. So
-**a graph that declares its inputs in the other order will load, run, and produce garbage.** If you
-author your own model, the input declaration order in `torch.export` is a wire-format decision.
+<!-- callout-id: callout-61b5aacdb6b06efa -->
+⚠️ **Match the consumer’s layout contract.** Current [input layout](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/InputLayout.swift) resolves known input names, while `outputs[0]` supplies logits. [State classification](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/StateHandlerFactory.swift) uses explicit metadata or shape/name heuristics. The engine requires **2–4 states** and float16 logits. Older positional consumers and the examples below still require their declared input/KV order.
 
 The execution core is the plainest possible use of the Core AI runtime, and it is worth reading if
 you want to understand what the pipelined engine is optimising away:
@@ -2167,6 +2167,10 @@ never reads positions ≥ the retained offset before they're rewritten."*
 
 ### 6.4 The negative result that changes model selection
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+<!-- current-defect-refs:end -->
+
 The pipelined implementation carries one guard, and it is the most interesting line in the patch:
 
 ```swift illustrative
@@ -2202,12 +2206,7 @@ the right choice for a single-shot summarizer.** Community-derived from one impl
 Apple claim — but the mechanism is architectural, not implementation-specific, so it will hold
 wherever you find it.
 
-(Sidebar, same source: upstream `CoreAIPipelinedEngine` **rejects hybrid bundles outright** —
-*"validates exactly two model states (the KV cache pair) … Qwen3.5/3.6 (GatedDeltaNet), LFM2.5, and
-Granite 4 (Mamba2) fail at load with `Expected 2 states, got 4`."* The fork relaxes the guard to
-`>= 2` plus a bounded extra-state pool whose shapes must be **fully static**. So on stock
-`apple/coreai-models` at commit `5ed9981`, the question of prefix reuse on a hybrid does not arise:
-the model does not load on the GPU engine at all.)
+Current [pipelined source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAIPipelinedEngine.swift) also accepts **2–4 states**. The older two-state refusal belongs to the archived beta snapshot. Validate extra-state allocation and reset, delegate support, and model parity on the exact revision and device you ship.
 
 ### 6.5 The caller-side algorithm
 

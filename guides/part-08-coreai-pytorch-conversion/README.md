@@ -250,6 +250,10 @@ already hit a genuinely unsupported op.
 
 ## Sources for this part
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
+<!-- current-defect-refs:end -->
+
 Strongest first. **Apple source read directly off disk this session:** `apple/coreai-torch` at `main`, HEAD
 `4529671`, version **0.4.1** — `converter.py` (1,082 lines), `_decomp.py`, `_validate.py`, `_utils.py`,
 `_aten_to_core.py`, `externalize.py`, `_composite_declaration.py`, `_compression/_intx.py`,

@@ -1990,6 +1990,10 @@ Two practical notes:
 
 ### 8.3 Step 3 — QK transpose into a cooperative tensor
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
+<!-- current-defect-refs:end -->
+
 ✅ **VERIFIED**, session 330 at 330:91:
 
 > *"We'll use a **cooperative tensor to store the intermediate matrix so that we can use it as an

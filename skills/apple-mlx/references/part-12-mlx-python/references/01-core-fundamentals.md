@@ -10,6 +10,7 @@
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
+| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
 | [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 <!-- current-defects:end -->
@@ -128,6 +129,11 @@ Two markers you will see constantly:
 > safe default.
 
 ### Freshness warning, and it is sharp
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+<!-- current-defect-refs:end -->
 
 The clone's HEAD is `973e27f` ("[CUDA] Fix grid overflow in gemm conv unfold kernels…", PR #3893).
 **Three NAX correctness fix PRs opened in the three days before 2026-07-27, and none is in
@@ -2871,6 +2877,10 @@ def bench(fn, *args, warmup: int = 10, iters: int = 100) -> float:
 > See §12.5.
 
 ### 10.6 Querying the device
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
 
 ```python
 import mlx.core as mx

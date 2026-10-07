@@ -2152,6 +2152,10 @@ While you are in `coreai-build`, one more, because it produces a crash rather th
 
 ### And one that is not about architectures at all
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:49 -->
+<!-- current-defect-refs:end -->
+
 > ⚠️ **`CoreAI.framework` is absent from the iOS Simulator SDK.**
 > Reported on `apple/coreai-models` issue #49 (FB23189921), **still open as of 2026-07-29** (3
 > comments, no activity since 2026-06-28), verbatim:
@@ -3194,6 +3198,10 @@ uses 0.4.3/b3; see the version floor and Part 8 for that workflow.
 | The beta1 → beta3 framework changelog | `foundation-models-utilities` commit `376ca60` message |
 
 ### SDK interfaces and toolchain probes (evidence class 2 — captured/run 2026-07-29, Xcode 27.0 beta `27A5228h`)
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:49 -->
+<!-- current-defect-refs:end -->
 
 | Claim | Source |
 |---|---|

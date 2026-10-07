@@ -575,6 +575,10 @@ Line numbers refer to that commit.
 
 ### 5.1 It is not a Python implementation of anything
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
+<!-- current-defect-refs:end -->
+
 > ✅ **VERIFIED** — repository structure, read on disk. The package is a **three-layer sandwich**:
 >
 > ```
@@ -815,6 +819,10 @@ A debug build is worth knowing about: when you are chasing a crash inside the sh
 `swift-build-config=debug` install gives you a symbolicated Swift stack instead of an optimised one.
 
 ### 6.2 The preflight ladder, and the two error strings that identify it
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:16 -->
+<!-- current-defect-refs:end -->
 
 Before compiling anything the backend runs five checks, each raising `SwiftToolingError`:
 
@@ -1082,6 +1090,10 @@ is a defect with an acknowledgement, not a documented gate. Full treatment in
 [`../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md`](../../part-01-orientation-and-gating/references/02-platform-and-version-gating.md).
 
 ### 7.2 The constructor: use case and guardrails
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
+<!-- current-defect-refs:end -->
 
 > ✅ **VERIFIED** — `core.py`:
 >
@@ -2687,6 +2699,11 @@ something is created on the native side and no Python object owns it.
 
 ### 13.2 The FD leak, and why the fix is not in any release
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
+<!-- current-defect-refs:end -->
+
 This is the best bug report in the corpus, and it comes with measurements.
 
 > ✅ **VERIFIED** — `apple/python-apple-fm-sdk` issue **#17** (2026-07-03, @dmkharlamov), fixed by PR
@@ -2795,6 +2812,10 @@ async def classify_images(paths: list[Path], instructions: str) -> list[str]:
 
 ### 13.5 The leaks that remain
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
+<!-- current-defect-refs:end -->
+
 Read from the source at HEAD; **UNVERIFIED at runtime, but structurally unambiguous**:
 
 | Leak | Where | Consequence |
@@ -2898,6 +2919,10 @@ to unit-test code that wraps the SDK without needing Apple Intelligence:
 ---
 
 ## 14. What the Python SDK cannot do
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
+<!-- current-defect-refs:end -->
 
 Consolidated so you can check feasibility before writing code. Every ❌ below was established by
 reading `__all__` and the C header, not by failing to find something in the docs.
@@ -3237,6 +3262,10 @@ Sorted by what you actually see. The split that matters is the second table: **d
 throw** are the ones that cost days.
 
 ### 16.1 It throws, and the message names the cause
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:6 -->
+<!-- current-defect-refs:end -->
 
 | Symptom | Cause | § |
 |---|---|---|

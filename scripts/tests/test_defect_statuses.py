@@ -148,6 +148,11 @@ class DefectRegistryTests(unittest.TestCase):
         result = subprocess.run(command + ['--check'], capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('unknown or misplaced defect ID', result.stderr)
+        guide.write_text(guide.read_text().replace('<!-- defect-ref:unknown -->', '')
+                         + '\n## Unrelated\n<!-- defect-ref:owner.repo:issue:19 -->\n')
+        result = subprocess.run(command + ['--check'], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('unknown or misplaced defect ID', result.stderr)
 
 
 if __name__ == '__main__':

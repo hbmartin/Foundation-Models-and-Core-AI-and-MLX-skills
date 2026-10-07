@@ -1672,6 +1672,10 @@ snippets have not.
 
 ### 5.4 Beta status, open bugs, and one tooling gap you will hit immediately
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
+<!-- current-defect-refs:end -->
+
 Every Core AI symbol is flagged **Beta**. That is not a formality here; the corpus contains a
 substantial list of reproduced defects across the converter, compiler and model repository. A
 representative sample follows; use the linked register for current status:

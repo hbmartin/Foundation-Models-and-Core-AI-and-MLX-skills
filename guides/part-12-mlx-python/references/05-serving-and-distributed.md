@@ -22,8 +22,21 @@ macOS 27**. The M5 prompt-processing story needs **M5 silicon** and no flags.
 
 | Reference | Recorded state/date | Verified release | Remediation | Disposition |
 |---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1472](https://github.com/ml-explore/mlx-lm/issues/1472) <!-- defect-ref:ml-explore.mlx-lm:issue:1472 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1493](https://github.com/ml-explore/mlx-lm/issues/1493) <!-- defect-ref:ml-explore.mlx-lm:issue:1493 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1494](https://github.com/ml-explore/mlx-lm/issues/1494) <!-- defect-ref:ml-explore.mlx-lm:issue:1494 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1495](https://github.com/ml-explore/mlx-lm/issues/1495) <!-- defect-ref:ml-explore.mlx-lm:issue:1495 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1505](https://github.com/ml-explore/mlx-lm/issues/1505) <!-- defect-ref:ml-explore.mlx-lm:issue:1505 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx-lm:issue:1587](https://github.com/ml-explore/mlx-lm/issues/1587) <!-- defect-ref:ml-explore.mlx-lm:issue:1587 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1513](https://github.com/ml-explore/mlx-lm/pull/1513) <!-- defect-ref:ml-explore.mlx-lm:pull:1513 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1598](https://github.com/ml-explore/mlx-lm/pull/1598) <!-- defect-ref:ml-explore.mlx-lm:pull:1598 --> | CLOSED (2026-10-07) | not-in-verified-release (0.32.0) | unverified | unknown |
+| [ml-explore.mlx-lm:pull:1826](https://github.com/ml-explore/mlx-lm/pull/1826) <!-- defect-ref:ml-explore.mlx-lm:pull:1826 --> | MERGED (2026-10-07) | released (0.32.0) | unverified | unknown |
+| [ml-explore.mlx:issue:3755](https://github.com/ml-explore/mlx/issues/3755) <!-- defect-ref:ml-explore.mlx:issue:3755 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3777](https://github.com/ml-explore/mlx/issues/3777) <!-- defect-ref:ml-explore.mlx:issue:3777 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3862](https://github.com/ml-explore/mlx/issues/3862) <!-- defect-ref:ml-explore.mlx:issue:3862 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3876](https://github.com/ml-explore/mlx/issues/3876) <!-- defect-ref:ml-explore.mlx:issue:3876 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx:issue:3910](https://github.com/ml-explore/mlx/issues/3910) <!-- defect-ref:ml-explore.mlx:issue:3910 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
 | [ml-explore.mlx:pull:3912](https://github.com/ml-explore/mlx/pull/3912) <!-- defect-ref:ml-explore.mlx:pull:3912 --> | MERGED (2026-10-07) | released (0.32.3) | unverified | unknown |
 | [ml-explore.mlx:pull:3924](https://github.com/ml-explore/mlx/pull/3924) <!-- defect-ref:ml-explore.mlx:pull:3924 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
 <!-- current-defects:end -->
@@ -414,6 +427,10 @@ come back to a regression in three weeks it is the only thing that will let you 
 stack.
 
 ### 3.1 Health checks that lie
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1493 -->
+<!-- current-defect-refs:end -->
 
 ⚠️ Worth knowing before you wire `/health` into a supervisor: it is a **static** handler. It does
 not touch the generation thread, the batch generator, or the model. Community bug report
@@ -1014,6 +1031,10 @@ models.
 
 ### 8.6 Tuning
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
+<!-- current-defect-refs:end -->
+
 `--decode-concurrency` (default 32) is the maximum number of sequences decoding simultaneously;
 `--prompt-concurrency` (default 8) the maximum prefilling simultaneously. ✅ VERIFIED that
 `BatchGenerator` enforces `completion_batch_size = max(completion_batch_size,
@@ -1117,6 +1138,10 @@ multiples on the Core AI side. The same physics applies here.
 
 ### 9.3 ⚠️ The architectures that forfeit prefix reuse entirely
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
+<!-- current-defect-refs:end -->
+
 This is the same constraint that shows up in Core AI's `trimKVCache` and it is worth stating in
 MLX's terms. ✅ VERIFIED from `mlx_lm/models/cache.py`'s class table:
 
@@ -1146,6 +1171,10 @@ Two knock-on effects, both ✅ VERIFIED:
   constraint governs any in-process serving you build yourself.)
 
 ### 9.4 Open correctness bugs in the server prompt cache
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1495 -->
+<!-- current-defect-refs:end -->
 
 Community-reported (GitHub, read 2026-07-27), status **open**. These are not hypothetical and you
 should know them before you trust `cached_tokens` on an unusual architecture.
@@ -1200,6 +1229,12 @@ prefill throughput — `prompt_tps` in mlx-lm's own reporting, and the thing
 `usage.prompt_tokens_details.cached_tokens` is trying to reduce.
 
 ### 10.1 The M5 Neural Accelerators
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+<!-- current-defect-refs:end -->
 
 > ✅ **VERIFIED** — 232:79–81: *"**The M5 chip introduces dedicated Neural Accelerators, and MLX
 > can target them for exactly this kind of work. Specifically, Neural Accelerators make matrix
@@ -1600,6 +1635,11 @@ reason not to use `mlx_lm.server`; all of them are reasons to supervise it.
 
 ### 13.1 mlx-lm#1493 — livelock, not deadlock
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1513 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1598 -->
+<!-- current-defect-refs:end -->
+
 The server hangs immediately after prompt processing on ~22–26k-token **streaming** requests from
 a real client (Obsidian Copilot: `stream:true, temperature:0.1, max_tokens:16000`, a system prompt
 plus long mixed-language markdown). Synthetic prompts of the same size pass. Concurrency alone
@@ -1621,8 +1661,9 @@ returned 200 throughout. Only `launchctl kickstart` recovered it.
 > the delivery level: *requests in flight + no tokens delivered to any consumer queue for N
 > seconds* = stalled engine."*
 
-Fix in flight: PR **#1598**, a delivery-staleness watchdog with `--generation-stall-timeout`
-(proposed default 60 s), stacked on **#1513** (exception / dead-worker recovery).
+PR **#1598** proposed a delivery-staleness watchdog, but was closed without merge.
+The 0.32.0 server source has no `--generation-stall-timeout` flag. Exception-recovery
+PR **#1513** remains open; neither proposal establishes a shipped remediation.
 
 **What to do today.** Do not health-check with `/health` or `/v1/models` — both stay green
 (§3.1). Health-check by *sending a tiny completion with a client-side timeout* and restarting the
@@ -1631,6 +1672,11 @@ solution and it is the difference between a two-second blip and an agent session
 overnight.
 
 ### 13.2 mlx-lm#1500 — an idle server pins a core
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1472 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1505 -->
+<!-- current-defect-refs:end -->
 
 `ResponseGenerator._generate()`'s worker thread busy-polls:
 
@@ -1655,13 +1701,18 @@ server when you are not using it, or accept it. There is no flag.
 
 ### 13.3 The wedge family
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1826 -->
+<!-- current-defect-refs:end -->
+
 - **mlx-lm#1505** — *"any uncaught exception in `_generate` leaves HTTP threads serving while every
   completion hangs forever."* Same external symptom as #1493, different cause.
-- **mlx-lm#1472 (closed 2026-09-04; fix merged but unreleased)** — the generation thread dies with
+- **mlx-lm#1472 (closed 2026-09-04; source fix included in 0.32.0)** — the generation thread dies with
   `TypeError ('NoneType' object is not iterable)` when a batch **mixes requests with and without
   logits processors**; the server then hangs forever. [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826)
   makes the invalid per-sequence state unrepresentable and adds a mixed-batch regression test.
-  Affected releases still need the guard or a watchdog. This one is directly agent-relevant: a
+  Affected older releases need the guard or a watchdog; local 0.32.0 runtime remediation
+  is unverified. This one is directly agent-relevant: a
   fan-out where some subagents set `repetition_penalty` and others do not is exactly that mix.
 - **mlx-lm#1435** — a uniform **+55–77 ms TTFT regression** on 0.31.3 vs 0.27.1 on M3 Ultra, with
   decode flat (±1.5%) and the penalty **independent of model size** (Qwen3-0.6B and gpt-oss-20b
@@ -1673,10 +1724,7 @@ server when you are not using it, or accept it. There is no flag.
   yanked in practice** for BatchKV cache cross-contamination, so it is not a version to go back to.
 
 All five together add up to one operational rule: **run `mlx_lm.server` under a supervisor with an
-external liveness prober, and pin your mlx-lm version.** The velocity on this repository is high
-and, per mlx-lm#1475 (open), maintainer bandwidth has been uneven — commit velocity was ~50/month
-through February 2026, dropped to 1 in May and ~13 in June, with 30+ open PRs at the time of
-filing. Merges resumed in July. Plan for a pinned version and deliberate upgrades, not `latest`.
+external liveness prober, and pin your mlx-lm version.** Use deliberate upgrades and test delivery-level health on the chosen release.
 
 ---
 
@@ -2996,6 +3044,11 @@ fields.
 
 ## 24. Apple's measured numbers
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3777 -->
+<!-- defect-ref:ml-explore.mlx:issue:3910 -->
+<!-- current-defect-refs:end -->
+
 **Attribution: Apple-published**, WWDC26 session 233. Hardware stated in the session: **4 × M3
 Ultra, meshed over Thunderbolt 5, RDMA enabled**, orchestrated from a MacBook over SSH. No OS
 build, no MLX version, no date, and no methodology beyond the model names are given. Present them
@@ -3032,6 +3085,12 @@ three times". Treat 3× on four nodes as a ceiling, not a floor.
 ---
 
 ## 25. The distributed bug cluster
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3755 -->
+<!-- defect-ref:ml-explore.mlx:issue:3862 -->
+<!-- defect-ref:ml-explore.mlx:issue:3876 -->
+<!-- current-defect-refs:end -->
 
 This is the newest surface in the entire 2026 stack and the issue tracker shows it. Everything
 below is **community-reported on GitHub**, read 2026-07-27, **open** at that date unless noted.

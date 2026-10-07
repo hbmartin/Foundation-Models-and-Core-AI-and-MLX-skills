@@ -3401,6 +3401,10 @@ the configured one.
 
 ### 17.6 A negative `axis` used to land on the wrong dimension
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
+<!-- current-defect-refs:end -->
+
 Covered at §8.5 (`apple/coreai-torch#24`, MERGED 2026-07-08). The failure had **no shape error** when
 the channel and its neighbour shared a size. **Avoid permanently:** write non-negative axes.
 

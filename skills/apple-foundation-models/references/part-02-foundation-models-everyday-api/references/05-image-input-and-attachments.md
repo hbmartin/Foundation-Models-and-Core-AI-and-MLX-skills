@@ -1682,6 +1682,11 @@ is a link error, not a Python exception.
 
 ### 11.3 The file-descriptor leak — the sharpest image-specific bug in the corpus
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
+<!-- current-defect-refs:end -->
+
 <!-- callout-id: callout-701cb12d4cb87d42 -->
 > ⚠️ **SILENT FAILURE — image attachments can retain file descriptors in Python sessions.**
 > `apple/python-apple-fm-sdk` #17 reported failure after 240–250 sequential image calls with `OSError:

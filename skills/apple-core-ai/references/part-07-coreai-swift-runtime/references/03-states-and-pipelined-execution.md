@@ -33,6 +33,16 @@ signature below is reconstructed rather than quoted, it says so.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [apple.coreai-models:issue:118](https://github.com/apple/coreai-models/issues/118) <!-- defect-ref:apple.coreai-models:issue:118 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [apple.coreai-models:issue:5](https://github.com/apple/coreai-models/issues/5) <!-- defect-ref:apple.coreai-models:issue:5 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 A transformer decode loop written the naive way gets slower every step. In Apple's own WWDC26
@@ -1354,25 +1364,25 @@ on the WWDC26 betas for one class of model.
 
 ### Argument ordering is load-bearing
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+<!-- current-defect-refs:end -->
+
 > ✅ **VERIFIED** — `lucasnewman/mlx2coreai`, `_convert_mlx_lm_stateful.py`:
 > `_reorder_graph_inputs(graph, [input_name, position_ids_name, key_cache_name, value_cache_name])`
 > *"then forces the argument order — which is why the Swift runner can index
 > `descriptor.stateNames[0]` = key, `[1]` = value."*
 
-Apple's own engine does the same thing:
+Current upstream accepts two inputs, at least one output, **2–4 states**, and float16 logits. Its [input layout](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/InputLayout.swift) resolves known input names; [state classification](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/Handlers/StateHandlerFactory.swift) uses explicit metadata or shape/name heuristics.
 
-> ✅ **VERIFIED** — `apple/coreai-models`, `CoreAISequentialEngine`: init validates
-> `descriptor.inputNames.count == 2`, `outputNames.count >= 1`, `stateNames.count == 2`, and
-> `logitsDesc.scalarType == .float16` (else `unsupportedLogitsType`). *"Names are taken
-> **positionally** from the descriptor arrays (inputs[0]=input_ids, inputs[1]=position_ids,
-> states[0]=key, states[1]=value, outputs[0]=logits)."*
-
-This is why §4's trap 3 is not academic. The entire ecosystem indexes `stateNames` positionally.
+**Keep the wire contract explicit.** Positional consumers, including the benchmark runner and the KV-only example below, still require the declared key/value and input order. Validate the names, order, shapes and state lifecycle expected by the consumer you ship.
 
 ### The whole loop, in Swift
 
 Here is a complete stateful decode step against this contract. It is not a reconstruction — it is
 adapted from a Swift runner that exists and compiles against the macOS 27 SDK.
+This example deliberately implements the two-state KV-only contract. Current upstream accepts
+up to four states; a hybrid decoder must also allocate, bind, retain and reset its persistent states.
 
 > ✅ **VERIFIED** — every API call below appears in
 > `lucasnewman/mlx2coreai`, `scripts/benchmark_aimodel_sampling_coreai.swift`, and the same calls
@@ -2468,18 +2478,24 @@ So the decision is not "pipelined is faster, use pipelined." It is:
 
 ## 13. The MPSGraph in-graph KV-write bug
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:5 -->
+<!-- current-defect-refs:end -->
+
 Everything above assumes that writing a KV column from inside the graph works. On the WWDC26 betas,
-for one specific and important class of model, it does not — and the way it fails is a textbook
+one reported model path failed. This section retains the beta regression and its diagnostic method;
+it does not establish a defect in the installed stable runtime. The failure is a textbook
 example of the silent-then-loud failure mode this framework specialises in: **conversion succeeds; it
 is load and execute that die.**
 
+<!-- callout-id: callout-35dd041d3fcd0313 -->
 > ⚠️ **Community-measured throughout this section.** Source: john-rocky,
 > `knowledge/coreai-beta-mpsgraph-kvwrite-bug.md`, filed as Apple Feedback **FB23024751** and
 > [`apple/coreai-models` issue #5](https://github.com/apple/coreai-models/issues/5), with a public
 > reproduction gist. This is first-hand incident material from one author with self-declared
-> uncontrolled benchmarks; the *isolation* is rigorous and reproducible, the *status* is unknown.
-> **Check FB23024751 and issue #5 before acting on any of it** — a beta bug from mid-2026 may well be
-> fixed by the time you read this.
+> uncontrolled benchmarks. Issue #5 closed on 2026-09-02 after the maintainer suggested beta 4.
+> Closure alone is not a reproduced fix: current stable runtime remediation remains unverified.
+> Reproduce on the exact model, OS and delegate before applying the archived workaround.
 
 ### The symptom
 
@@ -3193,6 +3209,10 @@ order  :  stateNames[0] = key, stateNames[1] = value   (indexed POSITIONALLY by 
 | `frozen Noema 3.5 snapshot` (MIT) | the copy-on-write state trap and the placeholder fix; `fedTokens`; prefill shape bucketing; host-cache detection; the pipelined cross-turn-reuse limitation; the Debug-build slowdown | **community, shipping app** |
 
 ### Standing gaps declared in this guide
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:apple.coreai-models:issue:5 -->
+<!-- current-defect-refs:end -->
 
 | § | Gap | What would resolve it |
 |---|---|---|

@@ -1305,6 +1305,13 @@ it explicitly unfreezes `keys=["scales", "biases"]`.)
 
 ### 5.3 What QLoRA costs you
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1585 -->
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:issue:3887 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
+<!-- current-defect-refs:end -->
+
 Three effects, in decreasing order of how often they bite:
 
 1. **Memory: a large win.** The base weights are ~4× smaller, and they dominate the resident set
@@ -1333,6 +1340,10 @@ Three effects, in decreasing order of how often they bite:
 > maintainer-triaged; presented as such.
 
 ### 5.4 The NAX caveat, stated sharply
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+<!-- current-defect-refs:end -->
 
 Three NAX (neural-accelerator) correctness fix PRs opened against `ml-explore/mlx` in the **three
 days** before 2026-07-27 — `#3912`, `#3922`, `#3924`; the first two **still open**, #3924 **closed
@@ -1940,6 +1951,11 @@ embeds, or churns shapes, the trainer's printed `peak_memory` stops tracking you
 on `active + cache` as above. No code or docs change landed at closure.
 
 ### 8.6 What OOM looks like — on a Mac, and why not on a phone
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3665 -->
+<!-- defect-ref:ml-explore.mlx:issue:3915 -->
+<!-- current-defect-refs:end -->
 
 **On a Mac, there are four distinct failures and they mean different things.**
 

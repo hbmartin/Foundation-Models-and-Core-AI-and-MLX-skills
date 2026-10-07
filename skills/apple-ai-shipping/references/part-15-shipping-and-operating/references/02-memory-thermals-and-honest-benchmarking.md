@@ -21,6 +21,15 @@ even mean.
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1390](https://github.com/ml-explore/mlx-lm/issues/1390) <!-- defect-ref:ml-explore.mlx-lm:issue:1390 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the guide about the gap between a demo that works on your desk and an app that survives a
@@ -1494,6 +1503,10 @@ compositor and the page cache are all competing for the same bytes. A budget com
 resource.
 
 ### 6.1 The forum report: ~40 GiB of "other allocations"
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1390 -->
+<!-- current-defect-refs:end -->
 
 ⚠️ **Community-reported, status unknown.** Apple Developer Forums thread **824753**:
 

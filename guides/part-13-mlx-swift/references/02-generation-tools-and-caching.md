@@ -25,6 +25,24 @@ Three OS floors do bite, and they are routinely confused:
 
 ---
 
+
+<!-- current-defects:start -->
+**Current tracked defects.** Closure, release availability, and demonstrated remediation are separate observations.
+
+| Reference | Recorded state/date | Verified release | Remediation | Disposition |
+|---|---|---|---|---|
+| [ml-explore.mlx-lm:issue:1494](https://github.com/ml-explore/mlx-lm/issues/1494) <!-- defect-ref:ml-explore.mlx-lm:issue:1494 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1566](https://github.com/ml-explore/mlx-lm/issues/1566) <!-- defect-ref:ml-explore.mlx-lm:issue:1566 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-lm:issue:1573](https://github.com/ml-explore/mlx-lm/issues/1573) <!-- defect-ref:ml-explore.mlx-lm:issue:1573 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:406](https://github.com/ml-explore/mlx-swift-lm/issues/406) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:406 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:420](https://github.com/ml-explore/mlx-swift-lm/issues/420) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:420 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:424](https://github.com/ml-explore/mlx-swift-lm/issues/424) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 --> | OPEN (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:issue:443](https://github.com/ml-explore/mlx-swift-lm/issues/443) <!-- defect-ref:ml-explore.mlx-swift-lm:issue:443 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:pull:419](https://github.com/ml-explore/mlx-swift-lm/pull/419) <!-- defect-ref:ml-explore.mlx-swift-lm:pull:419 --> | MERGED (2026-10-07) | unknown | unverified | unknown |
+| [ml-explore.mlx-swift-lm:pull:453](https://github.com/ml-explore/mlx-swift-lm/pull/453) <!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 --> | MERGED (2026-10-07) | released (3.32.3) | unverified | unknown |
+| [ml-explore.mlx:issue:3897](https://github.com/ml-explore/mlx/issues/3897) <!-- defect-ref:ml-explore.mlx:issue:3897 --> | CLOSED (2026-10-07) | unknown | unverified | unknown |
+<!-- current-defects:end -->
+
 ## What this covers
 
 This is the Swift counterpart to [Part 12 guide 04](../../part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md),
@@ -855,6 +873,10 @@ decorative fields, and nothing warns.
 
 ### 3.4 Determinism, and what you cannot have
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+<!-- current-defect-refs:end -->
+
 Set `temperature: 0` and you get deterministic output **on one machine, in one process, against
 one mlx-swift build**. You do not get:
 
@@ -950,6 +972,12 @@ down a layer to get one feature and lost another.
 > ✅ **VERIFIED** — source comment quoted from `Evaluate.swift`.
 
 ### 4.3 `state`, and the M-RoPE trap
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:420 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:443 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:419 -->
+<!-- current-defect-refs:end -->
 
 ```swift prelude:guide-context
 public internal(set) var state: LMOutput.State?
@@ -2750,6 +2778,10 @@ instance (deserialization, mostly).
 
 ### 8.5 Quantized KV: `kvBits`, `kvScheme`, and TurboQuant
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
+<!-- current-defect-refs:end -->
+
 Two knobs, and the second overrides the first:
 
 ```swift illustrative
@@ -2879,6 +2911,10 @@ and it presents as a network timeout during prefill rather than an error (`mlx-l
 **KV quantization must be off for that family.**
 
 ### 8.6 Prompt caching to disk
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:443 -->
+<!-- current-defect-refs:end -->
 
 ```swift prelude:guide-context
 public func savePromptCache(url: URL, cache: [KVCache], metadata: [String: String] = [:]) throws
@@ -3130,6 +3166,11 @@ harder in exactly the way that produced the bug.
 
 #### The class of error: *"port the line, lose the semantics"*
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
+<!-- current-defect-refs:end -->
+
 Write it down, because it will recur every time this stack is ported:
 
 > **In a reference-semantics language, mutating a container and mutating its contents are the same
@@ -3175,9 +3216,17 @@ from the command line is not what you get from the API.
 
 ### 9.2 `SpeculativeTokenIterator` discards `trimPromptCache`'s return value
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
+<!-- current-defect-refs:end -->
+
 **Issue: `mlx-swift-lm#424`. Status: OPEN as of 2026-07-29 (one comment, no maintainer fix).**
 
 #### What happens
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
+<!-- current-defect-refs:end -->
 
 `RotatingKVCache.isTrimmable` is `offset < maxCacheSize`, and `offset` only ever grows. So a
 sliding-window cache is trimmable up until the window wraps, and then permanently is not.
@@ -3224,6 +3273,10 @@ also inflates the offset and generates at drifted positions** — silent, and on
 > ✅ **VERIFIED** — all four from `#424`'s body and comments.
 
 #### The class of error: *"a return value that reports partial success"*
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
+<!-- current-defect-refs:end -->
 
 > **A function that returns "how much of what you asked for actually happened" is not optional to
 > check. `@discardableResult` on such a function is a loaded gun.**
@@ -3281,6 +3334,10 @@ is the combination at risk. Concretely:
 
 ### 9.3 A third, for the same shelf: `MLX.compile()` and `KVCacheSimple`
 
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:406 -->
+<!-- current-defect-refs:end -->
+
 Not required by the brief, but it belongs next to the other two because it is the third member of
 the family "Swift's type system makes a Python idiom unsound."
 
@@ -3313,6 +3370,10 @@ fixes in-thread (a graph-traceable `MLXArray` offset, a functional cache step, o
 compile-friendly cache type) are all library changes, not caller-side workarounds.
 
 ### 9.4 How to detect all three in your own app
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
+<!-- current-defect-refs:end -->
 
 A single diagnostic, run against your actual configuration, catches every one:
 
@@ -3597,6 +3658,10 @@ library either way.
 | Serve many conversations | many `ChatSession`s, one `ModelContainer` — **there is no batching in Swift** |
 
 ### 11.2 The silent-failure register
+
+<!-- current-defect-refs:start -->
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
+<!-- current-defect-refs:end -->
 
 Nine, collected. Every one of them produces plausible output or plausible behaviour, and none of
 them throws.
