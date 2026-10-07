@@ -576,32 +576,15 @@ The practical arguments, which Apple does not spell out but which follow from th
 
 This is where the actual work is, and where the quality of all three consumers is determined.
 
-> 🟡 **RECONSTRUCTED** — the code below. Here is exactly how much is verified and how much is not,
-> because this matters more than usual.
->
-> **Verified:** the *attribute names* — `title`, `contentDescription`, `namedLocation`,
-> `stateOrProvince`, `keywords`, `latitude`, `longitude`, `rating`, `duration`,
-> `contentCreationDate`, `completionDate` — are read from the sample's `fetchAttributes` list
-> (`Session.swift:116-134`), where they appear as static members of `SearchableItemAttribute`.
-> As of 2026-07-29 those members are additionally ✅ **SDK-verified**: the CoreSpotlight 27.0
-> interface declares `SearchableItemAttribute` (27.0, watchOS/tvOS unavailable) with every one of
-> them as a static member (`CoreSpotlight-27.0-macos.swiftinterface:16-193`).
-> Verified separately: the custom-key write, `attributeSet.setValue(_:forCustomKey:)`
-> (`Indexer.swift:180`).
->
-> **Not verified:** that `CSSearchableItemAttributeSet`'s *properties* carry those identical
-> spellings, and the exact `CSSearchableItemAttributeSet` and `CSSearchableItem` initialisers. The
-> sample's item-construction helper (`createSearchableItems(identifiers:)`) is referenced but its
-> body was not in the extracted portion. `CSSearchableItemAttributeSet` and `CSSearchableItem` are
-> **long-standing Core Spotlight API that predates this entire stack** — they are not 2026 surface
-> and there is no reason to expect them to have changed — but they are not verified *by this
-> session's evidence*, and being Objective-C they are invisible to the 2026-07-29 SDK-interface
-> pass too, so they keep the 🟡 marker.
->
-> **What to do about it:** type the property name and let Xcode's completion confirm it. Do not copy
-> an attribute name out of a blog post; the `CSSearchableItemAttributeSet` surface is enormous and
-> a large fraction of the names in circulation are `kMDItem…` constants from the Spotlight metadata
-> layer rather than Swift property names.
+> 🟡 **RECONSTRUCTED — validate the item-construction listing against the deployment SDK.**
+> The sample's `fetchAttributes` names and 27.0 `SearchableItemAttribute` declarations verify title,
+> description, location, keywords, coordinates, rating, duration, and dates (`Session.swift:116-134`;
+> `CoreSpotlight-27.0-macos.swiftinterface:16-193`). `Indexer.swift:180` verifies the custom-key
+> write.
+> The extracted session does not attest every Objective-C `CSSearchableItemAttributeSet` property or
+> item initializer used below. Confirm those with SDK completion/compiler checks rather than
+> substituting similarly named `kMDItem…` metadata constants. Attribute selection and item
+> construction are separate evidence boundaries.
 
 ```swift prelude:guide-context
 import CoreSpotlight
@@ -1942,33 +1925,15 @@ on-ramp B.
 
 ### 10.1 The gap, stated precisely
 
-> 🔴 **GAP (G5) — does `CSSearchableIndexDelegate.searchableItems(forIdentifiers:searchableItemsHandler:)`
-> fire for content indexed via `indexAppEntities(_:)`?**
->
-> **What is known:** ✅ `IndexedEntity` is *"backed by a `CSSearchableItem`"* (Apple engineer, thread
-> 833658). ✅ Entity-indexed content is reachable by `SpotlightSearchTool` (same answer, same
-> sentence). ✅ The hydration method exists on `CSSearchableIndexDelegate` and is wired through
-> `CoreSpotlightSource(searchableIndexDelegate:)`. ✅ **(added 2026-07-29)** The entity→item bridge
-> is explicit API in the 27.0 interface: `CSSearchableItem.init(appEntity:)` /
-> `init(appEntity:priority:)` (macOS 15 / iOS 18, plus 27.0 `async` variants),
-> `associateAppEntity(_:priority:)` on both `CSSearchableItem` and
-> `CSSearchableItemAttributeSet`, and a 27.0 `relatedAppEntityIdentifier: EntityIdentifier?`
-> property (`AppIntents-27.0-macos.swiftinterface:369-406`) — adjacent evidence that entities and
-> items are one currency, but silent on the delegate's behaviour.
->
-> **What is unknown:** whether the tool consults that delegate for items that arrived through
-> `indexAppEntities(_:)` rather than `indexSearchableItems(_:)`; if it does, **what identifiers
-> arrive** — the entity's `id` stringified, a namespaced composition, something else; and whether an
-> app whose only Core Spotlight surface is entity indexing is even expected to have a
-> `CSSearchableIndexDelegate` at all, given that §4.5's reindex duty is served by
-> `IndexedEntityQuery` instead.
->
-> **Nothing in Apple's documentation, in the sessions, in the sample projects, or in any forum
-> answer in this corpus addresses it.** Session 246 wired the delegate for a `CSSearchableItem`
-> app. Session 343 discussed entity indexing without mentioning Foundation Models at all. The two
-> halves of the architecture were presented by two teams and the seam between them was never
-> described. The 26.5 and 27.0 SDK interfaces were checked on 2026-07-29 and do not settle it
-> either — the delegate protocol is Objective-C and sits outside the Swift interface surface.
+> 🔴 **GAP (G5) — entity indexing does not establish Spotlight hydration-delegate behavior.**
+> Apple's forum 833658 states that `IndexedEntity` is backed by a searchable item and is reachable
+> through `SpotlightSearchTool`. The SDK declares entity/item bridge initializers, association APIs,
+> and `relatedAppEntityIdentifier`; `CoreSpotlightSource` accepts a searchable-index delegate.
+> Neither those declarations nor the recorded sessions establish whether
+> `searchableItems(forIdentifiers:searchableItemsHandler:)` fires for `indexAppEntities(_:)`, which
+> identifier form it receives, or whether entity-only indexing expects that delegate. Session 246's
+> item-app example and session 343's entity example do not resolve the seam. Verify with an
+> entity-indexed integration probe before depending on delegate hydration.
 
 ### 10.2 Why this matters more than a normal gap
 

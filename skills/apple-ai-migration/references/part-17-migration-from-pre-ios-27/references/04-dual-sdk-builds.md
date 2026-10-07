@@ -566,30 +566,12 @@ five-second check that replaces an afternoon of guessing.
 
 ### 4.4 🔴 GAP: this spelling is underscored and effectively undocumented
 
-> 🔴 **GAP — two things about `_version:` are still unknown, and you should not pretend otherwise.**
-> (A third was closed 2026-07-29.)
->
-> 1. ~~**What the 27.0 SDK actually reports.**~~ ✅ **RESOLVED 2026-07-29** — measured
->    **`2.0.62.1.402`** on the Xcode 27.0 beta's macOS 27.0 SDK
->    (`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`, header line 3), via
->    exactly the `find`/`grep` command this box used to prescribe. §19.1 has the cross-framework
->    table.
-> 2. **Whether the spelling is stable.** The leading underscore is Swift's convention for
->    "unofficial, may change". It appears in no Apple documentation page in this corpus and in no
->    WWDC session. Its only Apple-authored appearances anywhere we can see are inside
->    `ml-explore/mlx-swift-lm` source, its commit messages and its CI comments. It has been in the
->    compiler for years and is widely used, so the risk is low — but it is not zero and it is not
->    a promise.
-> 3. **Whether the number will keep tracking the way we think it does.** A framework can renumber.
->    If Apple ships FoundationModels `3.x` in a 27 point release, `_version: 2` still evaluates true
->    (it is `>=`) — which is what you want. If Apple *lowered* it, every gate in the ecosystem would
->    silently flip off. Nothing prevents that except Apple's good sense.
->
-> **SAFE DEFAULT: use `_version: 2`, exactly as Apple's own package does, and nothing else.** Do not
-> invent `_version: 3` for a hypothetical 28, do not invent `_version: 2.1` for a 27 point release,
-> and do not build a ladder of version predicates. One boundary, one predicate. If you need a
-> second boundary, add a build-setting flag (§5) that you control, rather than a second guess at
-> Apple's numbering.
+> 🔴 **Compatibility boundary — `_version:` is an underscored compiler predicate.**
+> Use `_version: 2` where Apple's package does, with the 27.0 interface's measured `2.x` module
+> version as evidence. The predicate means at least that version; it is not an OS-release number. Its
+> stability and future numbering are not a documented framework contract.
+> Avoid guessed predicates for hypothetical releases or point versions. Add a build-setting flag you
+> control if another boundary is required (§5), and verify it with the intended SDKs.
 
 ### 4.5 Nested `#if` versus `&&`
 

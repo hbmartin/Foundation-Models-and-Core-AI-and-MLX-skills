@@ -1602,37 +1602,15 @@ small, and it is not organized as a project you can open and run.
 
 This is the gap that costs you first, because it shows up the moment you write your first `do`.
 
-> 🔴 **GAP — the Core AI runtime throws untyped, and the SDK interface now confirms there is
-> nothing to catch by type.** (Narrowed 2026-07-29.)
->
-> The `.swiftinterface` dump this box used to ask for has been read: the Core AI module interfaces
-> were captured 2026-07-29 from the Xcode 27.0 beta (`27A5228h`; recaptured 2026-08-20, beta 5 `27A5237l`) into `notes/sdk-interfaces/`.
-> **`CoreAIRuntime` declares no public error type at all** — every `throws` in
-> `CoreAIRuntime-27.0-macos.swiftinterface` is untyped (the only typed-throws in the file are
-> generic `throws(E)` rethrow plumbing on the unsafe-view closures). The **only public error type
-> anywhere in the Core AI module family** is `CoreAIAsset.AssetError`
-> (`CoreAIAsset-27.0-macos.swiftinterface:229-247`): `struct AssetError : Error, LocalizedError`
-> with `kind`, `debugMessage: String?`, and a `Kind` enum of exactly five cases —
-> `unsupportedVersion(String)`, `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`,
-> `duplicateName` — publicly initializable by app code, so clearly not the sealed system error for
-> inference.
->
-> **What is still unknown:** what concrete error *values* escape `AIModel.init(contentsOf:)`,
-> `AIModel.specialize(…)`, `loadFunction(named:)`, `run(…)`, `encode(…)`, or `AIModelCache`'s
-> `delete*` methods at runtime. Community bug reports show at least two distinct shapes — a
-> `CoreAIDelegates.AIModelError error 3` (note: no `AIModelError` appears in the public interface;
-> that is an internal type surfacing through `NSError` bridging), and an `NSPOSIXErrorDomain Code=2`.
->
-> **What would resolve the rest:** a deliberate `do { … } catch let e as NSError {
-> print(e.domain, e.code) }` over a set of induced failures on a real device — the interface pass
-> is done and cannot say more.
->
-> **Safe default:** unchanged, and now on firmer ground — catch `AssetError` explicitly where you
-> are genuinely doing asset work, then catch the general `Error`. **A typed `catch` for any other
-> Core AI error cannot even be written**, because no other public error type exists to name. Log
-> `(error as NSError).domain` and `.code` so your crash reports are actually useful, and build your
-> recovery ladder on *observable state* (does `cache.model(for:options:)` return `nil`?) rather
-> than on error identity.
+> ✅ **SDK-verified — Core AI runtime throws are untyped.**
+> `CoreAIRuntime` declares no public runtime error type; generic `throws(E)` view closures are rethrow
+> plumbing. `CoreAIAsset.AssetError` covers asset validation, with unsupported version, invalid
+> feature type, corrupted metadata, invalid name, and duplicate name kinds.
+> Runtime reports include internal `AIModelError` code 3 and POSIX code 2, but the recorded corpus
+> does not define a complete error taxonomy. Catch AssetError for asset work, preserve cancellation,
+> and log bridged NSError domain/code for general failures. Build recovery on verified observable
+> state and explicit compatibility classification rather than assuming every load error merits cache
+> deletion or fallback.
 
 ```swift prelude:guide-context
 import CoreAI

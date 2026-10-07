@@ -215,38 +215,13 @@ Be precise about the shape of the hole. As of **2026-07-27**, in a corpus that i
 Meet-with-Apple transcripts, six Apple documentation articles, four forum topic captures with ~45
 live thread fetches, and 17 cloned repositories:
 
-> 🔴 **GAP — there is no Apple document that announces this.** Specifically absent:
->
-> - **No documentation page.** No `/documentation/foundationmodels/…` article, deprecation notice or
->   migration guide covering adapters is in our corpus.
-> - **No release-note entry.** The iOS/iPadOS 27 release notes' Foundation Models section is quoted
->   in our corpus for the Private Cloud Compute simulator issue (177684296). Adapters do not appear.
-> - **No WWDC26 session.** The Frameworks Engineer says "as we announced at WWDC26." Our three
->   Foundation Models transcripts do not contain it. The 2026 code-along **explicitly defers**
->   adapters as an advanced topic it will not cover (`notes/transcripts/fm-core.md:2068-2071`), which
->   is a strange thing to do in the year you remove them, and the researcher who read those
->   transcripts recorded adapters as covered by "only forum evidence"
->   (`notes/transcripts/fm-core.md:2258`).
-> - ~~**No deprecation attribute we can quote.**~~ ✅ **RESOLVED 2026-07-29 — there is one now, and
->   it is exactly the attribute §1.4 asked for.** The 27.0 beta `FoundationModels.swiftinterface`
->   (Xcode 27.0 beta `27A5228h`, captured to
->   `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`) marks
->   `SystemLanguageModel.Adapter` and its working surface — `init(fileURL:)`, `init(name:)`,
->   `compile()`, `compatibleAdapterIdentifiers(name:)` — as
->   **`@available(iOS, deprecated: 26.4, obsoleted: 27.0)`** (macOS and visionOS likewise;
->   `27.0:509-551`), and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`**
->   (`27.0:395-400`). §2 unpacks what `obsoleted:` does to your build. The captured **26.5**
->   interface has no deprecation on any of it (`26.5:578-671`) — the marks arrived with the 27 SDK,
->   and they back-date the deprecation to **26.4**, the release that swapped the base model.
->
-> **What is still missing, as of the 2026-07-29 check:** the *prose* half — a documentation page
-> with a deprecation banner, a release-note entry, or a WWDC26 transcript containing the
-> announcement. The header now says it; no Apple document does. An updated Adapter Training Toolkit
-> page would also close it (Apple said they would update it — check whether they have).
->
-> **Safe default:** treat the withdrawal as fact and plan the migration. You can now tell your team
-> it is **in the SDK** — quote the `obsoleted: 27.0` attribute — but still not that it is
-> "documented," because the prose half remains absent, and someone will go looking.
+> ✅ **SDK migration requirement — system-model adapters are obsoleted on OS 27.**
+> The captured interface marks Adapter and its working surface deprecated in 26.4 and obsoleted in
+> 27.0, including `SystemLanguageModel.init(adapter:guardrails:)`. The 26.5 capture lacked those
+> attributes; the newer SDK applies the boundary retroactively.
+> Plan the migration using these compiler-enforced attributes. The recorded forum announcement
+> corroborates intent, while the old search for a separate prose migration article does not affect the
+> API requirement. Do not delay migration for an announcement page.
 
 ### 1.5 The one thing to take from §1
 

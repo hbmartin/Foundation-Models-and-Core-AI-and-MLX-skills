@@ -1332,33 +1332,14 @@ literal sense, **irreplaceable** — the machine that could make another one has
 
 <!-- callout-id: callout-875f54069f82b233 -->
 > ⚠️ ⚠️ **THE LESSON OF THIS GUIDE**
->
 > ### The export host's OS version is an input to the model's performance.
->
-> Not to whether it builds. Not to whether it loads. Not to whether it produces correct output — the
-> slow artifact is *numerically fine*. To **how fast it runs and how much memory it uses on your
-> user's phone.**
->
-> Every build system you have ever used treats the host OS as an environmental detail — something you
-> upgrade when IT tells you to, something you note in a Dockerfile and forget. In this stack it is a
-> **compiler input**, on the same footing as your quantisation preset and your context length. It
-> belongs in your build manifest, in your artifact provenance record, and in the metadata line under
-> every benchmark number you publish.
->
-> The three practices that fall out of it:
->
-> 1. **Pin your export machine's OS.** Treat an OS upgrade on a build box the way you would treat a
->    compiler upgrade: a scheduled, deliberate change, with a before/after benchmark on the same
->    device, and a rollback plan. Do not let it happen because someone clicked "Update Now".
-> 2. **Benchmark the artifact you will actually ship.** Not the recipe. Not "a Qwen3-0.6B 4-bit
->    export". *That file.* On the target device. If you re-export, re-benchmark — a re-export is a
->    new artifact, not a copy of the old one.
-> 3. **Keep the artifact.** Archive the bytes, not just the command. If the command stops being able
->    to reproduce them — and here it did — the bytes are the only copy that exists.
->
-> Community-measured; the mechanism is the author's deduction and Apple has not commented. But the
-> *practice* the finding implies is correct regardless of whether this specific regression is still
-> live, because a stack that can do this once can do it again.
+> The cited community regression produced numerically correct artifacts with different device speed
+> and memory use. Its mechanism is the author's inference, not an Apple-confirmed cause or a current
+> stable-runtime finding.
+> Record and pin host OS alongside compiler, packages, and quantization settings. Benchmark the exact
+> shipped bytes on target hardware after every re-export or toolchain change, and preserve those bytes
+> and hashes when they prove a regression. Treat build-host upgrades as measured changes with a
+> rollback path.
 
 The author's own list of consequences, verbatim, is a tighter statement of the same thing:
 
@@ -2555,35 +2536,15 @@ The full breaking-change list, ✅ verified verbatim from the same document:
 #### ⚠️ The upgrade doc names two modules that do not exist in the package
 
 <!-- callout-id: callout-3c792332f6f97577 -->
-> ⚠️ **SILENT FAILURE — the migration document's own "Breaking Changes" section is stale.**
->
-> `upgrade.md`'s Breaking Changes section says, verbatim: *"For most users who were using the default
-> Hub client, **adding `import MLXLMHuggingFace` or `import MLXEmbeddersHuggingFace`** and using the
-> convenience overloads is sufficient."*
->
-> ✅ **VERIFIED — neither module exists.** `grep -rn "MLXLMHuggingFace\|MLXEmbeddersHuggingFace"
-> --include='*.swift'` over the whole checkout at HEAD `3cbf928` returns **zero** hits, and neither
-> name appears in `Package.swift`. The nine products the package actually vends are `MLXLLM`,
-> `MLXVLM`, `MLXLMCommon`, `MLXEmbedders`, **`MLXHuggingFace`**, `MLXFoundationModels`,
-> `MLXGuidedGeneration`, `BenchmarkHelpers`, `IntegrationTestHelpers`.
->
-> The same staleness runs deeper: the package's **shipped agent skill** (`skills/mlx-swift-lm/`) and
-> four library `README.md` files import `MLXLMHuggingFace  // from swift-huggingface-mlx` and
-> `MLXLMTokenizers  // from swift-tokenizers-mlx`, packages that are referenced nowhere in
-> `Package.swift`.
->
-> **Why this is a silent failure and not just a doc bug:** the failure it produces is
-> `no such module 'MLXLMHuggingFace'`, which reads like *your* project is misconfigured. Engineers
-> spend real time re-resolving packages and clearing DerivedData over this. And if you are using a
-> coding agent, the shipped skill will *confidently generate the stale imports*, because that is what
-> it was written against.
->
-> **The two paths that actually work, as of HEAD `3cbf928`:**
-> 1. **Hand-rolled conformances** to `Downloader` and `TokenizerLoader` — the protocols are four
->    lines total, quoted above.
-> 2. **The `MLXHuggingFace` macros** over `swift-huggingface` + `swift-transformers`:
->    `#hubDownloader()`, `#huggingFaceTokenizerLoader()`, `#huggingFaceLoadModelContainer(…)`,
->    `#huggingFaceLoadModel(…)`, `#huggingFaceLanguageModel(…)`.
+> ⚠️ **Dated migration pitfall — inspected documentation used nonexistent module names.**
+> At `mlx-swift-lm` revision `3cbf928`, `upgrade.md` and several package READMEs referenced
+> `MLXLMHuggingFace` / `MLXEmbeddersHuggingFace`; neither was a declared product. The actual module
+> was `MLXHuggingFace`. These stale imports produced a module-not-found build failure, not evidence of
+> a broken local package cache.
+> For that revision, use your own `Downloader` and `TokenizerLoader` conformances or the
+> `MLXHuggingFace` macros over `swift-huggingface` / `swift-transformers`: `#hubDownloader`,
+> `#huggingFaceTokenizerLoader`, and the model/container/language-model loading macros. Check the
+> installed revision's Package.swift before applying this migration workaround.
 
 The macros expand to code that references symbols **at your call site**, which produces another
 confusing error class:

@@ -719,28 +719,14 @@ is considerable ambiguity about *how*, and the next section is about that.
 
 ### 3.2 🔴 GAP — the 2026 Background Assets API surface for Core AI
 
-> 🔴 **GAP.** Our corpus contains **no Apple sample-code project, no WWDC26 session transcript, and
-> no Apple documentation page** that shows Background Assets being used to deliver a `.aimodel` or
-> `.aimodelc`. The Core AI AOT article names the framework in one sentence and links away. Session
-> 326 names it in one sentence and refers the viewer to a **WWDC25** session
-> ("Discover Apple-Hosted Background Assets") that is **not in our transcript corpus**.
->
-> **What is unknown:** the exact 2026 spellings for declaring an asset pack containing a model
-> bundle; whether a `.aimodel`/`.aimodelc` *directory* can be an asset-pack member as-is or must be
-> archived; how per-architecture variants are expressed in a manifest; whether Apple hosting has a
-> per-asset size ceiling that a multi-gigabyte LLM would exceed; and what the extension point is
-> called in the 27 SDK.
->
-> **What would resolve it:** the "Discover Apple-Hosted Background Assets" transcript (WWDC25),
-> the current `developer.apple.com/documentation/backgroundassets` reference, and — decisively —
-> any Apple sample project that ships a model this way. Apple's sample-code index for `coreai`
-> currently returns **zero projects** (✅ VERIFIED, `notes/CURRENT-DECISIONS.md`), so this is
-> not an oversight in our research; the sample does not exist yet.
->
-> **SAFE DEFAULT:** build your feature against a **delivery protocol you own** (§3.4), implement it
-> first with plain `URLSession` background downloads, and swap in Background Assets behind that
-> protocol once you have read the current documentation. Your Core AI code does not change either
-> way — the only thing Core AI needs is a local file URL.
+> 🔴 **GAP — this corpus has no verified Core AI Background Assets delivery example.**
+> The AOT article and session 326 recommend Background Assets but do not establish directory
+> packaging, per-architecture manifests, hosting size limits, or the current extension configuration.
+> The sample-index observation is preserved in `notes/web/apple-sample-code.md`; it is dated evidence,
+> not proof that no sample exists today.
+> Verify the current Background Assets documentation and a real model-delivery project before relying
+> on those details. Keep delivery behind your own protocol, initially using a verified download
+> implementation; Core AI needs a local model URL regardless of transport.
 
 That gap is real and this guide will not paper over it. What follows is what *can* be verified.
 
@@ -1326,48 +1312,15 @@ The codes observed in the wild, with what they were reported to correspond to:
 Sources: `notes/repos/john-rocky-models.md:1161-1164, 1176-1181`;
 `notes/repos/issues-coreai-stack.md:1187`.
 
-> 🔴 **GAP — the architecture-code enumeration was incomplete, community-sourced, and internally
-> contested. Narrowed 2026-07-31: the code *set* is now first-party-probed; the device mapping is
-> still contested.**
->
-> **Now enumerated:** probing the shipped `coreai-build` 3600.79.1's `--architecture` validation
-> (it validates the code before reading the input file, with distinct diagnostics for unknown /
-> valid-but-wrong-platform / accepted) yields **24 valid codes**: `h11p h11g h12p h13p h13s h13c
-> h13g h14p h14s h14c h14g h15p h15s h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p`.
-> Observed grammar: `h<generation><variant>`, `p` = phone-class (accepted for iOS/tvOS), `s`/`c` =
-> Mac-class, `g` present from `h13g` up — consistent with the tier reading above, though the
-> letters' meanings are still nowhere stated by Apple. At the 27.0 default target, macOS accepts
-> the `s`/`c`/`g` codes (plus `h17p`), iOS the `p`/`g` codes through `h18p`; watchOS and visionOS
-> accepted none of the swept codes on the probing host (macOS 26.5 — possibly missing
-> device-support data). Method and full matrix:
-> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, final section.
->
-> **What is still unknown:** the authoritative complete list of `deviceArchitectureName` values
-> (the compiler's accepted set is the best proxy, not a definition), most code-to-device mappings,
-> and which code a given Mac actually reports. One mapping is now project-verified rather than
-> community-attested: on 2026-08-20, `probes/` printed **`h16p`** on a physical iPhone 15 Pro
-> (`iPhone16,1`, `D83AP`) running iOS 27 beta-5 build `24A5408d`.
->
-> **The contested part is specific and worth naming.** Two community sources disagree about the M4
-> Max Mac. One says `h16c` is the only code that loads there
-> (`notes/repos/john-rocky-models.md:1163-1164`). A separate GitHub issue on `apple/coreai-models`
-> (#27, same author, M4 Max `Mac16,9`) compiles with `--architecture h16s` and then **fails to
-> load** with `AIModelError error 3` — but attributes it to a *different* cause: *"this macOS build
-> cannot load **any** precompiled `.aimodelc` for a macOS target, while the same Core AI runtime
-> loads AOT `.aimodelc` fine on **iOS** (h18p bundles run on iPhone 17 Pro)"*
-> (`notes/repos/issues-coreai-stack.md:946-957`). Both explanations fit the same observation. We
-> cannot separate "wrong arch code" from "macOS AOT load is broken on this beta."
->
-> **What would resolve it:** printing `AIModel.deviceArchitectureName` on one device of each family
-> — a two-line app. That is the *only* authoritative source, because the property is defined as the
-> thing that matches.
->
-> **SAFE DEFAULT:** never hardcode an architecture code anywhere in your app. Build the asset name
-> from `AIModel.deviceArchitectureName` at runtime, exactly as Apple's snippet does. On the build
-> side, either omit `--architecture` and ship every emitted variant (expensive — see §4.5), or
-> derive your target list by running a one-screen diagnostic build on each device in your test
-> matrix and reading the property. **Always ship the portable `.aimodel` as a fallback** so an
-> unrecognised architecture degrades to slow-but-working rather than broken.
+> 🔴 **GAP — compiler architecture codes do not define a complete device mapping.**
+> The dated 3600.79.1 sweep accepted 24 codes, with method/platform matrix in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The letters' meanings and complete runtime
+> mapping are not Apple-documented. The project measured `h16p` on iPhone 15 Pro (`iPhone16,1`,
+> `24A5408d`, 2026-08-20); the current host reports `h14s` (`notes/evidence/runtime-current.json`).
+> Community M4 Max reports disagree between wrong-architecture and beta macOS AOT-load explanations;
+> neither establishes a universal mapping or stable failure. Read `AIModel.deviceArchitectureName` on
+> each deployment family. Build names from it, validate compiler-emitted variants on target devices,
+> and retain a validated portable fallback where supported.
 
 ### 4.5 The cost of emitting every architecture
 
@@ -1593,28 +1546,14 @@ tool (same source):
 invalidCompiledModel
 ```
 
-> ✅ **RESOLVED (was a GAP) — `AIModelError` is confirmed non-public, and the throws are untyped.**
-> The SDK interface dump was captured 2026-07-29 from Xcode build `27A5228h` and recaptured
-> 2026-08-20 from beta 5 build `27A5237l` (`notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
-> `AIModel.init(contentsOf:options:)` and `specialize(…)` as plain untyped `async throws`
-> (✅ **SDK-verified** — `:22-26`) and the cache methods as untyped `throws` (`:33-43`); **no
-> `AIModelError` appears anywhere in the public interface** — it is internal, surfacing only via
-> `NSError` bridging as `CoreAIDelegates.AIModelError error 3`. The only public error type in the
-> whole Core AI surface is `AssetError`, with five `Kind` cases (`unsupportedVersion(String)`,
-> `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`, `duplicateName`) — ✅
-> **SDK-verified** (`CoreAIAsset-27.0-macos.swiftinterface:230-247`), matching the doc pages. The
-> meaning of code 3 remains open in the community issue archive
-> (`notes/repos/issues-coreai-stack.md:1462`).
->
-> **PRACTICE:** do not pattern-match on `AIModelError` cases — in the macOS 27.0 beta SDK the type
-> is not public and cannot be named. But the converse matters just as much: an **untyped** throw
-> does not prove that the compiled variant is corrupt or incompatible. Preserve task cancellation,
-> log the dynamic type plus `NSError` domain/code, and **rethrow an unclassified error**. Fall back
-> to the portable asset only after an evidence-backed classifier identifies an integrity or
-> compatibility failure; that classifier must default to `false`. Leave the cache intact on the
-> fallback path too — deletion belongs in a separate bounded repair test after the cache itself has
-> been isolated as the cause.
-> Full treatment of the public error surface: Part 7, guide 7.1 §13.[^untyped-fallback-policy]
+> ✅ **SDK-verified — no public `AIModelError` catch exists in 27.0.**
+> `AIModel` init/specialize and cache operations throw untyped errors. `CoreAIAsset.AssetError` is the
+> public asset-operation error; internal `CoreAIDelegates.AIModelError` code 3 can surface through
+> NSError bridging without establishing its cause. See Part 7, guide 7.1 §13.
+> Preserve cancellation, log dynamic type plus NSError domain/code, and rethrow unclassified failures.
+> Fall back to a portable asset only after an evidence-backed compatibility/integrity classifier,
+> defaulting to false. Keep the cache intact until a separate bounded repair test isolates it as the
+> cause.[^untyped-fallback-policy]
 
 Note also that `invalidCompiledModel` is a **package-level** name from `apple/coreai-models`, not a
 Core AI framework symbol. If you are not using that package you will never see the string. Do not
@@ -3581,27 +3520,15 @@ enum ModelStorageAudit {
 }
 ```
 
-> 🟡 **API GAP, DEVICE LOCATION MEASURED ONCE — there is no API to measure or locate the Core AI
-> cache.** `AIModelCache` exposes `default`, `init?(appGroup:)`, `model(for:options:)`, four
-> delete methods and the `Policy`/`PurgeConditions` types, and **nothing else** — no size property,
-> no entry enumeration, no on-disk location. That is no longer just the doc index talking: the
-> macOS 27.0 beta interface dump (2026-07-29) shows exactly that surface
-> (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:27-71`), and the `CoreAICache`
-> SubFramework module — the obvious place for a richer cache API — has an **empty public Swift
-> surface** in this beta (`CoreAICache-27.0-macos.swiftinterface`). A 2026-08-20 iPhone 15 Pro /
-> iOS build `24A5408d` container diff narrowed the implementation: specializing a 12,288-byte toy
-> model grew `Library/Caches` by 24,576 bytes, left `Library/Application Support` unchanged, and
-> created `Library/Caches/coreai-cache`. That path and ratio are observations, not contracts.
->
-> **What would resolve the rest:** Apple adding a size/enumeration API, plus repeated container diffs
-> across realistic assets and devices. The existing result gives you a diagnostic path, not a
-> supported API — do not ship code that reads it.
->
-> **SAFE DEFAULT:** report source-asset sizes, which you *can* measure, and label the figure
-> honestly: *"Downloaded models: 3.6 GB. Preparing a model uses additional space that iOS manages."*
-> Then give the user a **Remove** button per model that runs §11.5's full teardown, so the
-> unmeasurable part still gets reclaimed. A button that demonstrably frees space is worth more than
-> a number that is wrong.
+> 🟡 **Cache diagnostics — size, enumeration, and location are not public Core AI APIs.**
+> `AIModelCache` exposes lookup and deletion policies, not byte accounting or on-disk paths;
+> `CoreAICache` has no public Swift surface. A 2026-08-20 iPhone 15 Pro `24A5408d` container diff
+> found `Library/Caches/coreai-cache` and 24,576 bytes of growth for a 12,288-byte toy asset. That
+> path and ratio are observations, not contracts.
+> Report measurable downloaded-asset size and explain that preparation uses additional OS-managed
+> space. Offer full per-model teardown (§11.5). Do not ship code that depends on the observed private
+> cache path; resolving size accounting needs supported APIs or further controlled diagnostic
+> evidence.
 
 For calibration on how far a production app takes this: the community iOS app `noema-ios` ships a
 dedicated `ModelStorageCleanup.swift`, a `ModelStorageAdvisorView`, an `InstalledModelsStore`

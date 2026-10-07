@@ -172,43 +172,14 @@ func contextBudget() -> Int {
 ```
 
 <!-- callout-id: callout-ce7d86e192f8cd67 -->
-> ✅ **VERIFIED** — Apple Technical Note **TN3193**, *"Managing the on-device foundation model's
-> context window"*, states **4096 tokens per `LanguageModelSession`** plainly, and confirms that
-> `tokenCount(for:)` covers *instructions, prompts, tools, schemas and transcript entries*.
-> (Note the doc slug: `…tn3193-managing-the-on-device-foundation-model-s-context-window` — `model-s`,
-> not `models`; the other spelling 404s.)
->
-> ✅ **VERIFIED 2026-08-02 — Apple's written summary gives 4096 for iOS 27, and the budget is
-> shared.** The published Q&A summary for WWDC26 **Group Lab 8121**, *"Coding Intelligence,
-> Machine Learning & AI Group Lab"*, records a question about the on-device Foundation Models
-> context window in iOS 27 and whether input plus output share one budget. It gives **4096 tokens
-> as the on-device shared budget**, illustrates that a 4,000-token input leaves roughly 96 tokens
-> for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab]
->
-> This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
-> we can find" and left the question open. The 8192 comment is now retired historical provenance.
-> Apple has corroborated **4096**, for iOS 27
-> specifically, on the record. Four other lines of evidence agree: session 319's comparison table
-> and Apple's PCC article (4K/32K), the repo's simulator measurement, a **2026-08-20 physical
-> iPhone 15 Pro measurement** (4096 on iOS 27 beta-5 build `24A5408d`, `probes/`), and the 27.0
-> `swiftinterface`, which returns a dynamic `_contextSize` on OS 27+ with a **4096 fallback** below
-> it.
->
-> **The community 8192 report is retired from active guidance.** It is a single comment describing
-> device probing with no device/build/date, its upstream is unavailable, and repeated project-run
-> 27-hardware checks returned 4096. One iPhone family cannot
-> prove every device reports the same value, which is exactly why the standing advice below does
-> not change.
->
-> ⚠️ **Read `contextSize` at runtime rather than hardcoding either number.** Apple's answer is a
-> statement about the platform, not a per-device guarantee, and the 27.0 interface plainly returns
-> a *dynamic* value. The advice is version-proof; the constants are not.
->
-> **Budget accounting, from the same lab:** ch. `0:39:42` adds that **every tool definition and
-> instruction consumes the same shared budget** — *"keep prompts and tool definitions lean … only
-> include the tools relevant to the task"*. That matches TN3193's list above
-> (instructions, prompts, tools, schemas, transcript entries) and is the operational reason the
-> 4096 figure bites sooner than people expect.
+> ✅ **Documented iOS 27 budget — 4096 tokens shared by input and output.**
+> TN3193 and Group Lab 8121 (`0:08:11`) include instructions, tools, schemas, transcript, and response
+> in one on-device session budget; a 4000-token input leaves about 96 tokens for output. PCC's
+> documented shared budget is 32K.[^ctx-grouplab] The dated iPhone measurement was 4096, and current
+> host/simulator observations are separately recorded in `notes/evidence/runtime-current.json`.
+> ⚠️ **Read `contextSize` at runtime.** Platform documentation does not guarantee every
+> device/topology value. Keep tools and instructions lean; their definitions consume the same budget.
+> The unproven 8192 comment is retired from current recommendations.
 
 [^ctx-grouplab]: WWDC26 Group Lab **8121**, `https://developer.apple.com/videos/play/wwdc2026/8121/`.
     ⚠️ **Citation discipline for Group Labs:** Apple publishes **no caption track** for lab
@@ -833,26 +804,14 @@ func analyzeBarcodeImage(_ image: CGImage) async {
 }
 ```
 
-> ✅ **RESOLVED — SDK-verified 2026-07-29** from the cross-import overlay's own interface, captured
-> later the same day (`notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface`).
-> Both tools are declared in the **`_Vision_FoundationModels`** overlay — present in the main
-> interface of *neither* parent, materialising only when code imports **both** Vision and
-> FoundationModels: `BarcodeReaderTool` (`:14-47`) and `OCRTool` (`:49-83`). The answers:
-> - **The whole configuration surface is `init(name: String? = nil, description: String? = nil)`.**
-> - **`Arguments`** (both tools) is a nested `Generable` struct with **no named public
->   properties** — its public surface is `generationSchema`, `generatedContent`,
->   `PartiallyGenerated`, and `init(_ content: GeneratedContent) throws`. The model-facing field
->   names exist only in the runtime schema; user code cannot construct one except from
->   `GeneratedContent`.
-> - **`Output` is provably unnameable**: it is the opaque return type of
->   `call(arguments:) async throws -> some PromptRepresentable` (`:34-39`, `:70-76`). Write generic
->   code against `PromptRepresentable`; there is nothing to destructure.
-> - **No public `Barcode` type exists anywhere in the overlay** — Apple's "array of `Barcode`
->   values" prose describes model-facing content, not a public Swift type.
-> - Availability asymmetry, compiler-attested: `BarcodeReaderTool` includes **watchOS 27.0**;
->   `OCRTool` is **watchOS-unavailable**; both are tvOS-unavailable.
-> The old safe default — treat both as opaque tools you hand to the session — turns out to be not
-> merely safe but the *only* expressible usage.
+> ✅ **SDK-verified — Vision tools live in the cross-import overlay.**
+> Import both Vision and FoundationModels. The overlay declares `BarcodeReaderTool` and `OCRTool` with
+> `init(name: String? = nil, description: String? = nil)` and nested Generable arguments without named
+> public fields. Its schema defines model-facing values; construction uses `GeneratedContent`.
+> The call result is opaque `some PromptRepresentable`, with no public `Barcode` type to destructure.
+> BarcodeReaderTool supports watchOS 27; OCRTool is watchOS-unavailable, and both exclude tvOS. Hand
+> these tools to the session and use their protocol surfaces. Evidence:
+> `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-83`.
 
 The third tool surfaces when you import **CoreSpotlight together with FoundationModels**, and is the
 one people asked for most. (Precisely where it is declared is subtler than "in FoundationModels":
