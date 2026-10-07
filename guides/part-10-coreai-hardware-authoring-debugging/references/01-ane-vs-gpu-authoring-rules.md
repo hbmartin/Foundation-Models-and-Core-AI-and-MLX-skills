@@ -13,53 +13,17 @@ commit `db63a2d8`, inspected 2026-10-06). The Python side is equally specific an
 anything you read describing "iOS 20" or "macOS 17" in a Core AI context is fabricated.
 
 
-Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
-`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
-These model-export constraints are narrower than the standalone compression requirements in Part 9.
+The `coreai-models` export profile also requires `torchao<0.18`; it is narrower than standalone compression in [Part 9](../../part-09-coreai-compression-numerics/).
 
 ---
 
 ## What this covers
 
-Most guides about on-device model conversion tell you how to make a model *run*. This one is about
-the decision you make **before** you write the first `nn.Module`: which compute unit the model is
-for. Because the authoring rules for Apple's Neural Engine and the authoring rules for Apple's GPU
-are not two dialects of one style. They are, in a surprising number of places, **exact opposites** —
-opposite tensor layouts, opposite projection layers, opposite attention implementations, opposite
-positions in the shape/dynamism trade-off, opposite tolerances for float32. A model authored for one
-does not "run a bit slower" on the other. It usually falls off it entirely and lands on the CPU,
-where it is ten to a hundred times slower than either.
-
-What follows:
-
-- **Apple's own at-a-glance comparison table**, reproduced in full, then unpacked row by row.
-- **The Neural Engine rules in detail** — rank ≤ 5, fp16-only, the 64-byte alignment rule that
-  costs 32× memory when you get it wrong, BC1S layout, `nn.Conv2d(kernel_size=1)` in place of
-  `nn.Linear`, the transpose bookkeeping that surrounds every projection, per-head attention,
-  `-40000.0` instead of `-inf`, the read-only KV cache, and the residency constraint that governs
-  all of it.
-- **The GPU rules** — standard layouts, fused QKV, native fused SDPA, the stateful KV cache export
-  wrapper, MoE via `GatherMM`/`SwitchLinear`, memory-efficient weight loading.
-- **Apple's prescribed workflow and its numeric acceptance gates** — architecture discovery by
-  running code rather than reading it, bottom-up authoring order, and the four PSNR thresholds
-  (>70 dB, >70 dB, ≥40 dB, ≥35 dB) that decide whether your re-authored model is correct.
-- **The optional `coreai-models` helper's compute-unit policy** — its loader derives a preference
-  from the *shape of the function table inside the asset*. Direct `AIModel` callers instead choose
-  their own `SpecializationOptions`.[^sample-routing-policy]
-- **The SAM3 case study**: three functions, asymmetric palettisation, and 1008 → 336 pixels.
-- **A consolidated silent-failure catalogue.** Nearly every defect in this domain compiles cleanly,
-  converts cleanly, produces plausible-looking output, and is 30 dB worse than it should be.
+Choose Neural Engine or GPU authoring rules before export. The comparison and worked cases cover layouts, projections, attention, precision, shape constraints, residency, and numerical acceptance gates.
 
 ## What this does *not* cover
 
-- **How to convert and compile** — `torch.export`, `TorchConverter`, `coreai-build`, specialisation
-  and the `.aimodel` format are Part 8.
-- **How to choose a compression recipe** — quantisation vs palettisation, group sizes, calibration
-  and QAT are Part 9. This guide only tells you which compression *shapes* survive on which compute
-  unit, because that is an authoring constraint.
-- **The Swift runtime** — `AIModel`, `InferenceFunction`, `NDArray`, states — is Part 7.
-- **Writing custom Metal kernels** is Part 11. Note in advance that this is a GPU-only lever: there
-  is no mechanism for injecting a hand-written kernel into a Neural Engine graph.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 
@@ -74,42 +38,9 @@ What follows:
 
 ## ⚠️ A word about evidence, because this framework has none of the usual kind
 
-Every other part of this series can lean on a compiling Apple sample project. Core AI cannot.
+The authoring rules below cite Apple's pinned `coreai-models` source, especially `neural_engine_rules.md`, `gpu_rules.md`, and `common_issues.md`. Package policy and framework guarantees are identified separately.
 
-> 🔴 **GAP — Core AI ships zero Apple sample-code projects.**
-> Verified this session: **0 `sampleCode` entries across all 312 indexed Core AI symbols**, and
-> `developer.apple.com/documentation/updates/coreai` returns 404. There is no first-party
-> downloadable Xcode project for Core AI, unlike Foundation Models (three), Evaluations (one) or
-> App Intents. **What would resolve it:** Apple publishing a sample under
-> `/documentation/coreai`, discoverable via `developer.apple.com/tutorials/data/index/coreai`
-> filtered on `type == "sampleCode"`.
-> **Safe default meanwhile:** treat the `apple/coreai-models` repository as the sample project. It
-> is BSD-3-Clause, it is complete, it is written by the Core AI team, and every model in it is
-> exercised by the repo's own test suite. That is what this guide does.
-
-So the evidence ladder for *this* guide, strongest first:
-
-1. **Source files in the shipped Apple repos on disk** (`apple/coreai-models`,
-   `apple/coreai-torch`, `apple/coreai-optimization`). Cited as `path:line`.
-2. **Apple's own agent skills inside `apple/coreai-models`.** These are unusual and unusually
-   valuable: 952 lines of empirical, hard-won rules written by Apple's engineers *for coding agents*,
-   with no marketing register and no hedging. `skills/skills/model-authoring/references/`
-   contains `neural_engine_rules.md` (479 lines), `gpu_rules.md` (297) and `common_issues.md` (176).
-   Almost every rule in this guide traces to one of those three files. They are quoted, not
-   paraphrased, wherever the exact wording is load-bearing.
-3. **Apple documentation articles** on `developer.apple.com/documentation/coreai`.
-4. **WWDC26 session 325**, *"Dive into Core AI model authoring and optimization"* — the only session
-   that covers re-authoring. Spoken narration; treated as weaker than the code, and it **disagrees
-   with the shipped code in two places** which are flagged where they occur.
-5. **Community repositories** — principally `john-rocky/coreai-model-zoo`. Genuinely valuable and
-   frequently unique, but single-author with self-declared uncontrolled benchmarks. Always labelled
-   *community-measured*, never presented as an Apple figure.
-
-Signatures marked 🟡 **RECONSTRUCTED** are concepts that are attested but whose exact spelling
-could not be confirmed against a file on disk. There are fewer of those here than in most guides in
-this series, precisely because the repos are on disk — but there are some, and they are marked.
-
----
+Community benchmarks retain their hardware and date. [Native fixture results](../../../notes/evidence/core-ai/README.md) do not establish ANE placement, device thermals, or production-model quality. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## Contents
 
@@ -504,36 +435,15 @@ rank 5:
 2. **Fold trailing axes into the channel.** `(B*nH, ws, nW, ws, C)` → `(B*nH, ws, nW, ws*C)`, then
    permute, then unfold. Correct as long as the two folded axes stay adjacent and in order.
 
-> ⚠️ **SILENT FAILURE — the rank-6 palettisation trap.**
-> This one is worth its own callout because it does not come from your model code at all, it comes
-> from your *compression config*, and it produces a model that runs perfectly and burns your battery.
->
-> `coreai-opt`'s `PalettizationSpec` has a field `enable_per_channel_scale: bool = False`. Turning
-> it on looks like a free quality win — it normalises weights along output channels before
-> clustering. Apple's own SAM3 recipe deliberately leaves it off, and the reason is in the
-> config's docstring (✅ **VERIFIED** — `python/src/coreai_models/segmentation/pipeline.py:136-142`,
-> verbatim):
->
-> > *"Both encoders deliberately disable per-channel scale: `enable_per_channel_scale=True` lowers
-> > to `mps.dequantize_lut` ops with rank-6 LUTs, which ANE rejects (max tensor rank 5), forcing
-> > the runtime to fall back to GPU. Keeping it off keeps the asset ANE-compatible at the cost of a
-> > small PyTorch-side quality regression."*
->
-> **Nothing throws.** The export succeeds, the asset loads, inference produces correct numbers —
-> on the GPU, at GPU power draw, having discarded the entire reason you authored in BC1S. The only
-> symptom is energy and thermals.
->
-> **Detection:** compile with `xcrun coreai-build compile` and inspect residency (§4.16), or watch
-> for the model being much hotter than expected on device.
-> **Safe default:** leave `enable_per_channel_scale` at its default `False` and get your
-> per-channel behaviour from `PerGroupedChannelGranularity(axis=0, group_size=…)` instead, exactly
-> as Apple's shipped recipe does.
->
-> Note this is also a place where WWDC26 session 325 and the shipped code **disagree**: the talk
-> says (325:241) *"I apply 4-bit palettization **with per-channel scales** to the two encoders."*
-> The code sets the flag to `False` on purpose. Either the presenter was speaking loosely about
-> `PerGroupedChannelGranularity`, or the recipe changed after the talk was recorded. Follow the
-> code.
+<!-- callout-id: callout-5292ca5a3accb7ab -->
+> ⚠️ **SILENT FAILURE — per-channel palettization scales can force ANE fallback.**
+> Apple's SAM3 recipe disables `PalettizationSpec.enable_per_channel_scale`: enabling it lowers to
+> rank-6 LUTs in `mps.dequantize_lut`, beyond ANE's rank-5 limit (`segmentation/pipeline.py:136-142`).
+> Export and inference can succeed on GPU, hiding the power/residency change.
+> Follow the shipped recipe's default `False` and its `PerGroupedChannelGranularity(axis=0,
+> group_size=…)` configuration. Inspect residency and profile the target hardware. Session 325's
+> wording about per-channel scales differs from this recipe; the executable recipe explains the
+> compatibility constraint.
 
 ### 4.2 fp16, int8, int16 — and nothing else
 
@@ -1930,25 +1840,14 @@ and the base invocation (✅ **VERIFIED** — `working-with-coreai/SKILL.md:99`)
 xcrun coreai-build compile model.aimodel --platform iOS
 ```
 
-> 🔴 **GAP — `coreai-build`'s residency report. Narrowed 2026-07-31.**
-> Apple's skill says *"compile and check residency"* but **no source in this corpus shows what the
-> residency output looks like on a real asset** — not the format, not whether it is per-op or
-> per-segment. Session 325 does not cover `coreai-build` at all. The `--help` run this box used to
-> ask for has now happened: the wrapper turned out to ship in the optional **Metal Toolchain
-> component** (`xcodebuild -downloadComponent MetalToolchain`), not Xcode-beta.app — which is what
-> the 2026-07-29 "absent from the beta toolchain" check was actually seeing — and the full surface
-> is captured in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The residency-shaped
-> surface it reveals: **`coreai-build inspect --compute`** (*"Show compute types"*, off by
-> default) and `inspect --ops` (operation distribution), with `--json` output. **What would still
-> resolve it:** that inspect output captured on a real compiled asset, or the Apple doc page
-> *"Compiling Core AI models ahead of time"* at
-> `developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time`.
-> **Safe default meanwhile:** use the **Core AI Debugger** instead. It is a standalone app
-> (`developer.apple.com/core-ai-debugger/`) that, per session 325, *"executes your model on specific
-> hardware for true runtime results"* and *"the structure viewer has updated to show me the model,
-> exactly as it would run on my Mac."* A model that has been segmented shows up there as a changed
-> graph. Failing that, `coreai_torch.debugging.benchmarker.benchmark_coreai_program` gives per-module
-> timings, and a segmentation point shows up as an implausibly expensive layer.
+> 🔴 **GAP — the residency report's real-asset format is not captured here.**
+> The managed help verifies `coreai-build inspect --compute`, `--ops`, and `--json`, but not whether
+> output is per-op or per-segment. Capture it on a compiled asset before scripting against it.
+> For runtime residency, use the Core AI Debugger (`developer.apple.com/core-ai-debugger/`), which
+> session 325 demonstrates on target hardware.
+> `coreai_torch.debugging.benchmarker.benchmark_coreai_program` supplies per-module timing;
+> unexpectedly expensive segments warrant further profiling. Install the optional Metal Toolchain to
+> access `coreai-build`.
 
 **The `--preferred-compute` default is `none`.** Now ✅ **tool-verified** (2026-07-31,
 `coreai-build compile --help`, `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`): values

@@ -2,9 +2,7 @@
 
 **Part 12 · MLX in Python · Reference 02**
 
-**Version floor.** This guide targets **MLX 0.32.x** — `v0.32.0` was tagged **2026-07-07** and the dev
-line carries `MLX_VERSION_MAJOR 0 / MINOR 32 / PATCH 1` → **0.32.1**
-(✅ **VERIFIED**, `mlx/version.h`, read in `notes/repos/mlx-core.md` §0). MLX itself has a *much*
+**Version floor.** Current stable MLX is **0.32.3** ([release](https://github.com/ml-explore/mlx/releases/tag/v0.32.3), checked 2026-10-07); detailed APIs retain the inspected **0.32.1** source snapshot. MLX itself has a *much*
 lower OS floor than the rest of this series: the macOS wheels require **Apple silicon, native Python
 ≥ 3.10, macOS ≥ 14.0** (✅ `docs/src/install.rst`). **Nothing in this guide requires iOS 27 or
 macOS 27.** The one place where the OS version becomes load-bearing is the **neural-accelerator
@@ -28,45 +26,11 @@ true and they are about different things — §4.2 gives the full story. Build f
 
 ## What this covers
 
-This is the guide about **where MLX stops being a portable array library and starts being a program
-running on one specific piece of Apple silicon.** Three themes, tightly coupled:
-
-1. **Numeric types** — `float32` / `float16` / `bfloat16` and which one is right when; the integer
-   family; what "complex support" actually means in MLX; and the one dtype that is CPU-only.
-2. **The hardware gate** — the single most consequential and least visible thing in MLX 0.32 on
-   M5-class hardware. `relaxed_precision = true` is **hardcoded** in MLX's NAX matmul kernel, and
-   the *host* compensates by gating `float32` through the `MLX_ENABLE_TF32` environment variable.
-   These are **one feature in two halves**, and if you only learn one of them you will draw wrong
-   conclusions. The consequence is stark: whether your `float32` matmul runs at reduced internal
-   precision depends on an environment variable that almost nobody sets, on hardware you may not
-   have tested on, **and there is no runtime signal at all.**
-3. **Custom Metal kernels from Python** — `mx.fast.metal_kernel`, the complete API, a complete
-   working example, and an honest account of when writing one is the right call versus composing
-   existing ops or reaching for `mx.compile`.
-
-Threaded through all three is the property this series exists to document: **almost none of these
-failures throw.** A `float32` matmul at TF32 precision returns a plausible array. A fused attention
-kernel that falls back to the unfused path returns the *correct* answer, just slower and with a
-gigabyte of transient allocation. A custom kernel with `ensure_row_contiguous=False` and no
-`elem_to_loc` call reads whatever memory the strides happen to land on. You find these with a
-profiler, a differential test, or a bug report from a user on different hardware.
+Use this reference to choose numeric types and hardware paths, then implement and validate custom Metal kernels through MLX.
 
 ## What this does *not* cover
 
-- **The MLX array model, lazy evaluation, `mx.compile`, transforms, `mlx.nn`, optimizers.** Those are
-  the other guides in [Part 12](../). `mx.compile` appears here only where it explains *why*
-  `mx.fast`'s fused primitives exist (§6.1).
-- **Quantization as a modelling decision** — `mx.quantize`, `nn.QuantizedLinear`, the affine /
-  mxfp4 / mxfp8 / nvfp4 mode table. That is Part 12's quantization guide. Quantized dtypes appear
-  here only as consumers of the same NAX gate (§4.4).
-- **Writing Metal shaders in the TensorOps / cooperative-tensor style**, `mpp::tensor_ops::matmul2d`,
-  `metal::cooperative_tensor`, execution scopes. That is
-  [Part 11](../../part-11-metal-and-tensorops/). §7 covers what you *can* reach from a
-  Python-authored kernel; the C++ extension path is out of scope for this reference.
-- **Distributed MLX**, `mlx.launch`, JACCL/RDMA. Part 12's distributed guide.
-- **MLX in Swift.** [Part 13](../../part-13-mlx-swift/). Note in passing that fixes propagate
-  **mlx → mlx-c → mlx-swift → mlx-swift-lm / mlx-swift-examples**, four tag bumps, so Swift lags
-  everything here (community-observed, mlx-swift-examples#462).
+Related references: [Part 12](../), [Part 11](../../part-11-metal-and-tensorops/), [Part 13](../../part-13-mlx-swift/).
 
 ## What you need
 
@@ -87,43 +51,7 @@ profiler, a differential test, or a bug report from a user on different hardware
 
 ## ⚠️ Read this before you trust a signature below
 
-MLX moves weekly. The clone this guide was written against is **shallow (50 commits)** and its HEAD
-is `973e27f`. That has two consequences you must hold onto:
-
-> 🔴 **GAP — dates from git history are UNVERIFIED.** `git log` on most MLX paths returns the
-> **graft boundary** (`ca60290`, "Fix docstring nits (#3758)"), not the introducing commit —
-> `git log --diff-filter=A` returns the same artificial root for every NAX file. Anywhere this guide
-> mentions when something landed, the *pull-request record* is the source, not the commit date.
-> To resolve: `git -C <mlx-repo> fetch --unshallow` and re-run.
-> Source: `notes/repos/mlx-tensorops-kernels.md` §13.
-
-> ⚠️ **The NAX path is new and actively being fixed.** Three NAX correctness pull requests opened in
-> the three days before **2026-07-27** — on a **2026-08-03 `gh` re-check** #3912/#3922 were still
-> open and #3924 was **closed unmerged 2026-08-02**: **#3912** (fp quantized matmul corruption
-> when the quantized dim is not a multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary
-> handling), **#3924** (a tile-shape `static_assert` for `tile_matmad_nax` — proposed because the
-> function has **no `else` branch**, so odd tile shapes compile to *nothing* and the GEMM produces
-> garbage). Treat every M5-specific behaviour in this guide as sharp-edged and version-sensitive.
-> Source: `notes/repos/mlx-tensorops-kernels.md` §13; `notes/repos/issues-mlx-stack.md` §11.
-
-The evidence ladder used throughout, strongest first:
-
-1. **MLX repository source read on disk** — headers, kernels, Python bindings, tests, CMake. For
-   MLX this outranks everything, including MLX's own documentation site, because the docs lag.
-2. **The MLX documentation site** (a 5,465-line crawl of `ml-explore.github.io/mlx`, serving the
-   0.32.0 build). Authoritative for prose and worked examples; occasionally behind the source.
-3. **Apple documentation, WWDC sessions and Tech Talks.** Tech Talk 111432 ("Accelerate your machine
-   learning workloads with the M5 and A19 GPUs") is the source for every Apple-published M5 number
-   here.
-4. **GitHub issues and pull requests with maintainer answers** (`angeloskath`, `zcbenz`,
-   `davidkoski`, `awni`). Quoted and attributed.
-5. **Community measurements** — always labelled as such, with hardware and OS.
-
-Every non-obvious claim carries ✅ **VERIFIED** (quoted from a source read this session, with the
-citation), 🟡 **RECONSTRUCTED** (concept attested, exact spelling or usage inferred), or 🔴 **GAP**
-(could not verify — the box says what is unknown, what would resolve it, and a safe default).
-
----
+Pin MLX before validating an NAX kernel. PR #3912 is included in 0.32.3; runtime remediation remains unverified. PR #3924 closed without merge, so verify odd tile shapes numerically. The detailed restrictions and sources are in §4.
 
 ## Contents
 
@@ -383,6 +311,7 @@ is one of several reasons the fused primitive is better than your hand-composed 
 single-sequence attention in `float16` / `bfloat16` traces to the **NAX attention kernel's masked
 reduction at 64-aligned head dims** — and `MLX_ENABLE_TF32=0` does **nothing** about it, because the
 TF32 gate's third clause (`dtype != float32`) is satisfied regardless. The only lever that moves it
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 is forcing a different architecture string. Source: mlx#3897 (closed 2026-08-09; 7 comments at
 the research snapshot), M5 base
 `applegpu_g17g`, 32 GB, macOS 26.5.2 / build 25F84, reproduced on both mlx 0.31.2 and 0.32.0; M3 Max
@@ -750,37 +679,21 @@ Community-attributed (issue thread, contributor `katlun-lgtm`, 2026-07, quoted i
 
 ### 3.3 ⚠️ SILENT FAILURE: precision you did not choose, with no runtime signal
 
-> ⚠️ **SILENT FAILURE — `float32` matmul at TF32-class precision.**
->
-> **What happens.** On an M5-class Mac running macOS ≥ 26.2, `a @ b` with `a` and `b` of dtype
-> `float32` computes at reduced internal precision by default. The result is a `float32` array of
-> the right shape with plausible values. Relative error against a `float64` reference is roughly
-> **three orders of magnitude worse** than a real `float32` matmul (§3.4).
->
-> **What you see.** Nothing. No exception, no warning, no `stderr` line, no flag on the array, no
-> field in `mx.device_info()`. `x.dtype` still says `float32`, because it *is* `float32` — the
-> storage is fp32 and only the multiply-accumulate is relaxed.
->
-> **How you find out.** A test that was green on your M3 goes red on an M5; or an
-> `mx.allclose(..., rtol=1e-5)` assertion starts failing; or an `argmax` over near-ties flips; or a
-> user files a bug you cannot reproduce.
->
-> **Why it is like this.** The kernel-side `relaxed_precision = true` (§3.1) is unconditional, so the
-> host-side flag is the *only* precision control, and upstream has now settled on keeping it that way.
-> Docs PR **mlx#3894 merged 2026-08-04** (`docs/src/usage/precision.rst`) — but reduced to what "holds
-> independently of backend and hardware generation", so it names no generation, no gate and no numbers;
-> §3.2 and §3.4 remain your only source for scope and magnitude. On the strength of it **mlx#3860 was
-> closed as completed** the same day, `zcbenz` declining a runtime opt-out — *"having a programmable
-> switch would be nice … there is no necessarility"*. Warn-once **#3883** stays **closed unmerged**.
->
-> **Safe default.** In any test suite, set `MLX_ENABLE_TF32=0` **before importing mlx**. That is
-> exactly what MLX's own test harness does — `python/tests/mlx_tests.py` sets
-> `os.environ["MLX_ENABLE_TF32"] = "0"` with the comment *"Use regular fp32 precision for tests"*
-> (✅ VERIFIED). In production, leave it on if you want the speed, but write your numerical
-> tolerances against measured gen-17 behaviour, not against IEEE fp32.
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
+<!-- callout-id: callout-17c8d8203e6a6232 -->
+> ⚠️ **SILENT FAILURE — fp32 storage can conceal reduced matmul precision.**
+> On the documented M5/macOS ≥26.2 path, fp32 matmul defaults to relaxed internal precision while
+> retaining fp32 output dtype. The cited measurements show roughly three orders of magnitude worse
+> relative error against fp64; no array flag or warning reports the change.
+> For numerical tests, set `MLX_ENABLE_TF32=0` before importing MLX, as its own test harness does. For
+> production speed, measure tolerances on the actual hardware; dtype alone does not establish full
+> fp32 accumulation. Documentation PR #3894 and closure of #3860 concern documentation/policy, not
+> demonstrated removal of relaxed precision; the warning proposal #3883 closed unmerged.
 
 ### 3.4 What it measures out at
 
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
 All of the following are **community-measured**, from the mlx#3860 thread (**closed as completed
 2026-08-04**, 9 comments), by `pierre427` and `mabaeyens`. Not Apple figures. Attribution is per row.
 
@@ -813,6 +726,7 @@ independent confirmation that MLX is genuinely selecting `CUBLAS_COMPUTE_32F_FAS
 doing something of its own.
 
 ### 3.5 Three mechanics that cost people days
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 
 These are the parts that make bisection hard. All three are community-established on mlx#3860 and
 consistent with the source quoted in §3.1–§3.2.
@@ -870,6 +784,7 @@ Community-measured consequences, each attributed:
   on **1.4–2.5 % of spectra**, costing roughly **9 dB PSNR** — *"while every op-level parity test
   passed."* That last clause is the lesson: op-level tolerance tests did not catch a
   decision-boundary failure.
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 - **`mlx-lm/tests/test_generate.py`** (mlx#3860, mlx#3897): **8 of 28 tests fail on gen-17** —
   `test_batch_matches_single`, `test_batch_sliding_window`, `test_batch_continued_generation*`,
   `test_stream_generate_input_embeddings*` — all of them batch-versus-single equivalence assertions
@@ -902,6 +817,7 @@ A short, opinionated policy:
    the shell, and assert it with a §4.5-style probe.
 2. **In production: leave it on, and stop asserting bit equality.** A strict `rtol=1e-5`
    batch-equivalence assertion **cannot hold on gen-17, in any dtype** (community conclusion,
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
    mlx#3897). Decide what your product actually needs — usually "the argmax is stable and the
    loss curve matches within noise", not "the bits match."
 3. **Never compare numbers across two different Macs and call the difference a regression** without
@@ -1207,6 +1123,7 @@ This pair is the single most useful diagnostic in this guide. Their **difference
 - If `MLX_ENABLE_TF32=0` fixes it → it is the fp32 TF32 path (§3).
 - If only `MLX_METAL_GPU_ARCH=applegpu_g16s` fixes it → it is a NAX kernel behaviour affecting
   `bfloat16`/`float16`, which the TF32 flag cannot reach (§3.2's bottom rows). This is exactly how
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
   mlx#3897 separated its two mechanisms.
 - If **neither** fixes it → it is not NAX. On mlx#3702, neither did, and even forcing
   `can_use_nax = false` in the backend left the output corrupted — which is what redirected that
@@ -1706,6 +1623,7 @@ for (int b = 0; b < blocks / BN; ++b) {
 }
 ```
 
+<!-- defect-ref:ml-explore.mlx:pull:3875 -->
 > ⚠️ **SILENT FAILURE — a non-multiple-of-32 `MLX_SDPA_BLOCKS` silently corrupts attention.**
 > Quoting the PR: *"Any other value silently corrupts the attention output on every decode step —
 > **no error, no clamp**."* Fixed by **mlx PR #3875 (MERGED 2026-07-22)**, which rounds the override
@@ -1879,6 +1797,7 @@ directly — the fused path is then not in question.
 > assume inference-time speedups are real.
 
 ### 6.3 `rope`
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 
 ✅ **VERIFIED** — `python/src/fast.cpp`:
 

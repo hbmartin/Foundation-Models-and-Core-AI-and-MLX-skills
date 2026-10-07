@@ -1,10 +1,10 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1785 of them, 1425 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1733 of them, 1394 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-10-06 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-10-07 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -16,21 +16,21 @@ Start from the symptom column that matches what you observe. Within each section
 
 | Symptom | Entries | What it means |
 |---|---:|---|
-| [Wrong output](#wrong-output) | 175 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
-| [Empty output / no-op](#empty-output--no-op) | 62 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
-| [Truncation & limits](#truncation--limits) | 28 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
-| [Ignored input](#ignored-input) | 110 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
+| [Wrong output](#wrong-output) | 172 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
+| [Empty output / no-op](#empty-output--no-op) | 61 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
+| [Truncation & limits](#truncation--limits) | 27 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
+| [Ignored input](#ignored-input) | 109 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 39 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
-| [Data & artifact loss](#data--artifact-loss) | 41 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
-| [Compiles but unavailable](#compiles-but-unavailable) | 90 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
-| [Performance cliffs](#performance-cliffs) | 147 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
-| [Resource growth](#resource-growth) | 41 | Silent memory or disk growth, leaks, quota consumption. |
+| [Data & artifact loss](#data--artifact-loss) | 39 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
+| [Compiles but unavailable](#compiles-but-unavailable) | 84 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
+| [Performance cliffs](#performance-cliffs) | 143 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
+| [Resource growth](#resource-growth) | 40 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 157 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 100 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
-| [Docs vs reality](#docs-vs-reality) | 158 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
-| [API footguns](#api-footguns) | 259 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 360 | Warnings and considerations that are not themselves silent failures. |
+| [Version drift](#version-drift) | 94 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Docs vs reality](#docs-vs-reality) | 154 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
+| [API footguns](#api-footguns) | 257 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
+| [General cautions](#general-cautions) | 339 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -94,7 +94,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Uninitialised state storage: nothing documents that Swift NDArray inits zero — unzeroed KV reads garbage on first use](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#83-️-silent-failure--uninitialised-state-storage) — 7.3
 - [Two concurrent run() calls sharing one KV cache race — exclusivity checks don't span async tasks; one loop per state set](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#concurrency-and-its-hidden-cost) — 7.3
 - [Omit image_mean/image_std and you silently get CLIP's — Qwen3-VL-class models produce degraded captions, not an error](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#26-the-language-block-and-a-discrepancy-worth-knowing) — 7.4
-- [Inputs and states bind positionally, not by name — a graph declared in another order loads, runs, and produces garbage](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#53-coreaisequentialengine--dynamic-cpu-side-sampling-logits-available) — 7.4
+- [Validate input names and state metadata; positional legacy consumers can silently misbind reordered arrays.](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#53-coreaisequentialengine--dynamic-cpu-side-sampling-logits-available) — 7.4
 - [Fixed bug: pipelined sampling shared one execution descriptor across steps, corrupting text at temperature > 0](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#54-coreaipipelinedengine--gpu-on-device-sampling-no-logits) — 7.4 🔇
 - [Substring tensor-role discovery picks the first ambiguous match and can wire the wrong intermediate without a…](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#42-multi-function-backend) — 7.5 🔇
 
@@ -170,7 +170,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Verified: set() on a masked element is a no-op and get() returns zero; operator[] is entirely unchecked.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#64-️-silent-failure-masked-elements-and-the-method-name-that-does-not-exist) — 11.1 🔇
 - [reduce_rows' identity defaults to sum_identity (zero) regardless of the operation you pass.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#72-️-silent-failure-the-identity-default-is-sum_identity-regardless-of-the-operation) — 11.1
 - [Naked exp() in a hand-written softmax overflows above ~88 fp32 / ~11 fp16; subtract the running max first.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#73-map_iterator-and-is_iterator_compatible) — 11.1
-- [The guide's central trap: the default reduction identity silently clamps every negative row max to zero.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#what-this-covers) — 11.2
 - [TOC: cooperative tensors are not zero-initialised; they hold undefined register data.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2
 - [TOC: the reduce_rows identity default silently computes max(0,row).](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2
 - [Skip the is_compatible_as_left_input check and an incompatible layout converts undiagnosed - wrong data, no error.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#43-is_compatible_as_left_input--a-runtime-bool-you-must-branch-on) — 11.2 🔇
@@ -203,7 +202,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [ensure_row_contiguous=False with raw linear indexing reads strided buffers wrong: right shape, wrong contents, no error.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#91-strides-and-non-contiguous-inputs) — 12.2 🔇
 - [Custom-kernel outputs are uninitialized by default; without init_value, unwritten slots hold recycled buffer contents.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2 🔇
 - [A kernel weight captured by closure gets no gradient under custom_function; pass tensors as arguments instead.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2
-- [Overview: four quantized-matmul corruption defects with issue numbers, most reproducible only on M5-generation hardware.](part-12-mlx-python/references/03-quantization.md#what-this-covers) — 12.3
 - [TOC: the register of quantized-matmul corruption bugs.](part-12-mlx-python/references/03-quantization.md#contents) — 12.3
 - [Seven quantized-matmul defects, five exclusive to M5-generation hardware; the register with statuses.](part-12-mlx-python/references/03-quantization.md#9-️-the-corruption-bugs) — 12.3
 - [gather_qmm's unwritten rows aren't zeros: they hold recycled MTLBuffer contents, sometimes coincidentally plausible.](part-12-mlx-python/references/03-quantization.md#91-the-bad-one-affine-gather_qmm-leaves-rows-unwritten--mlx3856) — 12.3 🔇
@@ -217,7 +215,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [A VLM factory processor-selection gotcha produces wrong output rather than an error](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#72-the-processor-pipeline) — 13.1
 - [Dropped EXIF orientation feeds the model a rotated photo — wrong answers, no error; Apple fixed it in their own sample](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) — 13.1
 - [An empty assistant placeholder passed to UserInput(chat:) closes the turn — garbage or empty output blamed on the model](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#76-the-third-bug-in-the-same-commit-trailing-empty-assistant-message) — 13.1
-- [Template resolution has a silent failure mode: a wrong template degrades output with no error (§6)](part-13-mlx-swift/references/02-generation-tools-and-caching.md#what-this-covers) — 13.2
 - [Dropping LMOutput.State between turns drifts M-RoPE positions on VLMs — degraded multi-turn output, no error](part-13-mlx-swift/references/02-generation-tools-and-caching.md#43-state-and-the-m-rope-trap) — 13.2
 - [A trailing empty assistant message closes the turn — fresh user turn or instant EOS on the raw UserInput path](part-13-mlx-swift/references/02-generation-tools-and-caching.md#53-chatmessage) — 13.2
 - [The chat template is the contract and nothing checks it — mismatches produce fluent, degraded output](part-13-mlx-swift/references/02-generation-tools-and-caching.md#64-️-silent-failure-5--the-chat-template-is-the-contract-and-nothing-checks-it) — 13.2
@@ -287,7 +284,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [summarizeHistory fires only when the last entry is a .prompt — after tool turns it silently skips; Apple's test says so.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#134-summarizehistory--the-most-aggressive-one) — 3.2 🔇
 - [Heading: the composition rule — and why Apple's own examples never fire.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#135-️-the-composition-rule--and-why-apples-own-examples-never-fire) — 3.2
 - [rollingWindow(10) before summarizeHistory(threshold:10): 10>10 is false forever — summarisation can never run.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#135-️-the-composition-rule--and-why-apples-own-examples-never-fire) — 3.2 🔇
-- [Scope note: every composed call site the repo ships is inert — the thresholds can never trip.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: every composed example in the repository is inert.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [On tool-output continuations the summarise guard fails and the modifier returns — no log, no observable difference.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#33-summarizehistory--the-nuclear-option) — 3.3 🔇
 - [Heading: every composed history-modifier example in the repository is inert.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#5-️-every-composed-example-in-the-repository-is-inert) — 3.3
@@ -403,7 +399,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 16**
 
 - [Cancel the display task and the transcriber's final updates go unread — every recording's last phrase lost, no error](part-16-adjacent-capabilities/README.md#161--speechanalyzer-live-transcription-assets-and-custom-vocabulary) — 16.README 🔇
-- [TOC: cancelling the display task drops the final results — the tail of every recording is silently lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#what-this-covers) — 16.1
 - [Contents: the cancellation shield — the guard against losing each recording's final phrase](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#contents) — 16.1
 - [Code comment: without the shield you lose the tail of every recording](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#64-complete-microphone-capture-end-to-end) — 16.1
 - [The cancellation shield: stop reading at cancel time and the final updates — the recording's tail — are lost](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) — 16.1
@@ -486,7 +481,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 9**
 
-- [A block size the weight isn't divisible by yields only a warning and an uncompressed layer](part-09-coreai-compression-numerics/references/01-quantization.md#what-this-covers) — 9.1
 - [module_type_configs keyed by the string 'torch.nn.Linear' silently matches nothing — use the class object](part-09-coreai-compression-numerics/references/01-quantization.md#52-module_type_configs--fully-qualified-class-names-only) — 9.1
 - [A block size your weight isn't divisible by leaves the layer uncompressed, with only a log line](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1
 - [Block-size mismatch is caught internally and swallowed — the fake-quantize disables itself and the layer ships…](part-09-coreai-compression-numerics/references/01-quantization.md#75-️-silent-failure--a-block-size-your-weight-isnt-divisible-by-leaves-the-layer-uncompressed) — 9.1 🔇
@@ -661,7 +655,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Policy table: rollingWindow is known-buggy — it can orphan a response — and invalidates the cache when it fires.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#123-step-3--choose-a-compaction-policy-before-you-need-one) — 3.1
 - [Policy table: summarizeHistory collapses history to one entry, losing tool structure, and totally invalidates the cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#123-step-3--choose-a-compaction-policy-before-you-need-one) — 3.1
 - [Apple's own test: rollingWindow's naive trim orphans a response — 'in practice it crashes partway through.'](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#133-rollingwindowentries--apple-ships-a-known-bug) — 3.2 🔇
-- [Scope note: rollingWindow ships known-buggy — Apple's own test documents the orphaned-response outcome.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: rollingWindow splits prompt/response pairs — and Apple knows.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: rollingWindow splits prompt/response pairs — and Apple knows.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#7-️-rollingwindow-splits-promptresponse-pairs--and-apple-knows) — 3.3
 - [Apple's test comment verbatim: the naive trim orphans a response and 'in practice it crashes partway through.'](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#7-️-rollingwindow-splits-promptresponse-pairs--and-apple-knows) — 3.3 🔇
@@ -707,7 +700,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 15**
 
-- [TOC: bookmarks quietly die — init?(resolvingBookmark:) returns nil, not an error, once the entry is purged](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A stored bookmark quietly stops working — purge or invalidation makes resolve return nil, not an error](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) — 15.1
 - [bookmarkData doesn't pin the entry; resolvingBookmark returns nil, not an error — failure lands in an else branch](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#82-the-defect) — 15.1 🔇
 - [Code comment marks the silent branch: a well-formed bookmark whose entry is gone resolves to nil](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#84-the-fix-persist-a-record-never-a-bare-bookmark) — 15.1
@@ -809,11 +801,8 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 12**
 
 - [rich and regex are imported at module level but undeclared; a bare pip install crashes at import.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#what-you-need) — 12.4
-- [The server imports undeclared packages at module level; a clean install crashes before serving anything.](part-12-mlx-python/references/05-serving-and-distributed.md#11-three-steps-and-the-two-packages-nobody-tells-you-about) — 12.5
 - [macOS 26.2 is the hard gate for RDMA-over-Thunderbolt distributed inference; older machines simply can't join.](part-12-mlx-python/references/05-serving-and-distributed.md#14-the-four-layer-distributed-stack) — 12.5
 - [mlx_lm.lora imports two more packages at module scope that setup.py never declares; bare installs crash.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#what-you-need) — 12.6
-- [rich and regex must be installed by hand; they're imported at module scope but undeclared in setup.py.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#11-the-install-line) — 12.6
-- [On a bare pip install, mlx_lm.lora dies at import: cli_ui pulls rich at module scope (ModuleNotFoundError).](part-12-mlx-python/references/06-finetuning-and-porting-models.md#11-the-install-line) — 12.6
 
 **Part 13**
 
@@ -828,7 +817,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [compile exits 0 for any arch; codes track device ids, not names — green CI, invalidCompiledModel in users' hands](part-15-shipping-and-operating/README.md#151--shipping-models-background-assets-per-architecture-variants-and-updates) — 15.README 🔇
 - [AOT compilation has a far narrower hardware floor than the framework — AOT assets exclude devices the framework supports](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#shipping-models-background-assets-per-architecture-variants-and-updates) — 15.1
-- [TOC: coreai-build compile succeeds for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A green compile the device rejects — exit 0 proves nothing; the failure is invalidCompiledModel in the field](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#5-️-silent-failure-a-green-compile-that-the-device-rejects) — 15.1
 - [xcrun coreai-build compile exits 0 for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#51-the-defect) — 15.1 🔇
 - [A bad app-group entitlement silently drops to the per-bundle cache — specialization cost and storage double](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#103-️-the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror) — 15.1
@@ -853,11 +841,9 @@ Start from the symptom column that matches what you observe. Within each section
 - [BarcodeReaderTool lists watchOS but OCRTool does not; a watchOS target reaching for OCR finds nothing](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#46-additive--system-tools-and-the-one-that-isnt-where-youd-look) — 17.1
 - [Copying 2026 samples' reactive-only gating means users discover Apple Intelligence is unavailable only after tapping](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#64-behavioural--apples-samples-dropped-proactive-availability-gating) — 17.1 🔇
 - [No App Store required-device-capability exists for Apple Intelligence; incapable devices can always install your app](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#65-behavioural--the-siri-enablement-gate-is-a-defect-not-a-design) — 17.1
-- [On GPU-pipelined bundles you lose @Generable entirely; constrained decoding needs logits they never expose](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#what-this-covers) — 17.2
 - [@Generable needs logits the GPU-pipelined Core AI engine never returns; the fastest backend cannot do guided generation](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2
 - [The GPU-pipelined engine samples on-GPU and returns no logits; @Generable fails at runtime, not at build time](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#72-️-the-constraint-that-decides-this-for-many-readers-generable-and-logits) — 17.2 🔇
 - [Path table: @Generable works on FM and via MLXGuidedGeneration but not on GPU-pipelined Core AI bundles](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#122-the-three-paths-at-a-glance) — 17.2
-- [An SDK-interface/dylib symbol mismatch crashes at load before main; no runtime guard can intercept it](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the load-time crash from an interface/dylib mismatch that no runtime guard can catch](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [The load-time failure no guard can catch: interface/dylib mismatch SIGSEGVs before main](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4
 - [The FM-27 beta interface declared a symbol the dylib lacked; respond() SIGSEGVed emitting usage until mlx fix #439](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4 🔇
@@ -884,7 +870,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 3**
 
 - [Cache invalidation never throws — a reordering transform or time-interpolated instructions makes every turn O(N) again.](part-03-context-profiles-agentic/README.md#31--token-budgeting-transcript-anatomy-and-kv-cache-economics) — 3.README 🔇
-- [Scope note: linear-attention and hybrid architectures cannot prefix-cache — every turn re-prefills the transcript.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#what-this-covers) — 3.1
 - [Contents entry: architectures that cannot prefix-cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#contents) — 3.1
 - [Cache invalidation's only symptom is a longer prefill bar in Instruments — no error, no log line exists.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#84-taking-the-training-wheels-off) — 3.1 🔇
 - [Model switching re-prefills the shared transcript on the new engine — 2.35 s switch-in measured; KV reuse is per-model.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#89-profile-switching-is-a-deliberate-reset) — 3.1
@@ -954,13 +939,11 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [enable_per_channel_scale=True lowers to rank-6 LUTs the ANE (max rank 5) rejects — the model silently moves to GPU](part-09-coreai-compression-numerics/README.md#92--palettization-pruning-joint-compression-and-mixed-precision) — 9.README 🔇
 - [Compute-unit fallback is documented and silent — correct outputs, several times slower, visible only in tooling](part-09-coreai-compression-numerics/README.md#93--int4-to-mx-which-layer-supports-which-numeric-format) — 9.README 🔇
-- [Covered here: the ANE rank-5 ceiling — one palettization flag silently reroutes the model to the GPU](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#what-this-covers) — 9.2
 - [The ANE rank-5 ceiling: rank-6 tensors force the op — and its fused neighbors — off the Neural Engine](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#5-️-the-ane-rank-5-ceiling) — 9.2
 - [enable_per_channel_scale improves PyTorch numerics slightly and silently moves the model to GPU — invisible on a Mac](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#52-the-contradiction) — 9.2 🔇
 - [The 76% figure needs backbone-feature caching CoreAISegmentationEngine doesn't do — it re-runs image_encode every call](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#152-the-three-function-split-also-selects-coreai-models-ane-preference) — 9.2
 - [The 76%-faster second inference requires caller-side caching Apple's package does not do](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#201-apple-published) — 9.2
 - [Cheat sheet: enable_per_channel_scale=True means rank-6 LUT, ANE rejection, and silent GPU fallback](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#213-field-cheat-sheet) — 9.2
-- [A format the compute unit lacks doesn't throw — specialization silently reassigns the op several-times-slower elsewhere](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#what-this-covers) — 9.3
 - [Complex dtypes exist in MLX but are excluded from NAX — complex matmuls run on the older, slower kernels](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#12-the-master-matrix) — 9.3
 - [A bare Python float literal can move an op — and its fused pattern — off the ANE to the GPU](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#42-️-silent-failure--a-bare-python-float-literal-can-move-an-op-to-the-gpu) — 9.3
 - [A literal fp16 can't represent materializes as an fp32 constant — the consuming op leaves the ANE with no warning](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#42-️-silent-failure--a-bare-python-float-literal-can-move-an-op-to-the-gpu) — 9.3 🔇
@@ -1049,7 +1032,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 16**
 
 - [A [Entity] parameter fully resolves every element before perform() — hidden N-query stall; EntityCollection passes ids](part-16-adjacent-capabilities/references/02-app-schema-domains.md#133-️-entitycollection--the-parameter-resolution-performance-cliff) — 16.2
-- [TOC: the performance trap that turns on-screen awareness into a stall](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#what-this-covers) — 16.3
 - [Code comment: the naive displayRepresentations is correct but slow enough to break awareness](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [The naive implementation compiles and is correct — and stalls long enough to break the feature](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#42-️-silent-failure--the-naive-implementation-turns-awareness-into-a-stall) — 16.3
 - [A naive displayRepresentations turns awareness into a stall — it is called for every entity](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#81-️-silent-failure--a-naive-displayrepresentations-turns-awareness-into-a-stall) — 16.3
@@ -1120,7 +1102,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 15**
 
 - [A successful load is not a fit test — first inference adds activations and KV, and compute unit moves headroom 2×](part-15-shipping-and-operating/README.md#152--memory-jetsam-thermals-energy-and-measuring-honestly) — 15.README 🔇
-- [TOC: two slightly different options structs silently create two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [Prewarming a graph with static-shape host KV I/O allocates the whole cache up front — a net loss; gate your prewarm](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#62-the-three-levers) — 15.1
 - [SpecializationOptions is part of the cache key — two variants mean two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) — 15.1
 - [Slightly different SpecializationOptions from two code paths silently double the multi-GB cache and re-stall first load](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#91-the-defect) — 15.1 🔇
@@ -1214,7 +1195,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [availability == .available says nothing about quota — the most common real failure is invisible to every check.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#54-️-silent-failure--availability-is-not-a-health-check) — 4.1 🔇
 - [PCC in the Simulator throws a content-free error that reads as your bug — a known issue per Apple engineering.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#55-️-the-simulator-does-not-run-pcc) — 4.1
 - [This executor never throws rateLimited/contextSizeExceeded/timeout — a 429 arrives as generic httpError with raw bytes.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#27-the-errors-you-will-actually-see) — 4.2
-- [MLX never emits updateUsage — token usage reads absent or zero by design, a compile-vs-runtime symbol mismatch.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
+- [The cited beta adapter omits usage to avoid a missing symbol; verify stable behavior before token accounting.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
 - [A backend is not obliged to use the typed error vocabulary — and Apple's own executor mostly doesn't.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#64-the-rest-of-the-error-vocabulary) — 4.2
 - [Comparison table: MLX may report token usage absent or zero — the deliberate omission documented in §3.9.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#82-the-comparison-that-actually-decides-it) — 4.2
 - [Heading: Apple's own executor throws none of the typed LanguageModelError cases.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#113-️-apples-own-executor-throws-none-of-them) — 4.3
@@ -1423,7 +1404,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1
 - [Beta 5 retyped history to Transcript.HistoryView; suffix trims survive, but Int indexing breaks.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
-- [Scope note: SkillActivations dropped RandomAccessCollection at beta 3 — shipped docs and snippets still assume it.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [Heading: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#15-️-skillactivations-and-the-foreach-that-stopped-compiling) — 3.3
 - [Apple documents 4096 as the iOS 27 platform value; a retired unreproduced report claimed 8K — still read contextSize…](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#81-what-each-backend-is-charged-for) — 3.4
@@ -1482,14 +1462,10 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 12**
 
 - [export_function is experimental; .mlxfn files from older MLX versions may not load in future ones.](part-12-mlx-python/references/01-core-fundamentals.md#126-export_function--import_function--the-mlxfn-format) — 12.1
-- [Three NAX correctness PRs within three days (#3912 quant corruption, #3922 gather_qmm bounds); pin and re-verify.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#️-read-this-before-you-trust-a-signature-below) — 12.2
-- [mlx-lm 0.31.0 was pulled from PyPI for BatchKV cache cross-contamination; know exactly which version you run.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#mlx-lm-the-cli-surface-the-generation-api-and-kv-caching) — 12.4
-- [PyPI's mlx-lm (0.31.3, April) trails main by months of fixes; 0.31.0 was yanked for BatchKV cross-contamination.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#12-versions-on-disk-and-the-pypi-gap) — 12.6
 
 **Part 13**
 
 - [3.x main is a breaking major: download and tokenization become protocols you must implement yourself](part-13-mlx-swift/README.md#part-13--mlx-in-swift) — 13.README
-- [mlx-swift-lm main is a breaking 3.x major — code written against 2.x loading APIs no longer applies](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#mlx-swift-lm-in-an-app-setup-concurrency-memory-and-media-input) — 13.1
 - [The GPU cache API was renamed and both spellings circulate — verify which your version exports](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#62-️-the-gpu-cache-api-changed-name--and-both-spellings-are-in-the-wild) — 13.1
 - [Two ticket(...) spellings for wired memory exist in the repo and one is stale](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#65-wired-memory-the-part-with-a-dedicated-reference) — 13.1
 - [27-beta SDK churn: an interface/dylib mismatch escalates from silent drift to a SIGSEGV process abort](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#93-the-27-beta-sdk-churns-and-one-of-the-drifts-is-a-sigsegv) — 13.1
@@ -1523,7 +1499,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Revised: Xcode 27 now emits adapter deprecation warnings, and hard obsolete errors once you target OS 27](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
 - [MLXFoundationModels compiles only when the trait and the 27-SDK canImport both hold; otherwise it is an empty library](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#82-where-mlxfoundationmodels-actually-is) — 17.2
 - [GenerationError was deprecated, not deleted: catch clauses compile but stop firing once you rebuild with Xcode 27](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#error-taxonomy-migration-generationerror--languagemodelerror) — 17.3 🔇
-- [MLXFoundationModels builds green on the 26 SDK yet compiles to an empty library; the FM adapter is not in the binary](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#what-this-covers) — 17.4
 - [TOC pointer: the empty library — a green 26-SDK build of MLXFoundationModels contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [MLXFoundationModels on the 26 SDK: builds successfully and contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4
 - [Apple states it twice in-repo: on the 26 SDK MLXFoundationModels builds successfully as an empty library](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#7-️-the-empty-library) — 17.4 🔇
@@ -1568,7 +1543,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Docs still list four Segment cases; the beta 5 interface declares three — .custom is not present.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#23-segments-the-second-dimension) — 3.1
 - [Session 242 defers to 243 for detecting cache invalidation — 243 never mentions a cache metric; only the docs do.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#51-the-cache-hit-rate) — 3.1
 - [Profile(model:) { } appears in conference write-ups, never in Apple code — the model is applied as a modifier.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#32-the-model-is-a-modifier-not-an-initialiser-label) — 3.2
-- [Scope note: the README's '5000 tokens' summarisation trigger doesn't exist — the API threshold counts entries.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#what-this-covers) — 3.3
 - [Contents entry: the '5000 tokens' ghost.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
 - [The README's .package(from:"1.0.0") can never resolve — only prerelease tags exist and from: excludes prereleases.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#11-the-dependency-line-in-the-readme-does-not-work) — 3.3 🔇
 - [Apple's SKILL.md claims summarizeHistory defaults model: — the shipping source has no default; you must pass one.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#3-the-three-history-modifiers-signature-by-signature) — 3.3
@@ -1597,8 +1571,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Menu strings differ between Apple's spoken narration and its written docs — don't pattern-match one exact wording.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#41-the-menu) — 5.1
 - [Captions spell the idea tool three ways (GenerateCraftIdeaTool/IdeasTool/generateCraftIdea); the exact name is…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#81-the-feature) — 5.1
 - [Session 242 defers cache detection to 243, which never names it; the current written documentation supplies the metric.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#92-the-four-current-token-metrics) — 5.1
-- [A community post argues fm serve does not exist from its absence in a transcript; an Apple engineer and a --help paste…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#26-fm-serve--the-one-written-sentence-and-why-it-matters-most) — 5.2
-- [fmx is a third-party macOS 26 look-alike; its slash commands and flags are its own design and read as attested fm…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27) — 5.2
 - [The Python SDK is 26-generation (macOS 26+) though the session is about macOS 27 throughout — expect capability gaps.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The SDK runs on macOS 26 but the fm CLI does not exist there — the session presents them as one workflow.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
 - [The Python SDK lacks PCC, reasoning, and attachments; stable fm no longer supplies the beta PCC route.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#52-️-the-version-discrepancy-this-is-a-26-generation-sdk) — 5.2
@@ -1667,7 +1639,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Community audit counts 21 export recipes vs this guide's table; likely timing - run --list rather than trusting either.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#21-what-is-in-the-catalog) — 10.3
 - [coreai.llm.eval is declared in project.scripts but unconditionally errors with 'Evaluation support is coming soon'.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#26-three-gotchas-in-the-easy-road) — 10.3
 - [This contradicts WWDC26 325:241's 'with per-channel scales'; the shipped code sets it False and wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#77-the-exploration-loop-if-you-need-one) — 10.3
-- [coreai-build ships in the Metal Toolchain, not Xcode's app bundle; CI with only aimodelc cannot invoke it.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#102-the-compile-command) — 10.3
 - [COREAI_CHUNK_THRESHOLD is a memory dial and Apple's hint points the wrong way on a high-RAM Mac.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#143-️-coreai_chunk_threshold-is-a-memory-dial-and-apples-hint-is-backwards-on-a-big-mac) — 10.3
 - [Session 325:241's 'per-channel scales' conflicts with the shipped recipe; the shipped code wins.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#182-apple-spoken) — 10.3
 
@@ -1746,7 +1717,7 @@ Start from the symptom column that matches what you observe. Within each section
 - ['8K context on iOS 27' is retired third-party provenance; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
 - [No .coreaimodel, .aiasset or coreai-torch convert exist; real spellings are .aimodel/.aimodelc, both directories](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#27-mlmodel--mlmodelc--aimodel--aimodelc--and-both-are-directories) — 17.5
 - [upgrade.md tells you to import MLXLMHuggingFace or MLXEmbeddersHuggingFace; neither module exists in the package](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
-- [The migration doc's own Breaking Changes fix is stale: grep confirms neither named HuggingFace module exists](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6 🔇
+- [At the inspected revision, migration docs name missing modules; check Package.swift and use MLXHuggingFace.](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-upgrade-doc-names-two-modules-that-do-not-exist-in-the-package) — 17.6
 - [The utilities README's install line cannot resolve; only prerelease tags exist](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-silent-failure-3) — 17.6
 - [README says .package(from: 1.0.0) but only 1.0.0-beta1 and beta3 tags exist; SwiftPM's from: excludes prereleases](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#️-the-silent-failure-3) — 17.6 🔇
 
@@ -1810,7 +1781,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Mutating the transcript mid-response is caller misuse with a typed error — guard every assignment on isResponding.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#144-️-the-mutable-transcript-has-a-dedicated-session-error) — 3.2
 - [Add one skill with allowsDeactivation and the tool renames to toggle_skill — instructions citing activate_skill break.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#141-the-tool-is-named-toggle_skill-or-activate_skill-and-you-do-not-choose) — 3.3 🔇
 - [Prompt skills never register as active — isActive(promptSkillName) is false forever, by deliberate design.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#143-defer--oncallskill---why-the-verb-reads-backwards) — 3.3 🔇
-- [Scope note: .required is an unbounded while loop — Apple documents exactly two exits and you must wire one.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#what-this-covers) — 3.4
 - [Contents entry: .required is a while loop and you supply the exit.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#contents) — 3.4
 - [Heading: the baton tool you named but never registered.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#27-️-silent-failure--the-baton-tool-you-named-but-never-registered) — 3.4
 - [The handoff tool named only in instructions loops forever with no error — session 243 is built around this bug.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#27-️-silent-failure--the-baton-tool-you-named-but-never-registered) — 3.4 🔇
@@ -2031,7 +2001,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Per-row annotation loses selected and scrolled-off entities — annotate the container with forSelectionType](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#82-️-silent-failure--per-row-annotation-loses-selected-and-scrolled-off-entities) — 16.3
 - [TransientAppEntity forecloses three system integrations — silently, via the type choice](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#85-️-silent-failure--transientappentity-forecloses-three-system-integrations) — 16.3
 - [Now Playing identifiers in the wrong order resolve the wrong entity — the order is semantic](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#87-️-silent-failure--now-playing-identifiers-in-the-wrong-order) — 16.3
-- [TOC: the hydration hook is a nonisolated completion-handler method — not the async throwing shape you'd write](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#what-this-covers) — 16.4
 - [Index into a named CSSearchableIndex while other code uses the default and the corpus silently splits](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#32-why-a-named-index) — 16.4
 - [beginBatch/endBatch is not a transaction — partial writes persist; clientState is for resume, not rollback](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#34-batching-and-the-client-state-pattern) — 16.4
 - [CSCustomAttributeKey's init is failable — a nil key means the attribute silently never reaches the index](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#43-binding-your-properties-to-spotlight-keys) — 16.4
@@ -2072,10 +2041,6 @@ Start from the symptom column that matches what you observe. Within each section
 *Warnings and considerations that are not themselves silent failures.*
 
 
-**Series**
-
-- [Most defects do not throw; expect silence, plausible wrong numbers, and quiet degradation.](README.md#silent-failure-callouts) — root 🔇
-
 **Part 1**
 
 - [Pipelined Core AI samples on-GPU with no logits; a correct provider must throw on schema requests, not approximate.](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md#33-coreailanguagemodel--270-your-weights-apples-runtime) — 1.1
@@ -2105,7 +2070,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The 1044→700 token saving is Apple's demo on unspecified hardware — reuse the shape of the claim, not the numbers.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#101-the-measured-effect) — 2.2
 - [Heading: three Python-side silent failures, led by options= being dropped when generating= is passed.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#123-️-three-python-side-silent-failures) — 2.2
 - [Apple verbatim: recordings capture and store all Foundation Models prompts and responses — guard your traces.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#133-debugging-a-structured-output-problem) — 2.2
-- [Scope note: covers the OCR/barcode watchOS asymmetry and the attachment label image tools silently require.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#what-this-covers) — 2.3
 - [The tool-calling Instruments template records prompts and responses — treat .trace files as user data; never commit.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#84-how-to-spot-it) — 2.3
 - [Community-measured: small models emit tool JSON the framework rejects (decodingFailure) — in-tool baton-pass is shaky.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#113-small-models-make-different-mistakes) — 2.3
 - [The 27.0 SDK declares exactly four Attachment image inits — CGImage, CIImage, CVPixelBuffer, imageURL; no UIImage.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#32-what-you-can-hand-it) — 2.5
@@ -2148,7 +2112,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 5**
 
-- [The instrument's trace file is a sensitive artefact: it captures prompt and response data in the clear.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-this-covers) — 5.1
 - [No one here ran Xcode 27 Instruments; UI claims trace to the session or preserved direct Apple documentation.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
 - [The code-along targets macOS Tahoe/Xcode 26 — treat its Playground UI details as 'at least true in 26', not 27.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#21-the-macro-the-canvas-and-the-refresh-button) — 5.1
 - [LanguageModelFeedback attachments carry the full session transcript — consent, no auto-upload, scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) — 5.1
@@ -2167,13 +2130,11 @@ Start from the symptom column that matches what you observe. Within each section
 - [ScoreDimension text differs between production and calibration on purpose — 'same evaluator' means same type, not same…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-round-trip) — 6.1
 - [Give the judge only a few alignment examples; a longer list overfits the alignment score and hides misalignment…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#rule-4--three-iterations-and-what-each-one-taught) — 6.1
 - [A broken evaluation still produces a number — the number you decided to trust; the catalogue below runs worst-first.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#17-️-the-silent-failures) — 6.1
-- [Overview: judge-alignment silent failures — unvalidated positional join, ?? 0 phantom ratings, undefined kappa read as…](part-06-evaluations/references/02-model-judges-and-alignment.md#what-this-covers) — 6.2
 - [TOC: silent failures in judge alignment (section 19).](part-06-evaluations/references/02-model-judges-and-alignment.md#contents) — 6.2
 - [numeric(_:) takes [Double: String]; Apple's sample writes integer literals that coerce — both work, dumps say Double.](part-06-evaluations/references/02-model-judges-and-alignment.md#5-scoringscale-numeric-passfail-custom) — 6.2
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2
 - [Judge calls are model calls — guardrails, context, availability apply; 12% failed calls silently corrupt the…](part-06-evaluations/references/02-model-judges-and-alignment.md#198-️-judge-inferences-inherit-every-foundation-models-failure-mode) — 6.2
 - [TOC: ToolCallEvaluator requires ModelSubject(value:transcript:); omitting the transcript throws missingTranscript…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#contents) — 6.3
-- [Apple writes .exact values bare ('Paris, France') and wrapped (.string('r')); both compile via literal conformances.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#152-the-value-wrapping-footgun) — 6.3
 - [ToolCallEvaluator needs ModelSubject(value:transcript:) — without the transcript no trajectory can be scored.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass) — 6.3
 - [ModelSubject(value:) without transcript: still builds; ToolCallEvaluator throws missingTranscript — loud but…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#172-the-line-everyone-forgets) — 6.3
 - [The 58%-to-100% tool-eval lift is Apple's 12-sample letter-counting demo — a framework demo, not an expected benchmark.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#174-what-tool-evaluation-buys-with-a-number) — 6.3
@@ -2190,16 +2151,14 @@ Start from the symptom column that matches what you observe. Within each section
 - [run() requires a mutable view for every state — omitting any state is an error; drive allocation from stateNames](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
 - [Community state allocation: MTLBuffer sized by minimumByteCount with .storageModeShared, then memset to zero](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#minimumbytecount-for-manual-allocation) — 7.1
 - [Community swift-lm defines rich typed asset errors (shape/dtype/state mismatches) the Apple runtime does not give you](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#134-what-the-rest-of-the-stack-throws-for-contrast) — 7.1
-- [Core AI has zero Apple sample-code projects (0 of 312 symbols) — evidence is doc prose and shipped repos only](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#specialization-the-model-cache-and-ahead-of-time-compilation) — 7.2
 - [specialize() and init have no progress, stages, or cancellation contract — your Preparing UI must be indeterminate](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#where-to-actually-call-it) — 7.2
 - [Compile-time figures are single-author beta measurements — trust the shape (jetsam can kill compilation), not the…](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#143-aot-does-not-fix-memory) — 7.2
 - [Throughput figures here are one community author plus one shipping app, self-declared uncontrolled — attribute…](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#162-community-measured) — 7.2
 - [Verified absences: /documentation/updates/coreai 404s and the Updates hub carries no Core AI entries](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#primary--apple-documentation-strongest-doc-class-evidence-there-is-no-sample-code) — 7.2
 - [Whole block is community-measured on beta software under uncontrolled conditions — cited because nothing else exists](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#community--valuable-uniquely-detailed-and-not-apple) — 7.2
-- [Part-wide evidence weighting: zero Apple sample code — claims rest on docs, shipped repos, and attributed community work](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#states-as-kv-cache-and-pipelined-execution) — 7.3
 - [Apple ships 21 export recipes but zero performance numbers — the community bench table is the only data, treat as such](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#what-the-published-numbers-do-support) — 7.3
 - [Pipelined Core AI ties/beats MLX on dense models — but it's int8 vs 4-bit, a ship-config comparison, not iso-precision](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#what-the-published-numbers-do-support) — 7.3
-- [Whole section is one author's incident report (FB23024751, issue #5) — rigorous isolation, uncontrolled benchmarks](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#13-the-mpsgraph-in-graph-kv-write-bug) — 7.3
+- [Beta KV-write regression report; closure and current stable remediation are separate observations.](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#13-the-mpsgraph-in-graph-kv-write-bug) — 7.3
 - [Noema's host-cache design: KV rides as plain I/O because the ANE compiler rejects in-graph indexed KV writes](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#workaround-1--host-cache-the-kv) — 7.3
 - [Write-mask workaround status: Mac GPU verified; iPhone GPU and ANE re-isolation still pending](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#workaround-2--the-input-mask-escape) — 7.3
 - [Prefix-reuse section is a community fork of coreai-models — mechanism corroborated upstream, API and numbers are not](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#14-prefix-reuse-one-integer-assignment-101) — 7.3
@@ -2210,7 +2169,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The model-selection conclusion derives from one community implementation — not an Apple claim](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#️-the-constraint-that-changes-model-selection) — 7.3
 - [Known limits: the pipelined trim path is unverified (SIGTRAPs in GrowingLogitsBuffer); short chats see little gain](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#where-this-stands-today) — 7.3
 - [Numerics debugger pairs only iOS/iPadOS/macOS 27+ — no visionOS, tvOS or watchOS despite framework support](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md#debugging-state-numerics-not-state-timing) — 7.3
-- [Evidence note: zero Apple sample code — this guide rests on the shipped apple/coreai-models source read line-by-line](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#model-bundles-the-llm-engines-and-grammar-constrained-decoding) — 7.4
 - [Apple's own code disagrees on VLM sub-model loading (sequential vs async let) — load sequentially until resolved](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#43-modelresources--lazy-loading-shared-engines-borrow-safe-unload) — 7.4
 - [All of §6.3-6.4 is community work: a 3-file fork commit on a pre-SAM3 snapshot, not upstream Apple code](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#63-trimkvcache--the-community-primitive-apples-protocol-lacks) — 7.4
 - [The structure-to-compute mapping is apple/coreai-models loader policy, not a Core AI framework routing contract](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md#non-llm-engines-bundles-function-structure-warmup-specialization-and-caching) — 7.5
@@ -2218,7 +2176,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 8**
 
 - [Series-wide evidence note: zero Apple sample code — guides rest on shipped repo source, docs prose, and SDK dumps](part-08-coreai-pytorch-conversion/README.md#part-8--core-ai-converting-a-model-from-pytorch) — 8.README
-- [Evidence note: no Apple sample code — strongest sources are the shipped coreai-torch/models/optimization repos](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.1
 - [The Neural Engine path threads K/V as plain I/O, not Core AI state — register_buffer KV advice is GPU-only](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#96-what-the-swift-side-expects) — 8.1 🔇
 - [AIModelAsset.load only reads the header — compilation and its cost land lazily inside the executable() context manager](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#111-the-reference-implementation-verbatim) — 8.1
 - [Compare eager PyTorch, the decomposed exported program and the exact Core AI asset shipped](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) — 8.1
@@ -2229,21 +2186,18 @@ Start from the symptom column that matches what you observe. Within each section
 - [Externalization is not weight streaming — it neither reduces export RAM nor mmaps; that is a separate PyTorch technique](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#86-the-real-motivations--and-one-terminology-collision-to-defuse) — 8.2
 - [One word, two mechanisms: ExternalizeSpec preserves op boundaries; multi-entrypoint conversion splits programs](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#86-the-real-motivations--and-one-terminology-collision-to-defuse) — 8.2
 - [Exercise square and asymmetric inputs; apple/coreai-torch#49 affected 0.4.1; tested fixed in 0.4.3](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#102-the-four-gates-every-converted-model-should-pass) — 8.2
-- [Read first: zero Apple sample code for Core AI — kernel guidance rests on shipped coreai-torch source and tests](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#torchmetalkernel-writing-and-embedding-a-custom-metal-kernel) — 8.3
 - [Apple's own end-to-end custom-kernel tests are currently disabled — device coverage is thinner than the suite implies](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#125-️-apples-own-end-to-end-kernel-tests-are-currently-disabled) — 8.3
 - [Community figures here are single-author, self-declared uncontrolled, on beta OSes — attribute, never launder](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#174-community--attributed-never-presented-as-apple) — 8.3
 
 **Part 9**
 
 - [Evidence ladder note: zero Apple sample code — shipped repo source outranks docs and talks throughout this part](part-09-coreai-compression-numerics/README.md#part-9--core-ai-compression-and-numeric-formats) — 9.README
-- [Evidence note: no Apple sample code — quantization claims rest on coreai-opt source and shipped recipes](part-09-coreai-compression-numerics/references/01-quantization.md#coreai-opt-quantization-configs-graph-vs-eager-calibration-and-qat) — 9.1
 - [Table of contents pointer to the consolidated silent-failures section](part-09-coreai-compression-numerics/references/01-quantization.md#contents) — 9.1
 - [The 'dynamic' range calculator cannot be exported — finalize() raises NotImplementedError naming each affected module](part-09-coreai-compression-numerics/references/01-quantization.md#65-the-three-pluggable-classes-and-the-one-that-cannot-be-exported) — 9.1
 - [Annotation limits: chains longer than 2 raise, and sequential matching requires each op type in the chain to be unique](part-09-coreai-compression-numerics/references/01-quantization.md#87-how-graph-mode-decides-what-to-annotate) — 9.1
 - [Archive holds opposite int8 orderings for different tensor roles — int8 is the safe floor; which int8 is empirical](part-09-coreai-compression-numerics/references/01-quantization.md#102-the-bit-width-ladder-and-where-it-breaks) — 9.1
 - [Consolidated index of this guide's quantization silent failures](part-09-coreai-compression-numerics/references/01-quantization.md#17-️-silent-failures-consolidated) — 9.1
 - [The talk's third row has no number — 'a fraction of the size' is unquantified; don't invent one](part-09-coreai-compression-numerics/references/01-quantization.md#184-sam3--apple-published-wwdc26-session-325) — 9.1
-- [Evidence note: no Apple sample code — palettization claims rest on coreai-opt source and Apple's shipped recipes](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#palettization-pruning-joint-compression-and-mixed-precision) — 9.2
 - [Contents pointer: the ANE rank-5 ceiling section](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#contents) — 9.2
 - [Contents pointer: consolidated silent failures](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#contents) — 9.2
 - [Beta-era measurement with an identified but unconfirmed mechanism — record toolchain versions with every sweep result](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#154-the-aimodel-is-a-build-artefact-not-a-pure-function-of-the-recipe) — 9.2
@@ -2255,7 +2209,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [ResNet50 PTQ numbers rest on 128 eval samples (896 calibration) — indicative, not conclusive](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#201-apple-published) — 9.2
 - [Community table is a single-author archive with self-declared uncontrolled benchmarks — not Apple figures](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#202-community-measured--notesreposjohn-rocky-modelsmd) — 9.2
 - [2.18x dense-int4km ratio: author says absolute tok/s are ~10x too slow — only the ratio is valid](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#202-community-measured--notesreposjohn-rocky-modelsmd) — 9.2
-- [Evidence note: no Apple sample code — the format matrix rests on SDK headers, shipped source, and doc prose](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#int4-to-mx-which-layer-supports-which-numeric-format) — 9.3
 - [Contents pointer: consolidated silent failures](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#contents) — 9.3
 - [Matrix legend: warning-marked cells are supported only with the caveat named in the referenced section](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#12-the-master-matrix) — 9.3
 - [int16 sits in the TensorOps enum but the Metal-language type map has no int16 mapping — the int16 oddity](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#12-the-master-matrix) — 9.3
@@ -2285,7 +2238,6 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Scope note: Core AI has no compiling first-party samples, so verify every signature in this part before trusting it.](part-10-coreai-hardware-authoring-debugging/README.md#️-read-this-before-you-trust-a-signature-anywhere-in-this-part) — 10.README
 - [Evidence note: no Apple samples or doc updates exist for this framework; claims rest on repos, headers and community.](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md#️-a-word-about-evidence-because-this-framework-has-none-of-the-usual-kind) — 10.1
-- [Zero Apple sample projects exist for Core AI; the strongest evidence is shipped repos, then headers, then community.](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#the-debug-gauge-the-core-ai-instrument-and-the-core-ai-debugger) — 10.2
 - [TOC pointer to the coreai-torch 0.4.0 IR-location incident and its provenance.](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#contents) — 10.2
 - [Never run an iOS-compiled bundle on a Mac: it can wedge the GPU/ANE stack into a watchdog reboot (community-reported).](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#55-the-measured-payoff-attributed) — 10.2
 - [The Core AI Debugger's paired-device list omits visionOS, tvOS and watchOS; whether it attaches there is an open gap.](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md#61-what-it-is-and-where-to-get-it) — 10.2
@@ -2314,7 +2266,6 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 11**
 
 - [Scope note: session 330 material and circulating names diverge from shipped headers; verify against the SDK first.](part-11-metal-and-tensorops/README.md#️-read-this-before-you-start-especially-if-you-arrived-from-wwdc26-session-330) — 11.README
-- [The Metal toolchain cryptex path embeds a build-specific token; resolve it with xcrun, never paste it into scripts.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#01-the-three-evidence-bases) — 11.1
 - [The 4-bit path is a pointer cast to tensor<int4b_format>; the 26.x matmul2d op does the unpacking itself.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#56-declaring-tensors) — 11.1
 - [MLX writes cooperative tensors through unchecked operator[] and never calls is_valid_element, relying on known layouts.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#67-mlxs-cooperative-tensor-usage-annotated) — 11.1
 - [TOC: NAX is new and still settling; expect churn.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2
@@ -2342,7 +2293,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Scope note: quantization numbers below carry mixed provenance; check each one's sourcing before quoting.](part-12-mlx-python/references/03-quantization.md#️-read-this-before-you-trust-a-number-below) — 12.3
 - [The routed-only read numbers are community-measured (john-rocky, partly agent-generated repo), not Apple-published.](part-12-mlx-python/references/03-quantization.md#74-what-routed-only-reads-are-worth--community-measurements) — 12.3
 - [Scope note: flag names below were verified against argparse declarations, not the docs.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4
-- [Marker for this guide's register of six silent failures; none of them throw.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4 🔇
 - [Scope note: server signatures verified from source at a pinned commit; PyPI lags main by months.](part-12-mlx-python/references/05-serving-and-distributed.md#️-read-this-before-you-trust-a-signature-below) — 12.5
 - [Freshness: NAX code paths are new and moving, with three correctness fixes within days of writing.](part-12-mlx-python/references/05-serving-and-distributed.md#101-the-m5-neural-accelerators) — 12.5
 - [--host 0.0.0.0 exposes a server with no authentication; anyone on the network can drive your model.](part-12-mlx-python/references/05-serving-and-distributed.md#113-xcode-27--the-one-most-readers-will-use) — 12.5
@@ -2353,7 +2303,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Apple's distributed speedup comes with its own caveat - it depends on setup; quote the caveat with the number.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [180 to 600 tok/s are the session's only absolute figures; every other distributed claim is a ratio.](part-12-mlx-python/references/05-serving-and-distributed.md#24-apples-measured-numbers) — 12.5
 - [The RDMA port forum report is community-reported with unknown status and no replies captured.](part-12-mlx-python/references/05-serving-and-distributed.md#251-the-community-rdma-port-report) — 12.5
-- [Every file:line cite pins commit e5baded; on any other commit expect line numbers to have drifted.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#evidence-ladder-used-in-this-guide) — 12.6
 - [--mlx-path must not already exist and there is no --force; delete the previous output directory first.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#51-there-is-no---qlora-flag) — 12.6
 - [Dropout fires only in training mode; train() and evaluate() toggle it, so know which mode your loop left the model in.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#65-dropout) — 12.6
 - [The memory-constrained path's loader accepts only .jsonl with a text field (or one alternate); other formats fail.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#86-what-oom-looks-like--on-a-mac-and-why-not-on-a-phone) — 12.6
@@ -2369,8 +2318,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Streams always end with a .info event carrying stopReason and timings — rely on it, but don't copy llm-tool's fatalError](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#58-throwing-versus-non-throwing-streams) — 13.1
 - [Evidence on the EXIF fix conflicts between research passes — reported as conflicting, not smoothed over](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) — 13.1
 - [Scope note: trust no signature below without the stated verification caveats](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2
-- [Four items were not read this session and are deliberately not asserted](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2
-- [Marker definition: SILENT FAILURE means it does not throw — this guide catalogues nine](part-13-mlx-swift/references/02-generation-tools-and-caching.md#️-read-this-before-you-trust-a-signature-below) — 13.2 🔇
 - [Returning a string for an unknown tool (not throwing) is the right default — the model can read the failure and retry](part-13-mlx-swift/references/02-generation-tools-and-caching.md#77-the-end-to-end-loop-both-ways) — 13.2
 - [keep:4 attention sinks make rotating caches unquantizable/unmergeable in Python; the Swift guard is unverified](part-13-mlx-swift/references/02-generation-tools-and-caching.md#84-where-the-cache-actually-gets-created) — 13.2
 - [gpt-oss attention sinks are incompatible with quantized SDPA — a family-specific hard stop](part-13-mlx-swift/references/02-generation-tools-and-caching.md#85-quantized-kv-kvbits-kvscheme-and-turboquant) — 13.2
@@ -2429,7 +2376,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Session 345 explicitly does not cover UndoableIntent, IntentModes or SnippetIntent — don't cite it for them](part-16-adjacent-capabilities/references/02-app-schema-domains.md#13-the-new-execution-model) — 16.2
 - [Session 344 published no code block — every listing attributed to it is transcript reconstruction](part-16-adjacent-capabilities/references/02-app-schema-domains.md#primary--wwdc26-sessions) — 16.2
 - [Symbol-name trust note for this guide — verify before porting names](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3
-- [Marker definition: these silent failures neither throw nor log, and symptoms appear far from the defect — eight here](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.3 🔇
 - [Draft identity exists, but a verified hand-off still needs a real file payload — materialize first](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3
 - [Whether .appEntityIdentifier takes an optional is unverified — but the compiler tells you; explicitly not silent](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#55-️-draft-identity-exists-the-verified-hand-off-still-needs-a-real-file-payload) — 16.3 🔇
 - [In-memory content must be written to a file before the FileRepresentation hand-off — the step stays necessary](part-16-adjacent-capabilities/references/03-onscreen-awareness.md#58-what-to-do-today) — 16.3
@@ -2443,7 +2389,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Consumer surface note: the demo's consumer was the Fitness app's suggested-playlists list](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#122-the-api) — 16.4
 - [Donate only UI-originated interactions, never Siri-originated — the rule against feeding the ranking loop back](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#124-apples-three-way-decision-rule) — 16.4
 - [Get plain indexing working and verified before building consumers — everything downstream depends on it](part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md#142-the-sequence) — 16.4
-- [Marker definition: these do not throw — this guide catalogues five](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#evidence-markers-used-in-this-guide) — 16.5 🔇
 - [Treat the six performance numbers as documentation claims, not citable measurements](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#the-one-workflow-where-the-answer-is-unambiguously-yes) — 16.5
 - [All images must share H×W×C — mismatches raise DNIKitException; differing sizes need a custom Producer](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#57-the-producers-and-sample-assets-apple-ships) — 16.5
 

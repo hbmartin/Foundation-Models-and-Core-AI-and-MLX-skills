@@ -1,384 +1,55 @@
-# Next-beta checklist — run on every new Xcode 27 beta / Apple doc refresh
+# Release-event checklist
 
-Assembled 2026-07-31 from the open questions the 2026-07-29 refresh pass left behind.
+Run when Xcode, an SDK, the OS, a simulator runtime, or relevant Apple documentation changes. Keep installed verification and latest observed releases separate; a beta announcement does not verify local runtime behavior.
 
 <!-- current-state:next-beta:start -->
 Current installed baseline: Xcode 27.0 `27A266a`, macOS 27.0 `26A428`, macOS SDK `26A425`, iOS SDK `24A430`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 beta 2 `27B5028f`, iOS 27.2 beta 3 `24B5099f`, and macOS 27.2 beta 3 `26B5101f`. Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
 <!-- current-state:next-beta:end -->
 
-SDK dumps are committed in `notes/sdk-interfaces/`. Companion docs:
-`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` (items that need a *running* OS 27, not just
-a toolchain — this checklist covers what a toolchain drop CAN answer).
-
-> **Event log, 2026-08-03:** the host updated to macOS 26.6 build `25G72` and this ritual ran the
-> same day — interface diff clean for every framework, `coreai-build` help at its documented 27.0
-> fingerprint, snippet pass unchanged, probes 46/34/0 (host) and 39/2/0 (sim), defect sweep folded
-> in. Xcode 27 beta 4 and the iOS 27 beta 4 runtime still match the recorded baseline; the next
-> expected event is Xcode 27 beta 5.
-
-> **Event log, 2026-08-17:** Xcode 27 beta 5 (`27A5237l`), macOS SDK build `26A5406c`,
-> iOS SDK build `24A5408c`, and iOS Simulator runtime build `24A5408d` were checked on macOS 27 beta 5. The managed
-> interface capture was promoted after real AppIntents, Evaluations, FoundationModels, and Vision
-> drift; host probes passed 46/23/0 and simulator probes passed 39/19/0. Spotlight's unpublished
-> schema grew from 83,494 to 83,570 characters; simulator donation still works, while the host
-> helper is unavailable (`CSIndexErrorDomain -1003`). Snippet verification remains blocked because
-> `/Applications/Xcode.app/Contents/Developer` (the SDK-26 target) is absent.
-
-> **Event log, 2026-08-20:** an attached iPhone 15 Pro (`iPhone16,1`, `D83AP`) running iOS 27
-> build `24A5408d` completed the first hardware baseline. `contextSize=4096`,
-> `deviceArchitectureName=h16p`, Foundation Models availability/capabilities matched the static
-> iOS-27 declarations, and both documented `SpecializationOptions` constructors reported
-> `expectFrequentReshapes=false`. A live Core AI cache pin made deletion throw and remain findable;
-> deletion succeeded after release. The default cache appeared under
-> `Library/Caches/coreai-cache`. Call-site tool mode overrode the profile in the
-> profile-required + options-disallowed direction (tool not called — recorded); the reverse
-> direction threw `LanguageModelError.contextSizeExceeded(4096, 4099)` without recording the
-> toolCalled/toolRan discriminators, so it remains an inference from the error fingerprint (the
-> probe now records them for the next device run).
-> Throwing from `onToolCall` aborted the turn before the tool body; empty `.required` mode bridged
-> as typed `.unsupportedGenerationGuide` code 6 (Simulator had generic code −1). Image responses
-> worked, labels wrote through exactly, generic tools ran labeled and unlabeled, but image
-> `tokenCount(for:)` threw code −1. The beta-5 Spotlight schema artifact is now captured from the
-> device result. See `probes/README.md` for exact output and remaining inconclusive branches.
-
-> **Event log, 2026-09-16:** stable macOS 27 (`26A428`) completed the local lanes while Xcode,
-> SDKs, and Simulator remained beta 5. The safe Mac surface passed 44/44 executed probes across
-> bounded lanes; the iPhone 15 Pro on iOS build `24A435` passed 46 tests with 2 intentional skips
-> and 0 failures. Call-site tool mode now has direct two-direction proof, `onToolCall` throwing is
-> confirmed as a turn abort/revert, image-tool turns time out after the tool runs, and the device
-> overflow probe timed out where Mac returned typed after 92.7 seconds. Stable `/usr/bin/fm`
-> has a smaller, system-only surface; the canonical comparison is [guide 5.2 §3](../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27). The daily job completed;
-> weekly was blocked solely by the unavailable Noema mirror, which has now been removed from the
-> clone inventory. Full promoted evidence: `notes/PLATFORM-UPGRADE-VALIDATION-2026-09-16.md`.
-
-Every item is independent; check them off per beta. Commands are copy-pasteable from
-the repo root.
-
----
-
 ## 0. The re-dump ritual (do this first, in order)
 
-- [ ] Point this shell at the new beta and confirm what you got. Keep the selection process-local;
-  the capture scripts respect `DEVELOPER_DIR` and never change global `xcode-select` state:
-  ```bash
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-  xcodebuild -version
-  xcrun --sdk iphoneos --show-sdk-version
-  xcrun --sdk macosx --show-sdk-version
-  ```
-- [ ] Preflight the complete capture identity before writing evidence. This checks Xcode and SDK
-  versions plus the separately installed Metal Toolchain, `metal`, and `coreai-build` identities:
-  ```bash
-  ./scripts/dump-sdk-interfaces.sh --check-only
-  ```
-  The capture manifest makes a stable SDK filename safe: a different Xcode build cannot silently
-  overwrite an existing `*-27.0-macos.swiftinterface` merely because both betas report SDK 27.0.
-- [ ] Dump + drift in one step — `scripts/diff-interfaces.sh` captures into a temporary
-  destination, then compares every fresh artifact against the committed managed capture without
-  mutating it, filtered to `public|open|@available|case ` lines:
-  ```bash
-  ./scripts/diff-interfaces.sh                # fresh dumps vs HEAD
-  ./scripts/diff-interfaces.sh --against <tag-of-previous-beta>   # if HEAD moved
-  ```
-  A same-version re-dump with no toolchain change must read "clean — no drift" for
-  every framework (that is the verified 2026-07-31 baseline output). Anything else IS
-  the beta's API drift — start the guide pass from those lines. Slice selection is deterministic:
-  OS SDK frameworks prefer arm64e, while Xcode-bundled developer frameworks such as Evaluations
-  prefer their ordinary arm64 host slice. The same run also diffs each fresh CLI help capture
-  (`coreai-build`, and `fm` if present) body-for-body against the newest committed help capture
-  for that tool, so `--help` surface drift shows up here too — no separate manual step. Known
-  SDK-27.0 baseline: the committed `coreai-build-help-27.0-beta.txt` is a manual legacy capture,
-  so this comparison reports its section-marker spelling (`===== coreai-build compile =====` vs
-  the scripted `… compile --help =====`) and its extra validation-oracle lines as drift — that
-  exact report (verified 2026-07-31: +4 / −17 lines) is "clean" for 27.0. Flag-surface changes
-  appear as additional lines. From the next SDK version on, scripted captures compare against
-  scripted captures and a no-change run reads genuinely clean.
-- [ ] Re-verify the guide snippets against the new SDK (added 2026-07-31; grammar and
-  committed baseline in `notes/snippet-verification/README.md`):
-  ```bash
-  ./scripts/verify-snippets.sh --sdk 27 --developer-dir-27 "$DEVELOPER_DIR" \
-  --allow-unavailable-targets --out artifacts/swift-refresh
-  ```
-  `--sdk 27` is additive: it ensures target 27 is resolved and reported while marker-requested
-  26/simulator/deployment-floor targets still run. It is not a corpus filter.
-  Any fence that WAS green and turns red **is the beta's snippet-level API drift**, with
-  the failing symbol named by the compiler at a mapped guide line. Fold fixes into the
-  guides, re-run, commit the refreshed `results.tsv` + `report.md`.
-- [ ] Cross-major comparisons on request, one framework at a time:
-  ```bash
-  ./scripts/diff-interfaces.sh --baseline 26.5 --framework FoundationModels
-  ./scripts/diff-interfaces.sh --baseline 26.5 --framework Speech
-  ```
-- [ ] If the drift is intentional and you need to retain a same-SDK/new-Xcode candidate for review,
-  capture it to a fresh staging directory. Do not copy its manifest over the managed one: that
-  would discard the independently owned 26.5 and legacy records.
-  ```bash
-  capture_candidate_dir="$(mktemp -d)"
-  ./scripts/dump-sdk-interfaces.sh --dest "$capture_candidate_dir"
-  ```
-  Promote only the reviewed artifacts and merge their manifest ownership using the procedure in
-  `notes/sdk-interfaces/README.md`, then finish with
-  `./scripts/dump-sdk-interfaces.sh --check-only`. There is deliberately no blind auto-promotion
-  mode.
-- [ ] Confirm the CLI surfaces. `dump-sdk-interfaces.sh` resolves tools through `xcrun`, captures
-  top-level and all four `coreai-build` subcommand help pages, and writes the canonical
-  `coreai-build-help-<macOS-SDK-version>.txt`; the drift step above already compared its body
-  against the committed capture. On a **new SDK version**, a plain managed capture adds the new
-  help file alongside the interfaces. On a **same-SDK/new-Xcode beta**, the managed capture
-  correctly refuses (cross-build protection on the stable interface filenames) — use the
-  candidate-directory flow from the previous step; the legacy `-27.0-beta.txt` evidence remains
-  separately managed and is never overwritten either way:
-  ```bash
-  ./scripts/dump-sdk-interfaces.sh            # new SDK version only
-  xcrun --no-cache --find fm  # still expected absent from this toolchain; see item 2
-  ```
-- [ ] Re-run the runtime probes. The `probes/` package is tracked; see `probes/README.md` for the
-  historical-host / SIM-27 / MAC-27 / DEVICE-27 destination table and the per-probe results. The
-  beta-5 baselines are **46 host tests, 23 skipped, 0 failures** and **39 simulator tests,
-  19 skipped, 0 failures** — but note those are *gated* counts. Model-backed host and Simulator
-  probes never infer safety from an unfamiliar build identifier: run the bounded default first,
-  then explicitly enable each model-probe family when you are prepared to terminate a stuck test
-  process and harvest its `PROBE-RESULT` lines. Re-run per beta on both local destinations and once
-  on hardware:
-  ```bash
-  (cd probes && swift test)
-  (cd probes && xcodegen generate --spec device-project.yml && \
-      DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-      xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
-      -destination 'platform=iOS Simulator,OS=27.0,name=iPhone 17 Pro')
-  (cd probes && xcodegen generate --spec device-project.yml && \
-    xcodebuild test -project DeviceProbes.xcodeproj -scheme DeviceProbes \
-      -destination 'platform=iOS,id=<device-udid>' -allowProvisioningUpdates \
-      DEVELOPMENT_TEAM=<your-team-id>)
-  ```
-  The generated scheme's test action declares the relevant `PROBE_*` environment variables
-  (disabled) straight from `device-project.yml`, so the unconditional `xcodegen generate` above
-  no longer wipes them. Before the deliberate host-backed-model pass, enable
-  `PROBE_ENABLE_HOST_MODEL`, `PROBE_ENABLE_ATTACHMENT`, and `PROBE_ENABLE_GENERATOR`; enable
-  `PROBE_ENABLE_PCC` for the manual Siri-toggle pass. Tick a variable in the scheme editor for a
-  one-off run (the tick itself is lost on the next regeneration) or flip its `isEnabled` to `true`
-  in the spec before regenerating.
-  Any probe whose `PROBE-RESULT` differs from the value recorded in `probes/README.md` is the
-  beta's behavioral drift. The remaining destination gaps are documented in
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
-- [ ] Re-check the GitHub defect hedges (a doc refresh usually rides a beta):
-  ```bash
-  report_dir="artifacts/freshness/beta-event/$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  ./scripts/refresh-defect-statuses.sh --format json --output "$report_dir/defects.json"
-  ./scripts/refresh-defect-statuses.sh --changed-only            # just the edits needed
-  ```
-  Human-review every `STATE-CHANGED` row against its cited sentence before editing. The
-  2026-08-01 sweep exposed same-paragraph state-language leakage for five already-correct claims;
-  see `notes/FRESHNESS-RUNBOOK.md` §1. The script never edits guides.
-- [ ] After guide edits, rebuild the indexes. Per the header of
-  `scripts/build-indexes.sh`: re-run `python3 scripts/extract-callouts.py`, then
-  **classify any NEW ⚠️ callout rows by hand** (symptom ids per
-  `notes/synthesis/SYMPTOM-TAXONOMY.md` — this is the one step that needs judgment,
-  not automation), update the committed per-part `part-NN.tsv` files under
-  `notes/synthesis/callout-classifications/`, then:
-  ```bash
-  ./scripts/build-indexes.sh
-  ```
-- [ ] Rebuild the installable skills, which are derived from the same guides and the
-  indexes you just regenerated:
+- [ ] Select the intended Xcode in this shell, then record `xcodebuild -version`, `sw_vers`, SDK versions/builds, and simulator runtimes. Do not change global selection.
+- [ ] Run `./scripts/dump-sdk-interfaces.sh --check-only`; check the optional Metal Toolchain before capture.
+- [ ] Run `./scripts/diff-interfaces.sh` into a temporary candidate. Promote changed evidence only through the hashed capture workflow in [SDK evidence](sdk-interfaces/README.md).
+- [ ] Run `./scripts/verify-snippets.sh --sdk 27 --developer-dir-27 "$DEVELOPER_DIR" --allow-unavailable-targets --out artifacts/swift-refresh`. Preserve unavailable-target results with their original provenance.
+- [ ] Run `./scripts/run-probes.sh host` and the simulator lane with an available explicit destination. Run the hosted device lane when hardware-dependent claims changed. Preserve logs, results and complete topology; do not compare fixed test counts between lanes.
+- [ ] Triage current defect records, update canonical guides, reconcile changed callout identities, regenerate indexes and skills, then run portable checks.
+- [ ] Update `notes/current-state.json`, including full consistency-check dates, and run `./scripts/current-state.py render --write`.
 
-  ```bash
-  ./scripts/build-skills.sh
-  ```
+## 1. `coreai-build` — component-scoped capture
 
-  It refuses to run if a part README grew a heading it does not recognize, so a
-  structural guide edit surfaces here rather than silently dropping a section from a
-  released skill. `scripts/tests/test_skills.py` fails CI if `skills/` is stale.
+- [ ] Compare help and Metal Toolchain identity using the managed capture workflow. A changed component can change the CLI without an OS update.
 
----
+## 2. `fm` — OS-bundled capture
 
-## 1. `coreai-build` — component-scoped and captured (resolved 2026-07-31)
+- [ ] Check `/usr/bin/fm --help` on the recorded OS build. Compare against [the canonical surface](../guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#3--the-fm-help-surface-captured-on-macos-27); an absent tool in another SDK is not evidence about the running OS.
 
-The 2026-07-29 negative check was a component-installation result, not a beta-product result:
-`coreai-build` is not inside Xcode-beta.app. Apple's Core AI documentation requires the optional
-Metal Toolchain component (`xcodebuild -downloadComponent MetalToolchain`); after installation,
-`xcrun --no-cache --find coreai-build` resolves into
-`…/DVTDownloads/MetalToolchain/mounts/…/Metal.xctoolchain/usr/bin/coreai-build`, version
-`coreai-build 3600.79.1`. Its `compile` | `package` | `inspect` | `metadata` surfaces are captured,
-and the affected guides now distinguish the app bundle from the required component. See Apple's
-[*Compiling Core AI models ahead of time*](https://developer.apple.com/documentation/coreai/compiling-core-ai-models-ahead-of-time).
+## 3. Evaluations — framework location and tvOS
 
-- [ ] Does it move from the Metal Toolchain mount into Xcode proper, or change independently of
-  the Xcode build?
-  ```bash
-  xcodebuild -showComponent MetalToolchain -json
-  xcrun --no-cache --find coreai-build && xcrun coreai-build --version
-  ```
-- [ ] Re-capture every subcommand surface. The 2026-07-31 baseline has
-  `--preferred-compute {gpu, neural-engine, none}` and 24 accepted architecture codes; a new
-  component can drift even when the macOS SDK version remains `27.0`:
-  ```bash
-  xcrun coreai-build help compile; xcrun coreai-build help inspect
-  xcrun coreai-build help package; xcrun coreai-build help metadata
-  ```
-- [ ] Does `aimodelc`'s usage stub still point at `coreai-build`? (`aimodelc` at
-  `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc`, no `--help`.)
+- [ ] Check SDK and Xcode developer-framework locations independently. Recheck tvOS availability annotations; do not infer support from another platform's capture.
 
-## 2. `fm` — OS-bundled and captured; toolchain absence is expected
+## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — watch for regression
 
-The beta-5 macOS 27 host resolved `/usr/bin/fm`; top-level and all revealed subcommand help pages
-are captured in `notes/sdk-interfaces/fm-help-27.0.txt`. `xcrun --find fm` may still fail because
-the binary belongs to the OS, not Xcode. The guide now uses the captured eight-command surface:
-`guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`.
+- [ ] Run `./scripts/capture-apple-docs-watch.py --output artifacts/freshness/apple-docs/<unique-run-id>` before changing the guide. The overview and member captures must agree; inspect their hashes and argument types.
+- [ ] Compare the fresh FoundationModels declaration with the overview and member documentation. The current sequence overload is `resolved(in: some Sequence<Transcript.Entry>)`; a whole-Transcript overload is not a mechanical rename.
 
-- [ ] On each new macOS beta, re-run `scripts/dump-sdk-interfaces.sh` and compare the captured
-  `fm` help body. The script resolves `fm` through `xcrun` and falls back to `/usr/bin/fm` on
-  its own (the binary belongs to the OS, so `xcrun --find fm` may still fail); if the capture
-  comes back empty, verify `/usr/bin/fm` by hand.
-- [ ] Recheck the still-open runtime surface: interactive slash commands, refusal/error exit
-  behavior, and field-level Chat Completions compatibility.
+## 5. MetalPerformancePrimitives — headers and availability
 
-## 3. Evaluations — Xcode-bundled today; watch for an OS-SDK move and tvOS
-
-`Evaluations.framework` ships **inside Xcode, not in the OS SDKs** — the 27.0 beta
-SDKs contain no trace; it lives under
-`Xcode-beta.app/…/Platforms/<Platform>.platform/Developer/Library/Frameworks/` and is
-**absent for AppleTVOS** (99 `@available(tvOS, unavailable)` marks). Cited in
-`guides/part-06-evaluations/README.md` (callout, lines ~13–21) and
-`guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md` (lines
-~7–28). `dump-sdk-interfaces.sh` already checks Frameworks/, SubFrameworks/ and the
-Xcode fallback in that order, so a move shows up as a changed path in its output.
-
-- [ ] Did it enter the OS SDK?
-  ```bash
-  ls "$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks" | grep -i evaluations
-  ```
-- [ ] Did tvOS appear?
-  ```bash
-  grep -c 'tvOS, unavailable' notes/sdk-interfaces/Evaluations-*-macos.swiftinterface
-  ls "/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/Library/Frameworks" | grep -i evaluations
-  ```
-
-## 4. `ImageReference.resolve(in:)` vs `resolved(in:)` — resolved; watch for regression
-
-The beta-4 interface has **only** un-deprecated `resolve(in: Transcript)`; beta 5 and Xcode 27.0
-final (`27A266a`) instead have **only** un-deprecated
-`resolved(in: some Sequence<Transcript.Entry>)`. On 2026-10-05, Apple's default overview and the
-separate member page both documented the sequence spelling. A 2026-07-27 changes view retained the
-whole-`Transcript` overload as deprecated history; preserve that provenance, but do not treat it as
-part of the current surface.
-Tracked at
-`guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md`
-§7.6.
-
-- [ ] During each weekly docs watch, archive and compare both live pages before changing the guide:
-  ```bash
-  run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  ./scripts/capture-apple-docs-watch.py \
-    --output "artifacts/freshness/apple-docs/$run_id"
-  ```
-  The command preserves the exact Markdown responses, their SHA-256 hashes, and extracted method
-  spellings in `manifest.json`; it exits nonzero if the two pages disagree or stop documenting
-  `resolved(in:)` exclusively.
-- [ ] After each SDK re-dump:
-  ```bash
-  grep -n 'func resolved\?(in' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface
-  ```
-  If both spellings reappear or the sequence spelling gains a deprecation, update §7.6 —
-  and mind the argument-type difference the guide warns about
-  (`some Sequence<Transcript.Entry>` — satisfied by `Transcript.HistoryView` — vs whole
-  `Transcript`), so no mechanical rename.
-
-## 5. MetalPerformancePrimitives — availability still macro-only? conv2d still excluded?
-
-MPP has no `.swiftinterface` (C++ headers), so `diff-interfaces.sh` does not cover it —
-check the headers directly. Two watches, both from the 2026-07-29 pass (NEEDED item 6):
-per-symbol availability is **macro-only** (`__TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET_27_0`
-gates the 22 new matmul dtype rows; gap at
-`guides/part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md`
-lines ~281–291), and **`convolution2d` gets none of the new formats**
-(`guides/part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md`
-line ~271; related gap at line ~458).
-
-- [ ] ```bash
-  MPP="$(xcrun --sdk macosx --show-sdk-path)/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers"
-  grep -rn 'TENSOR_OPS_SUPPORT_DEPLOYMENT_TARGET' "$MPP" | head    # new gate macros = new ladder rung
-  grep -rln 'e2m1\|e4m3\|e5m2' "$MPP"                              # do the fp4/fp8 rows reach conv2d files?
-  ```
-- [x] ~~Also still pending on THIS machine (NEEDED item 6): the `static_slice` and `-std=metal`
-  questions in guide 11.1.~~ **Resolved 2026-07-31** (NEEDED item 6: `static_slice` does not
-  exist — the real API is `slice<...>`; the tensor macros are `-std`-gated, measured per version)
-  and folded into guide 11.1. Per beta, only re-check that the compiler's answers hold.
+- [ ] Inspect C++ headers directly for per-feature deployment macros and supported matmul/convolution formats; Swift interface diffs do not cover MPP.
+- [ ] Recheck compiler language-mode gates and `slice<...>` if relevant headers changed.
 
 ## 6. FoundationModels error/tool surface drift
 
-Three separate hedges, all answerable from the fresh dump + one runtime probe:
-
-- [ ] **`GenerationError` per-case deprecation messages** — the 27.0 interface keeps
-  deprecated `GenerationError` (`introduced: 26.0, deprecated: 27.0`, interface
-  `:3466-3510`) with a migration message on every case; the §4 mapping table in
-  `guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md`
-  (lines ~726–737, summary table line ~3261) is built from them. Watch for reworded
-  messages or a removed case:
-  ```bash
-  sed -n '3466,3510p' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface   # line range moves with each beta — re-locate with: grep -n 'enum GenerationError' …
-  ```
-  (or just read the `diff-interfaces.sh` FoundationModels drift lines — `@available`
-  and `case ` lines are exactly what the filter keeps).
-- [ ] **`LanguageModelError` case drift** — nine cases as of `27A5228h` (NEEDED item 5,
-  destinations mapped in part-17 ref 03 §4). Any added/removed case shows in the
-  FoundationModels drift output; re-count with:
-  ```bash
-  awk '/enum LanguageModelError/,/^}/' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -c 'case '
-  ```
-- [ ] **`Tool.includesSchemaInInstructions` still non-inlinable?** The default body is
-  invisible in interfaces (extension at `FoundationModels` interface `:3067-3073`; guide
-  `guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md`
-  §4.4, line ~815). If a beta makes it `@inlinable`, the default value becomes
-  readable in the interface; the runtime probe in `probes/` has already measured the default
-  (`true`, 2026-07-31, both the 26.5 host and the 27.0 sim runtime) — re-measure per beta:
-  ```bash
-  grep -n -A3 'includesSchemaInInstructions' notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface | grep -B1 -A3 '@inlinable'
-  ```
+- [ ] Compare `GenerationError` deprecation messages, `LanguageModelError` cases, and `Tool.includesSchemaInInstructions` declarations. Runtime-only defaults require a matching probe, not an inferred interface body.
 
 ## 7. Speech — `AssetInventory.Status` case order
 
-The enum is `Comparable`; the case **declaration order differs between the 26.5 and
-27.0 captures**, so if `<` is synthesized the ordering changed between OS generations.
-Gap at `guides/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md`
-§5.2 (line ~1126), probe list item 6 (line ~2993), gap table **G2** (line ~3871).
+- [ ] Compare the fresh declaration and runtime ordering. Preserve the OS 26/27 ordering difference where migration code depends on it.
 
-- [ ] Per beta, has the 27-side order changed again?
-  ```bash
-  grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-26.5-macos.swiftinterface
-  grep -n -A8 'enum Status' notes/sdk-interfaces/Speech-27.0-macos.swiftinterface
-  ```
-- [x] The definitive answer stays a runtime probe on both OS generations — an interface cannot
-  distinguish a synthesized `<` from a hand-written one. The probe now exists and has run
-  (2026-07-31): `speech.assetInventory-status-order` in
-  `probes/Tests/ProbesTests/SpeechProbes.swift` measured **26.5 host:
-  `unsupported<supported<downloading<installed`; 27.0 sim:
-  `unsupported<downloading<supported<installed`** — `<` is synthesized and the ordering really
-  changed (guide 16.1 §5.2 / G2 closed). The 26-generation order held on the 26.6 host
-  (re-measured 2026-08-03). Re-run per beta and compare against `probes/README.md`.
+## 8. AppIntents — annotation versus captured surface
 
-## 8. AppIntents — the 26.4-annotation-vs-26.5-capture oddity
+- [ ] Compare annotation floors with the actual supported SDK declaration. A missing declaration in an older capture must not be silently rewritten as runtime unavailability.
 
-The 27.0 interface annotates the new execution-model surface
-(`IntentValueRepresentation`, `IntentCancellationReason`, `performBackgroundTask`…)
-`@available(anyAppleOS 26.4, *)` — **yet none of it appears in this repo's 26.5
-capture**. Noted in
-`guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md` §13 (line
-~2664–2668) and gap rows G4/G9 (lines ~3505–3510). Either the 26.5 SDK genuinely lags
-its own OS availability, or the capture caught an odd slice.
+## Manual evidence
 
-- [ ] Does a fresh dump on a newer 26.x-SDK Xcode (or the next 27 beta's view of 26.x)
-  make them appear?
-  ```bash
-  grep -cn 'IntentValueRepresentation\|IntentCancellationReason' notes/sdk-interfaces/AppIntents-26.5-macos.swiftinterface   # 0 today
-  grep -cn 'IntentValueRepresentation\|IntentCancellationReason' notes/sdk-interfaces/AppIntents-27.0-macos.swiftinterface   # non-zero today
-  ```
-- [ ] If a later 26.x capture materializes them, the "not in 26.5" hedges in part-16
-  §13 need their wording tightened from "SDK absent" to "26.5-interface absent".
-
----
-
-Everything above feeds the same loop: dump → diff → edit guides → re-run
-`refresh-defect-statuses.sh` → rebuild indexes. The original macOS-27 and physical-device
-dependencies are closed; the remaining manual Instruments lane-name capture stays in
-`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md`.
+[Instruments recording](../probes/INSTRUMENTS-RECORDING.md) owns rendered UI labels and Core AI lane/metric names. Keep this checklist actionable; put current results in the manifest and retained evidence, not an event log here.

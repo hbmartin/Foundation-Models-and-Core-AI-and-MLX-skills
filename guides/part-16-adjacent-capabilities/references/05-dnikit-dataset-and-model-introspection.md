@@ -71,39 +71,11 @@ alive is the TF2/Keras one.
 
 ## What this covers
 
-- **§1 — Should you read this at all.** A five-line decision, and the one workflow where the answer
-  is unambiguously yes.
-- **§2 — Install, versions, and the environment that actually works.** Three version-locked
-  distributions, five extras, one packaging bug, and a Python release that is specifically broken.
-- **§3 — Producer → PipelineStage → Introspector.** The architecture, and *why* it is shaped that
-  way: lazy streaming over datasets too large to hold in memory. Plus the four places DNIKit
-  abandons streaming and loads everything into RAM anyway.
-- **§4 — `Batch`.** The universal container: fields, snapshots, metadata, standard keys, and the
-  frozen-array invariant that bites PyTorch users.
-- **§5 — `Model` and the framework backends.** What TF2/Keras 3 supports, what TF1 supports, why
-  the PyTorch package is data-adaptors-only, and the fact that **Core ML is not supported at all**.
-- **§6 — The introspectors.** `DimensionReduction`, `Familiarity`, `Duplicates`, `IUA`, and
-  **`PFA` — Principal Filter Analysis**, which is the reason a compression engineer should care.
-  Plus `DatasetReport`, which bundles four of them into one pandas DataFrame.
-- **§7 — One complete worked example, end to end.** CIFAR-10 through MobileNet, cached, reduced,
-  audited for duplicates and rare data, then a PFA recipe. Runnable top to bottom.
-- **§8 — The pre-flight workflow for Parts 8–10.** Audit the dataset, audit the network, prune,
-  *then* convert. With the handoff points named.
-- **§9 — What is explicitly not here.** So you do not go looking.
-- **§10 — Consolidated footguns.**
-- **§11 — Declared gaps.**
+Inspect vision datasets and model activations with DNIKit producers, pipeline stages, and introspectors. Use duplicate/familiarity analysis and Principal Filter Analysis before compression. Check the backend limitations first: this is not a direct MLX, Core ML, or Core AI integration.
 
 ## What this does *not* cover
 
-- **Symphony**, the interactive UI that consumes `DatasetReport`'s DataFrame. It lives in a
-  different repository (`apple/ml-symphony`) that we did not clone. §6.6 documents the column
-  contract DNIKit emits; the widget API is a declared gap (§11, G6).
-- **The PFA paper's mathematics.** We cite it (§6.5) and describe the strategies operationally.
-  The derivation is in the WACV 2020 paper.
-- **Anything on-device.** For evaluating a *shipping* model's quality, you want
-  [Part 6 — Evaluations](../../part-06-evaluations/), which is a completely different framework
-  with a completely different purpose. DNIKit runs before training finishes; Evaluations runs after
-  the app is built.
+Related references: [Part 6 — Evaluations](../../part-06-evaluations/).
 
 ## What you need
 
@@ -123,25 +95,7 @@ alive is the TF2/Keras one.
 
 ## Evidence markers used in this guide
 
-> ✅ **VERIFIED** — read out of the `apple/dnikit` repository this session: source file, test file,
-> docstring, `pyproject.toml`, or the repo's own Sphinx `.rst`. Citation attached.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested in the repo but the exact spelling or behaviour is
-> inferred from surrounding code rather than read directly.
->
-> 🔴 **GAP** — could not verify. The box names what is unknown, what would resolve it, and what to
-> do in the meantime.
->
-> ⚠️ **SILENT FAILURE** — it does not throw. This guide has five.
-
-**One caveat that applies to every code block below.** The research pass that produced our notes
-read the repository exhaustively — 60+ source files, 8 test files, 20 `.rst` pages, and all seven
-notebooks' code cells dumped verbatim — but **executed nothing**. TensorFlow was not installed in
-that session. So every listing here is ✅ VERIFIED *as source that exists in the repo*, and
-**UNVERIFIED as something that runs today under TF 2.16+/Keras 3.** §11 G1 is explicit about this.
-Treat the code as a faithful transcription, not as a smoke-tested recipe.
-
----
+See the [shared evidence conventions](../../README.md#evidence-conventions). The examples are transcribed from the cited DNIKit source and notebooks; that research pass executed none of them. Runtime compatibility under TF 2.16+/Keras 3 remains unverified (§11 G1).
 
 ## Contents
 

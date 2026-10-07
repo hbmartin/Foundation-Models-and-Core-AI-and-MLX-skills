@@ -4,19 +4,7 @@
 
 ## What this covers
 
-Everything that can go wrong between "I called `session.respond(to:)`" and "the user saw something
-useful", organised as a taxonomy: **symptom → cause → fix**. Availability gating — proactive and
-reactive, because Apple's 2026 samples quietly abandoned the first — the four error enums that
-replaced one in 2026 plus the fifth error type that is in none of them, the *two distinct refusal
-mechanisms* that almost everyone conflates, guardrail configuration and its documented blind spot
-(which Apple's own sample code falls into), context-window overflow, the
-undocumented error domains people are actually hitting in the betas, Private Cloud Compute quota
-handling, and how to file a bug that Apple will act on. It ends with a complete, copyable
-error-handling function.
-
-This is the largest and longest-running pain cluster in the Apple Developer Forums — threads span
-June 2025 to July 2026 with no resolution. It blocks more readers than any API gap, which is why it
-sits early in Part 2 rather than at the end.
+Diagnose availability, generation errors, refusals, guardrails, context overflow, and PCC quota failures. Use the symptom/cause/fix tables and the complete error-handling function.
 
 ## What you need
 
@@ -1816,16 +1804,7 @@ the last (most recent context):
 
 > ✅ **VERIFIED (Apple docs)**:
 
-```swift compile:27 imports:FoundationModels
-func newContextualSession(with originalSession: LanguageModelSession) -> LanguageModelSession {
-    let allEntries = originalSession.transcript
-    let condensedEntries = [allEntries.first, allEntries.last].compactMap { $0 }
-    let condensedTranscript = Transcript(entries: condensedEntries)
-    let newSession = LanguageModelSession(transcript: condensedTranscript)
-    newSession.prewarm()
-    return newSession
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#123-apples-documented-recovery-verbatim).
 
 > *"The first transcript entry often contains important instructions and the last entry contains the
 > most recent context. By preserving the first and last entry, you maintain continuity while
@@ -2120,30 +2099,15 @@ One genuine API ambiguity is visible in that snippet: `toolCallingMode` exists i
 modifier that a Frameworks Engineer recommended in thread 833692 (*"You can use `.toolCallingMode`
 with `DynamicProfiles` for this."*).
 
-> ✅ **RESOLVED on the type question (2026-07-29): yes, one type.** The profile modifier is declared
-> `func toolCallingMode(_ toolCallingMode: GenerationOptions.ToolCallingMode?) -> some
-> DynamicProfile` — the *same* `GenerationOptions.ToolCallingMode` struct as the options field —
-> ✅ **SDK-verified** (`FoundationModels-27.0-macos.swiftinterface:978`, with the struct and its
-> `Kind` at `:3293-3313`: statics `.allowed`/`.required`/`.disallowed` over
-> `case allowed/required/disallowed`). The dynamic-profiles article's general rule says call-site
-> arguments override profile modifiers, and the runtime now confirms it.
->
-> ✅ **DEVICE-CONFIRMED, one direction (2026-08-20).** On iPhone 15 Pro / iOS build `24A5408d`,
-> profile `.required` + options `.disallowed` produced no tool call — the recorded probe line reads
-> `toolCalled=false toolRan=false`. So call-site options override the profile modifier in the
-> profile-allows → options-disallow direction. The earlier simulator run pointed the same way but
-> lacked tool-calling assets.
->
-> 🔴 **GAP — the reverse direction is an inference, not a recorded observation.**
-> **Unknown:** whether options `.required` actually overrides a profile's `.disallowed`. That run
-> threw `LanguageModelError.contextSizeExceeded(contextSize: 4096, tokenCount: 4099)`, and the
-> probe's catch path did not record the `toolCalled`/`toolRan` discriminators — "the tool loop ran
-> until overflow" is read off the error fingerprint alone.
-> **What resolves it:** the probe has been updated to record the discriminators in its catch path;
-> the next device run turns the fingerprint into an observation.
-> **Safe default:** assume call-site `.required` *can* override a profile-level `.disallowed` —
-> never rely on a profile's `.disallowed` as an enforcement boundary — while not treating the
-> override as device-verified in that direction.
+> ✅ **SDK-verified — profile and call-site options share `GenerationOptions.ToolCallingMode`.**
+> The profile modifier accepts this same optional type
+> (`FoundationModels-27.0-macos.swiftinterface:978,3293-3313`). Apple's dynamic-profiles article says
+> call-site arguments override profile modifiers.
+> On iPhone 15 Pro / `24A5408d` (2026-08-20), profile `.required` plus options `.disallowed` recorded
+> `toolCalled=false toolRan=false`. The reverse run overflowed at 4099 tokens in a 4096-token context
+> without recording these discriminators, so that direction remains unverified. The probe now records
+> them on errors. Treat profile `.disallowed` as configuration, not an enforcement boundary, until the
+> reverse direction is measured.
 
 ### 7.5 `ToolCallError` and "Failed to parse generated content"
 

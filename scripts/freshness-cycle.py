@@ -517,7 +517,7 @@ def action_candidates(
             continue
         live_url = reference.get("liveUrl")
         candidates.append({
-            "id": f"defect:{reference.get('ref', '?')}",
+            "id": f"defect:{reference.get('registryId', reference.get('ref', '?'))}",
             "source": "defect-report",
             "summary": triage.get("summary") or f"Review {reference.get('ref', 'defect')}",
             "confidence": triage.get("confidence", reference.get("confidence", 0)),

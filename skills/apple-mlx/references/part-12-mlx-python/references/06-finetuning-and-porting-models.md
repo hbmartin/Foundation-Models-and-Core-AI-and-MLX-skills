@@ -2,71 +2,17 @@
 
 **Part 12 · MLX in Python · Reference 06**
 
-**Version floor.** This guide is about a Python package, not an OS framework, so the floor has two
-halves. **Software:** `mlx-lm` **0.31.3** (`mlx_lm/_version.py`) against `mlx` **>= 0.31.2**
-(`setup.py`, `MIN_MLX_VERSION`), with `transformers >= 5.7.0`. Every signature below was read from
-a clone of `ml-explore/mlx-lm` at commit `e5baded` (2026-07-26) and `ml-explore/mlx` at
-`MLX_VERSION 0.32.1`. **Hardware/OS:** MLX from PyPI needs Apple silicon, a *native* Python
->= 3.10, and **macOS >= 14.0**; memory wiring — which `mlx_lm.lora` turns on unconditionally —
-needs **macOS >= 15.0**. Nothing in this guide requires macOS 27 or iOS 27, and nothing in it runs
-on a phone: see §8.6. The consumer-side stories that *do* need OS 27 are
-[Part 13](../../part-13-mlx-swift/README.md) (running your adapter from Swift) and
-[Part 14](../../part-14-bridges-between-stacks/README.md) (converting the result to Core AI).
-
-**A caution about freshness that applies to this whole part.** The clone is `--depth 50`, so `git
-log` on most paths returns only the graft boundary; treat no date here as authoritative except the
-two commit dates named above. PyPI's newest `mlx-lm` is 0.31.3 from **April 2026** while `main` has
-months of merged fixes on top of it, so a reader on `pip install mlx-lm` is running older code than
-this guide describes. Where that matters, the text says so.
+**Current release:** mlx-lm **0.32.0** ([release manifest](https://github.com/ml-explore/mlx-lm/blob/a9bd8af5c02118882af735cef60705d2efce9fd0/pyproject.toml), checked 2026-10-07): Python ≥ 3.11, MLX ≥ 0.32.2 on Darwin, and `transformers ≥ 5.7.0`. MLX wheels require Apple silicon and macOS ≥ 14.0. Fine-tuning memory wiring requires macOS 15. Detailed signatures retain the `e5baded` snapshot; Swift execution and Core AI conversion have separate platform requirements.
 
 ---
 
 ## What this covers
 
-Two jobs that look unrelated and are not. **Adapting a model you already have** (LoRA, DoRA, full
-fine-tuning, fusing) and **teaching mlx-lm about a model it has never seen** (the `models/` file
-convention, weight mapping, parity checking). They belong in one guide because the second one is
-what you end up doing when the first one fails with `Model type <x> not supported.`
-
-- **Why this guide exists at all now.** Foundation Models' custom LoRA adapters are **discontinued
-  in OS 27** — two independent Apple-staff statements, §0. That removes the sanctioned on-device
-  adaptation path for the system model and leaves MLX's LoRA/DoRA as the surviving one.
-- **The data format**, all four of it, and the exact detection order that decides which one you got.
-- **The complete flag surface of `mlx_lm.lora`**, including the ten flags that only exist in YAML.
-- **What LoRA, DoRA and `--fine-tune-type full` actually compute**, from the module source, because
-  the difference between them is three lines of arithmetic and a large difference in cost.
-- **QLoRA** — training against a quantized base — and the one-line trick (`input_dims * 32 //
-  bits`) that makes it work.
-- **Rank, scale (mlx-lm's "alpha"), and target-module selection**, with the parameter-count
-  arithmetic the test suite asserts.
-- **Learning rate, warmup, schedules, and the five optimizers.**
-- **Memory, at length**, because it is the binding constraint: the three levers, gradient
-  checkpointing's real mechanism (and its process-wide side effect), and what OOM looks like.
-- **Checkpointing, resuming, and exactly what lands in `adapters/`.**
-- **Evaluating**: test perplexity, `mlx_lm.perplexity`, `mlx_lm.evaluate`, and generation A/B.
-- **`mlx_lm.fuse`**, and the capability you give up by running it.
-- **One complete worked run**: prepare → train → evaluate → fuse → convert → serve.
-- **Porting a new architecture**: the file-naming rule, the `Model` contract, `sanitize()`, RoPE and
-  norm variants, cache interaction, and how to verify parity against the reference implementation.
+Fine-tune with LoRA or DoRA, validate and fuse adapters, or add a model architecture to mlx-lm. Memory and tokenizer requirements are covered beside each workflow.
 
 ## What this does *not* cover
 
-- **Learned quantization** (`mlx_lm.dwq`, `awq`, `gptq`, `dynamic_quant`). Those are quantization
-  algorithms that happen to use gradients; they are covered in this part's quantization guide.
-- **`mlx_lm.server`, batching, prompt caching, distributed serving.** This part's serving guide.
-- **RLHF/DPO/GRPO — in `mlx_lm` itself.** mlx-lm ships
-  `batch_generate(return_logprobs=..., return_token_ids=...)`
-  explicitly for "reinforcement learning (e.g. RLOO, PPO) where behavior log-probabilities are
-  needed for importance weighting" (docstring, `generate.py`) — but no RL trainer. There is no
-  preference-optimization command in this package at this commit. **That remains true and is the
-  reason this guide stops at SFT.** It is *not* the same as saying preference optimisation is
-  unavailable on Apple silicon: a third-party layer built on top of mlx-lm provides it, and
-  **§13 now maps that layer** so the boundary is a deliberate scope choice rather than an
-  apparent hole.
-- **Vision-language fine-tuning.** `mlx_lm` is text-only; `save_config` even deletes
-  `vision_config` from any config it writes (§9.4). VLM work lives in `mlx-vlm`, out of scope.
-- **Running the adapter from Swift** — [Part 13](../../part-13-mlx-swift/README.md) — or converting the fused
-  model to Core AI — [Part 14](../../part-14-bridges-between-stacks/README.md).
+Related references: [Part 13](../../part-13-mlx-swift/README.md), [Part 14](../../part-14-bridges-between-stacks/README.md).
 
 ## What you need
 
@@ -87,27 +33,7 @@ what you end up doing when the first one fails with `Model type <x> not supporte
 
 ## Evidence ladder used in this guide
 
-Ranked strongest first, and every claim below carries a marker.
-
-1. **Source read on disk this session** — the `ml-explore/mlx-lm` and `ml-explore/mlx` clones. For
-   MLX this outranks everything, including MLX's own documentation site, because the package moves
-   weekly and the docs lag it. Citations are `path:line`, valid at commit `e5baded`.
-2. **The MLX documentation site crawl**, for `mlx.core` / `mlx.optimizers` surface that mlx-lm only
-   *calls*.
-3. **Apple documentation, WWDC26 transcripts, and Apple-staff Developer Forums answers** — used
-   here only for §0, the adapter sunset.
-4. **GitHub issues/PRs with maintainer replies**, always cited by number.
-5. **Community measurements**, always labelled as such.
-
-> ✅ **VERIFIED** — quoted from a file read this session, citation attached.
-> 🟡 **RECONSTRUCTED** — the mechanism is attested but the exact spelling or number is inferred.
-> 🔴 **GAP** — not verified. The box says what is unknown, what would resolve it, and what to do
-> in the meantime.
-
-⚠️ **Line numbers drift.** Every `file:line` below is from commit `e5baded`. If you are on a
-different checkout, grep for the symbol, not the line.
-
----
+Source/API citations below retain mlx-lm revision `e5baded`; search for the symbol when using another revision, because line numbers drift. Current package requirements are stated above. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 ## Contents
 
@@ -243,75 +169,13 @@ See §8.6 for the details and the two open issues behind it.
 
 ### 1.1 The install line
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install "mlx-lm[train]"
-pip install rich regex          # ⚠️ undeclared but imported at module scope — see below
-```
+Install `mlx-lm[train]` with Python ≥ 3.11. The 0.32.0 release manifest requires MLX ≥ 0.32.2 on Darwin and `transformers ≥ 5.7.0`; CUDA/CPU installs use their corresponding extras. Memory wiring requires macOS 15.
 
-> ✅ **VERIFIED** — `setup.py`, read this session:
-> ```python
-> MIN_MLX_VERSION = "0.31.2"
-> install_requires=[
->     f"mlx>={MIN_MLX_VERSION}; platform_system == 'Darwin'",
->     "numpy", "transformers>=5.7.0", "sentencepiece", "protobuf", "pyyaml", "jinja2",
-> ],
-> extras_require={
->     "test": ["datasets", "lm-eval"],
->     "train": ["datasets", "tqdm"],
->     "evaluate": ["lm-eval", "tqdm"],
->     "cuda13": [...], "cuda12": [...], "cpu": [...],
-> },
-> python_requires=">=3.8",
-> ```
-
-Four observations that matter for a training box:
-
-1. **`mlx` is only pinned on Darwin.** `platform_system == 'Darwin'` guards it. On Linux you get
-   MLX through `pip install "mlx-lm[cuda13]"` / `[cuda12]` / `[cpu]`. mlx-lm is no longer an
-   Apple-silicon-only package — but everything about *memory behaviour* in this guide is written
-   for unified memory on Apple silicon, and the CUDA path has its own failure modes.
-2. **`transformers >= 5.7.0`.** That is a major-version step past the 4.x era that most fine-tuning
-   tutorials were written against; tokenizer and chat-template APIs differ. Commit `c89c93c`
-   ("transformers>=5.7 (#1356)") made the bump.
-3. **`python_requires=">=3.8"` is wrong.** ✅ VERIFIED: `mlx_lm/quant/awq.py` and the tool parsers
-   use PEP-604 `X | None` annotations and `cli_ui.py` uses `list[tuple[str, str]]`, all of which
-   need **3.10** at runtime. MLX's own docs also state a **native Python >= 3.10** requirement.
-   Use 3.11 or 3.12.
-4. **The `train` extra gives you `datasets` and `tqdm` — and nothing else.** `rich` and `regex` are
-   imported at module scope by code `mlx_lm.lora` reaches on line one.
-
-> ⚠️ **The first thing that will go wrong.** On a bare `pip install mlx-lm`:
-> ```
-> $ mlx_lm.lora --model ... --train --data ./data
-> ModuleNotFoundError: No module named 'rich'
-> ```
-> ✅ VERIFIED by import chain: `mlx_lm/lora.py:16` does
-> `from .cli_ui import make_console, print_lora_run_header, rprint`, and `mlx_lm/cli_ui.py` imports
-> `rich.console`, `rich.progress`, `rich.panel`, `rich.theme` at module scope. `rich` appears
-> nowhere in `install_requires`. Same story for `regex` in `mlx_lm/tool_parsers/*.py`
-> (`import regex as re`). Whether the published PyPI wheel adds them is 🔴 **UNVERIFIED** from this
-> clone — the `setup.py` on disk does not.
+The 0.32.0 source still imports `rich` through `cli_ui.py` and `regex` through the tool parsers, while the release manifest omits both. Install them explicitly for training/chat/tool workflows. The `train` extra adds `datasets` and `tqdm`.
 
 ### 1.2 Versions on disk, and the PyPI gap
 
-| Component | Value | Source |
-|---|---|---|
-| `mlx-lm` | **0.31.3** | `mlx_lm/_version.py` (✅ read) |
-| `mlx` (this clone) | **0.32.1** | `mlx/version.h` `MLX_VERSION_{MAJOR,MINOR,PATCH} = 0,32,1` (✅ read) |
-| `mlx` minimum for mlx-lm | **0.31.2** | `setup.py` (✅ read) |
-| newest `mlx-lm` on PyPI | **0.31.3**, released **2026-04-22** | `notes/repos/issues-mlx-stack.md` §0, `gh release list` |
-| newest `mlx` release | **v0.32.0**, 2026-07-07 (dev line patched to 0.32.1) | same |
-
-> ⚠️ **The PyPI gap is the single most common cause of "the guide is wrong".** mlx-lm 0.31.3 is
-> from April; `main` has months of merged fixes on top of it. `notes/repos/issues-mlx-stack.md`
-> records that several issues *explicitly distinguish* "0.31.3 release" vs "current main". Also
-> noted there: **mlx-lm 0.31.0 was yanked** for "BatchKV cache cross-contamination". If you are
-> reproducing this guide exactly, install from the repo:
-> ```bash
-> git clone https://github.com/ml-explore/mlx-lm && cd mlx-lm && pip install -e ".[train]"
-> ```
-> and record the commit hash in your run notes. Every number you produce is meaningless without it.
+Current released baselines are mlx-lm **0.32.0** and MLX **0.32.3** (checked 2026-10-07). Examples retain the inspected `e5baded` / `973e27f` source snapshots. Record the installed versions and any immutable source pin with training results; do not use an unpinned `main` checkout to reproduce a measurement.
 
 ### 1.3 Sanity check before you spend an hour on a training run
 
@@ -1302,6 +1166,10 @@ Three effects, in decreasing order of how often they bite:
    adapter. If your evaluation shows the fine-tune is worse than expected, re-run the *baseline*
    evaluation on the quantized base before blaming the adapter.
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:issue:3887 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
+<!-- defect-ref:ml-explore.mlx-lm:pull:1585 -->
 > ⚠️ **A quantization correctness caveat you must know about if you are on M5 or A19.**
 > `notes/repos/issues-mlx-stack.md` §4.1 documents **mlx#3856** (closed completed 2026-08-26;
 > open at research time): affine
@@ -1319,10 +1187,8 @@ Three effects, in decreasing order of how often they bite:
 
 ### 5.4 The NAX caveat, stated sharply
 
-Three NAX (neural-accelerator) correctness fix PRs opened against `ml-explore/mlx` in the **three
-days** before 2026-07-27 — `#3912`, `#3922`, `#3924`; the first two **still open**, #3924 **closed
-unmerged 2026-08-02**, on a 2026-08-03 `gh` re-check — including a **missing `else` in `tile_matmad_nax` that silently
-miscompiles odd tile shapes**. NAX is the newest code path in the stack and it is sharp-edged.
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+PR #3924 closed without merge; odd `tile_matmad_nax` shapes require numerical validation. MLX 0.32.3 contains the #3912/#3922 source fixes, but source inclusion alone does not establish remediation for your training workload.
 
 > **Safe default while this settles.** If your fine-tune produces a loss curve that looks *fine*
 > but generations that look wrong, and you are on M5-generation hardware, re-run a handful of
@@ -1977,6 +1843,8 @@ stays; the mitigations above are the whole toolbox.
 
 **On a phone: you cannot hit any of this, because you cannot get there.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3665 -->
+<!-- defect-ref:ml-explore.mlx:issue:3915 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md` §10:
 > **mlx#3665 (OPEN)** — *"MLX doesn't publish iOS-compatible wheels."* Filed by a CPython core
 > developer who authored PEP 730 (iOS support) and maintains Briefcase; as of Python 3.14, Python
@@ -2298,7 +2166,7 @@ And remember §3.7: on the `run()` path your own callback is discarded.
 `step()` calls `average_gradients(grad)` before the optimizer update (✅ `trainer.py:134-137`,
 `254`). Launch it under `mlx.launch`.
 
-> ✅ **VERIFIED** — `notes/CORRECTIONS-PENDING.md` C10.4, from a WWDC26 session:
+> ✅ **VERIFIED** — `notes/transcripts/missing-sessions.md` (MLX distributed session), from a WWDC26 session:
 > `mlx.launch --hostfile <f> -- /remote/path/to/<exe> <args>`; the hostfile is a **JSON array of
 > `{ssh, ips[], rdma[]}`** where `rdma` is a positional adjacency matrix with `null` on the
 > diagonal; configured via
@@ -2894,7 +2762,7 @@ it only implements basic security checks."* (✅ `notes/repos/mlx-lm.md` §2.6.)
 - **To Core AI** — `./fused-bf16` is the input a converter wants.
   [Part 14](../../part-14-bridges-between-stacks/README.md).
 - **Behind a `LanguageModelSession`** — point `ChatCompletionsLanguageModel` at
-  `http://localhost:8080/v1`. [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), and note C4:
+  `http://localhost:8080/v1`. [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), and the backend logits constraint:
   guided generation needs logits, which not every backend exposes.
 
 ---

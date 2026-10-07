@@ -4,7 +4,7 @@
 
 **Version floor.** Everything in this guide is **27.0 and only 27.0**: Core AI ships as
 `iOS 27.0+ · iPadOS 27.0+ · Mac Catalyst 27.0+ · macOS 27.0+ · tvOS 27.0+ · visionOS 27.0+ ·
-watchOS 27.0+`, every symbol carrying a **Beta** flag. You need **Xcode 27** for the debug gauge
+watchOS 27.0+`. The original documentation capture carried beta flags; the installed verification toolchain is Xcode 27 final. You need **Xcode 27** for the debug gauge
 and the Instruments template. **Core AI Debugger is a separate download** with its own floor: host
 **macOS 27 or later**, paired devices **iOS 27+, iPadOS 27+, or macOS 27+** (no visionOS, tvOS or
 watchOS in the paired-device list). On the Python side the debugging APIs described here need
@@ -12,65 +12,20 @@ watchOS in the paired-device list). On the Python side the debugging APIs descri
 is the closing story of this guide — alongside `coreai-core 1.0.0b3`, `coreai-opt 0.3.0`, and a
 pinned `torch==2.9.0`. Nothing here back-deploys to 26.x, because Core AI did not exist in 26.x.
 
-> ⚠️ **Read this before you trust any signature below.** Core AI has **zero Apple sample-code
-> projects** — verified: 0 `sampleCode` entries across all 312 indexed Core AI symbols, and
-> `/documentation/updates/coreai` returns 404. Unlike Parts 1–6 there is no compiling first-party
-> reference to check against. The strongest evidence for this guide is, in order: the shipped
-> repositories (`apple/coreai-torch`, `apple/coreai-optimization`, `apple/coreai-models`), Apple's
-> own agent skills inside those repos, Apple's documentation articles, and the WWDC26 transcripts.
-> Every claim below is marked ✅ VERIFIED / 🟡 RECONSTRUCTED / 🔴 GAP accordingly, and the GAPs are
-> real — **nobody in this corpus has run Xcode 27's Instruments or the Core AI Debugger by hand.**
+Interactive Instruments and Core AI Debugger walkthroughs remain unperformed locally. Their UI descriptions come from the cited Apple material, not a fresh manual recording. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
 
 
-Current model-export profile: `torch==2.9.0`, `torchao<0.18`, `coreai-core==1.0.0b3`,
-`coreai-torch==0.4.3`, `coreai-opt==0.3.0` (`coreai-models` at `db63a2d8`).
-These model-export constraints are narrower than the standalone compression requirements in Part 9.
+The `coreai-models` export profile also requires `torchao<0.18`; it is narrower than standalone compression in [Part 9](../../part-09-coreai-compression-numerics/README.md).
 
 ---
 
 ## What this covers
 
-Three tools, at three levels, answering three different questions about a model that is already
-converted:
-
-| | Question it answers | Where it lives | Cost to reach for |
-|---|---|---|---|
-| **Core AI debug gauge** | *Is anything happening, and is it happening when I expect?* | Xcode Debug navigator | free — it is already running |
-| **Core AI instrument** | *Where is the time going, on which compute unit, and how often?* | Instruments template | a profiling run |
-| **Core AI Debugger** | *Which operation is producing the wrong numbers, and which Python line wrote it?* | standalone macOS app | a download and a specialization |
-
-The spine of the guide is the two worked diagnoses Apple actually demonstrated on stage:
-
-- **A latency curve that grows** (WWDC26 session 324). Inference intervals visibly widening across a
-  trace exposed a transformer with no KV cache; after adding Core AI **states**, the same trace
-  showed latency growing far more slowly. This is the canonical "what a bad shape looks like in the
-  Instruments timeline" example, and it is one of the very few places where Apple showed a
-  *before and after* trace for the same app.
-- **A model load with a large specialization sub-event sitting in the middle of a user-interactive
-  flow** (WWDC26 session 326). One glance at the trace turned a mysterious spinner into a
-  deployment-architecture decision: first-run experience, Background Assets, ahead-of-time
-  compilation.
-
-and the one Apple demonstrated for numerics (session 325): a 4-bit quantization of SAM3 that
-silently stopped detecting an occluded flower, diagnosed in the Core AI Debugger by sorting sync
-points by similarity, noticing that the low-PSNR pairs clustered in the **detector decoder**,
-realising the detector is only **4% of the model's parameters**, and excluding it from the
-quantization scheme — baseline quality back, at a fraction of the size.
-
-Also covered: `coreai-opt`'s own inspection surface (`ModelInspector`, the activation-comparison
-SNR table, graph-mode troubleshooting), the programmatic layer in `coreai_torch.debugging` that
-does in Python what the Debugger does in a window, and — at the end — the incident that explains
-why **asset provenance** is a debugging concern and not a bookkeeping one.
+Use the Xcode gauge for activity, Instruments for timing and compute placement, and Core AI Debugger for operation-level numerical divergence. The worked diagnoses connect traces and activation comparisons to specific fixes.
 
 ## What this does *not* cover
 
-- **Making the model faster once you know where the time goes.** Compute-unit selection, chunking,
-  BC1S re-authoring and the three-function split are Part 10 reference 01 and Part 8.
-- **Choosing a compression scheme.** Part 9. This guide covers how to *find out* that your scheme
-  broke something; Part 9 covers what to do about it.
-- **`AIModelCache`, `coreai-build`, and the specialization lifecycle.** Part 7 reference 02. This
-  guide only shows you what specialization *looks like* in a trace.
-- **Foundation Models' Instruments template.** Different template, different lanes, Part 5.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 
@@ -614,30 +569,15 @@ Two inferences worth drawing from those strings, both of which change how you re
    specialization. If your model has a single `main` entrypoint and the trace shows several
    `func_NN` runs per inference, that is the specializer having split your graph, not a bug.
 
-> 🔴 **GAP — the on-screen lane and metric names in the Instruments UI are not confirmed by anyone
-> in this corpus.** Everything in §3.2–§3.5 comes from Apple's documentation prose, two `termList`s
-> recovered from raw DocC JSON, and screenshot alt-text. That is good evidence for *what exists* —
-> four instruments, four categories, three levels of track, these event-label formats — and weak
-> evidence for *what the strings look like on screen* in the Xcode 27 build you have. **Nobody here
-> has run Xcode 27's Instruments.** In particular: the detail-pane column set, whether there is a
-> per-compute-unit breakdown column for each Inference event, whether the template works against the
-> Simulator, and whether there is a cache-hit metric are all **unknown**.
->
-> **Narrowed 2026-07-29:** the template file itself was inspected in the Xcode 27.0 beta and its
-> four-instrument composition is now ✅ (see §3.2) — so *what exists* is settled. The on-screen
-> strings remain out of reach from the toolchain alone: Instruments streams instrument definitions
-> from the **recording target** at attach time (a sweep of the host Instruments.app finds none of
-> the known lane names), so no amount of host-side inspection produces them.
-> **Narrowed again 2026-07-31:** an OS 27 recording target now exists on this machine — the iOS
-> 27.0 Simulator runtime — but `xcrun xctrace record` against the booted simulator hangs for every
-> template on this macOS 26.5 host (measured with a Time Profiler control; `--no-prompt` set), so
-> headless capture is ruled out. Note also that **Core AI itself cannot run in the simulator** (the
-> CoreAI module is absent from the iPhoneSimulator27.0 SDK — guide 7.1), so even a GUI recording of
-> *this* template against the simulator would show the lane chrome but no Core AI events.
-> **Resolution:** one manual GUI Instruments recording — against the booted iOS 27.0 simulator for
-> the lane/metric *names*, or a real OS 27 device for names *and* live Core AI events. **Safe default meanwhile:** navigate by the four
-> category names above (they are Apple's own, and appear in event labels, not just legends), expand
-> every track to its function level, and do not script or automate against any string in the UI.
+> 🔴 **GAP — Core AI Instruments screen labels and detail columns still require a manual recording.**
+> Documentation, recovered DocC terms, and template inspection establish four instruments/categories
+> and event formats, but not the current UI strings, per-compute breakdown, cache-hit metric, or
+> simulator template behavior. The old macOS 26.5 headless capture hung even with a Time Profiler
+> control; that is dated evidence, not a current-host limitation.
+> Core AI executable events require supported real hardware; its module is absent from the
+> iPhoneSimulator SDK. Follow `probes/INSTRUMENTS-RECORDING.md` for one GUI recording on an OS 27
+> target. Navigate by documented categories and expand function tracks; defer UI-string automation
+> until the capture records actual labels.
 
 ---
 
@@ -1806,31 +1746,15 @@ The community-side ladder agrees on the bars and adds an investigation trigger:
 
 ### 10.6 ⚠️ The limit of a similarity metric
 
-> ⚠️ **SILENT FAILURE — an all-green sync-point board can coexist with a model that generates
-> different text.** This is the sharpest warning in this guide for anyone shipping an LLM.
->
-> Sync points are computed on a **single forward pass**. A language model does not run a single
-> forward pass; it runs a decoding loop, and the loop's output at step *t* becomes its input at step
-> *t+1*. A per-step error small enough to score 42 dB — comfortably inside Apple's "compiled vs
-> torch ≥ 40 dB" bar — can flip one `argmax` at step 12, after which the two models are generating
-> **different sequences** and every subsequent comparison is meaningless. Nothing in the debugger
-> notices, because the debugger never ran step 12.
->
-> The community's stack calls this out explicitly and gates on something else entirely:
->
-> > 🟡 **Community-measured** — `notes/repos/john-rocky-models.md`, contrasting Apple's PSNR-based
-> > skill with the zoo's own gate: the zoo verifies LLMs with **per-token cosine ≥ 0.999 *and*
-> > greedy token-exact match**, and states *"Step 1 looking fine is not a gate; AR drift shows up
-> > late."* Its reading of the difference, flagged in the source as the author's own inference and
-> > not a claim by either party: *"a **PSNR ≥ 40 dB 'compiled vs torch' pass can coexist with a
-> > non-token-exact LLM**, which is the failure the zoo's gate is built to catch."* Also measured
-> > there: *"fp16 per-token decode drifts ~5–10 dB / 50 tokens"*, which is the same phenomenon seen
-> > from the other side.
->
-> **What to do:** treat the debugger's sync points as necessary and not sufficient for autoregressive
-> models. Add a decode-level gate to your pipeline — a deterministic prompt, greedy decoding, and a
-> token-for-token comparison against the source model — and run it on every conversion. §13 shows the
-> Python pieces; the gate itself is your code, and it is thirty lines.
+<!-- callout-id: callout-12c5dd42c27f434c -->
+> ⚠️ **SILENT FAILURE — single-forward-pass numerical checks can miss autoregressive drift.**
+> A small per-step difference can flip a later greedy `argmax`, causing subsequent inputs and
+> generated tokens to diverge even when an earlier sync point passes the 40 dB PSNR bar. The community
+> evidence in `notes/repos/john-rocky-models.md` uses per-token cosine ≥0.999 plus greedy token-exact
+> match; these are that source's gates, not Apple's documented requirement.
+> Keep debugger sync-point checks and add a deterministic decode-level comparison against the source
+> model for every conversion. A passing first token or forward pass does not establish sequence
+> fidelity.
 
 ---
 

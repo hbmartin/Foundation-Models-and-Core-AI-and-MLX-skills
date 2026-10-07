@@ -2,81 +2,19 @@
 
 **Part 7 · Core AI: the Swift runtime · Reference 02**
 
-**Version floor: everything in this guide is 27.0 and only 27.0.** Core AI shipped as a brand-new
-framework in the 27 cycle — **iOS 27.0 · iPadOS 27.0 · Mac Catalyst 27.0 · macOS 27.0 · tvOS 27.0 ·
-visionOS 27.0 · watchOS 27.0**, every symbol flagged **Beta**. There is no 26.x back-deployment
-story, no `@available(iOS 26, *)` fallback, and no Core AI release-notes page to diff against —
-`/documentation/updates/coreai` returns **404**, and the word "Core AI" does not appear anywhere on
-Apple's Updates hub. Build with **Xcode 27**, and install the **Metal Toolchain** separately (§15)
-or your build will not compile at all. The command-line half of this guide — `xcrun coreai-build` —
-runs on **macOS 27** hosts.
+**Requirements:** Core AI requires OS 27.0 and Xcode 27, including the separately installed Metal Toolchain (§15). The `coreai-build` command runs on macOS 27. Specialization is hardware- and OS-specific; keep device validation separate from source inspection.
 
-> ⚠️ **Core AI has zero Apple sample-code projects.** Verified this cycle: 0 `sampleCode` entries
-> across all **312** indexed Core AI symbols. Unlike Foundation Models, there is no first-party
-> compiling reference you can open in Xcode and read. The strongest evidence available is Apple's
-> documentation prose, Apple's shipped repositories (`apple/coreai-models`, `apple/coreai-torch`,
-> `apple/coreai-optimization`) including the agent skills Apple wrote for those repos, and the
-> WWDC26 transcripts. Every claim below carries a marker saying which of those it came from, and
-> where nobody has run the thing, this guide says so instead of guessing.
+See the [shared evidence conventions](../../README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-The single largest source of first-launch stalls, wedged loads and mysterious disk growth in a
-Core AI app.
-
-A `.aimodel` is **portable source**. It is not executable. Before it can run, Core AI must
-**specialize** it — compile it for *this* device's hardware **and this OS version** — and that
-process is expensive enough that Apple's own session says, in as many words, *"It is recommended
-you avoid having model specialization occur within user interactive flows."* On a 3 GB model on an
-iPhone that first load has been community-measured at **194 seconds**.
-
-What follows:
-
-- **What specialization actually does**, in the two phases Apple describes — and which one is the
-  expensive one. This is the fact that makes everything else make sense.
-- **The cache API**: `AIModelCache.default`, and `model(for:options:)` — which returns `nil` when
-  nothing is cached and **never specializes**. That is the gating primitive for a "Preparing…"
-  screen, and it is the most important three lines in the framework.
-- **The cache key** — `(source asset, SpecializationOptions)` — and how varying options silently
-  leaves you with two multi-gigabyte cache entries where you expected one.
-- **`AIModel.specialize(contentsOf:options:cache:cachePolicy:)`**: specializing *without* loading,
-  at a moment you choose. It controls **when**, not **how much**.
-- **`AIModelCache.Policy`**: `.default` vs `.persistent`, the two purge conditions, and the one
-  purge that no policy can prevent.
-- **Deleting entries** — and the fact that Apple's reference page and Apple's article **give
-  opposite answers** about what happens when you delete an entry a live `AIModel` is using. Both
-  are quoted; the conflict is marked as an open gap with a device test that would settle it.
-- **App groups**: `AIModelCache(appGroup:)` plus the entitlement, so an app and its extension
-  don't each pay for the same specialization.
-- **Bookmarks**: `bookmarkData` → persist → `AIModel(resolvingBookmark:)`. This is what lets you
-  **delete the source `.aimodel`** and keep running. It also fails in three ways, and one of them
-  is an OS update.
-- **`SpecializationOptions`** in practice, including the real reason to reach for `.cpuOnly` and
-  the undocumented `expectFrequentReshapes` flag, whose behaviour is entirely inferred and which
-  has an incident-grade community failure attached to it.
-- **Ahead-of-time compilation** with `xcrun coreai-build compile`: what it emits, how the
-  per-architecture artifacts are matched at runtime with `AIModel.deviceArchitectureName`, the
-  hardware gate that excludes every pre-A17-Pro iPhone, and the residual specialization that AOT
-  does *not* remove.
-- **Xcode integration**: `.aimodel` in Compile Sources, and the Metal Toolchain download whose
-  absence fails your build with a missing-Metal-compiler error.
-- **Numbers**, all attributed: Apple-published where Apple published them, community-measured
-  where a person with a phone measured them, and clearly labelled as such.
+Prepare models outside interactive flows. Use `AIModelCache` to distinguish a cache hit from specialization, select cache policy and options, persist bookmarks, and package architecture-specific AOT artifacts. Keep an OS-update recovery path.
 
 ## What this does *not* cover
 
-- **The `AIModel` / `InferenceFunction` / `NDArray` API itself** — descriptors, views, ownership,
-  `preferredStrides`. That is reference 01 of this part.
-- **States and pipelined execution** — KV caches as Core AI states, `ComputeStream`, `AsyncValue`.
-  Reference 03.
-- **Producing the `.aimodel` in the first place** — `coreai-torch`, op coverage, custom Metal
-  kernels. Part 8.
-- **Compression** — quantization, palettization, which of the 35 `ScalarType` cases[^scalar-type-count] you can
-  actually reach. Part 9.
-- **The Core AI Debugger, the debug gauge and the Instruments template** in depth. Part 10. They
-  appear here only where they are the way you *see* specialization happening.
+See the other references in this part for adjacent workflows.
 
 ## What you need
 
@@ -508,26 +446,18 @@ Two notes on that code:
 > or loading the model fails."* These are not behaviour statements; they are the *conditions* under
 > which those calls throw.
 
-> ✅ **RESOLVED (was a GAP) — they throw *untyped* errors, and no public error type for
-> specialization, loading, inference or cache work exists in the macOS 27.0 beta SDK.**
-> The SDK `.swiftinterface` dump was captured 2026-07-29 from Xcode build `27A5228h` and recaptured
-> 2026-08-20 from beta 5 build `27A5237l` (`notes/sdk-interfaces/`). It shows: `AIModel.init(contentsOf:options:)` and
-> `specialize(…)` are plain `async throws`, `loadFunction(named:)` and every `AIModelCache` method
-> plain `throws` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:22-26, :33-43,
-> :119-122`), and both `run` overloads plus `encode` untyped as well
-> (`CoreAIRuntime-27.0-macos.swiftinterface:92-103`). The only public error type in the entire
-> Core AI surface is `CoreAIAsset.AssetError`
-> (✅ **SDK-verified** — `CoreAIAsset-27.0-macos.swiftinterface:230-247`), whose five `Kind` cases —
-> `unsupportedVersion(String)`, `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`,
-> `duplicateName` — cover **asset** operations only; it is publicly initializable, a reporting
-> type, not the system's inference error.
-> **What this means in practice:** catch `AssetError` explicitly where you are doing asset work,
-> then catch the general `Error` — there is no typed `catch` to write for specialization or
-> inference failures in this beta, and do log `(error as NSError).domain` and `.code` so your
-> crash reports are useful. Community bug reports in this corpus show at least two shapes
-> escaping: `CoreAIDelegates.AIModelError error 3` (an `AIModelError` exists internally but is
-> **not present in the beta SDK's public interface**) and an `NSPOSIXErrorDomain Code=2` — the
-> errors are **not** all one type. Full treatment: guide 7.1 §13.
+> ✅ **SDK-verified — Core AI loading, specialization, inference, and cache operations throw untyped
+> errors.**
+> The current 27.0 interface declares no public `AIModelError`. `AIModel` init/specialize use `async
+> throws`; loading, cache methods, `run`, and `encode` also throw untyped errors
+> (`CoreAIDelegates-27.0-macos.swiftinterface:22-43,119-122`;
+> `CoreAIRuntime-27.0-macos.swiftinterface:92-103`). `CoreAIAsset.AssetError` covers asset operations
+> with five kinds: unsupported version, invalid feature type, corrupted metadata, invalid name, and
+> duplicate name.
+> Catch `AssetError` for asset work and general `Error` elsewhere. Log dynamic type and bridged
+> `NSError` domain/code; community reports include internal `CoreAIDelegates.AIModelError` code 3 and
+> `NSPOSIXErrorDomain` code 2. Neither defines a supported specialization-error taxonomy. See guide
+> 7.1 §13.
 
 ---
 
@@ -1028,7 +958,7 @@ Three things to take from it:
 >
 > 🔴 **GAP — this does not settle the deletion contradiction below.** The tools clear the cache
 > *before* any `AIModel` exists, so they never exercise the disputed case: deleting an entry that a
-> live `AIModel` is pinning. `NEEDED-FROM-A-MACOS-27-MACHINE.md` item 7 stands.
+> live `AIModel` is pinning. The live-model cache-deletion case still needs a controlled device probe.
 
 ---
 
@@ -1723,49 +1653,17 @@ discovered what happens if you get it wrong.
 
 ### 🔴 GAP
 
-> 🔴 **GAP — `expectFrequentReshapes` remains undocumented in the behavioral respects that matter.**
->
-> **What is unknown:**
-> 1. ~~**Its default value on a current device.**~~ ✅ **Measured 2026-08-20:** `.default` and
->    `.cpuOnly` both report `false` on a physical iPhone 15 Pro running iOS 27 beta 5
->    (`24A5408d`). This is a runtime observation, not a documented cross-device guarantee; the
->    `init(preferredComputeUnitKind:)` family still needs an explicit read if its default matters.
-> 2. **What it actually changes.** "More optimal specialization" is the entire specification. Whether
->    it compiles a shape-generic kernel, defers some compilation, widens a shape-bucket policy, or
->    something else, is not stated anywhere.
-> 3. **Whether it is part of the cache key.** `SpecializationOptions` is `Hashable` and the cache key
->    includes the options — so flipping this flag almost certainly creates a second entry, but
->    "almost certainly" is not verification, and `Hashable` synthesis is not documented to include
->    this property.
-> 4. **How the load-time flag and `coreai-build --expect-frequent-reshapes` interact.** The community
->    report says the load-time one dominates; Apple documents neither.
-> 5. **Whether the observed SIGSEGV is a property of the flag or a beta compiler bug.** The corpus
->    contains several unrelated MPSGraph compiler crashes in the same window, which makes a beta bug
->    entirely plausible.
->
-> **What the SDK dump and device probe did and did not resolve:** the 2026-07-29 beta interface
-> confirms the spelling — `public var expectFrequentReshapes: Bool`, the only settable property on
-> `SpecializationOptions` (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:100`) —
-> but a `.swiftinterface` prints neither a stored property's default value nor which members feed
-> the synthesised `Hashable`. `probes/` closed the concrete `.default` / `.cpuOnly` measurement on
-> 2026-08-20 (`false` for both), while unknown 3 survives.
-> **What would still resolve the behavioral questions:** a controlled device A/B of first-load time
-> with the flag on and off, on both a static-shape and a dynamic-shape asset, on a non-beta OS.
-> (`coreai-build compile --help` has now been run — 2026-07-31, via the Metal Toolchain component,
-> see §13 — and confirms the compile-side flag spelling `--expect-frequent-reshapes`, *"Hint that
-> inference will be run with frequently changing input shapes."*, but says nothing about the
-> load-time default or the `Hashable` question:
-> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`.)
->
-> **Safe default meanwhile:**
-> - **Do not set it** for static-shape graphs. Apple doesn't, and the one person who tried it
->   crashed.
-> - **Do set it** for a single-`main` dynamic-shape LLM export on the GPU — that is precisely
->   Apple's own configuration in shipping code, and it is the best-attested use.
-> - **Never toggle it dynamically at runtime.** Decide it once per model, in your one options
->   factory (§4), from the model's structure (§10).
-> - **Do not print it in logs as if it were meaningful state** — read it back if you must, but
->   remember you cannot compare against a known default.
+> 🔴 **GAP — `expectFrequentReshapes` behavior and cache-key contribution remain undocumented.**
+> The interface declares a settable `Bool`; it does not specify the stored default or synthesized
+> hashing. On iPhone 15 Pro `24A5408d`, `.default` and `.cpuOnly` both read `false` (2026-08-20),
+> which is not a cross-device guarantee. The compile-side flag is verified in the managed help
+> capture.
+> Unknowns are the specialization strategy, cache-key membership, interaction between export and
+> load-time hints, and whether the reported SIGSEGV was a flag or beta-compiler defect. Resolve with
+> controlled static/dynamic-shape A/B runs on the same current device.
+> Choose once per model in the options factory: leave it unset for static graphs; use Apple's explicit
+> GPU configuration for its dynamic-shape single-`main` LLM path. Do not toggle it during execution or
+> present the measured default as universal.
 
 ---
 
@@ -1898,48 +1796,18 @@ Which tells you there is at least an architecture-selection flag Apple declines 
 
 ### ✅ The CLI surface — gap resolved 2026-07-31
 
-> ✅ **GAP — RESOLVED 2026-07-31.** `xcrun coreai-build --help` and every subcommand's `--help`
-> have now been run on this machine and captured verbatim in
-> **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`**. The resolution of the 2026-07-29
-> mystery: **`coreai-build` ships in the optional Metal Toolchain component**
-> (`xcodebuild -downloadComponent MetalToolchain`), **not in Xcode-beta.app itself**. With the
-> component installed, `xcrun --no-cache --find coreai-build` resolves to
-> `~/Library/Developer/DVTDownloads/MetalToolchain/mounts/<hash>/Metal.xctoolchain/usr/bin/coreai-build`,
-> version **3600.79.1** — the same version number as the CoreAI framework's
-> `-user-module-version`. (Plain `xcrun --find` can still fail from a stale cache; `--no-cache`
-> is the reliable spelling.)
->
-> **The history, kept because the distribution split is reader-critical:** checked 2026-07-29
-> against Xcode 27.0 beta (27A5228h) **without the optional Metal Toolchain component**,
-> `xcrun --find coreai-build` **failed**, and
-> an exhaustive `find` of `Xcode-beta.app` turned up **no file named `coreai*` at all** — the
-> wrapper is genuinely absent from the app bundle. What the bundle ships is
-> `Xcode-beta.app/Contents/Developer/usr/bin/aimodelc` (project stamp `IDEMLKit-25131.2`,
-> linking `IDEMLCompilerCore.framework`; command types `package`/`compile` only, no `--help`),
-> whose binary embeds *"'aimodelc' is a tool used by the Xcode compiler."* and *"Please use
-> 'xcrun coreai-build' instead."* — a stub pointing at a tool that lives in a **different,
-> optional component**. A build machine that installs only Xcode will not have `coreai-build`;
-> add the `-downloadComponent MetalToolchain` step (§13's one-time setup) before the compile step.
->
-> **The captured surface (✅ verified 2026-07-31, `coreai-build 3600.79.1`):**
-> - Subcommands: **`compile` | `package` | `inspect` | `metadata`** — `inspect` exists after all
->   (flags `--io`/`--metadata`/`--storage`/`--compute`/`--ops`/`--json`, the first two on by
->   default), and **`metadata`** (set author/license/description/per-argument descriptions, or a
->   whole-file `--json` update) was previously unknown anywhere in the corpus.
-> - `compile`: `<input>` positional; `--output` (defaults to the current directory);
->   `--platform {iOS, macOS, watchOS, visionOS, tvOS}` (default **macOS**);
->   `--min-deployment-version` (default **27.0**); `--preferred-compute {gpu, neural-engine,
->   none}` (default **none**) — the long-sought value list, hyphenated exactly as the community
->   reported; `--architecture` (repeatable — *"If omitted compiles for all supported
->   architectures"*); and `--expect-frequent-reshapes`.
->
-> The community synopsis (`john-rocky`, 2026-06-10) is thereby confirmed token-for-token, as are
-> both community claims this guide had flagged: the `none` default and the extra subcommands.
->
-> **Still unresolved:** how `--preferred-compute`'s values map onto `ComputeUnitKind` semantics at
-> runtime, and what the flags *do* on device — the help text names them, nothing more. And the
-> silent failure below is unchanged: a green compile still proves nothing about the architecture
-> choice, so keep validating by loading the artifact on a real device.
+> ✅ **Tool distribution — install the optional Metal Toolchain component for `coreai-build`.**
+> Use `xcodebuild -downloadComponent MetalToolchain`, then `xcrun --no-cache --find coreai-build`; a
+> stale xcrun cache can hide the tool. Xcode's bundled `aimodelc` is an internal stub, not the public
+> CLI. The stable help is `notes/sdk-interfaces/coreai-build-help-27.0.txt` with toolchain identity in
+> the capture manifest.
+> Subcommands are `compile`, `package`, `inspect`, and `metadata`. Compile accepts input/output,
+> platform, minimum deployment version, preferred compute, repeatable architecture, and
+> frequent-reshape options. Captured defaults are macOS, 27.0, and preferred compute `none`; omitting
+> architecture compiles supported variants. Inspect offers I/O, metadata, storage, compute, ops, and
+> JSON reports.
+> These help declarations do not establish runtime compute selection or device-load compatibility.
+> Load each shipped variant on its intended hardware.
 
 ### What it emits
 
@@ -2022,58 +1890,22 @@ enum CompiledAsset {
 
 This is the AOT footgun, and it is exactly the shape this series exists to document.
 
-> ⚠️ **SILENT FAILURE — `coreai-build compile` exits 0 for architectures the device will reject.**
->
-> **Community-measured, device-validated 2026-06-10** (`john-rocky`; single-author community
-> material, uncontrolled conditions — attribute as community, never as Apple):
-> *"**`coreai-build compile` EXITs 0 for ANY requested arch** — a successful compile does **NOT**
-> validate the arch choice; **only a device load does**."*
->
-> The reported consequence: an artifact compiled for the wrong architecture *"fails to load with
-> `invalidCompiledModel`"* on the device — at runtime, in the user's hands, long after a green CI
-> build. The same source records the underlying naming rule that makes this easy to get wrong:
-> *"the `--architecture` h-numbers follow the hardware **device-identifier major version**
-> (`iPhone18,1`, `Mac16,5`), **not** the marketing name."* — and self-corrects an earlier note in
-> its own archive that had guessed `h17p` for the iPhone 17 Pro by name-matching, when the
-> device-validated answer was **`h18p`**.
->
-> **Why this bites:** the marketing name and the device identifier are off by one for current
-> iPhones. "iPhone 17 Pro" is `iPhone18,1`. Any scheme that derives an architecture code from a
-> product name is wrong, and wrong *silently*, because the compile succeeds.
->
-> **Safe default:**
-> 1. **Never hardcode an architecture code you have not loaded on the corresponding device.**
-> 2. **Prefer letting `coreai-build` fan out.** Apple's documented invocation passes no
->    `--architecture` at all and emits *"one compiled `.aimodelc` file per device architecture"*;
->    that set is by construction the set the toolchain believes in.
-> 3. **Make `AIModel.deviceArchitectureName` the source of truth on device**, exactly as Apple's
->    snippet does. Print it in your diagnostics. It is the only authoritative statement of what this
->    device wants, and it costs nothing.
-> 4. **Add a device smoke test that loads each shipped variant on real hardware.** A compile is not
->    a test.
+<!-- callout-id: callout-92f4050c93903353 -->
+> ⚠️ **SILENT FAILURE — a successful AOT compile does not establish device compatibility.**
+> A dated community report (`john-rocky`, 2026-06-10) observed exit 0 for an architecture later
+> rejected with `invalidCompiledModel`. Its iPhone 17 Pro mapping was `iPhone18,1` → `h18p`, not a
+> marketing-name-derived `h17p`. Attribute these measurements to that source, not Apple.
+> Read `AIModel.deviceArchitectureName` on the target, omit `--architecture` when using compiler
+> fan-out, and smoke-test each shipped variant on the corresponding hardware. Compiler validation and
+> runtime loading establish different properties.
 
-> ✅ **GAP — RESOLVED 2026-07-31 — the set of architecture codes, enumerated by probing.**
-> Apple still publishes no enumeration, and `compile --help` does not list the codes either. But
-> the codes could be enumerated against the shipped `coreai-build` 3600.79.1 (Metal Toolchain
-> component) by using the compiler's own validation as an oracle — it validates `--architecture`
-> *before* touching the input file, with three distinct responses (unknown code / valid code but
-> wrong platform / "Input model is missing the source bytecode." = accepted). Full matrix and
-> method: **`notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`**, final section.
->
-> **24 valid codes**: `h11p h11g h12p h13p h13s h13c h13g h14p h14s h14c h14g h15p h15s h15c h15g
-> h16p h16s h16c h16g h17p h17s h17c h17g h18p`. Observed grammar: `h<generation><variant>`, with
-> `p` = phone-class, `s`/`c` = Mac-class, `g` present from `h13g` up. At the default 27.0
-> deployment target, macOS accepts `h13s…h17g` (plus `h17p`), iOS accepts `h11p…h18p`; **`h17p` is
-> the one code accepted on both**. The community-attested **`h18p` is confirmed valid** (newest
-> phone-class code; no `h19*`/`h20*` exists in this toolchain). This corroborates the community
-> fan-out counts above in spirit, though the exact per-platform sets differ from the 2026-06-10
-> report — betas moved.
->
-> **What the enumeration does *not* give you:** the code→device mapping. Which physical device
-> reports which code is still community-attested only (`iPhone18,1` → `h18p`, device-validated).
-> **Safe default unchanged:** read the code at runtime with `AIModel.deviceArchitectureName`, ship
-> every variant `coreai-build` produces (hosted remotely, per Apple's own advice, since each device
-> downloads exactly one), and never map a marketing name to a code in your own code.
+> ✅ **Dated compiler enumeration — 24 architecture codes were accepted by `coreai-build` 3600.79.1.**
+> The beta validation-oracle sweep accepted `h11p h11g h12p h13p h13s h13c h13g h14p h14s h14c h14g
+> h15p h15s h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p`. Method, platform matrix, and
+> diagnostics are preserved in `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`.
+> This is regression evidence for that toolchain, not the current tool's complete device mapping. Read
+> `AIModel.deviceArchitectureName` at runtime, ship the variants emitted by the selected compiler, and
+> never derive an architecture code from a marketing name.
 
 ### The bundle hand-edit everyone forgets
 
@@ -2200,39 +2032,15 @@ And there is an entitlement that changes the arithmetic on iOS/iPadOS:
 Apple frames AOT as an optimisation. Some community material frames it as mandatory on iOS. The
 evidence in this corpus points **both ways**, and this guide will not pretend otherwise.
 
-> 🔴 **GAP — is AOT optional or required on iOS?**
->
-> **For "optional" (Apple's position):** the AOT article calls it a way to *"help reduce on-device
-> specialization time"*, and the loading section says *"you don't need to change your loading code
-> when you adopt ahead-of-time compilation"* — the language of an optimisation, not a requirement.
-> `AIModel.init(contentsOf:)` documents accepting *"a `.aimodel` **or** `.aimodelc` file"* with no
-> platform qualifier.
->
-> **For "optional", from the community too:** the same community source that elsewhere says iOS
-> requires AOT also reports a clean device A/B in which an **uncompiled `.aimodel` cold-specialized
-> on an iPhone in 19.2 s** versus **4.9 s** for the `.aimodelc`. A model that JITs in 19.2 seconds
-> is a model that JITs.
->
-> **For "required":** the same corpus reports that pointing the runtime at an uncompiled `.aimodel`
-> on iOS *"fails at engine load with `NSPOSIXErrorDomain Code=2`"*, and separately that a
-> **macOS-tagged** IR on iOS produces exactly that error because there are *"no iOS delegates to
-> load"*. It also reports a 4B-class model whose on-device GPU specialization *"exhausts the
-> device's scratch disk mid-compile → `LLVM ERROR: No space left on device`"*.
->
-> **The most probable reconciliation** — and it is an inference, not a verified finding — is that
-> the `Code=2` failures are about **platform-tagged exports** (a model exported `--platform macOS`
-> has no iOS-compatible delegates and cannot be specialized on iOS regardless of AOT), and the
-> disk/OOM failures are about **size**, not about iOS being unable to JIT at all. Under that reading
-> both observations are true and neither generalises to "iOS cannot JIT."
->
-> **What would resolve it:** export one small model with `--platform iOS`, load the **uncompiled**
-> `.aimodel` on an iPhone, and report whether it specializes. That is a fifteen-minute experiment
-> and nobody in this corpus has published it cleanly.
->
-> **Safe default meanwhile:** on iOS, **ship AOT-compiled `.aimodelc` for every A17-Pro-or-later
-> architecture**, and keep the portable `.aimodel` as the fallback for older devices (§14.1). That
-> configuration is correct under every reading of the evidence. And **always export with the
-> platform you will run on** — a `--platform macOS` export is not an iOS model.
+> 🔴 **GAP — iOS JIT requirements are not established by the conflicting community reports.**
+> Apple documents `.aimodel` and `.aimodelc` loading and describes AOT as reducing specialization
+> time. One community run cold-specialized an uncompiled model in 19.2 seconds versus 4.9 seconds AOT;
+> other reports saw POSIX code 2 or scratch-disk exhaustion. Platform-tagged exports and model size
+> could explain those failures, but that reconciliation is unverified.
+> Resolve with a small iOS-targeted portable export loaded on a current iPhone. Until then, use
+> validated AOT variants for supported targets plus a validated portable fallback where supported, and
+> export for the deployment platform. Do not generalize a macOS-tagged load failure into an iOS-wide
+> JIT prohibition.
 
 ---
 
@@ -2778,12 +2586,7 @@ zero Core AI mentions; and the Core AI symbol index contains **0 `sampleCode` en
 
 ---
 
-*Guide last revised 2026-09-16, against the captured Xcode 27 beta-5 interface plus stable macOS 27
-and iOS build `24A435` runtime probes. The selected SDK is still beta-era; re-verify signatures
-against a coherent shipping Xcode before relying on them.*
-
-[^scalar-type-count]: Apple’s current `NDArray.ScalarType` reference enumerates 35 cases:
-    [Apple Developer — `NDArray.ScalarType`](https://developer.apple.com/documentation/coreai/ndarray/scalartype-swift.enum).
+*The 2026-09-16 source/runtime capture used Xcode 27 beta-5 interfaces and iOS build `24A435`. Current compiler evidence uses Xcode 27 final; see [snippet verification](../../../notes/snippet-verification/report.md). Device behavior retains its original observation date.*
 
 [^sample-routing-policy]: The classifier and preferences are source code in the optional
     `apple/coreai-models` package’s pinned

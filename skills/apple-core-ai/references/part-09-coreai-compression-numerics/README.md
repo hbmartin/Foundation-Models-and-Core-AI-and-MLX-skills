@@ -1,5 +1,7 @@
 # Part 9 — Core AI: compression and numeric formats
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** Core AI runtime OS 27, `coreai-core==1.0.0b3`, `coreai-torch==0.4.3`.
 Current compression behavior is pinned in the 2026-10-06 audit to
 `coreai-opt==0.3.0` (2026-09-25), implementation commit `189612be`. Python is **>=3.11,<3.14**;
@@ -15,7 +17,7 @@ The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includ
 Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
 `torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
 and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
-recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/synthesis/coreai-030-refresh/README.md).
+recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
 

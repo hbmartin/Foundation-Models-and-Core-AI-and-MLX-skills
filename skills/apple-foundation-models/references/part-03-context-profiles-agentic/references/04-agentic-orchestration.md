@@ -20,37 +20,7 @@ improved instruction-following and tool-calling**, so any handoff-reliability nu
 
 ## What this covers
 
-Apple named two orchestration patterns at WWDC26 and then shipped a sample that uses neither of them
-literally. This guide covers both patterns precisely, says which parts are verified and which are
-reconstructed from spoken narration, and then covers the four things you actually have to decide once
-you have more than one model in play.
-
-- **Baton-pass** — two or more profiles, a variable that selects one, and a tool that lets the model
-  set that variable. The full transcript is visible to both; the profile that *receives* the baton
-  produces the final answer.
-- **Phone-a-friend** — a tool that spawns a **short-lived child session with an independent
-  transcript**, prompts it, and returns the response as tool output. The child disappears; the
-  **parent** always produces the final answer.
-- The real trade-off between them: **shared context and handoff** versus **isolation and cost
-  control** — and why that choice is mostly a decision about your token budget, not about elegance.
-- **Tool-calling mode** as the orchestration control surface: `.allowed` / `.disallowed` /
-  `.required`, set either through `GenerationOptions` (no profile) or a profile modifier (with one),
-  plus the precedence rule between them.
-- ⚠️ **The `.required` loop.** It is an unbounded `while` loop. Apple documents exactly two exits and
-  you must wire one of them. This is the single most consequential silent failure in the agentic API
-  and it gets its own section.
-- **Tool-as-consent-request** — Apple's Origami sample turns a tool call into a Yes/No question for a
-  human and resumes with a synthesized follow-up turn. It appears in no WWDC session; it is the best
-  human-in-the-loop pattern in the corpus and this guide reproduces it from source.
-- **Model routing economics** — when a hop to Private Cloud Compute pays for itself, what switching
-  models costs you in KV cache, and the backend constraint that quietly decides your architecture:
-  **grammar-constrained decoding needs engine logits, so a BYO-model app on a GPU-pipelined Core AI
-  bundle loses `@Generable`.** If your orchestration depends on structured output, that narrows your
-  backend list before you write a line.
-- **`Skills`** from `foundation-models-utilities` as a third orchestration option that is neither
-  baton-pass nor phone-a-friend.
-- **Evaluating agentic behaviour** — trajectory expectations, and how to assert that a handoff
-  actually happened rather than that the answer looked plausible.
+Choose shared-context handoff or isolated child sessions, route between models, and control tool-calling loops. The recipes cover cancellation, state propagation, and stopping policies.
 
 ## What you need
 
@@ -1343,29 +1313,7 @@ Apple's own documentation sample, verbatim:
 
 > ✅ **VERIFIED** — from the `GenerationOptions.ToolCallingMode` documentation page:
 
-```swift prelude:guide-context
-import FoundationModels
-
-extension SessionPropertyValues {
-    @SessionPropertyEntry
-    var toolCallCount: Int = 0
-}
-
-struct RecipeDynamicProfile: LanguageModelSession.DynamicProfile {
-    @SessionProperty(\.toolCallCount)
-    var toolCallCount
-
-    var body: some LanguageModelSession.DynamicProfile {
-        Profile {
-            BreadDatabaseTool()
-        }
-        .toolCallingMode(toolCallCount < 1 ? .required : .allowed)
-        .onToolCall {
-            toolCallCount += 1
-        }
-    }
-}
-```
+See the [canonical example](../../part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#71-exit-a--conditionalise-the-mode-on-state-the-tool-moves).
 
 ```swift prelude:guide-context
 let session = LanguageModelSession(profile: RecipeDynamicProfile())
@@ -1390,39 +1338,7 @@ The reference implementation in compiled code goes one step further and switches
 > ✅ **VERIFIED** — `mlx-swift-lm`, `StructuredToolOutputSessionTests.swift:47-79`, compiled against
 > the 27.0 SDK:
 
-```swift illustrative
-@available(iOS 27.0, macOS 27.0, visionOS 27.0, *)
-private struct StructuredToolOutputProfile: LanguageModelSession.DynamicProfile {
-    let model: MLXLanguageModel
-
-    @SessionProperty(\.structuredToolOutputCallCount)
-    var toolCallCount
-
-    var body: some LanguageModelSession.DynamicProfile {
-        if toolCallCount == 0 {
-            Profile {
-                Instructions {
-                    "Call the lookup tool once. After it returns, answer with the value of its requiredToken field exactly."
-                }
-                StructuredLookupTool()
-            }
-            .model(model)
-            .toolCallingMode(.required)
-            .onToolCall {
-                toolCallCount += 1
-            }
-        } else {
-            Profile {
-                Instructions {
-                    "Use the latest tool output. Return its requiredToken field exactly and no other text."
-                }
-            }
-            .model(model)
-            .toolCallingMode(.disallowed)
-        }
-    }
-}
-```
+See the [canonical example](../../part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#71-exit-a--conditionalise-the-mode-on-state-the-tool-moves).
 
 with the counter declared as
 
@@ -1507,26 +1423,7 @@ struct FinalAnswerTool: Tool {
 
 At the call site you unwrap it, because the framework wraps whatever your tool throws:
 
-```swift prelude:guide-context
-let session = LanguageModelSession(tools: [SearchBooksTool(library: store), FinalAnswerTool()]) {
-    "Answer only from tool results. When you are done, call finalAnswer."
-}
-
-func ask(_ prompt: String) async throws -> String {
-    do {
-        let response = try await session.respond(
-            to: prompt,
-            options: GenerationOptions(toolCallingMode: .required)
-        )
-        return response.content          // reached only if the loop ended some other way
-    } catch let error as LanguageModelSession.ToolCallError {
-        if let final = error.underlyingError as? FinalAnswer {
-            return final.text            // the intended exit
-        }
-        throw error
-    }
-}
-```
+See the [canonical example](../../part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#72-exit-b--a-final-answer-tool-that-throws).
 
 > ✅ **VERIFIED** — the unwrapping shape is Apple's own, from the tool-calling article:
 > ```swift
@@ -2697,21 +2594,7 @@ which ships sixteen trajectory expectations across a 578-line evaluation file.
 
 > ✅ **VERIFIED** — `BookTrackerEvaluations/SearchBooks.swift:46-74`, a sample with expectations:
 
-```swift illustrative
-    ModelSample(
-        prompt: "gothic",
-        expected: BookResults(books: [ … ]),
-        instructions: BookAssistant.instructions,
-        expectations: TrajectoryExpectation(unordered: [
-            ToolExpectation(
-                "searchBooks",
-                arguments: [
-                    .exact(argumentName: "tag", value: .string("gothic"))
-                ]
-            )
-        ])
-    ),
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#132-unordered--it-happened-i-dont-care-when).
 
 Four `TrajectoryExpectation` initializers, all observed in that one file:
 
@@ -2755,41 +2638,7 @@ And the wiring, which has one non-obvious requirement:
 
 > ✅ **VERIFIED** — `SearchBooks.swift:525-563`:
 
-```swift illustrative
-struct SearchToolEvaluations: Evaluation {
-    var dataset = samples
-
-    let pass = Metric("All Passed")
-    let percent = Metric("Percentage Passed")
-
-    var evaluators: Evaluators {
-        ToolCallEvaluator(allPass: pass, percentagePass: percent)
-    }
-
-    var registeredTools: [any Tool] = [
-        SearchBooksTool(books: Book.sampleBooks.map(\.snapshot)),
-        GetBookDetailsTool(books: Book.sampleBooks.map(\.snapshot)),
-        FindSimilarBooksTool(books: Book.sampleBooks.map(\.snapshot))
-    ]
-
-    func subject(from sample: ModelSample<BookResults>) async throws -> ModelSubject<BookResults> {
-        let model = SystemLanguageModel(
-            guardrails: .permissiveContentTransformations
-        )
-        let session = LanguageModelSession(
-            model: model,
-            tools: registeredTools,
-            instructions: BookAssistant.instructions
-        )
-
-        let response = try await session.respond(to: sample.prompt, generating: BookResults.self)
-
-        return ModelSubject(
-            value: response.content,
-            transcript: session.transcript.structuredTranscript
-        )
-    }
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass).
 
 - **`ToolCallEvaluator(allPass:percentagePass:)`** takes two `Metric`s — strict all-or-nothing, and
   partial credit.

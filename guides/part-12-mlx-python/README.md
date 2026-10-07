@@ -1,5 +1,7 @@
 # Part 12 — MLX in Python
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order, and what you can defer", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** MLX **0.32.x** (the tree declares `MLX_VERSION 0.32.1` at commit `973e27f`; the docs site
 served the 0.32.0 build) and **mlx-lm 0.31.3**, plus `main` at `e5baded` (2026-07-26). MLX is a **pip package,
 not an OS framework**, and its floor sits far below the rest of this series: **Apple silicon, a native `arm`
@@ -102,6 +104,8 @@ formats rather than dtypes); the hardware gate, **one feature in two halves** �
 hardcoded in MLX's NAX matmul kernel while the host gates `float32` on `MLX_ENABLE_TF32`; and
 `mx.fast.metal_kernel` end to end, JIT-compiled from a Python string with no Xcode and no build step.
 
+<!-- defect-ref:ml-explore.mlx:issue:3860 -->
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
 > ⚠️ **SILENT FAILURE — TF32 you did not choose (§3.3).** Community measurements in mlx#3860 put M5 `float32`
 > matmul error at **2^-10.4** versus **2^-19.8** with `MLX_ENABLE_TF32=0`; `x.dtype` still says `float32`,
 > because it is — only the multiply-accumulate is relaxed. **Set `MLX_ENABLE_TF32=0` before importing mlx in any
@@ -126,6 +130,8 @@ and a calibration procedure. Covers the full array and module API, `gather_qmm` 
 are worth multiples rather than percentages, the four learned-quantization pipelines with their real argparse
 defaults, and a pre-ship verification recipe.
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
 > ⚠️ **SILENT FAILURE — §9 is why this guide exists.** Seven quantized-matmul defects with status as of
 > 2026-07-29; **five are M5-generation-only**. The worst (mlx#3856, closed completed after fix PR
 > mlx#3922 merged 2026-08-26) is an `int16`

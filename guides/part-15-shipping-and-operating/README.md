@@ -1,5 +1,7 @@
 # Part 15 — Shipping and operating on device
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** **iOS · iPadOS · macOS · tvOS · visionOS · watchOS 27.0 — all Beta** — plus
 **Xcode 27** and the **Metal Toolchain**, a separate download (`xcodebuild -downloadComponent
 MetalToolchain`) whose absence fails any build containing a `.aimodel` with a *missing Metal

@@ -20,35 +20,7 @@ first for a reason.
 
 ## What this covers
 
-Apple's server-side Foundation Model — the same model behind many Apple Intelligence features —
-reached third-party developers in the 27 cycle behind a `LanguageModel` conformance you swap in with
-one line. This guide covers:
-
-- **Eligibility, in full.** Three conditions, not one. One of them appears in **no WWDC session**,
-  one of them is measured over your entire App Store history rather than the last twelve months, and
-  one of them is a managed entitlement you apply for at a URL that most people mistype. If you fail
-  any of the three, §1.7 tells you what to build instead.
-- The **entitlement**: where to request it, what it looks like in the project, and the failure mode
-  when it is absent (which is not a thrown error).
-- **What you actually get** — 32K context against the on-device model's 4K, three reasoning levels,
-  no API keys, no authentication, no account setup, no token cost to you, and Foundation Models on
-  watchOS for the first time, precisely *because* the inference is remote.
-- **The one-line swap**, and the much more interesting claim underneath it: `@Generable`, `Tool`,
-  streaming, dynamic profiles and `Transcript` behave identically. One documentation contradiction
-  about the initializer, resolved by Apple's own compiling sample code.
-- **Availability**, which is three separate checks answering three separate questions, plus the fact
-  that **quota is orthogonal to availability** — a model can report `.available` and still fail every
-  request.
-- **Reasoning**: what it is, the four `ReasoningLevel` cases (Apple's prose says three), where the
-  reasoning text lands, how to observe it to drive a progress UI, and the fact that it silently
-  spends your 32K.
-- **Quota UX**, which is the largest single body of explicit Apple design guidance in the entire
-  Foundation Models corpus: `quotaUsage`, `isLimitReached`, the nearing-limit state,
-  `limitIncreaseSuggestion.show()`, a complete SwiftUI implementation, the Xcode scheme option that
-  simulates both states — and the reason a usage *meter* is impossible to build today.
-- **Errors**: `PrivateCloudComputeLanguageModel.Error` has three cases nobody has written about, and
-  its relationship to `LanguageModelError` is unresolved.
-- The **fallback architecture** for the majority of readers who are ineligible.
+Check PCC eligibility and entitlements, select reasoning effort, and handle quota and availability failures. Keep an eligible local fallback and validate the user experience on the supported runtime.
 
 ## What you need
 
@@ -2355,7 +2327,7 @@ constraint rather than a footnote.
 > local backend can therefore lose Apple's flagship structured-generation feature.
 >
 > **Community-measured** — `notes/repos/john-rocky-models.md`, via
-> `notes/CORRECTIONS-PENDING.md` C4. Attribute it as such; it is not an Apple statement.
+> `notes/repos/john-rocky-models.md`. Attribute it as such; it is not an Apple statement.
 >
 > The failure is at least *typed*: a well-behaved provider throws
 > `LanguageModelError.unsupportedCapability(.guidedGeneration)` rather than returning malformed JSON,

@@ -2,11 +2,7 @@
 
 **Part 13 · MLX in Swift · Reference 02**
 
-**Version floor: `mlx-swift-lm` 3.31.4 (released 2026-06-30), plus `main` at commit
-`3cbf928b5eb24190e8952725699ae6a3bb02824d` (2026-07-24).** Like mlx-lm in Python, this is a Swift
-package rather than an OS framework, so its primary version axis is the *package* version. The
-package declares `swift-tools-version: 6.1` and platforms **macOS 14 / iOS 17 / tvOS 17 /
-visionOS 1**, and depends on `mlx-swift` `.upToNextMinor(from: "0.31.4")`.
+**Current release:** mlx-swift-lm **3.32.3** ([release manifest](https://github.com/ml-explore/mlx-swift-lm/blob/3b339ad6e3b3f44c8121ecff5131c7fd55e075e6/Package.swift), checked 2026-10-07). It requires Swift tools **6.2** and declares macOS 14 / iOS 17 / tvOS 17 / visionOS 1. Its MLX 0.32.x dependency has its own toolchain requirements; MLX 0.32.3 declares Swift tools **6.3**. Detailed API examples retain the `3cbf928` snapshot. SDK/platform gates below are separate from package versions.
 
 Three OS floors do bite, and they are routinely confused:
 
@@ -27,55 +23,17 @@ Three OS floors do bite, and they are routinely confused:
 
 ## What this covers
 
-This is the Swift counterpart to [Part 12 guide 04](../../part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md),
-and it is deliberately structured to mirror it so you can move between the two languages without
-relearning the model. Where an API corresponds, this guide says so and names the Python spelling.
-Where it *doesn't* correspond — and there are more of those than you would expect from two ports of
-the same design — the difference is called out, because **every one of those gaps has produced a
-real bug**.
-
-Five things in depth:
-
-- **§2–§4 — The generation API.** `generate`, `generateTokens`, `generateTask`, `ChatSession`, and
-  the `TokenIterator` underneath all of them. `GenerateParameters` field by field, sampler and
-  logit-processor selection, and the stream event types. One complete, copyable async streaming
-  program with correct cancellation.
-- **§5 — Input types.** `UserInput` → `UserInputProcessor` → `LMInput`, `Chat.Message`, and the
-  VLM path where images and video become part of the token stream.
-- **§6 — Tokenizers and chat templates.** How templates get resolved, and the ⚠️ silent failure
-  where a mismatched or absent template produces fluent, degraded output with no error at any
-  layer. With a render-and-eyeball recipe you can run in ten seconds.
-- **§7 — Tool calling.** **Ten** tool-call wire formats across the supported model families, why
-  the variety exists, how the library detects and parses each one, and what to do when your model's
-  format is not one of the ten. The variance *is* the lesson.
-- **§8–§9 — KV caching.** **Eight** concrete cache types, mapped to their Python counterparts;
-  the selection rule; prompt caching to disk; cross-turn reuse; and the two real Swift-side cache
-  bugs (`mlx-swift-lm#312` and `#424`) that this guide exists partly to document, because both are
-  silent and both destroy output quality rather than crashing.
-- **§10 — `MLXEmbedders`**, briefly. A local Swift RAG pipeline wants an embedder *and* an LLM in
-  the same process, and the memory interaction between them is not obvious.
+Generate and stream text, prepare model input, render chat templates, handle tools, and manage KV caches. Python/Swift differences are explained where they affect behavior.
 
 ## What this does *not* cover
 
-- **Loading models, factories, registries, downloaders, the `MLXHuggingFace` macros.** Named here
-  where a signature needs them; taught in Part 13's model-loading guide.
-- **Putting an MLX model behind `LanguageModelSession`.** `MLXFoundationModels`,
-  `#huggingFaceLanguageModel`, `MLXGuidedGeneration` and the xgrammar-backed structured output
-  path are [Part 4](../../part-04-beyond-the-built-in-model/). §7.9 explains only the parts of the
-  tool-calling story that leak across that boundary.
-- **LoRA / DoRA adapters and training.** `LoRAContainer`, `LoRATrain` — a separate Part 13 guide.
-- **Porting a model architecture to Swift.** `attentionWithCacheUpdate` appears in §8.7 because
-  cache correctness depends on calling it right, but the porting recipe is elsewhere.
-- **Metal kernel behaviour underneath all of this.** Why `head_dim = 72` silently falls back to a
-  composed SDPA is [Part 11](../../part-11-metal-and-tensorops/); §9.5 gives the one-line
-  consequence.
+Related references: [Part 4](../../part-04-beyond-the-built-in-model/), [Part 11](../../part-11-metal-and-tensorops/).
 
 ## What you need
 
 - **Apple silicon.** MLX Swift will build for the simulator but you are not measuring anything
   real there.
-- **Xcode 26.x is enough** for everything in §2–§10. Xcode 27 (the 27 SDK) is required *only* if
-  you want the Foundation Models bridge to compile to something other than an empty library.
+- **A toolchain supporting the resolved package:** mlx-swift-lm 3.32.3 declares Swift tools 6.2; MLX 0.32.3 declares 6.3. Foundation Models integration additionally requires the 27 SDK.
 - **`swift test` does not work on this package.** Use
   `xcodebuild test -scheme mlx-swift-lm-Package -destination 'platform=macOS' -skipPackagePluginValidation`.
   The flag is mandatory because mlx-swift 0.31.5 added a `CudaBuild` build-tool plugin that
@@ -90,45 +48,7 @@ Five things in depth:
 
 ## ⚠️ Read this before you trust a signature below
 
-**The evidence class here is strong but not uniform.** Three tiers appear in this guide:
-
-**Tier 1 — the library source.** Every signature, default, enum case and error string in §2–§10
-was read out of `ml-explore/mlx-swift-lm` at HEAD `3cbf928` (2026-07-24) during the research pass
-behind this guide. That is the strongest evidence available for this package, because it is the
-code that runs.
-
-**Tier 2 — Apple's own sample projects.** `ml-explore/mlx-swift-examples` at HEAD `378f244`
-(2026-06-16) contains the `LLMBasic`, `MLXChatExample` and `LLMEval` apps plus the `llm-tool`,
-`embedder-tool` CLIs. Where this guide shows an *idiom* — how to cancel, how to time first token,
-how to hold a `ModelContainer` — it comes from there, verbatim, because that is compiling
-first-party code rather than something a guide author composed.
-
-**Tier 3 — issue threads.** §9's two bug write-ups, and several gotchas, come from the
-`ml-explore/mlx-swift-lm` issue tracker. These are community bug reports with maintainer replies.
-Where the maintainer (`davidkoski`) spoke, he is quoted and attributed. **Line numbers quoted from
-issue bodies drift** — the issue was filed against a commit you are not on. Verify before you rely
-on a line number.
-
-⚠️ **Four things that were *not* read, and are therefore not asserted:** the body of
-`SpeculativeTokenIterator` (`Evaluate.swift:864-1069`), `MTPSpeculativeTokenIterator.swift`,
-`ToolCallProcessor.swift` past line 140, and `TurboQuantKVCache.swift` / `TurboQuantKernels.swift`
-(4,132 lines between them). Claims about those files are limited to their public symbols and doc
-comments, and are marked. See §11.3.
-
-Markers used throughout:
-
-> ✅ **VERIFIED** — read from the package source, an Apple sample project, or a repository
-> document this session. The citation follows: file and line, commit, or issue number.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested but the exact spelling, number or ordering is
-> inferred from a symbol name or doc comment rather than a body.
->
-> 🔴 **GAP** — could not verify. The box says what is unknown, what would resolve it, and what to
-> ship in the meantime.
->
-> ⚠️ **SILENT FAILURE** — it does not throw. This guide has nine.
-
----
+API details retain source revision `3cbf928b5eb24190e8952725699ae6a3bb02824d`. The inspected speculative-generation and TurboQuant bodies were incomplete; their unverified behavior remains marked beside the relevant sections.
 
 ## Contents
 
@@ -865,6 +785,7 @@ one mlx-swift build**. You do not get:
   community-measured, two machines, mlx 0.32.x, July 2026. **Cross-device bit reproducibility is
   not a property MLX offers.**
 - **Batch-versus-single equivalence on M5-class hardware.** Also community-measured
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
   (`mlx#3897`, M5 base `applegpu_g17g`, 32 GB, macOS 26.5.2): `mlx-lm`'s own
   `test_generate.py` fails 8 of 28 tests on `mx.allclose(batch_logprobs, single_logprobs)` at
   `rtol=1e-5`, with max |Δlogprob| ≈ 0.031–0.039. Two independent gen-17 mechanisms were separated
@@ -986,9 +907,11 @@ lmState = iterator.state
 ⚠️ **SILENT FAILURE #3 — dropping `LMOutput.State` between turns produces drifted positions in
 VLMs, with no error.** Three linked issues document this:
 
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:419 -->
 - **`mlx-swift-lm#419` (fixed, merged)** — prefill's `LMOutput.State` was dropped on
   `TokenIterator`'s `.logits` path. The one-line fix (`self.state = result.state` in the
   `.logits` branch of `prepare`) landed as commit `42f08a8`.
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:420 -->
 - **`mlx-swift-lm#420` (closed completed 2026-08-28)** — M-RoPE state dropped **across `ChatSession` turns**:
   *"`LMOutput.State` (which carries the M-RoPE `positionIds`/`ropeDeltas` since #239/#283) dies
   with each turn's `TokenIterator`. On the next turn the Qwen VLM position branches see a warm
@@ -996,6 +919,7 @@ VLMs, with no error.** Three linked issues document this:
   (**merged 2026-07-14**); PR #448 wiring Qwen2.5-VL / Qwen2-VL **merged 2026-07-30**. **Qwen3-VL
   remained unwired in the researched snapshot** — the issue title named Qwen2.5-VL / Qwen3-VL;
   verify the closing implementation before removing the workaround.
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:443 -->
 - **`mlx-swift-lm#443` (closed 2026-08-10)** — `savePromptCache` / `loadPromptCache` drop
   `LMOutput.State` entirely in the researched snapshot:
   *"The safetensors layout has no slot for it, `loadPromptCache` returns only
@@ -2532,14 +2456,7 @@ tool-calling defects are worth knowing because they are *not* in the layers abov
   replay, `ToolCallingModeResolution` (automatic / required / disallowed), and ordered streaming at
   parse boundaries all arrived in that ~3,200-line PR.
 
-> ✅ **VERIFIED** — `mlx-swift-lm` issues #432/#433/#441 and PRs #434/#435/#456, from the July 2026
-> issue-mining pass. All three PRs are **merged**; the fixes are in `main` but **not in the 3.31.4
-> release** (2026-06-30), so a released-version pin does not have them.
-
-That last sentence generalises: **3.31.4 shipped 2026-06-30 and `main` has moved substantially
-past it.** Several fixes this guide describes — #434, #435, #439, #455, #456, #464 — landed in
-July. If you pin `.upToNextMajor(from: "3.31.3")`, SwiftPM will resolve the newest 3.x tag, which
-may still predate them.
+PRs #434, #435, #439, #453, #455, #456, and #464 are ancestors of the 3.32.3 release revision `3b339ad6`. Their source changes are available in that release; this does not attest local runtime remediation. Keep compatibility workarounds for older pins and reproduce the affected path before removing one.
 
 ---
 
@@ -2787,6 +2704,7 @@ a sliding-window model (most Gemma layers), setting `kvBits` or `kvScheme` **con
 Memory does not drop. Nothing warns. There is a one-time notice listing which layers stayed fp16 —
 watch for it, because it is the only signal.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
 > ✅ **VERIFIED** — source TODO comment; the one-time notice is described in
 > `Documentation.docc/kv-cache-quantization.md`. The Python-side manifestation is worse: there,
 > `RotatingKVCache.to_quantized()` is *defined* and **raises**, so `mlx_lm.server --kv-bits N`
@@ -2924,6 +2842,7 @@ incoherent output."* `ChatSession` prepends `.system(instructions)` **on every t
 twice in the token stream and once in the KV — which is exactly the mismatch that produces fluent
 nonsense.
 
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:443 -->
 **(2) `saveCache` drops `LMOutput.State`** (`mlx-swift-lm#443`, closed 2026-08-10; affected the
 researched snapshot), so a restored VLM cache
 has no M-RoPE deltas. §4.3.
@@ -3037,19 +2956,11 @@ at full precision and no message about it.
 
 ## 9. Two real Swift-side cache bugs
 
-Both are open (or were open at the time of the research pass behind this guide), both are silent,
-and both destroy output quality rather than crashing. They are here not as a bug list but because
-each one is a **class of error** that will recur — one about value semantics, one about ignored
-return values — and recognising the class is more useful than memorising the instance.
-
-**Status of everything in this section: as of 2026-08-07**, based on a `gh`-CLI pass over
-`ml-explore/mlx-swift-lm` on 2026-08-07 plus a source read at HEAD `c97539d` (2026-08-06). Re-check
-before you build around either.
+These failure mechanisms affect caller-held caches and speculative rollback. Current GitHub state, source availability, and demonstrated remediation are separate observations; the records below state their boundaries.
 
 ### 9.1 `maybeQuantizeKVCache` replaces array elements instead of mutating objects
 
-**Issue: `mlx-swift-lm#312`. Status: still OPEN as of 2026-08-07, but the fix landed on main — PR
-#453 merged 2026-08-05 (#358 closed unmerged in its favor). No release carries it: latest is 3.31.4.**
+**Current record:** issue #312 remains open (2026-10-07). PR #453’s `KVCacheStorage` source change is included in 3.32.3; local runtime remediation remains unverified. The value-semantics failure below describes affected older implementations.
 
 #### What happens
 
@@ -3145,8 +3056,8 @@ Three places to look for the same shape:
 3. **Any Python `list[...]` translated to a Swift `Array<...>` in a port**, where the Python code
    mutates the list itself rather than its elements.
 
-**The mitigation on any released version — 3.31.4 and earlier all predate PR #453's merge:** do not
-use mid-generation KV quantization together with a caller-held cache.
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
+**Mitigation for affected older pins:** avoid mid-generation KV quantization with a caller-held cache. The source change is in 3.32.3; validate your application’s reuse path before retiring the guard.
 
 ```swift prelude:guide-context
 // SAFE: quantization threshold is never crossed mid-generation, because the whole
@@ -3162,6 +3073,7 @@ let params = GenerateParameters(kvBits: 8, quantizedKVStart: 4096)
 ```
 
 ⚠️ **Note the trade-off you are making with `quantizedKVStart: 0`.** The Python side measured
+<!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
 (`mlx-lm#1566`, M4 Pro 24 GB, mlx 0.32.0, community-measured) that quantizing from token 0 costs
 **−17.1% decode** on Qwen2.5-0.5B-Instruct-4bit at a 512-token prompt, versus parity at
 `start=5000`. Past the threshold the sign flips: at a 5,120-token prompt, `start=5000` gave
@@ -3175,6 +3087,7 @@ from the command line is not what you get from the API.
 
 ### 9.2 `SpeculativeTokenIterator` discards `trimPromptCache`'s return value
 
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
 **Issue: `mlx-swift-lm#424`. Status: OPEN as of 2026-07-29 (one comment, no maintainer fix).**
 
 #### What happens
@@ -3189,6 +3102,7 @@ caller that ignores the value cannot tell.
 
 `SpeculativeTokenIterator.speculateRound()` is such a caller:
 
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
 > ✅ **VERIFIED** — `mlx-swift-lm#424`, quoted from the issue body:
 >
 > > "`SpeculativeTokenIterator.speculateRound()` rewinds rejected drafts with
@@ -3237,6 +3151,7 @@ This series has now recorded the identical contract in three places on three dif
 | Stack | API | What it returns on failure | Consequence of ignoring |
 |---|---|---|---|
 | MLX Swift | `trimPromptCache(_:numTokens:)` | `0` | spec-decode transcript corruption (#424) |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
 | mlx-lm (Python) | `trim_prompt_cache(cache, n)` | `0` | server prefix reuse returns mismatched KV (`mlx-lm#1494`) |
 | Core AI | `trimKVCache(to:)` | `-1` when `extraStates` is non-empty; otherwise **the actual retained prefix**, which may be `length - 1` | prefill from the wrong offset (this series' corrections register, C5) |
 
@@ -3284,6 +3199,7 @@ is the combination at risk. Concretely:
 Not required by the brief, but it belongs next to the other two because it is the third member of
 the family "Swift's type system makes a Python idiom unsound."
 
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:406 -->
 **Issue: `mlx-swift-lm#406`. Status: OPEN as of 2026-07-29 (zero comments).**
 
 ```swift prelude:guide-context
@@ -3313,6 +3229,7 @@ fixes in-thread (a graph-traceable `MLXArray` offset, a functional cache step, o
 compile-friendly cache type) are all library changes, not caller-side workarounds.
 
 ### 9.4 How to detect all three in your own app
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:424 -->
 
 A single diagnostic, run against your actual configuration, catches every one:
 
@@ -3617,7 +3534,8 @@ Plus the two §9 bugs, which are defects rather than design:
 
 | Issue | Status 2026-08-07 | Silent symptom |
 |---|---|---|
-| `#312` `maybeQuantizeKVCache` replaces elements, not objects | **OPEN**; fixed on main by PR #453 (merged 2026-08-05), unreleased | model loses all context after `quantizedKVStart` |
+<!-- defect-ref:ml-explore.mlx-swift-lm:pull:453 -->
+| `#312` `maybeQuantizeKVCache` replaces elements, not objects | **OPEN** (2026-10-07); PR #453 included in 3.32.3, runtime remediation unverified | model loses all context after `quantizedKVStart` |
 | `#424` `trimPromptCache` return discarded in `SpeculativeTokenIterator` | **OPEN** | generation continues on a transcript containing never-emitted tokens |
 
 ### 11.3 The gap register
@@ -3787,8 +3705,7 @@ Python-side threads used for cross-language comparison and for numbers explicitl
 community-measured: `mlx#3896`, `mlx#3897`, `mlx-lm#1280`, `#1332`, `#1438`, `#1470`, `#1494`,
 `#1566`, `#1573`, `#1583`, `#1587`, `#1588`.
 
-**Release metadata**: `mlx-swift-lm` latest release **3.31.4** (2026-06-30), prior 3.31.3
-(2026-04-15); `mlx` **v0.32.0** (2026-07-07); `mlx-lm` **v0.31.3** (2026-04-22).
+**Release metadata:** mlx-swift-lm **3.32.3**, MLX **0.32.3**, mlx-lm **0.32.0** (checked 2026-10-07). Source inclusion is recorded separately from runtime verification.
 
 ---
 

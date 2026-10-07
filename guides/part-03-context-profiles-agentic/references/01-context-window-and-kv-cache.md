@@ -18,50 +18,7 @@ guide and they are routinely confused; every claim below is tagged.
 
 ## What this covers
 
-This is the conceptual spine of Part 3. Four other guides in this part — dynamic profiles, history
-management, agentic orchestration, and session persistence — are all applications of the two ideas
-here:
-
-1. **The transcript *is* the context window.** Not a log of it, not a view onto it. The token
-   sequence the model sees on turn *N* is a rendering of the transcript, and every design decision
-   about instructions, tools, schemas and images is a decision about how many of your ~4,096 tokens
-   are gone before the user types anything.
-2. **The KV cache is a prefix.** Appending preserves it. A change at position *N* invalidates
-   everything from *N* onward. That single sentence explains why Apple made the 2025 API append-only,
-   why the 2026 API is dangerous, why `historyTransform` beats mutating `history`, why conditional
-   content goes at the *bottom* of a `DynamicInstructions` body, and why switching profiles is a
-   deliberate reset rather than a cheap toggle.
-
-Concretely:
-
-- The **six `Transcript.Entry` cases** and what each one costs you — including the two that most
-  budgets forget (tool *definitions*, which live inside the instructions entry, and `Generable`
-  schemas, which are re-sent per request).
-- **`contextSize`** on `SystemLanguageModel` and `PrivateCloudComputeLanguageModel`, and the
-  Apple-published 4K / 32K split. **The on-device window is 4096 tokens per `LanguageModelSession`** —
-  Apple's docs, the WWDC slide and **TN3193** all say so. Runtime probes measured 4096 on the
-  macOS 26.5 host, the iOS 27 simulator, and — on 2026-08-20 — a physical iPhone 15 Pro running
-  iOS 27 beta 5. The lone third-party claim of 8192 is now contradicted by the first project-run
-  hardware measurement, but the rule is unchanged: **read `contextSize` at runtime, never
-  hardcode.** (§3.3)
-- **`tokenCount(for:)`** — the only pre-flight budget check that exists, its five overloads, and the
-  OS floor that makes it unusable as your only strategy.
-- **`Usage`** and `Usage.Input.cachedTokenCount` — the post-hoc accounting, and the cache-hit-rate
-  formula Apple gives you.
-- **Overflow**: `LanguageModelError.contextSizeExceeded`, its deprecated ancestor, the recovery
-  pattern Apple documents, and the retry-and-compact pattern developers hand-rolled on the forums
-  **before Apple shipped history modifiers**.
-- **KV-cache economics in depth** — token layout, blast radius, the invalidation table, the "training
-  wheels off" framing, and the six things that are cheap versus the six that are not.
-- **What prefix reuse is actually worth**, community-measured: turn-2 time-to-first-token
-  **23.28 s → 0.230 s (101×)** at 4k context, with byte-identical greedy output. And the mechanism,
-  which is a *single integer assignment*.
-- ⚠️ **The model-selection consequence.** Linear-attention and hybrid architectures — Qwen3.5,
-  Qwen3.6, LFM2.5, Granite 4 — **cannot prefix-cache at all** and must re-prefill every turn. This
-  belongs in your model-choice spreadsheet, not in a tuning appendix.
-- **The accuracy hazard**: rewriting history does not just cost latency, it can make the model wrong
-  in a way no test catches — it saw itself do a task without a tool, so it does that again after you
-  add the tool.
+Budget the rendered transcript within the model’s context window. Preserve KV-cache prefixes when appending, and account for invalidation when changing earlier instructions, tools, or history.
 
 ## What you need
 
@@ -562,29 +519,11 @@ Earlier drafts of this guide presented 4096-vs-8192 as an equal-weight conflict.
 Apple's technote states the documented platform value plainly; the single unverified 8192 comment
 is retired historical provenance, not an active alternative.
 
-> ✅ **VERIFIED** — Apple Technical Note **TN3193**, *Managing the on-device foundation model's
-> context window*
-> (`/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window`,
-> fetched 2026-07-27): the on-device model has a context window of **4096 tokens per
-> `LanguageModelSession`**, covering instructions, prompt, tools, schemas, transcript history *and*
-> the response. Note the scoping word: **per session**, not per app and not per device.
->
-> Corroborated by: the context-window article (*"a context window of 4096 tokens per session"*), the
-> PCC comparison table (4K), WWDC26 session 319's spoken table (4K), and Apple's own DTS engineer on
-> forum thread 790736 — *"You are correct that currently the token limit for Foundation Models
-> framework is **around 4,000**."*
->
-> ✅ **Fifth Apple channel, and the one that names iOS 27 explicitly (2026-08-02).** Apple's
-> published Q&A summary for WWDC26 Group Lab **8121** records a question about the on-device
-> context window in iOS 27 and whether input plus output share one budget. The written summary
-> gives **4096 tokens as the on-device shared budget**, illustrates that a 4,000-token input leaves
-> roughly 96 tokens for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab-8121]
->
-> Two things this adds that TN3193 does not. First, **it is scoped to iOS 27 by the question
-> itself**, which is what the noema comment claims changed. That makes 4096 Apple's documented
-> iOS 27 platform value and retires the alleged device-specific 8192 observation from active guidance.
-> Second, it states the **shared input+output budget** as an arithmetic rule with a worked example,
-> which is the framing §4 depends on.
+> ✅ **Documented context budget — 4096 tokens per on-device session, shared by input and output.**
+> TN3193 includes instructions, prompts, tools, schemas, transcript history, and the response. WWDC26
+> Group Lab 8121 explicitly confirms the iOS 27 budget and illustrates a 4000-token input leaving
+> about 96 tokens for output; PCC has a 32K shared budget (chapter `0:08:11`).[^ctx-grouplab-8121]
+> Read the model's runtime `contextSize` and budget tool definitions alongside user text.
 
 [^ctx-grouplab-8121]: WWDC26 Group Lab **8121**, *"Coding Intelligence, Machine Learning & AI Group
     Lab"*, `https://developer.apple.com/videos/play/wwdc2026/8121/`. ⚠️ Apple publishes **no

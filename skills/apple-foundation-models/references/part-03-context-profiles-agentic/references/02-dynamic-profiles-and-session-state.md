@@ -5,8 +5,7 @@
 **Version floor:** every symbol in this guide — `LanguageModelSession.DynamicProfile`,
 `LanguageModelSession.Profile`, `DynamicInstructions`, `LanguageModelSession.DynamicProfileModifier`,
 `SessionPropertyValues`, `@SessionPropertyEntry`, `@SessionProperty`, `TranscriptErrorHandlingPolicy`,
-the settable `session.transcript` — is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0**, marked
-Beta in the SDK documentation. `apple/foundation-models-utilities` additionally declares
+the settable `session.transcript` — is **iOS 27.0 / iPadOS 27.0 / macOS 27.0 / visionOS 27.0**, The captured beta documentation is historical; use the stated SDK availability floors. `apple/foundation-models-utilities` additionally declares
 **watchOS 27.0**. There is **no back-deployment**: none of this exists on 26.0, 26.1, 26.3 or 26.4.
 The host class `LanguageModelSession` is iOS 26.0 (no watchOS until 27.0), and `Tool` is iOS 26.0 /
 watchOS 27.0 — so a 26.x app can have tools and sessions but cannot have profiles. One local
@@ -18,39 +17,7 @@ conformance found in the corpus is annotated `@available(iOS 27.0, macOS 27.0, v
 
 ## What this covers
 
-The flagship 2026 Foundation Models API, and the mental model that makes it tractable.
-
-A `DynamicProfile` is **not a configuration object**. It is a *projection of your app's `@Observable`
-state machine* — the same relationship a SwiftUI `View`'s `body` has to `@State`. Apple's Origami
-sample makes this literal: an observable orchestrator holds `mode`, the profile's `body` `switch`es
-on it, and **mutating `orchestrator.mode` is the agent handoff.** No new session, no transcript
-surgery, no `if` ladder inside your prompt string. That framing — rather than the WWDC session's
-"swapping hats" metaphor — is what this guide is built around, because it is what the shipping code
-actually does.
-
-Concretely:
-
-- The three composable layers — `DynamicInstructions`, `Profile`, `DynamicProfile` — and the exact
-  spelling of each, including the two places where the transcript-derived spellings in wide
-  circulation are **wrong**.
-- `DynamicInstructions` composition: nesting concatenates instructions *and* tools, conditionals are
-  legal, and there is a token-ordering rule that costs you the whole KV cache if you break it.
-- The `body` contract: **re-evaluated before every prompt**, must resolve to **exactly one** active
-  `Profile`, and must be **pure** — a community measurement recorded seven evaluations across three
-  turns.
-- The complete modifier catalogue: value modifiers, lifecycle modifiers, `historyTransform`, and the
-  three-tier precedence rule that decides which wins.
-- Custom modifiers via `DynamicProfileModifier` + an extension on `DynamicProfile`, with a real
-  Apple-authored implementation quoted line by line.
-- Session properties — `@SessionPropertyEntry` on `SessionPropertyValues`, `@SessionProperty(\.…)`
-  in profiles and tools, `session.properties` from outside — and the built-in `history` property,
-  which is **lossy and global** where `historyTransform` is **lossless and profile-scoped**.
-- `transcriptErrorHandlingPolicy`, the newly-mutable `session.transcript`, and the dedicated
-  `LanguageModelSession.Error.transcriptMutationWhileResponding` failure for mutating it while a
-  request is in progress.[^transcript-mutation-error]
-- Apple's own shipped history modifiers in `foundation-models-utilities`, including the one Apple
-  ships with a test that pins its buggy behaviour, and the composition rule that makes **every
-  composed example in Apple's own repository inert**.
+Project observable app state into DynamicProfile, compose instructions and modifiers, and manage session properties and history. Profile selection must resolve to one active profile and remain pure during evaluation.
 
 ## What you need
 

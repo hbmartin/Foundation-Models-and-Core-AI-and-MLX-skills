@@ -16,7 +16,7 @@ final class InstrumentsWorkloadProbes: XCTestCase {
     // GAP: guides/part-05-prototyping-profiling-non-swift/references/01-playground-and-
     //      instruments.md §6.3 (four of the six Foundation Models instrument lane names are
     //      unknown — they stream from the recording target at attach time and are not on
-    //      disk) + notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 3. Headless
+    //      disk) + probes/INSTRUMENTS-RECORDING.md. Headless
     //      `xcrun xctrace record` hangs against the booted sim for every template on this
     //      26.5 host (measured 2026-07-31), so a human must attach the Instruments GUI to a
     //      live process — this test IS that process. Full procedure:

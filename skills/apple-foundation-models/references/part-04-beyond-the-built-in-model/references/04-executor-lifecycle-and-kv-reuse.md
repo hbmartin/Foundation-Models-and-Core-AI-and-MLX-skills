@@ -24,33 +24,7 @@ FoundationModels SDK.
 
 ## What this covers
 
-The mechanics that decide whether your `LanguageModel` provider is fast or slow — and, more often
-than anyone expects, whether it is *correct*.
-
-- **The executor store.** Each `LanguageModelSession` holds one. Your `Configuration` is `Hashable`
-  and is the **lookup key — not the model**. Same configuration ⇒ same executor instance ⇒ reused KV
-  cache and reused connections. Different configuration ⇒ a new executor, a cold cache, and a
-  re-prefill you will feel.
-- **What belongs in a `Configuration`**, the manual `==`/`hash` escape hatch every real provider
-  reaches for, and a **real latent bug in Apple's own sample package** that is exactly the mistake a
-  provider author will make.
-- **How load-bearing `Configuration: Hashable` actually is** — illustrated by a deleted 92-line
-  type-eraser that `unsafeBitCast`s a metatype to `UnsafeRawPointer` for no reason other than to
-  obtain `Hashable`.
-- **Teardown you do not write**, and the two legitimate ways to opt out of it (a process-global
-  weights cache; a borrow-counted shared resource registry).
-- **`prewarm` is not guaranteed to run.** How to design so weights load exactly once either way, and
-  the near-miss signature that compiles, binds the framework's default no-op, and never tells you.
-- **Transcript diffing** — the heart of a stateful provider. You receive the *full* transcript on
-  every `respond`. Appended entries mean you keep your state; removed or modified entries mean you
-  invalidate back to the divergence point. The framework hands you the data; **your executor decides
-  what counts as a match**.
-- **The payoff, measured:** turn-2 TTFT **23.28 s → 0.230 s (101×)** at 4k context with
-  byte-identical greedy output — community-measured, and the mechanism is a **single integer
-  assignment**. Plus the API contract that makes it safe, and the model architectures that forfeit it
-  entirely.
-- **Approximate or throw** — Apple's rule for the moments when the developer asked for something your
-  model cannot honestly do.
+Design Configuration equality and hashing to reuse executors safely. Preserve matching transcript prefixes across calls, invalidate stale work, and release resources when the executor’s lifetime ends.
 
 ## What you need
 

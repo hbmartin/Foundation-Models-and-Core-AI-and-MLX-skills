@@ -1,13 +1,6 @@
 # 2.4 — Local RAG with `SpotlightSearchTool`, plus OCR and barcodes
 
-**What this covers.** Apple's 2026 answer to "how do I do RAG on device without a vector
-database": `SpotlightSearchTool`, a `Tool` conformer that lets a language model write and execute
-queries against your app's own Core Spotlight index. This guide covers the whole surface from
-WWDC26 session 246 **and from Apple's shipping sample project for it** — configuration, the
-index-delegate hydration hook, the batched `SearchReply` stream, the two-channel results pattern,
-guidance profiles, the contact resolver, and custom `Generable` pipeline stages — and then covers,
-honestly, the three ways it is currently known to fail. It closes with the two Vision-backed system
-tools, `OCRTool` and `BarcodeReaderTool`.
+**What this covers.** Use SpotlightSearchTool to retrieve indexed app content, hydrate search results, and guide a response. OCRTool and BarcodeReaderTool cover the Vision-backed system-tool paths.
 
 **Version floor.** `SpotlightSearchTool` is **27.0** — **iOS 27, iPadOS 27, macOS 27, visionOS 27**.
 **There is no watchOS support**; Apple's platform sentence omits it and nothing in the corpus
@@ -511,25 +504,15 @@ Pro, but the local Mac host threw `CSIndexErrorDomain -1003` because its helper 
 unavailable. Treat host donation as an environment preflight, not proof that the schema or the
 system tool is invalid; retain a device lane for the shipping behavior.
 
-> ⚠️ **Probe-measured 2026-07-31 — direct programmatic `call(arguments:)` is a dead end in this
-> beta, and it fails *in-band*, not by throwing.** From the SIM-27 test-runner app container
-> (`probes/`, `fm.spotlight-direct-call`): `CSSearchableItem` donation **works**, and
-> `tool.searchResults` emits a `SearchReply` (stage token `search`) per call — so the old "needs a
-> signed app container" assumption is refuted for donation and observation. But the argument
-> decode rejected every programmatic shape tried — a naive `{"query": "…"}`, the exact
-> `FullArguments` shape the tool's own error message prescribes, and an order-preserving
-> `GeneratedContent(properties:)` build — each returning a **code-100 JSON error inside the Prompt
-> output** ("Malformed tool arguments — retry with the schema below"), never a thrown error. Two
-> consequences worth designing around: (1) the tool's malformed-argument recovery is a message *to
-> the model*, invisible to any `catch`; (2) all three tested programmatic encodings were rejected
-> on 27A5228h/24A5390f, while other encodings remain unproven. The deadline-bounded collector
-> observed **three replies across the three calls**, but `SearchReply` exposes no call correlation
-> ID, so that count does not prove a one-to-one call/reply mapping.
->
-> ✅ **DEVICE-REPRODUCED 2026-08-20** — the iPhone 15 Pro / iOS build `24A5408d` run also donated
-> and cleaned up successfully, rejected the same three argument encodings in-band with code 100,
-> and produced three `.complete` replies before the bounded listener deadline. This closes the
-> physical-container residual but not the missing call-correlation issue.
+<!-- callout-id: callout-ed5506ac759e00bb -->
+> ⚠️ **Dated regression — programmatic Spotlight calls rejected three tested argument encodings
+> in-band.**
+> On the 2026-07-31 simulator (`27A5228h` / `24A5390f`) and 2026-08-20 iPhone 15 Pro (`24A5408d`),
+> donation and cleanup succeeded. Naive query JSON, the reported `FullArguments` schema, and ordered
+> `GeneratedContent(properties:)` each returned code-100 JSON inside the prompt rather than throwing.
+> A `catch` cannot observe that recovery message. Both runs collected three replies, but `SearchReply`
+> has no correlation ID, so this does not prove one reply per call. Other encodings and current
+> physical-device behavior remain unverified; see `probes/` `fm.spotlight-direct-call`.
 
 The second `fetch_note` call in that trace is not part of Apple's design — it is the workaround
 from §8. Note where it sits in the trajectory: the model got `items` back, found they contained

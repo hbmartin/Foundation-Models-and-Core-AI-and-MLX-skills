@@ -35,62 +35,11 @@ and matter to §6's token budgeting.
 
 ## What this covers
 
-- **§1 — The news, and exactly what the evidence is.** Both Apple-staff statements verbatim, with
-  thread IDs, dates and badges. Then the harder part: an explicit list of what those statements do
-  *not* say, so you can tell the difference between what is settled and what this guide had to
-  construct.
-- **§2 — What "no longer supported" concretely means**, claim by claim, each carrying its own
-  marker. Includes the two questions nobody has answered — whether an already-shipped 26.x adapter
-  still resolves on a device that upgrades to 27, and whether the packaging CLI still emits a
-  loadable pack — and the safe default for each.
-- **§3 — The historical record.** The full 26.x pipeline: `SystemLanguageModel.Adapter`, the
-  `.fmadapter` bundle, `xcrun ba-package foundation-models package`, the entitlement, the three
-  `Info.plist` keys, the `StoreDownloaderExtension`, and the `"onDemand": null` manifest defect that
-  Transporter rejects with **ITMS-91140**. Written down because it is nowhere else in one place, and
-  because a 26.x build you still ship still needs it.
-- **§4 — The `compatibleAdapterNotFound` failure**, in detail: an adapter that loads perfectly from
-  a local file URL and then cannot be found when the same bytes arrive as an Apple-hosted managed
-  asset pack through TestFlight. Apple's answer is one missing call. Plus the ~100 MB-per-call APFS
-  leak into a SIP-protected directory, which looks exactly like filesystem corruption.
-- **§5 — The decision table**, keyed on *why you built an adapter in the first place*: tone and
-  style, domain vocabulary, structured-output reliability, or a genuinely different task. These four
-  reasons have four different answers and three different costs.
-- **§6 — Path 1: re-frame the task as prompting plus guided generation.** Try this first. It costs
-  nothing, keeps you on the system model, and covers more ground than people expect — Apple's own
-  code-along deletes structural prompt guidance once `@Generable` is applied. With the honest limits.
-- **§7 — Path 2: move the specialised model to Core AI**, driven through `CoreAILanguageModel`. You
-  keep `LanguageModelSession`. You take on conversion, size, distribution, specialization latency and
-  updates. ⚠️ And on GPU-pipelined bundles you **lose `@Generable` entirely**, because constrained
-  decoding needs engine logits that path never exposes — verified in Apple's own repository source,
-  down to the error string.
-- **§8 — Path 3: move it to MLX**, driven through `MLXFoundationModels`. `mlx-lm`'s LoRA/DoRA is the
-  surviving on-device adaptation story: you can genuinely still fine-tune. Costs: a hard 27.0 SDK
-  floor, app size and memory you now manage, and no Neural Engine.
-- **§9 — 🔴 The gap, stated prominently.** Apple *named* the migration path — "Core ML or Core AI…
-  Background Assets remains a great way to deliver custom models" — and has documented it end to end
-  **nowhere**. This guide constructs it from parts. §9 says which parts, and what Apple would have to
-  publish to close it.
-- **§10 — What to do if you have an adapter shipping to users today.** The support window, how to
-  detect and degrade, and a five-release sequence that never leaves you with a broken build.
-- **§11 — What not to do.** The fabricated APIs circulating about this exact topic, including an
-  on-device LoRA-training API that does not exist and never shipped.
+Replace system-model adapter dependencies for OS 27. Keep the 26.x packaging and delivery instructions only for builds you still support; use the decision table to choose prompting, retrieval, tools, or a custom model for the replacement.
 
 ## What this does *not* cover
 
-- **How to train a LoRA adapter with the Adapter Training Toolkit.** That story ended; §3 documents
-  the *delivery* half because a shipping 26.x build still needs it, not the training half.
-- **The full Core AI runtime** — `AIModel`, `InferenceFunction`, `NDArray`, specialization, the
-  cache. [Part 7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/README.md). Conversion from PyTorch is
-  [Part 8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md); compression is
-  [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md).
-- **The full MLX story** — [Part 12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/README.md) for Python and fine-tuning,
-  [Part 13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/README.md) for Swift and the Foundation Models bridge.
-- **Distribution mechanics** — Background Assets, per-architecture variants, update strategy.
-  [Part 15, reference 01](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md),
-  which carries its own 🔴 GAP on the 2026 Background Assets API surface.
-- **The error taxonomy migration** — `GenerationError` → `LanguageModelError`. That is
-  [17.3](03-error-taxonomy-migration.md), and it is a separate problem that happens to land in the
-  same release.
+Related references: [Part 7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/README.md), [Part 8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md), [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md), [Part 12](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-12-mlx-python/README.md), [Part 13](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-13-mlx-swift/README.md), [Part 15, reference 01](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [17.3](03-error-taxonomy-migration.md).
 
 ## What you need
 
@@ -190,63 +139,17 @@ adapter successor, that blessing is in a different conversation about a differen
 
 ### 1.3 Why "two forum replies" is stronger evidence than it sounds
 
-The series precedence order puts Apple-staff forum answers *above* WWDC session transcripts, and the
-series README says why: several WWDC transcript claims from this cycle are already superseded, and
-custom adapters are given as the first example. This is that case, exactly.
-
-The forum answers also corroborate each other in a way that is hard to fake:
-
-- **Two different Apple badges.** "Frameworks Engineer" and "Apple Designer" are distinct roles that
-  appear across dozens of threads in this corpus; they are not the same person posting twice.
-- **Two different questions.** 829108 is a debugging thread about a delivery failure; 831314 is a
-  tooling-version question. Neither poster asked "are adapters going away." Both got told.
-- **A third, non-verbal signal.** The toolkit version page stops at 26.0.0, and Apple's own reply
-  concedes the page needs updating.
-- **An architectural signal.** Adapters were pinned to a specific base-model version, and OS 27 both
-  rebuilt the on-device model *and* forked it into two variants — **AFM 3 Core** and **AFM 3 Core
-  Advanced**, split by hardware tier (thread 832910, Apple Designer, accepted answer). An adapter
-  that must be retrained per base-model version, against a base model that has just become two base
-  models on a hardware-dependent split, is a maintenance story that does not have a happy ending.
-  This does not *prove* the withdrawal, but it makes it legible.
+Apple-staff replies in threads 829108 and 831314 independently announce the adapter withdrawal. The captured SDK's obsoletion attributes establish the migration boundary (§1.4); the forum discussion explains intent. See the [source precedence convention](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#precedence-when-sources-conflict).
 
 ### 1.4 What the evidence does *not* include — and this matters
 
-Be precise about the shape of the hole. As of **2026-07-27**, in a corpus that includes 16 WWDC26 /
-Meet-with-Apple transcripts, six Apple documentation articles, four forum topic captures with ~45
-live thread fetches, and 17 cloned repositories:
-
-> 🔴 **GAP — there is no Apple document that announces this.** Specifically absent:
->
-> - **No documentation page.** No `/documentation/foundationmodels/…` article, deprecation notice or
->   migration guide covering adapters is in our corpus.
-> - **No release-note entry.** The iOS/iPadOS 27 release notes' Foundation Models section is quoted
->   in our corpus for the Private Cloud Compute simulator issue (177684296). Adapters do not appear.
-> - **No WWDC26 session.** The Frameworks Engineer says "as we announced at WWDC26." Our three
->   Foundation Models transcripts do not contain it. The 2026 code-along **explicitly defers**
->   adapters as an advanced topic it will not cover (`notes/transcripts/fm-core.md:2068-2071`), which
->   is a strange thing to do in the year you remove them, and the researcher who read those
->   transcripts recorded adapters as covered by "only forum evidence"
->   (`notes/transcripts/fm-core.md:2258`).
-> - ~~**No deprecation attribute we can quote.**~~ ✅ **RESOLVED 2026-07-29 — there is one now, and
->   it is exactly the attribute §1.4 asked for.** The 27.0 beta `FoundationModels.swiftinterface`
->   (Xcode 27.0 beta `27A5228h`, captured to
->   `notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`) marks
->   `SystemLanguageModel.Adapter` and its working surface — `init(fileURL:)`, `init(name:)`,
->   `compile()`, `compatibleAdapterIdentifiers(name:)` — as
->   **`@available(iOS, deprecated: 26.4, obsoleted: 27.0)`** (macOS and visionOS likewise;
->   `27.0:509-551`), and `SystemLanguageModel.init(adapter:guardrails:)` as **`obsoleted: 27.0`**
->   (`27.0:395-400`). §2 unpacks what `obsoleted:` does to your build. The captured **26.5**
->   interface has no deprecation on any of it (`26.5:578-671`) — the marks arrived with the 27 SDK,
->   and they back-date the deprecation to **26.4**, the release that swapped the base model.
->
-> **What is still missing, as of the 2026-07-29 check:** the *prose* half — a documentation page
-> with a deprecation banner, a release-note entry, or a WWDC26 transcript containing the
-> announcement. The header now says it; no Apple document does. An updated Adapter Training Toolkit
-> page would also close it (Apple said they would update it — check whether they have).
->
-> **Safe default:** treat the withdrawal as fact and plan the migration. You can now tell your team
-> it is **in the SDK** — quote the `obsoleted: 27.0` attribute — but still not that it is
-> "documented," because the prose half remains absent, and someone will go looking.
+> ✅ **SDK migration requirement — system-model adapters are obsoleted on OS 27.**
+> The captured interface marks Adapter and its working surface deprecated in 26.4 and obsoleted in
+> 27.0, including `SystemLanguageModel.init(adapter:guardrails:)`. The 26.5 capture lacked those
+> attributes; the newer SDK applies the boundary retroactively.
+> Plan the migration using these compiler-enforced attributes. The recorded forum announcement
+> corroborates intent, while the old search for a separate prose migration article does not affect the
+> API requirement. Do not delay migration for an announcement page.
 
 ### 1.5 The one thing to take from §1
 

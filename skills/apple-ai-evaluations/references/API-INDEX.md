@@ -1,8 +1,8 @@
 # API & symbol index — Evaluations: measuring on-device model output
 
-**162 symbols, of 1210 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**159 symbols, of 1201 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-06; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-07; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>17 symbols</sub>
 
@@ -97,7 +97,7 @@
 | `JSONLoader` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `String` | ✓ | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 
-## other  <sub>104 symbols</sub>
+## other  <sub>101 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -188,15 +188,13 @@
 | `Self.samples` | ✓ | ✓ | [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `Sequence` | ✓ | ✓ | [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) |
 | `Statistics.cohensKappa` |  |  | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
-| `StructuredValue` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `Subject` | ✓ | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `SubjectInferenceError` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `TagCount` |  |  | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `TagQuality` |  |  | [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
-| `@Test` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md) |
+| `@Test` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `Testing` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
-| `Testing.framework` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
-| `ToolCallEvaluator` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
+| `ToolCallEvaluator` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `ToolDefinition` | ✓ | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `ToolExpectation` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `TorchProducer` |  |  | [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) |
@@ -204,4 +202,3 @@
 | `Transferable` |  | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `UNKNOWN` |  |  | [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) |
 | `ValueError` |  |  | [16.5](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md) |
-| `XCTest.framework` |  |  | [6.README](part-06-evaluations/README.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |

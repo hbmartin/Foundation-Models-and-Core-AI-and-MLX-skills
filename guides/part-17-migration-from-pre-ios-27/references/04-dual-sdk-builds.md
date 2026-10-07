@@ -22,65 +22,11 @@ your two builds.
 
 ## What this covers
 
-The mechanics of shipping one codebase against two SDKs, organised around the only question that
-actually matters at each call site: **is the symbol missing at compile time, or missing at run
-time?** Those are different problems with different tools, and using the runtime tool on a
-compile-time problem is what broke Apple's own test suite in July 2026.
-
-- **The three tools, and the decision procedure** that tells you which one you need (§1). This is
-  the guide's spine; everything after it is detail.
-- **`@available` / `if #available`** — the runtime tool, correct when the symbol *exists* in the SDK
-  you compile against but may be absent on the device (§2).
-- **`#if canImport(Module)`** — the compile-time tool, correct when the whole module may be absent.
-  Verified against a real case: **`FoundationModels.framework` does not exist in the watchOS 26.5
-  SDK at all** (§3).
-- **`#if canImport(Module, _version: N)`** — the compile-time, version-aware tool, and the only
-  reliable 27-SDK test in circulation. §4 explains **what the number actually is**, which we
-  resolved by measurement rather than by guessing, and marks the parts that remain unknown.
-- **Build-setting-driven SDK checks** — `SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=…27.*]`, the
-  pattern a shipping third-party app uses for the same job in an Xcode project rather than a
-  package (§5).
-- **SwiftPM traits** as the package-author's half of the story (§6).
-- ⚠️ **The failure that motivates the guide**: `MLXFoundationModels` **compiles to an empty library
-  on the 26 SDK**, so `@available` alone is not enough — your call sites must mirror the library's
-  `#if` (§7).
-- **The worked example**: `ml-explore/mlx-swift-lm` commit `3cbf928`, *"Integration tests: build on
-  both macOS 26 and 27 SDKs (#464)"* — 37 test files and one CI workflow, authored by Apple, fixing
-  exactly this mistake (§8). It is the best available template for a dual-SDK package.
-- **What is hard 27-only** and therefore cannot be papered over with a runtime check (§9), and
-  **what genuinely is runtime-gateable** (§10).
-- **Over-gating**, the mirror-image mistake: hiding a 26.4 API behind a 27 gate and losing it from
-  your 26 build for no reason (§11).
-- **Shim construction** — stored properties you cannot annotate, `@unknown default`, and how deep
-  the nesting really goes (§12).
-- ⚠️ **A load-time failure mode that no runtime guard can catch**: an SDK-interface/dylib symbol
-  mismatch that **SIGSEGVs before your `if #available` executes** (§13). This is the reason CI must
-  *load* on the target OS, not merely compile.
-- **API drift inside a single major version** — enum cases renamed between betas, which no
-  conditional-compilation tool can bridge (§14).
-- **Known toolchain breakages** with workarounds where any exist, and a plain statement where none
-  does: the watchOS 27 beta `CoreImage` module-resolution failure, `SkillActivation` on Xcode 26,
-  and the Simulator's host punch-out (§15).
-- **CI strategy**: a two-axis matrix, what to run on each cell, and why compile-success is a weak
-  signal here (§16).
-- **A complete, copyable dual-SDK package and app target** (§17), then a checklist (§18) and the
-  declared gaps (§19).
+Choose runtime availability checks when the SDK contains a symbol and compile-time conditions when it does not. The examples cover `canImport`, module versions, Xcode conditions, SwiftPM traits, and checks that catch accidentally excluded features.
 
 ## What this does *not* cover
 
-- **What actually changed between 26 and 27.** The API-level diff is [17.1](01-what-changed-checklist.md).
-- **The error taxonomy.** `GenerationError` → `LanguageModelError` and which `catch` fires is
-  [17.3](03-error-taxonomy-migration.md). It matters here only as an example of drift you cannot
-  `#if` your way out of.
-- **The adapter sunset.** [17.2](02-adapter-sunset.md).
-- **Artifact-level compatibility** — `.aimodel` bundles, `coreai-torch` wheels, re-export drift.
-  That is [17.6](06-toolchain-and-asset-compatibility.md), and it is a *different* dual-version
-  problem: your build artifacts have compatibility constraints independent of your source.
-- **The shipping consequences** — App Store review, minimum-OS strategy, staged rollout, and what a
-  user on 26.x actually sees when your 27 path compiles out. That is
-  [Part 15](../../part-15-shipping-and-operating/), and §16 cross-links to it deliberately, because
-  a dual-SDK build strategy that nobody has thought through at the distribution layer is a
-  half-strategy.
+Related references: [17.1](01-what-changed-checklist.md), [17.3](03-error-taxonomy-migration.md), [17.2](02-adapter-sunset.md), [17.6](06-toolchain-and-asset-compatibility.md), [Part 15](../../part-15-shipping-and-operating/).
 
 ## What you need
 
@@ -96,28 +42,7 @@ compile-time problem is what broke Apple's own test suite in July 2026.
 
 ## How evidence is marked in this guide
 
-Series convention, restated because this guide leans on an unusual mix of sources:
-
-> ✅ **VERIFIED** — read from a header, an SDK on disk, a compiling first-party source file, or an
-> Apple documentation page. Citation follows.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested; the exact spelling or the exact boundary is
-> inferred.
->
-> 🔴 **GAP** — not verified. The box says what is unknown, what would resolve it, and what to do
-> in the meantime.
-
-Two extra labels appear here:
-
-> 📏 **MEASURED BY US** — run on this machine, this week. Every such claim carries the full
-> environment: **macOS 26.5.2 (build 25F84) · Xcode 26.6 (17F113) · `MacOSX26.5.sdk` ·
-> 2026-07-28**. These are 26-SDK measurements. **This machine does not have Xcode 27**, so every
-> claim about what the 27 SDK reports is marked 🔴 GAP or 🟡 RECONSTRUCTED, never as measurement.
->
-> 🧑‍💻 **COMMUNITY** — from a third-party shipping repository, attributed by name. Never presented
-> as an Apple statement.
-
----
+See the [shared evidence conventions](../../README.md#evidence-conventions). “MEASURED BY US” in this guide retains the original macOS 26.5.2 (25F84), Xcode 26.6 (17F113), macOS SDK 26.5 measurements from 2026-07-28. They establish the 26-SDK behavior only. Separate Xcode 27 compiler checks are recorded in [snippet verification](../../../notes/snippet-verification/report.md); unchanged identity and content hashes are required to carry a verdict forward. Community package behavior remains attributed to its pinned source.
 
 ## Contents
 
@@ -255,27 +180,7 @@ Both halves of the pairing are visible in the quick-start example in `ml-explore
 root `README.md`, which is worth reading closely because it uses **two different floors in one
 snippet** (✅ VERIFIED — `README.md:104-141`, read from the local clone at commit `3cbf928`):
 
-```swift prelude:guide-context
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-@Generable
-struct Recommendation {
-    let attraction: String
-    let neighborhood: String
-    let tip: String
-}
-
-if #available(iOS 27.0, macOS 27.0, visionOS 27.0, *) {
-    let model = #huggingFaceLanguageModel(
-        configuration: LLMRegistry.gemma3_1B_qat_4bit,
-        capabilities: [.guidedGeneration])
-    let session = LanguageModelSession(model: model)
-
-    let recommendation = try await session.respond(
-        to: "Recommend one thing to do in Chicago.",
-        generating: Recommendation.self)
-    print(recommendation.content)
-}
-```
+See the [canonical example](../../part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#94-the-two-availability-floors-in-one-example).
 
 `@Generable` is **26.0**. `LanguageModelSession(model:)` — the initializer that takes an arbitrary
 `LanguageModel` conformer — is **27.0**. That split is the migration in miniature: the *description
@@ -566,30 +471,12 @@ five-second check that replaces an afternoon of guessing.
 
 ### 4.4 🔴 GAP: this spelling is underscored and effectively undocumented
 
-> 🔴 **GAP — two things about `_version:` are still unknown, and you should not pretend otherwise.**
-> (A third was closed 2026-07-29.)
->
-> 1. ~~**What the 27.0 SDK actually reports.**~~ ✅ **RESOLVED 2026-07-29** — measured
->    **`2.0.62.1.402`** on the Xcode 27.0 beta's macOS 27.0 SDK
->    (`notes/sdk-interfaces/FoundationModels-27.0-macos.swiftinterface`, header line 3), via
->    exactly the `find`/`grep` command this box used to prescribe. §19.1 has the cross-framework
->    table.
-> 2. **Whether the spelling is stable.** The leading underscore is Swift's convention for
->    "unofficial, may change". It appears in no Apple documentation page in this corpus and in no
->    WWDC session. Its only Apple-authored appearances anywhere we can see are inside
->    `ml-explore/mlx-swift-lm` source, its commit messages and its CI comments. It has been in the
->    compiler for years and is widely used, so the risk is low — but it is not zero and it is not
->    a promise.
-> 3. **Whether the number will keep tracking the way we think it does.** A framework can renumber.
->    If Apple ships FoundationModels `3.x` in a 27 point release, `_version: 2` still evaluates true
->    (it is `>=`) — which is what you want. If Apple *lowered* it, every gate in the ecosystem would
->    silently flip off. Nothing prevents that except Apple's good sense.
->
-> **SAFE DEFAULT: use `_version: 2`, exactly as Apple's own package does, and nothing else.** Do not
-> invent `_version: 3` for a hypothetical 28, do not invent `_version: 2.1` for a 27 point release,
-> and do not build a ladder of version predicates. One boundary, one predicate. If you need a
-> second boundary, add a build-setting flag (§5) that you control, rather than a second guess at
-> Apple's numbering.
+> 🔴 **Compatibility boundary — `_version:` is an underscored compiler predicate.**
+> Use `_version: 2` where Apple's package does, with the 27.0 interface's measured `2.x` module
+> version as evidence. The predicate means at least that version; it is not an OS-release number. Its
+> stability and future numbering are not a documented framework contract.
+> Avoid guessed predicates for hypothetical releases or point versions. Add a build-setting flag you
+> control if another boundary is required (§5), and verify it with the intended SDKs.
 
 ### 4.5 Nested `#if` versus `&&`
 
@@ -856,24 +743,7 @@ this?" but "does this consumer want this capability at all?"**
 ✅ VERIFIED — `ml-explore/mlx-swift-lm`, `Package.swift:44-59`, quoted verbatim from the clone at
 `3cbf928`, comment included because the comment is the documentation:
 
-```swift illustrative
-    traits: [
-        // Gates the MLXLanguageModel adapter for Apple's FoundationModels
-        // framework. Default-on. Disabling the trait compiles MLXFoundationModels
-        // to an empty library: the entire `MLXLanguageModel` / `MLXLanguageModel.Executor`
-        // surface requires FoundationModels types that are not available on platforms
-        // older than iOS/macOS/visionOS 27.0, and the MLXDownloadProgress observable
-        // (whose only producer is that adapter) is gated alongside it. Consumers
-        // targeting older OS versions can still use this package for MLXLLM /
-        // MLXLMCommon / MLXEmbedders etc. by turning the trait off.
-        .trait(
-            name: "FoundationModelsIntegration",
-            description:
-                "Enables the MLXLanguageModel adapter for Apple's FoundationModels framework. Disabling removes the MLXLanguageModel / MLXLanguageModel.Executor types."
-        ),
-        .default(enabledTraits: ["FoundationModelsIntegration"]),
-    ],
-```
+See the [canonical example](../../part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#1--the-two-gates-and-the-four-cell-matrix).
 
 And the target, showing that a trait can also gate a **dependency edge**, not just source
 (✅ VERIFIED — `Package.swift:243-262`):

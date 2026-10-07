@@ -37,72 +37,11 @@ Nothing in this guide requires Apple Intelligence to be *enabled*, and nothing h
 
 ## What this covers
 
-This is the operational guide: **how a model actually reaches a user's device, and how it gets
-replaced later.** It is the guide you need after the model works on your desk and before you press
-Submit for Review.
-
-The motivating constraint is a size problem, and it is worth stating in Apple's own words before
-anything else. In WWDC26 session 326, the presenter is building a language-learning feature on top
-of SAM 3 (segmentation) plus Qwen3 0.6B (card generation), shipping it as an update to an existing
-app, and hits this:
-
-> "My first-run experience gives me a natural place to explain the feature and prepare for a smooth
-> first launch. But **I'd been assuming the models would just be bundled with the app and when I
-> checked, they're adding over 1 GB to my download size. That hits everyone who updates, even
-> people who'll never touch this feature.**"
-
-✅ VERIFIED — WWDC26 session 326, transcript lines 140-149, captured in
-`notes/transcripts/coreai-intro.md:1680`.
-
-That single sentence is the spine of this guide. Two sub-1B-class models bundled into an app binary
-cost over a gigabyte of download, charged to every updater including the ones who will never open
-the feature. Everything below is the machinery for not doing that.
-
-Sections:
-
-- **§1 — The size problem.** Why bundling is the wrong default for an optional AI feature, what
-  "over 1 GB" was actually made of, and what the alternative costs you in complexity.
-- **§2 — The feature-introduction screen.** The UI pattern Apple's own session arrives at, why it
-  exists for three separate reasons at once, and how it becomes the place you hide specialization
-  latency.
-- **§3 — Background Assets.** What Apple actually says about using it for model files, what we can
-  verify about the API surface, and — honestly — what we cannot. Includes a design that keeps your
-  Core AI code independent of the delivery mechanism.
-- **§4 — Per-architecture variants.** `coreai-build compile`, the `.aimodelc` output naming
-  convention, `AIModel.deviceArchitectureName`, and the arch-code enumeration problem.
-- **§5 — ⚠️ SILENT FAILURE: a green compile that the device rejects.** `coreai-build compile`
-  exits 0 for architectures no device will load. The failure surfaces in a user's hands.
-- **§6 — Specialization after download.** The cache, the policies, `specialize(...)`, and why the
-  first-run screen is where this belongs.
-- **§7 — Updating a model.** The full replace sequence, asset versioning, and keeping the app
-  working while an update is in flight.
-- **§8 — ⚠️ SILENT FAILURE: the bookmark that quietly stops working.** `init?(resolvingBookmark:)`
-  returns `nil`, does not throw, and the recovery path is a multi-gigabyte re-download. Persist a
-  record, never a bare bookmark.
-- **§9 — ⚠️ SILENT FAILURE: two options structs, two multi-gigabyte specializations.**
-  `SpecializationOptions` is part of the cache key and has a mutable property. The fix is
-  structural.
-- **§10 — App groups.** Sharing one specialization across an app and its extensions with
-  `AIModelCache(appGroup:)`.
-- **§11 — Storage hygiene.** Cache policies, when the system may reclaim, deleting the source
-  asset, and how to report model storage to the user.
-- **§12 — The App Store reality.** There is no Required Device Capability for Apple Intelligence.
-  What Apple's own staff recommend instead, and what that means for pricing and review.
-- **§13 — Checklist and declared gaps.**
+Deliver models only to users who need them, prepare specialization outside interactive flows, and ship recoverable updates. The workflows cover Background Assets, downloaded bundles, AOT architectures, bookmarks, storage, integrity, and rollback.
 
 ## What this does *not* cover
 
-- **Converting a PyTorch model to `.aimodel`.** That is
-  [Part 8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md). This guide starts from an `.aimodel` bundle
-  that already exists and already runs.
-- **The Core AI runtime API** — `AIModel` → `InferenceFunction` → `NDArray`, states, views.
-  [Part 7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/README.md).
-- **Compression and quantization**, which is the other half of the size story and often the larger
-  half. [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md).
-- **Profiling specialization** with the Core AI instrument and debug gauge.
-  [Part 10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/README.md).
-- **Apple's own `SystemLanguageModel`**, which ships with the OS and has no distribution story at
-  all — that is exactly why it is attractive and exactly why §12 exists.
+Related references: [Part 8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md), [Part 7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/README.md), [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md), [Part 10](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/README.md).
 
 ## What you need
 
@@ -133,26 +72,7 @@ Sections:
 
 ## Evidence markers used in this guide
 
-Per the series conventions:
-
-> ✅ **VERIFIED** — quoted from an Apple documentation page, a header, a shipping source file, or
-> an Apple-staff forum answer. The citation follows the claim.
-
-> 🟡 **RECONSTRUCTED** — the concept is attested, but the exact spelling is inferred. Treat the
-> shape as right and the identifiers as provisional.
-
-> 🔴 **GAP** — we could not verify this and are saying so rather than guessing. Each gap box names
-> what is unknown, what would resolve it, and gives a safe default.
-
-One class of evidence deserves a standing caveat before §4. A large amount of what is *known* about
-per-architecture compilation comes from a **community archive** (`notes/repos/john-rocky-models.md`,
-`notes/repos/issues-coreai-stack.md`) whose measurements were taken by one person on one Mac and one
-iPhone, on beta OSes, and from GitHub issues on `apple/coreai-models`. Those are cited as
-**community-measured** throughout, with hardware and date. They are not Apple statements. They are
-also, in several places, the *only* source that exists — Apple's documentation names an
-architecture flag without ever printing a single architecture value.
-
----
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Architecture and startup measurements below retain their original community source, hardware, beta OS, and observation date; they are not Apple guarantees.
 
 ## 1. The size problem
 
@@ -637,25 +557,7 @@ This is the API that makes `refreshState()` safe to call on every appearance of 
 For comparison, Apple's documentation ships a much shorter form of the same idea, and it is worth
 reading because it shows the intended shape without the state machine:
 
-```swift illustrative
-func loadModel(from modelURL: URL) async throws -> AIModel {
-    // The default cache stores all specialized assets for your app bundle.
-    let cache = AIModelCache.default
-
-    // A non-`nil` result means the model was previously specialized and cached.
-    if let model = try cache.model(for: modelURL, options: .default) {
-        return model
-    }
-
-    // No cached specialization exists. Inform the person and specialize now.
-    Task { @MainActor in
-        informUser("Preparing AI features. This may take a while…")
-    }
-
-    // This call performs specialization, caches the result, and returns the model.
-    return try await AIModel(contentsOf: modelURL, options: .default)
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-one-method-that-matters-most).
 
 ✅ VERIFIED verbatim — Apple's *Managing model specialization and caching* article, captured at
 `notes/web/apple-docs-coreai.md:1264-1282`.
@@ -719,28 +621,14 @@ is considerable ambiguity about *how*, and the next section is about that.
 
 ### 3.2 🔴 GAP — the 2026 Background Assets API surface for Core AI
 
-> 🔴 **GAP.** Our corpus contains **no Apple sample-code project, no WWDC26 session transcript, and
-> no Apple documentation page** that shows Background Assets being used to deliver a `.aimodel` or
-> `.aimodelc`. The Core AI AOT article names the framework in one sentence and links away. Session
-> 326 names it in one sentence and refers the viewer to a **WWDC25** session
-> ("Discover Apple-Hosted Background Assets") that is **not in our transcript corpus**.
->
-> **What is unknown:** the exact 2026 spellings for declaring an asset pack containing a model
-> bundle; whether a `.aimodel`/`.aimodelc` *directory* can be an asset-pack member as-is or must be
-> archived; how per-architecture variants are expressed in a manifest; whether Apple hosting has a
-> per-asset size ceiling that a multi-gigabyte LLM would exceed; and what the extension point is
-> called in the 27 SDK.
->
-> **What would resolve it:** the "Discover Apple-Hosted Background Assets" transcript (WWDC25),
-> the current `developer.apple.com/documentation/backgroundassets` reference, and — decisively —
-> any Apple sample project that ships a model this way. Apple's sample-code index for `coreai`
-> currently returns **zero projects** (✅ VERIFIED, `notes/CORRECTIONS-PENDING.md:245`), so this is
-> not an oversight in our research; the sample does not exist yet.
->
-> **SAFE DEFAULT:** build your feature against a **delivery protocol you own** (§3.4), implement it
-> first with plain `URLSession` background downloads, and swap in Background Assets behind that
-> protocol once you have read the current documentation. Your Core AI code does not change either
-> way — the only thing Core AI needs is a local file URL.
+> 🔴 **GAP — this corpus has no verified Core AI Background Assets delivery example.**
+> The AOT article and session 326 recommend Background Assets but do not establish directory
+> packaging, per-architecture manifests, hosting size limits, or the current extension configuration.
+> The sample-index observation is preserved in `notes/web/apple-sample-code.md`; it is dated evidence,
+> not proof that no sample exists today.
+> Verify the current Background Assets documentation and a real model-delivery project before relying
+> on those details. Keep delivery behind your own protocol, initially using a verified download
+> implementation; Core AI needs a local model URL regardless of transport.
 
 That gap is real and this guide will not paper over it. What follows is what *can* be verified.
 
@@ -1326,48 +1214,15 @@ The codes observed in the wild, with what they were reported to correspond to:
 Sources: `notes/repos/john-rocky-models.md:1161-1164, 1176-1181`;
 `notes/repos/issues-coreai-stack.md:1187`.
 
-> 🔴 **GAP — the architecture-code enumeration was incomplete, community-sourced, and internally
-> contested. Narrowed 2026-07-31: the code *set* is now first-party-probed; the device mapping is
-> still contested.**
->
-> **Now enumerated:** probing the shipped `coreai-build` 3600.79.1's `--architecture` validation
-> (it validates the code before reading the input file, with distinct diagnostics for unknown /
-> valid-but-wrong-platform / accepted) yields **24 valid codes**: `h11p h11g h12p h13p h13s h13c
-> h13g h14p h14s h14c h14g h15p h15s h15c h15g h16p h16s h16c h16g h17p h17s h17c h17g h18p`.
-> Observed grammar: `h<generation><variant>`, `p` = phone-class (accepted for iOS/tvOS), `s`/`c` =
-> Mac-class, `g` present from `h13g` up — consistent with the tier reading above, though the
-> letters' meanings are still nowhere stated by Apple. At the 27.0 default target, macOS accepts
-> the `s`/`c`/`g` codes (plus `h17p`), iOS the `p`/`g` codes through `h18p`; watchOS and visionOS
-> accepted none of the swept codes on the probing host (macOS 26.5 — possibly missing
-> device-support data). Method and full matrix:
-> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`, final section.
->
-> **What is still unknown:** the authoritative complete list of `deviceArchitectureName` values
-> (the compiler's accepted set is the best proxy, not a definition), most code-to-device mappings,
-> and which code a given Mac actually reports. One mapping is now project-verified rather than
-> community-attested: on 2026-08-20, `probes/` printed **`h16p`** on a physical iPhone 15 Pro
-> (`iPhone16,1`, `D83AP`) running iOS 27 beta-5 build `24A5408d`.
->
-> **The contested part is specific and worth naming.** Two community sources disagree about the M4
-> Max Mac. One says `h16c` is the only code that loads there
-> (`notes/repos/john-rocky-models.md:1163-1164`). A separate GitHub issue on `apple/coreai-models`
-> (#27, same author, M4 Max `Mac16,9`) compiles with `--architecture h16s` and then **fails to
-> load** with `AIModelError error 3` — but attributes it to a *different* cause: *"this macOS build
-> cannot load **any** precompiled `.aimodelc` for a macOS target, while the same Core AI runtime
-> loads AOT `.aimodelc` fine on **iOS** (h18p bundles run on iPhone 17 Pro)"*
-> (`notes/repos/issues-coreai-stack.md:946-957`). Both explanations fit the same observation. We
-> cannot separate "wrong arch code" from "macOS AOT load is broken on this beta."
->
-> **What would resolve it:** printing `AIModel.deviceArchitectureName` on one device of each family
-> — a two-line app. That is the *only* authoritative source, because the property is defined as the
-> thing that matches.
->
-> **SAFE DEFAULT:** never hardcode an architecture code anywhere in your app. Build the asset name
-> from `AIModel.deviceArchitectureName` at runtime, exactly as Apple's snippet does. On the build
-> side, either omit `--architecture` and ship every emitted variant (expensive — see §4.5), or
-> derive your target list by running a one-screen diagnostic build on each device in your test
-> matrix and reading the property. **Always ship the portable `.aimodel` as a fallback** so an
-> unrecognised architecture degrades to slow-but-working rather than broken.
+> 🔴 **GAP — compiler architecture codes do not define a complete device mapping.**
+> The dated 3600.79.1 sweep accepted 24 codes, with method/platform matrix in
+> `notes/sdk-interfaces/coreai-build-help-27.0-beta.txt`. The letters' meanings and complete runtime
+> mapping are not Apple-documented. The project measured `h16p` on iPhone 15 Pro (`iPhone16,1`,
+> `24A5408d`, 2026-08-20); the current host reports `h14s` (`notes/evidence/runtime-current.json`).
+> Community M4 Max reports disagree between wrong-architecture and beta macOS AOT-load explanations;
+> neither establishes a universal mapping or stable failure. Read `AIModel.deviceArchitectureName` on
+> each deployment family. Build names from it, validate compiler-emitted variants on target devices,
+> and retain a validated portable fallback where supported.
 
 ### 4.5 The cost of emitting every architecture
 
@@ -1593,28 +1448,14 @@ tool (same source):
 invalidCompiledModel
 ```
 
-> ✅ **RESOLVED (was a GAP) — `AIModelError` is confirmed non-public, and the throws are untyped.**
-> The SDK interface dump was captured 2026-07-29 from Xcode build `27A5228h` and recaptured
-> 2026-08-20 from beta 5 build `27A5237l` (`notes/sdk-interfaces/`). `CoreAIDelegates-27.0-macos.swiftinterface` declares
-> `AIModel.init(contentsOf:options:)` and `specialize(…)` as plain untyped `async throws`
-> (✅ **SDK-verified** — `:22-26`) and the cache methods as untyped `throws` (`:33-43`); **no
-> `AIModelError` appears anywhere in the public interface** — it is internal, surfacing only via
-> `NSError` bridging as `CoreAIDelegates.AIModelError error 3`. The only public error type in the
-> whole Core AI surface is `AssetError`, with five `Kind` cases (`unsupportedVersion(String)`,
-> `invalidFeatureType(String)`, `corruptedMetadata`, `invalidName`, `duplicateName`) — ✅
-> **SDK-verified** (`CoreAIAsset-27.0-macos.swiftinterface:230-247`), matching the doc pages. The
-> meaning of code 3 remains open in the community issue archive
-> (`notes/repos/issues-coreai-stack.md:1462`).
->
-> **PRACTICE:** do not pattern-match on `AIModelError` cases — in the macOS 27.0 beta SDK the type
-> is not public and cannot be named. But the converse matters just as much: an **untyped** throw
-> does not prove that the compiled variant is corrupt or incompatible. Preserve task cancellation,
-> log the dynamic type plus `NSError` domain/code, and **rethrow an unclassified error**. Fall back
-> to the portable asset only after an evidence-backed classifier identifies an integrity or
-> compatibility failure; that classifier must default to `false`. Leave the cache intact on the
-> fallback path too — deletion belongs in a separate bounded repair test after the cache itself has
-> been isolated as the cause.
-> Full treatment of the public error surface: Part 7, guide 7.1 §13.[^untyped-fallback-policy]
+> ✅ **SDK-verified — no public `AIModelError` catch exists in 27.0.**
+> `AIModel` init/specialize and cache operations throw untyped errors. `CoreAIAsset.AssetError` is the
+> public asset-operation error; internal `CoreAIDelegates.AIModelError` code 3 can surface through
+> NSError bridging without establishing its cause. See Part 7, guide 7.1 §13.
+> Preserve cancellation, log dynamic type plus NSError domain/code, and rethrow unclassified failures.
+> Fall back to a portable asset only after an evidence-backed compatibility/integrity classifier,
+> defaulting to false. Keep the cache intact until a separate bounded repair test isolates it as the
+> cause.[^untyped-fallback-policy]
 
 Note also that `invalidCompiledModel` is a **package-level** name from `apple/coreai-models`, not a
 Core AI framework symbol. If you are not using that package you will never see the string. Do not
@@ -1891,17 +1732,7 @@ guard CoreAIDecoder.hostCacheCapacity(in: descriptor) == nil else {
 
 Apple's documented pre-specialization pattern, verbatim:
 
-```swift prelude:guide-context
-guard let localModelURL = try await downloadModel(forFeature: feature) else {
-    throw AppError.failedToDownloadModel(feature)
-}
-
-// Specialize the model so it's ready before the person needs it.
-try await AIModel.specialize(contentsOf: localModelURL, options: .default)
-
-// The model is now specialized and cached. Future loads skip specialization.
-let model = try await AIModel(contentsOf: localModelURL, options: .default)
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#5-aimodelspecialize--controlling-when-not-how-much).
 
 ✅ VERIFIED verbatim (`notes/web/apple-docs-coreai.md:1289-1299`), with the NOTE: *"Calling
 `specialize` multiple times with the same model URL and options returns the cached result without
@@ -2127,25 +1958,7 @@ route on filename, split on path components and compare exactly.
 Apple ships the canonical update flow as four lines, and the ordering of those four lines is the
 whole lesson:
 
-```swift prelude:guide-context
-func downloadAndUpdateModel(from remoteURL: URL, localModelURL: URL) async throws {
-    let tempURL = try await downloadLatestModel(from: remoteURL)
-
-    // Delete cached assets for the old model.
-    let cache = AIModelCache.default
-    try cache.deleteEntries(for: localModelURL)
-
-    // Replace the old model with the new one.
-    try FileManager.default.replaceItemAt(localModelURL, withItemAt: tempURL)
-
-    // Specialize the updated model.
-    try await AIModel.specialize(
-        contentsOf: localModelURL,
-        options: .default,
-        cachePolicy: .persistent
-    )
-}
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#7-deleting-entries--and-apples-contradiction).
 
 ✅ VERIFIED verbatim — Apple's *Managing model specialization and caching* article
 (`notes/web/apple-docs-coreai.md:1320-1337`).
@@ -2477,34 +2290,9 @@ cannot name. The bookmark is the alternate key.
 
 Apple's three-step workflow, verbatim:
 
-```swift prelude:guide-context
-// Specialize and keep a reference to the model.
-let model = try await AIModel.specialize(
-    contentsOf: llmURL,
-    options: .default,
-    cachePolicy: .persistent
-)
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-full-workflow-apples-code).
 
-// Save bookmark data to restore access after the app exits.
-let bookmarkData = model.bookmarkData
-UserDefaults.standard.set(bookmarkData, forKey: "llm.bookmark")
-```
-
-```swift illustrative
-if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
-    do {
-        if let model = try AIModel(resolvingBookmark: bookmarkData) {
-            // Use the model.
-            return model
-        }
-        // The model can't be found or was invalidated by an OS update.
-    } catch {
-        // The bookmark data is invalid.
-    }
-}
-
-// Download and specialize the model again.
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-full-workflow-apples-code).
 
 ```swift prelude:guide-context
 // Delete the source model to reclaim storage.
@@ -3134,21 +2922,7 @@ init?(appGroup groupIdentifier: String)
 
 Apple's usage examples, verbatim:
 
-```swift prelude:guide-context
-// Get the app group cache.
-guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
-    fatalError("Invalid group identifier or entitlement.")
-    return
-}
-
-// Specialize into the shared cache.
-try await AIModel.specialize(
-    contentsOf: sharedModelURL,
-    options: .default,
-    cache: groupCache,
-    cachePolicy: .persistent
-)
-```
+See the [canonical example](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#8-sharing-a-cache-across-an-app-group).
 
 ```swift prelude:guide-context
 guard let groupCache = AIModelCache(appGroup: groupIdentifier) else {
@@ -3581,27 +3355,15 @@ enum ModelStorageAudit {
 }
 ```
 
-> 🟡 **API GAP, DEVICE LOCATION MEASURED ONCE — there is no API to measure or locate the Core AI
-> cache.** `AIModelCache` exposes `default`, `init?(appGroup:)`, `model(for:options:)`, four
-> delete methods and the `Policy`/`PurgeConditions` types, and **nothing else** — no size property,
-> no entry enumeration, no on-disk location. That is no longer just the doc index talking: the
-> macOS 27.0 beta interface dump (2026-07-29) shows exactly that surface
-> (✅ **SDK-verified** — `CoreAIDelegates-27.0-macos.swiftinterface:27-71`), and the `CoreAICache`
-> SubFramework module — the obvious place for a richer cache API — has an **empty public Swift
-> surface** in this beta (`CoreAICache-27.0-macos.swiftinterface`). A 2026-08-20 iPhone 15 Pro /
-> iOS build `24A5408d` container diff narrowed the implementation: specializing a 12,288-byte toy
-> model grew `Library/Caches` by 24,576 bytes, left `Library/Application Support` unchanged, and
-> created `Library/Caches/coreai-cache`. That path and ratio are observations, not contracts.
->
-> **What would resolve the rest:** Apple adding a size/enumeration API, plus repeated container diffs
-> across realistic assets and devices. The existing result gives you a diagnostic path, not a
-> supported API — do not ship code that reads it.
->
-> **SAFE DEFAULT:** report source-asset sizes, which you *can* measure, and label the figure
-> honestly: *"Downloaded models: 3.6 GB. Preparing a model uses additional space that iOS manages."*
-> Then give the user a **Remove** button per model that runs §11.5's full teardown, so the
-> unmeasurable part still gets reclaimed. A button that demonstrably frees space is worth more than
-> a number that is wrong.
+> 🟡 **Cache diagnostics — size, enumeration, and location are not public Core AI APIs.**
+> `AIModelCache` exposes lookup and deletion policies, not byte accounting or on-disk paths;
+> `CoreAICache` has no public Swift surface. A 2026-08-20 iPhone 15 Pro `24A5408d` container diff
+> found `Library/Caches/coreai-cache` and 24,576 bytes of growth for a 12,288-byte toy asset. That
+> path and ratio are observations, not contracts.
+> Report measurable downloaded-asset size and explain that preparation uses additional OS-managed
+> space. Offer full per-model teardown (§11.5). Do not ship code that depends on the observed private
+> cache path; resolving size accounting needs supported APIs or further controlled diagnostic
+> evidence.
 
 For calibration on how far a production app takes this: the community iOS app `noema-ios` ships a
 dedicated `ModelStorageCleanup.swift`, a `ModelStorageAdvisorView`, an `InstalledModelsStore`
@@ -3717,8 +3479,7 @@ unless the user has enabled Siri (forum threads 835211, 836760). **An Apple Fram
 confirmed on thread 836760 that this is a bug** — verbatim: *"The Foundation Models framework
 **should be available in Europe even if Siri AI is not enabled**. Please file a bug report via
 Feedback Assistant and be sure to include a sysdiagnose to help us investigate."* ✅ VERIFIED
-(`notes/forums/forum-pain-points.md:607-614`, reclassified per
-`notes/CORRECTIONS-PENDING.md:10-27`). Unresolved as of 2026-07-27. Expect to hit it on betas; do
+(`notes/forums/forum-pain-points.md:607-614`). Unresolved as of 2026-07-27. Expect to hit it on betas; do
 not build permanent UX around requiring Siri.
 
 ### 12.3 The four realistic strategies
@@ -3754,8 +3515,7 @@ broadly, the *AOT optimisation* does not. Devices outside the AOT envelope get t
 routinely discovered too late: **grammar-constrained decoding needs access to engine logits, and
 GPU-pipelined Core AI bundles never expose them.** Consequence: an app that brings its own model
 **loses Apple's flagship structured-generation feature exactly when it selects the fastest
-backend.** Community-measured (`notes/repos/john-rocky-models.md`, per
-`notes/CORRECTIONS-PENDING.md:113-121`). This is a first-class architectural constraint, not a
+backend.** Community-measured (`notes/repos/john-rocky-models.md`). This is a first-class architectural constraint, not a
 footnote — factor it into the decision before you build the delivery pipeline, not after.
 
 **Strategy 3 — check availability before anyone pays.** The Apple Designer's advice on 836810, and

@@ -22,58 +22,11 @@ hardware path is a fast path, not a requirement.
 
 ## What this covers
 
-This is the advanced kernel-authoring guide for Metal TensorOps. Guide 01 in this part covers the
-ground floor — `metal::tensor`, the three descriptor tags, `matmul2d_descriptor`, execution scopes,
-the dtype table, and the quantisation story. This guide picks up where that stops and covers the
-three things you need in order to write a *fused* kernel rather than a sequence of separate ones:
-
-- **Cooperative tensors** — what it means for a tensor's storage to be "distributed across the
-  private memory of the participating threads," why that is the difference between a kernel that
-  round-trips an intermediate through threadgroup memory and one that never leaves registers, and
-  the three lifetime rules that will bite you.
-- **The template-parameter asymmetry that is the #1 compile failure.**
-  `get_left_input_cooperative_tensor` and `get_right_input_cooperative_tensor` take **element**
-  types. `get_destination_cooperative_tensor` takes **operand** types. The error message will not
-  tell you this. §3 gives correct and incorrect side by side.
-- **Runtime layout compatibility.** `is_compatible_as_left_input` / `is_compatible_as_right_input`
-  return a **runtime `bool`**, not a `constexpr` one, and you are expected to branch on them. The
-  documented fallback when they return false is a store/reload through threadgroup memory.
-- **Reductions.** `reduce_rows` is a **free function**, not a member. `reduction_operation` has
-  **exactly three cases**. And its `identity` parameter defaults to `sum_identity` — **zero** —
-  *regardless of the operation you pass*, which means `reduction_operation::max` silently clamps
-  every negative value to zero. That is the ⚠️ **SILENT FAILURE** of this guide and it lands
-  squarely on softmax.
-- **`map_iterator`** — the mechanism for pairing an element of a 2-D cooperative tensor with the
-  corresponding element of a differently-shaped reduction destination, and its guard
-  `is_iterator_compatible`.
-- **A step-by-step FlashAttention walkthrough**, assembled in the order WWDC26 session 330 assembles
-  it: custom simdgroup mapping → slice by simdgroup ID → Q@Kᵀ into registers → row-max reduction →
-  `map_iterator` softmax in place → feed the result straight into the second matmul against V.
-- **The integration story** — how session 330 got exactly this kernel into a SAM3 segmentation model
-  from Python, via a `TorchMetalKernel` and a monkey-patched Hugging Face attention implementation.
-- **What MLX does instead**, and why an expert would reasonably decline every portable API in this
-  guide.
+Build fused attention with cooperative tensors, row reductions, iterator mapping, and matmul. Check template argument kinds, runtime layout compatibility, reduction identities, and deployment availability before tuning the kernel.
 
 ## What this does *not* cover
 
-- **The basics.** `metal::tensor<ElementType, Extents, Descriptor, Tags...>`, `tensor_handle` /
-  `tensor_offset` / `tensor_inline`, `.slice()` / `.static_slice()`, the full `matmul2d_descriptor`
-  positional argument list, the 13-entry dtype enum (transcribed in full in
-  `notes/repos/mlx-tensorops-kernels.md` §8) and the ~50 legal operand triples (69 in the
-  macOS 27.0 beta SDK — guide 01 §0.2): guide 01 in
-  this part. This guide assumes them and cites them where it leans on them.
-- **Quantised matmul in depth.** Xcode 27 has a documented host-side scale-plane mechanism, and the
-  macOS 27.0 beta SDK carries its shader-side half in the MPP headers (guide 01 §0.2); in-kernel
-  custom dequantisation remains the fallback for 26.x targets and custom formats. Guide 01 and §0.3
-  distinguish the two paths.[^metal27-multiplane]
-- **`convolution2d`.** `MPPTensorOpsConvolution2d.h` exists (177 lines public + 4,914 lines of
-  implementation) and was not read for this series.
-- **Host-side Metal 4 encoding.** `MTL4MachineLearningCommandEncoder`, `MTLTensor` allocation,
-  residency sets. §10 covers only the one host-side fact you cannot write a correct kernel without:
-  how threads-per-threadgroup must agree with your execution scope.
-- **Getting a Metal kernel into a Core AI asset.** §12 sketches the hand-off;
-  [Part 8 guide 3 — *Custom Metal kernels*](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md)
-  is the full treatment of `TorchMetalKernel`.
+Related references: [Part 8 guide 3 — *Custom Metal kernels*](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md).
 
 ## What you need
 
@@ -151,13 +104,7 @@ three things you need in order to write a *fused* kernel rather than a sequence 
 
 ## §0 — Evidence, versions, and where the files are
 
-There is a specific reason this guide opens with a bibliography rather than with code. WWDC26
-session 330 — *"Optimize custom machine learning operations with Metal tensors"* — described this
-API **in speech only**. There is no published code-sample block on that session's page for the
-FlashAttention material. A guide written from the narration alone will contain plausible-looking
-identifiers that do not exist, and a set of them was in circulation before the headers were located.
-
-The headers are on your machine. They are the normative source. Read them.
+Use the SDK's TensorOps headers and the separately installed Metal language headers for API spelling and availability. Session 330 describes the fused-attention design; the examples below identify reconstructed assembly and unresolved constraints.
 
 ### 0.1 The two header roots
 
@@ -369,20 +316,7 @@ when you need older deployment or custom layout/control.[^metal27-multiplane]
 
 ### 0.4 How to read the evidence markers in this guide
 
-- ✅ **VERIFIED** — quoted from a header, an SDK file, or a shipping source file, with a
-  `path:LINE` citation. Where the quotation includes one of Apple's own typos (`transpse_left`,
-  `__mutmul2d_detail`, `execution_simgroups`) it is reproduced as-is and flagged; those typos are a
-  useful authenticity marker.
-- 🟡 **RECONSTRUCTED** — the concept is attested, usually from session 330's narration, and the
-  surrounding code has been assembled from verified pieces. Every symbol inside a reconstructed
-  block is individually verified unless it carries its own marker; what is reconstructed is the
-  *assembly*, not the vocabulary.
-- 🔴 **GAP** — not verified, said so, with the resolution path and a safe default.
-
-Where session 330's narration and the headers disagree, **the headers win** and the guide says so.
-There are four such disagreements and they are all called out inline.
-
----
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Header/source citations attest individual symbols; a reconstructed block does not establish a tested complete kernel. Header typos and transcript disagreements are flagged where they affect the example.
 
 ## §1 — Why cooperative tensors exist
 
@@ -2047,6 +1981,7 @@ call, and noted in this series' correction register at `nax.h:406` — and that 
 gates the whole accelerated path on `MLX_ENABLE_TF32` for float32 inputs
 (`mlx/utils.h:195-197`, `matmul.cpp:916-918`). One feature, two halves. If you set
 `relaxed_precision = true` in your own kernel, you are opting into the same trade and you should
+<!-- defect-ref:ml-explore.mlx:pull:3883 -->
 expose the same escape hatch to your callers. Upstream PR **#3883** ("Warn once when float32 ops
 silently run at TF32 precision", closed unmerged 2026-08-03) was opened because MLX's users were
 surprised by it — which is a good reason to make yours explicit.

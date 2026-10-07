@@ -27,65 +27,17 @@ know before you read anything else:
 > (`docs/guides/custom-op-lowering.ipynb`, cell 0.) A `coreai-core` wheel bump can break every
 > custom lowering you wrote. Pin it.
 
-**Evidence standard for this guide.** Core AI ships **zero Apple sample-code projects** — verified:
-0 `sampleCode` entries across all 312 indexed Core AI symbols, and `/documentation/updates/coreai`
-404s. So unlike Parts 1–6, there is no first-party compiling reference project to check against.
-What there *is*, and what this guide leans on, is stronger than it sounds: the **shipped source of
-`apple/coreai-torch` at commit `4529671` (version 0.4.1)** and **`apple/coreai-models`**, both read
-directly off disk this session, plus Apple's own agent skills in `coreai-models`, the package's
-documentation, and the issue tracker. Where a claim comes from source, the file and line are named.
+The overload inventory and custom-lowering citations retain the inspected `coreai-torch` 0.4.1 revision `4529671`. Current conversion uses 0.4.3; historical defect demonstrations remain labelled. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ---
 
 ## What this covers
 
-This is the debugging guide for **conversion failures** — and, more importantly, for **conversions
-that succeed but should not have**.
-
-`TorchConverter` gives you an error message for the easy case: an op it cannot lower. The error is
-good, it names the ops, and it tells you the fix. That case is five minutes of work. The cases that
-cost you a week are the other three: an op that *is* supported but not in the overload your
-decomposition path produced; a decomposition table that quietly changed shape under you; and a
-lowering that ran, produced a correctly-shaped tensor, and got the arithmetic wrong.
-
-- **Op coverage and the overload rule.** `docs/api/supported-aten-ops.md` lists every ATen operator
-  `TorchConverter` lowers out of the box, in FX qualified-name form `op_name.overload`. Coverage is
-  **per-overload, not per-op**, and which overload you get depends on your decomposition path. This
-  is the single highest-value fact in the guide and it is stated once, in one sentence, in Apple's
-  docs. §2.
-- **Reading the two validator errors.** They are different errors with different fixes and they are
-  easy to confuse. Plus the third error, which fires *later*, from a different code path, with a
-  different message. §3.
-- **A worked diagnosis procedure** for "supported op, unsupported overload" — the failure mode with
-  no error message that says so. §4.
-- **Composite ops as a library you author models from**, not merely a conversion detail. All fifteen
-  documented composites, both categories, the attribute schemas, and the three traps. §5.
-- **The unadvertised capability**: `gather-mm` is Mixture-of-Experts expert dispatch and
-  `gated-delta-update` is a modern linear-attention / state-space update (Qwen3-Next class). Core AI
-  therefore has **first-class MoE and SSM support in the IR**. Nobody said this out loud. §6 also
-  says exactly how far that support does *not* extend up the stack, which matters more.
-- **Custom lowerings**: `register_torch_lowering()`, `allow_override=True` to replace a built-in, the
-  six-way dispatch ladder, the registration-ordering rule, and `generate_composite_decl` for
-  emitting a *composite* from your own lowering — with Apple's own shipping example. §7.
-- **Externalization**: `ExternalizeSpec` and `externalize_modules`, the five-phase pipeline, and the
-  real motivations from Apple's own agent skill. §8.
-- **Four live silent-miscompile defects on 0.4.1**, all verified against the shipped source in this
-  session, all with open-or-closed-unmerged fixes as of 2026-07-29. §9.
-- **A diagnostic checklist**: given a symptom, which of the four failure classes is it, and which
-  tool finds it. §10.
+Diagnose unsupported operator overloads, choose composite ops or custom lowerings, and externalize parameters when required. Coverage depends on the decomposed graph and exact overload; a successful conversion still needs numerical comparison.
 
 ## What this does *not* cover
 
-- **The basic conversion pipeline** — `torch.export` → `run_decompositions` → `TorchConverter` →
-  automatic module rewrite → `save_asset()`. See [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md).
-- **Compression and numeric formats** — `coreai-opt`, quantization, palettization, fp16 casting. That
-  is [Part 9](../../part-09-coreai-compression-numerics/).
-- **The Core AI Debugger app, `coreai_torch.debugging`, and the ANE/GPU hardware rules** — that is
-  [Part 10](../../part-10-coreai-hardware-authoring-debugging/), and this guide cross-links to it at
-  every point where a diagnosis needs a tool.
-- **Custom Metal kernels** (`TorchMetalKernel`). A kernel is a different escape hatch from a
-  lowering, with a different failure surface; it belongs with the hardware-authoring material in
-  Part 10.
+Related references: [`01-conversion-and-the-io-contract.md`](01-conversion-and-the-io-contract.md), [Part 9](../../part-09-coreai-compression-numerics/), [Part 10](../../part-10-coreai-hardware-authoring-debugging/).
 
 ## What you need
 
@@ -1107,40 +1059,24 @@ composite, you get the unmatched-class `UserWarning`, and you ship without the c
 The resolution order is documented and worth memorising, because passing a redundant argument
 silently does nothing:
 
+<!-- callout-id: callout-356886e0d7764b53 -->
 > ✅ **VERIFIED** — `docs/api/composite-ops/rope.md`: *"1. If `cos` and `sin` are both provided, use
 > them directly. 2. Else, build `cos`/`sin` from `position_ids` and `freqs`."* And on the arguments:
 > *"`position_ids` … **Ignored if `cos` and `sin` are provided.**"*, *"`freqs` … **Ignored if `cos`
 > and `sin` are provided.**"*, and for `offset`: *"If a tensor is provided alongside the int
 > attribute, **the tensor wins**."*
 
-> ⚠️ **SILENT FAILURE — partial-rotary RoPE pairs the wrong dimensions.** Community-reported
-> (`apple/coreai-models` issue **#66**, author `kylejfrost`, 2026-07, acknowledged by maintainer
-> @stikves as *"a known issue"*), verbatim:
->
-> > *"The composite `RoPE` partial-rotary mode (`dims < head_dim`) pairs dimensions in a **contiguous
-> > block** (dim `i` ↔ `i + dims/2`, *inside* the first `dims` dims, passing the rest through).
-> > HuggingFace `transformers`' **partial / 'proportional' rotary** (any model with
-> > `partial_rotary_factor < 1`) instead pairs across the **full head_dim half-split** (dim `i` ↔
-> > `i + head_dim/2`), with only the first `rope_angles` frequencies non-zero (`inv_freq`
-> > zero-padded). The **frequencies are identical; only the dim pairing differs**, so the result is
-> > silently wrong."*
->
-> Community-measured, single reporter, uncontrolled conditions: full-rotary (sliding) layers came
-> out bit-exact (PSNR ∞); the global partial-rotary layer measured **PSNR ≈ 21.6 dB, max-abs ≈ 8.2**
-> on gemma-4-26B-A4B (`head_dim=512`, `partial_rotary_factor=0.25`). The reporter's framing of why
-> this is nasty: *"Generation stays coherent (global layers are ~1/6 of the stack), so it passes a
-> smoke test — but it isn't faithful to the reference, and it **breaks EAGLE/MTP speculative-draft
-> acceptance**."*
->
-> **Apple's stated workaround** (@stikves, verbatim): *"currently the workaround is **pre-computing
-> the sine/cosine tables** for RoPE embeddings"* — i.e. compute `cos`/`sin` yourself against the
-> reference convention and pass them in, which takes resolution rule 1 and bypasses the internal
-> pairing entirely. **Safe default:** if your model has `partial_rotary_factor < 1`, precompute
-> `cos`/`sin`; if it does not, the composite's own path is fine.
->
-> Second-order hazard from the same thread: *"If `inv_freq` is stored as a **registered buffer**,
-> `model.to(bfloat16)` downcasts it and bf16's ~3-digit mantissa corrupts the frequencies (cos error
-> ≈ 0.35 at position 200). Recomputing `inv_freq` in fp32 inside `forward` avoids it."*
+> ⚠️ **SILENT FAILURE — partial-rotary RoPE can pair the wrong dimensions.**
+> `apple/coreai-models` #66 reports that the composite pairs within the first `dims`, while
+> transformers proportional rotary pairs across `head_dim/2` with zero-padded frequencies. For
+> gemma-4-26B-A4B (`head_dim=512`, factor 0.25), the reporter measured about 21.6 dB PSNR and 8.2 max
+> absolute error; full-rotary layers were bit-exact. Coherent generation can conceal reference
+> mismatch and reduce speculative-draft acceptance.
+> The maintainer's workaround is precomputed sine/cosine tables using the reference convention. Apply
+> it to affected partial-rotary models and verify numerical output. The same report warns that bf16
+> conversion of a registered `inv_freq` buffer corrupts frequencies; recomputing in fp32 avoids that
+> reported secondary hazard. These are attributed community measurements, not a controlled project
+> benchmark.
 
 ---
 
@@ -1268,26 +1204,14 @@ Apple's own MoE work shows up as measured throughput:
 
 This is the part that will save you a month, so it gets more space than the good news.
 
-**IR support is not runtime support.** The composite exists, the converter emits it, and the shipped
-Swift LLM runtime refuses to run the resulting model.
+**Check IR, engine and delegate support separately.** Current [upstream Swift source](https://github.com/apple/coreai-models/blob/1953c4f90ba0214c1abc7bebcb9be5107e329a46/swift/Sources/CoreAILanguageModels/InferenceEngines/CoreAISequentialEngine.swift), inspected 2026-10-07, accepts **2–4 states** and binds optional persistent hybrid states. That source change does not establish end-to-end model parity on a shipping device.
 
-> ✅ **VERIFIED** — `apple/coreai-models` issue **#118**, *"[Swift runtime] `CoreAISequentialEngine`
-> rejects hybrid models with four persistent states"*. A 16 KB no-weights repro with the function
-> contract `inputs: input_ids, position_ids · output: logits · states: keyCache, valueCache,
-> convState, recState` fails at load with:
->
-> ```text
-> Expected 2 states (KV cache), got 4: states=["keyCache", "valueCache", "convState", "recState"], outputs=["logits"]
-> ```
->
-> Root cause is a `descriptor.stateNames.count == 2` guard. **Maintainer answer (@stikves),
-> verbatim — the definitive statement:** *"Thanks for the report. **The check for only 2 states is
-> deliberate. We currently do not have support for linear attention or similar hybrid state models.**
-> Keeping this open for potential future changes."* Filed as FB23893830. Still open 2026-07-29.
+<!-- defect-ref:apple.coreai-models:issue:118 -->
+Issue #118 documented the older two-state guard at source commit `04a3fd6cfe9bfae9cf05b1f246cf915d930d1c0a`. Its 16 KB no-weights reproduction used `keyCache`, `valueCache`, `convState`, and `recState`; it failed before inference with `Expected 2 states (KV cache), got 4`. The issue closed on 2026-08-05. Retain that case as migration and regression evidence; do not apply the old refusal to current source.
 
-**Prefix caching is forfeit for these architectures, and that is architectural, not a bug.**
+**KV-only rewind is unsafe for recurrent states.** Current upstream resets and replays the prompt when a hybrid session rewinds; recurrent checkpoints would require their own implementation and verification.
 
-> ✅ **VERIFIED** — `trimKVCache` returns `-1` (unsupported) whenever `extraStates` is non-empty.
+> ✅ **VERIFIED** — the community fork’s `trimKVCache` returns `-1` (unsupported) whenever `extraStates` is non-empty.
 > The reporter of #118 states the underlying reason cleanly: *"There is also a correctness issue with
 > KV-only prefix rewind. **Recurrent state is a summary of the full prefix and cannot be rewound by
 > changing a KV token cursor.** A safe implementation must replay the prompt or maintain recurrent
@@ -1320,6 +1244,7 @@ Swift LLM runtime refuses to run the resulting model.
 
 And the crash that follows from exactly that combination:
 
+<!-- defect-ref:apple.coreai-torch:issue:2 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#2** (open), author `scndls`. Crash:
 > `EXC_BAD_ACCESS (code=1, address=0x0)` at
 > `MetalPerformanceShadersGraph mlir::FloatType::getWidth() + 16`. The decision table, verbatim:
@@ -1339,6 +1264,8 @@ And the crash that follows from exactly that combination:
 **The escape route (static export) is blocked by a third bug.** This is the trap that makes hybrid
 models genuinely hard right now, and the reporter mapped it out precisely:
 
+<!-- defect-ref:apple.coreai-torch:issue:6 -->
+<!-- defect-ref:apple.coreai-models:issue:5 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#6** (open), verbatim: *"This is the third member of a bug
 > family that currently blocks the natural export paths for hybrid DeltaNet models (Qwen3.5/3.6,
 > Qwen3-Next): dynamic context dims trip #1 (SDPA externalize re-export) and #2 (MPSGraph
@@ -1365,7 +1292,7 @@ models genuinely hard right now, and the reporter mapped it out precisely:
 | In Apple's `_EXTERNALIZE_SPECS` | ✅ yes | ✅ yes |
 | Apple ships a working model using it | ✅ Qwen3-MoE, Mixtral, GPT-OSS | ❌ none — spec only |
 | Runs on GPU/ANE delegates | ✅ (Qwen3-MoE ships) | ⚠️ see #2 — combination-dependent |
-| Swift `CoreAISequentialEngine` accepts it | ✅ (2 states) | ❌ hard-rejected, deliberately (#118) |
+| Swift `CoreAISequentialEngine` descriptor gate | ✅ KV pair | Current source accepts 2–4 states; end-to-end hybrid parity is unverified (#118) |
 | Prefix caching / `trimKVCache` | ✅ | ❌ returns `-1` |
 
 The asymmetry between the two is visible in Apple's own repository, and it is stark:
@@ -2300,6 +2227,7 @@ Transformers."*
 
 **(d) The SDPA externalize re-export drops a dimension bound.**
 
+<!-- defect-ref:apple.coreai-torch:issue:1 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#1** (open), author `scndls`. Error, verbatim:
 >
 > ```text
@@ -2340,8 +2268,12 @@ None of them throws. Three of them are wrong on *every* backend, because the def
 lowering — upstream of any delegate.
 
 ### 9.1 fp16 overflow in `softplus`, `mish`, `logsumexp`, `logcumsumexp`
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
 
+<!-- defect-ref:apple.coreai-torch:issue:5 -->
+<!-- defect-ref:apple.coreai-torch:issue:21 -->
 **Status:** `apple/coreai-torch` issue **#21** open; proposal **apple/coreai-torch#5** open;
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
 implementation PR **apple/coreai-torch#22** open, unmerged.
 
 **Verified live.** Grep of `coreai_torch/_aten_to_core.py` and `coreai_torch/_decomp.py` at HEAD:
@@ -2444,6 +2376,7 @@ dynamic-overflow calibration was added after 0.3.0 and is not a released capabil
 
 ### 9.2 Integer true-divide truncates instead of promoting to float
 
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
 **Status:** `apple/coreai-torch#32` merged 2026-07-29.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:3591-3592` and `:3722`:
@@ -2510,7 +2443,9 @@ as current HEAD.
 > ```
 
 ### 9.3 `cat` on packed sub-byte tensors always concatenates on dim 0
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
 
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
 **Status:** `apple/coreai-torch#41` merged 2026-09-25; its fix is outside the 0.4.3 tag.
 
 **Verified live.** `coreai_torch/_compression/_intx.py:380-382`, `__torch_dispatch__`:
@@ -2556,6 +2491,7 @@ if func is torch.ops.aten.slice.Tensor:
 
 ### 9.4 int64 accumulator narrowing in `sum` and `prod`
 
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
 **Status:** `apple/coreai-torch#45` **closed without merge**. The defect stands.
 
 **Verified live.** `coreai_torch/_aten_to_core.py:2692-2701`, `replace_sum_dim_intlist`:
@@ -2613,6 +2549,7 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 
 **MobileNetV3 / ANE fp16: a 2D matmul feeding `Hardswish`.**
 
+<!-- defect-ref:apple.coreai-torch:issue:51 -->
 > ✅ **VERIFIED** — `coreai-torch` issue **#51** (open, 0 comments), author `zli96`, 2026-07-23.
 > Environment: **macOS 27 beta 3, `coreai-torch` v0.4.1**. Reporter-measured, FP16 NPU vs GPU on the
 > *same* `.aimodel`:
@@ -2673,6 +2610,8 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > the shipped-asset parity gate in §10 rather than trying to construct an unoptimized arm.
 
 ### 9.6 Recovering 0.4.0 artifacts without re-converting
+<!-- defect-ref:apple.coreai-torch:pull:32 -->
+<!-- defect-ref:apple.coreai-torch:pull:45 -->
 
 Not a miscompile, but the version gate from the top of this guide has a documented escape hatch that
 is easy to miss.
@@ -2713,14 +2652,21 @@ Nine defects, in one table, so you can check your own model against it:
 
 | # | Defect | Wrong on | Fix status 2026-10-02 | Cheap workaround |
 |---|---|---|---|---|
+<!-- defect-ref:apple.coreai-torch:pull:22 -->
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
 | 2 | Integer true-divide truncates | **every** backend | `apple/coreai-torch#32` merged 2026-07-29 | `a.float() / b` |
+<!-- defect-ref:apple.coreai-torch:pull:41 -->
 | 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` merged 2026-09-25; fix outside the 0.4.3 tag | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
+<!-- defect-ref:apple.coreai-torch:issue:49 -->
 | 5 | 0.4.1 optimizer drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate |
+<!-- defect-ref:apple.coreai-torch:issue:9 -->
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
+<!-- defect-ref:apple.coreai-torch:issue:10 -->
 | 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
+<!-- defect-ref:apple.coreai-torch:issue:11 -->
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
+<!-- defect-ref:apple.coreai-models:issue:66 -->
 | 9 | Partial-rotary RoPE pairs contiguously, not half-split | every backend | `apple/coreai-models#66` open, known | Precompute `cos`/`sin` (§5.7) |
 
 Two workarounds from that table are worth spelling out because they are non-obvious.

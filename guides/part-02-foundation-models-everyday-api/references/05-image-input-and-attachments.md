@@ -7,17 +7,7 @@
 
 ## What this covers
 
-The 2026 release gave the on-device model eyes. You put an image into a prompt the same way you put
-a string into a prompt — `Attachment(image)` inside a `Prompt { }` builder — and the model can answer
-questions about it. This guide covers the whole surface: the `Attachment` type and every source it
-accepts, orientation (which is *your* problem and is the single most common way to get silently wrong
-answers), labels and `ImageReference` for keying structured output back to specific images, the
-transcript types that images turn into, the Python SDK's parallel API, and the platform asymmetry
-that bites you the moment your Swift code leaves Darwin.
-
-The most useful section is **§9 — what the model cannot do with pixels**. The model reliably *names*
-what is in an image and unreliably *locates* it. Spatial work belongs to Vision or to a real
-detection/segmentation model. If you read only one section, read that one.
+Attach and label images, handle orientation, and connect structured results to their source image. Use Vision or a detection model for spatial measurements; the language model’s image descriptions do not establish pixel coordinates.
 
 ## Version floor
 
@@ -256,24 +246,7 @@ WWDC26 session 241 read out a longer list — the same four, plus `UIImage` and 
 And the `UIImage` / `NSImage` claim is not just narration — Apple's Origami sample passes them
 directly:
 
-```swift prelude:guide-context
-// Origami/Models/DataModels/Photo.swift:77-91 — Apple sample source, verbatim
-func toPrompt() async throws -> Prompt {
-    #if canImport(UIKit)
-    guard let image = UIImage(data: data) else {
-        return Prompt {}
-    }
-    #elseif canImport(AppKit)
-    guard let image = NSImage(data: data) else {
-        return Prompt {}
-    }
-    #endif
-    let idImage = Attachment(image).label(idString)
-    return Prompt {
-        idImage
-    }
-}
-```
+See the [canonical example](05-image-input-and-attachments.md#62-the-mechanism-end-to-end).
 
 Three things to steal from those fifteen lines:
 
@@ -983,32 +956,7 @@ standard compaction tool has a sharp edge:
 Here is Apple's canonical transcript-rendering switch, from the `Transcript` documentation page —
 note that it covers `Entry`, so it does *not* itself show the `.attachment` **segment** case:
 
-```swift prelude:guide-context
-struct HistoryView: View {
-    let session: LanguageModelSession
-
-    var body: some View {
-        ScrollView {
-            ForEach(session.transcript) { entry in
-                switch entry {
-                case let .instructions(instructions):
-                    MyInstructionsView(instructions)
-                case let .prompt(prompt):
-                    MyPromptView(prompt)
-                case let .reasoning(reasoning):
-                    MyReasoningView(reasoning)
-                case let .toolCalls(toolCalls):
-                    MyToolCallsView(toolCalls)
-                case let .toolOutput(toolOutput):
-                    MyToolOutputView(toolOutput)
-                case let .response(response):
-                    MyResponseView(response)
-                }
-            }
-        }
-    }
-}
-```
+See the [canonical example](01-sessions-and-prompting.md#124-rendering-a-transcript).
 
 Inside `MyPromptView`, you now need a second switch over `prompt.segments` that handles
 `.text`, `.structure`, `.attachment(let attachment)` and `.custom`, with `@unknown default`.
@@ -1091,27 +1039,7 @@ Two `Tool` implementations provided by the Vision framework, new in 27.0:
 > WWDC26 241 adds the rationale: *"Both enhance a model's ability to reason about visual information
 > **in ways it can't natively**."*
 
-```swift compile:27 imports:FoundationModels,Vision
-func analyzeBarcodeImage(_ image: CGImage) async {
-    do {
-        let session = LanguageModelSession(tools: [BarcodeReaderTool()])
-        let response = try await session.respond {
-            """
-            Scan this image for any barcodes. For each barcode found, describe \
-            its symbology type and explain what the encoded content means or \
-            represents.
-            """
-
-            Attachment(image)
-                .label("barcode-image")
-        }.content
-
-        print("The model response: \(response)")
-    } catch {
-        // Handle the error.
-    }
-}
-```
+See the [canonical example](04-spotlight-rag-and-system-tools.md#17-ocrtool-and-barcodereadertool).
 
 Note the label on the attachment — that is the stable handle by which a tool can identify the image.
 A generic-tool device probe showed that an unlabeled attachment does not universally suppress tool
@@ -1517,47 +1445,20 @@ Two further caveats about that Linux claim, from a full read of the repository:
 
 ### 10.4 Private Cloud Compute — support settled, operating limits open
 
-> ✅ **Image input on PCC is supported** — settled by two Apple sources, matching
-> [Part 4 §13.1](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md).
-> WWDC26 session **319** ("building with Private Cloud Compute") demos an app that takes *"a
-> markdown file, and we take the **text and images**, feed that into a `LanguageModelSession`, and
-> generate a summary"* while describing PCC's large context window, and Apple's
-> [multimodal prompting article](https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting)
-> explicitly recommends `PrivateCloudComputeLanguageModel` when image analysis needs more reasoning
-> or context. Build PCC multimodal features with the same labelled `Attachment` surface this guide
-> teaches, and keep an on-device fallback for availability, quota, and network failures.
->
-> Apple's Origami sample shows the intended **architecture**: its multi-image analysis runs in the
-> profile's `.brainstorm` branch, which is bound to `.model(serverModel)` — and `serverModel` is
-> declared with Apple's own comment: *"Brainstorm and tutorial work best on a server model. The
-> sample defaults to the on-device system model so it runs out of the box. To use Private Cloud
-> Compute, request access to the managed `com.apple.developer.private-cloud-compute` entitlement …
-> then replace the `serverModel` initialization with the line below.
-> `// var serverModel = PrivateCloudComputeLanguageModel()`"*
-> (`Origami/Models/OrchestratorProfile.swift:11-40`). The sample ships running on-device, so it
-> corroborates the pattern rather than adding an independent PCC measurement.
->
-> 🔴 **What remains open is operational, not the support question — and nothing addresses the
-> economics.** The Apple documentation page for PCC
-> (`adding-server-side-intelligence-with-private-cloud-compute`) publishes a capability table
-> covering privacy, offline operation, usage limits, reasoning and context size — and **says nothing
-> about vision**. The per-user daily quota is expressed in *requests* counted against the user's
-> iCloud account, and the quota API exposes only coarse states (reached / below / approaching) — a
-> developer asked for actual numbers and was told they don't exist (FB23378161). The 27.0 interface
-> confirms `PrivateCloudComputeLanguageModel` **publicly exposes** `capabilities:
-> LanguageModelCapabilities` via its `LanguageModel` conformance (✅ **SDK-verified**,
-> `FoundationModels-27.0-macos.swiftinterface:98-101`), and `.vision` is a declared `Capability`
-> (`:1511-1514`) — so the check is one property read. Specifically:
->
-> - Whether a PCC request carrying five images costs the same quota as a text request: **unknown**.
-> - Whether PCC has different image size or count limits than the on-device model: **unknown**.
-> - Whether PCC's `capabilities` **contains** `.vision` on a real entitled device: **unknown** —
->   the property is SDK-verified readable; nobody in this corpus has printed it.
->
-> **Do not assume parity with the on-device model.** Resolve by reading
-> `PrivateCloudComputeLanguageModel.capabilities` on a 27.0 device with the PCC entitlement, then
-> running the same image prompt against both models and comparing `quotaUsage` before and after.
-> Full PCC coverage: [Part 4 · Private Cloud Compute](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md).
+> ✅ **PCC supports image input; runtime limits and quota accounting remain unmeasured.**
+> WWDC26 session 319 demonstrates text-and-image summarization, and Apple's [multimodal prompting
+> article](https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting)
+> recommends `PrivateCloudComputeLanguageModel` for additional reasoning or context. Use labelled
+> attachments and an on-device fallback for availability, quota, or network failure.
+> Origami routes its multi-image `.brainstorm` profile through a configurable server model but ships
+> with an on-device default; it demonstrates architecture, not an entitled PCC run
+> (`OrchestratorProfile.swift:11-40`). The 27.0 interface exposes `capabilities`, including the
+> declared `.vision` capability. No recorded entitled-device run here establishes whether PCC reports
+> `.vision`, how image count/size limits differ, or whether five images consume the same request quota
+> as text. Read capabilities and compare quota observations on the actual entitled device; the quota
+> API exposes coarse states, not exact remaining counts (FB23378161).
+> See [Part 4 §13.1](../../part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md)
+> for the full PCC contract.
 
 ### 10.5 watchOS
 
@@ -1699,33 +1600,18 @@ is a link error, not a Python exception.
 
 ### 11.3 The file-descriptor leak — the sharpest image-specific bug in the corpus
 
-> ⚠️ **SILENT FAILURE — until it isn't.** Issue **#17** (2026-07-03) against
-> `apple/python-apple-fm-sdk`, reported verbatim:
->
-> *"Under macOS, even though the soft file descriptor limit can be high (e.g., `1,048,575`),
-> sequential predictions consistently fail after exactly **240-250 sequential calls with image
-> attachments**. The system starts throwing a fatal **`OSError: [Errno 9] Bad file descriptor`** on
-> any subsequent file system opens (including standard Python `open()`, `PIL.Image.open()`, or system
-> plist reads)."*
->
-> Two independent leak channels:
->
-> 1. The native `FMComposedPrompt` was created but never released on the `respond()` paths — and
->    because it retains the `ImageAttachment`, **the image's file descriptor leaked with it**. Fixed
->    by PR **#18** (merged 2026-07-07) for the three `respond()` paths.
-> 2. *"The native `LanguageModelSession` transcript history **automatically retains previous prompts
->    and attachments**. Therefore, in a single persistent session run, previous attachment file
->    descriptors are kept open throughout the session's lifetime."* — **this one is inherent**, not a
->    bug. Long-lived sessions hold every image's FD open.
->
-> And by inspection, the fix did not cover everything: `_stream_response_basic` still creates a
-> composed prompt and releases only the stream pointer, so **`stream_response()` leaks one
-> `FMComposedPrompt` (and any image FDs) per call**. `SystemLanguageModel.token_count()` has the same
-> shape. (Structurally clear from the source; **unverified at runtime**.)
->
-> **Mitigations:** create a fresh session for image-heavy batch work rather than one long-lived
-> session; prefer `respond()` over `stream_response()` in loops on `apple-fm-sdk` ≤ the version you
-> can verify; and monitor your process's open FD count if you are doing hundreds of image calls.
+<!-- defect-ref:apple.python-apple-fm-sdk:pull:18 -->
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:17 -->
+<!-- callout-id: callout-701cb12d4cb87d42 -->
+> ⚠️ **SILENT FAILURE — image attachments can retain file descriptors in Python sessions.**
+> `apple/python-apple-fm-sdk` #17 reported failure after 240–250 sequential image calls with `OSError:
+> [Errno 9] Bad file descriptor`. PR #18 added native composed-prompt release on three `respond()`
+> paths. The current 0.2.1 tag does not contain that merge; a patched source revision needs separate verification.
+> Transcript history also retains attachments for the session lifetime. Inspection of the cited source
+> found unmatched composed-prompt ownership in `stream_response()` and
+> `SystemLanguageModel.token_count()`; those residual leaks were not runtime-verified. For image-heavy
+> batches, bound session lifetime, verify the installed package's release behavior, and monitor open
+> FDs. Prefer a verified `respond()` path over an unverified streaming loop.
 
 Note channel 2 has a direct Swift analogue: the transcript retains attachments there too (§7.3). The
 Python SDK just makes the cost visible as a file descriptor.

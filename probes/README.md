@@ -1,11 +1,7 @@
 # probes/ — runtime probes for the open behavioral gaps
 
 A SwiftPM package whose XCTest cases are **executable evidence collectors**: one probe per
-open 🔴 GAP in the guide series that a machine can decide. The package **builds and tests
-green on the authoring host today** (stable macOS 27 `26A428`, with Xcode 27 beta 5
-`27A5237l` still selected), and its hosted runner has completed a 46-test physical-device baseline
-on an iPhone 15 Pro running iOS 27 build `24A435`. On each new beta or runtime update, the same tests turn
-behavioral drift into log lines.
+open behavioral gap that a machine can decide. The generated summary below records the installed toolchain and latest retained baselines; measurements remain specific to their hosting mode and destination. [Current runtime evidence](../notes/evidence/runtime-current.json) records the fresh Mac/simulator lanes and device-refresh boundary.
 
 **Output contract.** Probes never fake a pass/fail. A measuring probe prints
 
@@ -30,14 +26,9 @@ candidate answers, and what to write back for each outcome.
 ## Generated baseline summary
 
 <!-- current-state:probes:start -->
-- `app-hosted-ios27-beta5-simulator` — app-hosted; iOS Simulator 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `generated DeviceProbes app`; device `Simulator`; 39 tests / 19 skipped / 0 failures; contextSize=0. The 2026-09-04 app-hosted pass returned 0; this now agrees with the latest tool-hosted pass but not its earlier 4096 result.
-- `device-hosted-iphone15pro-ios27-24A435` — device-hosted; iOS 27.0 (24A435); Xcode 27.0 beta 5 (27A5237l); destination `wired physical device`; device `iPhone 15 Pro (D83AP; h16p)`; 46 tests / 2 skipped / 0 failures; contextSize=4096. 46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.
-- `device-hosted-iphone15pro-ios27-beta5` — device-hosted; iOS 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `wired physical device`; device `iPhone 15 Pro (iPhone16,1; D83AP)`; 11 tests / 4 skipped / 0 failures; contextSize=4096. Offline/static pass; a separate asset pass ran four tests with zero failures.
-- `tool-hosted-ios27-beta5-simulator` — tool-hosted; iOS Simulator 27.0 beta 5 (24A5408d); Xcode 27.0 beta 5 (27A5237l); destination `iPhone 17 Pro, OS=27.0`; device `Simulator`; 39 tests / 19 skipped / 0 failures; contextSize=0. The 2026-09-05 tool-hosted pass returned 0, while the 2026-08-17 pass returned 4096 on the same recorded builds; treat this value as volatile. Build-keyed model skips are active.
-- `tool-hosted-ios27-xcode27-final-bounded` — tool-hosted; iOS Simulator 27.0 (24A5408d); Xcode 27.0 final (27A266a); destination `iPhone 18 Pro, OS=27.0`; device `Simulator`; 39 tests / 22 skipped / 0 failures; contextSize=0. 2026-10-06 bounded independent lane; Spotlight direct call excluded after a retained 60-second timeout. First saved iPhone 17 Pro destination unavailable. Model-free error-counter probes agree with host.
-- `tool-hosted-macos27-beta5` — tool-hosted; macOS 27.0 beta 5 (26A5406e); Xcode 27.0 beta 5 (27A5237l); destination `local arm64 host`; device `Mac host`; 46 tests / 23 skipped / 0 failures; contextSize=4096. Reverified 2026-09-05; build-keyed model, attachment, and unreachable-generator skips are active.
-- `tool-hosted-macos27-stable` — tool-hosted; macOS 27.0 (26A428); Xcode 27.0 beta 5 (27A5237l); destination `local arm64 host`; device `Mac host`; 46 tests / 26 skipped / 0 failures; contextSize=4096. Default lane: 46 tests, 26 skips, 0 failures. Across bounded opt-in lanes, 44 of 46 safe tests ran and passed; PCC and interactive Instruments were intentionally excluded. Selected Xcode remains beta 5.
-- `tool-hosted-macos27-xcode27-final` — tool-hosted; macOS 27.0 (26A428); Xcode 27.0 final (27A266a); destination `local arm64 host`; device `Mac host`; 47 tests / 26 skipped / 0 failures; contextSize=4096. 2026-10-06 default lane; model-backed opt-ins, PCC and interactive Instruments excluded. New model-free error-counter probes pass.
+- `device-hosted-iphone15pro-ios27-24A435` — device-hosted; iOS 27.0 (24A435); Xcode 27.0 beta 5 (27A5237l); destination `wired physical device`; device `iPhone 15 Pro (D83AP; h16p)`; 46 tests / 2 skipped / 0 failures; contextSize=4096. Last recorded physical-device pass, 2026-09-16; refresh pending device availability. 46 tests, 2 intentional skips, 0 failures. PCC and interactive Instruments were excluded. Build 24A435 does not match public iOS 27 build 24A437.
+- `tool-hosted-current-host` — tool-hosted; macOS 27.0 (26A428); Xcode 27.0 (27A266a); destination `local arm64 host`; device `Mac14,12`; 47 tests / 26 skipped / 0 failures; contextSize=4096. 2026-10-07 default bounded lane; model-backed opt-ins, PCC and interactive Instruments excluded.
+- `tool-hosted-current-simulator` — tool-hosted; iOS Simulator 27.0 (24A5408d); Xcode 27.0 (27A266a); destination `iPhone 18 Pro, OS=27.0`; device `iPhone 18 Pro`; 39 tests / 22 skipped / 0 failures; contextSize=0. 2026-10-07 default bounded lane; model-backed opt-ins, PCC and interactive Instruments excluded. Spotlight direct-call excluded after its previously retained simulator timeout.
 <!-- current-state:probes:end -->
 
 Every result below must be interpreted against one of these complete topology tuples. A measured
@@ -80,7 +71,7 @@ Environment knobs:
   Assets in that directory are ignored by Git. Produce one with
   `xcrun coreai-build compile … --output …` (ships in the optional Metal Toolchain
   component — `xcodebuild -downloadComponent MetalToolchain`; see
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 2) or `xcrun aimodelc`.
+  the SDK capture workflow in `notes/sdk-interfaces/README.md`) or `xcrun aimodelc`.
 - `PROBE_ENUM_RUNS=100` — sample count for the `.anyOf` enforcement probe (default 10).
 - `PROBE_CONCURRENT_SESSIONS=16` — width of the concurrent-session probe (default 8).
 - `PROBE_ENABLE_PCC=1` — opt-in for the PCC probe (an unentitled process may `fatalError`
@@ -185,9 +176,9 @@ knob (asset/entitlement).
 
 | Probe id | Gap | Guide § | Destination | Status |
 |---|---|---|---|---|
-| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + NEEDED item 5 | HISTORICAL HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
+| `fm.tool-schema-flag-default` | `Tool.includesSchemaInInstructions` default value | 2.3 §4.4 + matching guide/probe | HISTORICAL HOST-26 · SIM-27 · MAC-27 · DEVICE-27 | ✅ `true` on host, sim, and device |
 | `fm.tool-derived-name` | derived `Tool.name` string | 2.3 §2 | HISTORICAL HOST-26 · SIM-27 · DEVICE-27 | ✅ verbatim type name on every tested runtime |
-| `fm.contextSize` | 4096 vs retired 8192 claim on 27 | NEEDED item 7 · 3.1 | HISTORICAL HOST-26 · SIM-27 · DEVICE-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; 🟠 4096 on host and iPhone 15 Pro; both Simulator modes most recently returned 0. Tool-hosted Simulator observations changed from 4096 (2026-08-17) to 0 (2026-09-05) on the same recorded builds. |
+| `fm.contextSize` | 4096 vs retired 8192 claim on 27 | matching guide/probe · 3.1 | HISTORICAL HOST-26 · SIM-27 · DEVICE-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; 🟠 4096 on host and iPhone 15 Pro; both Simulator modes most recently returned 0. Tool-hosted Simulator observations changed from 4096 (2026-08-17) to 0 (2026-09-05) on the same recorded builds. |
 | `fm.availability` | does FM work against the Simulator | 5.1 §13.4 · 17.2 | HISTORICAL HOST-26 · SIM-27 | 🔒 host/sim: `PROBE_ENABLE_HOST_MODEL=1`; ✅ sim: `available`, inference runs |
 | `fm.toolCallingMode-precedence` | options vs profile modifier | 2.6 §7.4 · 17.1 §4.8 | MAC-27 / DEVICE-27 | ✅ both directions confirmed on Mac/device: call-site options win; required direction ran the tool then ended in `contextSizeExceeded(4096,4099)` |
 | `fm.includeSchemaInPrompt-recording` | legacy param vs `ContextOptions` | 17.1 §4.11 | SIM-27 · MAC-27 · DEVICE-27 | ✅ one knob, two spellings; default `true` |
@@ -206,7 +197,7 @@ knob (asset/entitlement).
 | `coreai.deviceArchitectureName` | authoritative arch codes | 15.1 §4.4 | MAC-27 · DEVICE-27 (**no sim** — see below) | ✅ iPhone 15 Pro `iPhone16,1` / `D83AP` = `h16p` |
 | `coreai.specializationOptions-defaults` | `expectFrequentReshapes` default; compute-unit sets | 7.1 §4.3, §16.3-7 | MAC-27 · DEVICE-27 | ✅ device: default and cpuOnly both `false`; allowed units recorded below |
 | `coreai.ndarray-zero-init` | does `NDArray(shape:scalarType:)` zero storage | 7.3 §8.3 | MAC-27 · DEVICE-27 | 🟠 six 8 MiB device allocations were all zero; still not an initialization contract |
-| `coreai.cache-delete-while-referenced` | delete throws vs defers | 7.2 §7 + NEEDED item 7 | MAC-27 / DEVICE-27 | ✅ device: throws while live, remains findable, succeeds after release |
+| `coreai.cache-delete-while-referenced` | delete throws vs defers | 7.2 §7 + matching guide/probe | MAC-27 / DEVICE-27 | ✅ device: throws while live, remains findable, succeeds after release |
 | `coreai.specialize-cancellation` | is specialization cancellable | 7.2 §5 · 17.6 §5 | MAC-27 / DEVICE-27 | 🟠 Mac/device reported completed after ~10 s with cache entry present; still inconclusive, retry with a slow asset |
 | `coreai.cache-location-size` | cache location and entry size | 7.2 §6 | MAC-27 / DEVICE-27 | 🟠 default cache observed at `Library/Caches/coreai-cache`; one toy-model size result below |
 | `coreai.specialize-return-identity` | `specialize()` return vs `model(for:)` | 7.2 §9 | MAC-27 / DEVICE-27 | 🟠 default cache: identical 181-byte bookmarks; entitled app-group variant remains |
@@ -223,7 +214,7 @@ knob (asset/entitlement).
 | `fm.unsupportedLanguageOrLocale-error` | is the error ever thrown for unsupported locales | 17.3 §6.3 · 2.6 | SIM-27 · MAC-27 · DEVICE-27 | 🟠 `am_ET`: sim silently succeeds; stable Mac/device throw guardrail violation, not unsupported-locale — named case still unobserved |
 | `fm.spotlight-tool-surface` | declared name + unpublished `parameters` schema | 2.4 §7 · 2.3 §2 | SIM-27 · MAC-27 · DEVICE-27 | ✅ `spotlight_search`, `includesSchema=true`, beta-5 schema 83,570 characters on sim + device |
 | `fm.spotlight-direct-call` | donation + direct `call()` from the runner container | 2.4 §7/§7.1 | SIM-27 · MAC-27 · DEVICE-27 | ✅ sim + device donation works; all three encodings rejected **in-band** (code-100 JSON, never throws); 3 replies observed |
-| `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · NEEDED item 3 | SIM-27 (manual) · MAC-27 | 🔒 six FM lane names are documented; use `INSTRUMENTS-RECORDING.md` for rendered order, detail fields, badges, and remaining Core AI names |
+| `instruments.fm-workload` | Instruments recording target (not a measurement) | 5.1 §6.3 · matching guide/probe | SIM-27 (manual) · MAC-27 | 🔒 six FM lane names are documented; use `INSTRUMENTS-RECORDING.md` for rendered order, detail fields, badges, and remaining Core AI names |
 
 ## Results harvested 2026-08-20 (physical iPhone)
 
@@ -333,7 +324,7 @@ Readings, one line each:
 - **2.3 §2** — the derived `Tool.name` is the **verbatim type name** (no lowercasing, no
   snake_case, no suffix stripping) — so `SpotlightSearchTool`'s `spotlight_search` is
   hand-declared, not derived.
-- **NEEDED item 7 / 3.1** — `contextSize` changed from 4096 on the 2026-08-17 tool-hosted
+- **matching guide/probe** — `contextSize` changed from 4096 on the 2026-08-17 tool-hosted
   Simulator run to 0 on 2026-09-05 despite the same recorded builds; the app-hosted Simulator
   also returned 0 on 2026-09-04. The device remained 4096, and the device overflow error text
   independently names 4096. The unreproduced 8192 comment is retired historical provenance; keep reading the property at
@@ -449,8 +440,8 @@ Readings, one line each:
 
 | Gap | Guide § | Why skipped |
 |---|---|---|
-| `fm` CLI flag surface | 5.2 + NEEDED item 1 | CLI capture on a macOS 27 machine, not an XCTest |
-| Instruments 27 rendered FM details + Core AI lane/metric names | 5.1 §6.3 · 10.2 §3.2 + NEEDED item 3 | Apple's current page names all six FM lanes; display order/detail fields and Core AI names remain human-read via `INSTRUMENTS-RECORDING.md` + `instruments.fm-workload` |
+| `fm` CLI flag surface | 5.2 + matching guide/probe | CLI capture on a macOS 27 machine, not an XCTest |
+| Instruments 27 rendered FM details + Core AI lane/metric names | 5.1 §6.3 · 10.2 §3.2 + matching guide/probe | Apple's current page names all six FM lanes; display order/detail fields and Core AI names remain human-read via `INSTRUMENTS-RECORDING.md` + `instruments.fm-workload` |
 | Where a `#Playground` block executes | 5.1 §4 | Xcode UI behavior, not linkable API |
 | Xcode "Simulated Apple Foundation Models Availability" menu contents | 5.1 §8 | Xcode UI |
 | What a third-party `LanguageModel` populates in the FM instrument | 5.1 §10 | needs Instruments attached + human reading of lanes |

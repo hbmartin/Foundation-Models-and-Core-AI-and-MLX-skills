@@ -1,14 +1,6 @@
 # Guided generation and snapshot streaming: `@Generable`, `@Guide`, dynamic schemas, `PartiallyGenerated`
 
-**What this covers.** The Foundation Models framework's structured-output system, end to end: what
-the `@Generable` macro actually synthesises, every `@Guide` form we have evidence for, building
-schemas at runtime with `DynamicGenerationSchema`, reading results out of `GeneratedContent`, and
-how `streamResponse` differs from `respond`. It also covers three things Apple has documented
-nowhere: **how guided generation is enforced under the hood** (grammar-constrained decoding via
-`xgrammar`); the architectural consequence — a bring-your-own-model app can *lose* guided
-generation precisely when it selects the fastest backend; and **guided generation over images**, the
-`Attachment(_:).label(_:)` → `ImageReference` → `.attachmentLabel` round trip that lets a structured
-result name which of your input photos it is talking about.
+**What this covers.** Define Generable types and guides, build dynamic schemas, extract GeneratedContent, and consume response snapshots. Guided image output and backend logits have additional requirements.
 
 **Version floor.** The guided-generation core — `Generable`, `GenerationSchema`,
 `DynamicGenerationSchema`, `GeneratedContent`, `GenerationGuide`, `GenerationID`,
@@ -2328,24 +2320,7 @@ The errors you will actually see, and which are which.
 Verbatim code from an Apple Frameworks Engineer, forum thread 831404 (✅ **VERIFIED** as a quotation
 of Apple's own reply):
 
-```swift compile:27 imports:FoundationModels
-let session = LanguageModelSession()
-let stream = session.streamResponse(to: "Tell me about origami.")
-
-do {
-    for try await partialResponse in stream {
-
-    }
-} catch let error as LanguageModelError {
-
-} catch let error as LanguageModelSession.Error {
-
-} catch let error as LanguageModelSession.GenerationError {
-   // Deprecated in 27.0
-} catch {
-
-}
-```
+See the [canonical example](06-availability-errors-and-guardrails.md#37-catch-order-and-the-pattern-matching-bug).
 
 Three distinct error types, plus a catch-all. The split is by *whose fault it is*:
 
@@ -2365,34 +2340,7 @@ and report "something went wrong" for a device that simply has Apple Intelligenc
 ✅ **VERIFIED** from `Origami/Models/Error+DisplayMessage.swift:12-36`, which is the most complete
 first-party statement of this taxonomy in existence:
 
-```swift compile:27 imports:FoundationModels
-extension Error {
-    /// A short message describing the error, suitable for display in the UI.
-    var displayMessage: String {
-        if self is SystemLanguageModel.Error {
-            return "Apple Intelligence isn't available right now."
-        }
-        if let modelError = self as? LanguageModelError {
-            switch modelError {
-            case .timeout:
-                return "This is taking longer than expected. Please try again."
-            case .guardrailViolation, .refusal:
-                return "Origami can't work with that. Try a different photo or prompt."
-            case .contextSizeExceeded:
-                return "There's too much in this conversation. Try regenerating to start fresh."
-            case .unsupportedLanguageOrLocale:
-                return "Origami doesn't support this language."
-            default:
-                break
-            }
-        }
-        if self is GeneratedContent.ParsingError {
-            return "Origami had trouble understanding the response. Please try again."
-        }
-        return "Something went wrong. Please try again."
-    }
-}
-```
+See the [canonical example](01-sessions-and-prompting.md#14-errors-the-three-type-taxonomy).
 
 Three things to take from it beyond the ordering. **`LanguageModelError` is non-frozen** — the
 `default: break` is mandatory, and a `switch` without one stops compiling when Apple adds a case.

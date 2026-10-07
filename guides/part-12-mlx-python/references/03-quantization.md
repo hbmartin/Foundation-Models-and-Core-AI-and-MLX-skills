@@ -2,80 +2,23 @@
 
 **Part 12 · MLX in Python · Reference 03**
 
-**Version floor.** Everything in this guide was read against **mlx `0.32.1`** (the declared
-version in the tree; latest tag in the shallow clone is `v0.32.0`) and **mlx-lm `0.31.3`**, which
-pins `mlx >= 0.31.2` on Darwin. macOS wheels require **Apple silicon, native Python ≥ 3.10, and
-macOS ≥ 14.0**. That is the floor for *using* quantization at all.
+**Current releases:** MLX **0.32.3** and mlx-lm **0.32.0**, checked 2026-10-07. Detailed examples retain the inspected MLX 0.32.1 / mlx-lm 0.31.3 snapshots. MLX wheels require Apple silicon, native Python ≥ 3.10, and macOS ≥ 14.0; current mlx-lm requires Python ≥ 3.11 and MLX ≥ 0.32.2 on Darwin.
 
 There is a **second, much higher floor** for the fast kernels. MLX's NAX quantized matmuls — the
 ones that run on the M5-generation neural accelerators — require **Metal 4, macOS SDK ≥ 26.2, a
 deployment target ≥ 26.2**, and at runtime **`__builtin_available(macOS 26.2, iOS 26.2, tvOS 26.2,
 visionOS 26.2)` plus GPU architecture generation ≥ 17 (≥ 18 on `'p'` parts)**. Below that line you
-get the older Metal kernels, silently. Above it you get more speed and, as of **2026-07-27**, a
-cluster of **open correctness bugs that silently corrupt quantized model output**. Both halves of
-that sentence are the reason this guide exists.
-
-Nothing here is written from memory. Every API name, flag and number comes from a research note
-read this session and carries an evidence marker.
+get the older Metal kernels, silently. Above it, validate output against a reference implementation: source fixes and target-hardware remediation are tracked separately in the relevant kernel sections.
 
 ---
 
 ## What this covers
 
-Quantization in MLX is not one feature. It is four things wearing the same name, and confusing
-them is how people ship broken models:
-
-1. **A numeric format** — affine at 2/3/4/5/6/8 bits, or one of the three block-float modes
-   (`mxfp4`, `mxfp8`, `nvfp4`). Choosing one is a size/quality decision.
-2. **A memory layout** — packed `uint32` weights plus a separate scales array plus (for affine) a
-   separate biases array. Three arrays, not one. Every API in this guide takes all three.
-3. **A kernel dispatch problem** — whether your shapes hit the fast path is decided by
-   `K % 64 == 0`, by `transpose=True`, and for the gather path by a tile constant of `BK = 64`.
-   Miss those and nothing warns you; you just get slower, or on one hardware generation, wrong.
-4. **A calibration procedure** — plain round-to-nearest, or one of mlx-lm's four data-aware
-   pipelines (AWQ, GPTQ, DWQ, dynamic). This is where the quality actually comes from at 3 bits
-   and below.
-
-Read this guide to learn:
-
-- **The verified mode inventory** and what each mode's scale encoding actually is — including the
-  fact that `fp8_e8m0`, `fp8_e4m3` and `fp4_e2m1` are **MLX's own C++ structs**, not Metal types,
-  and that MLX builds the whole MX/NV story in software on top of plain integer operands.
-- **The bits-per-weight arithmetic**, so you can predict a checkpoint's size before you convert it
-  and recognise when MLX's reported number disagrees with your expectation (it usually should).
-- **The complete API**: `mx.quantize`, `mx.dequantize`, `mx.quantized_matmul`, `mx.gather_qmm`,
-  `mx.qqmm`, `nn.quantize`, `nn.QuantizedLinear`, `nn.QuantizedEmbedding`, `nn.QQLinear`.
-- **The gates** that decide kernel selection, what happens when you miss them, and why the failure
-  is invisible.
-- **`gather_qmm`** — the op that makes Mixture-of-Experts decode tractable, why reading only the
-  routed experts is worth multiples rather than percentages, and community measurements of exactly
-  that.
-- **Learned quantization** — what AWQ, GPTQ, DWQ and dynamic quantization each actually do in
-  mlx-lm's implementation, their real argparse defaults, their hard limits, and when the extra
-  compute pays for itself.
-- **⚠️ The corruption bugs.** Four separate defects in quantized matmul paths, with issue numbers
-  and precise status as of 2026-07-29. One of them leaves output rows **unwritten**, exposing
-  recycled Metal allocator memory — which is sometimes coincidentally plausible, which is why it
-  went unnoticed.
-- **A verification recipe** you should run before every ship: quantized versus unquantized, one
-  fixed prompt, greedy sampling, and a buffer-poisoning trick that turns "sometimes wrong" into
-  "always caught".
+Choose a quantization mode, group size, and compute path; validate numerical accuracy and check the corruption pitfalls before deploying.
 
 ## What this does *not* cover
 
-- **KV-cache quantization** (`--kv-bits`, `QuantizedKVCache`, `quantized_kv_start`). It shares the
-  word "quantization" and almost nothing else: it is an *activation* cache format, its failure
-  modes are different, and it deserves its own guide. §11 gives you the four facts you need so you
-  don't conflate the two.
-- **LoRA / QLoRA / DoRA on quantized bases.** That is the fine-tuning guide in this part.
-- **Distributed and sharded quantized layers** (`QuantizedAllToShardedLinear`,
-  `QuantizedShardedToAllLinear`). See the distributed guide.
-- **Core AI's compression story** (palettization, `.aimodel` numeric formats). Different framework,
-  different file format, different tooling —
-  [Part 9](../../part-09-coreai-compression-numerics/).
-- **Metal kernel authoring against MetalPerformancePrimitives.**
-  [Part 11](../../part-11-metal-and-tensorops/) covers what TensorOps does and does not give you;
-  §2.4 here summarises the one conclusion that changes how you read MLX's quantized kernels.
+Related references: [Part 9](../../part-09-coreai-compression-numerics/), [Part 11](../../part-11-metal-and-tensorops/).
 
 ## What you need
 
@@ -93,33 +36,7 @@ Read this guide to learn:
 
 ## ⚠️ Read this before you trust a number below
 
-Three sourcing rules apply to everything that follows.
-
-**First: the MLX clone behind these notes is shallow (`--depth 50`).** `git log` on most paths
-returns the graft boundary, not real history. No date in this guide should be read as "this is
-when the feature landed" unless it is attached to a specific PR number that the notes recorded with
-a date. Where I know a date, I give it; where I do not, I say so.
-
-**Second: the NAX quantized path is new and actively churning.** Three correctness fix PRs touching
-NAX opened in the **72 hours before 2026-07-27** — PRs **#3912**, **#3922** and **#3924**; on a
-2026-08-03 `gh` re-check the first two were still open and #3924 was closed unmerged 2026-08-02
-— including a *missing `else`* in `tile_matmad_nax` that silently compiles to nothing for odd tile
-shapes and produces garbage. The research note that found it puts it plainly:
-
-> ✅ **VERIFIED** — "There is an **active stream of correctness fixes** as of the last week before
-> this investigation (3912, 3922, 3924, all within 72 hours). The NAX path is **new and still
-> settling**. A guide should not present it as mature."
-> — `notes/repos/mlx-tensorops-kernels.md:2003-2005`
-
-Treat every M5-generation quantized number in this guide as a moving target, and pin your mlx
-version in production.
-
-**Third: community measurements are labelled as such, every time.** The MoE throughput numbers in
-§7.4 come from a community model zoo, not from Apple. They are unique — nobody else has published
-them — and they are not Apple-official. Where a number is community-measured, the hardware and the
-source file are named inline.
-
----
+Pin MLX and verify quantized output on the target hardware. The NAX restrictions and current source/release observations are documented beside the affected kernels; community throughput measurements retain their hardware and source.
 
 ## Contents
 
@@ -515,6 +432,7 @@ These are the exact strings `mlx/ops.cpp` raises. Knowing them saves a debugging
 ### 2.6 `global_scale` is CUDA/CPU only, and that has a real cost on Metal
 
 `nvfp4` supports an optional per-tensor scale on top of the per-block scale. On Metal it throws on
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 mlx ≤ 0.32.0; PR **#3757** (merged 2026-08-04, first shipped in **0.32.1**, released 2026-08-18)
 removed the rejection and added basic Metal support — see the closure context below. The section
 title is kept for anchor stability; read "is CUDA/CPU only" as the ≤ 0.32.0 state this section
@@ -2042,18 +1960,20 @@ arithmetic — it produces no arithmetic at all**, leaving output rows unwritten
 the recycled Metal buffer last held. Sometimes that is obviously garbage. Sometimes it is
 coincidentally plausible. That is the whole problem.
 
-**Status legend.** Every entry below is marked with its state *as of 2026-08-03* (re-checked
-against live GitHub via `gh` on 2026-08-03; the notes behind this section were taken 2026-07-27).
-Statuses move. Check the issue before you rely on this table.
+**Current state:** the registry block above records GitHub state, released source, and local
+remediation separately. The table identifies each defect's scope; historical reproductions
+remain relevant when supporting older releases.
 
-| # | Defect | Issue / PR | Status 2026-08-03 | Affects |
+| # | Defect | Issue / PR | Recorded disposition | Affects |
 |---|---|---|---|---|
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
 | 9.1 | affine `gather_qmm` int16 overflow → **unwritten rows** | mlx**#3856** → PR **#3922** | issue **closed completed**, fix PR **merged 2026-08-26** | affine MoE, M5/NAX only |
 | 9.2 | `gather_qmm` sorted-rhs `K % 64 != 0` tail | mlx**#3887** → PR **#3922** | issue **closed completed 2026-09-07**, fix PR **merged 2026-08-26** | affine **and mxfp4** MoE, M5/NAX only |
 | 9.3 | `nvfp4` split-K → ~2× error, `NaN`/`inf` | PR **#3854** | **MERGED 2026-07-22** | nvfp4 dense matmul |
-| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **OPEN** (opened 2026-07-24) | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
+| 9.4 | fp quantized matmul, quantized dim not a multiple of 32 | PR **#3912** | **MERGED 2026-09-11**; source fix included in 0.32.3 | nvfp4 (group 16); GPU matrix path, **not** NAX-only |
 | 9.5 | fp quantized matvec, output dim < 8 | PR **#3804** | **MERGED** | mxfp4 matvec |
 | 9.6 | `tile_matmad_nax` missing `else` → silent no-op for odd tile shapes | PR **#3924** | **CLOSED unmerged** 2026-08-02, declined | all NAX GEMM |
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 | 9.7 | `nvfp4` `global_scale` unimplemented on Metal | mlx**#3911** → PR **#3757** | **CLOSED** 2026-08-05; fix merged 2026-08-04, ships in **0.32.1** — on ≤ 0.32.0 it **throws**, does not corrupt | nvfp4 on Apple silicon, mlx ≤ 0.32.0 |
 
 Read the last column carefully. **Five of the seven are M5-generation-only.** On an M1 through M4
@@ -2062,8 +1982,10 @@ machine most of this section is history rather than a hazard — but "most" is n
 
 ### 9.1 The bad one: affine `gather_qmm` leaves rows unwritten — mlx#3856
 
+<!-- defect-ref:ml-explore.mlx:pull:3922 -->
 **Status: issue closed completed and fix PR #3922 merged, 2026-08-26.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3856 -->
 > ✅ **VERIFIED** — mlx#3856 (closed completed 2026-08-26; 9 comments), summarised at
 > `notes/repos/issues-mlx-stack.md:379-427`.
 >
@@ -2229,6 +2151,7 @@ native K is not aligned, padding is a correctness workaround with memory and com
 it rather than describing it as a free conversion setting.[^k64-tradeoff]
 
 ### 9.3 `nvfp4` split-K — fixed, and the reason is instructive — PR #3854
+<!-- defect-ref:ml-explore.mlx:pull:3854 -->
 
 **Status: MERGED 2026-07-22.**
 
@@ -2256,12 +2179,12 @@ assumes "a group is at least as large as a block" is wrong for `nvfp4` and only 
 is a structural hazard, not a one-off, and it is a reason to treat `nvfp4` on Metal as the least
 mature of the four modes — a judgement that §9.7 independently supports.
 
-This one is **merged**, so an mlx build from after 2026-07-22 has it. It is in the table because
+This PR is **merged**; verify that the installed release contains its commit before relying on the fix. It is in the table because
 its *shape* — a mode-specific block-size assumption — is the kind of defect that recurs.
 
 ### 9.4 fp quantized matmul when the quantized dim is not a multiple of 32 — PR #3912
 
-**Status: OPEN as of 2026-07-29, opened 2026-07-24.**
+**Current record:** PR #3912 merged 2026-09-11, and its merge commit is contained in stable MLX 0.32.3. Local remediation is unverified; reproduce the shape below on the installed release before removing a workaround.
 
 > ✅ **VERIFIED** — `notes/repos/mlx-tensorops-kernels.md:1994`: PR **3912**, 2026-07-24, OPEN:
 > *"Fix fp quantized matmul corruption when the quantized dim is not a multiple of 32"*. Also
@@ -2279,7 +2202,7 @@ this is the fp modes' analogue of §9.2.
 > correctly — *"a model can decode perfectly and corrupt during prefill."* **Not NAX-only:** the
 > PR's reproducer is an M3 Pro. Magnitude in that reproducer: max |err| ≈ 40, **72% of outputs
 > wrong**, versus ~1e-3 on the aligned/CPU/vector paths.
-> **Safe default until the PR merges:** keep dimensions that are *already* multiples of 64 aligned;
+> **For releases without the bounded-tail fix:** keep dimensions that are *already* multiples of 64 aligned;
 > for a legal non-aligned NVFP4 model, either pin a revision containing #3912's bounded-tail fix,
 > route the affected matrix operation to the verified CPU path, or pad only after measuring the
 > graph-wide cost. The PR's own `K = 1040` reproducer would need padding to 1088: 48 extra reduction
@@ -2291,6 +2214,8 @@ this is the fp modes' analogue of §9.2.
 
 **Status: MERGED.**
 
+<!-- defect-ref:ml-explore.mlx:pull:3804 -->
+<!-- defect-ref:ml-explore.mlx:issue:3762 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:1043`: PR **#3804** "Fix fp quantized matvec
 > for output dim < 8 (issue **#3762**: `fp_qmv_impl` used the raw scale byte instead of
 > `dequantize_scale` → **wrong mxfp4 matvec for `out_vec_size < 8`**)."
@@ -2328,7 +2253,10 @@ written down.** As long as you use MLX's own instantiations (tiles fixed at 64/6
 these headers — Part 11 territory — you are not, and you should assume the assert is not there yet.
 
 ### 9.7 `nvfp4` `global_scale` on Metal — mlx#3911
+<!-- defect-ref:ml-explore.mlx:issue:3911 -->
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 
+<!-- defect-ref:ml-explore.mlx:pull:3757 -->
 **Status: CLOSED 2026-08-05 — fixed by PR #3757 (merged 2026-08-04), shipped in mlx 0.32.1, as of
 2026-08-23.** Covered in §2.6, including the closure context. It stays in this table for
 completeness and as the counterexample: on ≤ 0.32.0, an unimplemented feature that raises
@@ -2344,6 +2272,7 @@ first.
 
 **`MLX_SDPA_BLOCKS` must be a multiple of 32.**
 
+<!-- defect-ref:ml-explore.mlx:pull:3875 -->
 > ✅ **VERIFIED** — mlx PR **#3875** (MERGED 2026-07-22), `notes/repos/issues-mlx-stack.md:262-274`.
 > The env var was added in #3455 and validated only for `> 0`, but pass-2 in `sdpa_vector.h`
 > iterates `blocks / BN` with `BN = 32` and integer division:
@@ -2360,6 +2289,7 @@ first.
 
 **Batch-versus-single equivalence is not achievable on gen-17, in any dtype.**
 
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 > ✅ **VERIFIED** — mlx#3897 (closed 2026-08-09; 7 comments at snapshot), M5 base
 > `applegpu_g17g` 32 GB, macOS 26.5.2 /
 > 25F84, reproduced on mlx 0.31.2 **and** 0.32.0; M3 Max clean.
@@ -2695,6 +2625,7 @@ print("Any nonzero row count means the kernel did not write those rows.")
 > are safe** — fall back to check 3, which needs no allocator assumptions at all.
 
 ### 10.5 What to put in CI
+<!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
 
 A pragmatic split:
 
@@ -2723,6 +2654,7 @@ to where the real coverage lives.
 
 **1. It costs decode speed and, today, *raises* prefill peak memory.**
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
 > ✅ **VERIFIED** — mlx-lm#1587 (OPEN, 11 comments), reported on Llama-3.2-3B-Instruct-4bit,
 > **M4 Max 128 GB, macOS 27.0**, `notes/repos/issues-mlx-stack.md:498-505`:
 >
@@ -2755,6 +2687,7 @@ The conclusion from that thread is worth memorising:
 
 **3. `RotatingKVCache` cannot be quantized — and `hasattr` will not save you.**
 
+<!-- defect-ref:ml-explore.mlx-lm:pull:1584 -->
 > ✅ **VERIFIED** — `notes/repos/issues-mlx-stack.md:580-596`:
 > ```python
 > def to_quantized(self, group_size: int = 64, bits: int = 4) -> QuantizedKVCache:
@@ -2762,7 +2695,8 @@ The conclusion from that thread is worth memorising:
 > ```
 > and `maybe_quantize_kv_cache` guards with `if hasattr(c, "to_quantized")` — which passes,
 > because the method **is defined and it raises**. *"Presence ≠ implementation."*
-> Fix in flight: mlx-lm PR **#1584** adds `RotatingQuantizedKVCache`; `keep > 0` will still raise.
+> The unmerged proposal mlx-lm PR **#1584** adds `RotatingQuantizedKVCache`; `keep > 0` still raises
+> in that patch. Stock 0.32.0 still raises for rotating-cache quantization at any `keep` value.
 
 **4. gpt-oss plus a quantized KV cache is a silent client timeout.**
 
@@ -2853,13 +2787,14 @@ LADDER       M = 1        qmv
 FIXED MAIN   #3856  affine gather_qmm, n > 32768 && n % 64 != 0, M5/NAX
              #3887  gather_qmm sorted-rhs, K % 64 != 0, M5/NAX, mxfp4 too
                     -> both fixed by #3922 (`d73eb752`); v0.32.2 predates the merge
-OPEN BUGS    #3912  fp quantized matmul, quantized dim % 32 != 0
-             #3924  tile_matmad_nax missing else, odd tile shapes
-             (#3912/#3924 OPEN; #3854 nvfp4 split-K is MERGED)
+RELEASED     #3912  bounded fp quantized matmul tail; fix in v0.32.3
+             #3922  gathered-row fixes; also contained in v0.32.3
+UNVERIFIED   Local remediation on the installed wheel; run the reproducer.
+DECLINED     #3924  tile_matmad_nax missing else, closed unmerged
 
 MITIGATION   Prefer native K % 64 == 0; otherwise pin a fixed revision, use a
              safe fallback, or measure padding. Pad gathered rows to 64 while
-             the row-tail bugs remain open.
+             the installed release still reproduces the row-tail bug.
 
 ENV          MLX_ENABLE_TF32 defaults to 1. Set it to 0 BEFORE the first matmul
              or it silently does nothing. Metal: gen-17 + macOS 26.2 only.
@@ -2892,81 +2827,24 @@ forever, but it is the rate today.
 
 Things this guide could not verify, what would resolve them, and what to do meanwhile.
 
-> 🔴 **GAP 1 — the return arity of `mx.quantize` for non-affine modes.**
-> The published signature says `-> tuple[array, array, array]`, but the mode table says `mxfp4`,
-> `mxfp8` and `nvfp4` have **no bias**, and `dequantize`'s `biases` is `Optional`. Whether those
-> modes return a 2-tuple, a 3-tuple ending in `None`, or a 3-tuple with a dummy array is not
-> settled by the notes.
-> **Resolution:** `python/tests/test_quantized.py`, or one line at a REPL.
-> **Safe default:** unpack defensively (`q[2] if len(q) > 2 else None`) and pass `biases=None`
-> explicitly for the fp modes, as every listing in this guide does.
->
-> 🔴 **GAP 2 — no way to ask which quantized kernel ran.**
-> There is no MLX API, env var or attribute that reports the dispatch decision. The gates live in
-> `quantized.cpp` behind the Python boundary.
-> **Resolution:** an upstream diagnostic hook, or a Metal capture in Instruments where the kernel
-> names are readable (the NAX variants are separately named).
-> **Safe default:** benchmark the shapes you care about (§6.5), use `transpose=True`, and preserve
-> native 64-alignment where it exists. For a non-aligned K, compare a pinned fix or safe fallback
-> against measured padding rather than changing the graph unconditionally.
->
-> ✅ **GAP 3 — RESOLVED 2026-07-29 — PR #3912's trigger, scope and magnitude.**
-> The PR body was read live via `gh` on 2026-07-29 (PR still **OPEN**): trigger `K % 32 == 16`,
-> legal only for `nvfp4` (group size 16); affected kernels `fp_qmm_t_impl` and siblings in
-> `fp_quantized.h`, GPU matrix path only (CPU and vector/decode kernels correct); **not**
-> NAX-gated — reproduced on an M3 Pro; magnitude max |err| ≈ 40 with 72% of outputs wrong in the
-> reproducer. Full detail now in §9.4.
-> **Safe default:** keep already-aligned dimensions aligned. For legal non-aligned NVFP4 dimensions,
-> pin a revision containing the fix or use a verified fallback; pad only after measuring the
-> graph-wide overhead.
->
-> 🔴 **GAP 4 — `gather_qmm`'s index dtype and rank contract.**
-> "Flat indices along the batch dimensions" is the whole published description. The permitted dtype
-> (int32 vs uint32), the permitted rank, and the semantics when `lhs_indices` and `rhs_indices` are
-> both supplied are not pinned down.
-> **Resolution:** `mlx/ops.cpp`'s validation for `gather_qmm`, or `python/tests/test_quantized.py`.
-> **Safe default:** 1-D `int32` `rhs_indices` of length `n`, `lhs_indices=None` — the MoE-decode
-> shape mlx-lm's `SwitchLinear` exercises.
->
-> ✅ **RESOLVED ON MAIN — `mlx#3922` merged 2026-08-26; `mlx#3856` and `mlx#3887` are closed.**
-> Both `mlx#3856` and `mlx#3887` were **OPEN** on 2026-07-27, with `mlx#3922` (upstream) and
-> `mlx-lm#1585` (downstream
-> padding workaround) also open. A **2026-07-31** re-check still found all three open; that is now
-> historical. On **2026-08-26**, `mlx#3922` merged with a focused regression test and `mlx#3856`
-> closed.
-> Release v0.32.2 (2026-08-25) predates that merge. On 2026-09-07, `mlx#3887` closed completed
-> after maintainers confirmed #3922 covers its reported affine and MXFP ragged-K cases.
-> **Resolution:** pin `d73eb752` or later, or use a release that contains that commit.
-> **Safe default:** preserve native 64-alignment and keep the gathered-row workaround on ≤0.32.2
-> while needed, but re-measure and remove padding after a fix; both forms of padding consume memory
-> and compute even when the underlying bug is gone.
->
-> 🔴 **GAP 6 — quality numbers for MLX's quantization modes specifically.**
-> The corpus contains no MLX-measured perplexity or benchmark table comparing affine-4 against
-> `mxfp4` against `nvfp4` on the same model. The quality claims in §3.2 and §7.5 are
-> **community-measured on Core AI bundles**, not on MLX, and the schemes do not map one-to-one
-> (Core AI's "sym8" is symmetric-linear with a per-K-block-32 scale; MLX's affine-8 is asymmetric
-> with a bias). The *mechanisms* transfer; the exact rankings may not.
-> **Resolution:** run `mlx_lm.evaluate` (§8.8) across modes on one model and publish it.
-> **Safe default:** treat §3.2 as directional and run your own §10 checks.
->
-> 🔴 **GAP 7 — the `nn.quantize` / `mlx_lm` interaction with `quantize_input=True`.**
-> The docstring says `quantize_input=True` is "only supported for `nvfp4` and `mxfp8` modes and
-> `Linear` layers", and mlx-lm's `-qa` path raises on a bias term. What happens when
-> `quantize_input=True` meets a model containing a mix of eligible and ineligible layers — silent
-> skip, or raise — is not recorded.
-> **Resolution:** `python/mlx/nn/layers/quantized.py` read directly.
-> **Safe default:** apply a `class_predicate` that selects only the layers you have verified are
-> eligible, rather than relying on the default predicate to do the filtering.
->
-> 🔴 **GAP 8 — the poisoning technique's reliability.**
-> §10.4's allocator-seeding code is a reconstruction. Whether `mx.full` + `del` reliably places a
-> buffer of the right size class into the recycle pool depends on allocator internals; the only
-> supporting facts are the reuse window `[size, size + 2·page_size)` and the fact that
-> `mx.clear_cache()` drains the pool.
-> **Resolution:** upstream PR #3922 now includes the focused regression in `python/tests/test_quantized.py`.
-> **Safe default:** treat a zero result from §10.4 as inconclusive and fall back to §10.3, which
-> makes no allocator assumptions.
+> 🔴 **Remaining quantization questions require versioned source or runtime checks.**
+> The published `mx.quantize` signature describes three outputs while non-affine modes have no bias.
+> Verify installed return arity or unpack defensively with `q[2] if len(q) > 2 else None` and pass
+> `biases=None` for the fp modes.
+> No recorded public diagnostic identifies the selected quantized kernel. Use Metal capture or
+> measured shapes; preserve native alignment and compare pinned fixes/fallbacks before adding padding.
+> The reported NVFP4 `K % 32 == 16` matrix-path corruption also affected M3 Pro, so it was not
+> NAX-specific (§9.4).
+> For ragged gathered-K cases, upstream #3922 added a regression and merged at `d73eb752`. Release
+> 0.32.2 predates that merge; 0.32.3 contains it. Issue closure does not establish remediation in an installed wheel: pin
+> a containing revision/release, verify the reproducer, then remove padding after measuring overhead.
+> The allocator-poisoning example remains reconstructed; a zero result is inconclusive, so prefer the
+> upstream regression or §10.3.
+> `gather_qmm` index dtype/rank and paired-index semantics are not fully specified here; the exercised
+> MoE shape uses one-dimensional int32 `rhs_indices` with `lhs_indices=None`. Select verified eligible
+> Linear layers explicitly for `quantize_input=True` rather than assuming mixed-layer behavior.
+> Finally, Core AI quantization quality rankings are not MLX measurements; compare modes on the same
+> model with `mlx_lm.evaluate`.
 
 **One thing that is emphatically *not* a gap:** the pinned MLX implementation does not use native
 scale planes. Its kernels hand-dequantize into threadgroup memory (§2.4). The older negative header
@@ -3012,9 +2890,6 @@ Everything in this guide traces to one of these. Nothing was written from model 
 
 **Series corrections applied:**
 
-- `notes/CORRECTIONS-PENDING.md` — item **C3** correctly identified `fp8_e8m0` / `fp8_e4m3` /
-  `fp4_e2m1` as MLX's own structs but overgeneralized a 26.6 negative header search. §2.4 now
-  distinguishes MLX's pinned implementation from Xcode 27's documented multiplane tensor API.
 
 **A note on precedence.** Where the brief for this guide and the research notes disagreed, the
 notes won and the difference is reported inline — most visibly in §7.4, where the community

@@ -1,15 +1,15 @@
 # Silent-failure index — Shipping and operating on-device AI in a released app
 
-**50 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**47 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Data & artifact loss](#data--artifact-loss) | 5 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 9 |
+| [Data & artifact loss](#data--artifact-loss) | 4 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 8 |
 | [Performance cliffs](#performance-cliffs) | 3 |
-| [Resource growth](#resource-growth) | 13 |
+| [Resource growth](#resource-growth) | 12 |
 | [Misleading signals](#misleading-signals) | 7 |
 | [Version drift](#version-drift) | 1 |
 | [Docs vs reality](#docs-vs-reality) | 4 |
@@ -20,7 +20,6 @@
 
 **Part 15**
 
-- [TOC: bookmarks quietly die — init?(resolvingBookmark:) returns nil, not an error, once the entry is purged](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A stored bookmark quietly stops working — purge or invalidation makes resolve return nil, not an error](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#8-️-silent-failure-the-bookmark-that-quietly-stops-working) — 15.1
 - [bookmarkData doesn't pin the entry; resolvingBookmark returns nil, not an error — failure lands in an else branch](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#82-the-defect) — 15.1 🔇
 - [Code comment marks the silent branch: a well-formed bookmark whose entry is gone resolves to nil](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#84-the-fix-persist-a-record-never-a-bare-bookmark) — 15.1
@@ -32,7 +31,6 @@
 
 - [compile exits 0 for any arch; codes track device ids, not names — green CI, invalidCompiledModel in users' hands](part-15-shipping-and-operating/README.md#151--shipping-models-background-assets-per-architecture-variants-and-updates) — 15.README 🔇
 - [AOT compilation has a far narrower hardware floor than the framework — AOT assets exclude devices the framework supports](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#shipping-models-background-assets-per-architecture-variants-and-updates) — 15.1
-- [TOC: coreai-build compile succeeds for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [A green compile the device rejects — exit 0 proves nothing; the failure is invalidCompiledModel in the field](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#5-️-silent-failure-a-green-compile-that-the-device-rejects) — 15.1
 - [xcrun coreai-build compile exits 0 for architectures the device will reject — only a device load validates](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#51-the-defect) — 15.1 🔇
 - [A bad app-group entitlement silently drops to the per-bundle cache — specialization cost and storage double](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#103-️-the-initializer-returns-nil-and-apples-own-sample-calls-fatalerror) — 15.1
@@ -53,7 +51,6 @@
 **Part 15**
 
 - [A successful load is not a fit test — first inference adds activations and KV, and compute unit moves headroom 2×](part-15-shipping-and-operating/README.md#152--memory-jetsam-thermals-energy-and-measuring-honestly) — 15.README 🔇
-- [TOC: two slightly different options structs silently create two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#what-this-covers) — 15.1
 - [Prewarming a graph with static-shape host KV I/O allocates the whole cache up front — a net loss; gate your prewarm](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#62-the-three-levers) — 15.1
 - [SpecializationOptions is part of the cache key — two variants mean two multi-gigabyte specializations](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#9-️-silent-failure-two-options-structs-two-multi-gigabyte-specializations) — 15.1
 - [Slightly different SpecializationOptions from two code paths silently double the multi-GB cache and re-stall first load](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#91-the-defect) — 15.1 🔇

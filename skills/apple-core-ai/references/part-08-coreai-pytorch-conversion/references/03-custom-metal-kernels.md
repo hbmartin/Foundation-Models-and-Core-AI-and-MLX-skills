@@ -2,15 +2,7 @@
 
 **Part 8 · Core AI: converting from PyTorch · Reference 03**
 
-**Version floor.** `TorchMetalKernel` ships in **`coreai-torch` 0.4.1**, which pins
-**`coreai-core==1.0.0b2`** exactly, requires **Python ≥ 3.11** and **torch ≥ 2.8.0** (validated to
-**2.13.0**; anything newer imports with a `UserWarning`). ✅ **VERIFIED** —
-`repos/apple__coreai-torch/pyproject.toml:5-59`, `coreai_torch/__init__.py:32-39`. The assets it
-produces run on the public Core AI runtime, i.e. **iOS 27 / iPadOS 27 / macOS 27** and the Xcode 27
-toolchain; there is no back-deployment of `.aimodel` custom kernels to 26.x. Authoring itself is
-**macOS-only in practice** — Apple's own test suite skips every Metal test with *"Metal tests run
-only on Mac"* (`tests/dsl/conftest.py:23`), and a custom kernel is **GPU-only by construction**: the
-Neural Engine executes fixed hardware ops and cannot run arbitrary Metal Shading Language.
+**Requirements:** Current conversion uses `coreai-torch` 0.4.3 with beta `coreai-core==1.0.0b3`, Python ≥3.11, and torch ≥2.8.0. The `TorchMetalKernel` source/signature inventory below was inspected in 0.4.1 (`pyproject.toml:5-59`, `coreai_torch/__init__.py:32-39`); its 2.13.0 warning boundary is a package compatibility claim, not fresh local testing of that range. Custom kernels run on the GPU, and Apple's Metal tests require a Mac. Core AI assets target OS 27 and Xcode 27.
 
 If your kernel body reaches for **TensorOps** (`mpp::tensor_ops::matmul2d`, cooperative tensors),
 a second, finer version ladder applies to the *device OS*, not to `coreai-torch`:
@@ -21,69 +13,17 @@ machine learning workloads with the M5 and A19 GPUs"*, quoted in
 the shipped Xcode 26.6 SDK annotates the relevant TensorOps symbols with a 26.2 deployment macro.
 Both statements are true and they are about different things — §11 untangles them.
 
-> ⚠️ **Read this before you write a line of MSL.** Core AI has **zero Apple sample-code projects** —
-> verified: 0 `sampleCode` entries across all 312 indexed Core AI symbols, and
-> `/documentation/updates/coreai` returns 404. Unlike Foundation Models, there is no first-party
-> compiling reference app to diff your work against. The strongest evidence available is the shipped
-> `apple/coreai-torch` source and its test suite, which is what this guide is built on. Every
-> signature below was read from that clone this session, and every line citation is real.
+See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-The mechanism, in one sentence, is the one the WWDC26 session 325 presenter used: **you give
-`coreai-torch` a second input alongside your PyTorch model — your kernel source in Metal Shading
-Language — and the converter bundles both into a single asset, with the MSL embedded so it ships
-with the model.**
-
-> ✅ **VERIFIED** — WWDC26 session 325, *"Dive into Core AI model authoring and optimization"*
-> (Sachin, Core AI team), lines 178–184:
-> *"Here's what changes with custom Metal kernels. **I am adding a second input to `coreai-torch`.
-> My kernel's source code written in the Metal Shading Language, or MSL.** The converter takes both
-> my PyTorch model and my custom kernel, and **bundles them together into a single asset. The MSL is
-> embedded right inside. It ships with the model.**"*
-
-Concretely, this guide covers:
-
-- **The three pieces** you must write — a PyTorch reference implementation (which is what
-  `torch.export` sees during tracing), the Metal kernel body, and the `TorchMetalKernel`
-  registration that binds them — plus the fourth thing you *don't* write, because the converter
-  generates it.
-- **When to do this at all.** Core AI already ships fast kernels and primitives for heavy operations
-  like scaled dot-product attention. Reaching for a custom kernel before profiling is a reliable way
-  to make a model slower. §2 is deliberately discouraging, with community measurements showing both
-  a 3.6× win and a clear regression from the same technique.
-- **The full constructor and call signature**, field by field, read from
-  `coreai_torch/_torch_metal_kernel.py`.
-- **The axis reversal.** `MTLTensor` extents are stored in the *reverse* of the torch shape. This is
-  documented in Apple's own test docstring and it is the single most expensive footgun in the API —
-  it produces kernels whose PyTorch reference passes on CPU and whose Metal body reads out of bounds.
-- **`result_shapes` at every call site**, why the transcript makes a point of it, and what silently
-  goes wrong when you hardcode it.
-- **Registration order** — kernels must be registered with `TorchConverter` *before* the exported
-  program is added — and the exact `ValueError` you get when two kernels share a name.
-- **Scalars, dtype templating, multiple outputs, `helper_src`**, and the 31-buffer parameter limit
-  that ties all four together.
-- **Reaching TensorOps from inside a `TorchMetalKernel` body** — the SAM3 FlashAttention integration
-  from session 330, the OS 27 auxiliary scale-plane path, and the 26.x/custom-format cooperative-
-  tensor fallback.[^xcode27-scale-planes]
-- **The failure taxonomy**: what raises at construction, what raises at conversion, and the one
-  category that raises neither — a malformed MSL body that converts cleanly, saves cleanly, loads
-  cleanly, and fails only when you bind a function.
+Provide a PyTorch reference, a Metal kernel, and a `TorchMetalKernel` registration. Check reversed tensor extents, result shapes, dispatch, dtype, and parity with the reference before relying on a performance improvement.
 
 ## What this does *not* cover
 
-- **How to write a *good* Metal kernel.** Tiling, SIMD-group mapping, cooperative tensors,
-  `matmul2d` descriptors, `reduce_rows`, the M5 neural accelerator — all of that is
-  [Part 11 — Metal and TensorOps](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md). This guide is about the
-  *seam*: how a kernel you already know how to write gets into an `.aimodel`. §11 marks the handoff
-  precisely.
-- **Custom op *lowering*** (`register_torch_lowering`), which expresses a new op using existing Core
-  AI operations rather than raw MSL. That is a different, usually better, extension point — see
-  guide 04 in this part, and §2.3 for the decision.
-- **Composite ops** (`coreai_torch.composite_ops`: `SDPA`, `RoPE`, `RMSNorm`, `GatherMM`,
-  `GatedDeltaUpdate`) — the pre-packaged fast paths you should exhaust first. Guide 02 in this part.
+Related references: [Part 11 — Metal and TensorOps](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md).
 
 ## What you need
 
@@ -2554,7 +2494,7 @@ what the headers do and do not contain.
 |---|---|
 | Session 330 narrates `MTLTensor` **scale planes** with `blockFactors` and an auxiliary plane map | **Corroborated by Xcode 27.** The older negative result came from Xcode 26.x headers and the pinned MLX implementation; in-kernel cooperative-tensor dequantization remains the fallback for 26.x and custom formats. §11.4[^xcode27-scale-planes] |
 | Session 330 says int2, FP4, FP8 and E8M0 tensor types are new in iOS/macOS 27 | **Corroborated by Xcode 27.** The 26.0/26.1/26.3/26.4 ladder still describes earlier TensorOps capabilities; the new low-bit formats form a distinct OS 27 tier. §11.4[^xcode27-scale-planes] |
-| CORRECTIONS-PENDING C3 said TensorOps availability is a blanket **26.2** | **Superseded** by Tech Talk 111432's ladder (26.0/26.1/26.3/26.4). Both the ladder and the 26.2 *symbol* macro are printed, as separate facts. §11.4 |
+| Earlier TensorOps research said TensorOps availability is a blanket **26.2** | **Superseded** by Tech Talk 111432's ladder (26.0/26.1/26.3/26.4). Both the ladder and the 26.2 *symbol* macro are printed, as separate facts. §11.4 |
 | `MetalParameter`'s keyword names | Community-cited only; **guide uses the verified positional form**. §4.6 |
 | Community dtype map omits `int16`; Apple's test parametrizes over it and passes | Apple's test wins; both stated. §5.5 |
 | Docs example writes `TYPE sum = 0.0f;` under templating; Apple's own tests specialize the literal per dtype | Tests win — the docs example is float-only. §10.1 |

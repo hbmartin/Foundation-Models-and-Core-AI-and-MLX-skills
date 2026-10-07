@@ -45,7 +45,7 @@ class MkDocsHookTests(unittest.TestCase):
             path.relative_to(docs_dir).as_posix() for path in docs_dir.rglob("*.md")
         )
 
-        self.assertEqual(82, len(paths))
+        self.assertEqual(len(source_paths), len(paths))
         self.assertEqual(source_paths, sorted(paths))
         self.assertEqual(len(paths), len(set(paths)))
         self.assertEqual("Overview", next(iter(navigation[0])))
@@ -54,6 +54,25 @@ class MkDocsHookTests(unittest.TestCase):
         self.assertEqual("Cross-cutting indexes", next(iter(navigation[3])))
         self.assertEqual(1, paths.count("workflows/README.md"))
         self.assertEqual(1, paths.count("workflows/remote-training-to-ios.md"))
+
+    def test_site_routes_detect_missing_or_extra_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            docs, site = root / "docs", root / "site"
+            docs.mkdir(); (docs / "README.md").write_text("# Home")
+            (docs / "guide.md").write_text("# Guide")
+            (site / "guide").mkdir(parents=True); (site / "search").mkdir()
+            (site / "index.html").write_text("home")
+            (site / "guide/index.html").write_text("guide")
+            (site / "search/search_index.json").write_text("{}")
+            mkdocs_hooks.verify_site_routes(docs, site)
+            (site / "guide/index.html").unlink()
+            with self.assertRaisesRegex(ValueError, "missing=.*guide/index.html"):
+                mkdocs_hooks.verify_site_routes(docs, site)
+            (site / "guide/index.html").write_text("guide")
+            (site / "extra").mkdir(); (site / "extra/index.html").write_text("extra")
+            with self.assertRaisesRegex(ValueError, "unexpected=.*extra/index.html"):
+                mkdocs_hooks.verify_site_routes(docs, site)
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")

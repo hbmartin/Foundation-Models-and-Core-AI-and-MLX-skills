@@ -37,6 +37,8 @@ verifier = load_script("verify_skills", "verify-skills.py")
 PART_README = """\
 # Part 1 — Orientation
 
+<!-- part-router: {"triage": "Read this first: the triage table", "guides": "The guides in this part", "reading": "Reading order"} -->
+
 **Version floor:** everything here is **27.0 and only 27.0**. Older SDKs lack it.
 
 **Who this is for:** everyone.

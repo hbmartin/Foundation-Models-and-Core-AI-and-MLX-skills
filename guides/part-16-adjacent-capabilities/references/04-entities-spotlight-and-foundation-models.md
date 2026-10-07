@@ -36,82 +36,11 @@ not of API.
 
 ## What this covers
 
-There was an unanswered question sitting in the middle of this series' research corpus, and it is
-worth stating before anything else because this guide exists to answer it.
-
-WWDC26 session 246 — the Spotlight-plus-Foundation-Models session — sets up `SpotlightSearchTool`
-with a one-sentence prerequisite:
-
-> ✅ **VERIFIED** — WWDC26 session 246, transcript line 24, verbatim: *"Once your app has donated
-> searchable items to Core Spotlight, **or indexed entities for Apple Intelligence**, we're ready to
-> begin."*
-
-Everybody who read that sentence understood the first clause. Nobody could identify the second one.
-Our own research note recorded it as an open question — *"an interesting second on-ramp… **UNVERIFIED**
-how that path differs"* — and it stayed open through two research passes.
-
-**It is resolved.** "Indexed entities for Apple Intelligence" is `IndexedEntity` +
-`CSSearchableIndex.indexAppEntities(_:)`, the App Intents indexing API. It is not a second index.
-It is the *same* Core Spotlight index, written through a different door.
-
-Which produces the thesis of this guide, and the reason it is worth a guide rather than a footnote:
-
-> **App Intents entities and Core Spotlight items land in the same semantic index, and that one
-> index is read by three different consumers: Siri's entity resolution, `SpotlightSearchTool`
-> (i.e. your own on-device model doing RAG), and Spotlight search itself.**
-
-One indexing investment serves three surfaces. And — the part that actually changes how you
-prioritise work — **a gap in your indexing degrades all three at once, silently, with no error at
-any layer.** An entity you forgot to index is invisible to Siri, invisible to your own language
-model, and invisible in Spotlight, and nothing in any of those three code paths throws.
-
-The guide covers:
-
-- **§1–§2 — The resolved question, and the architecture.** What the second on-ramp is, with the
-  diagram, and what "one index, three consumers" buys and costs.
-- **§3 — On-ramp A: `CSSearchableItem` donation.** The classic path, complete, from
-  `CSSearchableItemAttributeSet` through batching and client state to custom attribute keys —
-  all of it read out of Apple's shipping sample project for session 246.
-- **§4 — On-ramp B: `IndexedEntity` + `indexAppEntities(_:)`.** The App Intents path. One protocol
-  conformance, `@Property(indexingKey:)`, `customIndexingKey:`, and `IndexedEntityQuery` for
-  servicing reindex requests.
-- **§5 — Precisely where the two differ**, including the three things only one of them gives you.
-- **§6–§8 — The three consumers**, one section each, with what each one actually needs from your
-  index and what it does when the index is thin.
-- **§9 — The hydration hook.** `searchableItems(forIdentifiers:searchableItemsHandler:)` — why it
-  exists (some Spotlight metadata is stored in a compact searchable-but-not-readable form the model
-  cannot read), what its exact signature is (⚠️ it is a **completion-handler** method, `nonisolated`
-  and **non-throwing** — it does not return an array, and getting this wrong is a compile error at
-  best and a silent no-op at worst), and the two field reports that contradict Apple's design story.
-- **§10 — The gap that stays open**, stated as sharply as we can state it, with a safe default.
-- **§11 — Session 343's three retrieval paths** and the data-shape rule for choosing between them.
-- **§12 — `RelevantEntities`**, the third discovery mechanism, and Apple's own three-way decision
-  rule for Spotlight vs. donations vs. relevance.
-- **§13 — Failure modes**, including four silent ones.
-- **§14 — The adoption sequence.** What to index first for the best return across all three
-  consumers, which is not the order you would guess.
+Index `IndexedEntity` values in Core Spotlight so system search and Foundation Models can retrieve app content. Preserve identifiers, update or delete stale entities, donate searchable representations, and validate the actual retrieval path.
 
 ## What this does *not* cover
 
-- **How to use `SpotlightSearchTool` itself.** Configuration members, the `SearchReply` stream,
-  `queryToken`, guidance levels and their token cost, custom pipeline stages, the contact resolver,
-  the three documented failure modes, and evaluation are all
-  [Part 2 guide 04 — Local RAG with `SpotlightSearchTool`](../../part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md).
-  This guide covers the *index* side and the *architecture*, and cross-links rather than repeats.
-  Where a number from that guide is load-bearing here — the guidance token gate, above all — it is
-  restated in one line with a pointer, not re-derived.
-- **App schema domains.** Which domains exist, what each contains, what has no domain at all, and
-  the discovery-versus-action distinction are
-  [Part 16 guide 02 — App Schema Domains](02-app-schema-domains.md). §6 assumes you have read the
-  discovery/action framing or are willing to take it on trust.
-- **On-screen awareness.** `EntityIdentifier`, the four annotation shapes, and the verified
-  `.files.file` hand-off recipe are Part 16 guide 03. Entity *annotation* is a different mechanism
-  from entity *indexing* and the two are constantly conflated; §6.4 draws the line and stops.
-- **Writing `AppIntent`s.** Nothing here requires you to have any intents at all. Indexing is a
-  discovery mechanism; it works on entities that no intent ever accepts as a parameter.
-- **Core Spotlight donation best practice.** Apple defers this to a WWDC25 session — *"Supporting
-  semantic search with Core Spotlight"* — which is **not in this corpus**. §3 covers what Apple's
-  2026 sample does, which is a working reference but not a best-practice treatment.
+Related references: [Part 2 guide 04 — Local RAG with `SpotlightSearchTool`](../../part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [Part 16 guide 02 — App Schema Domains](02-app-schema-domains.md).
 
 ## What you need
 
@@ -136,54 +65,9 @@ The guide covers:
 
 ## ⚠️ Read this before you trust a symbol name below
 
-Four things about the evidence in this guide, because this landscape is beta-era and a meaningful
-fraction of the API spellings in public circulation were reconstructed from *spoken* WWDC narration.
+The session-246 sample `LLMSearchUsingCoreSpotlightApp` supplies the search and hydration patterns (iOS 27, Swift 6). Entity indexing uses Apple's documentation and session-343 excerpts; community behavioral observations remain attributed beside the affected advice.
 
-**First: the strongest evidence here is a compiling Apple sample project.** The session-246 sample —
-Apple's own, target `LLMSearchUsingCoreSpotlightApp`, `IPHONEOS_DEPLOYMENT_TARGET = 27.0`,
-`SWIFT_VERSION = 6.0`, six Swift files and 792 lines total — was obtained and read. Every signature
-in §3 and §9 marked ✅ with a file-and-line citation came out of it. That outranks the transcript
-everywhere the two disagree, and in §9 they *do* disagree.
-
-**Second: the App Intents side has a weaker evidence class, and I am not going to pretend
-otherwise.** There is no Apple sample project in this corpus that indexes via `indexAppEntities`.
-What there is: Apple's published code-sample block on the session 343 page (which is a separate
-artifact from the transcript prose, so agreement between them is genuine corroboration), Apple's
-documentation page *"Making app entities available in Spotlight"* read through a docs mirror, and
-one accepted answer from an Apple engineer on the developer forums. That is evidence classes 3 and
-4, not class 1. §4 marks accordingly.
-
-**Third: two of this guide's most useful facts are community-measured and are labelled as such
-every single time they appear.** Both come from developers testing on 27.0 betas, both contradict
-Apple's narration, and both are the kind of thing you would rather know before shipping. They are
-never presented as Apple figures.
-
-**Fourth — added 2026-07-29: the SDK module interfaces now sit above all of it.** Every symbol
-below was checked against the `AppIntents` and `CoreSpotlight` Swift interfaces from the 26.5 and
-27.0-beta macOS SDKs, plus the cross-import overlay module
-`_CoreSpotlight_FoundationModels-27.0-macos.swiftinterface`, which is where `SpotlightSearchTool`,
-`CoreSpotlightSource` and `GuidanceProfile` actually live (`notes/sdk-interfaces/`).
-✅ **SDK-verified** (`file:lines`) marks a declaration read from those files, and it outranks even
-the compiling sample — it is the SDK the compiler sees. The one remaining blind spot is stated
-where it matters: Objective-C declarations (`CSSearchableIndexDelegate`, the
-`CSSearchableItemAttributeSet` properties, the item-deletion methods) do not appear in any Swift
-module interface, so §9's hydration signature keeps its sample-class evidence.
-
-Markers used throughout:
-
-> ✅ **SDK-verified** — read from an SDK module interface in `notes/sdk-interfaces/`, cited as
-> `filename:lines`. The strongest marker in the guide.
-
-> ✅ **VERIFIED** — quoted from Apple's sample project, Apple's published code samples, an Apple
-> documentation page, an Apple-staff forum answer, or a WWDC transcript. The citation follows.
-
-> 🟡 **RECONSTRUCTED** — the concept is attested; the exact spelling is inferred. Treat the shape as
-> right and the identifiers as provisional.
-
-> 🔴 **GAP** — we could not verify it and are saying so rather than inventing. Each gap box names
-> what is unknown, what would resolve it, and a safe default.
-
----
+SDK citations retain the 2026-07-29 macOS captures for AppIntents, CoreSpotlight, and `_CoreSpotlight_FoundationModels` from SDKs 26.5 and 27 beta. Swift interfaces omit Objective-C declarations, so absence does not invalidate the sample's delegate/property APIs. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## Contents
 
@@ -576,32 +460,15 @@ The practical arguments, which Apple does not spell out but which follow from th
 
 This is where the actual work is, and where the quality of all three consumers is determined.
 
-> 🟡 **RECONSTRUCTED** — the code below. Here is exactly how much is verified and how much is not,
-> because this matters more than usual.
->
-> **Verified:** the *attribute names* — `title`, `contentDescription`, `namedLocation`,
-> `stateOrProvince`, `keywords`, `latitude`, `longitude`, `rating`, `duration`,
-> `contentCreationDate`, `completionDate` — are read from the sample's `fetchAttributes` list
-> (`Session.swift:116-134`), where they appear as static members of `SearchableItemAttribute`.
-> As of 2026-07-29 those members are additionally ✅ **SDK-verified**: the CoreSpotlight 27.0
-> interface declares `SearchableItemAttribute` (27.0, watchOS/tvOS unavailable) with every one of
-> them as a static member (`CoreSpotlight-27.0-macos.swiftinterface:16-193`).
-> Verified separately: the custom-key write, `attributeSet.setValue(_:forCustomKey:)`
-> (`Indexer.swift:180`).
->
-> **Not verified:** that `CSSearchableItemAttributeSet`'s *properties* carry those identical
-> spellings, and the exact `CSSearchableItemAttributeSet` and `CSSearchableItem` initialisers. The
-> sample's item-construction helper (`createSearchableItems(identifiers:)`) is referenced but its
-> body was not in the extracted portion. `CSSearchableItemAttributeSet` and `CSSearchableItem` are
-> **long-standing Core Spotlight API that predates this entire stack** — they are not 2026 surface
-> and there is no reason to expect them to have changed — but they are not verified *by this
-> session's evidence*, and being Objective-C they are invisible to the 2026-07-29 SDK-interface
-> pass too, so they keep the 🟡 marker.
->
-> **What to do about it:** type the property name and let Xcode's completion confirm it. Do not copy
-> an attribute name out of a blog post; the `CSSearchableItemAttributeSet` surface is enormous and
-> a large fraction of the names in circulation are `kMDItem…` constants from the Spotlight metadata
-> layer rather than Swift property names.
+> 🟡 **RECONSTRUCTED — validate the item-construction listing against the deployment SDK.**
+> The sample's `fetchAttributes` names and 27.0 `SearchableItemAttribute` declarations verify title,
+> description, location, keywords, coordinates, rating, duration, and dates (`Session.swift:116-134`;
+> `CoreSpotlight-27.0-macos.swiftinterface:16-193`). `Indexer.swift:180` verifies the custom-key
+> write.
+> The extracted session does not attest every Objective-C `CSSearchableItemAttributeSet` property or
+> item initializer used below. Confirm those with SDK completion/compiler checks rather than
+> substituting similarly named `kMDItem…` metadata constants. Attribute selection and item
+> construction are separate evidence boundaries.
 
 ```swift prelude:guide-context
 import CoreSpotlight
@@ -1942,33 +1809,15 @@ on-ramp B.
 
 ### 10.1 The gap, stated precisely
 
-> 🔴 **GAP (G5) — does `CSSearchableIndexDelegate.searchableItems(forIdentifiers:searchableItemsHandler:)`
-> fire for content indexed via `indexAppEntities(_:)`?**
->
-> **What is known:** ✅ `IndexedEntity` is *"backed by a `CSSearchableItem`"* (Apple engineer, thread
-> 833658). ✅ Entity-indexed content is reachable by `SpotlightSearchTool` (same answer, same
-> sentence). ✅ The hydration method exists on `CSSearchableIndexDelegate` and is wired through
-> `CoreSpotlightSource(searchableIndexDelegate:)`. ✅ **(added 2026-07-29)** The entity→item bridge
-> is explicit API in the 27.0 interface: `CSSearchableItem.init(appEntity:)` /
-> `init(appEntity:priority:)` (macOS 15 / iOS 18, plus 27.0 `async` variants),
-> `associateAppEntity(_:priority:)` on both `CSSearchableItem` and
-> `CSSearchableItemAttributeSet`, and a 27.0 `relatedAppEntityIdentifier: EntityIdentifier?`
-> property (`AppIntents-27.0-macos.swiftinterface:369-406`) — adjacent evidence that entities and
-> items are one currency, but silent on the delegate's behaviour.
->
-> **What is unknown:** whether the tool consults that delegate for items that arrived through
-> `indexAppEntities(_:)` rather than `indexSearchableItems(_:)`; if it does, **what identifiers
-> arrive** — the entity's `id` stringified, a namespaced composition, something else; and whether an
-> app whose only Core Spotlight surface is entity indexing is even expected to have a
-> `CSSearchableIndexDelegate` at all, given that §4.5's reindex duty is served by
-> `IndexedEntityQuery` instead.
->
-> **Nothing in Apple's documentation, in the sessions, in the sample projects, or in any forum
-> answer in this corpus addresses it.** Session 246 wired the delegate for a `CSSearchableItem`
-> app. Session 343 discussed entity indexing without mentioning Foundation Models at all. The two
-> halves of the architecture were presented by two teams and the seam between them was never
-> described. The 26.5 and 27.0 SDK interfaces were checked on 2026-07-29 and do not settle it
-> either — the delegate protocol is Objective-C and sits outside the Swift interface surface.
+> 🔴 **GAP (G5) — entity indexing does not establish Spotlight hydration-delegate behavior.**
+> Apple's forum 833658 states that `IndexedEntity` is backed by a searchable item and is reachable
+> through `SpotlightSearchTool`. The SDK declares entity/item bridge initializers, association APIs,
+> and `relatedAppEntityIdentifier`; `CoreSpotlightSource` accepts a searchable-index delegate.
+> Neither those declarations nor the recorded sessions establish whether
+> `searchableItems(forIdentifiers:searchableItemsHandler:)` fires for `indexAppEntities(_:)`, which
+> identifier form it receives, or whether entity-only indexing expects that delegate. Session 246's
+> item-app example and session 343's entity example do not resolve the seam. Verify with an
+> entity-indexed integration probe before depending on delegate hydration.
 
 ### 10.2 Why this matters more than a normal gap
 

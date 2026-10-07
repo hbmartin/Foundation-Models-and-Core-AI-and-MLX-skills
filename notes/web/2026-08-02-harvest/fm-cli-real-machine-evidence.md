@@ -1,6 +1,6 @@
 # The `fm` CLI — first real-macOS-27 evidence (harvested 2026-08-02)
 
-**Why this file exists.** `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 1 and
+**Why this file exists.** the FM CLI capture task (now completed) and
 `guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`
 (23 🔴 GAPs, the joint-highest in the repo) both rest on the same hole: **nobody on this project
 has run `fm --help` on a macOS 27 machine.** This session found third parties who have.
@@ -182,5 +182,5 @@ resume later) — S4 only, derived from session-334 narration, so still 🟡.** 
 2. The four unknown subcommands (`available`, `quota-usage`, `token-count`, and the disputed
    `serve`) are the highest-value addition — the guide currently tells readers the list is
    unknowable.
-3. Re-run `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` item 1 unchanged: it is still the only thing
+3. Re-run the FM CLI capture task (now completed) unchanged: it is still the only thing
    that settles §2's truncation, §3's `--instructions`, §4's `serve`, and every exit code.

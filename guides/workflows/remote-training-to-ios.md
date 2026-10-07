@@ -7,12 +7,7 @@ vision, audio, and embedding models, but their exporters and iOS runners differ.
 ## Evidence and version floor
 
 This workflow targets the package and service behavior available on 2026-09-16 and the iOS 27 /
-Xcode 27 Core AI generation. Non-obvious API claims use the corpus-wide evidence states:
-
-- ✅ **VERIFIED** — confirmed in current upstream documentation or source linked beside the claim;
-- 🟡 **RECONSTRUCTED** — the route is supported, but the exact end-to-end composition is this
-  guide's;
-- 🔴 **GAP** — the current public interface cannot satisfy part of the desired contract.
+Xcode 27 Core AI generation. See the [shared evidence conventions](../README.md#evidence-conventions). The service/training recipe retains its 2026-09-16 provenance. Current package introductions are maintained in [Python MLX](../part-12-mlx-python/README.md) and [Swift MLX](../part-13-mlx-swift/README.md); inspect those boundaries before selecting a toolchain.
 
 Recheck service pricing, GPU inventory, and moving package versions immediately before a run.
 
@@ -1152,6 +1147,9 @@ configuration, and quantization metadata are part of the runtime contract.
 `--force` or overwrite flag. The preflight fails safely instead of deleting an earlier conversion.
 
 ### 5.1 Load the result with MLX Swift
+
+The manifest example below starts its compatible range at 3.31.3; that is a minimum package pin. The observed stable `mlx-swift-lm` release is 3.32.3 (2026-10-07), with Swift tools 6.2 and an MLX dependency requiring tools 6.3. See [the current app integration requirements](../part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md).
+
 
 For a prototype, add these packages and products to the iOS target:
 

@@ -6,13 +6,9 @@
 
 ## Version floor
 
-**MLX is a pip package, not an OS framework, and its floor is much lower than the rest of this
-series.** Everything in this guide targets **MLX 0.32.x**. The checkout this guide was written
-against declares `MLX_VERSION_MAJOR 0 / MINOR 32 / PATCH 1` → **0.32.1** at commit `973e27f`, and the
-documentation site served **"MLX 0.32.0 documentation"** on every page when it was crawled
-(2026-07-27). To install the macOS wheel you need **Apple silicon**, a **native `arm` Python ≥ 3.10**,
-and **macOS ≥ 14.0** — *not* macOS 27. If you have been reading Parts 7–11 of this series, unlearn
-the 27.0 floor here; it does not apply.
+Current stable MLX is **0.32.3** ([release](https://github.com/ml-explore/mlx/releases/tag/v0.32.3), checked 2026-10-07). The API descriptions below retain their inspected revision; verify version-specific behavior against the installed wheel.
+
+**Requirements:** Apple silicon, native arm64 Python ≥ 3.10, and macOS ≥ 14.0. The detailed API snapshot is MLX 0.32.1 at `973e27f`; feature-specific OS floors follow below.
 
 A handful of MLX features do carry their own OS floors, and those are the ones that trip people up:
 `mx.set_wired_limit` needs **macOS ≥ 15.0**; Metal shader logging needs **Metal 3.2 (macOS 15 / iOS
@@ -22,61 +18,16 @@ Thunderbolt 5. Each is marked in place below. Everything else in this guide — 
 evaluation, the transforms, `mx.compile`, streams, `nn.Module`, saving and loading — runs on macOS
 14.
 
-> 🔴 **GAP — MLX version-introduction dates.** The repository clone used for this guide is
-> **shallow (50 commits)**, so `git log` on most paths returns only the graft boundary. This guide can
-> tell you that an API **exists at 0.32.1** because it was read out of the source or the shipped
-> docs; it **cannot** tell you which MLX release introduced it. Wherever you see a phrase like
-> "recent" or "new", it means *new relative to the 0.31 → 0.32 commit window we could actually see*,
-> not a dated claim. To resolve: `git clone --filter=blob:none` the full history and
-> `git log -S '<symbol>' --oneline` it. **Safe default:** pin `mlx==0.32.*` in your requirements and
-> re-read the shipped `mlx/version.h` rather than trusting any date, including ours.
 
 ---
 
 ## What this covers
 
-This is the conceptual primer that the rest of Part 12 assumes. MLX looks like NumPy, and the
-resemblance is close enough that you can be productive in ten minutes and wrong in twenty. The five
-ideas below are where the resemblance ends, and every one of them is load-bearing:
-
-- **Unified memory.** Arrays do not live "on a device." They live in memory that both CPU and GPU can
-  read. You do not move arrays; you choose, per operation, *which device runs it*. This deletes an
-  entire category of code (`.to(device)`, `.cpu()`, pinned-memory staging) and introduces a new
-  tuning knob (per-op stream/device placement) that most people never touch and occasionally should.
-- **Lazy evaluation.** Operations build a graph. Nothing computes until something forces it. This is
-  the single largest source of "why is my MLX program using 60 GB" and "why does the traceback point
-  at the wrong line."
-- **Composable function transforms.** `grad`, `value_and_grad`, `vjp`, `jvp`, `vmap`, `checkpoint`,
-  `custom_function`, and `compile` are all *function-to-function* transforms, and every one of them
-  returns something the others can transform again.
-- **`mx.compile`.** What it actually fuses (a short, verified list), what it costs, and — the part
-  that costs people days — exactly what makes it recompile. We read the cache-key code and it
-  contains a trigger the documentation does not mention.
-- **`nn.Module` as a parameter tree.** MLX modules are not PyTorch modules with different spelling.
-  `Module` is a `dict` subclass, parameters are a plain nested tree of arrays, and gradients flow
-  through an explicit `model.update(params)` call rather than through in-place `.grad` accumulation.
-
-Plus the plumbing you need on day one: streams and devices, saving and loading (`safetensors`,
-`npz`, `.mlxfn`), and converting to and from NumPy and PyTorch without silently destroying your
-gradients.
+MLX arrays share CPU/GPU memory and evaluate lazily. This reference covers device placement, evaluation, function transforms, compilation, modules, and serialization.
 
 ## What this does *not* cover
 
-- **Running or fine-tuning LLMs.** `mlx-lm`, KV caches, prompt caching, quantized generation — those
-  are the later guides in this part.
-- **Distributed training and `mlx.launch`.** JACCL, ring, MPI, NCCL, hostfile schemas, tensor and
-  data parallelism — the distributed guide in this part. This guide mentions JACCL exactly once, for
-  its OS floor.
-- **Writing custom Metal kernels.** `mx.fast.metal_kernel`, `atomic_outputs`, `math_mode` — the
-  kernel-authoring guide in this part, and [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md) for the
-  Metal/TensorOps layer underneath.
-- **Quantization formats.** `affine` / `mxfp4` / `mxfp8` / `nvfp4`, `qqmm`, `nn.quantize` — the
-  quantization guide in this part, and [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md) for the
-  Core AI equivalent.
-- **MLX in Swift.** [Part 13](../../part-13-mlx-swift/README.md). The concepts transfer; the spellings and
-  several of the footguns do not.
-- **Getting an MLX model into Core AI or Foundation Models.**
-  [Part 14](../../part-14-bridges-between-stacks/README.md).
+Related references: [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md), [Part 9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/README.md), [Part 13](../../part-13-mlx-swift/README.md), [Part 14](../../part-14-bridges-between-stacks/README.md).
 
 ## What you need
 
@@ -92,47 +43,13 @@ gradients.
 
 ## ⚠️ Read this before you trust a signature below
 
-MLX moves fast — fast enough that a model's recollection of its API is both **stale and confidently
-wrong**. Nothing in this guide was written from memory. Every claim traces to one of the following,
-read in the session that produced this guide, strongest first:
-
-1. **The MLX source tree on disk** — `/repos/ml-explore__mlx` at commit `973e27f`, version
-   **0.32.1**. This is the strongest class: `python/src/*.cpp` holds the nanobind bindings including
-   the literal `nb::sig(...)` strings that *become* the published Python signatures, and
-   `mlx/*.cpp` holds the behaviour. Where the docs and the source disagree, **the source wins** and
-   the guide says so.
-2. **The MLX documentation site crawl** (`ml-explore.github.io/mlx/build/html/`, harvested
-   2026-07-27, 5,465 lines of extracted verbatim text). Apple's own prose and code samples.
-3. **Maintainer answers in GitHub issues and PRs** on `ml-explore/mlx` and `ml-explore/mlx-lm`.
-   Attributed by handle where quoted.
-4. **Community-measured numbers** from issue threads — always labelled as such, with hardware and
-   OS, and never presented as Apple figures.
-
-Two markers you will see constantly:
-
-> ✅ **VERIFIED** — quoted from source or docs read this session, with the citation attached.
-> 🟡 **RECONSTRUCTED** — the concept is attested but a spelling or default is inferred.
-> 🔴 **GAP** — we could not verify it, and we say so rather than guessing. Every GAP box ends with a
-> safe default.
+API details below were inspected at MLX `973e27f82ffe68dbd626cda31ba34997045d1eb7`. Match behavior to the installed package; community benchmarks retain their hardware and source attribution.
 
 ### Freshness warning, and it is sharp
 
-The clone's HEAD is `973e27f` ("[CUDA] Fix grid overflow in gemm conv unfold kernels…", PR #3893).
-**Three NAX correctness fix PRs opened in the three days before 2026-07-27, and none is in
-this checkout: #3912/#3922 still open, #3924 closed unmerged, on a 2026-08-03
-`gh` re-check:** PRs **#3912** (fp quantized matmul corruption when the quantized dimension is not a
-multiple of 32), **#3922** (sorted `gather_qmm` NAX boundary handling), and **#3924** — one of which
-is a *missing `else`* in `tile_matmad_nax` that silently miscompiles odd tile shapes. We grepped:
-`tile_matmad_nax` is present at `mlx/backend/metal/kernels/steel/gemm/nax.h:825` and called from
-`gemm_nax.h:81,119`, and none of #3912/#3922/#3924 appear in `git log`.
-
-None of that touches the fundamentals in this guide — NAX is the M5-and-later matmul path, and it is
-Part 11's and the quantization guide's problem. But it establishes the posture: **the newest
-surfaces in MLX are sharp-edged, they fail silently and numerically rather than loudly, and a
-three-day-old checkout can be wrong.** Pin your version, and re-run your own numerics after every
-bump.
-
----
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+MLX 0.32.3 contains PR #3912’s bounded-tail source fix; target-hardware remediation remains unverified. PR #3924 closed without merge. Validate non-aligned dimensions and odd NAX tile shapes against a numerical reference; see [quantization pitfalls](03-quantization.md#9-️-the-corruption-bugs).
 
 ## Contents
 
@@ -2894,6 +2811,7 @@ The `architecture` string is worth understanding because it drives real dispatch
 | `d` | Ultra | 50 | 50 |
 | other | default | 40 | 40 |
 
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
 > ✅ **VERIFIED (the table)** — `mlx/backend/metal/device.cpp` heuristics, per the repo notes.
 > Both columns are overridable with `MLX_MAX_OPS_PER_BUFFER` / `MLX_MAX_MB_PER_BUFFER`, and the
 > architecture string itself can be forced with `MLX_METAL_GPU_ARCH`.

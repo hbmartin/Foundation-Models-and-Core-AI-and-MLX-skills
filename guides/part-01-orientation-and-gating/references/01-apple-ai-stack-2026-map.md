@@ -6,16 +6,7 @@
 
 ## What this covers
 
-The structural change that happened at WWDC26, and the decision it replaced. In 2025 you chose a
-*framework*: Foundation Models, or Core ML, or MLX. In 2026 Foundation Models grew a public
-`LanguageModel` / `LanguageModelExecutor` protocol pair, Apple shipped conformers backed by Core AI
-and by MLX, and the question became **which backend runs behind one session API**. This guide maps
-the layers, walks the five shipping conformers and exactly when each is right, says where Core ML
-still belongs, gives a decision table keyed on constraints you actually have (privacy, offline,
-cost, model choice, context size, latency, energy, app size, eligibility) plus the two feature
-cliffs a bring-your-own model can fall off — `@Generable` and prefix reuse — presents the measured
-performance picture with full attribution — including the places where the ranking *inverts*
-depending on what you measure — and carries the series' known-bad-claims reference.
+Choose a model backend behind LanguageModelSession by privacy, connectivity, context size, structured output, hardware, and deployment constraints. Core AI, MLX, and Metal provide the execution layers underneath.
 
 ## Version floor
 
@@ -1536,35 +1527,15 @@ The defining property of this stack is that **most defects do not throw**. That 
 orientation level too — the following four will cost you a day each and none of them produces an
 error. All four are backend-independent: they will happen behind any conformer you choose.
 
+<!-- callout-id: callout-be9f78225ae3a869 -->
 > ⚠️ **SILENT FAILURE — `prewarm` with a near-miss signature compiles and is never called.**
->
-> `LanguageModelExecutor.prewarm(model:transcript:)` ships with a **default no-op extension**. If
-> your implementation's signature does not match the requirement *exactly*, it does not become the
-> protocol witness — the framework's no-op default wins instead, silently. Nothing warns you. Your
-> `session.prewarm()` call appears to work and does nothing, and you discover it as "why is the first
-> response always 3 seconds slow".
->
-> Three independent sources say so. The MLX adapter's own comment is the most precise:
->
-> > "The signature must match the requirement *exactly* — **concrete `Transcript`, not a generic
-> > `some Collection<Transcript.Entry>`** — otherwise it fails to bind as the witness and the
-> > framework's no-op default silently wins instead."
-> > — `MLXLanguageModel.swift:901-907`
->
-> And a community provider note reports the same class of bug **in Apple's own adapter today**:
-> "Implement `prewarm(transcript:)` and it compiles but is never called. **Apple's own adapter has
-> this today**, which is why `session.prewarm()` does nothing for Core AI models: do your own warm-up
-> (a 1-token generate after load)."
->
-> **How to detect it:** put a log line or a breakpoint in your `prewarm` and confirm it is reached.
-> Do not infer it from timing.
->
-> **A second layer to the same trap:** even a correctly-bound `prewarm` may not warm what you think.
-> MLX's own code documents that loading weights is not sufficient — "Metal kernels **JIT-compile
-> lazily on the first *synchronous* readback** […] so this runs a **minimal throwaway forward
-> pass**", and its weights-only `preload()` is explicitly documented as leaving the shader-JIT cost
-> on your first real request. And per session 339: "**`prewarm` isn't guaranteed to run.**" Design so
-> that weights load exactly once *either way*.
+> Implement `LanguageModelExecutor.prewarm(model:transcript:)` with a concrete `Transcript`. A generic
+> `some Collection<Transcript.Entry>` or missing parameter does not bind the protocol witness, so the
+> default no-op runs instead (`MLXLanguageModel.swift:901-907`). Verify dispatch with a counter or
+> breakpoint through `session.prewarm()`.
+> Loading weights alone does not warm lazily compiled Metal kernels; MLX uses a minimal throwaway
+> forward pass with synchronous readback. Session 339 also warns that prewarm is not guaranteed to
+> run. Make loading idempotent and retain a first-request path.
 
 > ⚠️ **SILENT FAILURE — a tool named in your instructions but absent from the toolset loops forever.**
 >

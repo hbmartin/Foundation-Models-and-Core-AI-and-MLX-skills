@@ -2,62 +2,17 @@
 
 **Part 12 · MLX in Python · Reference 04**
 
-**Version floor: mlx-lm `0.31.3` on PyPI, plus main at commit `e5baded` (2026-07-26).** mlx-lm is a
-Python package, not an OS framework, so its version axis is the *package* version, not an iOS or
-macOS release — nothing in this guide is gated on iOS 27 or macOS 27. Where an OS floor does bite,
-it is called out inline: **memory wiring requires macOS 15 or later**, and **Thunderbolt RDMA for
-distributed runs requires macOS 26.2**. The package's own declared floors, read from `setup.py`
-this session: **`mlx >= 0.31.2`** (pinned only on Darwin), **`transformers >= 5.7.0`**,
-`numpy`, `sentencepiece`, `protobuf`, `pyyaml`, `jinja2`. The declared `python_requires=">=3.8"`
-is **stale** — the shipped source uses PEP-604 `X | None` unions and `list[tuple[str, str]]`
-annotations, so **Python 3.10 is the real floor**.
-
-⚠️ **The single most important version fact in this guide:** mlx-lm **0.31.0 was pulled from
-practical use for a `BatchKVCache` cross-contamination bug**, 0.31.3 (2026-04-22) is the newest
-PyPI release, and **`main` has moved substantially past it** — PRs merged through late July 2026
-that this guide describes are *not* in any release you can `pip install` today. Every claim below
-is tagged with which of the two it came from.
+**Current release:** mlx-lm **0.32.0** ([PyPI](https://pypi.org/project/mlx-lm/0.32.0/), checked 2026-10-07), requiring **Python ≥ 3.11**, **MLX ≥ 0.32.2 on Darwin**, and `transformers ≥ 5.7.0` ([release manifest](https://github.com/ml-explore/mlx-lm/blob/a9bd8af5c02118882af735cef60705d2efce9fd0/pyproject.toml)). Detailed signatures retain the earlier `e5baded` source snapshot. Memory wiring requires macOS 15; Thunderbolt RDMA requires macOS 26.2. A merge or release inclusion does not establish runtime remediation.
 
 ---
 
 ## What this covers
 
-mlx-lm is the layer where MLX stops being an array framework and starts being an LLM runtime. WWDC26
-session 232 describes it as the thing that *"provides everything you need to load, run, quantize,
-and fine-tune large language models… and gives you both CLI tools and a Python API."* That is
-accurate but undersells it: mlx-lm ships **18 command-line entry points**, a generation API with
-five public functions, and a **cache module with nine concrete KV-cache classes** whose differences
-decide whether your workload is fast, correct, or silently broken.
-
-This guide covers three things in depth and two in passing:
-
-- **§2 — The CLI surface.** All 18 entry points enumerated from `setup.py`'s `console_scripts`,
-  with the flags that matter and real invocations. Not placeholders: commands you can paste.
-- **§3 — The Python generation API.** `load`, `generate`, `stream_generate`, and the
-  `generate_step` generator underneath them; how samplers and logits processors compose, in what
-  order, and where the defaults disagree with each other. One complete, runnable script.
-- **§4–§6 — KV caching, the deepest section.** The nine concrete cache classes and what each one
-  is for; the trimmability contract that everything else depends on; prompt caching to disk and why
-  it changes the economics of long shared prefixes; quantized KV and the counter-intuitive fact
-  that it can *increase* peak memory.
-- **§7 — Speculative decoding.** How to run it, what makes a good draft model, and the
-  acceptance-rate arithmetic that decides whether it helps at all.
-- **§8 — Batch generation.** `batch_generate`, `BatchGenerator`, and how continuous batching
-  interacts with — and constrains — every cache decision from §4.
+Run generation through the CLI or Python API, choose a KV-cache policy, and verify prompt reuse, quantized caching, speculative decoding, and batching.
 
 ## What this does *not* cover
 
-- **Quantization: `convert`, AWQ, DWQ, GPTQ, dynamic quant.** §2 lists the commands and their
-  headline flags so you can find them; the algorithms, the bit-width tradeoffs and the recipes are
-  [Part 12 guide 03](03-quantization.md).
-- **Fine-tuning: `mlx_lm.lora`, `mlx_lm.fuse`, datasets, adapters.** Same treatment — enumerated
-  here, taught in [Part 12 guide 06](06-finetuning-and-porting-models.md).
-- **Putting `mlx_lm.server` behind `LanguageModelSession`.** The server is described here as a CLI
-  entry point and as a consumer of the prompt cache; wiring it to Foundation Models via
-  `ChatCompletionsLanguageModel` is [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md).
-- **Distributed inference.** `mlx.launch`, hostfiles and RDMA are their own guide in this part.
-- **MLX Swift.** [Part 13](../../part-13-mlx-swift/README.md) — and note that the Swift port has
-  *different* cache bugs, several of which are worse (§9.6).
+Related references: [Part 12 guide 03](03-quantization.md), [Part 12 guide 06](06-finetuning-and-porting-models.md), [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), [Part 13](../../part-13-mlx-swift/README.md).
 
 ## What you need
 
@@ -66,7 +21,7 @@ This guide covers three things in depth and two in passing:
   supports. mlx-lm also targets **CUDA and CPU** now — `pip install "mlx-lm[cuda13]"`,
   `"[cuda12]"`, `"[cpu]"` — because the `mlx` requirement is pinned only under
   `platform_system == 'Darwin'`.
-- **Python 3.10+** despite what `setup.py` claims.
+- **Python 3.11+** for mlx-lm 0.32.0.
 - **`pip install mlx-lm`** or `conda install -c conda-forge mlx-lm`. Add `[train]` if you intend to
   fine-tune or run any learned-quantization CLI, `[evaluate]` for `mlx_lm.evaluate`.
 - ⚠️ **Two undeclared runtime dependencies.** `rich` and `regex` are imported at *module level* by
@@ -78,41 +33,7 @@ This guide covers three things in depth and two in passing:
 
 ## ⚠️ Read this before you trust a flag name below
 
-Three things about the evidence in this guide.
-
-**First: the strongest evidence class here is the repository itself.** Unlike the Core AI parts of
-this series, where the best available evidence was Apple documentation, mlx-lm is open source and
-the clone is on disk. Every signature, flag, default and error string in this guide was read out of
-`ml-explore/mlx-lm` at commit `e5baded8c1d286754edb479ffbde4655a68e2758` ("Support for Poolside
-LagunaXS open source coding model in nvfp4", 2026-07-26) in this session. That is evidence class 1.
-
-**Second: MLX moves weekly, and this clone is shallow.** It was cloned `--depth 50`, so `git log`
-on most paths returns only the graft boundary. **Do not treat any date in this guide as
-authoritative** beyond the HEAD commit date. Three NAX correctness fix PRs opened against mlx core
-in the three days before 2026-07-27 alone (#3912/#3922 still open, #3924 closed unmerged, on a
-2026-08-03 `gh` re-check). Anything described here as "new" should be re-read against
-`main` before you build on it.
-
-**Third: the docs disagree with the code in several documented places, and the code wins.** mlx-lm
-ships five Markdown files inside the package (`LORA.md`, `SERVER.md`, `LEARNED_QUANTS.md`,
-`MANAGE.md`, `BENCHMARKS.md`). At least four of them are stale in ways that will waste your
-afternoon — `LORA.md` documents an `mlx_lm.fuse --hf-path` flag that does not exist,
-`LEARNED_QUANTS.md`'s defaults disagree with the argparse defaults, `SERVER.md` documents a
-`top_logprobs` range the server does not enforce. Each is flagged where it appears.
-
-Markers used throughout:
-
-> ✅ **VERIFIED** — read from the repository, a header, or an Apple documentation page this
-> session. Citation attached: file and line, or an issue number.
->
-> 🟡 **RECONSTRUCTED** — the concept is attested but the exact spelling or number is inferred.
->
-> 🔴 **GAP** — could not verify. The box says what is unknown, what would resolve it, and what to
-> ship in the meantime.
->
-> ⚠️ **SILENT FAILURE** — it does not throw. This guide has six.
-
----
+CLI signatures below retain the `e5baded8c1d286754edb479ffbde4655a68e2758` source snapshot. Check the installed command’s help before relying on a flag or default; package releases and runtime verification are separate observations.
 
 ## Contents
 
@@ -159,38 +80,17 @@ backend. `mlx_lm.server` is the shortest path from a Hugging Face checkpoint to 
 
 ### 1.2 The two versions you are running, and why you must know which
 
-There is a release-versus-`main` split in mlx-lm right now that is wide enough to change advice.
-
-> ✅ **VERIFIED** — `mlx_lm/_version.py` → `__version__ = "0.31.3"`. Release history from
-> `notes/repos/issues-mlx-stack.md:17-23`: latest PyPI release **0.31.3**, dated **2026-04-22**;
-> prior releases 0.31.2, 0.31.0, 0.30.7.
-
-Two facts about that history:
-
-- **0.31.0 was yanked in practice for "BatchKV cache cross-contamination."** The phrasing is the
-  reporter's, in mlx-lm#1425: *"I realize `0.31.0` was yanked for BatchKV cache cross-contamination,
-  so this is **not** a request to recommend 0.31.0."* If you have 0.31.0 pinned anywhere, unpin it.
-- **Multiple open issues explicitly distinguish "0.31.3 release" behaviour from "current main"
-  behaviour.** Several of the cache fixes described in §4 and §6 exist only as merged-to-`main` or
-  in-flight PRs.
-
-Check both versions at the top of any bug report you file or read:
+Use mlx-lm 0.32.0 as the current released baseline. Check the installed MLX and mlx-lm versions before reproducing a problem. Source snapshots and runtime-verification boundaries are stated beside affected examples; pin an immutable revision when using unreleased source.
 
 ```bash
 python -m mlx --version
 python -m mlx_lm --version
 ```
 
-> ✅ **VERIFIED** — `mlx_lm/cli.py` handles `--version` and prints `__version__`; `mlx_lm -h`
-> lists subcommands only.
-
-If you need `main`:
 
 ```bash
 pip install "mlx-lm @ git+https://github.com/ml-explore/mlx-lm@main"
 ```
-
-…and pin the commit hash in your lockfile, because "main" is not a version.
 
 ### 1.3 The deprecation banner you will see
 
@@ -1414,6 +1314,7 @@ That table is the single best argument for reading this section before you reach
 rather than `min(self.offset, n)`. It exists for chunked-attention architectures — Llama 4 is the
 canonical consumer.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
 > ⚠️ **`ChunkedKVCache` and `ConcatenateKVCache` violate an assumption the server's prompt cache
 > makes.** From mlx-lm#1494 (administratively closed without a fix 2026-08-21): `LRUPromptCache.fetch_nearest_cache` assumes (1) a stored
 > cache's KV corresponds exactly to its token key and (2) `is_trimmable() == True` implies
@@ -1432,6 +1333,7 @@ lets a single layer hold several sub-caches (say, a conv state and an SSM state)
 
 The practical shape of a 2026 hybrid stack, from a real bug report:
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1480 -->
 > ✅ **VERIFIED** — mlx-lm#1480 (OPEN), community-measured: Qwen3.6-35B-A3B-4bit on a 128 GB Mac,
 > **only 10 of 40 layers have a full KV cache**; the other 30 are `ArraysCache(size=2)`
 > GatedDeltaNet layers. (That issue is about a Metal OOM at ~176K tokens during prefill, which the
@@ -1682,9 +1584,13 @@ Three open defects and one administratively closed defect, all community-reporte
 
 | Issue | Symptom | Status |
 |---|---|---|
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
 | mlx-lm#1494 | Reuse can return KV that does not match the keyed prefix, for `ChunkedKVCache` / `ConcatenateKVCache`. Silently wrong output, and the bad state gets re-stored under the new key. | Administratively closed without a fix 2026-08-21; repro script in-thread |
-| mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | OPEN |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1495 -->
+| mlx-lm#1495 | `PromptTrie.search` has an off-by-one (`if last_index > 0` should be `>= 0`), so **one-token prefixes never match**; and `fetch_nearest_cache` never touches `self._lru`, so **eviction is FIFO, not LRU** | CLOSED; remediation unverified |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1395 -->
 | mlx-lm#1395 | `fetch_nearest_cache` **deep-copies** the cached KV, doubling peak memory exactly when a cached conversation is reused | OPEN |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1390 -->
 | mlx-lm#1390 | Server aborts with a Metal `Insufficient Memory` command-buffer failure after the prompt cache grew to **23.35 GB / 26.28 GB** | OPEN |
 
 > ✅ **VERIFIED** — issue numbers, quoted symptoms and status from
@@ -1733,6 +1639,7 @@ only works because the cache carried the first turn's KV.
 
 **The in-place mutation is the API contract and the footgun.** `generate_step`'s docstring says
 *"Note, if provided, the cache will be updated in place."* If you want a checkpoint, you must
+<!-- defect-ref:ml-explore.mlx-lm:issue:1395 -->
 `copy.deepcopy` it, and §5.5's mlx-lm#1395 tells you what that costs.
 
 ### 5.7 The serialization format
@@ -1803,10 +1710,12 @@ def maybe_quantize_kv_cache(prompt_cache, quantized_kv_start, kv_group_size, kv_
 > the Swift port (§9.6).
 
 ### 6.2 The counter-intuitive part: peak memory can go *up*
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
 
 This is the finding that changes how you should use the flag, and it is one of the best-documented
 investigations in the mlx-lm tracker.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
 > ✅ **VERIFIED, community-measured** — mlx-lm#1587 (OPEN, 11 comments), via
 > `notes/repos/issues-mlx-stack.md:496-541`. Reported on **Llama-3.2-3B-Instruct-4bit, M4 Max
 > 128 GB, macOS 27.0**:
@@ -1868,6 +1777,7 @@ latency. The real fix is a fused quantized-SDPA Metal kernel.
 > kernel.
 
 ### 6.3 Quality and speed: what `--kv-bits` actually buys
+<!-- defect-ref:ml-explore.mlx-lm:issue:1566 -->
 
 > ✅ **VERIFIED, community-measured** — mlx-lm#1573, cross-posted to mlx#3026 and mlx-lm#1587.
 > **Qwen3-32B-4bit, group_size 64, int8 KV versus fp16, paired runs:**
@@ -1926,14 +1836,19 @@ def to_quantized(self, group_size: int = 64, bits: int = 4) -> QuantizedKVCache:
 And `maybe_quantize_kv_cache` guards with `hasattr(c, "to_quantized")` — which is **true**. The
 method is defined. It just raises.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1573 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1583 -->
 > ⚠️ **SILENT FAILURE-adjacent, and worse than silent: it is deferred.** The symptom, from
 > mlx-lm#1573 and #1583, is that `mlx_lm.server --kv-bits N` **starts cleanly, answers `/health`
 > with 200, and then crashes on the first inference request** for any model with sliding-window
 > layers. On Gemma 4 26B-A4B that is **35 of 42 layers** in the reporter's configuration. Your
 > health check says the service is up. It is not.
 
-The in-flight fix is mlx-lm PR **#1584**, which adds `RotatingQuantizedKVCache` and
-`BatchRotatingQuantizedKVCache`. Validated in-thread on Gemma 4: layer census goes from
+<!-- defect-ref:ml-explore.mlx-lm:pull:1584 -->
+The closed, unmerged proposal mlx-lm PR **#1584** adds `RotatingQuantizedKVCache` and
+`BatchRotatingQuantizedKVCache`. The 0.32.0 source still raises in both rotating-cache
+`to_quantized()` methods. The following in-thread result describes the experimental patch,
+not the released API. Validated in-thread on Gemma 4: layer census goes from
 `{'RotatingKVCache': 25, 'KVCache': 5}` to
 `{'RotatingQuantizedKVCache': 25, 'QuantizedKVCache': 5}`, `max_size=1024` preserved, and with a
 3,592-token prompt (3.5× the window) fp16 and kv8 produced **character-identical 60 tokens across
@@ -1990,7 +1905,7 @@ Do you have an attention-sink model (gpt-oss family)?
   → yes: --kv-bits is unusable. Stop.
 Does your model produce RotatingKVCache layers (sliding window, or you passed --max-kv-size)?
   → yes, and you are on a release: --kv-bits will crash on first request. Stop.
-  → yes, on main with #1584, and keep == 0: proceed.
+  → yes: use only a separately reviewed and tested rotating-quantization patch with keep == 0; stock 0.32.0 does not implement it.
   → yes, keep > 0: still raises. Stop.
 Are you memory-constrained on CONTEXT (not on weights)?
   → no: skip --kv-bits. It costs 2-7% decode and buys you nothing.
@@ -2116,6 +2031,7 @@ if not cache.can_trim_prompt_cache(model_cache):
     )
 ```
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1446 -->
 > ✅ **VERIFIED** — `mlx_lm/generate.py:520-524`, quoted verbatim. This is a *loud* failure, and
 > that is a deliberate mercy. What you see in practice:
 >
@@ -2231,6 +2147,7 @@ if n == num_draft:
 A recurring bug report: speculative decoding at `temp=0` produces different text from plain greedy
 decoding. Three independent reproductions on three model families found the same signature.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1470 -->
 > ✅ **VERIFIED** — mlx-lm#1470 (OPEN, 7 comments) → PR #1592, via
 > `notes/repos/issues-mlx-stack.md:693-704`:
 > - Qwen3-4B / 0.6B: `mx.eval(l1376 == l1887)` → `True` — **tokens 1376 and 1887 are an exact
@@ -2304,6 +2221,7 @@ Recording negative results, because they save you from re-deriving them.
 > Read that number twice: **85.7% acceptance and it still did not pay.** Acceptance rate is
 > necessary, not sufficient. The `c` term ate it.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1497 -->
 **N-gram / prompt-lookup self-speculation: positive but narrow.** mlx-lm#1497 proposes a CPU-side
 trigram→bigram→unigram draft table for hybrid GDN/SA models, with `--ngram-spec` / `--ngram-n`
 flags (default n=3).
@@ -2322,6 +2240,7 @@ That third row is §7.1's `v(k)` term, measured. Going from one draft to two tur
 This technique matters specifically because it needs no draft model *and* — unlike model-based
 speculation — has a proposed path through `ArraysCache`, since the proposal includes
 `ArraysCache.checkpoint()/rollback()/trim()` (about 18 lines; `trim` is a no-op because the state
+<!-- defect-ref:ml-explore.mlx-swift-lm:issue:425 -->
 is state-based, not offset-based). A Swift sibling is open as mlx-swift-lm#425 with PR #426.
 
 > 🔴 **GAP — n-gram speculation is not merged.** mlx-lm#1497 was open on the 2026-07-29 live
@@ -2549,6 +2468,7 @@ Batch caches also expose `prepare(left_padding=, lengths=, right_padding=)`, `fi
 with `stream_generate`.
 
 ### 8.4 The server's batchability gate — two ways to lose continuous batching
+<!-- defect-ref:ml-explore.mlx-lm:issue:1472 -->
 
 ```python
 # mlx_lm/server.py:352-356
@@ -2588,8 +2508,11 @@ whole server, and nothing in the response tells them so.
 | Issue | Symptom |
 |---|---|
 | mlx-lm 0.31.0 | **yanked in practice** for `BatchKVCache` cross-contamination — output from one sequence leaking into another |
-| mlx-lm#1472 (MERGED-UNRELEASED 2026-09-04) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826) fixes the wedge by normalizing per-sequence samplers and processors, but affected releases still need the guard or a watchdog |
+<!-- defect-ref:ml-explore.mlx-lm:pull:1826 -->
+| mlx-lm#1472 (CLOSED; source fix included in 0.32.0) | Generation thread dies with `TypeError: 'NoneType' object is not iterable` when a batch mixes requests **with and without** logits processors; [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826) fixes the wedge by normalizing per-sequence samplers and processors, while affected older releases need the guard or a watchdog; local 0.32.0 runtime remediation is unverified |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1493 -->
 | mlx-lm#1493 (OPEN) | Server **livelock**: the batch keeps stepping and delivers zero chunks. `is_alive()` stays true; a naive per-iteration heartbeat would also tick |
+<!-- defect-ref:ml-explore.mlx-lm:issue:1500 -->
 | mlx-lm#1500 (OPEN) | Idle server pins a core at 100% — the worker thread busy-polls with `get_nowait()` |
 
 > ✅ **VERIFIED** — release history at `notes/repos/issues-mlx-stack.md:22`; issue numbers,
@@ -2606,11 +2529,12 @@ timeout, and `GET /v1/models` returned 200 throughout. Only a hard restart recov
 > queue for N seconds = stalled engine.**"*
 
 That is a good rule for any inference service you operate, not just this one. **Health-check what
-you deliver, not what you execute.** The fix in flight is PR #1598, a delivery-staleness watchdog
-with `--generation-stall-timeout` (default 60 s).
-
-> 🔴 **GAP — `--generation-stall-timeout` is not merged.** As of our read, PR #1598 is open and
-> stacked on #1513. **What would resolve it:** checking `mlx_lm.server --help` on `main`.
+<!-- defect-ref:ml-explore.mlx-lm:pull:1598 -->
+you deliver, not what you execute.** PR #1598 proposed a delivery-staleness watchdog,
+but was closed without merge. The 0.32.0 server source has no `--generation-stall-timeout`
+flag. Run an external completion probe with a client-side timeout; the separately open
+<!-- defect-ref:ml-explore.mlx-lm:pull:1513 -->
+exception-recovery PR #1513 does not establish a shipped fix.
 > **Safe default:** put your own watchdog in front of the server — track time since the last SSE
 > byte per request, and restart the process if it exceeds your timeout with requests in flight.
 
@@ -2776,6 +2700,7 @@ alongside the result. `--kv-bits 8 --quantized-kv-start 5000` is a defensible de
 alone from Python is not.
 
 ### 9.3 ⚠️ SILENT FAILURE — sampler parameters that do nothing
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
 
 Four of them, all reading as configured when they are not.
 
@@ -2866,42 +2791,7 @@ from. You lose the caching benefit and keep correctness. Verify the effect by wa
 
 ### 9.6 ⚠️ SILENT FAILURE — the Swift port's cache bugs, because you will hit them from a Mac app
 
-Included here rather than in [Part 13](../../part-13-mlx-swift/README.md) because the mechanism is the
-Python one seen through a value-type lens, and understanding it in Python is how you recognise it in
-Swift.
-
-**`maybeQuantizeKVCache` silently corrupts context mid-generation.**
-
-> ✅ **VERIFIED** — mlx-swift-lm#312 (OPEN, 6 comments), quoted verbatim:
-> *"`maybeQuantizeKVCache` is called on every step inside `TokenIterator`'s generation loop. When
-> the `quantizedKVStart` threshold is crossed mid-generation, it replaces elements in
-> `TokenIterator`'s local copy of the cache array with new `QuantizedKVCache` instances. Because the
-> function takes `cache: inout [KVCache]`, it **replaces array elements rather than mutating the
-> cache objects in place**. The caller's array (in `ChatSession`) still holds the original
-> `KVCacheSimple` references … **The model loses all context generated after the quantization
-> threshold.**"*
->
-> Fix landed: PR #453 merged 2026-08-05 (supersedes #358, closed unmerged); the reference-wrapper approach shipped as `KVCacheStorage`, a class boxing `[KVCache]`. #312 stays open as of 2026-08-07, and no release carries the fix (latest 3.31.4) — check your pin.
-
-Compare with §6.1: mlx-lm's Python `maybe_quantize_kv_cache` does *the same element replacement* —
-`prompt_cache[e] = c.to_quantized(...)` — and it is safe **only because Python lists are reference
-types and everyone shares the same list object.** Port that line to a value-semantics language
-without thinking and you get exactly this bug.
-
-**`trimPromptCache`'s return value discarded during speculative rewind.**
-
-> ✅ **VERIFIED** — mlx-swift-lm, via `notes/repos/issues-mlx-stack.md:947`:
-> `SpeculativeTokenIterator.speculateRound()` rewinds rejected drafts with
-> `trimPromptCache(mainCache, numTokens: numDraft - accepted)` **and discards the result**.
-> `trimPromptCache` guards on `canTrimPromptCache`, so **once one sliding layer wraps, the whole
-> rollback returns 0 silently** and generation continues on a transcript containing tokens that were
-> never emitted. On Gemma-family models the sliding window is small (e.g. 512), so a single long
-> reply is enough to trigger it.
-
-This is §4.2's "returns `0`, not an error" made concrete. **Check the return value of
-`trim_prompt_cache`.** Every time. In both languages.
-
----
+Swift array replacement and an ignored trim result can corrupt caller-held caches. See the [Swift cache mechanisms and mitigations](../../part-13-mlx-swift/references/02-generation-tools-and-caching.md#9-two-real-swift-side-cache-bugs); the Python list has different ownership semantics.
 
 ## 10. Decision tables, cross-links, and the gap register
 
@@ -3063,8 +2953,8 @@ cross-checks; source of the four-layer stack, the batchability gate cross-check,
 concurrency defaults.
 `notes/web/mlx-docs-site.md` (5,465 lines) — the MLX documentation crawl; consulted for
 `mlx.launch` invocation forms.
-`notes/CORRECTIONS-PENDING.md` — C5 (prefix reuse and hybrid architectures) and C10.4 (distributed
-hostfile shape) are applied in §5.1 and §2.9.
+`notes/repos/john-rocky-models.md` — prefix-cache constraints;
+`notes/transcripts/missing-sessions.md` — distributed hostfile shape.
 
 **Evidence class 3 — project-published measurements.** `mlx_lm/BENCHMARKS.md`, measured on a 64 GB
 M4 Max with mlx 0.29.2.dev, mlx-lm 0.28.2, macOS 26.1. Attributed as project-published, not

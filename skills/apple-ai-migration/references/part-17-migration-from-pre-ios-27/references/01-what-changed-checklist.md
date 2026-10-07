@@ -24,52 +24,11 @@ single most expensive sentence in this guide.
 
 ## What this covers
 
-The exhaustive 26 → 27 diff for Apple's on-device AI stack, organised by framework, with **every
-item labelled**:
-
-| Label | Meaning | What it costs you |
-|---|---|---|
-| **ADDITIVE** | New surface. Nothing you wrote stops working. | Time to learn, if you want it. |
-| **BEHAVIOURAL** | Same source, different runtime behaviour. | The dangerous one. Your diff is empty. |
-| **RENAMED** | Old spelling deprecated or superseded; usually both spellings coexist for a cycle. | A rebuild, and a decision about which to catch. |
-| **WITHDRAWN** | Gone, with no drop-in replacement. | A feature redesign. |
-
-Specifically:
-
-- **The version-floor table**, first, because it resolves more phantom bugs than anything else here.
-  Including the separate **TensorOps ladder** and the reason a header can say "26.2" while Apple's
-  narration says "26.1 / 26.3 / 26.4" and *both be true*.
-- **Everything additive**, from image input on the on-device model through to the `fm` CLI — with
-  the two system tools that live in **Vision, not FoundationModels**, which is where most people
-  look first and fail.
-- **Everything behavioural** — the rebuilt on-device model, the guardrail changes, the refusal
-  traffic that moved between two different error mechanisms, and Apple's own samples quietly
-  abandoning proactive availability gating.
-- **A known defect, not a design**: `SystemLanguageModel.default.availability` returning
-  `.appleIntelligenceNotEnabled` unless the user has Siri turned on. An Apple Frameworks Engineer
-  said on the record that this should not happen. Do **not** build permanent UX around it.
-- **The renames**, including the one that is the migration in miniature: Apple's own Technical Note
-  and Apple's own 2026 sample code name *different* errors for the same failure, and both are current.
-- **What was withdrawn** — custom LoRA adapters — summarised here and owned by guide 17.2.
-- **The Python SDK generation lag**, stated plainly: `apple/python-apple-fm-sdk` is a **26-generation
-  artifact** and does not expose the 27 feature set.
-- **A toolchain-breakage table** for the build failures that are not your code's fault.
-- **A migration checklist** you can work down in order.
+Audit an OS 26 app before adopting OS 27 APIs. The framework checklist separates additive changes, runtime behavior changes, renamed APIs, and withdrawn features, then links to the detailed migration procedures.
 
 ## What this does *not* cover
 
-- **The error mapping in detail** — old case to new case, which `catch` fires when, and the
-  regression-test recipe. That is [guide 17.3](03-error-taxonomy-migration.md); this guide gives you
-  the summary and the version story.
-- **The adapter sunset in detail** — what to do about a shipped `.fmadapter`. That is
-  [guide 17.2](02-adapter-sunset.md).
-- **Dual-SDK compilation technique** — `#if canImport(FoundationModels, _version: 2)` versus
-  `@available` versus SDK checks. That is [guide 17.4](04-dual-sdk-builds.md); this guide names the
-  symbols that are hard 27-only so you know what needs it.
-- **Core ML → Core AI.** [Guide 17.5](05-coreml-to-coreai.md).
-- **Build-artifact compatibility** — `.aimodel` assets, wheel pinning, `mlx-swift-lm` 2.x → 3.x.
-  [Guide 17.6](06-toolchain-and-asset-compatibility.md).
-- **How to *use* any of the new APIs.** Parts 2, 3, 4 and 6 do that. This is a diff, not a tutorial.
+Related references: [guide 17.3](03-error-taxonomy-migration.md), [guide 17.2](02-adapter-sunset.md), [guide 17.4](04-dual-sdk-builds.md), [Guide 17.5](05-coreml-to-coreai.md), [Guide 17.6](06-toolchain-and-asset-compatibility.md).
 
 ## What you need
 
@@ -171,43 +130,15 @@ func contextBudget() -> Int {
 }
 ```
 
-> ✅ **VERIFIED** — Apple Technical Note **TN3193**, *"Managing the on-device foundation model's
-> context window"*, states **4096 tokens per `LanguageModelSession`** plainly, and confirms that
-> `tokenCount(for:)` covers *instructions, prompts, tools, schemas and transcript entries*.
-> (Note the doc slug: `…tn3193-managing-the-on-device-foundation-model-s-context-window` — `model-s`,
-> not `models`; the other spelling 404s.)
->
-> ✅ **VERIFIED 2026-08-02 — Apple's written summary gives 4096 for iOS 27, and the budget is
-> shared.** The published Q&A summary for WWDC26 **Group Lab 8121**, *"Coding Intelligence,
-> Machine Learning & AI Group Lab"*, records a question about the on-device Foundation Models
-> context window in iOS 27 and whether input plus output share one budget. It gives **4096 tokens
-> as the on-device shared budget**, illustrates that a 4,000-token input leaves roughly 96 tokens
-> for the response, and gives **32K as PCC's shared budget** (ch. `0:08:11`).[^ctx-grouplab]
->
-> This supersedes the earlier 🟡 box, which recorded that "Apple has not corroborated 8192 anywhere
-> we can find" and left the question open. The 8192 comment is now retired historical provenance.
-> Apple has corroborated **4096**, for iOS 27
-> specifically, on the record. Four other lines of evidence agree: session 319's comparison table
-> and Apple's PCC article (4K/32K), the repo's simulator measurement, a **2026-08-20 physical
-> iPhone 15 Pro measurement** (4096 on iOS 27 beta-5 build `24A5408d`, `probes/`), and the 27.0
-> `swiftinterface`, which returns a dynamic `_contextSize` on OS 27+ with a **4096 fallback** below
-> it.
->
-> **The community 8192 report is retired from active guidance.** It is a single comment describing
-> device probing with no device/build/date, its upstream is unavailable, and repeated project-run
-> 27-hardware checks returned 4096. One iPhone family cannot
-> prove every device reports the same value, which is exactly why the standing advice below does
-> not change.
->
-> ⚠️ **Read `contextSize` at runtime rather than hardcoding either number.** Apple's answer is a
-> statement about the platform, not a per-device guarantee, and the 27.0 interface plainly returns
-> a *dynamic* value. The advice is version-proof; the constants are not.
->
-> **Budget accounting, from the same lab:** ch. `0:39:42` adds that **every tool definition and
-> instruction consumes the same shared budget** — *"keep prompts and tool definitions lean … only
-> include the tools relevant to the task"*. That matches TN3193's list above
-> (instructions, prompts, tools, schemas, transcript entries) and is the operational reason the
-> 4096 figure bites sooner than people expect.
+<!-- callout-id: callout-ce7d86e192f8cd67 -->
+> ✅ **Documented iOS 27 budget — 4096 tokens shared by input and output.**
+> TN3193 and Group Lab 8121 (`0:08:11`) include instructions, tools, schemas, transcript, and response
+> in one on-device session budget; a 4000-token input leaves about 96 tokens for output. PCC's
+> documented shared budget is 32K.[^ctx-grouplab] The dated iPhone measurement was 4096, and current
+> host/simulator observations are separately recorded in `notes/evidence/runtime-current.json`.
+> ⚠️ **Read `contextSize` at runtime.** Platform documentation does not guarantee every
+> device/topology value. Keep tools and instructions lean; their definitions consume the same budget.
+> The unproven 8192 comment is retired from current recommendations.
 
 [^ctx-grouplab]: WWDC26 Group Lab **8121**, `https://developer.apple.com/videos/play/wwdc2026/8121/`.
     ⚠️ **Citation discipline for Group Labs:** Apple publishes **no caption track** for lab
@@ -832,26 +763,14 @@ func analyzeBarcodeImage(_ image: CGImage) async {
 }
 ```
 
-> ✅ **RESOLVED — SDK-verified 2026-07-29** from the cross-import overlay's own interface, captured
-> later the same day (`notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface`).
-> Both tools are declared in the **`_Vision_FoundationModels`** overlay — present in the main
-> interface of *neither* parent, materialising only when code imports **both** Vision and
-> FoundationModels: `BarcodeReaderTool` (`:14-47`) and `OCRTool` (`:49-83`). The answers:
-> - **The whole configuration surface is `init(name: String? = nil, description: String? = nil)`.**
-> - **`Arguments`** (both tools) is a nested `Generable` struct with **no named public
->   properties** — its public surface is `generationSchema`, `generatedContent`,
->   `PartiallyGenerated`, and `init(_ content: GeneratedContent) throws`. The model-facing field
->   names exist only in the runtime schema; user code cannot construct one except from
->   `GeneratedContent`.
-> - **`Output` is provably unnameable**: it is the opaque return type of
->   `call(arguments:) async throws -> some PromptRepresentable` (`:34-39`, `:70-76`). Write generic
->   code against `PromptRepresentable`; there is nothing to destructure.
-> - **No public `Barcode` type exists anywhere in the overlay** — Apple's "array of `Barcode`
->   values" prose describes model-facing content, not a public Swift type.
-> - Availability asymmetry, compiler-attested: `BarcodeReaderTool` includes **watchOS 27.0**;
->   `OCRTool` is **watchOS-unavailable**; both are tvOS-unavailable.
-> The old safe default — treat both as opaque tools you hand to the session — turns out to be not
-> merely safe but the *only* expressible usage.
+> ✅ **SDK-verified — Vision tools live in the cross-import overlay.**
+> Import both Vision and FoundationModels. The overlay declares `BarcodeReaderTool` and `OCRTool` with
+> `init(name: String? = nil, description: String? = nil)` and nested Generable arguments without named
+> public fields. Its schema defines model-facing values; construction uses `GeneratedContent`.
+> The call result is opaque `some PromptRepresentable`, with no public `Barcode` type to destructure.
+> BarcodeReaderTool supports watchOS 27; OCRTool is watchOS-unavailable, and both exclude tvOS. Hand
+> these tools to the session and use their protocol surfaces. Evidence:
+> `notes/sdk-interfaces/_Vision_FoundationModels-27.0-macos.swiftinterface:14-83`.
 
 The third tool surfaces when you import **CoreSpotlight together with FoundationModels**, and is the
 one people asked for most. (Precisely where it is declared is subtler than "in FoundationModels":

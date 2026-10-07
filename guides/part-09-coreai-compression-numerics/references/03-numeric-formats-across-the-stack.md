@@ -16,85 +16,20 @@ The `coreai` extra pins `coreai-core==1.0.0b3`, `coreai-torch==0.4.3` and includ
 Python 3.14**. `coreai-models` at `db63a2d8` has a narrower export profile: `torch==2.9.0`,
 `torchao<0.18`. Native fixtures here use Python 3.12, NumPy 2.4.6 and both Torch 2.11.0/AO 0.18.0
 and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fixture outcomes are
-recorded separately in [the refresh evidence](../../../notes/synthesis/coreai-030-refresh/README.md).
+recorded separately in [the refresh evidence](../../../notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
-
-⚠️ **Core AI has zero Apple sample-code projects.** Verified: 0 `sampleCode` entries across all 312
-indexed Core AI symbols, and `/documentation/updates/coreai` 404s. Unlike Parts 1–6, there is no
-first-party compiling Xcode project to check a signature against. Evidence in this guide is ranked:
-shipped repo source and SDK headers on disk first, then Apple's own agent skills vendored in
-`apple/coreai-models`, then Apple documentation, then WWDC/Tech Talk transcripts, then attributed
-community measurement. Every claim carries its marker.
+See the [shared evidence conventions](../../README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 
 ## What this covers
 
-This is a reference, not a tutorial. It answers one question in as many tables as it takes:
-
-> **For a given numeric format — int4, int8, FP8 E4M3, FP4 E2M1, MXFP4, a 6-bit palette, E8M0 block
-> scales — which layer of Apple's 2026 stack can produce it, which layer can store it, and which
-> layer can actually do arithmetic on it?**
-
-The answer is that these are **three different sets**, and that is the whole guide:
-
-| | Question | Owner | Answered in |
-|---|---|---|---|
-| **Emit** | What can my compression tool *produce*? | `coreai-opt`, `mlx_lm.convert` | §2, §6 |
-| **Store** | What can the runtime *represent in memory and on disk*? | `NDArray.ScalarType`, the `.aimodel` asset | §3 |
-| **Compute** | What can the hardware *multiply*? | ANE, GPU/MPP TensorOps | §4, §5 |
-
-The emit set is the **largest**. `coreai-opt` will happily produce int2 weights with FP8 E5M2 LUT
-scales. The store set is **also large but differently shaped** — `NDArray.ScalarType` exposes
-`int2` through `int7` and `uint1` through `uint7`, widths no compression tool in the corpus emits.
-The compute set is **much smaller**: the Neural Engine does fp16, int8 and int16, full stop; Metal
-TensorOps does fp32/fp16/bfloat16 plus 4- and 8-bit integers with **no scale mechanism of any kind**.
-
-And the consequence that makes this guide worth writing:
-
-> ⚠️ **A mismatch between the three sets does not throw. It silently reassigns your model to a
-> slower compute unit.** Core AI's specialization documentation says this in as many words:
-> *"Fallback to other kinds in `allowedComputeUnitKinds` may still occur for operations or operation
-> patterns that are incompatible with the preferred kind."* You get a working model with correct
-> outputs, several times slower than the one you thought you built, and no diagnostic anywhere
-> except the Xcode model viewer and Instruments.
-
-What follows:
-
-- **§1** — the thesis in one master matrix, plus the mental model to hang the rest on.
-- **§2** — everything `coreai-opt` can emit: nine quantization dtypes, six palette widths, four LUT
-  dtypes, three granularity families, and the E8M0 scale type that turns FP4 into MXFP4. Plus the
-  CoreML export restriction matrix, which is a strictly smaller set and rejects at `finalize()`.
-- **§3** — `NDArray.ScalarType`, the runtime's full type zoo, grouped and annotated, with the
-  🔴 GAP that means sub-byte data is unreadable from Swift except through `RawView`.
-- **§4** — the Neural Engine: three dtypes, rank ≤ 5, 64-byte last-axis alignment, and the reason a
-  bare Python float literal in your model code can move an entire op to the GPU.
-- **§5** — Metal / MPP TensorOps: the 26.x baseline, the Xcode 27 int2/FP4/FP8/E8M0 additions,
-  auxiliary scale planes and automatic dequantization, plus the cooperative-tensor fallback for
-  26.x and custom formats.[^xcode27-scale-planes]
-- **§6** — MLX: the widest format menu in the stack (affine 2/3/4/5/6/8 bits × three group sizes,
-  mxfp4, mxfp8, nvfp4), implemented by its current kernels with MLX-owned software structs, and the
-  four gates that decide whether you get the fast kernel. This implementation choice does not erase
-  the separate OS 27 Metal FP4/FP8 types.[^xcode27-scale-planes]
-- **§7** — the crossings that silently degrade, as a lookup table: *you emitted X, the runtime stored
-  Y, the hardware wanted Z → here is what actually happens.*
-- **§8** — how to check what you actually got: the Xcode model viewer's compute-vs-storage precision
-  split and operation distribution, the same data programmatically via `AIModelAsset.Summary`, the
-  Instruments Core AI template for residency, and the Metal System Trace counter for M5.
-- **§9–§12** — decision tables, consolidated silent failures, attributed numbers, quick reference.
+Match storage format, scale dtype, and granularity across PyTorch compression, Core AI conversion, Core ML export, and Metal operands. Use the compatibility tables before choosing FP4, FP8, integer, or block-scaled weights.
 
 ## What this does *not* cover
 
-- **How to choose a compression configuration.** That is
-  [`01-quantization.md`](01-quantization.md) (configs, GRAPH vs EAGER, calibration, QAT) and the
-  palettization guide in this part. This guide tells you which formats *exist* at each layer; those
-  guides tell you which one to pick and how to measure the trade.
-- **Conversion mechanics** — `torch.export`, `TorchConverter`, automatic frontend rewriting, `save_asset()`. Part 8.
-- **Writing TensorOps kernels.** Part 11. §5 here is the dtype surface only.
-- **MLX as a framework.** Parts 12 and 13. §6 here is the quantization surface only.
-- **Debugging a numerics regression** — the Core AI Debugger, PSNR workflows, `save_intermediates`.
-  Part 10. §8 here covers only *format inspection*, which is a different question from *accuracy*.
+Related references: [`01-quantization.md`](01-quantization.md).
 
 ## What you need
 

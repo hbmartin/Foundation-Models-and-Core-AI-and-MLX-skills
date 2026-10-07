@@ -194,4 +194,4 @@ now owns the seventeen current 27.0 paths. Evaluations adds `EvaluationRunErrors
 case; the other Swift declaration bodies are unchanged. Compiler headers and the fm
 help surface were reviewed separately. SDK 26.5 and unrelated legacy records remain.
 Superseded evidence is available at commit `2b12a8544deb7b7c4a807d1e83ad35be2079dabf`.
-See [the promotion and validation record](../synthesis/pr49-followup/README.md).
+See [the promotion and validation record](../evidence/core-ai/README.md).

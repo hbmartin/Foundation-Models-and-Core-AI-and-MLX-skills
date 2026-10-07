@@ -196,7 +196,7 @@ final class FoundationModelsProbes: XCTestCase {
     // MARK: fm.tool-schema-flag-default  [HOST-26 · SIM-27 · MAC-27]
     //
     // GAP: guides/part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md §4.4
-    //      and notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 5 (residue).
+    //      and the matching guide’s current token-accounting gap.
     // Question: the default *value* of `Tool.includesSchemaInInstructions` — the
     //      swiftinterface shows the requirement + a default impl but cannot print the body.
     // Candidates: (a) true — schema injected into instructions by default;
@@ -234,7 +234,7 @@ final class FoundationModelsProbes: XCTestCase {
 
     // MARK: fm.contextSize  [HOST-26 · SIM-27 · DEVICE-27]
     //
-    // GAP: notes/NEEDED-FROM-A-MACOS-27-MACHINE.md item 7 (second bullet); also
+    // GAP: live-model cache pinning/deletion semantics; also
     //      part-03 …/01-context-window-and-kv-cache.md (TN3193's 4096 vs the community 8192
     //      claim). The 26.5 interface hardcodes `return 4096`; the 27.0 interface returns a
     //      dynamic `_contextSize` on OS 27+.

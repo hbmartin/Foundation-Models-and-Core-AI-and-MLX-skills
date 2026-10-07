@@ -2,57 +2,17 @@
 
 **Part 12 · MLX in Python · Reference 05**
 
-**Version floor.** Two halves, two floors. **Serving on one machine** needs
-**`mlx-lm` 0.31.3** on **`mlx` ≥ 0.31.2** (`setup.py`'s `MIN_MLX_VERSION`), Python **≥ 3.10 in
-practice** despite a declared 3.8, and **macOS ≥ 15** if you want the model's memory wired.
-Nothing on this half requires macOS 26 or 27 at all — `mlx_lm.server` has run on Apple silicon
-for years and now also runs on **CUDA and CPU** via the `mlx-lm[cuda13]` / `[cuda12]` / `[cpu]`
-extras. **Distributing across machines** is where the new gates are: **RDMA over Thunderbolt 5
-requires macOS 26.2**, and the **JACCL** backend that uses it needs a Thunderbolt cable between
-*every pair* of Macs. On the client side, **Xcode 27** is what added *Settings ▸ Intelligence ▸
-Add Chat Provider ▸ Locally Hosted*, and **`ChatCompletionsLanguageModel`** — the Foundation
-Models conformer that turns this server into a `LanguageModelSession` backend — is **iOS 27 /
-macOS 27**. The M5 prompt-processing story needs **M5 silicon** and no flags.
+**Current release:** mlx-lm **0.32.0** ([release manifest](https://github.com/ml-explore/mlx-lm/blob/a9bd8af5c02118882af735cef60705d2efce9fd0/pyproject.toml), checked 2026-10-07): Python ≥ 3.11, MLX ≥ 0.32.2 on Darwin, and `transformers ≥ 5.7.0`. MLX wheels require Apple silicon and macOS ≥ 14.0. RDMA over Thunderbolt 5 requires macOS 26.2 and the topology described in Part B. Foundation Models integration requires the OS-27 SDK.
 
 ---
 
 ## What this covers
 
-Two halves. First one machine, then many.
-
-**Serving one machine.** `mlx_lm.server` is an OpenAI chat-completions-compatible HTTP server
-with structured tool calling and reasoning-model support. Apple's framing in WWDC26 session 232
-is that it is *"a drop-in replacement for any cloud LLM API"* — which is close to true and worth
-a careful read of where it deviates. You will get: every CLI flag with its verified default;
-every endpoint; every request field the server actually parses; the response shape including the
-two fields most clients get wrong (`message.reasoning` and
-`usage.prompt_tokens_details.cached_tokens`); and **continuous batching**, which is the single
-feature that decides whether a swarm of parallel subagents runs concurrently or queues.
-
-**The local agent stack.** MLX → MLX-LM → MLX-LM Server → agent. The OpenCode configuration.
-The **Xcode 27** click-path, which is the one most readers of this series will actually use. The
-`ChatCompletionsLanguageModel` bridge that puts any Hugging Face checkpoint behind
-`LanguageModelSession` today (Part 4). And the reason prompt processing, not decode, is the
-number that matters for agents.
-
-**Serving many machines.** `mlx.launch`, the JSON hostfile and its positional RDMA adjacency
-matrix, `mlx.distributed_config`, the Thunderbolt-5 RDMA setup sequence, mesh vs ring, tensor vs
-pipeline parallelism, distributed fine-tuning, and Apple's measured numbers on four M3 Ultras.
-Plus the open bug cluster in the distributed backends, because this surface is weeks old and it
-shows.
+Serve an MLX model on one Mac or distribute inference across Macs. The recipes cover HTTP integration, health checks, prompt caching, RDMA, and backend failures.
 
 ## What this does *not* cover
 
-- **Loading, generating, sampling, and prompt caching in-process.** That is this part's
-  generation guide; here we only cover the server's use of those primitives.
-- **Quantization and fine-tuning mechanics.** `mlx_lm.convert`, `mlx_lm.lora`, DWQ/AWQ/GPTQ —
-  other guides in Part 12. Distributed *launching* of `mlx_lm.lora` is covered here; the
-  training itself is not.
-- **Swift.** `mlx-swift-lm`, `MLXFoundationModels`, and `DistributedGroup` are
-  [Part 13](../../part-13-mlx-swift/README.md).
-- **Writing a `LanguageModel` conformer by hand.** [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md)
-  guides 02 and 03. This guide only shows the wiring.
-- **Metal kernels and NAX.** [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md).
+Related references: [Part 13](../../part-13-mlx-swift/README.md), [Part 4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-04-beyond-the-built-in-model/README.md), [Part 11](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-11-metal-and-tensorops/README.md).
 
 ## What you need
 
@@ -70,31 +30,7 @@ shows.
 
 ## ⚠️ Read this before you trust a signature below
 
-This guide's evidence is unusually good on one half and unusually thin on the other, and you
-should know which is which.
-
-**The serving half is class-1 evidence.** Everything about `mlx_lm.server` below was read out of
-the checked-out repository at
-`repos/ml-explore__mlx-lm` — `mlx_lm/server.py` (1,871 lines), `mlx_lm/SERVER.md`,
-`mlx_lm/generate.py`, `mlx_lm/models/cache.py` — in this session. Flag names, defaults, HTTP
-status codes and error strings are quoted, not remembered.
-
-**The distributed half rests on three sources that mostly agree.** In precedence order: the MLX
-repository's own Python (`python/mlx/_distributed_utils/{launch,config,common}.py`, read on disk),
-the MLX documentation site crawl, and WWDC26 session **233** *"Explore distributed inference and
-training with MLX"*. Where they disagree — and they disagree twice, on a flag name and on how you
-turn RDMA on — this guide says so and tells you which to trust.
-
-**MLX moves weekly and this surface is new.** The clone is `--depth 50`, so most `git log` output
-bottoms out at the graft boundary and no date in it should be treated as authoritative. Three NAX
-correctness fix PRs opened, none merged, in the three days before 2026-07-27. There is an open cluster of
-distributed-backend crash and hang reports (§24). Treat everything in Part B as sharp-edged.
-
-**Markers.** ✅ VERIFIED means quoted from a source read this session, with the citation attached.
-🟡 RECONSTRUCTED means the concept is attested but the exact spelling is inferred. 🔴 GAP means we
-could not verify it, and the box says what would resolve it and what to do meanwhile.
-
----
+Serving details retain the inspected mlx-lm source revision. Distributed recipes use the MLX launcher source and documentation; verify the selected backend on the actual topology before deployment.
 
 ## Contents
 
@@ -187,27 +123,13 @@ Apple's advice on step 2 is worth taking literally:
 > ✅ **VERIFIED** — 232:61–62: run it *"with a model that supports tool calling. **Starting with a
 > small model to test your set-up is always a good idea.**"*
 
-⚠️ **Two undeclared runtime dependencies.** ✅ VERIFIED from `setup.py` and the module sources at
-mlx-lm HEAD `e5baded`: `install_requires` is
-`["mlx>=0.31.2; platform_system == 'Darwin'", "numpy", "transformers>=5.7.0", "sentencepiece",
-"protobuf", "pyyaml", "jinja2"]` — and **`rich` and `regex` are not in it**, despite being imported
-at module scope. `mlx_lm/cli_ui.py` does `from rich.console import Console` and is pulled in by
-`chat.py`, `lora.py` and everything under `tuner/`. Every module in `mlx_lm/tool_parsers/` does
-`import regex as re`. A bare `pip install mlx-lm` therefore gives you a server that can start but
-a `mlx_lm.chat` that cannot import, and tool parsing that fails on the first tool-capable model.
+The mlx-lm 0.32.0 release manifest omits `rich` and `regex`, although `cli_ui.py` and the Gemma tool parser import them. Install them explicitly for chat, training, or tool workflows:
 
 ```bash
 pip install mlx-lm rich regex
 ```
 
-🔴 **GAP — whether the published PyPI wheel declares them.** The `setup.py` in this checkout omits
-both. Whether the wheel on PyPI for 0.31.3 carries them (e.g. via a different packaging path) was
-not verified. **Safe default:** install them explicitly; it is idempotent if they are already
-declared.
-
-Also note the declared Python floor is stale. ✅ VERIFIED: `python_requires=">=3.8"`, but
-`mlx_lm/quant/awq.py` and the tool parsers use PEP-604 `X | None` annotations and `cli_ui.py` uses
-`list[tuple[str, str]]`. **Use Python 3.10 or newer.**
+Use Python ≥ 3.11 for the current release.
 
 ### 1.2 The ecosystem claim
 
@@ -332,16 +254,7 @@ trust_remote_code (#1385)"*. Before that commit, a `model_file` key in a downloa
 `config.json` caused `load_model` to import and execute an arbitrary Python file **from the model
 directory**, on a plain `load()`, with no opt-out. The fix, verbatim from `utils.load_model`:
 
-```python
-if (model_file := config.get("model_file")) is not None:
-    if not trust_remote_code:
-        raise ValueError(
-            f"The model at {model_path} requires importing and running a "
-            f"custom module ({model_file!r}) to build its architecture. This "
-            "is disabled by default. Pass trust_remote_code=True if you "
-            "trust this model."
-        )
-```
+See the [canonical example](04-mlx-lm-cli-generation-and-caching.md#21-all-18-entry-points).
 
 `--trust-remote-code` is present on the **model-loading** mlx-lm commands, and it gates two different
 things there: remote *tokenizer* code and the *architecture* file. It is intentionally absent from
@@ -405,6 +318,7 @@ stack.
 
 ⚠️ Worth knowing before you wire `/health` into a supervisor: it is a **static** handler. It does
 not touch the generation thread, the batch generator, or the model. Community bug report
+<!-- defect-ref:ml-explore.mlx-lm:issue:1493 -->
 **mlx-lm#1493** (open, 10 comments) documents a livelocked server where *"`GET /v1/models`
 returned 200 throughout"* while every completion hung for more than 180 seconds. `/health` would
 have behaved the same way. Community-reported; see §13.1 for the full diagnosis and the liveness
@@ -909,18 +823,7 @@ Under the hood `BatchGenerator` maps each regular cache class onto a batched one
 `KVCache → BatchKVCache`, `RotatingKVCache → BatchRotatingKVCache`, `CacheList` recursing — using
 a left-padding convention documented verbatim in `BatchKVCache`'s docstring:
 
-```
-E.g. the following prompts:
-    [1, 3, 5]
-    [7]
-    [2, 6, 8, 9]
-Should be padded like so:
-    [0, 1, 3, 5]
-    [0, 0, 0, 7]
-    [2, 6, 8, 9]
-And ``left_padding`` specifies the amount of padding for each.
-In this case, ``left_padding = [1, 3, 0]``.
-```
+See the [canonical example](04-mlx-lm-cli-generation-and-caching.md#83-how-batching-constrains-your-cache-choices).
 
 PR **#1072** added the asymmetry that makes mixed-length agent traffic efficient — ✅ VERIFIED,
 verbatim: *"right padding for prefill, left padding for decode"* so finished sequences stop early:
@@ -1018,6 +921,7 @@ benchmarked them:
   `--prefill-step-size 2048` is a lot of simultaneous matmul.
 - **`--prefill-step-size` is also a memory lever.** Lowering it reduces peak memory during prefill,
   which matters because quantized KV caches currently *raise* prefill peak memory (community
+<!-- defect-ref:ml-explore.mlx-lm:issue:1587 -->
   finding, mlx-lm#1587, open, 11 comments).
 
 🔴 **GAP — no published throughput/concurrency curve.** Neither Apple nor the repository publishes
@@ -1104,6 +1008,7 @@ is nearly free because attention is causal, and prefix reuse has been community-
 multiples on the Core AI side. The same physics applies here.
 
 ### 9.3 ⚠️ The architectures that forfeit prefix reuse entirely
+<!-- defect-ref:ml-explore.mlx-lm:issue:1494 -->
 
 This is the same constraint that shows up in Core AI's `trimKVCache` and it is worth stating in
 MLX's terms. ✅ VERIFIED from `mlx_lm/models/cache.py`'s class table:
@@ -1147,6 +1052,7 @@ server then checkpointing the mismatched state under the *new* key so later exac
 bad entry; and a trim-contract problem in `trim_prompt_cache` itself. The issue ships a model-free
 reproduction script.
 
+<!-- defect-ref:ml-explore.mlx-lm:issue:1495 -->
 **mlx-lm#1495 — the LRU is not an LRU, and one-token prefixes never match.** Two defects against
 `main @ 2ed2231`. First, in `PromptTrie.search`:
 
@@ -1215,13 +1121,13 @@ a 4K×4K matmul goes **2 s → 0.5 s → 0.33 s** across three kernel versions. 
 are reachable only through the newer kernel formulations, which is precisely why "MLX selects the
 best kernel" is the operative clause.
 
-⚠️ **Freshness caution.** The NAX (neural accelerator) code paths in MLX are new and moving. Three
-correctness fix PRs opened in the three days before 2026-07-27, including a **missing `else` in
-`tile_matmad_nax` that silently miscompiles odd tile shapes** (mlx #3912/#3922 still open, #3924
-closed unmerged 2026-08-02, on a 2026-08-03 `gh` re-check). Separately,
-mlx#3897 (closed 2026-08-09) reports that **batched vs single-sequence attention diverges numerically on M5**.
-If you are on M5 and chasing a correctness difference, update MLX before you debug anything else,
-and do not assert bit-equality between batched and unbatched paths.
+<!-- callout-id: callout-33510d5464325061 -->
+⚠️ **NAX numerical validation.**
+<!-- defect-ref:ml-explore.mlx:pull:3912 -->
+<!-- defect-ref:ml-explore.mlx:pull:3924 -->
+MLX 0.32.3 includes PR #3912’s source fix; remediation on the target hardware remains unverified. PR #3924 closed without merge, so test odd tile shapes against a reference.
+<!-- defect-ref:ml-explore.mlx:issue:3897 -->
+Issue #3897 reported batched/single-sequence attention divergence on M5 and closed on 2026-08-09. Closure does not establish bit equality; compare outputs for the shapes your application uses.
 
 🔴 **GAP — no M5 kernel-selection surface.** The M5 neural accelerator has **no API**. In MLX's
 own kernels the gate is inferred from `get_architecture_gen() >= 17` (18 for the `'p'` variants).
@@ -1609,8 +1515,11 @@ returned 200 throughout. Only `launchctl kickstart` recovered it.
 > the delivery level: *requests in flight + no tokens delivered to any consumer queue for N
 > seconds* = stalled engine."*
 
-Fix in flight: PR **#1598**, a delivery-staleness watchdog with `--generation-stall-timeout`
-(proposed default 60 s), stacked on **#1513** (exception / dead-worker recovery).
+<!-- defect-ref:ml-explore.mlx-lm:pull:1598 -->
+PR **#1598** proposed a delivery-staleness watchdog, but was closed without merge.
+The 0.32.0 server source has no `--generation-stall-timeout` flag. Exception-recovery
+<!-- defect-ref:ml-explore.mlx-lm:pull:1513 -->
+PR **#1513** remains open; neither proposal establishes a shipped remediation.
 
 **What to do today.** Do not health-check with `/health` or `/v1/models` — both stay green
 (§3.1). Health-check by *sending a tiny completion with a client-side timeout* and restarting the
@@ -1619,6 +1528,8 @@ solution and it is the difference between a two-second blip and an agent session
 overnight.
 
 ### 13.2 mlx-lm#1500 — an idle server pins a core
+<!-- defect-ref:ml-explore.mlx-lm:issue:1472 -->
+<!-- defect-ref:ml-explore.mlx-lm:issue:1505 -->
 
 `ResponseGenerator._generate()`'s worker thread busy-polls:
 
@@ -1645,11 +1556,13 @@ server when you are not using it, or accept it. There is no flag.
 
 - **mlx-lm#1505** — *"any uncaught exception in `_generate` leaves HTTP threads serving while every
   completion hangs forever."* Same external symptom as #1493, different cause.
-- **mlx-lm#1472 (closed 2026-09-04; fix merged but unreleased)** — the generation thread dies with
+- **mlx-lm#1472 (closed 2026-09-04; source fix included in 0.32.0)** — the generation thread dies with
   `TypeError ('NoneType' object is not iterable)` when a batch **mixes requests with and without
+<!-- defect-ref:ml-explore.mlx-lm:pull:1826 -->
   logits processors**; the server then hangs forever. [PR #1826](https://github.com/ml-explore/mlx-lm/pull/1826)
   makes the invalid per-sequence state unrepresentable and adds a mixed-batch regression test.
-  Affected releases still need the guard or a watchdog. This one is directly agent-relevant: a
+  Affected older releases need the guard or a watchdog; local 0.32.0 runtime remediation
+  is unverified. This one is directly agent-relevant: a
   fan-out where some subagents set `repetition_penalty` and others do not is exactly that mix.
 - **mlx-lm#1435** — a uniform **+55–77 ms TTFT regression** on 0.31.3 vs 0.27.1 on M3 Ultra, with
   decode flat (±1.5%) and the penalty **independent of model size** (Qwen3-0.6B and gpt-oss-20b
@@ -1661,10 +1574,7 @@ server when you are not using it, or accept it. There is no flag.
   yanked in practice** for BatchKV cache cross-contamination, so it is not a version to go back to.
 
 All five together add up to one operational rule: **run `mlx_lm.server` under a supervisor with an
-external liveness prober, and pin your mlx-lm version.** The velocity on this repository is high
-and, per mlx-lm#1475 (open), maintainer bandwidth has been uneven — commit velocity was ~50/month
-through February 2026, dropped to 1 in May and ~13 in June, with 30+ open PRs at the time of
-filing. Merges resumed in July. Plan for a pinned version and deliberate upgrades, not `latest`.
+external liveness prober, and pin your mlx-lm version.** Use deliberate upgrades and test delivery-level health on the chosen release.
 
 ---
 
@@ -2983,6 +2893,8 @@ fields.
 ---
 
 ## 24. Apple's measured numbers
+<!-- defect-ref:ml-explore.mlx:issue:3910 -->
+<!-- defect-ref:ml-explore.mlx:issue:3777 -->
 
 **Attribution: Apple-published**, WWDC26 session 233. Hardware stated in the session: **4 × M3
 Ultra, meshed over Thunderbolt 5, RDMA enabled**, orchestrated from a MacBook over SSH. No OS
@@ -3035,11 +2947,13 @@ is the crash you get if you skipped §16 on one machine. It is a segfault, not a
 diagnostic value is nil — which is why `ibv_devices` on every node before you launch is not
 optional.
 
+<!-- defect-ref:ml-explore.mlx:issue:3755 -->
 **mlx#3755 — ring and jaccl both fail to connect (errno 60/65) on a 4-node M3 Ultra cluster.**
 errno 60 is `ETIMEDOUT`, errno 65 is `EHOSTUNREACH`. The shape of a coordinator or per-cable
 subnet that is not reachable. Cross-check with §19.4: rank 0's IP plus `--starting-port` (32323)
 must be reachable from every node.
 
+<!-- defect-ref:ml-explore.mlx:issue:3862 -->
 **mlx#3862 — ring `SocketThread` dies silently on a transient connection reset**, after which all
 ranks wedge in `Event::wait`. A single blip on the network is enough.
 
@@ -3048,6 +2962,7 @@ variable set, an orphaned `fence_wait` kernel can lock the GPU until reboot; wit
 workload hits the ~5 s GPU watchdog (`kIOGPUCommandBufferCallbackErrorTimeout`) at around 7,300
 tokens.
 
+<!-- defect-ref:ml-explore.mlx:issue:3876 -->
 **mlx#3876 — CUDA distributed `all_sum` barrier hangs** in `cu::AtomicEvent::wait` on Blackwell.
 Not Apple silicon, but it tells you the instability is in the distributed layer generally, not just
 in JACCL.

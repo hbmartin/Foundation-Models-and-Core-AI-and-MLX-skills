@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract and report the live state of defect references in guides/.
+"""Report the live state of explicit current defect records.
 
 The reporter never edits the corpus. Network failures are represented as
 UNREACHABLE references and do not make the command fail.
@@ -22,50 +22,15 @@ from collections.abc import Iterable, Sequence
 from typing import Any
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-ALIASES = {
-    "coreai-torch": "apple/coreai-torch",
-    "coreai-models": "apple/coreai-models",
-    "coreai-optimization": "apple/coreai-optimization",
-    "python-apple-fm-sdk": "apple/python-apple-fm-sdk",
-    "mlx": "ml-explore/mlx",
-    "mlx-lm": "ml-explore/mlx-lm",
-    "mlx-swift": "ml-explore/mlx-swift",
-    "mlx-swift-lm": "ml-explore/mlx-swift-lm",
-    "mlx-swift-examples": "ml-explore/mlx-swift-examples",
-}
-ALIAS_ALT = "|".join(sorted((re.escape(alias) for alias in ALIASES), key=len, reverse=True))
+try:
+    from scripts.mdslug import collect_headings
+    from scripts.mdlinks import iter_lines
+except ModuleNotFoundError:
+    from mdslug import collect_headings
+    from mdlinks import iter_lines
 
-RE_URL = re.compile(
-    r"https?://github\.com/([\w.-]+/[\w.-]+)/(?P<route>issues|pull|discussions)/(\d+)"
-)
-RE_OWNER = re.compile(r"(?<![\w.-])([\w-]+/[\w.-]+?)#(\d{1,6})(?![\w-])")
-RE_ADJACENT = re.compile(
-    r"(?<![\w-])(" + ALIAS_ALT
-    + r")(?:[`'\"*\s]{0,4}(?:issues?|PRs?|pulls?|bugs?)?[`'\"*\s]{0,4})#(\d{1,6})(?![\w-])"
-)
-RE_BARE = re.compile(r"(?<![\w/.#&-])#(\d{1,6})(?![\w#-])")
-RE_MENTION = re.compile(r"(?<![\w-])(?:(?:apple|ml-explore)/)?(" + ALIAS_ALT + r")(?![\w-])")
-RE_AS_OF = re.compile(r"as of\s*\*{0,2}(20\d{2}-\d{2}-\d{2})", re.IGNORECASE)
-RE_DEFECTISH = re.compile(
-    r"\b(issues?|PRs?|pull|bug|open(?:ed)?|closed|merged|landed|fix(?:ed)?|regression)\b",
-    re.IGNORECASE,
-)
-CLAIM_PATTERNS = (
-    (re.compile(r"\b(?:merged|landed)\b", re.IGNORECASE), "MERGED"),
-    (re.compile(r"\bclosed\b", re.IGNORECASE), "CLOSED"),
-    (re.compile(r"\bopen(?:ed)?\b", re.IGNORECASE), "OPEN"),
-)
-RE_NEGATED = re.compile(
-    r"(?:\b(?:not|never|no)|n['’]t)(?:\s+(?:currently|still|longer|yet|been))*[\s`'\"*]*$",
-    re.IGNORECASE,
-)
-RE_CLAUSE_BOUNDARY = re.compile(
-    r"(?:[.;](?:\s+|$)|\n(?=\s*(?:>\s*)*(?:[-*+]\s|\d+[.)]\s))|"
-    r",\s*(?=(?:while|whereas|but)\b)|"
-    r"\b(?:while|whereas|but)\b|,\s+and\s+(?=(?:issues?|PRs?|pull requests?|bugs?)\b))",
-    re.IGNORECASE,
-)
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+RE_URL = re.compile(r"https?://github\.com/([\w.-]+/[\w.-]+)/(?P<route>issues|pull|discussions)/(\d+)")
 GENERATED = {
     pathlib.Path("guides/SILENT-FAILURES.md"),
     pathlib.Path("guides/API-INDEX.md"),
@@ -136,333 +101,125 @@ def atomic_text(path: pathlib.Path, contents: str) -> None:
             os.unlink(temporary)
 
 
-def paragraphs(path: pathlib.Path) -> Iterable[tuple[int, str]]:
-    """Yield blank-line paragraphs, while treating each Markdown table row separately."""
-    block: list[str] = []
-    start: int | None = None
-
-    def flush() -> tuple[int, str] | None:
-        nonlocal block, start
-        if not block or start is None:
-            return None
-        value = (start, "\n".join(block))
-        block = []
-        start = None
-        return value
-
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    for line_number, line in enumerate(lines, 1):
-        if not line.strip() or line.lstrip().startswith("|"):
-            value = flush()
-            if value:
-                yield value
-            if line.lstrip().startswith("|"):
-                yield line_number, line
-        else:
-            if start is None:
-                start = line_number
-            block.append(line)
-    value = flush()
-    if value:
-        yield value
-
-
-def nearest(matches: Sequence[tuple[int, str]], offset: int) -> str | None:
-    return min(matches, key=lambda match: abs(match[0] - offset))[1] if matches else None
-
-
-def nearest_mention(
-    mentions: Sequence[tuple[int, str]], start: int, end: int, text: str
-) -> tuple[str | None, float, list[dict[str, str]]]:
-    after = [mention for mention in mentions if mention[0] >= end]
-    if after:
-        first = min(after)
-        gap = text[end : first[0]]
-        if len(gap) <= 12 and "(" in gap and "#" not in gap:
-            return first[1], 0.8, []
-    before = sorted(mention for mention in mentions if mention[0] <= start)
-    if not before:
-        mapped = nearest(mentions, start)
-        if mapped:
-            return mapped, 0.65, []
-        return None, 0.0, [
-            {
-                "code": "ambiguous-repository",
-                "message": "Bare reference has no unambiguous repository mention in its paragraph.",
-            }
-        ]
-    closest = before[-1]
-    for previous in before[:-1]:
-        if (
-            previous[1] != closest[1]
-            and 0 < closest[0] - previous[0] < 40
-            and "#" not in text[previous[0] : closest[0]]
-        ):
-            return None, 0.0, [
-                {
-                    "code": "ambiguous-repository",
-                    "message": "Bare reference follows a list containing multiple repositories.",
-                }
-            ]
-    return closest[1], 0.75, []
-
-
-def clause_spans(text: str) -> list[tuple[int, int]]:
-    spans: list[tuple[int, int]] = []
-    start = 0
-    for match in RE_CLAUSE_BOUNDARY.finditer(text):
-        if match.start() > start:
-            spans.append((start, match.start()))
-        start = match.end()
-    if start < len(text):
-        spans.append((start, len(text)))
-    return spans or [(0, len(text))]
-
-
-def clause_for_offset(text: str, offset: int) -> tuple[int, int]:
-    for start, end in clause_spans(text):
-        if start <= offset <= end:
-            return start, end
-    return 0, len(text)
-
-
-RE_REFERENCE_JOIN = re.compile(
-    r"(?!.*[,/][\s*`\\]*(?:PR|issue|pull request|bug)\b)"
-    r"(?:[\s,*`\\/]|\b(?:and|or|PRs?|issues?|pull requests?|bugs?)\b)+", re.I | re.S
-)
-RE_DIRECT_PREFIX = re.compile(
-    r"\b(?:merged|landed|closed|open(?:ed)?)\b"
-    r"[\s*`\\]*(?:(?:PRs?|issues?|pull requests?|bugs?)[\s*`\\]*)?$", re.I
-)
-
-
-class ClaimScope:
-    """A reference's local predicates and explicitly shared metadata."""
-
-    def __init__(self, before: str, after: str, claim_text: str, claim_date: str | None):
-        self.before, self.after = before, after
-        self.claim_text, self.claim_date = claim_text, claim_date
-
-    @staticmethod
-    def scan(segment: str, before: bool = False) -> list[tuple[int, str, bool]]:
-        found = []
-        for pattern, state in CLAIM_PATTERNS:
-            for match in pattern.finditer(segment):
-                prefix = segment[max(0, match.start() - 60):match.start()]
-                distance = len(segment) - match.end() if before else match.start()
-                found.append((distance, state, bool(RE_NEGATED.search(prefix))))
-        return found
-
-    def state_words(self) -> list[tuple[int, str, bool]]:
-        """Include negation for focused guards, without inferring its opposite."""
-        return self.scan(self.after[:80]) or self.scan(self.before[-40:], before=True)
-
-    def claim(self) -> tuple[str | None, float, list[dict[str, str]]]:
-        candidates = [(distance, state) for distance, state, negated in self.scan(self.after[:80])
-                      if not negated]
-        direction = "after"
-        if not candidates:
-            candidates = [(distance, state) for distance, state, negated in
-                          self.scan(self.before[-40:], before=True) if not negated]
-            direction = "before"
-        if not candidates:
-            return None, 1.0, []
-        chosen = min(candidates, key=lambda item: item[0])[1]
-        if len({state for _, state in candidates}) == 1:
-            return chosen, 0.9, []
-        return chosen, 0.6, [{
-            "code": "multiple-state-words",
-            "message": f"Bounded {direction}-reference window contains multiple state words; "
-                       f"selected nearest state {chosen}.",
-        }]
-
-
-class ParagraphClaims:
-    """Parse once; associate states, dates, and prose with normalized references."""
-
-    def __init__(self, text: str, references=None, dates=None):
-        self.text = text
-        self.clauses = clause_spans(text)
-        self.dates = dates if dates is not None else [
-            (m.start(), m.group(1)) for m in RE_AS_OF.finditer(text)]
-        if references is None:
-            references = []
-            for pattern in (RE_URL, RE_OWNER, RE_ADJACENT, RE_BARE):
-                for match in pattern.finditer(text):
-                    if any(match.start() < end and match.end() > start
-                           for start, end, _, _ in references):
-                        continue
-                    if pattern is RE_URL:
-                        repository, number = match.group(1), int(match.group(3))
-                    elif pattern is RE_OWNER:
-                        repository, number = match.group(1), int(match.group(2))
-                    elif pattern is RE_ADJACENT:
-                        repository, number = ALIASES[match.group(1)], int(match.group(2))
-                    else:
-                        repository, number = None, int(match.group(1))
-                    references.append((match.start(), match.end(), repository, number))
-        self.references = sorted(references)
-        self.scopes: dict[tuple[int, int], ClaimScope] = {}
-
-    def scope(self, reference_start: int, reference_end: int) -> ClaimScope:
-        key = (reference_start, reference_end)
-        if key in self.scopes:
-            return self.scopes[key]
-        index = next(i for i, (start, end, _, _) in enumerate(self.references)
-                     if start <= reference_start < end)
-        clause_start, clause_end = next(
-            (start, end) for start, end in self.clauses if start <= reference_start <= end)
-        left = right = index
-        while left > 0 and self.references[left - 1][0] >= clause_start:
-            if not RE_REFERENCE_JOIN.fullmatch(self.text[self.references[left - 1][1]:self.references[left][0]]):
-                break
-            left -= 1
-        while right + 1 < len(self.references) and self.references[right + 1][0] < clause_end:
-            if not RE_REFERENCE_JOIN.fullmatch(self.text[self.references[right][1]:self.references[right + 1][0]]):
-                break
-            right += 1
-        group_start, group_end = self.references[left][0], self.references[right][1]
-        previous = self.references[left - 1] if left > 0 and self.references[left - 1][0] >= clause_start else None
-        following = self.references[right + 1] if right + 1 < len(self.references) else None
-        before_start = previous[1] if previous else clause_start
-        after_end = min(clause_end, following[0]) if following else clause_end
-        if following and following[0] < clause_end:
-            next_prefix = RE_DIRECT_PREFIX.search(self.text[group_end:after_end])
-            if next_prefix:
-                after_end = group_end + next_prefix.start()
-        direct = None
-        if previous:
-            prefix = self.text[before_start:group_start]
-            joins = list(re.finditer(r"\b(?:and|or)\b", prefix, re.I))
-            direct = RE_DIRECT_PREFIX.search(prefix)
-            if direct:
-                # Preserve a state immediately before this reference. Earlier
-                # state words in the gap still belong to the preceding reference.
-                prior_states = [m for pattern, _ in CLAIM_PATTERNS for m in pattern.finditer(prefix)
-                                if m.end() <= direct.start()]
-                before_start += max((m.end() for m in prior_states), default=0)
-                if joins and joins[-1].end() <= direct.start():
-                    before_start = max(before_start, previous[1] + joins[-1].end())
-            elif joins:
-                before_start += joins[-1].end()
-            else:
-                before_start = group_start
-        first = next(r for r in self.references if clause_start <= r[0] < clause_end)
-        leading_dates = [d for d in self.dates if clause_start <= d[0] < first[0]]
-        local_dates = [d for d in self.dates if max(before_start, first[0]) <= d[0] < after_end]
-        claim_date = nearest(local_dates or leading_dates, reference_start)
-        claim_text = self.text[before_start:after_end]
-        if leading_dates and before_start > first[0]:
-            claim_text = self.text[clause_start:first[0]] + " " + claim_text
-        before = self.text[before_start:group_start] if not previous or direct else ""
-        scope = ClaimScope(before, self.text[group_end:after_end],
-                           " ".join(claim_text.split()), claim_date)
-        self.scopes[key] = scope
-        return scope
-
-    def matching_scopes(self, repository: str, number: int) -> list[ClaimScope]:
-        return [self.scope(start, end) for start, end, repo, num in self.references
-                if num == number and repo in (None, repository)]
-
-
-def claim_in_clause(
-    text: str, reference_start: int, reference_end: int
-) -> tuple[str | None, float, list[dict[str, str]]]:
-    """Compatibility entrypoint; extraction reuses its paragraph analysis."""
-    return ParagraphClaims(text).scope(reference_start, reference_end).claim()
+def load_registry(source_root: pathlib.Path) -> list[dict[str, Any]]:
+    path = source_root / "notes/defects.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot read defect registry: {error}") from error
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1 or not isinstance(payload.get("defects"), list):
+        raise ValueError("defect registry must be schema version 1")
+    ids, identities = set(), set()
+    for record in payload["defects"]:
+        if not isinstance(record, dict):
+            raise ValueError("defect record must be an object")
+        required = {"id", "url", "kind", "affectedVersions", "guideRefs", "claimedState", "asOf", "resolution"}
+        if not required.issubset(record):
+            raise ValueError("defect record lacks required fields")
+        if any(not isinstance(record[key], str) or not record[key].strip() for key in ("id", "url", "kind", "claimedState", "asOf", "affectedVersions")):
+            raise ValueError("defect scalar fields must be nonempty strings")
+        match = re.fullmatch(r"https://github\.com/([\w.-]+/[\w.-]+)/(issues|pull|discussions)/([1-9][0-9]*)", record["url"] if isinstance(record["url"], str) else "")
+        routes = {"issue": "issues", "pull": "pull", "discussion": "discussions"}
+        if not match or record["kind"] not in routes or routes[record["kind"]] != match[2]:
+            raise ValueError("defect URL and kind must identify the same GitHub reference")
+        identity = (match[1], record["kind"], int(match[3]))
+        if not isinstance(record["id"], str) or not re.fullmatch(r"[A-Za-z0-9_.:-]+", record["id"]) or record["id"] in ids or identity in identities:
+            raise ValueError("duplicate or invalid defect identity")
+        ids.add(record["id"]); identities.add(identity)
+        allowed = {"OPEN", "CLOSED", "MERGED"} if record["kind"] == "pull" else {"OPEN", "CLOSED"}
+        if record["claimedState"] not in allowed:
+            raise ValueError("invalid state for defect kind")
+        for value in (record["asOf"], record["resolution"].get("evidenceDate") if isinstance(record["resolution"], dict) else None):
+            if not isinstance(value, str) or not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", value):
+                raise ValueError("defect dates must be ISO dates")
+            dt.date.fromisoformat(value)
+        resolution = record["resolution"]
+        if resolution.get("disposition") not in RESOLUTION_DISPOSITIONS or not isinstance(resolution.get("evidenceUrls"), list) or not resolution["evidenceUrls"] or not all(isinstance(url, str) and url.startswith("https://") for url in resolution["evidenceUrls"]):
+            raise ValueError("resolution requires a known disposition and evidence URLs")
+        confidence = resolution.get("confidence")
+        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1 or not isinstance(resolution.get("rationale"), str) or not resolution["rationale"].strip():
+            raise ValueError("resolution requires confidence and rationale")
+        for key, states in (("releaseAvailability", {"unknown", "released", "not-in-verified-release"}),
+                            ("remediation", {"unverified", "demonstrated", "not-remediated"})):
+            evidence = resolution.get(key)
+            if not isinstance(evidence, dict) or not isinstance(evidence.get("status"), str) or evidence["status"] not in states:
+                raise ValueError(f"resolution requires explicit {key} state")
+            if evidence.get("version") is not None and (not isinstance(evidence["version"], str) or not evidence["version"].strip()):
+                raise ValueError(f"invalid {key} version")
+            if evidence["status"] != "unknown" and evidence["status"] != "unverified":
+                urls = evidence.get("evidenceUrls")
+                if not isinstance(urls, list) or not urls or not all(isinstance(url, str) and url.startswith("https://") for url in urls):
+                    raise ValueError(f"{key} claims require evidence URLs")
+        if resolution["disposition"] in {"fixed", "fixed-with-residual"} and resolution["remediation"]["status"] != "demonstrated":
+            raise ValueError("a fixed disposition requires demonstrated remediation")
+        if not isinstance(record["affectedVersions"], str) or not record["affectedVersions"].strip() or not isinstance(record["guideRefs"], list) or not record["guideRefs"]:
+            raise ValueError("defect requires affected versions and guide references")
+        seen_locations = set()
+        for location in record["guideRefs"]:
+            if not isinstance(location, dict) or set(location) != {"file", "anchor"} or not all(isinstance(location[k], str) and location[k] for k in location):
+                raise ValueError("guide reference requires file and anchor")
+            relative = pathlib.PurePosixPath(location["file"])
+            target = source_root / relative
+            if relative.is_absolute() or ".." in relative.parts or not relative.parts or relative.parts[0] != "guides" or relative.suffix != ".md" or target.is_symlink() or not target.is_file() or source_root.resolve() not in target.resolve().parents:
+                raise ValueError(f"missing or unsafe guide target: {location['file']}")
+            # Shared heading extraction preserves duplicate-anchor suffixes and ignores fences.
+            anchors = {item.anchor for item in collect_headings(target.read_text(encoding="utf-8"))}
+            if location["anchor"] not in anchors:
+                raise ValueError(f"missing guide anchor: {location['file']}#{location['anchor']}")
+            key = (location["file"], location["anchor"])
+            if key in seen_locations:
+                raise ValueError("duplicate guide reference")
+            seen_locations.add(key)
+    expected = {
+        (location["file"], location["anchor"], record["id"])
+        for record in payload["defects"] for location in record["guideRefs"]
+    }
+    found = set()
+    for guide in sorted((source_root / "guides").rglob("*.md")):
+        text = guide.read_text(encoding="utf-8")
+        headings = iter(collect_headings(text))
+        heading = next(headings, None)
+        anchor = None
+        relative = guide.relative_to(source_root).as_posix()
+        for number, (line, _newline, fenced) in enumerate(iter_lines(text), 1):
+            if fenced:
+                continue
+            while heading and heading.line <= number:
+                anchor = heading.anchor
+                heading = next(headings, None)
+            for identifier in re.findall(r"<!--\s*defect-ref:([^\s]+)\s*-->", line):
+                key = (relative, anchor, identifier)
+                if key not in expected:
+                    raise ValueError(f"{relative}:{number}: unknown or misplaced defect ID {identifier}")
+                if key in found:
+                    raise ValueError(f"{relative}:{number}: duplicate defect marker {identifier}")
+                found.add(key)
+    missing = expected - found
+    if missing:
+        raise ValueError("missing defect markers: " + ", ".join(
+            f"{file}#{anchor}: {identifier}" for file, anchor, identifier in sorted(missing)
+        ))
+    return payload["defects"]
 
 
 def extract(source_root: pathlib.Path) -> list[dict[str, Any]]:
-    sightings: list[dict[str, Any]] = []
-    guides = source_root / "guides"
-    for path in sorted(guides.rglob("*.md")):
-        relative_path = path.relative_to(source_root)
-        if relative_path in GENERATED:
-            continue
-        for paragraph_start, text in paragraphs(path):
-            mentions = [(match.start(), ALIASES[match.group(1)]) for match in RE_MENTION.finditer(text)]
-            mentions.extend((match.start(), match.group(1)) for match in RE_URL.finditer(text))
-            dates = [(match.start(), match.group(1)) for match in RE_AS_OF.finditer(text)]
-            occupied: list[tuple[int, int]] = []
-            references: list[tuple[int, int, str | None, int, str, float, list[dict[str, str]], str]] = []
-
-            def take(
-                match: re.Match[str],
-                repository: str | None,
-                number: int,
-                form: str,
-                confidence: float,
-                diagnostics: list[dict[str, str]] | None = None,
-                reference_kind: str = "issue-or-pr",
-            ) -> None:
-                if any(match.start() < end and match.end() > start for start, end in occupied):
-                    return
-                occupied.append((match.start(), match.end()))
-                references.append(
-                    (
-                        match.start(),
-                        match.end(),
-                        repository,
-                        number,
-                        form,
-                        confidence,
-                        diagnostics or [],
-                        reference_kind,
-                    )
-                )
-
-            for match in RE_URL.finditer(text):
-                take(match, match.group(1), int(match.group(3)), "url", 1.0,
-                     reference_kind="discussion" if match.group("route") == "discussions" else "issue-or-pr")
-            for match in RE_OWNER.finditer(text):
-                take(match, match.group(1), int(match.group(2)), "owner-repo", 1.0)
-            for match in RE_ADJACENT.finditer(text):
-                take(match, ALIASES[match.group(1)], int(match.group(2)), "repo-adjacent", 0.95)
-            if RE_DEFECTISH.search(text):
-                for match in RE_BARE.finditer(text):
-                    repository, confidence, diagnostics = nearest_mention(
-                        mentions, match.start(), match.end(), text
-                    )
-                    take(
-                        match,
-                        repository,
-                        int(match.group(1)),
-                        "bare",
-                        confidence,
-                        diagnostics,
-                    )
-
-            analysis = ParagraphClaims(text, [(r[0], r[1], r[2], r[3]) for r in references], dates)
-
-            # Keep the legacy extraction order: URLs, owner/repo refs, adjacent
-            # repo refs, then bare refs, each in regex encounter order.
-            for offset, end, repository, number, form, map_confidence, diagnostics, reference_kind in references:
-                scope = analysis.scope(offset, end)
-                claimed_state, claim_confidence, claim_diagnostics = scope.claim()
-                claim_date = scope.claim_date
-                context_width = 240
-                reference_width = end - offset
-                left_budget = max(0, (context_width - reference_width) // 2)
-                context_start = max(0, offset - left_budget)
-                context_end = min(len(text), context_start + context_width)
-                context_start = max(0, context_end - context_width)
-                sightings.append(
-                    {
-                        "id": f"s{len(sightings) + 1:04d}",
-                        "file": relative_path.as_posix(),
-                        "line": paragraph_start + text.count("\n", 0, offset),
-                        "repository": repository,
-                        "number": number,
-                        "form": form,
-                        "referenceKind": reference_kind,
-                        "claimedState": claimed_state,
-                        "claimDate": claim_date,
-                        "claimText": scope.claim_text,
-                        "context": " ".join(text[context_start:context_end].split()),
-                        "confidence": round(min(map_confidence, claim_confidence), 2),
-                        "diagnostics": diagnostics + claim_diagnostics,
-                    }
-                )
+    """Describe explicit current claims, without interpreting prose or bare issue numbers."""
+    sightings = []
+    for record in load_registry(source_root):
+        match = RE_URL.fullmatch(record["url"])
+        for location in record["guideRefs"]:
+            path = source_root / location["file"]
+            headings = collect_headings(path.read_text(encoding="utf-8"))
+            heading = next(item for item in headings if item.anchor == location["anchor"])
+            sightings.append({
+                "id": f"s{len(sightings) + 1:04d}", "file": location["file"], "line": heading.line,
+                "repository": match[1], "number": int(match[3]), "form": "registry",
+                "referenceKind": "discussion" if record["kind"] == "discussion" else "issue-or-pr",
+                "githubKind": record["kind"], "registryId": record["id"],
+                "claimedState": record["claimedState"], "claimDate": record["asOf"],
+                "claimText": record["affectedVersions"], "context": record["title"] if "title" in record else record["affectedVersions"],
+                "confidence": 1.0, "diagnostics": [], "resolution": record["resolution"],
+            })
     return sightings
 
 
@@ -484,6 +241,14 @@ def gh_json(*arguments: str) -> tuple[dict[str, Any] | None, str | None]:
 
 
 def lookup(repository: str, number: int, reference_kind: str = "issue-or-pr") -> dict[str, Any]:
+    if reference_kind == "pull":
+        data, error = gh_json("api", f"repos/{repository}/pulls/{number}")
+        if not data:
+            return {"error": error or "pull request not returned"}
+        return {"kind": "PR", "state": "MERGED" if data.get("merged_at") else data["state"].upper(),
+                "url": data["html_url"], "title": data["title"], "closedAt": data.get("closed_at"),
+                "mergedAt": data.get("merged_at"), "stateReason": None, "reason": None}
+
     if reference_kind == "discussion":
         owner, name = repository.split("/", 1)
         query = ("query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name)"
@@ -500,6 +265,8 @@ def lookup(repository: str, number: int, reference_kind: str = "issue-or-pr") ->
                 "stateReason": None, "reason": None, "answered": discussion["isAnswered"]}
     data, error = gh_json("api", f"repos/{repository}/issues/{number}")
     if data:
+        if reference_kind == "issue" and data.get("pull_request"):
+            return {"error": "registry declares an issue but GitHub returned a pull request"}
         pull_request = data.get("pull_request") or {}
         state = (
             "MERGED"
@@ -519,6 +286,8 @@ def lookup(repository: str, number: int, reference_kind: str = "issue-or-pr") ->
             "reason": reason if reason not in (None, "", "completed") else None,
             "title": data.get("title") or "",
         }
+    if reference_kind == "issue":
+        return {"error": error or "issue not returned"}
     data, _ = gh_json(
         "issue",
         "view",
@@ -615,7 +384,7 @@ def group_references(
     distinct: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for sighting in sightings:
         repository = sighting["repository"] or f"?@{sighting['file']}"
-        distinct.setdefault((repository, sighting.get("referenceKind", "issue-or-pr"), sighting["number"]), []).append(sighting)
+        distinct.setdefault((repository, sighting.get("githubKind", sighting.get("referenceKind", "issue-or-pr")), sighting["number"]), []).append(sighting)
 
     references: list[dict[str, Any]] = []
     for (_, reference_kind, number), group in sorted(distinct.items()):
@@ -623,7 +392,7 @@ def group_references(
         live: dict[str, Any] | None = None
         diagnostics = [diagnostic for sighting in group for diagnostic in sighting["diagnostics"]]
         if perform_lookup and repository:
-            live = lookup(repository, number, reference_kind) if reference_kind == "discussion" else lookup(repository, number)
+            live = lookup(repository, number, reference_kind)
             if "error" in live:
                 diagnostics.append({"code": "github-unreachable", "message": live["error"]})
             time.sleep(sleep_seconds)
@@ -645,7 +414,9 @@ def group_references(
             "ref": f"{repository or '?'}#{number}",
             "repository": repository,
             "number": number,
-            "referenceKind": reference_kind,
+            "referenceKind": "discussion" if reference_kind == "discussion" else "issue-or-pr",
+            "githubKind": reference_kind,
+            "registryId": group[0].get("registryId"),
             "claims": claims,
             "latestClaimDate": claim_date,
             "sightingCount": len(group),
@@ -658,7 +429,9 @@ def group_references(
             "closedAt": live.get("closedAt") if live and "error" not in live else None,
             "mergeTimestamp": live.get("mergedAt") if live and "error" not in live else None,
             "transitionKind": transition_kind(live, claims),
-            "resolutionDisposition": "unknown",
+            "resolutionDisposition": group[0].get("resolution", {}).get("disposition", "unknown"),
+            "releaseAvailability": group[0].get("resolution", {}).get("releaseAvailability"),
+            "remediation": group[0].get("resolution", {}).get("remediation"),
             "automaticFixEligible": False,
         }
         if perform_lookup:
@@ -707,6 +480,7 @@ def structured_payload(
             "ambiguousSightings": sum(sighting["repository"] is None for sighting in sightings),
             "verdicts": verdict_counts if not extraction_only else None,
         },
+        "unreachableReferences": [reference for reference in summarized if reference.get("verdict") == "UNREACHABLE"],
         "references": list(references),
         "sightings": list(sightings),
     }
@@ -798,6 +572,9 @@ def markdown_report(
             f"{reference['confidence']:.2f} | **{reference['verdict']}** |"
         )
     summarized = references if summary_references is None else summary_references
+    failures = [r for r in summarized if r.get("verdict") == "UNREACHABLE"]
+    if failures:
+        lines.extend(["", "## Failed GitHub lookups", ""] + [f"- {r['ref']}: {(r.get('live') or {}).get('error', 'unreachable')}" for r in failures])
     counts = {
         name: sum(reference["verdict"] == name for reference in summarized)
         for name in VERDICT_ORDER

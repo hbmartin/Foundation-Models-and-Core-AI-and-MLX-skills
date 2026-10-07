@@ -108,3 +108,22 @@ def slugify(heading, separator="-"):
         if ch == '-' or category[0] in 'LMN' or category == 'Pc':
             out.append(ch)
     return ''.join(out)
+
+
+def collect_headings(text):
+    """Return fence-aware headings with source lines and duplicate-safe anchors."""
+    from collections import defaultdict, namedtuple
+    try:
+        from scripts.mdlinks import iter_lines
+    except ModuleNotFoundError:
+        from mdlinks import iter_lines
+    Heading = namedtuple('Heading', 'line text anchor')
+    used, suffixes, headings = set(), defaultdict(int), []
+    for number, (body, _newline, fenced) in enumerate(iter_lines(text), 1):
+        if fenced:
+            continue
+        match = re.match(r'^ {0,3}#{1,6}[ \t]+(.*?)(?:[ \t]+#+[ \t]*)?$', body)
+        if match:
+            title = match[1].strip()
+            headings.append(Heading(number, title, unique_slug(slugify(title), used, suffixes)))
+    return headings

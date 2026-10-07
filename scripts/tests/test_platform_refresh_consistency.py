@@ -23,39 +23,15 @@ FROZEN_NOEMA_URL = (
 
 
 def current_issue49_errors(root: Path) -> list[str]:
-    """Check #49 claims locally; unresolved references require qualification."""
+    """Check the explicit current record; historical citations do not create claims."""
     errors = []
-    parts = tuple(f"guides/part-{part:02d}-" for part in (7, 8, 9, 10, 17))
-    for row in defects.extract(root):
-        if (not row["file"].startswith(parts) or row["number"] != 49
-                or row["referenceKind"] != "issue-or-pr"):
+    for record in defects.load_registry(root):
+        if record["url"] != "https://github.com/apple/coreai-torch/issues/49":
             continue
-        if row["repository"] is None:
-            errors.append(f'{row["file"]}:{row["line"]}: qualify #49 with its repository')
-            continue
-        if row["repository"] != "apple/coreai-torch":
-            continue
-        claim = re.sub(r'"[^"]*"', "", row["claimText"])
-        scopes = defects.ParagraphClaims(claim).matching_scopes(row["repository"], row["number"])
-        for scope in scopes:
-            after = scope.after.lstrip(" `*()[]")
-            dated = row["claimDate"] is not None and row["claimDate"] < "2026-10-02"
-            past = bool(re.match(r"(?:(?:silently|still|currently)\s+)*(?:was|were|had|miscompiled|failed)\b",
-                                 after, re.I))
-            past |= bool(re.search(r"\b(?:was|were|had)\s+(?:(?:not|never|yet|been|still|currently)\s+)*"
-                                   r"(?:open|closed)\s+(?:issues?\s*)?$", scope.before, re.I))
-            historical = dated or (bool(re.search(r"\b0\.4\.[012]\b", scope.claim_text)) and past)
-            words = scope.state_words()
-            stale = any((state == "OPEN" and not negated) or (state == "CLOSED" and negated)
-                        for _, state, negated in words)
-            if stale and not historical:
-                errors.append(f'{row["file"]}:{row["line"]}: coreai-torch#49 incorrectly reported open')
-            if not historical and re.match(
-                    r"(?:(?:is|are)\s+)?(?:(?:still|currently|silently)\s+)*"
-                    r"(?:miscompiles|miscompiling|fails|failing)\b", after, re.I):
-                errors.append(f'{row["file"]}:{row["line"]}: qualify the historical #49 behavior')
-            errors.extend(f'{row["file"]}:{row["line"]}: {error}'
-                          for error in contract_errors(scope.claim_text, "issue49"))
+        if record["claimedState"] != "CLOSED":
+            errors.append("coreai-torch#49 incorrectly reported open")
+        if record["resolution"]["disposition"] != "fixed" or "0.4.2 unverified" not in record["affectedVersions"]:
+            errors.append("#49 requires the tested 0.4.3 fix and the unverified 0.4.2 boundary")
     return errors
 
 
@@ -169,14 +145,10 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         )
         canonical_anchor = "#3--the-fm-help-surface-captured-on-macos-27"
         linked_files = (
-            "notes/NEEDED-FROM-A-MACOS-27-MACHINE.md",
             "guides/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md",
             "guides/part-05-prototyping-profiling-non-swift/README.md",
             "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md",
             "notes/repos/issues-community-stack.md",
-            "notes/synthesis/PROPOSED-GUIDE-TOPICS.md",
-            "notes/synthesis/proposal-by-depth.md",
-            "notes/synthesis/proposal-by-framework.md",
         )
         for relative in linked_files:
             self.assertIn(canonical_anchor, self.read(relative), relative)
@@ -278,7 +250,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         )
 
     def test_foundation_models_lane_names_are_resolved_in_active_trackers(self) -> None:
-        tracker = self.read("notes/NEEDED-FROM-A-MACOS-27-MACHINE.md")
+        tracker = self.read("probes/INSTRUMENTS-RECORDING.md")
         self.assertIn("Foundation Models names resolved", tracker)
         self.assertIn("Core AI still open", tracker)
         for lane in (
@@ -292,7 +264,6 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             self.assertIn(lane, tracker)
 
         active_documents = (
-            "notes/NEEDED-FROM-A-MACOS-27-MACHINE.md",
             "notes/FRESHNESS-RUNBOOK.md",
             "notes/FOLLOWUP-BACKLOG.md",
             "probes/INSTRUMENTS-RECORDING.md",
@@ -345,7 +316,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         )
         self.assertIsNotNone(match)
         total, concrete = (f"{int(value.replace(',', '')):,}" for value in match.groups())
-        self.assertIn(f"({total},\n  of which {concrete} describe", overview)
+        self.assertIn(f"{total} classified warnings ({concrete} concrete silent failures)", overview)
 
     def test_coreai_torch_043_guidance_has_no_removed_optimizer_calls(self) -> None:
         self.assertEqual([], removed_optimizer_errors(ROOT))
@@ -418,64 +389,22 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             active,
         )
 
-    def test_issue49_guard_scans_other_pages_and_handles_reference_context(self):
+    def test_issue49_guard_checks_explicit_state_and_version_boundaries(self):
+        import copy
         import tempfile
-        fixtures = (
-            ("`coreai-torch` issue **#49** (open)", True),
-            ("coreai-torch#49 remains open", True),
-            ("apple/coreai-torch#49 remains OPEN", True),
-            ("coreai-torch#49 is not OPEN", False),
-            ("coreai-torch#49 isn't open", False),
-            ("coreai-torch#49 isn't currently open", False),
-            ("coreai-torch#49 isn’t currently still open", False),
-            ("coreai-torch#49 isn't yet closed", True),
-            ("coreai-torch#49 isn’t yet closed", True),
-            ("coreai-torch#49 is no longer open", False),
-            ("coreai-torch#49 is not currently OPEN", False),
-            ("coreai-torch has no open issues #49, #51", False),
-            ("coreai-torch#49 CLOSED; coreai-models#49 remains open", False),
-            ("coreai-torch#49 closed; issue #51 remains open", False),
-            ("Historical: as of 2026-07-29 coreai-torch#49 was open", False),
-            ("Historical 0.4.1: coreai-torch#49 was open", False),
-            ("Historical 0.4.1 bug: coreai-torch#49 remains open", True),
-            ("as of 2026-10-02 coreai-torch#49 remains open", True),
-            ("Issue #49 remains open", True),
-            ("Issue #49 miscompiles on square/equal-length inputs", True),
-            ("coreai-torch#49 miscompiles on square/equal-length inputs", True),
-            ("Historical 0.4.1 notes describe old behavior; coreai-torch#49 is open", True),
-            ("Historical 0.4.1 notes describe old behavior. coreai-torch#49 is open", True),
-            ("Historical 0.4.1 reports were different: coreai-torch#49 is currently open", True),
-            ("Historical 0.4.1 reports were different: coreai-torch#49 isn't yet closed", True),
-            ("Historical 0.4.1: coreai-torch#9 was open; coreai-torch#49 is open", True),
-            ("coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open", True),
-            ("coreai-torch#49 silently miscompiles on square inputs", True),
-            ("coreai-torch#49 is still miscompiling on square inputs", True),
-            ("https://github.com/apple/coreai-torch/issues/49 miscompiles on square inputs", True),
-            ("https://github.com/apple/coreai-torch/issues/49 is still miscompiling", True),
-            ("Historical 0.4.1: https://github.com/apple/coreai-torch/issues/49 was open", False),
-            ("Historical 0.4.1: coreai-torch#9 and coreai-torch#49 were open", False),
-            ("As of 2026-08-01, coreai-torch#9 and coreai-torch#49 remain open", False),
-            ("Historical 0.4.1: coreai-torch#9 was open and https://github.com/apple/coreai-torch/issues/49 is open", True),
-            ("coreai-torch#49 hasn't been closed", True),
-            ("coreai-torch#49 hasn’t been closed", True),
-            ("coreai-torch#49 has not yet been closed", True),
-            ("coreai-torch#49 has never been closed", True),
-            ("- As of 2026-07-29 coreai-torch#9 was open\n- coreai-torch#49 is open", True),
-            ("coreai-torch#49 is not silently miscompiling", False),
-            ('coreai-torch#49 ("silently miscompiles on square inputs") is closed', False),
-            ("coreai-models#49 remains open", False),
-            ("https://github.com/apple/coreai-torch/discussions/49 is open", False),
-        )
+        payload = json.loads(self.read("notes/defects.json"))
+        current = next(row for row in payload["defects"] if row["url"] == "https://github.com/apple/coreai-torch/issues/49")
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            for part in (7, 8, 9, 10, 17):
-                path = root / f"guides/part-{part:02d}-fixture/references/other-page.md"
-                path.parent.mkdir(parents=True)
-                for prose, stale in fixtures:
-                    path.write_text(prose + "\n")
-                    with self.subTest(part=part, prose=prose):
-                        self.assertEqual(stale, bool(current_issue49_errors(root)))
-                path.unlink()
+            (root / "notes").mkdir()
+            (root / "guides").mkdir()
+            (root / "guides/test.md").write_text("# Test\n## Current\n<!-- defect-ref:apple.coreai-torch:issue:49 -->\nHistorical #49 was open.\n")
+            for changes, stale in (({}, False), ({"claimedState": "OPEN"}, True), ({"affectedVersions": "0.4.2 fixed"}, True)):
+                record = copy.deepcopy(current)
+                record["guideRefs"] = [{"file": "guides/test.md", "anchor": "current"}]
+                record.update(changes)
+                (root / "notes/defects.json").write_text(json.dumps({"schemaVersion": 1, "defects": [record]}))
+                self.assertEqual(stale, bool(current_issue49_errors(root)))
 
 
 if __name__ == "__main__":

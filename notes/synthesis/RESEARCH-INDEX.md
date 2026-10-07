@@ -21,7 +21,7 @@ the synthesis layer:
 | Web/docs | `web/` | Live fetches of Apple developer docs, the MLX docs site, and community blogs |
 | Forums | `forums/` | RSS captures plus live thread fetches of `developer.apple.com/forums` |
 | Lead agent | `00–02*.md` | Independent grounding, written before and alongside subagent output |
-| Synthesis | `synthesis/` | Three independent topic proposals, merged plan, critique, taxonomy, and this index |
+| Synthesis | `synthesis/` | Current taxonomy, skill ownership, classifications, and this index |
 
 **Shared provenance convention** used across every file: `VERBATIM` / `VERIFIED: path:line` for text read directly; `RECONSTRUCTED` for code reassembled from spoken narration; `UNVERIFIED` for anything not corroborated. This convention should be carried into the guides themselves.
 
@@ -124,15 +124,10 @@ exact full commit used during research rather than at a moving default branch.[^
 
 ---
 
-## `synthesis/` — proposals
+## `synthesis/` — maintained metadata
 
 | File | Description |
 |---|---|
-| `proposal-by-framework.md` | Topic proposal organized by **framework/product line** (16 pillars, 55 topics). Strongest on per-framework completeness and on the "verified vs unverified" editorial convention. |
-| `proposal-by-task.md` | Topic proposal organized by **developer task / reader journey** (12 pillars, 56 topics). Strongest on ordering, on the five reader journeys, and on surfacing the silent-failure theme. |
-| `proposal-by-depth.md` | Topic proposal organized by **stack depth**, L0→L10 (11 pillars, 55 topics). Strongest on the vertical dependency structure and on the low-level Core AI / TensorOps material other lenses under-weighted. |
-| **`PROPOSED-GUIDE-TOPICS.md`** | The merged, adjudicated initial plan — 50 guides in 16 parts. It is now a historical planning artifact; the 17-part `guides/` tree is authoritative. |
-| `COVERAGE-CRITIQUE.md` | Adversarial review that found the initial plan's missing non-LLM Core AI, repo, and source coverage; its accepted gaps were later closed in the guides. |
 | `SYMPTOM-TAXONOMY.md` | Canonical symptom vocabulary used by the silent-failure index and committed callout classifications. |
 | `RESEARCH-INDEX.md` | This reconstruction map and the current boundary ledger for the notes corpus. |
 
@@ -148,17 +143,13 @@ exact full commit used during research rather than at a moving default branch.[^
 
 Recorded so a later pass knows what remains outside the evidence envelope:
 
-- The active host is macOS 27 beta 5 with Xcode 27 beta 5, the optional Metal Toolchain, and the
-  iOS 27 beta-5 simulator. An iPhone 15 Pro on the matching iOS build completed the first physical
-  baseline on 2026-08-20. The precise residue is maintained in
-  `notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` and `probes/README.md`.
+- Installed environment and destination baselines are maintained in `notes/current-state.json` and `probes/README.md`. Historical captures retain their original dates; they are not current host observations.
 - The OS-bundled `/usr/bin/fm` surface is captured on macOS 27. Runtime-only CLI questions remain,
   but the executable and its eight-command help surface are no longer evidence gaps.
 - Core AI remains absent from the simulator SDK. Hardware now covers cache deletion, default cache
   placement, specialization identity, architecture naming, and bounded NDArray initialization;
   cancellation with a slow asset, entitled app-group behavior, ANE performance, and thermals remain.
-- The six Foundation Models and Core AI Instruments lane headers still require one manual GUI
-  recording; headless `xctrace` cannot recover them on this host.
+- Foundation Models lane names are documented. Rendered detail panes and remaining Core AI lane/metric names require the manual Instruments recording.
 - The MSL bodies demoed in sessions 325 and 330 (FlashAttention, SiLU) were on screen but never
   read aloud, and the exact bodies were not downloadable.
 - Repository and defect-state evidence is snapshot-based and continues to age. Use

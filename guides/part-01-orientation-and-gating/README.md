@@ -1,5 +1,7 @@
 # Part 1 — Orientation and gating
 
+<!-- part-router: {"guides": "The guides in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** **iOS / iPadOS / macOS / visionOS 26.0 → 27.0**, **watchOS 27.0**, **tvOS 27.0**,
 built with **Xcode 26 → 27**. Four OS floors are live at once — **26.0**, **26.2**, **26.4** and
 **27.0** — and this part is where they are told apart.

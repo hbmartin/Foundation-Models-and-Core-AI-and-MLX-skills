@@ -32,5 +32,4 @@ After editing a guide:
 
 For a reproducible generated date, set `SOURCE_DATE_EPOCH` before running the build. The extractor
 assigns duplicate headings the same suffixes GitHub uses (`anchor`, `anchor-1`, `anchor-2`, …), so
-the stored anchors must not be manually collapsed back to the unsuffixed form. The one-time v1
-migration is `python3 scripts/migrate-stable-identities.py callouts --write`.
+the stored anchors must not be manually collapsed back to the unsuffixed form. All committed classification files use schema version 2.

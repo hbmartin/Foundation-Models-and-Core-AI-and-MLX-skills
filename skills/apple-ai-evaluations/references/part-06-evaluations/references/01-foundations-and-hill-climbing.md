@@ -25,64 +25,19 @@ evaluate a 26.0-era feature, but you can only *run* the evaluation on 27.
 > Python, Apple's guidance is the Python Foundation Models SDK plus your own scoring code — covered in
 > [`../../part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md`](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md).
 
-> ✅ **VERIFIED — distribution.** The framework ships **inside Xcode, not in the OS SDK** (Xcode 27
-> beta, checked 2026-07-29). The macOS 27.0 and iOS 27.0 beta SDKs contain no public `Evaluations`
-> module anywhere (`System/Library/Frameworks`, `SubFrameworks`, `usr/lib/swift`); the framework
-> lives at `<Xcode>/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`
-> — the same location and mechanism as `XCTest.framework` and Swift Testing's `Testing.framework`,
-> and consistent with session 299's *"new in Xcode 27"* phrasing. It is present for every platform
-> in the availability list and absent for AppleTVOS; its `.swiftinterface` annotates symbols
-> `@available(anyAppleOS 27.0, *)` / `@available(tvOS, unavailable)` and imports `Testing`. Two
-> practical consequences: `import Evaluations` resolves in **test targets** by default — a
-> non-test target (Book Tracker ships two command-line tools that use the framework) has to reach
-> the same platform `Developer/Library/Frameworks` directory through its search paths, as with
-> XCTest — and if you go looking for the framework under `xcrun --show-sdk-path`, you will not
-> find it. That absence is expected, not evidence the framework is missing.
->
-> **Interface pass, 2026-07-29:** that captured interface (885 lines, checked into this repo at
-> `notes/sdk-interfaces/Evaluations-27.0-macos.swiftinterface`) has now been read end-to-end
-> against all three guides in this part. Claims marked ✅ **SDK-verified**
-> (`Evaluations-27.0-macos.swiftinterface:<lines>`) cite it. An interface settles spellings,
-> signatures, defaults, availability and case lists; it cannot settle runtime behaviour, and
-> absence from it means "not present in the Xcode 27 beta interface", never "does not exist".
+> ✅ **SDK-verified — Evaluations ships in Xcode's platform developer frameworks.**
+> Its location is
+> `<Xcode>/Contents/Developer/Platforms/<Platform>.platform/Developer/Library/Frameworks/Evaluations.framework`,
+> alongside testing frameworks rather than under the OS SDK. Test targets resolve it by default;
+> non-test tools need that framework search path. The captured interface imports `Testing`, requires
+> OS 27, and marks tvOS unavailable. See `notes/sdk-interfaces/capture-manifest.json` for the current
+> stable capture; interface evidence establishes declarations, not runtime behavior.
 
 ---
 
 ## What this covers
 
-The bottom of Part 6: why a probabilistic feature cannot be unit-tested, what the Evaluations framework
-puts in its place, and the working discipline — **hill climbing** — that the framework is shaped around.
-
-- **Why the same input producing different outputs breaks the contract every unit test depends on**,
-  in Apple's own words, and what "insufficient" actually means in practice.
-- That Evaluations is **not an LLM framework**. It is a harness for any stochastic system — Apple names
-  classifiers and linear regression models explicitly.
-- **The five steps**, each mapped to exact API: `subject(from:)` → `dataset` → `evaluators` + `Metric` →
-  `aggregateMetrics(using:)` → a Swift Testing `@Test`.
-- The **corrected spellings**. `ModelSubject<T>` is the return type of `subject(from:)` and was absent
-  from every reconstruction in circulation; `Evaluator` takes a **two-argument** closure collected in
-  `var evaluators: Evaluators`; metric results come from `.passing()` / `.failing()` / `.scoring(_:)` /
-  `.ignore()`, not from a `.pass` enum.
-- **Swift Testing integration** — `@Suite`, `@Test`, the `.evaluates(_:)` / `.evaluates(_:info:)` trait,
-  `EvaluationContext.current.result`, and `#expect` over an aggregate. Including the two things about
-  the test body that are counter-intuitive: it runs *after* the whole dataset, and it never iterates
-  samples.
-- **The Xcode 27 Evaluations report** — where it lives, what the assistant editor shows per sample, and
-  the **Compare** button that makes run-to-run diffing possible.
-- **The attachment trick.** An evaluation run records its full generated data as an Xcode attachment.
-  Session 335 reads that attachment back to build a *meta*-evaluation of its own judge. This is the
-  single technique that makes judge calibration possible, and almost nobody knows it is there.
-- **Hill climbing / evaluation-driven development** — develop → run → check → analyse → repeat, run as
-  a controlled experiment: control vs experimental, **one variable at a time**, and the backport step
-  that most people skip.
-- The **non-prompt** hill-climb: adding a book-lookup tool to the tagging service, and the API-design
-  move (`tools: [any Tool] = []`) that let the existing evaluation keep compiling.
-- **Why any of this is structural.** There is no model version pinning API. An eval suite is the only
-  defence you have when Apple ships a new on-device model in a point release.
-
-Model judges, `ScoreDimension`, judge drift and Cohen's kappa, synthetic datasets with
-`SampleGenerator`, and `ToolCallEvaluator` / `TrajectoryExpectation` each get their own guide elsewhere
-in Part 6. This one gives you the frame they hang on, and names them where they belong.
+Build an evaluation dataset, map inputs to ModelSubject, combine evaluators and metrics, aggregate results, and run the checks through Swift Testing. Use repeatable comparisons to improve a stochastic feature.
 
 ## What you need
 
@@ -2357,7 +2312,7 @@ which of your five expectations has no metric behind it.
 > and fixture length. A clean error summary alone does not prove that ignored scores or
 > dropped loader rows covered the complete fixture. Model-free failure probes are in
 > `probes/Tests/ProbesTests/EvaluationsProbes.swift`; their observed outcomes are recorded in
-> [the final-SDK evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/synthesis/pr49-followup/README.md).
+> [the final-SDK evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 
 ```swift compile:27 imports:Evaluations
 func requireCompleteScoring(_ result: EvaluationResult, metric: Metric, expectedRows: Int) {

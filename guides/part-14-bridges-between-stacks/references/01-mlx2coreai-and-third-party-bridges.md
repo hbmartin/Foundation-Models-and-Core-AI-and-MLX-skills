@@ -18,79 +18,15 @@ bridges.
 
 ## ⚠️ Read this before you trust a signature in this guide
 
-Everything below was read from **local clones of three third-party repositories** plus the Apple
-repos they target, in this session. That is a weaker evidence class than most of this series, and
-the weakness is specific rather than general:
-
-**None of it was executed.** `coreai-core` is not installed in the environment these notes were
-taken in, and there is no macOS 27 SDK on the machine to compile the Swift runners against. Every
-signature, flag and error string here was *read from source*, and the source is honest about
-being a beta-era moving target. Where a claim rests on reading a call site rather than a
-declaration — for example the exact keyword arguments of `coreai.GraphOp(...)`, which appear only
-as calls in `mlx2coreai` and never as a definition anywhere in our corpus — it is marked.
-
-**And the central caveat of the whole guide, stated once here and again in §6:** `mlx2coreai`'s own
-op-coverage report opens with the line
-
-> *"Coverage type: CoreAI asset generation. This does not imply runtime numerical parity."*
-
-✅ **VERIFIED** — `docs/op_coverage.md:3`, quoted verbatim from the repo. **Nothing in our corpus
-verifies a converted MLX model end to end on a device.** The 156-op coverage table tells you what
-will *convert*. It does not tell you what will be *correct*. §6 gives you a parity-testing recipe
-and tells you to run it before you trust anything this guide describes.
-
----
+These community bridges were source-inspected. Asset-generation coverage does not establish runtime numerical parity; no end-to-end MLX-to-Core-AI device parity attestation is recorded. Run the validation recipe in §6 before deployment.
 
 ## What this covers
 
-This is the guide for the person who already has a model working in one stack and wants it in
-another. Not "how do I export a model" — that is
-[Part 10 guide 03](../../part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md).
-This is "I have an MLX model / a PyTorch checkpoint / a working bundle in some other shape, and I
-want a `.aimodel`, and I want to know which of the community's bridges is worth my afternoon."
-
-Three bridges, in descending order of how much of this guide they occupy:
-
-- **§2–§8 — `lucasnewman/mlx2coreai`**, the main subject. The only tool in existence that goes
-  **MLX → Core AI** without passing through PyTorch. It captures an MLX graph with MLX's export
-  callback tracer, lowers what it can to **Core AI MLIR**, and writes either a bare `.aimodel` or a
-  full `coreai-models`-style LLM bundle. Two facts are worth drawing out of that sentence and both
-  get their own section: **Core AI's IR is MLIR-based** (§5.5), and **the `coreai-models` bundle
-  layout is a de-facto interchange format that third parties target** (§4).
-- **§9–§10 — `1amageek/swift-lm`**, a third-party Swift package that ships a **Core AI vision
-  language model adapter**. This is one of very few *real, third-party* Core AI integrations you
-  can read, and it exercises `CoreAI` (the OS framework), `CoreAILanguageModels` (the SPM package),
-  `coreai-torch`, `coreai-opt` and `coreai-build`. It also carries a documented, reproducible
-  rejection of `SpecializationOptions.expectFrequentReshapes` that **contradicts Apple's own code**
-  — §10 puts all four sources on the table.
-- **§11 — `john-rocky/coreai-model-zoo`**, a single-author community catalogue of ~70 Core AI
-  repos, 238 bundles and 52 recipes, plus a *porting playbook* that is the best written-down
-  process for this work anywhere. Attributed throughout as community material with self-declared
-  uncontrolled benchmarks.
-
-§12 closes with the decision table, including the case where the honest answer is **"re-author from
-the checkpoint instead of converting."**
+Compare community bridges into Core AI, build the required assets, and validate runtime parity before using a converted model.
 
 ## What this does *not* cover
 
-- **The PyTorch → Core AI path itself.** `coreai_torch.TorchConverter`, `get_decomp_table()`,
-  `state_names`, `remove_functionalization` and the whole export pipeline are
-  [Part 8](../../part-08-coreai-pytorch-conversion/) and
-  [Part 10 guide 03](../../part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md).
-  This guide references them as the *destination* of a bridge, not the subject.
-- **Running the resulting bundle.** `AIModel`, `InferenceFunction`, `NDArray`, `MutableViews`,
-  states, pipelined decode — [Part 7 guides 01 and 03](../../part-07-coreai-swift-runtime/).
-  §3.4's signature discussion cross-links there rather than repeating it.
-- **Specialization and AOT.** `SpecializationOptions`, `AIModelCache`, `coreai-build compile`,
-  and the `expectFrequentReshapes` flag in its own right —
-  [Part 7 guide 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md).
-  §10 here covers only the third-party *disagreement* about that flag.
-- **MLX itself.** `mx.export_function`, the primitive `state()` tuples, mlx-lm's cache protocol —
-  [Part 12](../../part-12-mlx-python/). This guide assumes you can already produce a working MLX
-  model.
-- **Compression.** Neither bridge in this guide quantizes anything. `mlx2coreai` has **no
-  palettization, no int4/int8 packing, and no `coreai-opt` integration at all** (§2.4).
-  Compression is [Part 9](../../part-09-coreai-compression-numerics/).
+Related references: [Part 8](../../part-08-coreai-pytorch-conversion/), [Part 10 guide 03](../../part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [Part 7 guides 01 and 03](../../part-07-coreai-swift-runtime/), [Part 7 guide 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [Part 12](../../part-12-mlx-python/), [Part 9](../../part-09-coreai-compression-numerics/).
 
 ## What you need
 

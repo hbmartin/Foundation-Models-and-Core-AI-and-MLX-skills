@@ -1,14 +1,12 @@
-# Reconciled Swift verification — 2026-10-06
+# Swift verification inventory — 2026-10-07
 
-The table below is the fresh **partial** compiler run. Five fences require SDK 26, which is
-unavailable: /Applications/Xcode.app supplies SDK 27. The run returns 3 for incomplete coverage.
-No available target failed unexpectedly. Canonical results.tsv re-keys all 1,360 fences and
-preserves only the five unchanged historical SDK-26 verdicts from the prior record; every other
-compiler target was checked on Xcode 27 final. Target provenance and exact content hashes are
-recorded in target-provenance.json. Historical pass values are not fresh SDK-26 verification.
-The prior report remains in Git history at 2b12a8544deb7b7c4a807d1e83ad35be2079dabf.
+The current `results.tsv` contains **1,327 Swift fences**. Round-two cleanup retired 33 exact duplicate copies; every surviving snippet retains its identity, content hash, and compiler verdict. No executable Swift body changed. The current inventory is VERIFIED 184 · ILLUSTRATIVE 478 · PRELUDE-NEEDED 661 · MIGRATION-PROVEN 2 · XFAIL-PROVEN 2.
 
-Canonical reconciled statuses: ILLUSTRATIVE 486 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 677 · VERIFIED 193 · XFAIL-PROVEN 2
+Compiler provenance remains **2026-10-06**: Xcode 27 final checked the available targets; the five unchanged SDK-26 attestations retain their earlier provenance because that SDK is unavailable. See `target-provenance.json`. Removing copies does not refresh an SDK or device validation date.
+
+## Original compiler run — 2026-10-06
+
+The report below is the original 1,360-fence **partial** run, retained as compiler provenance. Five fences required unavailable SDK 26, so the run returned 3 for incomplete coverage. No available target failed unexpectedly. The reconciled ledger at that time preserved those five prior attestations, giving ILLUSTRATIVE 486 · MIGRATION-PROVEN 2 · PRELUDE-NEEDED 677 · VERIFIED 193 · XFAIL-PROVEN 2. The earlier report remains in Git at `2b12a8544deb7b7c4a807d1e83ad35be2079dabf`.
 
 # Snippet compile-verification report
 

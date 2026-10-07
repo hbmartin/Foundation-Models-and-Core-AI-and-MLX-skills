@@ -16,7 +16,7 @@ when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and
 there; `/tmp` is only for disposable intermediates that will never be linked from a task.
 
 <!-- current-state:runbook:start -->
-> **Current trigger, generated 2026-10-06:** Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f. The installed topology is macOS 27.0 build `26A428`, Xcode 27.0 build `27A266a`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
+> **Current trigger, generated 2026-10-07:** Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f. The installed topology is macOS 27.0 build `26A428`, Xcode 27.0 build `27A266a`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
 <!-- current-state:runbook:end -->
 
 ---
@@ -29,12 +29,14 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 ./scripts/validate-automation-contracts.py --installed
 run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 report_dir="artifacts/freshness/daily-defects/$run_id"
-./scripts/current-state.py collect --output "$report_dir/observed-state.json"
+./scripts/current-state.py collect --skip-generated-checks --output "$report_dir/observed-state.json"
 ```
 
 Stop on installed-contract drift. The observation report records `collection.complete=false` and
 the exact blockers when a host tool cannot be queried; preserved prior values are not fresh
-observations. This daily lane remains report-only.
+observations. Generated-output checks are skipped explicitly in the daily lane; prior validation
+dates are preserved. Default collection and weekly runs perform the full checks. This daily lane
+remains report-only.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
@@ -42,35 +44,16 @@ observations. This daily lane remains report-only.
 ./scripts/refresh-defect-statuses.sh --changed-only
 ```
 
-This extracts the issue/PR sightings from the guides. After a few minutes of `gh` calls it prints
-only rows whose live state appears to disagree with the guide's claim, while the summary retains
-the full verdict counts so an offline run remains visibly UNREACHABLE. Triage each row:
+The reporter reads explicit current records in `notes/defects.json`; it does not infer status from guide sentences or bare issue numbers. Recorded states, affected-version boundaries and resolution evidence are separate. Inspect `unreachableReferences` even with `--changed-only`; failed lookups remain a failed check.
 
-| Verdict | What to do |
+| Verdict | Follow-up |
 |---|---|
-| **STATE-CHANGED** | **Human-review the cited sentence first.** If that specific reference really claims the old state, edit the hedge the same day: state + date, keep the incident narrative, close/narrow any 🔴 GAP that hinged on it, and update the in-file gap ledger. Do not edit from the verdict alone: nearby state words can leak between references. |
-| **STALE-DATE-ONLY** | Do **not** churn dates daily — refresh "as of" dates only when you touch the file for another reason, or in the weekly batch (§2). A correct claim with an old date is still correct. |
-| **AMBIGUOUS** | The ref couldn't be mapped confidently or its nearby state language conflicts. Inspect the sighting and either tighten the citation to `owner/repo#N` or make the state wording reference-local. |
-| **UNREACHABLE** | Usually a miscitation (wrong repo for the number) — the 2026-07-31 run caught three this way. Verify by hand, fix the citation. |
+| **STATE-CHANGED** | Review the referenced record and supported-version guidance. Closure alone does not prove remediation or release availability. |
+| **STALE-DATE-ONLY** | Refresh dates only when evidence or guidance changes; do not churn correct records daily. |
+| **AMBIGUOUS** | Resolve identity/evidence diagnostics before proposing edits. |
+| **UNREACHABLE** | Preserve the exact failure and retry independently. |
 
-The report's live state and `transitionKind` are mechanical. Triage separately assigns exactly one
-semantic disposition: `fixed`, `fixed-with-residual`, `merged-unreleased`, `closed-unfixed`,
-`closed-unmerged`, `superseded`, `consolidated`, or `unknown`. Record evidence URLs, evidence date,
-rationale, and confidence. `unknown` and ambiguous reports are never automatic edit instructions.
-
-Precedent for pace: the very first scripted run caught `mlx-swift-lm#448` merging **the day
-before**. Most quiet-day changed lists should be empty or short.
-
-**Parser guardrail, tightened 2026-09-04.** State claims are clause-scoped and bounded to 80
-characters after or 40 before a reference, with after-reference wording taking precedence.
-GitHub discussion URLs use GraphQL and have their own JSON `referenceKind`, separate from
-issue/PR number groups. Legacy TSV columns remain stable. Reference boundaries prevent a
-neighbor's status from leaking; explicit plural lists can share a prefix state. Unresolved
-repository mappings remain a report-only backlog.
-
-Ambiguous state windows no longer produce actionable verdicts, and regression tests pin real
-mixed-state corpus sightings. Still treat every `STATE-CHANGED` row as a review lead rather than
-an edit instruction: triage **per sighting**, since one ref can have both current and stale prose.
+The semantic dispositions remain `fixed`, `fixed-with-residual`, `merged-unreleased`, `closed-unfixed`, `closed-unmerged`, `superseded`, `consolidated`, and `unknown`. Updates need dated evidence and rationale. Validate inline registry references with `scripts/refresh_defect_statuses.py --extract-only`; the daily lane never writes the registry or guides.
 
 ### Step 2 — did the ground move? (three 10-second checks)
 
@@ -87,11 +70,9 @@ Plus one browser glance: Apple Developer **News/Releases** (or an RSS reader on 
 watching for: a new Xcode 27 beta, a new macOS 26.x/27 build, a docs-update day, or the
 `foundation-models` updates page changing. Any hit escalates to §3.
 
-### Step 3 — write down what you changed
+### Step 3 — record the report and next actions
 
-If Step 1 produced edits: rebuild nothing (index anchors only break on *heading* changes), commit
-with the usual message style, push. If a 🔴 GAP closed, also update
-`notes/NEEDED-FROM-A-MACOS-27-MACHINE.md` if it's one of the tracked items.
+Keep the reports and lookup failures in the durable run directory. Queue evidence-backed edits for human review or the weekly lane; the daily sweep never edits, commits, or pushes corpus files.
 
 **What NOT to do daily:** re-dump SDK interfaces (deterministic per toolchain — nothing changes
 between betas), re-run probes (deterministic per runtime), rebuild the indexes (guides unchanged =

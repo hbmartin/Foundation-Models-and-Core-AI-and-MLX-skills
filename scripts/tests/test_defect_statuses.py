@@ -1,462 +1,170 @@
 from __future__ import annotations
-
-import csv
-import io
+import copy
+import importlib.util
 import json
 import os
-import pathlib
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest import mock
-
 from scripts import refresh_defect_statuses as reporter
+from scripts.mdslug import collect_headings
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
-FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "defect-status"
+class DefectRegistryTests(unittest.TestCase):
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+        (self.root / 'notes').mkdir()
+        (self.root / 'guides').mkdir()
+        (self.root / 'guides/test.md').write_text('# Test\n\n## Current\n\n<!-- defect-ref:owner.repo:issue:19 -->\nAn unrelated #19 was open.\n')
+        self.record = {'id': 'owner.repo:issue:19', 'url': 'https://github.com/owner/repo/issues/19',
+                       'kind': 'issue', 'affectedVersions': 'Version boundary not established.',
+                       'guideRefs': [{'file': 'guides/test.md', 'anchor': 'current'}],
+                       'claimedState': 'OPEN', 'asOf': '2026-10-07',
+                       'resolution': {'disposition': 'unknown', 'evidenceUrls': ['https://github.com/owner/repo/issues/19'],
+                                      'evidenceDate': '2026-10-07', 'rationale': 'Closure is not a verified fix.', 'confidence': 1.0,
+                                      'releaseAvailability': {'status': 'unknown', 'version': None, 'evidenceUrls': []},
+                                      'remediation': {'status': 'unverified', 'version': None, 'evidenceUrls': []}}}
+        self.write([self.record])
 
+    def write(self, records):
+        (self.root / 'notes/defects.json').write_text(json.dumps({'schemaVersion': 1, 'defects': records}))
 
-class DefectStatusGoldenTests(unittest.TestCase):
-    def test_negated_states_do_not_infer_their_opposite(self):
-        for phrase in (
-            "isn't yet closed", "isn’t currently closed", "isn't currently open",
-            "isn’t currently still open", "is no longer open", "is not yet merged",
-            "hasn’t yet landed", "was not open", "hasn't been closed",
-            "has not yet been closed", "has never been closed",
+    def test_extraction_uses_only_registry_claims(self):
+        (self.root / 'guides/test.md').write_text('# Test\n## Current\n<!-- defect-ref:owner.repo:issue:19 -->\n#999 is CLOSED, not open.\n')
+        rows = reporter.extract(self.root)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]['number'], rows[0]['claimedState'], rows[0]['line']), (19, 'OPEN', 2))
+        self.assertEqual(rows[0]['registryId'], self.record['id'])
+
+    def test_kind_namespaces_remain_separate(self):
+        discussion = copy.deepcopy(self.record)
+        discussion.update(id='owner.repo:discussion:19', kind='discussion', url='https://github.com/owner/repo/discussions/19')
+        pull = copy.deepcopy(self.record)
+        pull.update(id='owner.repo:pull:19', kind='pull', url='https://github.com/owner/repo/pull/19')
+        self.write([self.record, discussion, pull])
+        guide = self.root / 'guides/test.md'
+        guide.write_text(guide.read_text() + '<!-- defect-ref:owner.repo:discussion:19 -->\n<!-- defect-ref:owner.repo:pull:19 -->\n')
+        refs = reporter.group_references(reporter.extract(self.root), False, 0)
+        self.assertEqual(len(refs), 3)
+        self.assertEqual(len({r['registryId'] for r in refs}), 3)
+
+    def test_invalid_registry_and_missing_or_unsafe_targets_fail(self):
+        variants = []
+        for changes in ({'kind': 'discussion'}, {'claimedState': 'MERGED'}, {'asOf': '2026-99-99'},
+                        {'affectedVersions': ''}, {'guideRefs': [{'file': 'guides/missing.md', 'anchor': 'current'}]},
+                        {'guideRefs': [{'file': '../escape.md', 'anchor': 'current'}]},
+                        {'guideRefs': [{'file': 'guides/test.md', 'anchor': 'missing'}]}):
+            value = copy.deepcopy(self.record); value.update(changes); variants.append([value])
+        variants.append([self.record, self.record])
+        for value in variants:
+            self.write(value)
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                reporter.load_registry(self.root)
+
+    def test_heading_namespace_ignores_fences_and_handles_duplicates(self):
+        text = '# Test\n```md\n## Ignored\n```\n## Current\n## Current\n'
+        headings = collect_headings(text)
+        self.assertEqual([(h.line, h.anchor) for h in headings], [(1, 'test'), (5, 'current'), (6, 'current-1')])
+
+    def test_state_transition_does_not_establish_fix(self):
+        live = {'kind': 'issue', 'state': 'CLOSED', 'url': self.record['url'], 'title': 'Closed', 'closedAt': '2026-10-07', 'mergedAt': None}
+        with mock.patch.object(reporter, 'lookup', return_value=live):
+            refs = reporter.group_references(reporter.extract(self.root), True, 0)
+        self.assertEqual(refs[0]['verdict'], 'STATE-CHANGED')
+        self.assertEqual(refs[0]['transitionKind'], 'OPEN_TO_CLOSED')
+        self.assertEqual(refs[0]['resolutionDisposition'], 'unknown')
+        self.assertFalse(refs[0]['automaticFixEligible'])
+
+    def test_release_and_remediation_require_separate_evidence(self):
+        value = copy.deepcopy(self.record)
+        value['resolution']['disposition'] = 'fixed'
+        self.write([value])
+        with self.assertRaisesRegex(ValueError, 'demonstrated remediation'):
+            reporter.load_registry(self.root)
+        value['resolution']['remediation'] = {'status': 'demonstrated', 'version': '1.2', 'evidenceUrls': [self.record['url']]}
+        self.write([value])
+        loaded = reporter.load_registry(self.root)[0]
+        self.assertEqual(loaded['resolution']['releaseAvailability']['status'], 'unknown')
+
+    def test_failed_lookup_is_visible_in_changed_only_json_and_markdown(self):
+        args = reporter.parse_arguments(['--source-root', str(self.root), '--changed-only', '--format', 'json'])
+        with mock.patch.object(reporter, 'lookup', return_value={'error': 'offline'}):
+            payload = json.loads(reporter.render(args))
+            args.format = 'markdown'; markdown = reporter.render(args)
+        self.assertEqual(payload['references'], [])
+        self.assertEqual(payload['summary']['verdicts']['UNREACHABLE'], 1)
+        self.assertEqual(payload['unreachableReferences'][0]['live']['error'], 'offline')
+        self.assertIn('Failed GitHub lookups', markdown)
+        self.assertIn('offline', markdown)
+
+    def test_lookup_uses_explicit_endpoint(self):
+        data = {'state': 'closed', 'html_url': 'https://github.com/owner/repo/pull/19', 'title': 'Fix', 'merged_at': '2026-10-07'}
+        with mock.patch.object(reporter, 'gh_json', return_value=(data, None)) as query:
+            result = reporter.lookup('owner/repo', 19, 'pull')
+        query.assert_called_once_with('api', 'repos/owner/repo/pulls/19')
+        self.assertEqual(result['state'], 'MERGED')
+        with mock.patch.object(reporter, 'gh_json', return_value=(None, 'offline')) as query:
+            self.assertEqual(reporter.lookup('owner/repo', 19, 'issue'), {'error': 'offline'})
+        query.assert_called_once_with('api', 'repos/owner/repo/issues/19')
+        collision = dict(data, pull_request={'url': self.record['url']})
+        with mock.patch.object(reporter, 'gh_json', return_value=(collision, None)):
+            result = reporter.lookup('owner/repo', 19, 'issue')
+        self.assertIn('registry declares an issue', result['error'])
+
+    def test_cli_atomic_json_and_legacy_tsv_columns(self):
+        output = self.root / 'report.json'; output.write_text('old'); output.chmod(0o640)
+        result = subprocess.run([sys.executable, ROOT / 'scripts/refresh_defect_statuses.py', '--source-root', self.root,
+                                 '--extract-only', '--format', 'json', '--output', output], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(output.read_text())['schemaVersion'], 2)
+        self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o640)
+        self.assertEqual(reporter.sighting_tsv(reporter.extract(self.root)).splitlines()[0],
+                         'file\tline\trepo\tnumber\tform\tclaimed_state\tclaim_date\tcontext')
+
+    def test_wrapper_resolves_output_from_repository_root(self):
+        output = self.root / 'wrapper.json'
+        result = subprocess.run([ROOT / 'scripts/refresh-defect-statuses.sh', '--extract-only', '--format', 'json',
+                                 '--repo', 'not/a-repo', '--output', os.path.relpath(output, ROOT)],
+                                cwd=self.root, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(output.is_file())
+
+    def test_canonical_registry_and_inline_markers_match(self):
+        self.assertTrue(reporter.load_registry(ROOT))
+
+    def test_missing_unknown_duplicate_and_misplaced_markers_fail(self):
+        guide = self.root / 'guides/test.md'
+        original = guide.read_text()
+        marker = '<!-- defect-ref:owner.repo:issue:19 -->'
+        for text, error in (
+            (original.replace(marker, ''), 'missing defect markers'),
+            (original + '\n<!-- defect-ref:unknown -->\n', 'unknown or misplaced'),
+            (original + '\n' + marker, 'duplicate defect marker'),
+            (original.replace(marker, '') + '\n## Unrelated\n' + marker, 'unknown or misplaced'),
         ):
-            text = 'coreai-torch#49 ' + phrase
-            start = text.index('#49')
-            with self.subTest(phrase=phrase):
-                self.assertEqual(reporter.claim_in_clause(text, start, start + 3), (None, 1.0, []))
+            with self.subTest(error=error):
+                guide.write_text(text)
+                with self.assertRaisesRegex(ValueError, error):
+                    reporter.load_registry(self.root)
 
-    def test_negated_closed_does_not_conflict_with_merged(self):
-        text = 'coreai-torch PR #18 was merged, not closed'
-        start = text.index('#18')
-        state, confidence, diagnostics = reporter.claim_in_clause(text, start, start + 3)
-        self.assertEqual((state, confidence, diagnostics), ('MERGED', 0.9, []))
-        self.assertEqual(reporter.verdict({'state': 'MERGED', 'kind': 'PR'}, [state],
-                                        None, confidence, diagnostics), 'UNCHANGED')
-
-    def test_lists_share_predicates_and_metadata_but_individual_claims_do_not(self):
-        fixtures = (
-            ('As of 2026-08-01, coreai-torch#49 and coreai-torch#51 remain open',
-             [('OPEN', '2026-08-01'), ('OPEN', '2026-08-01')]),
-            ('Historical 0.4.1: coreai-torch#9 and coreai-torch#49 were open',
-             [('OPEN', None), ('OPEN', None)]),
-            ('Closed issues coreai-torch#49 or coreai-torch#51',
-             [('CLOSED', None), ('CLOSED', None)]),
-            ('coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open',
-             [('OPEN', '2026-07-29'), ('OPEN', None)]),
-            ('As of 2026-07-01, coreai-torch#49 was closed as of 2026-08-01 and coreai-torch#51 is open',
-             [('CLOSED', '2026-08-01'), ('OPEN', '2026-07-01')]),
-            ('coreai-torch#9 was closed by issue #49', [('CLOSED', None), (None, None)]),
-            ('coreai-torch#9 was open and closed coreai-torch#49', [('OPEN', None), ('CLOSED', None)]),
-            ('coreai-torch#9 was closed and merged PR #49', [('CLOSED', None), ('MERGED', None)]),
-            ('- As of 2026-07-29 coreai-torch#9 was open\n- coreai-torch#49 is open',
-             [('OPEN', '2026-07-29'), ('OPEN', None)]),
-        )
-        with tempfile.TemporaryDirectory() as folder:
-            root = pathlib.Path(folder)
-            (root / 'guides').mkdir()
-            path = root / 'guides/fixture.md'
-            for text, expected in fixtures:
-                path.write_text(text)
-                with self.subTest(text=text):
-                    self.assertEqual([(r['claimedState'], r['claimDate']) for r in reporter.extract(root)], expected)
-
-    def test_claim_text_and_date_do_not_borrow_from_neighbors(self):
-        with tempfile.TemporaryDirectory() as folder:
-            root = pathlib.Path(folder)
-            (root / 'guides').mkdir()
-            (root / 'guides/test.md').write_text(
-                'Historical 0.4.1: coreai-torch#9 was open as of 2026-07-29 and coreai-torch#49 is open.\n')
-            row = next(r for r in reporter.extract(root) if r['number'] == 49)
-        self.assertEqual(row['claimedState'], 'OPEN')
-        self.assertIsNone(row['claimDate'])
-        self.assertNotIn('Historical', row['claimText'])
-        self.assertNotIn('2026-07-29', row['claimText'])
-        self.assertIn('Historical', row['context'])
-
-    def make_fixture_checkout(self, directory: str) -> pathlib.Path:
-        checkout = pathlib.Path(directory)
-        (checkout / "guides").mkdir()
-        (checkout / "guides" / "fixture.md").write_text(
-            (FIXTURES / "clause-scope.md").read_text()
-        )
-        return checkout
-
-    def run_report(self, *arguments: str) -> subprocess.CompletedProcess[str]:
-        with tempfile.TemporaryDirectory() as directory:
-            checkout = self.make_fixture_checkout(directory)
-            return subprocess.run(
-                [
-                    ROOT / "scripts" / "refresh_defect_statuses.py",
-                    "--source-root",
-                    checkout,
-                    *arguments,
-                ],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "SOURCE_DATE_EPOCH": "1785542400"},
-            )
-
-    def test_clause_aware_extraction_matches_golden(self) -> None:
-        result = self.run_report("--extract-only")
-
-        rows = list(csv.DictReader(io.StringIO(result.stdout), delimiter="\t"))
-        actual = [
-            {
-                key: row[key]
-                for key in ("claim_date", "claimed_state", "form", "number", "repo")
-            }
-            for row in rows
-        ]
-        expected = json.loads((FIXTURES / "current-extraction.json").read_text())
-        self.assertEqual(actual, expected)
-
-    def test_structured_extraction_matches_golden(self) -> None:
-        result = self.run_report("--extract-only", "--format", "json")
-        actual = json.loads(result.stdout)
-        expected = json.loads((FIXTURES / "structured-extraction.json").read_text())
-
-        self.assertEqual(actual, expected)
-
-    def test_wrapper_preserves_legacy_extract_only_tsv(self) -> None:
-        result = subprocess.run(
-            [
-                ROOT / "scripts" / "refresh-defect-statuses.sh",
-                "--extract-only",
-                "--repo",
-                "not/a-repo",
-            ],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-
-        self.assertEqual(
-            result.stdout.splitlines()[0],
-            "file\tline\trepo\tnumber\tform\tclaimed_state\tclaim_date\tcontext",
-        )
-
-    def test_legacy_tsv_preserves_form_group_order(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            checkout = pathlib.Path(directory)
-            (checkout / "guides").mkdir()
-            (checkout / "guides" / "fixture.md").write_text(
-                "The mlx issue #1 and https://github.com/ml-explore/mlx/issues/2 are open.\n"
-            )
-            sightings = reporter.extract(checkout)
-
-        rows = list(
-            csv.DictReader(io.StringIO(reporter.sighting_tsv(sightings)), delimiter="\t")
-        )
-        self.assertEqual([row["number"] for row in rows], ["2", "1"])
-
-    def test_actual_neighboring_references_do_not_share_attached_states(self):
-        fixtures = (
-            ("apple/coreai-optimization#7 closed 2026-10-02 after **#117** added dynamic overflow calibration", "#117", None),
-            ("issue #17 was fixed by PR #18 (merged)", "#17", None),
-            ("PR #448 fixes issue #420 (closed)", "#448", None),
-            (r"merged PRs **#62, \#74, #89**, PR **#85** (**closed unmerged 2026-08-23**)", "#74", "MERGED"),
-        )
-        for text, ref, expected in fixtures:
-            start = text.index(ref)
-            with self.subTest(text=text):
-                state, _, _ = reporter.claim_in_clause(text, start, start + len(ref))
-                self.assertEqual(state, expected)
-
-    def test_discussion_dispatch_and_number_namespace(self):
-        live = {"data": {"repository": {"discussion": {"title": "MLX on CUDA", "url": "https://github.com/ml-explore/mlx/discussions/2422", "closedAt": None, "isAnswered": False}}}}
-        with mock.patch.object(reporter, "gh_json", return_value=(live, None)) as request:
-            result = reporter.lookup("ml-explore/mlx", 2422, "discussion")
-            self.assertEqual(result["kind"], "discussion")
-            self.assertEqual(result["state"], "OPEN")
-            self.assertFalse(result["answered"])
-            self.assertEqual(request.call_args.args[:2], ("api", "graphql"))
-        with tempfile.TemporaryDirectory() as directory:
-            root = pathlib.Path(directory)
-            (root / "guides").mkdir()
-            (root / "guides/fixture.md").write_text("https://github.com/ml-explore/mlx/discussions/2422\n\nhttps://github.com/ml-explore/mlx/issues/2422\n")
-            sightings = reporter.extract(root)
-            self.assertEqual({s["referenceKind"] for s in sightings}, {"discussion", "issue-or-pr"})
-            self.assertEqual(len(reporter.group_references(sightings, False, 0)), 2)
-
-    def test_claim_parser_prefers_bounded_state_after_reference(self) -> None:
-        text = (
-            'mlx#3821 ("Source builds silently drop every NAX kernel", CLOSED) and its fix '
-            'PR #3824 ("Warn at configure time when NAX kernels are disabled", MERGED)'
-        )
-        start = text.index("#3824")
-
-        state, confidence, diagnostics = reporter.claim_in_clause(
-            text, start, start + len("#3824")
-        )
-
-        self.assertEqual(state, "MERGED")
-        self.assertEqual(confidence, 0.9)
-        self.assertEqual(diagnostics, [])
-
-    def test_claim_parser_does_not_reach_across_a_long_clause(self) -> None:
-        text = "merged PR #62 " + ("unrelated detail " * 10) + "issue #85"
-        start = text.index("#85")
-
-        state, confidence, diagnostics = reporter.claim_in_clause(
-            text, start, start + len("#85")
-        )
-
-        self.assertIsNone(state)
-        self.assertEqual(confidence, 1.0)
-        self.assertEqual(diagnostics, [])
-
-    def test_context_is_centered_on_each_reference(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            checkout = pathlib.Path(directory)
-            (checkout / "guides").mkdir()
-            (checkout / "guides" / "fixture.md").write_text(
-                ("background detail " * 30) + "The mlx issue #42 remains open.\n"
-            )
-            sightings = reporter.extract(checkout)
-
-        self.assertEqual(len(sightings), 1)
-        self.assertIn("#42", sightings[0]["context"])
-        self.assertLessEqual(len(sightings[0]["context"]), 240)
-
-    def test_low_confidence_or_diagnostic_claim_is_ambiguous(self) -> None:
-        live = {"kind": "issue", "state": "OPEN", "closedAt": None}
-
-        self.assertEqual(reporter.verdict(live, ["CLOSED"], None, 0.6), "AMBIGUOUS")
-        self.assertEqual(
-            reporter.verdict(
-                live,
-                ["CLOSED"],
-                None,
-                0.9,
-                [{"code": "multiple-state-words", "message": "ambiguous"}],
-            ),
-            "AMBIGUOUS",
-        )
-
-    def test_real_corpus_pins_reference_local_claims(self) -> None:
-        sightings = reporter.extract(ROOT)
-
-        def claim(path: str, line: int, number: int) -> str | None:
-            matches = [
-                sighting["claimedState"]
-                for sighting in sightings
-                if sighting["file"] == path
-                and sighting["line"] == line
-                and sighting["number"] == number
-            ]
-            self.assertEqual(len(matches), 1, (path, line, number, matches))
-            return matches[0]
-
-        quantization = (
-            "guides/part-12-mlx-python/references/03-quantization.md"
-        )
-        fundamentals = (
-            "guides/part-12-mlx-python/references/01-core-fundamentals.md"
-        )
-        runtime = (
-            "guides/part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md"
-        )
-        self.assertEqual(claim(quantization, 1266, 3824), "MERGED")
-        self.assertEqual(claim(fundamentals, 122, 3924), "CLOSED")
-        self.assertEqual(claim(fundamentals, 2117, 1444), "CLOSED")
-        dated = next(r for r in sightings if r["file"] == quantization
-                     and r["line"] == 542 and r["number"] == 3757)
-        self.assertEqual(dated["claimDate"], "2026-08-23")
-        self.assertIsNone(claim(runtime, 3670, 85))
-
-    def test_unreachable_github_is_structured_and_nonfatal(self) -> None:
-        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:
-            checkout = self.make_fixture_checkout(directory)
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    ROOT / "scripts" / "refresh_defect_statuses.py",
-                    "--source-root",
-                    checkout,
-                    "--format",
-                    "json",
-                    "--sleep-seconds",
-                    "0",
-                ],
-                cwd=ROOT,
-                check=False,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "PATH": empty_path, "SOURCE_DATE_EPOCH": "1785542400"},
-            )
-
-        payload = json.loads(result.stdout)
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(payload["summary"]["verdicts"]["UNREACHABLE"], 4)
-        self.assertTrue(
-            all(
-                reference["diagnostics"][-1]["code"] == "github-unreachable"
-                for reference in payload["references"]
-            )
-        )
-
-    def test_changed_only_keeps_full_unreachable_summary(self) -> None:
-        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as empty_path:
-            checkout = self.make_fixture_checkout(directory)
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    ROOT / "scripts" / "refresh_defect_statuses.py",
-                    "--source-root",
-                    checkout,
-                    "--format",
-                    "json",
-                    "--changed-only",
-                    "--sleep-seconds",
-                    "0",
-                ],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "PATH": empty_path, "SOURCE_DATE_EPOCH": "1785542400"},
-            )
-
-        payload = json.loads(result.stdout)
-        self.assertEqual(payload["references"], [])
-        self.assertEqual(payload["summary"]["references"], 4)
-        self.assertEqual(payload["summary"]["verdicts"]["UNREACHABLE"], 4)
-
-    def test_output_is_written_as_a_complete_json_document(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            checkout = self.make_fixture_checkout(directory)
-            output = checkout / "artifacts" / "defects.json"
-            ordinary = checkout / "ordinary.json"
-            ordinary.write_text("{}\n")
-            expected_mode = stat.S_IMODE(ordinary.stat().st_mode)
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    ROOT / "scripts" / "refresh_defect_statuses.py",
-                    "--source-root",
-                    checkout,
-                    "--extract-only",
-                    "--format",
-                    "json",
-                    "--output",
-                    output,
-                ],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "SOURCE_DATE_EPOCH": "1785542400"},
-            )
-            payload = json.loads(output.read_text())
-            actual_mode = stat.S_IMODE(output.stat().st_mode)
-
-        self.assertIn("Report written to", result.stdout)
-        self.assertEqual(payload["schemaVersion"], 2)
-        self.assertEqual(payload["summary"]["references"], 4)
-        self.assertEqual(actual_mode, expected_mode)
-
-    def test_schema_v2_separates_transition_from_resolution(self) -> None:
-        live = {
-            "kind": "PR", "state": "MERGED", "url": "https://github.com/o/r/pull/1",
-            "closedAt": "2026-09-05", "mergedAt": "2026-09-05",
-            "stateReason": None, "title": "Fix",
-        }
-        self.assertEqual(reporter.transition_kind(live, ["OPEN"]), "OPEN_TO_MERGED")
-        payload = reporter.structured_payload([], [], "2026-09-05T00:00:00Z", None,
-                                              extraction_only=True)
-        self.assertIn("unknown", payload["resolutionDispositions"])
-
-    def test_every_resolution_disposition_is_valid_and_unknown_is_report_only(self) -> None:
-        self.assertEqual(set(reporter.RESOLUTION_DISPOSITIONS), {
-            "fixed", "fixed-with-residual", "merged-unreleased", "closed-unfixed",
-            "closed-unmerged", "superseded", "consolidated", "unknown",
-        })
-        references = reporter.group_references(
-            [{
-                "repository": "owner/repository", "number": 1, "claimedState": "OPEN",
-                "claimDate": None, "id": "s0001", "confidence": 1.0, "diagnostics": [],
-            }],
-            perform_lookup=False,
-            sleep_seconds=0,
-        )
-        self.assertEqual(references[0]["resolutionDisposition"], "unknown")
-        self.assertFalse(references[0]["automaticFixEligible"])
-        self.assertEqual(references[0]["transitionKind"], "UNKNOWN")
-        self.assertIsNone(references[0]["liveState"])
-
-    def test_same_day_closure_does_not_look_newer_than_a_date_claim(self) -> None:
-        live = {
-            "kind": "issue", "state": "CLOSED",
-            "closedAt": "2026-09-05T23:59:59Z",
-        }
-        self.assertEqual(
-            reporter.verdict(live, [], "2026-09-05"), "STALE-DATE-ONLY"
-        )
-        self.assertEqual(
-            reporter.verdict(live, [], "2026-09-04"), "STATE-CHANGED"
-        )
-
-    def test_atomic_output_preserves_existing_mode(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            checkout = self.make_fixture_checkout(directory)
-            output = checkout / "defects.json"
-            output.write_text("old\n")
-            output.chmod(0o640)
-
-            subprocess.run(
-                [
-                    sys.executable,
-                    ROOT / "scripts" / "refresh_defect_statuses.py",
-                    "--source-root",
-                    checkout,
-                    "--extract-only",
-                    "--format",
-                    "json",
-                    "--output",
-                    output,
-                ],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-            self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o640)
-
-    def test_wrapper_resolves_relative_output_from_repository_root(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            output = pathlib.Path(directory) / "wrapper-output.json"
-            relative_output = os.path.relpath(output, ROOT)
-
-            subprocess.run(
-                [
-                    ROOT / "scripts" / "refresh-defect-statuses.sh",
-                    "--extract-only",
-                    "--format",
-                    "json",
-                    "--repo",
-                    "not/a-repo",
-                    "--output",
-                    relative_output,
-                ],
-                cwd=directory,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-            self.assertTrue(output.is_file())
+    def test_fenced_marker_examples_do_not_register_claims(self):
+        guide = self.root / 'guides/test.md'
+        original = guide.read_text()
+        guide.write_text(original + '\n```md\n<!-- defect-ref:unknown -->\n```\n')
+        self.assertEqual(len(reporter.load_registry(self.root)), 1)
+        guide.write_text(original.replace('<!-- defect-ref:owner.repo:issue:19 -->', '')
+                         + '\n~~~md\n<!-- defect-ref:owner.repo:issue:19 -->\n~~~\n')
+        with self.assertRaisesRegex(ValueError, 'missing defect markers'):
+            reporter.load_registry(self.root)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

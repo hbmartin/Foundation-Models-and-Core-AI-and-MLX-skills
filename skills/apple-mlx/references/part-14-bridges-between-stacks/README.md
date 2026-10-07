@@ -1,5 +1,7 @@
 # Part 14 — Bridges between stacks
 
+<!-- part-router: {"guides": "The guide in this part", "reading": "Reading order", "triage": "Read this first: the triage table"} -->
+
 **Version floor:** **macOS 27 / iOS 27** for anything that *executes*, **Python 3.11+** to convert, and
 a set of wheel pins that **do not agree with each other**. `mlx2coreai` 0.1.1 pins
 **`coreai-core==1.0.0b1`** exactly; `1amageek/swift-lm` 0.11.0-alpha.1 pins **`coreai-core==1.0.0b2`,

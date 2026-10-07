@@ -1,8 +1,8 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**73 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**70 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-06. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -14,7 +14,7 @@
 | [Misleading signals](#misleading-signals) | 11 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
 | [API footguns](#api-footguns) | 8 |
-| [General cautions](#general-cautions) | 20 |
+| [General cautions](#general-cautions) | 17 |
 
 ## Wrong output
 
@@ -132,13 +132,11 @@
 - [ScoreDimension text differs between production and calibration on purpose — 'same evaluator' means same type, not same…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-round-trip) — 6.1
 - [Give the judge only a few alignment examples; a longer list overfits the alignment score and hides misalignment…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#rule-4--three-iterations-and-what-each-one-taught) — 6.1
 - [A broken evaluation still produces a number — the number you decided to trust; the catalogue below runs worst-first.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#17-️-the-silent-failures) — 6.1
-- [Overview: judge-alignment silent failures — unvalidated positional join, ?? 0 phantom ratings, undefined kappa read as…](part-06-evaluations/references/02-model-judges-and-alignment.md#what-this-covers) — 6.2
 - [TOC: silent failures in judge alignment (section 19).](part-06-evaluations/references/02-model-judges-and-alignment.md#contents) — 6.2
 - [numeric(_:) takes [Double: String]; Apple's sample writes integer literals that coerce — both work, dumps say Double.](part-06-evaluations/references/02-model-judges-and-alignment.md#5-scoringscale-numeric-passfail-custom) — 6.2
 - [Section index: eight silent failures in judge alignment, from the positional join to inherited FM failure modes.](part-06-evaluations/references/02-model-judges-and-alignment.md#19-️-silent-failures-in-judge-alignment) — 6.2
 - [Judge calls are model calls — guardrails, context, availability apply; 12% failed calls silently corrupt the…](part-06-evaluations/references/02-model-judges-and-alignment.md#198-️-judge-inferences-inherit-every-foundation-models-failure-mode) — 6.2
 - [TOC: ToolCallEvaluator requires ModelSubject(value:transcript:); omitting the transcript throws missingTranscript…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#contents) — 6.3
-- [Apple writes .exact values bare ('Paris, France') and wrapped (.string('r')); both compile via literal conformances.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#152-the-value-wrapping-footgun) — 6.3
 - [ToolCallEvaluator needs ModelSubject(value:transcript:) — without the transcript no trajectory can be scored.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#17-️-wiring-it-up-toolcallevaluator-and-the-transcript-you-must-remember-to-pass) — 6.3
 - [ModelSubject(value:) without transcript: still builds; ToolCallEvaluator throws missingTranscript — loud but…](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#172-the-line-everyone-forgets) — 6.3
 - [The 58%-to-100% tool-eval lift is Apple's 12-sample letter-counting demo — a framework demo, not an expected benchmark.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#174-what-tool-evaluation-buys-with-a-number) — 6.3
@@ -148,7 +146,6 @@
 **Part 16**
 
 - [Read-first: two planning-level facts gate everything in this part — learn them before scoping work](part-16-adjacent-capabilities/README.md#️-two-things-to-learn-before-you-plan-anything) — 16.README
-- [Marker definition: these do not throw — this guide catalogues five](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#evidence-markers-used-in-this-guide) — 16.5 🔇
 - [Treat the six performance numbers as documentation claims, not citable measurements](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#the-one-workflow-where-the-answer-is-unambiguously-yes) — 16.5
 - [All images must share H×W×C — mismatches raise DNIKitException; differing sizes need a custom Producer](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#57-the-producers-and-sample-assets-apple-ships) — 16.5
 

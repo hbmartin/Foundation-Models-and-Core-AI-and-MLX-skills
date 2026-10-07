@@ -31,40 +31,7 @@ reasonable reader concludes it ships. It does not. §15 shows you what you have 
 
 ## What this covers
 
-The half of evaluation that cannot be expressed as an `if` statement — and then the harder,
-stranger, more valuable half: proving that the thing doing the judging deserves to.
-
-- When a criterion has to be qualitative, and Apple's one-line test for telling the difference.
-- **A model judge is just another `Evaluator`** producing the same `Metric` type, so judges and
-  code-based heuristics compose in a single `evaluators` block with no ceremony.
-- Picking the judge model: the "at least as capable" rule from session 298 — and the fact that
-  **Apple's own shipping sample does not follow it**, why that is defensible, and what makes it
-  defensible.
-- `ScoringScale` (`.numeric`, `.passFail`, `.custom`), `ScoreDimension`, and why an **even** number
-  of levels is a structural choice rather than a stylistic one.
-- **The single most useful technique in the framework: when you disagree with a score, split the
-  question into two dimensions.** Apple's worked example splits "quality" into Relevance and
-  Usefulness, and the two rationales then separate the diagnosis — relevance tells you *what kind*
-  of tag is wrong, usefulness tells you *how* the wrong tags fail at browsing.
-- `ModelJudgePrompt(instructions:evaluationTarget:reference:)` — including the correction that
-  `reference` returns a **`[String: String]` dictionary of labelled sections**, not a string.
-- Rationales as the primary debugging loop: *"You'll learn more from a single run than from hours of
-  careful planning."*
-- **Drift** — systematic judge/human disagreement that *widens as your dataset grows*, so a judge
-  that looks fine on 13 samples can be badly wrong at 1,000.
-- Why **accuracy is the wrong alignment measure** on a score-skewed dataset, and why your dataset is
-  always score-skewed.
-- **Cohen's kappa**: the formula, a complete implementation, the κ ≥ 0.6 bar, the two paradoxes that
-  make κ misread, and the weighted variant Apple's sample does not use.
-- **The meta-evaluation** — the cleverest construction in the corpus. Extract the previous run's
-  results from Xcode's attachment, add your own ratings, freeze `subject(from:)` so it performs no
-  inference at all, run the same judge over it, and aggregate with κ. Then hill-climb *the judge*
-  until it can stand in for your judgement.
-- The four documented iterations of that hill-climb, including the one where relevance improved and
-  usefulness got worse.
-- ⚠️ The silent failures: a positional join that misaligns without complaint, a `?? 0` that turns a
-  missing expert score into a rating of zero, an undefined κ that reports as "no agreement", and a
-  judge with no prompt at all that still returns confident numbers.
+Define judge dimensions and scales, compare judges against human labels, and measure agreement and drift. A model judge uses the same evaluator/metric interfaces as code-based criteria.
 
 ## What you need
 

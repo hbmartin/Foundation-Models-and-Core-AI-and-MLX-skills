@@ -40,38 +40,7 @@ implementation detail. Nothing described here can be back-deployed to 26.0, 26.1
 
 ## What this covers
 
-The two feature areas of `apple/foundation-models-utilities` that change how you think about a
-transcript — and the exact ways the shipped documentation for both is wrong.
-
-- **How to actually depend on the package.** The README's dependency line resolves to nothing. §1.
-- **The three history modifiers**, with their complete signatures, every parameter, every default,
-  and every default that Apple's own agent skill claims exists but does not:
-  `droppingCompletedToolCalls()`, `rollingWindow(entries:)` / `rollingWindow(size:)`, and
-  `summarizeHistory(entryThreshold:model:instructions:summaryPostamble:)`.
-- **Application order**, resolved precisely: modifiers wrap inside-out and *execute* outside-in, so
-  the last modifier you write is the first one that runs.
-- ⚠️ **The inert-composition trap.** Every composed example shipped in the repository — four call
-  sites — pairs an `entryThreshold` with a `rollingWindow` size that makes summarisation
-  mathematically unreachable. Nothing throws. Nothing warns.
-- ⚠️ **The "5000 tokens" ghost.** The README says summarisation triggers on a token count. The API
-  has no token awareness anywhere; the gate is `history.count > entryThreshold`, an entry count.
-- ⚠️ **`rollingWindow` is a known-buggy modifier that Apple shipped anyway**, with a test whose own
-  comment says *"in practice it crashes partway through."*
-- **What these modifiers actually mutate** — and why that is the *lossy, session-wide*
-  `@SessionProperty(\.history)` path rather than the lossless per-profile `historyTransform(_:)` that
-  session 242 tells you to prefer. This is the most consequential thing in the guide and nobody says
-  it out loud.
-- **Skills** — the best worked example of KV-cache economics in the entire corpus. Why a prompt-based
-  skill preserves the key/value cache and an instructions-based skill destroys it, established from
-  the one line of source that decides it, plus the three transcript diagrams from Apple's README.
-- The synthesized `ToggleSkillTool`: the `activate_skill` / `toggle_skill` naming rule, the three
-  rendering states (including `[on demand]`, which is not documented as a state anywhere else),
-  `strictSchema`, and the `defer` that makes the tool's own verb read backwards.
-- ⚠️ **`SkillActivations` stopped conforming to `RandomAccessCollection` at beta 3**, and both the
-  README and Apple's own agent skill still ship a `ForEach` snippet that no longer compiles.
-- **`ChatCompletionsLanguageModel`** in brief, with a pointer to Part 4 for the full treatment.
-- The `skills/foundation-models-utilities/SKILL.md` audit: a beta-1 document with **eight** verified
-  wrong claims, including a SwiftPM trait system that does not exist.
+Integrate Skills and history transforms from foundation-models-utilities. Apply modifiers in the correct order, budget activation instructions, and check the inert-composition and rolling-window pitfalls.
 
 ## What you need
 
@@ -484,28 +453,14 @@ zero hits. §6 traces where the README's token language came from.
 
 **(2) The trailing entry must be a `.prompt`, or the whole thing is a no-op.**
 
-> ⚠️ **SILENT FAILURE — summarisation skips itself on tool-output continuations and tells you
-> nothing.** The `onPrompt` hook fires on every generation, including the continuation after a tool
-> returns. On those iterations `history.last` is a `.toolOutput`, the second `guard` fails, and the
-> modifier returns without summarising, without logging, and without any observable difference from
-> a successful run.
->
-> ✅ **VERIFIED** — Apple's test `only summarizes on prompts, not on tool-output continuations`
-> (`SummarizeHistoryTests.swift:155-189`), comment verbatim (`:178-184`): *"The single respond
-> produces: prompt -> tool call -> tool output -> response. By the time summarization's hook runs on
-> the tool-output continuation, the history count (3) already exceeds the threshold (2), but the most
-> recent entry is a tool output rather than a prompt. Because summarization only acts when the last
-> entry is a prompt, it is skipped."*
->
-> **Consequence for agentic apps:** in a session where most generations are tool-loop iterations
-> rather than fresh user prompts, the threshold you configured is not the threshold you get.
-> A `.required` tool-calling loop (see Part 2's tool guide §7) can run many inferences per user
-> turn, and summarisation will fire on at most one of them. Budget for the transcript growing to
-> `entryThreshold + (entries added during the longest tool loop)` before anything compresses.
->
-> Apple's own skill document states the rule correctly, and it is one of the places that document is
-> right: *"`summarizeHistory` requires the trailing entry to be `.prompt`. It is a no-op for any
-> other trailing entry kind."* (✅ `skills/foundation-models-utilities/SKILL.md`, pitfalls list.)
+<!-- callout-id: callout-3a858a45400c4640 -->
+> ⚠️ **SILENT FAILURE — summarisation skips tool-output continuations.**
+> The `onPrompt` hook runs for each generation, but Apple's modifier returns unless `history.last` is
+> `.prompt`. `SummarizeHistoryTests.swift:155-189` verifies that a tool-output continuation does not
+> summarize even after crossing the threshold; the package skill documents the same requirement.
+> A long tool loop can therefore grow past `entryThreshold` before the next user prompt triggers
+> compression. Budget for the threshold plus entries added by the longest tool loop, and test this
+> continuation shape explicitly.
 
 **(3) The result is one entry. Not "the old entries plus a summary" — one entry.** The assignment at
 `:153` replaces the entire history array with a single `.prompt`. Everything else — the instructions

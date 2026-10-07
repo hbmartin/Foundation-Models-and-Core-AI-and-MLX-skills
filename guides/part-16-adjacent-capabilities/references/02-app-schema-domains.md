@@ -38,60 +38,11 @@ year label in this space as soft and every *API name* as the solid part.
 
 ## What this covers
 
-This guide is an **enumeration**. That is the product. Apple's App Intents documentation spreads
-the app-schema surface across roughly twenty-four separate pages — one index plus one page per
-domain — and there is no page, in Apple's docs or anywhere else we could find, that puts the whole
-thing in one place. Without the whole thing in one place you cannot answer the only question that
-actually matters at the start of an integration:
-
-> **Is there a schema for what my app does? And if not, what is left?**
-
-So: **all 23 domains, in three tiers, with the intents, entities and enums each one contains.**
-**182 intents, 74 entities and 50 enums — censused symbol-by-symbol against the macOS 27.0 beta
-SDK interface on 2026-07-29** (§5.4). Then the part nobody writes down — the
-categories that have **no domain at all** — and then the one Siri hook that is reachable
-regardless.
-
-Around that enumeration sit the things you need in order to use it:
-
-- **§2–§3 — Why schemas exist at all.** Apple's own discovery-versus-action framing, which is the
-  single most clarifying paragraph in the whole area, and the three macros that implement it.
-- **§4 — The three tiers**, and the under-appreciated fact that eight of the 23 domains are
-  grouped as *Shortcuts-specific*, not Siri-tier.
-- **§5 — The complete enumeration.** Thirteen primary domains, two single-purpose, eight
-  Shortcuts-only, with counts and per-domain commentary on what the shape of each one tells you.
-- **§6 — The absences, stated plainly.** No fitness, health, finance, commerce, travel, food,
-  transport, social, education or games domain. For most readers this is the most useful
-  paragraph in the guide.
-- **§7–§8 — The deprecations, and `.system.searchInApp`** — the escape hatch, with complete code.
-  It is a *rename*, not a new schema, and it works regardless of domain adoption or indexing.
-- **§9 — A decision tree** from "what does my app do" to one of three outcomes.
-- **§10 — Query protocols**, and how entity resolution actually works. Picking the wrong query
-  protocol is a leading cause of "Siri can't find my stuff."
-- **§11–§12 — Shaping the conversation:** custom dialog, `requestValue`, `SnippetIntent` (which
-  is an **iOS 26** feature and is routinely mis-reported as new this year), `ShowsSnippetView`,
-  interaction donations, confirmations and `OwnershipProvidingEntity`.
-- **§13 — The new execution model.** `LongRunningIntent` past the 30-second wall,
-  `ExecutionTargets` for choosing the process, `EntityCollection` for the parameter-resolution
-  performance cliff, `@UnionValue`, `ValueRepresentation`, `RelevantEntities`, `SyncableEntity`,
-  and the extended native `@Parameter` types.
-- **§14 — Silent failures**, including the mandatory one: `IntentParameter.valueState`.
-- **§15 — Testing**, §16 — the gap register, §17 — sources and how to re-verify.
+Choose an App Intents schema domain, apply the intent/entity/enum macros, and supply the required representations and parameters. The domain inventory distinguishes Siri-facing, single-purpose, and Shortcuts-only schemas; unsupported categories need a different integration path.
 
 ## What this does *not* cover
 
-- **On-screen awareness in depth** — the two paths, the four annotation shapes, and the verified
-  `.files.file` + `FileEntityIdentifier` + `FileRepresentation` hand-off recipe. That is
-  [Part 16 guide 03](03-onscreen-awareness.md). This guide touches on-screen material only where
-  the schema map depends on it.
-- **Spotlight indexing in depth** — `IndexedEntity`, `indexAppEntities`, the semantic index, and
-  the fact that Siri entity resolution and `SpotlightSearchTool` read the *same* index. That is
-  [Part 16 guide 04](04-entities-spotlight-and-foundation-models.md).
-- **Foundation Models.** There is no direct `AppIntent` → `LanguageModelSession` bridge; the
-  connection is indirect and runs through Spotlight. See guide 04 and
-  [Part 2 guide 04](../../part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md).
-- **Writing a plain `AppIntent`, `AppShortcutsProvider`, or a widget configuration intent.** Those
-  are unchanged fundamentals and Apple's own App Intents documentation covers them well.
+Related references: [Part 16 guide 03](03-onscreen-awareness.md), [Part 16 guide 04](04-entities-spotlight-and-foundation-models.md), [Part 2 guide 04](../../part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md).
 
 ## What you need
 
@@ -112,51 +63,9 @@ Around that enumeration sit the things you need in order to use it:
 
 ## ⚠️ Read this before you trust a symbol name below
 
-**The evidence classes in this guide are not the ones the rest of the series relies on.** There is
-no Apple sample-code project for App Intents schema domains in our corpus — we checked. So the top
-of the ladder here is Apple's *documentation pages* and Apple's *published code-sample blocks on
-the WWDC26 session pages*, which are a distinct artifact from the spoken transcript on the same
-page and are therefore an independent second reading of the same API.
+SDK citations retain the 2026-07-29 macOS captures `AppIntents-26.5-macos.swiftinterface` and `AppIntents-27.0-macos.swiftinterface`. A symbol missing there may still exist on iOS. The SDK confirms `AppEntity.ValueRepresentation` is an alias for `IntentValueRepresentation` (§13.1).
 
-**One artifact has since been added above all of these: the SDK module interfaces themselves.** On
-2026-07-29 every API symbol in this guide was checked against
-`AppIntents-26.5-macos.swiftinterface` and `AppIntents-27.0-macos.swiftinterface`
-(`notes/sdk-interfaces/`). Where the interface confirms a claim it is marked ✅ **SDK-verified**
-(`AppIntents-27.0-macos.swiftinterface:NNNN`), which outranks every class below — it is what
-compiles. Its one blind spot: these are the **macOS** surfaces, so a symbol absent from them may
-still exist on iOS (flagged inline where it matters).
-
-In descending order, as used below:
-
-1. **Apple documentation pages**, read through the `sosumi.ai` markdown mirror on 2026-07-27 and
-   recorded in `notes/web/app-intents-siri-schemas.md`. This is where the entire §5 enumeration
-   comes from. Marked ✅ **VERIFIED (docs)**.
-2. **Apple's published code samples on the session pages** for WWDC26 sessions 240, 343 and 345 —
-   fetched 2026-07-27, recorded verbatim in `notes/transcripts/missing-sessions.md`. Marked ✅
-   **VERIFIED (Apple code sample, session N @ time)**. Where a name appears in *both* the
-   transcript prose and the code block, that is two independent renderings and it is called out.
-3. **WWDC26 session transcript prose.** Marked ✅ **VERIFIED (transcript)** for direct quotations,
-   because the sentence itself is verifiable, and 🟡 **RECONSTRUCTED** for any code shape assembled
-   from narration — session **344 published no code-sample block at all**, so everything
-   code-shaped attributed to 344 is a reconstruction and is labelled as such.
-4. **Apple-staff forum answers** and **community forum findings**, always attributed by thread
-   number and by whether the answer came from Apple or from another developer. In this topic area
-   that distinction matters unusually much: of the App Intents / Siri / on-screen threads examined,
-   **one had a substantive Apple answer, one was deflected to Feedback Assistant, and the rest are
-   unanswered.** The single most useful technical answer in the cluster came from another
-   developer, not from Apple.
-
-Two hazards were flagged inline wherever they appear, and again in §16 — one of them has since
-been resolved:
-
-- **`ValueRepresentation` vs `IntentValueRepresentation` — resolved by the SDK pass.** They are
-  the same type: `extension AppEntity { public typealias ValueRepresentation =
-  IntentValueRepresentation }` — ✅ **SDK-verified**
-  (`AppIntents-27.0-macos.swiftinterface:2629-2634`). §13.1 has the details, including why each
-  session used the spelling it did.
-- **Release-year labels.** See the version-floor box above.
-
----
+Published session code, transcript reconstructions, Apple-staff replies, and community findings remain attributed individually. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## Contents
 
@@ -722,24 +631,7 @@ request category there is, and shaving the warm-up off it was worth a dedicated 
 Two `.audio` schemas appear in Apple's own code samples with their parameter lists, which is
 unusually good evidence:
 
-```swift prelude:guide-context
-// ✅ VERIFIED (Apple code sample, WWDC26 343 @ 5:05)
-@AppIntent(schema: .audio.addToPlaylist)
-struct AddToPlaylistIntent {
-
-    var audioEntity: AudioEntity
-    var playlist: PlaylistEntity
-
-    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
-        // Adds to playlist and shows dialog and snippet
-        let view = PlaylistSnippetView(
-            playlist: updatedEntity,
-            tracks: updated.tracks
-        )
-        return .result(dialog: dialog, view: view)
-    }
-}
-```
+See the [canonical example](02-app-schema-domains.md#115-the-other-route-a-snippet-view-straight-from-a-schema-intent).
 
 Note `audioEntity: AudioEntity` — session 343 describes `AudioEntity` as *"a `UnionValue` type that
 includes both songs and playlists"* (✅ VERIFIED, transcript, 343). **A schema parameter can itself
@@ -747,21 +639,7 @@ be a union type.** That is worth internalizing before §13.4.
 
 And `.audio.song` on the entity side:
 
-```swift prelude:guide-context
-// ✅ VERIFIED (Apple code sample, WWDC26 343 @ 4:26)
-// Enhanced DisplayRepresentation
-@AppEntity(schema: .audio.song)
-struct SongEntity {
-
-    var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(
-            title: "\(title)",
-            subtitle: "\(artistName)",
-            image: artworkImage
-        )
-    }
-}
-```
+See the [canonical example](02-app-schema-domains.md#113-displayrepresentation--the-highest-leverage-thing-you-can-customize).
 
 ---
 
@@ -846,27 +724,7 @@ be distinct utterances mapping to distinct calls.
 
 `.clock.createTimer`'s parameter list is verified from Apple's own code:
 
-```swift prelude:guide-context
-// ✅ VERIFIED (Apple code sample, WWDC26 343 @ 3:42)
-@AppIntent(schema: .clock.createTimer)
-struct CreateTimerIntent {
-    // MARK: Schema Parameters
-    var duration: Duration
-    var label: String?
-    var isSleepTimer: Bool
-
-    func perform() async throws -> some ReturnsValue<TimerEntity> {
-        // Checks active timers and requests label parameter
-        label = try await $label.requestValue(
-            """
-            You already have a timer running. \
-            What should we call this one?
-            """
-        )
-        return .result(value: timerEntity)
-    }
-}
-```
+See the [canonical example](02-app-schema-domains.md#112-asking-a-question-mid-perform--requestvalue).
 
 Three things fall out of that block beyond `.clock`:
 
@@ -3640,7 +3498,6 @@ strong evidence, but because in this area they are frequently the *only* evidenc
   published code samples reproduced
 - `notes/forums/forum-pain-points.md` (1,538 lines) — the thread inventory and the undocumented
   error/limit table
-- `notes/CORRECTIONS-PENDING.md` — items C8, C10.3 and C10.6, applied in §8.2, §14.1 and §16
 - `transcripts/wwdc2026-{240,343,344,345}.txt` — the raw session prose
 
 [^app-dependency-registration]: Apple,

@@ -23,7 +23,7 @@ here is archival evidence plus a proposed edit list.
 ### 1. ⭐ The `fm` CLI gap has third-party evidence for the first time
 
 `part-05/references/02-fm-cli-and-python-sdk.md` carries 23 🔴 GAPs, and
-`NEEDED-FROM-A-MACOS-27-MACHINE.md` item 1 is the repo's oldest open item. Three independent
+the FM CLI capture task (now completed) is the repo's oldest open item. Three independent
 authors — two English, one Japanese, spanning June–July 2026 — have run it, and one pasted
 `fm --help` from **macOS 27.0 build `26A5378n`**.
 
@@ -187,7 +187,7 @@ refusal that is not an error). **Nine** — none yet written, all belong to stil
 ## Caveats
 
 - Everything here is **web evidence**. Nothing was run by this project on a macOS 27 machine, and the three items
-  in `NEEDED-FROM-A-MACOS-27-MACHINE.md` that need a 27 host, an Instruments GUI recording, or a
+  in `../probes/INSTRUMENTS-RECORDING.md` that need a 27 host, an Instruments GUI recording, or a
   physical device are all still open — §7 of `gap-closures-and-corrections.md` records exactly
   which searches failed and why, so they are not repeated.
 - Session transcripts fetched here are Apple's published text, retrieved directly from

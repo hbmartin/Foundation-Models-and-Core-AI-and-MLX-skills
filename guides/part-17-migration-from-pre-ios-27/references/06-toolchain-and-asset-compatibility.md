@@ -25,69 +25,11 @@ says who measured it.
 
 ## What this covers
 
-The thesis first, because everything else follows from it:
-
-> **An `.aimodel` is a build artifact, not a pure function of your recipe.**
-> Treat it like a compiled binary — version-stamp it, archive it, and benchmark exactly the bytes
-> you intend to ship.
-
-That sentence is not ours. It is the conclusion a community engineer reached after re-running an
-export command that had produced a 1,116 tok/s artifact and getting a 500 tok/s one, with the same
-source checkout, the same registry preset, the same wheel versions and the same machine. It is
-quoted in full in §4.
-
-What follows:
-
-- **§1–2 — The artifact inventory.** Five distinct classes of build output live in a modern
-  on-device AI project, and each one is invalidated by a different thing. Most teams can name two
-  of them.
-- **§3 — Incident 1: the `coreai-torch` 0.4.0 IR-location break.** Assets converted with 0.4.0 stop
-  loading on 27 beta 2 and later. Repacking does not fix it, wheel-pinning does not fix it, and
-  re-AOT does not fix it — but `coreai-build inspect` still reads the asset perfectly, which is what
-  makes the whole thing feel recoverable when it is not. Includes the `producer`-field audit that
-  finds every affected asset in one `find`, the `strip_debug_info` repair, and the chicken-and-egg
-  problem in the repair (you need one wheel generation to *parse* the asset and a different one to
-  *stamp* it).
-- **§4 — Incident 2: the macOS 26 → 27 export-lowering regression.** Same recipe, same wheels, same
-  weights, same device: **~2.2× slower and roughly twice the memory**, because the
-  dequantisation-folding decision consults the *running OS*, not the wheel. Nothing errors, nothing
-  warns. This section carries the lesson that ought to change how you run a build farm: **the export
-  host's OS version is an input to the model's performance.**
-- **§5 — Specialization artifacts are tied to the device *and the OS version*.** Every OS update
-  invalidates every cache entry your app owns, regardless of cache policy, and your users pay the
-  first-load cost again. There is a supported way to notice this before the user does.
-- **§6 — Bookmarks stop resolving after a purge, a manual delete, or an OS update** — and
-  `AIModel(resolvingBookmark:)` returns **`nil`** rather than throwing, so on the OS-update path it
-  lands in whatever `else` branch you wrote six months ago and never tested.
-- **§7 — `coreai-build compile` exits 0 for architectures a device will reject.** A green build is
-  not validation. Only a device load validates the architecture choice.
-- **§8 — `metadata.json`'s `compression` field records the *request*, not the *result*.**
-  Quantisation failures are swallowed with a `logger.warning`, so you can ship a 4×-too-large asset
-  whose metadata claims 4-bit. The only signal is file size.
-- **§9 — Package-level migrations.** `mlx-swift-lm` 2.x → 3.x (the tokenizer/downloader decoupling,
-  what it breaks, and where the upgrade doc is itself stale); `foundation-models-utilities`, whose
-  README dependency line resolves to *nothing*; and `apple/coreai-models` commit #123, an example of
-  the ecosystem chasing the same Foundation Models rename that guide 17.3 documents.
-- **§10 — The artifact provenance checklist.** What to record alongside every shipped model so that
-  the next time something like this happens you can identify the blast radius in minutes instead of
-  days. With the verified API for stamping it into the asset itself.
-- **§11–12 — Triage table and the evidence ledger.**
+Version-stamp and validate the exact model artifact you ship. The incident comparisons show why converter, OS, toolchain, architecture, and compiled cache identity matter independently, and how to recover from incompatible assets.
 
 ## What this does *not* cover
 
-- **Source-level API migration.** `GenerationError` → `LanguageModelError`, the adapter sunset,
-  dual-SDK conditional compilation — guides [17.2](02-adapter-sunset.md),
-  [17.3](03-error-taxonomy-migration.md) and [17.4](04-dual-sdk-builds.md).
-- **How to convert a model in the first place.** `TorchConverter`, op coverage, externalization —
-  [Part 8](../../part-08-coreai-pytorch-conversion/).
-- **Which compression scheme to pick.** [Part 9](../../part-09-coreai-compression-numerics/).
-  §8 here is only about the metadata field lying to you, not about the choice.
-- **The specialization API surface in depth** — `AIModelCache`, `Policy`, `PurgeConditions`,
-  `SpecializationOptions`. That is
-  [Part 7 reference 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md),
-  and §5–6 here assume you have read it or will.
-- **Distribution mechanics** — Background Assets, per-architecture asset packs, staged rollout.
-  [Part 15 reference 01](../../part-15-shipping-and-operating/references/01-model-distribution-and-updates.md).
+Related references: [17.2](02-adapter-sunset.md), [17.3](03-error-taxonomy-migration.md), [17.4](04-dual-sdk-builds.md), [Part 8](../../part-08-coreai-pytorch-conversion/), [Part 9](../../part-09-coreai-compression-numerics/), [Part 7 reference 02](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [Part 15 reference 01](../../part-15-shipping-and-operating/references/01-model-distribution-and-updates.md).
 
 ## What you need
 
@@ -202,24 +144,7 @@ moment at which anyone is forced to look. This is the reason §10 exists.
 
 ### A note on evidence
 
-Both incidents in this guide are **community-documented**, and this guide attributes them as such
-every time they are mentioned. They are not Apple statements and they are not our measurements.
-Specifically:
-
-- **Incident 1** has an Apple root-cause statement behind it — `apple/coreai-torch` issue #37 and
-  the v0.4.1 release notes — plus an Apple maintainer's repair recipe in issue #44. The *operational*
-  detail (the negative list, the `producer` audit, the two-wheel recovery) is a single community
-  engineer's forensics, published in a public repository, and reproduced here with attribution.
-- **Incident 2** has **no** Apple acknowledgement at all. It is one engineer's A/B on one Mac and one
-  iPhone, on beta software, dated 2026-06-11. The mechanism is well argued and the negative control
-  is a good one, but treat the *magnitude* as an order-of-magnitude claim and re-measure on your own
-  hardware before you make a decision costing more than a day.
-
-Where this guide quotes an Apple documentation page, a header, or a file in a shipping Apple
-repository, it says so and marks the claim ✅ **VERIFIED**. Where it quotes a community engineer, it
-names them as community-measured. The distinction is load-bearing in this guide more than most.
-
----
+Incident 1 combines Apple's converter issue #37/release notes and repair recipe in #44 with community operational forensics. Incident 2 is a community A/B from 2026-06-11 on one Mac and iPhone running beta software; its magnitude requires validation on the intended artifact and hardware. Keep those distinctions when using the recovery procedures. See the [shared evidence conventions](../../README.md#evidence-conventions).
 
 ## 2. The artifact inventory: five classes, five invalidation rules
 
@@ -1321,34 +1246,16 @@ literal sense, **irreplaceable** — the machine that could make another one has
 
 ### 4.5 ⚠️ The lesson: the export host's OS version is an input to the model's performance
 
+<!-- callout-id: callout-875f54069f82b233 -->
 > ⚠️ ⚠️ **THE LESSON OF THIS GUIDE**
->
 > ### The export host's OS version is an input to the model's performance.
->
-> Not to whether it builds. Not to whether it loads. Not to whether it produces correct output — the
-> slow artifact is *numerically fine*. To **how fast it runs and how much memory it uses on your
-> user's phone.**
->
-> Every build system you have ever used treats the host OS as an environmental detail — something you
-> upgrade when IT tells you to, something you note in a Dockerfile and forget. In this stack it is a
-> **compiler input**, on the same footing as your quantisation preset and your context length. It
-> belongs in your build manifest, in your artifact provenance record, and in the metadata line under
-> every benchmark number you publish.
->
-> The three practices that fall out of it:
->
-> 1. **Pin your export machine's OS.** Treat an OS upgrade on a build box the way you would treat a
->    compiler upgrade: a scheduled, deliberate change, with a before/after benchmark on the same
->    device, and a rollback plan. Do not let it happen because someone clicked "Update Now".
-> 2. **Benchmark the artifact you will actually ship.** Not the recipe. Not "a Qwen3-0.6B 4-bit
->    export". *That file.* On the target device. If you re-export, re-benchmark — a re-export is a
->    new artifact, not a copy of the old one.
-> 3. **Keep the artifact.** Archive the bytes, not just the command. If the command stops being able
->    to reproduce them — and here it did — the bytes are the only copy that exists.
->
-> Community-measured; the mechanism is the author's deduction and Apple has not commented. But the
-> *practice* the finding implies is correct regardless of whether this specific regression is still
-> live, because a stack that can do this once can do it again.
+> The cited community regression produced numerically correct artifacts with different device speed
+> and memory use. Its mechanism is the author's inference, not an Apple-confirmed cause or a current
+> stable-runtime finding.
+> Record and pin host OS alongside compiler, packages, and quantization settings. Benchmark the exact
+> shipped bytes on target hardware after every re-export or toolchain change, and preserve those bytes
+> and hashes when they prove a regression. Treat build-host upgrades as measured changes with a
+> rollback path.
 
 The author's own list of consequences, verbatim, is a tighter statement of the same thing:
 
@@ -1825,21 +1732,7 @@ What matters *here*, in a migration context, is the failure shape.
 
 Apple's own sample code for this workflow, quoted verbatim, has the shape and even labels the branch:
 
-```swift illustrative
-if let bookmarkData = UserDefaults.standard.data(forKey: "llm.bookmark") {
-    do {
-        if let model = try AIModel(resolvingBookmark: bookmarkData) {
-            // Use the model.
-            return model
-        }
-        // The model can't be found or was invalidated by an OS update.
-    } catch {
-        // The bookmark data is invalid.
-    }
-}
-
-// Download and specialize the model again.
-```
+See the [canonical example](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#the-full-workflow-apples-code).
 
 > ✅ **VERIFIED** — reproduced verbatim from *Managing model specialization and caching*, comments
 > included. Note that Apple's comment on the `nil` path says exactly the right thing — *"or was
@@ -2161,6 +2054,7 @@ While you are in `coreai-build`, one more, because it produces a crash rather th
 
 ### And one that is not about architectures at all
 
+<!-- defect-ref:apple.coreai-models:issue:49 -->
 > ⚠️ **`CoreAI.framework` is absent from the iOS Simulator SDK.**
 > Reported on `apple/coreai-models` issue #49 (FB23189921), **still open as of 2026-07-29** (3
 > comments, no activity since 2026-06-28), verbatim:
@@ -2544,35 +2438,16 @@ The full breaking-change list, ✅ verified verbatim from the same document:
 
 #### ⚠️ The upgrade doc names two modules that do not exist in the package
 
-> ⚠️ **SILENT FAILURE — the migration document's own "Breaking Changes" section is stale.**
->
-> `upgrade.md`'s Breaking Changes section says, verbatim: *"For most users who were using the default
-> Hub client, **adding `import MLXLMHuggingFace` or `import MLXEmbeddersHuggingFace`** and using the
-> convenience overloads is sufficient."*
->
-> ✅ **VERIFIED — neither module exists.** `grep -rn "MLXLMHuggingFace\|MLXEmbeddersHuggingFace"
-> --include='*.swift'` over the whole checkout at HEAD `3cbf928` returns **zero** hits, and neither
-> name appears in `Package.swift`. The nine products the package actually vends are `MLXLLM`,
-> `MLXVLM`, `MLXLMCommon`, `MLXEmbedders`, **`MLXHuggingFace`**, `MLXFoundationModels`,
-> `MLXGuidedGeneration`, `BenchmarkHelpers`, `IntegrationTestHelpers`.
->
-> The same staleness runs deeper: the package's **shipped agent skill** (`skills/mlx-swift-lm/`) and
-> four library `README.md` files import `MLXLMHuggingFace  // from swift-huggingface-mlx` and
-> `MLXLMTokenizers  // from swift-tokenizers-mlx`, packages that are referenced nowhere in
-> `Package.swift`.
->
-> **Why this is a silent failure and not just a doc bug:** the failure it produces is
-> `no such module 'MLXLMHuggingFace'`, which reads like *your* project is misconfigured. Engineers
-> spend real time re-resolving packages and clearing DerivedData over this. And if you are using a
-> coding agent, the shipped skill will *confidently generate the stale imports*, because that is what
-> it was written against.
->
-> **The two paths that actually work, as of HEAD `3cbf928`:**
-> 1. **Hand-rolled conformances** to `Downloader` and `TokenizerLoader` — the protocols are four
->    lines total, quoted above.
-> 2. **The `MLXHuggingFace` macros** over `swift-huggingface` + `swift-transformers`:
->    `#hubDownloader()`, `#huggingFaceTokenizerLoader()`, `#huggingFaceLoadModelContainer(…)`,
->    `#huggingFaceLoadModel(…)`, `#huggingFaceLanguageModel(…)`.
+<!-- callout-id: callout-3c792332f6f97577 -->
+> ⚠️ **Dated migration pitfall — inspected documentation used nonexistent module names.**
+> At `mlx-swift-lm` revision `3cbf928`, `upgrade.md` and several package READMEs referenced
+> `MLXLMHuggingFace` / `MLXEmbeddersHuggingFace`; neither was a declared product. The actual module
+> was `MLXHuggingFace`. These stale imports produced a module-not-found build failure, not evidence of
+> a broken local package cache.
+> For that revision, use your own `Downloader` and `TokenizerLoader` conformances or the
+> `MLXHuggingFace` macros over `swift-huggingface` / `swift-transformers`: `#hubDownloader`,
+> `#huggingFaceTokenizerLoader`, and the model/container/language-model loading macros. Check the
+> installed revision's Package.swift before applying this migration workaround.
 
 The macros expand to code that references symbols **at your call site**, which produces another
 confusing error class:

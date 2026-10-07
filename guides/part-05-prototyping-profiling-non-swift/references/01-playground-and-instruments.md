@@ -24,28 +24,7 @@ canvas is a **26.4** feature, so a reader on 26.0–26.3 will look for it and no
 
 ## What this covers
 
-Foundation Models is a non-deterministic runtime with no useful `XCTAssertEqual`, and — this is the part
-that catches people — **most of its defects do not throw**. The framework will happily run a broken
-feature forever and report success. This guide is the observability story for that: three tools, used in
-a fixed order, that between them cover prototyping, unhappy paths, and production-shaped latency.
-
-- **`#Playground`** — the fastest prompt-iteration loop there is (no build, no run, full access to your
-  project's types), what its canvas shows you, and the one thing it is silently bad at.
-- **`#Playground` as Apple's official bug channel.** The thumbs-up icon next to a response in the canvas
-  is the documented way to report a bad model output, per Apple's own pinned (and locked) forum thread.
-  The programmatic equivalent, `logFeedbackAttachment(sentiment:issues:desiredOutput:)`, for feedback
-  you collect from real users.
-- **Scheme simulation** — *Product ▸ Scheme ▸ Edit Scheme ▸ Run ▸ Options ▸ "Simulated Apple Foundation
-  Models Availability"*, which is how you reach `.unavailable(.appleIntelligenceNotEnabled)` and
-  *Quota Usage Limit Reached* without owning four devices and burning a real PCC quota.
-- **The Foundation Models instrument in Xcode 27** — how to launch it, ⚠️ **why the trace file is a
-  sensitive artefact**, all six documented lanes, the tree detail view, and the Info column.
-- **The canonical worked bug**, reproduced end to end: a tool referenced in the *instructions text* but
-  absent from the *toolset*. The model loops, keeps calling tools, and never throws. This is the bug
-  Apple built an entire WWDC session around, and it is the archetype for the whole class.
-- **Three session metrics** — Time to First Token, Tokens per Second, Total Latency — plus the four
-  current token metrics: Total, Consumed, Generated, and Cached. The KV-caching page supplies the
-  cache-hit formula and the interpretation of a low rate between turns.
+Prototype with #Playground, simulate unhappy paths through the scheme, then inspect Foundation Models traces in Instruments. Runtime measurements remain tied to the host or device that executes inference.
 
 ## What you need
 
@@ -368,46 +347,17 @@ precisely why Apple's Instruments session exists.
 
 **And it runs somewhere you may not expect.**
 
-> ⚠️ **SILENT FAILURE — the Simulator trap.** Xcode ships the SDK; the *model* ships with the OS. When
-> you run against the Simulator, inference is executed by the **host Mac's** OS, not by anything
-> resembling your deployment target. Xcode 27 SDK on a macOS 26 host produces errors that are pure
-> version skew, and they do not identify themselves as such — you get a bare
-> `FoundationModels.LanguageModelError error -1`.
->
-> ✅ **VERIFIED** — Apple Designer, Developer Forums thread 831404, accepted answer, verbatim: *"Xcode
-> 27.0 contains the latest SDK, but the on-device `SystemLanguageModel` is actually built into the OS.
-> **Meaning that when you run simulator from Xcode, the simulator is actually 'punching out' to macOS to
-> run the model**, using the 26.5 model inference code in the OS. Whenever we see 'weird' errors like
-> this, it's usually an underlying incompatibility between the Xcode SDK and OS for running the model.
-> **Suggested Fix: Update a physical device to 27.0.**"*
->
-> And the harder version:
->
-> ✅ **VERIFIED** — Frameworks Engineer (Apple), thread 831998, accepted, quoting the iOS 27 release
-> notes: *"**Private Cloud Compute might not work when you use simulators. (177684296)** Workaround: Use
-> a physical device running OS 27.0."*
->
-> **The practical rule: a Foundation Models bug is not a bug until you have reproduced it on a physical
-> device on the matching OS.** This is, by a wide margin, the largest single source of phantom bug
-> reports in the developer forums. Before you spend an afternoon on an error code, check what you are
-> running on.
->
-> ✅ **Probe-verified nuance, 2026-07-31** (`probes/` `fm.availability` and friends, iOS 27.0
-> Simulator runtime 24A5390f on a macOS 26.5.2 host): the "punching out" picture needs one
-> correction — **the 27.0 sim runtime resolves model availability and assets independently of the
-> host's Apple Intelligence toggle.** With host Apple Intelligence OFF (the host's own `swift test`
-> reports `.appleIntelligenceNotEnabled`), the sim still reported `available` and ran text
-> inference, guided generation, streaming, and 8 concurrent sessions. What the sim runtime *lacks*:
-> tool-calling assets (`ModelManagerError 1026` / `UnifiedAssetFramework 5000`) and image
-> attachments (`LanguageModelError -1`). So the sim is more usable for plain/guided-generation
-> prototyping than the folklore says — and still useless for tool calling, attachments, PCC, and
-> any number you intend to quote.
->
-> ✅ **Physical baseline, 2026-08-20:** the attached iPhone 15 Pro / iOS build `24A5408d` reported
-> `available` and declared `.vision`, `.toolCalling`, and `.guidedGeneration` but not `.reasoning`.
-> Text, guided generation, and tool invocation ran. Image `respond` calls also ran, while
-> `tokenCount(for:)` with the same generated image threw code `-1` at every tested size. Treat
-> `capabilities` as routing/declaration metadata, not proof that every auxiliary path is healthy.
+<!-- callout-id: callout-ff676562acbac3de -->
+> ⚠️ **SILENT FAILURE — simulator inference can reflect host/runtime skew.**
+> Apple's accepted answers in forums 831404 and 831998 describe host-side inference and recommend
+> matching physical hardware, especially for PCC. Record host OS, SDK, simulator runtime, and hosting
+> mode separately before attributing an error to the framework.
+> Dated regression evidence shows availability is not simply the host's Apple Intelligence toggle: the
+> 2026-07-31 simulator ran text/guided generation with that host toggle off, while tool and image
+> paths failed. On 2026-08-20, iPhone 15 Pro `24A5408d` declared vision/tool/guided capabilities and
+> ran image responses, yet image `tokenCount(for:)` still threw code -1. A capability declaration does
+> not prove every auxiliary path works. Current host and simulator results are recorded in
+> `notes/evidence/runtime-current.json`; physical validation remains separately dated.
 
 One live example of how unhelpful the failure looks, so you recognise it:
 
@@ -610,6 +560,7 @@ final class FeedbackCollector {
 
 ### 3.2 The non-Swift hole
 
+<!-- defect-ref:apple.python-apple-fm-sdk:issue:5 -->
 > ✅ **VERIFIED** — community-tracked, `python-apple-fm-sdk` issue **#5** (OPEN as of 2026-07-29,
 > one comment, no activity since 2026-03-07):
 > feedback submission — `LanguageModelFeedback` and `logFeedbackAttachment` — **is Swift-only and is not

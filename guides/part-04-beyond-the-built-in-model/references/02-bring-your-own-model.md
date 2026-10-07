@@ -22,34 +22,7 @@ visionOS 27.0, *)`. Two different floors in one file is the normal shape of this
 
 ## What this covers
 
-You have decided not to use `SystemLanguageModel`. This guide is the **consumer** side of that
-decision: how to put a different model behind the same `LanguageModelSession` API, with real
-initializers, real failure modes, and the one architectural trade that should change which backend
-you pick.
-
-- **Path 1 — `ChatCompletionsLanguageModel`.** The one that works today, on hardware you already
-  own, without the 27 SDK's model packages. Point it at `mlx_lm.server`, Ollama, LM Studio or vLLM
-  and any Hugging Face checkpoint is behind `LanguageModelSession`. Including the confirmed,
-  as-of-today unfixed URL-versioning defect, its verified workaround, and the malformed URL in
-  Apple's own README.
-- **Path 2 — `MLXLanguageModel`.** Where `MLXFoundationModels` actually lives (this is the direct
-  answer to Developer Forums thread **836264**), the double gate that makes it vanish silently, the
-  `#huggingFaceLanguageModel` macro, the explicit initializer, and why the `capabilities:` array you
-  pass is load-bearing rather than decorative.
-- **Path 3 — `CoreAILanguageModel`.** One line to load a converted bundle, what it detects about
-  your model without asking you, and what the Foundation Models path does *not* expose.
-- **The constraint that deserves its own section:** grammar-constrained decoding — the mechanism
-  behind `@Generable` — needs engine **logits**. The fastest local backend never surfaces them. A
-  bring-your-own-model app therefore **loses Apple's flagship structured-generation feature exactly
-  when it selects the fastest backend.** This should change your backend choice, not merely inform
-  it.
-- **Capability declaration** as the actual contract between you and the framework, and the errors
-  the framework throws on your behalf when a backend under-declares.
-- **The privacy obligation** from session 339, which applies to you as a *consumer* of a model
-  package, not only to the people who ship them.
-
-Authoring a `LanguageModel` conformance of your own is **guide 03** in this part. This guide stops
-at the boundary: you are choosing and configuring somebody else's.
+Configure an OpenAI-compatible endpoint, MLX model, or Core AI bundle behind LanguageModelSession. Choose capabilities carefully: guided generation requires logits, which the pipelined Core AI engine does not expose.
 
 ## What you need
 
@@ -1353,28 +1326,16 @@ The framework's `prewarm` hook calls the full version:
 
 Collected, because each of these costs an hour the first time.
 
-> ⚠️ **SILENT FAILURE — token usage may be absent or zero, by design, on this SDK.** MLX's adapter
-> deliberately does **not** send `updateUsage` events at all. The reason is a compile-versus-runtime
-> symbol mismatch, and the comment explaining it (`MLXLanguageModel.swift:729-761`) is worth reading
-> in full because it is the sharpest beta-era hazard in the corpus:
->
-> > ✅ **VERIFIED (repo source, verbatim)** — *"the FM-27 beta `.swiftinterface` declares
-> > `Response.Action.updateUsage(input:output:metadata: = [:])` (three parameters), but the **shipping
-> > FoundationModels dylib only exports the older two-parameter
-> > `Response.Action.updateUsage(input:output:)`**. Because our call relies on the `metadata:`
-> > default, the compiler resolves it to the three-parameter symbol, **which does not exist at
-> > runtime.** dyld cannot bind it: under **chained-fixups linking (the arm64 default) the reference
-> > aborts the process the moment the image loads**, and under lazy binding it **faults through null
-> > (SIGSEGV at 0x0)** the instant this send executes — crashing every `respond()` path right after
-> > generation completes. **A runtime `dlsym` guard cannot save this**: the compiled reference to the
-> > missing symbol is enough to abort at launch regardless of any surrounding check. The only safe
-> > option is to **not reference the symbol at all**."*
->
-> The stated consequence for you: *"consumer-visible usage for these responses may be absent or
-> zero."* So **do not build a token-accounting or cost-display feature on `response.usage` against
-> this backend on this SDK**, and do not conclude your prompts are free. Two lessons generalise: a
-> beta `.swiftinterface` can advertise symbols the dylib does not export, and the failure mode is a
-> **launch-time abort**, not a graceful error.
+<!-- callout-id: callout-9f6befd531a050ab -->
+> ⚠️ **Beta-only workaround — the cited MLX adapter omits token-usage events.**
+> `MLXLanguageModel.swift:729-761` documents a beta interface/runtime mismatch: the interface's
+> three-parameter `Response.Action.updateUsage(input:output:metadata:)` had no matching dylib symbol.
+> A compiled reference could abort at image load or crash on lazy binding; a runtime `dlsym` guard
+> could not remove that reference. The adapter consequently omitted usage events, leaving
+> `response.usage` absent or zero.
+> This is evidence for that adapter/SDK snapshot, not a verified stable-27 defect. Verify the
+> installed adapter and runtime before using usage for accounting. Zero usage does not establish that
+> generation consumed no tokens.
 
 > ⚠️ **SILENT FAILURE — the executor cache key is the model id and nothing else.**
 > `MLXLanguageModel.Executor.Configuration` is verified as
