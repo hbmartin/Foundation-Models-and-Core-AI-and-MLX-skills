@@ -1,0 +1,43 @@
+{
+  "implementationRevision": "893624e9a09adf991d87c191b91795986a82b422",
+  "callouts": {
+    "baselineRevision": "406b8db",
+    "identitiesPreserved": 1785,
+    "changedBodies": []
+  },
+  "pythonFences": {
+    "count": 464,
+    "changed": [
+      "compression-native-fixtures"
+    ]
+  },
+  "swiftFences": {
+    "count": 1360,
+    "identitiesAndBodiesUnchanged": true,
+    "freshCompilation": false
+  },
+  "nativeProfiles": {
+    "model-export": {
+      "checks": 38,
+      "outcomes": {
+        "PASS": 22,
+        "PASS (rejected)": 16
+      },
+      "run_status": "passed",
+      "exampleHashesVerified": 5
+    },
+    "standalone": {
+      "checks": 38,
+      "outcomes": {
+        "PASS": 22,
+        "PASS (rejected)": 16
+      },
+      "run_status": "passed",
+      "exampleHashesVerified": 5
+    }
+  },
+  "primaryCheckout": {
+    "filesChecked": 458,
+    "unchanged": true
+  }
+}
