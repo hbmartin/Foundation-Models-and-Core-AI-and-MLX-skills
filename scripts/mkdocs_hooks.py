@@ -9,9 +9,10 @@ existing guide hierarchy.
 from __future__ import annotations
 
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlsplit
 
 try:
     from scripts.mdslug import slugify
@@ -500,8 +501,60 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Any) -> str:
     )
 
 
+class _RenderedLinks(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.anchors: set[str] = set()
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if attributes.get("id") is not None:
+            self.anchors.add(attributes["id"])
+        if tag == "a":
+            if attributes.get("name") is not None:
+                self.anchors.add(attributes["name"])
+            if attributes.get("href") is not None:
+                self.links.append(attributes["href"])
+
+    handle_startendtag = handle_starttag
+
+
+def _verify_site_fragments(site_dir: Path) -> None:
+    """Check local HTML fragments against the renderer's exact IDs and named anchors."""
+    root = site_dir.resolve()
+    pages: dict[Path, _RenderedLinks] = {}
+    for path in sorted(root.rglob("*.html")):
+        parsed = _RenderedLinks()
+        parsed.feed(path.read_text(encoding="utf-8"))
+        parsed.close()
+        pages[path.resolve()] = parsed
+
+    errors = []
+    for source, page in pages.items():
+        for href in page.links:
+            url = urlsplit(href)
+            if url.scheme or url.netloc or not url.fragment:
+                continue
+            path = unquote(url.path)
+            if not path:
+                target = source
+            else:
+                target = (root / path.lstrip("/") if path.startswith("/") else source.parent / path).resolve()
+                if path.endswith("/") or target.is_dir() or not target.suffix:
+                    target = target / "index.html"
+                elif target.suffix.lower() != ".html":
+                    continue  # Asset fragments (for example SVG) are outside this check.
+            if target not in pages:
+                errors.append(f"{source.relative_to(root)}: {href!r}: local HTML destination missing")
+            elif unquote(url.fragment) not in pages[target].anchors:
+                errors.append(f"{source.relative_to(root)}: {href!r}: fragment missing in {target.relative_to(root)}")
+    if errors:
+        raise ValueError("site fragment mismatch:\n" + "\n".join(sorted(set(errors))))
+
+
 def verify_site_routes(docs_dir: Path, site_dir: Path) -> None:
-    """Require one rendered route per canonical Markdown page, including README routes."""
+    """Require canonical routes, search output, and valid local rendered HTML fragments."""
     expected = set()
     for source in docs_dir.rglob("*.md"):
         relative = source.relative_to(docs_dir)
@@ -512,3 +565,4 @@ def verify_site_routes(docs_dir: Path, site_dir: Path) -> None:
         raise ValueError(f"site route mismatch: missing={sorted(expected - actual)}, unexpected={sorted(actual - expected)}")
     if not (site_dir / "search/search_index.json").is_file():
         raise ValueError("site search index missing")
+    _verify_site_fragments(site_dir)
