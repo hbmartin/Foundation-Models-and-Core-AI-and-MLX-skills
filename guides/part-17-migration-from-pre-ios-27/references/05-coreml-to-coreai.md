@@ -895,6 +895,7 @@ and [Part 7 reference 02 §4](../../part-07-coreai-swift-runtime/references/02-s
 ### 3.4 ⚠️ Numeric parity at the conversion boundary
 
 In `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program.
+The former `AIProgram.optimize()` method was removed in 0.4.3.
 Validate the exact artifact your application ships against eager PyTorch and the decomposed
 export on production inputs, including square and asymmetric shapes.
 

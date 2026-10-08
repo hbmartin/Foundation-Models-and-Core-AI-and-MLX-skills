@@ -6,7 +6,7 @@
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 8 |
+| [Wrong output](#wrong-output) | 6 |
 | [Empty output / no-op](#empty-output--no-op) | 4 |
 | [Ignored input](#ignored-input) | 10 |
 | [Stale state](#stale-state) | 2 |
@@ -19,7 +19,7 @@
 | [Version drift](#version-drift) | 24 |
 | [Docs vs reality](#docs-vs-reality) | 12 |
 | [API footguns](#api-footguns) | 19 |
-| [General cautions](#general-cautions) | 36 |
+| [General cautions](#general-cautions) | 38 |
 
 ## Wrong output
 
@@ -29,8 +29,6 @@
 - [In string mode a refusal is a successful response; the apology string flows into your pipeline as real content](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#91-the-two-layers-from-apples-own-description) — 17.3 🔇
 - [A throwing subject(from:) lets refusals abort samples; aggregate eval scores silently exclude the refused cases](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#162-the-critical-design-decision) — 17.3 🔇
 - [coreai-models has zero EXIF or orientation handling; rotated camera photos silently produce wrong vision results](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#29-image-inputs-and-the-pre-processing-you-used-to-get-for-free) — 17.5
-- [Validate numeric parity at the conversion boundary with the exact shipped asset](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
-- [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [Orientation and coordinate conventions are now your job; getting them wrong yields plausible but wrong vision output](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 - [CIImage(contentsOf:) applies EXIF orientation, CGImageSource does not; the same JPEG preprocesses two different ways](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 
@@ -247,6 +245,8 @@
 - [Core AI succeeds Core ML for neural networks only; decision trees and tabular pipelines stay on Core ML by design](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#core-ml-to-core-ai-what-moves-what-stays-and-how) — 17.5
 - [TOC pointer to the guide's collection of failures that do not announce themselves](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#contents) — 17.5
 - [Section heading for the Core AI failures that do not announce themselves: compute units, drift, caches, miscompiles](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#3-️-what-does-not-announce-itself) — 17.5
+- [Validate numeric parity at the conversion boundary with the exact shipped asset](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
+- [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [states: requires a mutable view for every declared state; omitting any produces an error — enumerate stateNames first](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#41-states-kv-caches-as-first-class-in-place-model-inputs) — 17.5
 - [The 76% multi-function saving is Apple's demo number with no device or protocol stated; treat it as an existence proof](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#42-multi-function-assets--and-the-finding-that-reframes-them) — 17.5
 - [Verified: 0 sample-code entries across all 312 indexed Core AI symbols; no first-party compiling reference exists](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#51-the-hard-fact-core-ai-ships-with-zero-apple-sample-code-projects) — 17.5

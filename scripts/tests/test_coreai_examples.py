@@ -95,6 +95,12 @@ class CoreAIExampleTests(unittest.TestCase):
             "Assets don't replace existing destinations",
             "The converter didn’t replace the asset",
             "Existing destinations aren't replaced",
+            "save_asset will not be replacing an existing destination",
+            "save_asset performs no overwriting of existing destinations",
+            "save_asset never overwrote the file",
+            "The destination is not being overwritten",
+            "MyModel.aimodel was not replaced",
+            "save_asset did not overwrite",
         ):
             with self.subTest(text=text):
                 self.assertTrue(contract_errors(text, "overwrite"))
@@ -110,6 +116,31 @@ class CoreAIExampleTests(unittest.TestCase):
                      "The program is not optimized; the destination is replaced"):
             with self.subTest(text=text):
                 self.assertEqual([], contract_errors(text, "overwrite"))
+
+    def test_overwrite_guard_ignores_unrelated_prose_in_same_section(self):
+        correct_contract = "AIProgram.save_asset replaces an existing file or directory.\n"
+        for advice in (
+            "Metadata does not replace a parity gate.",
+            "Asset metadata does not replace a parity gate.",
+            "Parity checks cannot replace validation on production inputs.",
+            "save_asset metadata does not replace validation.",
+            "Metadata will fail validation if an existing author is missing.",
+            "Asset validation will fail if an existing model is incompatible.",
+            "save_asset will fail if an existing metadata field is invalid.",
+            "save_asset will fail validation if the metadata record already exists.",
+            "The destination is not optimized, but save_asset replaces the file.",
+            "Metadata is not replaced; the asset is overwritten.",
+            "- Metadata does not replace parity\n- save_asset overwrites the destination",
+        ):
+            with self.subTest(advice=advice):
+                self.assertEqual([], contract_errors(correct_contract + advice, "overwrite"))
+
+    def test_overwrite_guard_checks_all_predicate_forms(self):
+        for predicate in ("overwrite", "overwrites", "overwrote", "overwritten", "overwriting",
+                          "replace", "replaces", "replaced", "replacing"):
+            with self.subTest(predicate=predicate):
+                self.assertTrue(contract_errors(f"save_asset never {predicate} the destination", "overwrite"))
+                self.assertEqual([], contract_errors(f"Metadata never {predicate} a parity gate", "overwrite"))
 
     def test_invalid_identifiers_fail_across_tokenizer_versions(self):
         for code in ("x = …", "x = €", "program.…()"):

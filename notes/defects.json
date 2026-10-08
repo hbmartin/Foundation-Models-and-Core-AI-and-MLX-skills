@@ -489,7 +489,7 @@
         },
         {
           "file": "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
-          "anchor": "95-two-more-you-must-know-though-they-are-not-in-coreai-torchs-lowerings"
+          "anchor": "95-mobilenetv3-on-ane-fp16-matmul-feeding-hardswish"
         }
       ],
       "claimedState": "OPEN",

@@ -63,7 +63,7 @@ jobs:
           test -s .build/mkdocs-site/API-INDEX/index.html
           test -s .build/mkdocs-site/SILENT-FAILURES/index.html
           test -s .build/mkdocs-site/search/search_index.json
-          python -c "from pathlib import Path; from scripts.mkdocs_hooks import verify_site_routes; verify_site_routes(Path('guides'), Path('.build/mkdocs-site'))"
+          python -c "from pathlib import Path; from mkdocs.config import load_config; from scripts.mkdocs_hooks import verify_site_routes; config = load_config(); verify_site_routes(Path(config['docs_dir']), Path(config['site_dir']), site_url=config['site_url'])"
           git diff --exit-code -- guides
 
       - name: Upload GitHub Pages artifact

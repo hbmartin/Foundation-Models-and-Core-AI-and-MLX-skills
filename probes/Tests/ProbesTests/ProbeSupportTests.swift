@@ -1,5 +1,5 @@
 import Foundation
-import ProbeSupport
+@testable import ProbeSupport
 import XCTest
 
 final class ProbeSupportTests: XCTestCase {
@@ -70,19 +70,15 @@ final class ProbeSupportTests: XCTestCase {
     }
 
     func testParentCancelledBeforeEntryDoesNotStartWork() async {
-        let ran = Probe.Counter()
-        let entryGate = SuspensionGate()
+        let operationRan = expectation(description: "operation must not run")
+        operationRan.isInverted = true
         let task = Task {
-            await entryGate.wait()
+            withUnsafeCurrentTask { $0?.cancel() }
             return try await Probe.withTimeout(seconds: 30) { () async throws -> Int in
-                ran.increment()
-                try await Task.sleep(for: .seconds(30))
+                operationRan.fulfill()
                 return 1
             }
         }
-        await entryGate.waitUntilOccupied()
-        task.cancel()
-        await entryGate.open()
         do {
             _ = try await task.value
             XCTFail("expected parent cancellation")
@@ -91,6 +87,90 @@ final class ProbeSupportTests: XCTestCase {
         } catch {
             XCTFail("unexpected error: \(error)")
         }
+        await fulfillment(of: [operationRan], timeout: 0.1)
+    }
+
+    func testCancellationBeforeRegistrationDoesNotCreateRacers() async {
+        let created = Probe.Counter()
+        let ran = Probe.Counter()
+        let race = TimeoutRace<Int>(makeTask: { _, body in
+            created.increment()
+            return Task { await body() }
+        })
+        // Simulate cancellation after the entry check but before registration.
+        race.cancel()
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                race.start(continuation: continuation, seconds: 30) {
+                    ran.increment()
+                    return 1
+                }
+            }
+            XCTFail("expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+        XCTAssertEqual(created.count, 0)
+        XCTAssertEqual(ran.count, 0)
+    }
+
+    func testCancellationBeforeAdmissionDoesNotStartWork() async {
+        await verifySettledRacePreventsAdmission(cancel: true)
+    }
+
+    func testTimeoutBeforeAdmissionDoesNotStartWork() async {
+        await verifySettledRacePreventsAdmission(cancel: false)
+    }
+
+    private func verifySettledRacePreventsAdmission(cancel: Bool) async {
+        let operationQueued = expectation(description: "operation queued before admission")
+        let operationExited = expectation(description: "operation racer exited")
+        let timerExited = expectation(description: "timer racer exited")
+        let gate = SuspensionGate()
+        let ran = Probe.Counter()
+        let race = TimeoutRace<Int>(makeTask: { winner, body in
+            Task {
+                switch winner {
+                case .operation:
+                    operationQueued.fulfill()
+                    await gate.wait()
+                    await body()
+                    operationExited.fulfill()
+                case .timer:
+                    await body()
+                    timerExited.fulfill()
+                }
+            }
+        })
+        let task = Task {
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    race.start(continuation: continuation, seconds: cancel ? 30 : 0) {
+                        ran.increment()
+                        return 1
+                    }
+                }
+            } onCancel: {
+                race.cancel()
+            }
+        }
+        await fulfillment(of: [operationQueued], timeout: 1)
+        if cancel { task.cancel() }
+        do {
+            let result = try await task.value
+            if cancel { XCTFail("expected cancellation") }
+            if case .value = result { XCTFail("expected timeout") }
+        } catch is CancellationError {
+            if !cancel { XCTFail("unexpected cancellation") }
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+        await gate.open()
+        // Join both racers before asserting: the old immediate assertion could
+        // pass while the unstructured operation task had not yet been scheduled.
+        await fulfillment(of: [operationExited, timerExited], timeout: 1)
         XCTAssertEqual(ran.count, 0)
     }
 
@@ -124,23 +204,18 @@ final class ProbeSupportTests: XCTestCase {
 }
 
 private actor SuspensionGate {
+    private var isOpen = false
     private var continuation: CheckedContinuation<Void, Never>?
-    private var observers: [CheckedContinuation<Void, Never>] = []
 
     func wait() async {
+        if isOpen { return }
         await withCheckedContinuation { continuation in
             self.continuation = continuation
-            for observer in observers { observer.resume() }
-            observers.removeAll()
         }
     }
 
-    func waitUntilOccupied() async {
-        if continuation != nil { return }
-        await withCheckedContinuation { observers.append($0) }
-    }
-
     func open() {
+        isOpen = true
         continuation?.resume()
         continuation = nil
     }

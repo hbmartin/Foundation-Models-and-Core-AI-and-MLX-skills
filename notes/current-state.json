@@ -2,8 +2,8 @@
   "asOf": "2026-10-07",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1394,
-      "total": 1733
+      "concreteSilentFailures": 1392,
+      "total": 1735
     },
     "externalLinks": 200,
     "generatedSkills": 10,

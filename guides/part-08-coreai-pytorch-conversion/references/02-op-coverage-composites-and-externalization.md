@@ -2469,6 +2469,7 @@ if func is torch.ops.aten.slice.Tensor:
     return cls.from_unpacked(func(unpacked, dim, start, end, step), self.nbits)
 ```
 
+<!-- callout-id: callout-b40dd98b6728eccc -->
 > ⚠️ **SILENT FAILURE.** Per PR #41: two `(2, 4)` packed tensors concatenated with `dim=1` produce
 > **`(4, 4)` instead of `(2, 8)`**, silently. Affects both `IntxTensor` and `UintxTensor` — i.e.
 > every 2-, 4- or 8-bit quantized weight and every 1-, 2-, 3-, 4-, 6- or 8-bit palettized LUT that
@@ -2482,7 +2483,7 @@ if func is torch.ops.aten.slice.Tensor:
 > **Why you might not notice:** if the tensors are square, or if the concatenated dimensions happen
 > to have compatible sizes, the resulting shape can still be *valid* — just wrong. A downstream
 > matmul then computes garbage with no shape error. Check numeric parity on square and asymmetric
-> inputs so that a shape-compatible simplification cannot pass on output dimensions alone.
+> inputs so that a lowering that ignores `dim` cannot pass on output dimensions alone.
 >
 > **Workaround:** do every `cat` on **unpacked** tensors, before sub-byte injection. Concretely: do
 > your weight fusion in the PyTorch model definition or in the state-dict mutation step, never on a
@@ -2544,7 +2545,8 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > total = mask.to(torch.float32).sum(dim=0)     # exact below 2**24
 > ```
 
-### 9.5 Two more you must know, though they are not in `coreai-torch`'s lowerings
+<a id="95-two-more-you-must-know-though-they-are-not-in-coreai-torchs-lowerings"></a>
+### 9.5 MobileNetV3 on ANE fp16: matmul feeding Hardswish
 
 **MobileNetV3 / ANE fp16: a 2D matmul feeding `Hardswish`.**
 

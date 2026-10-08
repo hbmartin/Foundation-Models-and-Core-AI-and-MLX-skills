@@ -84,6 +84,8 @@ public enum Probe {
     /// Race an async operation against a wall-clock bound without waiting for a
     /// cancelled operation that ignores cancellation. Operation errors and parent
     /// cancellation propagate; timeout is a distinct, non-error result.
+    /// Cancellation or timeout before operation admission prevents the operation
+    /// from starting. Once admitted, the operation must cooperate with cancellation.
     public static func withTimeout<T: Sendable>(
         seconds: Double,
         _ op: @escaping @Sendable () async throws -> T
@@ -92,23 +94,7 @@ public enum Probe {
         let race = TimeoutRace<T>()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                race.install(continuation: continuation)
-                let operationTask = Task {
-                    do {
-                        race.finish(.success(.value(try await op())), winner: .operation)
-                    } catch {
-                        race.finish(.failure(error), winner: .operation)
-                    }
-                }
-                let timerTask = Task {
-                    do {
-                        try await Task.sleep(for: .seconds(max(0, seconds)))
-                    } catch {
-                        return
-                    }
-                    race.finish(.success(.timedOut), winner: .timer)
-                }
-                race.install(operationTask: operationTask, timerTask: timerTask)
+                race.start(continuation: continuation, seconds: seconds, operation: op)
             }
         } onCancel: {
             race.cancel()
@@ -116,37 +102,59 @@ public enum Probe {
     }
 }
 
-private final class TimeoutRace<T: Sendable>: @unchecked Sendable {
+final class TimeoutRace<T: Sendable>: @unchecked Sendable {
     enum Winner { case operation, timer }
+    typealias TaskFactory = @Sendable (Winner, @escaping @Sendable () async -> Void) -> Task<Void, Never>
 
     private let lock = NSLock()
+    private let makeTask: TaskFactory
     private var continuation: CheckedContinuation<Probe.TimeoutResult<T>, any Error>?
     private var terminal: Result<Probe.TimeoutResult<T>, any Error>?
     private var operationTask: Task<Void, Never>?
     private var timerTask: Task<Void, Never>?
+    private var operationAdmitted = false
 
-    func install(continuation newContinuation: CheckedContinuation<Probe.TimeoutResult<T>, any Error>) {
+    // Instance-local scheduling seam for deterministic race tests. Factories must
+    // return a scheduled task without synchronously invoking its body or this race.
+    init(makeTask: @escaping TaskFactory = { _, body in Task { await body() } }) {
+        self.makeTask = makeTask
+    }
+
+    func start(continuation newContinuation: CheckedContinuation<Probe.TimeoutResult<T>, any Error>,
+               seconds: Double, operation: @escaping @Sendable () async throws -> T) {
         lock.lock()
         if let terminal {
             lock.unlock()
             newContinuation.resume(with: terminal)
-        } else {
-            continuation = newContinuation
-            lock.unlock()
+            return
         }
+
+        continuation = newContinuation
+        operationTask = makeTask(.operation) {
+            guard self.admitOperation() else { return }
+            do {
+                self.finish(.success(.value(try await operation())), winner: .operation)
+            } catch {
+                self.finish(.failure(error), winner: .operation)
+            }
+        }
+        timerTask = makeTask(.timer) {
+            do {
+                try await Task.sleep(for: .seconds(max(0, seconds)))
+            } catch {
+                return
+            }
+            self.finish(.success(.timedOut), winner: .timer)
+        }
+        // Both handles are installed before cancellation/completion can settle.
+        lock.unlock()
     }
 
-    func install(operationTask newOperationTask: Task<Void, Never>,
-                 timerTask newTimerTask: Task<Void, Never>) {
-        lock.lock()
-        if terminal == nil {
-            operationTask = newOperationTask
-            timerTask = newTimerTask
-            lock.unlock()
-        } else {
-            lock.unlock()
-            newOperationTask.cancel()
-            newTimerTask.cancel()
+    private func admitOperation() -> Bool {
+        lock.withLock {
+            guard terminal == nil, !operationAdmitted else { return false }
+            operationAdmitted = true
+            return true
         }
     }
 
