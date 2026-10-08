@@ -22,6 +22,10 @@ directory holds the committed latest results:
   Xcode 26.5 and the 27 beta installed (this host dropped Xcode 26.5 at the
   macOS 27 beta 5 upgrade).
 
+- 2026-10-08: re-keyed all 1,327 fence locations after the warmup and parity
+  guidance edits. Every semantic ID, content hash, and verdict matches the prior
+  ledger; compiler and native verification dates retain their original provenance.
+
 ## The marker grammar (canonical)
 
 Space-separated tokens after the language word in the fence info string — invisible in

@@ -74,6 +74,61 @@ class MkDocsHookTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unexpected=.*extra/index.html"):
                 mkdocs_hooks.verify_site_routes(docs, site)
 
+    def fragment_site(self, root, home):
+        docs, site = root / "docs", root / "site"
+        docs.mkdir()
+        (docs / "README.md").write_text("# Home")
+        (docs / "guide.md").write_text("# Guide")
+        (site / "guide").mkdir(parents=True)
+        (site / "search").mkdir()
+        (site / "index.html").write_text(home)
+        (site / "guide/index.html").write_text(
+            '<h1 id="guide">Guide</h1><a name="legacy"></a>'
+            '<a href="../#heading-1">Back</a>'
+        )
+        (site / "search/search_index.json").write_text("{}")
+        return docs, site
+
+    def test_site_fragments_use_rendered_ids_and_named_anchors(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            docs, site = self.fragment_site(root, '''
+                <h1 id="heading">Heading</h1><h2 id="heading-1">Heading again</h2>
+                <span id="π️"></span><span id="%20"></span>
+                <a href="#heading">Same page</a><a href="#heading-1">Duplicate heading</a>
+                <a href="#%CF%80%EF%B8%8F">Unicode including variation selector</a>
+                <a href="#%2520">Decode exactly once</a>
+                <a href="guide/?view=1&amp;other=2#guide">Directory route with query</a>
+                <a href="/guide/index.html#legacy">Root route and named alias</a>
+                <a href="space%20guide/#legacy">Encoded directory</a>
+                <a href="https://example.com/guide/#missing">External</a>
+                <a href="//example.com/guide/#missing">Protocol-relative external</a>
+                <a href="mailto:person@example.com#missing">Other scheme</a>
+                <a href="icon.svg#missing">Non-HTML asset</a>
+                <a href="missing/">No fragment</a><a href="missing/#">Empty fragment</a>
+            ''')
+            (docs / "space guide.md").write_text("# Space guide")
+            (site / "space guide").mkdir()
+            (site / "space guide/index.html").write_text('<a name="legacy"></a>')
+            mkdocs_hooks.verify_site_routes(docs, site)
+
+    def test_site_fragments_report_missing_ids_and_html_destinations(self):
+        for href, reason in (
+            ("#missing", "fragment missing in index.html"),
+            ("guide/#missing", "fragment missing in guide/index.html"),
+            ("#%CF%80", "fragment missing in index.html"),
+            ("absent/#guide", "local HTML destination missing"),
+            ("absent.html#guide", "local HTML destination missing"),
+        ):
+            with self.subTest(href=href), tempfile.TemporaryDirectory() as folder:
+                docs, site = self.fragment_site(Path(folder),
+                    f'<span id="heading-1"></span><span id="π️"></span><a href="{href}">Broken</a>')
+                with self.assertRaises(ValueError) as caught:
+                    mkdocs_hooks.verify_site_routes(docs, site)
+                self.assertIn("index.html", str(caught.exception))
+                self.assertIn(repr(href), str(caught.exception))
+                self.assertIn(reason, str(caught.exception))
+
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")
         titles = []

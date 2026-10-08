@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-10-07 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-10-08 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -100,10 +100,10 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 8**
 
-- [Historical 0.4.1 optimizer defect deleted a broadcasting-significant expand_dims; fixed in the tested 0.4.3 path](part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
+- [Default decompositions lose fused ops; mutations or buffer reordering change the state ABI; names affect routing](part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
 - [MTLTensor extents reverse the torch shape — a kernel correct in torch coordinates reads the wrong axes in Metal](part-08-coreai-pytorch-conversion/README.md#83--torchmetalkernel-writing-and-embedding-a-custom-metal-kernel) — 8.README 🔇
-- [Historical 0.4.1 optimizer defect deleted a broadcasting-significant axis move; the tested 0.4.3 path is fixed](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) — 8.1
-- [Keep shipped-asset parity against eager and exported PyTorch at production shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) — 8.1
+- [Verify numeric parity on the exact shipped Core AI asset, not output shapes alone](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
+- [Keep shipped-asset parity against eager and exported PyTorch at production shapes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
 - [State ordering is an assumption — same-shape buffers like k_cache/v_cache can swap slots and every check still passes](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1
 - [k_cache and v_cache can swap positions across a PyTorch upgrade — Swift binds key to the value slot and output is…](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1 🔇
 - [NDArray.from_descriptor only sizes the buffer — on Linux, buffer-state reads return garbage on the first call](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#94-the-runtime-state-protocol-and-its-own-footgun) — 8.1
@@ -250,8 +250,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [In string mode a refusal is a successful response; the apology string flows into your pipeline as real content](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#91-the-two-layers-from-apples-own-description) — 17.3 🔇
 - [A throwing subject(from:) lets refusals abort samples; aggregate eval scores silently exclude the refused cases](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#162-the-critical-design-decision) — 17.3 🔇
 - [coreai-models has zero EXIF or orientation handling; rotated camera photos silently produce wrong vision results](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#29-image-inputs-and-the-pre-processing-you-used-to-get-for-free) — 17.5
-- [Historical 0.4.1 optimizer defect silently changed NxN distance expressions; fixed in the tested 0.4.3 path](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
-- [coreai-torch #49 is closed after a community-measured 0.4.3 retest; keep shipped-asset parity](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
+- [Validate numeric parity at the conversion boundary with the exact shipped asset](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
+- [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [Orientation and coordinate conventions are now your job; getting them wrong yields plausible but wrong vision output](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 - [CIImage(contentsOf:) applies EXIF orientation, CGImageSource does not; the same JPEG preprocesses two different ways](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 
@@ -2185,7 +2185,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Externalization needs the live nn.Module via add_pytorch_module — add_exported_program has no externalization path](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#82-externalizespec) — 8.2
 - [Externalization is not weight streaming — it neither reduces export RAM nor mmaps; that is a separate PyTorch technique](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#86-the-real-motivations--and-one-terminology-collision-to-defuse) — 8.2
 - [One word, two mechanisms: ExternalizeSpec preserves op boundaries; multi-entrypoint conversion splits programs](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#86-the-real-motivations--and-one-terminology-collision-to-defuse) — 8.2
-- [Exercise square and asymmetric inputs; apple/coreai-torch#49 affected 0.4.1; tested fixed in 0.4.3](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#102-the-four-gates-every-converted-model-should-pass) — 8.2
+- [Exercise square and asymmetric shapes, non-integral cast inputs, and production value boundaries](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#102-the-four-gates-every-converted-model-should-pass) — 8.2
 - [Apple's own end-to-end custom-kernel tests are currently disabled — device coverage is thinner than the suite implies](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#125-️-apples-own-end-to-end-kernel-tests-are-currently-disabled) — 8.3
 - [Community figures here are single-author, self-declared uncontrolled, on beta OSes — attribute, never launder](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md#174-community--attributed-never-presented-as-apple) — 8.3
 

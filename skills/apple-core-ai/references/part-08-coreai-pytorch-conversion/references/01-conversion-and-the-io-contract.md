@@ -977,130 +977,37 @@ Two more pass names are attested from a crash report rather than from source:
 > 🔴 **GAP — the full current `CorePasses` catalog remains unverified.** The public 0.4.3 converter
 > does not expose a pass list or optimization-level switch.
 
-### 6.4 ⚠️ HISTORICAL SILENT FAILURE — the 0.4.1 optimizer miscompile
+<a id="64-️-historical-silent-failure--the-041-optimizer-miscompile"></a>
+<!-- callout-id: callout-3f9a681c2e8b3a2f -->
+### 6.4 ⚠️ Numeric parity: verify the shipped asset
 
-This is the most important historical callout in Part 8. In 0.4.1 it produced an artifact that
-loaded and ran, and the wrongness was large.
+In `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program.
+Validate eager PyTorch, the decomposed exported program, and the exact saved Core AI asset
+on the same inputs. Matching output shapes alone does not establish numeric parity.
 
-> 🟠 **COMMUNITY-MEASURED** — `coreai-torch#49`, *"`AIProgram.optimize()` removes broadcasting-significant axis
-> moves and silently miscompiles N×N distance expressions"*. Originally open as of 2026-07-29;
-> **closed as completed on 2026-10-02** after the reporter's 0.4.3/1.0.0b3 retest no longer reproduced
-> the three minimal patterns. Version 0.4.2 was not tested; its release notes do not claim this fix.
-> Reported 2026-07-23 by `dkomoroske`. Environment: macOS 27.0 builds `26A5378j` and `26A5388g`,
-> `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0, Python 3.12.13. Also filed as Feedback
-> Assistant **FB23695952**.
+<!-- callout-id: callout-5e4b0d535fdcb326 -->
+> ⚠️ **Keep a standing shipped-asset parity gate.** Use production shapes and value ranges,
+> including square and asymmetric inputs. Set separate error budgets for export and runtime,
+> and compare copied runtime outputs with the reference. [§11.4](#114-️-the-shipped-asset-parity-gate)
+> provides the gate.
 
-The trigger is the classic expanded squared-distance form `D[i,j] = ‖xᵢ‖² − 2·xᵢ·yⱼ + ‖yⱼ‖²`:
+The [current defect register](02-op-coverage-composites-and-externalization.md#97-the-register)
+records the resolved optimizer issue. Its old reproducer, measurements, and workarounds are in
+the [historical evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md#historical-issue-49-regression).
 
-```python
-# Minimal reproducer from the issue — no matmul needed; z is a graph input.
-s1 = torch.sum(x ** 2, dim=-1).unsqueeze(-1)   # (1, N, 1)
-s2 = torch.sum(y ** 2, dim=-1).unsqueeze(-2)   # (1, 1, N)
-out = (s1 - 2 * z + s2).clamp(min=0.0)
-```
-
-`optimize()` deletes the `expand_dims` that moves `s2` onto the *other* axis — an op that is
-semantically load-bearing precisely because it changes which axis broadcasts:
-
-> ✅ **VERIFIED** — IR before `optimize()`, verbatim from the issue:
->
-> ```text
-> %y_norm       = coreai.reduce_sum ...                          -> tensor<1x32x1xf32>
-> %y_norm_moved = coreai.expand_dims ...                         -> tensor<1x1x32xf32>
-> %tmp = ...broadcasting_sub ... : (tensor<1x32x1xf32>, tensor<1x32x32xf32>) -> tensor<1x32x32xf32>
-> %out = ...broadcasting_add %tmp, %y_norm_moved
->                            : (tensor<1x32x32xf32>, tensor<1x1x32xf32>)   -> tensor<1x32x32xf32>
-> ```
->
-> IR **after** `optimize()` — the axis move is gone and the wrong operand broadcasts:
->
-> ```text
-> %x_norm = coreai.reduce_sum ... %arg0 ...                      -> tensor<1x32x1xf32>
-> %y_norm = coreai.reduce_sum ... %arg1 ...                      -> tensor<1x32x1xf32>
-> %tmp = ...broadcasting_sub ... : (tensor<1x32x1xf32>, tensor<1x32x32xf32>) -> tensor<1x32x32xf32>
-> %out = ...broadcasting_add %tmp, %y_norm
->                            : (tensor<1x32x32xf32>, tensor<1x32x1xf32>)   -> tensor<1x32x32xf32>
-> ```
-
-The measured harness output, verbatim:
-
-```text
-Chain           optimize=False: max|d| = 1.907e-06  OK
-Chain           optimize=True : max|d| = 1.022e+01  MISCOMPILED
-ChainKeepdim    optimize=False: max|d| = 1.907e-06  OK
-ChainKeepdim    optimize=True : max|d| = 1.022e+01  MISCOMPILED
-ChainReordered  optimize=False: max|d| = 3.815e-06  OK
-ChainReordered  optimize=True : max|d| = 3.815e-06  OK
-```
-
-**Why it is silent.** The output shape still validates. `1x32x32` is `1x32x32` either way, because the
-inputs are square. The reporter's control table makes the shape-dependence explicit:
-
-> ✅ **VERIFIED** — controls, verbatim rows:
-> - `SpecializationOptions.cpu_only()` → **same miscompile**, so this is a compiler/optimizer bug, not
->   a compute-unit delegate bug.
-> - A real `x @ y.transpose(-1, -2)` with distinct equal-length inputs → miscompiled.
-> - `s1 + s2` alone → correct.
-> - **Unequal input lengths (17 × 23) → correct** — the wrong operand cannot broadcast, so the bug
->   cannot hide.
-> - Reordered `(s1 + s2) - 2*z` → correct.
-
-Impact at model scale, verbatim from the reporter:
-
-> *"In a larger GeoTransformer conversion, this appeared as approximately **17 dB PSNR** versus eager
-> PyTorch and scrambled nearest-neighbor relationships. **Disabling `optimize()` restored
-> approximately 78–85 dB parity.**"*
-
-For calibration, Apple's own agent skill sets these acceptance thresholds:
-
-> ✅ **VERIFIED** — `working-with-coreai/SKILL.md` PSNR acceptance table:
->
-> | Scenario | Expected PSNR | Investigate below |
-> |---|---|---|
-> | float32 end-to-end | > 70 dB | 60 dB |
-> | fp16 on-device | > 50 dB | 40 dB |
-> | 4-bit palettized | ~40 dB | 30 dB |
->
-> 17 dB is far below the floor for *2-bit palettization*. This is not a numerics wobble; it is a
-> different computation.
-
-**Historical 0.4.1 workarounds, from the issue:**
-
-1. **Do not call `optimize()`.** *"Conversion, `save_asset`, specialization, loading, and inference
-   work correctly without it."* This applied to the historical 0.4.1 API only.
-2. **Reorder the algebra** to `(‖xᵢ‖² + ‖yⱼ‖²) − 2·xᵢ·yⱼ`, which the control table shows converts
-   correctly.
-
-> ⚠️ **Keep a standing shipped-asset parity gate.** Any distance matrix,
-> attention-score construction, kernel/Gram matrix, contrastive loss at inference, or nearest-neighbour
-> search built from the expanded square form was exposed in 0.4.1. In 0.4.3 there is no public
-> unoptimized arm, so compare eager PyTorch, the decomposed exported program, and the shipped Core AI
-> asset on the same production-shaped inputs. §11.4 is that gate, written out.
->
-> 🟠 **COMMUNITY-MEASURED — fixed with residual risk as of 2026-10-02.** On an M5 running macOS 27.2
-> (26B5091g), Xcode 27.2 (27B5028f), `coreai-torch 0.4.3`, and `coreai-core 1.0.0b3`, the reporter
-> measured minimal-case maximum absolute errors of 1.907e-06 to 3.815e-06, versus 1.022e+01 before
-> updating. The retest was not a
-> complete end-to-end registration validation or expanded boundary sweep, so retain shipped-artifact
-> parity testing.
-
-This is not an isolated case, which is why the gate matters more than the specific bug. The same
-issue tracker documents a family of `optimize()`-reachable and converter-reachable
-semantics-changing simplifications, all producing plausible output with correct shapes and no
-diagnostic:
+The issue tracker also documents converter and runtime failures that produce plausible
+output with correct shapes and no diagnostic:
 
 > ✅ **VERIFIED** — from the issue corpus, all OPEN unless noted:
 >
 > | Issue | Silent behaviour |
 > |---|---|
-> | `coreai-torch#49` | In 0.4.1, the separate optimizer dropped a broadcast-significant axis move — 17 dB PSNR; fixed in the tested 0.4.3 path |
 > | `coreai-torch#9` | float→int→float cast round-trips folded away, dropping truncation: `(x + 64.0).long().float() - 64.0` returns the identity instead of `floor` |
 > | `coreai-torch#10` | GPU delegate executes `floor`/`trunc`/`ceil` as identity; `round` uses away-from-zero ties |
 > | `coreai-torch#11` | an int64-comparison bool-mask chain clobbers an unrelated live tensor; in a full RF-DETR decoder the output cosine was **~0.65 with no error raised** |
 > | `coreai-torch` PR#43 (MERGED) | `aten.min.dim` returned correct `values` but **silently wrong `indices`** at dtype-extremal minima |
 >
-> Issue #49 explicitly cross-references #9 as a related historical simplification. Between #9 and
-> #10, **both natural in-graph `floor`
+> Between #9 and #10, **both natural in-graph `floor`
 > workarounds are removed on GPU** — worth knowing if your model quantizes coordinates.
 
 ### 6.5 The const-folding escape hatch
@@ -2381,8 +2288,8 @@ Call with your recorded model, decomposed export and shipping path, for example
 `await shipped_asset_gate(Path("model.aimodel"), reference, ep, sample,
 input_names=["x"], output_names=["y"], runtime_atol=1e-2, runtime_rtol=1e-3)`.
 Those runtime tolerances are illustrative for a small fp16 fixture; choose them from your model's
-error budget. Export and runtime error budgets are separate. Run every production shape boundary:
-the historical #49 control passed at 17×23 but failed at 32×32.
+error budget. Export and runtime error budgets are separate. Run every production shape boundary,
+including square and asymmetric cases; matching shapes do not establish numeric parity.
 
 ### 11.5 Structural checks that need no inference
 
@@ -2769,7 +2676,7 @@ Every one of these raises at conversion time with an actionable message. They ar
 | 1 | export without `.eval()` | dropout active, batch stats wrong at inference | §11.1 eager-vs-Core-AI |
 | 2 | `run_decompositions(default_decompositions())` | SDPA/silu/pad decompose → **fast paths silently lost** | §11.5 `"scaled_dot_product_attention" in ir` |
 | 3 | rely on a non-preserved op (`softplus`, `mish`, `logsumexp`) at fp16 | overflow → 0 or NaN, earlier still on ANE | §11.6 CPU/GPU/ANE A/B at real activation ranges |
-| 4 | use the 0.4.1 separate optimizer on an expanded-square-distance graph | broadcast axis move deleted → **17 dB PSNR** | historical #49 reproducer; current §11.4 shipped-asset gate |
+| 4 | validate shapes without comparing numeric outputs | plausible output passes the shape check while computing wrong values | §11.4 shipped-asset parity gate at production shapes |
 | 5 | omit `input_names` / `output_names` | outputs named after internal ops; renamed by a PyTorch upgrade | §11.3 descriptor assertion |
 | 6 | omit `state_names` with two same-shape buffers | states may silently reorder | §11.3 + asymmetric state contents |
 | 7 | mutate a `forward` argument in place | it silently becomes a **state**, changing the calling convention | count mismatch (loud) or §11.3 |
@@ -2984,8 +2891,6 @@ Before you consider a conversion done:
 | 3 GB → ~430 MB (SAM3 fp32 → int4) | **Apple-published**, session 325:96–102 | Same caveats; came with a visible quality regression |
 | SAM3 = 848M params, encoders 96% / detector 4% | **Apple-published**, `models/sam3/README.md` + session 325:60, 325:158 | Transcript rounds 848M to "850-million" |
 | PSNR bands >70 / >50 / ~40 dB | **Apple-published**, `working-with-coreai/SKILL.md` | float32 / fp16-on-device / 4-bit palettized |
-| 17 dB PSNR from `optimize()`; 78–85 dB without | **Community-measured**, `coreai-torch#49` | GeoTransformer; macOS 27.0 `26A5378j`/`26A5388g`, coreai-torch 0.4.1, torch 2.11.0, Python 3.12.13 |
-| `max\|d\|` 1.907e-06 → 1.022e+01[^optimize-regression] | **Community-measured**, `coreai-torch#49` | 32×32 square case; unequal 17×23 does **not** reproduce |
 | MobileNetV3 ANE-vs-GPU max abs diff 0.199 | **Community-measured**, `coreai-torch#51` (`zli96`) | macOS 27 beta 3, coreai-torch 0.4.1, fp16 |
 | fp16 overflow thresholds (softplus 10.4, logsumexp 7.63…) | **Community-measured**, `coreai-torch#21` | ANE-specific earlier thresholds attributed to a 2^15-bounded internal representation |
 | RF-DETR output cosine ~0.65 with no error | **Community-measured**, `coreai-torch#11` (`john-rocky`) | macOS 27.0 `26A5353q`, M4 Max, coreai-torch 0.4.0 |
@@ -3055,9 +2960,8 @@ Two more, inherited from the corpus and worth carrying:
 
 *Guide last verified 2026-07-27 against `coreai-torch` 0.4.1 (`main`, HEAD `4529671`),
 `coreai-core` 1.0.0b2, `coreai-models` 0.2.0-pre, macOS 27.0 beta builds `26A5378j` / `26A5388g`.
-Issue and PR states were re-checked 2026-07-29. `coreai-torch#49` — the `optimize()`
-miscompile — closed as completed on 2026-10-02 after a 0.4.3/1.0.0b3 retest no longer reproduced
-the minimal failure; the shipped-artifact parity gate remains recommended.*
+Issue and PR states were re-checked 2026-07-29. Later dispositions are recorded in the
+[current defect register](02-op-coverage-composites-and-externalization.md#97-the-register).*
 
 [^sample-routing-policy]: The name classifier and preferences are implemented by the optional
     `apple/coreai-models` package in its pinned
@@ -3070,6 +2974,3 @@ the minimal failure; the shipped-artifact parity gate remains recommended.*
     specialization-selected preferred layouts:
     [`common_issues.md`](https://github.com/apple/coreai-models/blob/5ed9981303b38d5a44aa6b45509bc4f6945029f5/skills/skills/model-authoring/references/common_issues.md#L95-L98) and
     [Apple Developer — `NDArray`](https://developer.apple.com/documentation/coreai/ndarray).
-
-[^optimize-regression]: The values and square-versus-rectangular reproducer come from
-    [`apple/coreai-torch` issue #49](https://github.com/apple/coreai-torch/issues/49).

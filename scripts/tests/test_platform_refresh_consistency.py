@@ -358,6 +358,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         migration = self.read(
             "guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md"
         )
+        history = self.read("notes/evidence/core-ai/README.md")
         for required in (
             "M5",
             "26B5091g",
@@ -366,7 +367,10 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             "coreai-core 1.0.0b3",
             "COMMUNITY-MEASURED",
         ):
-            self.assertIn(required, migration)
+            self.assertIn(required, history)
+        self.assertIn("0.4.3/1.0.0b3 retest", migration)
+        self.assertIn("#114-️-the-shipped-asset-parity-gate", migration)
+        self.assertIn("notes/evidence/core-ai/README.md#historical-issue-49-regression", migration)
 
         active = "\n".join(
             path.read_text(encoding="utf-8")

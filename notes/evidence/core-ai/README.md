@@ -27,3 +27,39 @@ Reproduce native checks using each existing pinned profile, sequentially, from a
 ```
 
 Resolved review narratives, superseded full-corpus reconciliation tables, and duplicate earlier native results remain recoverable from Git. Keep new evidence only if it updates current claims or demonstrates a distinct regression.
+
+## Historical issue #49 regression
+
+**COMMUNITY-MEASURED**, preserved from the guide at `9faa6496593b5e67173e6b62e8424df7e07ae973` and
+[the original issue](https://github.com/apple/coreai-torch/issues/49). This archival edit does not
+assert a fresh issue lookup or native execution. Reporter `dkomoroske` filed the regression on
+2026-07-23, also as **FB23695952**, with `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`,
+Torch 2.11.0, Python 3.12.13, and macOS 27 builds `26A5378j` / `26A5388g`.
+
+The trigger was the expanded squared-distance expression
+`D[i,j] = ‖xᵢ‖² − 2·z[i,j] + ‖yⱼ‖²`, with `z` supplied directly or computed as
+`x @ y.transpose(-1, -2)`. The separate 0.4.1 optimizer removed the axis move of the `y`
+norms from `(1,N,1)` to `(1,1,N)`. The wrong operand still broadcast for square inputs,
+producing plausible output with the expected shape. Summing with `keepdim=True` did not fix it.
+
+| Reporter fixture | Separate optimization | Maximum absolute error |
+|---|---|---|
+| Original or keepdim, 32×32 | Bypassed | `1.907e-06` |
+| Original or keepdim, 32×32 | Enabled | `1.022e+01` |
+| Reordered `(‖x‖² + ‖y‖²) − 2·z`, 32×32 | Either | `3.815e-06` |
+
+The asymmetric 17×23 control and the norm-sum-only control passed; `cpu_only()` reproduced the
+square-input failure. The larger GeoTransformer fixture measured about 17 dB PSNR with
+optimization and 78–85 dB when bypassed. These are community fixture measurements, not general
+quality thresholds. Historical 0.4.1 workarounds were bypassing the separate optimizer or
+reordering the algebra as above.
+
+The reporter's **2026-10-02** retest passed all three minimal patterns with maximum absolute
+errors `1.907e-06` to `3.815e-06` using `coreai-torch 0.4.3` / `coreai-core 1.0.0b3` on an M5,
+macOS 27.2 `26B5091g`, and Xcode 27.2 `27B5028f`. The issue closed as completed; **0.4.2 remains
+unverified**. The retest did not establish full end-to-end registration parity or an expanded
+boundary sweep. The separate optimizer is absent in 0.4.3: `to_coreai()` returns an already
+optimized program. Use the [shipped-asset parity gate](../../../guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate)
+and [current defect register](../../../guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register)
+with production shapes and value ranges. The distinct native evidence above retains its original
+2026-10-06 execution date and trusted-runner provenance.

@@ -56,10 +56,11 @@ three long guides rather than a quickstart. Four things underpin it:
    read this page" preamble. The error says *unsupported*, the doc says *supported*, both are telling the
    truth about different things.
 
-The sharpest historical example is `coreai-torch#49`: in 0.4.1 the separate optimizer produced
-**17 dB PSNR** on a real model. The issue closed after a 0.4.3 retest, and 0.4.3 removed the separate
-`AIProgram.optimize()` step: `to_coreai()` now returns an already optimized program. The lasting rule is
-to compare the shipped Core AI asset with eager PyTorch at production shapes.
+The lasting rule is to compare the exact shipped Core AI asset with eager PyTorch and the
+decomposed export at production shapes and value ranges. `coreai-torch 0.4.3` returns an already
+optimized program from `to_coreai()`. The [defect register](references/02-op-coverage-composites-and-externalization.md#97-the-register)
+records version boundaries; the [evidence page](../../notes/evidence/core-ai/README.md#historical-issue-49-regression)
+preserves the resolved optimizer regression's measurements and environments.
 
 ---
 
@@ -70,7 +71,7 @@ to compare the shipped Core AI asset with eager PyTorch at production shapes.
 | "I have a working `nn.Module` and want an `.aimodel`" | [8.1 §1–§7](references/01-conversion-and-the-io-contract.md#1-the-four-lines-and-what-each-one-is-for) | The five lines, what each owns, and the IO contract that becomes your Swift call site |
 | "My assets stopped loading on a newer beta" | [8.1 §2.3](references/01-conversion-and-the-io-contract.md#23-️-the-version-gate-that-invalidates-already-published-assets) | The 0.4.0 gate, plus the `strip_debug_info` recovery that does *not* need a reconvert |
 | "My transformer converted fine and is slower than I expected" | [8.1 §4.4](references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) | You probably passed PyTorch's default decomposition table; SDPA decomposed into six supported ops and the fast path vanished |
-| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md#64-️-historical-silent-failure--the-041-optimizer-miscompile) → [§11.4](references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) | The historical optimizer miscompile, then the current eager-to-Core-AI parity gate |
+| "The numbers are wrong and nothing threw" | [8.1 §6.4](references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) → [§11.4](references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) | Compare the shipped asset with eager and exported PyTorch using separate error budgets |
 | "My model has a KV cache" | [8.1 §9](references/01-conversion-and-the-io-contract.md#9-state-mutable-buffers-become-core-ai-states) | Mutable buffers become states, with **no opt-out**, in an order that is an observed-behaviour assumption |
 | "Which names should my inputs and outputs have?" | [8.1 §7.5](references/01-conversion-and-the-io-contract.md#75-name-your-outputs-the-way-your-consumer-wants-to-read-them) | Apple's own engines duck-type on substrings, and the LLM path reads states **positionally** |
 | "Should I split my model into several functions?" | [8.1 §10](references/01-conversion-and-the-io-contract.md#10-multi-function-assets-and-the-finding-that-reframes-them) | Split when stages run at different cadences; preserve Apple’s names if you also adopt `coreai-models`’ sample routing policy |
@@ -94,17 +95,7 @@ which twelve ops it preserves (Apple's README says three — a subset); the two 
 the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the
 multi-function split; and the Python-side verification gate that catches everything above for free.
 
-> ⚠️ **HISTORICAL SILENT FAILURE IN 0.4.1 — the separate optimizer could change model semantics.** `coreai-torch#49`
-> (FB23695952) documented an optimizer deleting a broadcasting-significant
-> `expand_dims` in the expanded squared-distance form, and the output shape still validates because the
-> inputs are square. **17 dB PSNR** at model scale; **78–85 dB** with `optimize()` off. Reproduces under
-> `cpu_only()`, so it is the compiler, not a delegate. Unequal input lengths do **not** reproduce it, so a
-> gate on rectangular toy tensors passes while your square production case is broken.
-> The issue closed as completed on 2026-10-02 after the reporter retested `coreai-torch 0.4.3` /
-> `coreai-core 1.0.0b3`: all three minimal patterns passed, and `to_coreai()` now returns an already
-> optimized program. Version 0.4.2 was not tested. Keep the shipped-artifact parity gate because the closure did not include a full
-> end-to-end registration validation or expanded boundary sweep.
->
+<!-- callout-id: callout-219d797935bd2b9d -->
 > ⚠️ **SILENT FAILURE (four more).** `run_decompositions(torch.export.default_decompositions())` compiles,
 > converts, saves, loads and is numerically fine — with your fused attention composite gone. An in-place
 > mutation of a `forward` argument silently moves it from an input to a **state**, changing the calling
@@ -271,8 +262,8 @@ hardware, OS build and date where the source gave them. **Apple published no per
 this except the SAM3 76% and the Qwen3-MoE tok/s deltas, both with hardware and methodology unstated.** All
 three guides were last verified 2026-07-27 against `coreai-torch` 0.4.1, `coreai-core` 1.0.0b2,
 `coreai-models` 0.2.0-pre and macOS 27.0 betas `26A5378j` / `26A5388g`; the state of every issue and PR
-cited was re-checked 2026-07-29. `coreai-torch#49` later closed as completed on 2026-10-02 after a
-0.4.3/1.0.0b3 retest no longer reproduced the minimal failure. `coreai-torch` PR #7 (the
+cited was re-checked 2026-07-29. The [current defect register](references/02-op-coverage-composites-and-externalization.md#97-the-register)
+records later dispositions. `coreai-torch` PR #7 (the
 SDPA submodule re-export fix) was **closed without being merged on 2026-07-29** (re-checked via `gh`
 2026-07-31). The 0.4.0-artifact incident
 issues are resolved: `coreai-torch#37` closed as completed 2026-07-13 and `#44` closed as completed
