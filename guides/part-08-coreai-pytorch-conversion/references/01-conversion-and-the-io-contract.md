@@ -116,7 +116,7 @@ asset = coreai_program.save_asset(Path("MyModel.aimodel"))
 | `torch.export.export(...)` | PyTorch | Loudly — `torch.export` raises on unsupported constructs | §3 |
 | `.run_decompositions(get_decomp_table())` | You, using Apple's table | **Loudly if skipped, silently if you use the wrong table** | §4 |
 | `TorchConverter().add_*(...)` | `coreai-torch` | Loudly — eager validation with actionable messages | §5 |
-| `.to_coreai()` | `coreai-torch` + `coreai-core` | Loudly on unsupported ATen ops; historically capable of silent rewrite defects | §6.1, §6.4 |
+| `.to_coreai()` | `coreai-torch` + `coreai-core` | Loudly on unsupported ATen ops; historically capable of silent rewrite defects | §6.1; [historical rewrite-defect evidence](../../../notes/evidence/core-ai/README.md#historical-issue-49-regression) |
 | `.save_asset(path)` | `coreai-core` | Loudly — extension validation, overwrite is fine | §1 |
 
 Three stages are silent-capable. That ratio is the reason this part of the series exists.

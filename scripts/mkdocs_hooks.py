@@ -8,11 +8,13 @@ existing guide hierarchy.
 
 from __future__ import annotations
 
+import os
+import posixpath
 import re
 from html.parser import HTMLParser
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import quote, unquote, urljoin, urlsplit
 
 try:
     from scripts.mdslug import slugify
@@ -520,40 +522,78 @@ class _RenderedLinks(HTMLParser):
     handle_startendtag = handle_starttag
 
 
-def _verify_site_fragments(site_dir: Path) -> None:
+def _fragment_destination(source: str, path: str, site_path: str,
+                          files: set[str], directories: set[str]) -> str | None:
+    """Map a browser URL to output using only lexical paths and the inventory."""
+    if not path:
+        return source
+    source_url = site_path.rstrip("/") + "/" + quote(source, safe="/")
+    decoded = unquote(urljoin(source_url, path))
+    normalized = posixpath.normpath("/" + decoded.lstrip("/"))
+    if site_path == "/":
+        target = normalized.lstrip("/")
+    elif normalized == site_path:
+        target = ""
+    elif normalized.startswith(site_path + "/"):
+        target = normalized[len(site_path) + 1:]
+    else:
+        raise ValueError("local destination outside configured site path")
+
+    if not decoded.endswith("/") and target in files:
+        return target if PurePosixPath(target).suffix.lower() == ".html" else None
+    if decoded.endswith("/") or target in directories or not PurePosixPath(target).suffix:
+        return posixpath.join(target, "index.html")
+    if PurePosixPath(target).suffix.lower() != ".html":
+        return None  # Asset fragments (for example SVG) are outside this check.
+    return target
+
+
+def _verify_site_fragments(site_dir: Path, *, site_url: str) -> None:
     """Check local HTML fragments against the renderer's exact IDs and named anchors."""
     root = site_dir.resolve()
-    pages: dict[Path, _RenderedLinks] = {}
-    for path in sorted(root.rglob("*.html")):
-        parsed = _RenderedLinks()
-        parsed.feed(path.read_text(encoding="utf-8"))
-        parsed.close()
-        pages[path.resolve()] = parsed
+    site_path = posixpath.normpath("/" + unquote(urlsplit(site_url).path).lstrip("/"))
+    files: set[str] = set()
+    directories: set[str] = set()
+    pages: dict[str, _RenderedLinks] = {}
+    for directory, _, filenames in os.walk(root):
+        relative = Path(directory).relative_to(root).as_posix()
+        relative = "" if relative == "." else relative
+        directories.add(relative)
+        for filename in filenames:
+            path = posixpath.join(relative, filename)
+            files.add(path)
+            if PurePosixPath(path).suffix.lower() == ".html":
+                parsed = _RenderedLinks()
+                parsed.feed((root / path).read_text(encoding="utf-8"))
+                parsed.close()
+                pages[path] = parsed
 
     errors = []
+    destinations: dict[tuple[str, str], str | None] = {}
     for source, page in pages.items():
         for href in page.links:
             url = urlsplit(href)
             if url.scheme or url.netloc or not url.fragment:
                 continue
-            path = unquote(url.path)
-            if not path:
-                target = source
-            else:
-                target = (root / path.lstrip("/") if path.startswith("/") else source.parent / path).resolve()
-                if path.endswith("/") or target.is_dir() or not target.suffix:
-                    target = target / "index.html"
-                elif target.suffix.lower() != ".html":
-                    continue  # Asset fragments (for example SVG) are outside this check.
+            key = (source, url.path)
+            try:
+                if key not in destinations:
+                    destinations[key] = _fragment_destination(source, url.path, site_path, files, directories)
+                target = destinations[key]
+            except ValueError as error:
+                errors.append(f"{source}: {href!r}: {error}")
+                continue
+            if target is None:
+                continue
             if target not in pages:
-                errors.append(f"{source.relative_to(root)}: {href!r}: local HTML destination missing")
+                errors.append(f"{source}: {href!r}: local HTML destination missing")
             elif unquote(url.fragment) not in pages[target].anchors:
-                errors.append(f"{source.relative_to(root)}: {href!r}: fragment missing in {target.relative_to(root)}")
+                errors.append(f"{source}: {href!r}: fragment missing in {target}")
     if errors:
         raise ValueError("site fragment mismatch:\n" + "\n".join(sorted(set(errors))))
 
 
-def verify_site_routes(docs_dir: Path, site_dir: Path) -> None:
+def verify_site_routes(docs_dir: Path, site_dir: Path, *, site_url: str) -> None:
     """Require canonical routes, search output, and valid local rendered HTML fragments."""
     expected = set()
     for source in docs_dir.rglob("*.md"):
@@ -565,4 +605,4 @@ def verify_site_routes(docs_dir: Path, site_dir: Path) -> None:
         raise ValueError(f"site route mismatch: missing={sorted(expected - actual)}, unexpected={sorted(actual - expected)}")
     if not (site_dir / "search/search_index.json").is_file():
         raise ValueError("site search index missing")
-    _verify_site_fragments(site_dir)
+    _verify_site_fragments(site_dir, site_url=site_url)

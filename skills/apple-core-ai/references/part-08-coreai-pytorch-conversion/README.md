@@ -95,12 +95,19 @@ which twelve ops it preserves (Apple's README says three — a subset); the two 
 the IO contract as your caller's API; `dynamic_shapes` and the SymInt sharp edges; state; the
 multi-function split; and the Python-side verification gate that catches everything above for free.
 
+<!-- callout-id: callout-part08-default-decomposition-performance -->
+> ⚠️ **SILENT FAILURE — fused attention disappears.**
+> `run_decompositions(torch.export.default_decompositions())` compiles, converts, saves, loads and is
+> numerically fine — with your fused attention composite gone.
+
 <!-- callout-id: callout-219d797935bd2b9d -->
-> ⚠️ **SILENT FAILURE (four more).** `run_decompositions(torch.export.default_decompositions())` compiles,
-> converts, saves, loads and is numerically fine — with your fused attention composite gone. An in-place
-> mutation of a `forward` argument silently moves it from an input to a **state**, changing the calling
-> convention. Two same-shape buffers can reorder across a PyTorch upgrade and every check still passes. And
-> loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
+> ⚠️ **SILENT FAILURE — the state contract changes.** An in-place mutation of a `forward` argument
+> silently moves it from an input to a **state**, changing the calling convention. Two same-shape
+> buffers can reorder across a PyTorch upgrade and every check still passes.
+
+<!-- callout-id: callout-part08-helper-routing-performance -->
+> ⚠️ **SILENT FAILURE — helper routing changes compute preference.**
+> Loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
 > **GPU preference** instead of its Neural Engine preference, with a log line rather than an error. Direct
 > Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
 >

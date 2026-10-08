@@ -65,14 +65,14 @@ class MkDocsHookTests(unittest.TestCase):
             (site / "index.html").write_text("home")
             (site / "guide/index.html").write_text("guide")
             (site / "search/search_index.json").write_text("{}")
-            mkdocs_hooks.verify_site_routes(docs, site)
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
             (site / "guide/index.html").unlink()
             with self.assertRaisesRegex(ValueError, "missing=.*guide/index.html"):
-                mkdocs_hooks.verify_site_routes(docs, site)
+                mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
             (site / "guide/index.html").write_text("guide")
             (site / "extra").mkdir(); (site / "extra/index.html").write_text("extra")
             with self.assertRaisesRegex(ValueError, "unexpected=.*extra/index.html"):
-                mkdocs_hooks.verify_site_routes(docs, site)
+                mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
 
     def fragment_site(self, root, home):
         docs, site = root / "docs", root / "site"
@@ -110,7 +110,7 @@ class MkDocsHookTests(unittest.TestCase):
             (docs / "space guide.md").write_text("# Space guide")
             (site / "space guide").mkdir()
             (site / "space guide/index.html").write_text('<a name="legacy"></a>')
-            mkdocs_hooks.verify_site_routes(docs, site)
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
 
     def test_site_fragments_report_missing_ids_and_html_destinations(self):
         for href, reason in (
@@ -124,10 +124,67 @@ class MkDocsHookTests(unittest.TestCase):
                 docs, site = self.fragment_site(Path(folder),
                     f'<span id="heading-1"></span><span id="π️"></span><a href="{href}">Broken</a>')
                 with self.assertRaises(ValueError) as caught:
-                    mkdocs_hooks.verify_site_routes(docs, site)
+                    mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
                 self.assertIn("index.html", str(caught.exception))
                 self.assertIn(repr(href), str(caught.exception))
                 self.assertIn(reason, str(caught.exception))
+
+    def test_site_fragments_respect_deployment_base_path(self):
+        with tempfile.TemporaryDirectory() as folder:
+            docs, site = self.fragment_site(Path(folder), '''
+                <span id="heading-1"></span>
+                <a href="/repo/#heading-1">Site root</a>
+                <a href="/repo/guide/#guide">Prefixed directory</a>
+                <a href="/repo/guide/index.html#legacy">Prefixed file</a>
+                <a href="guide#guide">Directory without slash</a>
+                <a href="guide/../guide/?view=1#guide">Relative normalization</a>
+                <a href="/repo/guide/../#heading-1">Absolute normalization</a>
+            ''')
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo/")
+
+    def test_site_fragments_reject_paths_outside_deployment(self):
+        for href in ("/guide/#guide", "/repo-other/guide/#guide", "../guide/#guide",
+                     "guide/../../guide/#guide", "%2e%2e/guide/#guide",
+                     "/repo/%2e%2e/guide/#guide"):
+            with self.subTest(href=href), tempfile.TemporaryDirectory() as folder:
+                docs, site = self.fragment_site(Path(folder),
+                    f'<span id="heading-1"></span><a href="{href}">Outside</a>')
+                with self.assertRaisesRegex(ValueError, "outside configured site path"):
+                    mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo/")
+
+    def test_site_fragments_skip_existing_extensionless_assets(self):
+        with tempfile.TemporaryDirectory() as folder:
+            docs, site = self.fragment_site(Path(folder), '''
+                <span id="heading-1"></span>
+                <a href="LICENSE#L10">License</a><a href="/repo/LICENSE#L10">Prefixed license</a>
+                <a href="guide#guide">Extensionless directory</a>
+            ''')
+            (site / "LICENSE").write_text("License text")
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo/")
+            (site / "LICENSE").unlink()
+            with self.assertRaisesRegex(ValueError, "local HTML destination missing"):
+                mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo/")
+
+    def test_site_fragments_decode_url_paths_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            docs, site = self.fragment_site(Path(folder), '''
+                <span id="heading-1"></span>
+                <a href="/my%20repo/%2520/#literal">Literal percent directory</a>
+            ''')
+            (docs / "%20.md").write_text("# Literal")
+            (site / "%20").mkdir()
+            (site / "%20/index.html").write_text('<h1 id="literal">Literal</h1>')
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/my%20repo/")
+
+    def test_repeated_fragment_links_do_not_repeat_filesystem_resolution(self):
+        with tempfile.TemporaryDirectory() as folder:
+            docs, site = self.fragment_site(Path(folder), '<span id="heading-1"></span>' +
+                '<a href="guide/#guide">Guide</a>' * 100)
+            original_resolve = Path.resolve
+            with mock.patch.object(Path, "resolve", autospec=True, side_effect=original_resolve) as resolve:
+                with mock.patch.object(Path, "is_dir", side_effect=AssertionError("per-link stat")):
+                    mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
+            self.assertEqual(1, resolve.call_count)
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")

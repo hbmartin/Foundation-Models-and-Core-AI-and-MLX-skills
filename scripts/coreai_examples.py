@@ -179,6 +179,26 @@ def negated_predicate(prefix: str) -> bool:
         r"[\s`*]*$", prefix, re.I))
 
 
+_ASSET_DESTINATION = r"(?:\b(?:destinations?|assets?|files?|director(?:y|ies))\b|[^\s;,]+\.aimodel\b)"
+
+
+def asset_replacement_claim(prefix: str, suffix: str) -> bool:
+    """Recognize a file object, passive file subject, or save_asset verb phrase."""
+    modifiers = r"(?:\s+(?:of|the|an?|any|existing|specified|current|old|output))*"
+    auxiliaries = (
+        r"(?:\s+(?:will|would|can|could|is|are|was|were|be|been|being|has|have|had|do|does|did|"
+        r"not|never|no|cannot|yet|still|currently|silently|automatically|ever|\w+n['’]t))*"
+    )
+    if re.match(rf"{modifiers}\s+{_ASSET_DESTINATION}", suffix, re.I):
+        return True
+    if re.search(rf"{_ASSET_DESTINATION}{auxiliaries}\s*$", prefix, re.I):
+        return True
+    # A bare API claim still has an unambiguous implied destination. An explicit
+    # unrelated object (for example a parity gate) must not inherit that context.
+    return bool(not suffix.strip() and re.search(
+        rf"\b(?:AIProgram\.)?save_asset(?:\(\))?{auxiliaries}\s*$", prefix, re.I))
+
+
 def contract_errors(text: str, contract: str) -> list[str]:
     """Semantic checks scoped by callers to the relevant heading/defect row."""
     errors = []
@@ -215,12 +235,20 @@ def contract_errors(text: str, contract: str) -> list[str]:
                     errors.append("square/rectangular #49 explanation reversed")
                     return errors
     elif contract == "overwrite":
-        for sentence in prose_segments(text):
-            for predicate in re.finditer(r"\b(?:overwrites?|overwritten|replaces?|replaced)\b", sentence, re.I):
-                if negated_predicate(sentence[:predicate.start()]):
+        for clause in prose_segments(text, contrast=True):
+            clause = re.sub(r"[`*]", "", clause)
+            for predicate in re.finditer(
+                r"\b(?:overwrites?|overwrote|overwritten|overwriting|replace[sd]?|replacing)\b",
+                clause, re.I,
+            ):
+                prefix, suffix = clause[:predicate.start()], clause[predicate.end():]
+                if asset_replacement_claim(prefix, suffix) and negated_predicate(prefix):
                     errors.append("b3 overwrite behavior incorrect")
                     return errors
-            if re.search(r"\bwill\s+fail\b.*?\b(?:exists?|existing)\b", sentence, re.I | re.S):
+            failure = re.search(r"\bwill\s+fail\b.*?\b(?:exists?|existing)\b", clause, re.I | re.S)
+            if (failure
+                    and re.search(r"\b(?:save_asset|converter|b3|sav(?:e|es|ing))\b", clause[:failure.start()], re.I)
+                    and re.search(_ASSET_DESTINATION, clause[failure.start():], re.I)):
                 errors.append("b3 overwrite behavior incorrect")
                 return errors
     else:

@@ -895,6 +895,7 @@ and [Part 7 reference 02 §4](https://github.com/hbmartin/Foundation-Models-and-
 ### 3.4 ⚠️ Numeric parity at the conversion boundary
 
 In `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program.
+The former `AIProgram.optimize()` method was removed in 0.4.3.
 Validate the exact artifact your application ships against eager PyTorch and the decomposed
 export on production inputs, including square and asymmetric shapes.
 

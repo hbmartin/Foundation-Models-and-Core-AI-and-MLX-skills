@@ -1,26 +1,26 @@
 # Silent-failure index — Apple on-device AI: choosing a stack and getting the gates right
 
-**1733 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**1735 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 172 |
+| [Wrong output](#wrong-output) | 168 |
 | [Empty output / no-op](#empty-output--no-op) | 61 |
 | [Truncation & limits](#truncation--limits) | 27 |
 | [Ignored input](#ignored-input) | 109 |
 | [Stale state](#stale-state) | 39 |
 | [Data & artifact loss](#data--artifact-loss) | 39 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 84 |
-| [Performance cliffs](#performance-cliffs) | 143 |
+| [Performance cliffs](#performance-cliffs) | 145 |
 | [Resource growth](#resource-growth) | 40 |
 | [Precision loss](#precision-loss) | 18 |
 | [Misleading signals](#misleading-signals) | 157 |
 | [Version drift](#version-drift) | 94 |
 | [Docs vs reality](#docs-vs-reality) | 154 |
 | [API footguns](#api-footguns) | 257 |
-| [General cautions](#general-cautions) | 339 |
+| [General cautions](#general-cautions) | 343 |
 
 ## Wrong output
 
@@ -86,10 +86,8 @@
 
 **Part 8**
 
-- [Default decompositions lose fused ops; mutations or buffer reordering change the state ABI; names affect routing](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
+- [Mutating an input changes the state ABI; same-shape buffers can reorder across a PyTorch upgrade](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
 - [MTLTensor extents reverse the torch shape — a kernel correct in torch coordinates reads the wrong axes in Metal](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#83--torchmetalkernel-writing-and-embedding-a-custom-metal-kernel) — 8.README 🔇
-- [Verify numeric parity on the exact shipped Core AI asset, not output shapes alone](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
-- [Keep shipped-asset parity against eager and exported PyTorch at production shapes](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
 - [State ordering is an assumption — same-shape buffers like k_cache/v_cache can swap slots and every check still passes](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1
 - [k_cache and v_cache can swap positions across a PyTorch upgrade — Swift binds key to the value slot and output is…](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#93-️-silent-failure--state-ordering-is-an-assumption-not-a-guarantee) — 8.1 🔇
 - [NDArray.from_descriptor only sizes the buffer — on Linux, buffer-state reads return garbage on the first call](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#94-the-runtime-state-protocol-and-its-own-footgun) — 8.1
@@ -236,8 +234,6 @@
 - [In string mode a refusal is a successful response; the apology string flows into your pipeline as real content](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#91-the-two-layers-from-apples-own-description) — 17.3 🔇
 - [A throwing subject(from:) lets refusals abort samples; aggregate eval scores silently exclude the refused cases](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#162-the-critical-design-decision) — 17.3 🔇
 - [coreai-models has zero EXIF or orientation handling; rotated camera photos silently produce wrong vision results](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#29-image-inputs-and-the-pre-processing-you-used-to-get-for-free) — 17.5
-- [Validate numeric parity at the conversion boundary with the exact shipped asset](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
-- [Compare the saved asset with eager and decomposed export using separate error budgets](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [Orientation and coordinate conventions are now your job; getting them wrong yields plausible but wrong vision output](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 - [CIImage(contentsOf:) applies EXIF orientation, CGImageSource does not; the same JPEG preprocesses two different ways](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 
@@ -883,6 +879,8 @@
 
 **Part 8**
 
+- [Default decompositions discard fused attention; conversion and numeric checks still succeed](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
+- [Renaming a segmenter selects PreparedModel dynamic GPU preference instead of its Neural Engine preference](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#81--torchexport-to-aimodel-and-the-io--state--dynamic-shape-contract) — 8.README 🔇
 - [torch.export's default decomposition table splits SDPA into matmul+softmax — you silently lose the fused kernel](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) — 8.1
 - [No error marks a lost composite — count ops with freqop or assert composite.scaled_dot_product_attention in the IR](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#44-️-silent-failure--using-pytorchs-default-table-instead-of-apples) — 8.1 🔇
 - [Entrypoint names are routing: nonstandard names make the loader classify .dynamic and request GPU instead of ANE](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#104-the-sample-runtime-finding-the-split-selects-coreai-models-ane-policy) — 8.1
@@ -2106,6 +2104,8 @@
 **Part 8**
 
 - [Series-wide evidence note: zero Apple sample code — guides rest on shipped repo source, docs prose, and SDK dumps](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/README.md#part-8--core-ai-converting-a-model-from-pytorch) — 8.README
+- [Verify numeric parity on the exact shipped Core AI asset, not output shapes alone](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
+- [Keep shipped-asset parity against eager and exported PyTorch at production shapes](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#64-️-numeric-parity-verify-the-shipped-asset) — 8.1
 - [The Neural Engine path threads K/V as plain I/O, not Core AI state — register_buffer KV advice is GPU-only](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#96-what-the-swift-side-expects) — 8.1 🔇
 - [AIModelAsset.load only reads the header — compilation and its cost land lazily inside the executable() context manager](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#111-the-reference-implementation-verbatim) — 8.1
 - [Compare eager PyTorch, the decomposed exported program and the exact Core AI asset shipped](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate) — 8.1
@@ -2347,6 +2347,8 @@
 - [Core AI succeeds Core ML for neural networks only; decision trees and tabular pipelines stay on Core ML by design](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#core-ml-to-core-ai-what-moves-what-stays-and-how) — 17.5
 - [TOC pointer to the guide's collection of failures that do not announce themselves](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#contents) — 17.5
 - [Section heading for the Core AI failures that do not announce themselves: compute units, drift, caches, miscompiles](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#3-️-what-does-not-announce-itself) — 17.5
+- [Validate numeric parity at the conversion boundary with the exact shipped asset](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
+- [Compare the saved asset with eager and decomposed export using separate error budgets](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [states: requires a mutable view for every declared state; omitting any produces an error — enumerate stateNames first](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#41-states-kv-caches-as-first-class-in-place-model-inputs) — 17.5
 - [The 76% multi-function saving is Apple's demo number with no device or protocol stated; treat it as an existence proof](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#42-multi-function-assets--and-the-finding-that-reframes-them) — 17.5
 - [Verified: 0 sample-code entries across all 312 indexed Core AI symbols; no first-party compiling reference exists](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#51-the-hard-fact-core-ai-ships-with-zero-apple-sample-code-projects) — 17.5

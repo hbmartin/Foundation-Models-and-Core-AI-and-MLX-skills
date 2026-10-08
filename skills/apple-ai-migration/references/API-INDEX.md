@@ -1,6 +1,6 @@
 # API & symbol index — Migrating an Apple AI integration from 26 to 27
 
-**402 symbols, of 1201 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**403 symbols, of 1201 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
 > A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-08; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -270,11 +270,12 @@
 | `URL` | ✓ | ✓ | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `URLSession` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 
-## other  <sub>191 symbols</sub>
+## other  <sub>192 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
 | `AIProgram` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
+| `AIProgram.optimize()` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `AIProgram.save_asset(path)` |  |  | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `ANECompiler` |  |  | [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `Any` | ✓ | ✓ | [17.4](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md) |
