@@ -890,29 +890,24 @@ on exactly this, is in
 [Part 15 reference 01 §9](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-15-shipping-and-operating/references/01-model-distribution-and-updates.md)
 and [Part 7 reference 02 §4](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md).
 
-### 3.4 ⚠️ HISTORICAL SILENT FAILURE: the 0.4.1 optimizer miscompile
+<a id="34-️-historical-silent-failure-the-041-optimizer-miscompile"></a>
+<!-- callout-id: callout-e9a872a31ebc0482 -->
+### 3.4 ⚠️ Numeric parity at the conversion boundary
 
-This one belongs to the conversion stage but lands in your migration, so it goes here.
+In `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program.
+Validate the exact artifact your application ships against eager PyTorch and the decomposed
+export on production inputs, including square and asymmetric shapes.
 
-In `coreai-torch 0.4.3`, `TorchConverter().…​.to_coreai()` returns an already optimized `AIProgram`.
-The separate `.optimize()` method used by 0.4.1 no longer exists.
+<!-- callout-id: callout-9fbaf26e9cbda82f -->
+> ⚠️ **Validate the asset you ship.** Run the
+> [shipped-asset parity gate](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate)
+> after saving the program, with explicit export and runtime error budgets. Successful conversion,
+> loading, and matching output shapes do not establish numeric parity.
 
-> ⚠️ **The separate optimizer had a correctness bug in 0.4.1.** 🟠 **COMMUNITY-MEASURED** — `coreai-torch` issue **#49**:
-> *"`AIProgram.optimize()` removes broadcasting-significant axis moves and
-> **silently miscompiles** N×N distance expressions."* A transpose that exists only to make
-> broadcasting work can be treated as removable, and the resulting graph computes something else.
->
-> 🟠 **COMMUNITY-MEASURED — FIXED WITH RESIDUAL RISK, 2026-10-02.** The issue closed as completed
-> after the reporter retested on an M5 running macOS 27.2 (26B5091g), Xcode 27.2 (27B5028f),
-> `coreai-torch 0.4.3` / `coreai-core 1.0.0b3`; all three minimal patterns passed with maximum absolute
-> error from 1.907e-06 to 3.815e-06. The retest did not include full end-to-end registration validation
-> or an expanded boundary sweep. **Safe default:** run the Python-side numeric parity check on the
-> shipped program. Version 0.4.2 was not tested, so do not infer its status from the 0.4.1 and 0.4.3
-> measurements. The canonical status entry is [Part 8 §9.7](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register).
-
-The shipped-artifact requirement generalizes into the rule this whole section is arguing for: **validate the
-artifact you are going to ship, at the stage you are going to ship it from.** Every silent failure
-above survives a check performed one stage too early.
+The [canonical status register](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register)
+records the resolved optimizer issue and the **COMMUNITY-MEASURED** 0.4.3/1.0.0b3 retest.
+The old reproducer, measurements, environment pins, and workarounds are preserved in the
+[historical evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md#historical-issue-49-regression).
 
 ### 3.5 ⚠️ SILENT FAILURE: orientation and coordinate conventions, which used to be someone else's job
 

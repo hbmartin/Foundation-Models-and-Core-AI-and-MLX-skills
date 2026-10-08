@@ -2,7 +2,7 @@
 
 **170 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-07. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -29,8 +29,8 @@
 - [In string mode a refusal is a successful response; the apology string flows into your pipeline as real content](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#91-the-two-layers-from-apples-own-description) — 17.3 🔇
 - [A throwing subject(from:) lets refusals abort samples; aggregate eval scores silently exclude the refused cases](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#162-the-critical-design-decision) — 17.3 🔇
 - [coreai-models has zero EXIF or orientation handling; rotated camera photos silently produce wrong vision results](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#29-image-inputs-and-the-pre-processing-you-used-to-get-for-free) — 17.5
-- [Historical 0.4.1 optimizer defect silently changed NxN distance expressions; fixed in the tested 0.4.3 path](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
-- [coreai-torch #49 is closed after a community-measured 0.4.3 retest; keep shipped-asset parity](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-historical-silent-failure-the-041-optimizer-miscompile) — 17.5
+- [Validate numeric parity at the conversion boundary with the exact shipped asset](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
+- [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [Orientation and coordinate conventions are now your job; getting them wrong yields plausible but wrong vision output](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 - [CIImage(contentsOf:) applies EXIF orientation, CGImageSource does not; the same JPEG preprocesses two different ways](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
 

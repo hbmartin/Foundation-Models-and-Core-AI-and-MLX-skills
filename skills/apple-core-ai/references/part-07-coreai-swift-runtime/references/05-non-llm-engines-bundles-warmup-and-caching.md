@@ -313,10 +313,14 @@ try await detector.warmup(
 )
 ```
 
-For dynamic models, this performs a real zero-filled forward pass with the same `(B, H, W)` that later
-calls will use (✅ VERIFIED, `ObjectDetector.swift:87-107`). For static models, descriptor dimensions
-win and the arguments are ignored (✅ VERIFIED, resolution rules at `:283-288`). A warmup at
-batch 1 and 640×640 therefore says little about the first request at batch 8 and 1024×1024.
+For dynamic models, this performs a real forward pass with a newly constructed dummy `NDArray` at the
+same `(B, H, W)` that later calls will use (✅ VERIFIED, `ObjectDetector.swift:87-107`). The package
+does not explicitly fill that array, so do not describe its contents as zero-initialized. For static
+spatial dimensions, descriptor height and width override `parameters.inputHeight` and
+`parameters.inputWidth`; `imageCount` is still checked against a fixed batch dimension and a mismatch
+throws (✅ VERIFIED, resolution and validation rules at `:283-312`). A warmup at batch 1 and 640×640
+therefore says little about the first request at batch 8 and 1024×1024 when those dimensions are
+dynamic.
 
 > ⚠️ **SILENT FAILURE — malformed detector output becomes “no objects.”** The postprocessor returns an
 > empty array when logits are not rank 3, query/class counts are invalid, or flat logits/box lengths do
@@ -444,13 +448,13 @@ captured 27.0 beta Core AI interfaces (✅ **SDK-verified** — zero matches acr
 | `AIModel(contentsOf:options:)` | a matching specialization exists or can be produced; model object loads | that a particular function executes successfully at production shapes |
 | `loadFunction(named:)` | the named function exists and its weights/resources load | that kernels for a real run are hot |
 | segmentation `warmup()` | dummy forward through the selected single function or all three functions | production image/prompt distributions; image-encoder reuse |
-| detector `warmup(imageCount:parameters:)` | zero-input forward at the resolved batch/spatial shape | other dynamic shapes |
+| detector `warmup(imageCount:parameters:)` | dummy-input forward at the resolved batch/spatial shape | other dynamic shapes; any particular dummy-array contents |
 | `ResourceManaging.prewarmResources()` | `loadResources()` succeeds, then package references are dropped | an inference forward; production-shape kernel execution |
 | diffusion `loadResources()` | all component models and `main` functions load | a full text→denoise→decode pass |
 
 Segmentation's `warmup()` dispatches on the selected backend and, for the trio, drives all three
-functions with dummy arrays — a zero image and an EOT-token text batch (✅ VERIFIED,
-`ImageSegmentationEngine.swift:88-99`, `:796-817`).
+functions with dummy arrays — an image array constructed from its descriptor without an explicit fill,
+plus an EOT-token text batch (✅ VERIFIED, `ImageSegmentationEngine.swift:88-99`, `:796-817`).
 `prewarmResources()` is literally load followed by unload (✅ VERIFIED,
 `swift/Sources/CoreAIShared/Runtime/ResourceManaging.swift:17-22`). It may warm filesystem pages,
 driver/JIT work, or Core AI's specialization cache as consequences of loading, but it is not

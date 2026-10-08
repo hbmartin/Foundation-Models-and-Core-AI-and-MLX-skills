@@ -2481,9 +2481,8 @@ if func is torch.ops.aten.slice.Tensor:
 >
 > **Why you might not notice:** if the tensors are square, or if the concatenated dimensions happen
 > to have compatible sizes, the resulting shape can still be *valid* — just wrong. A downstream
-> matmul then computes garbage with no shape error. This is the same failure geometry as
-> `coreai-torch#49`, where square (32×32) inputs exposed the historical optimizer bug and rectangular
-> (17×23) inputs passed.
+> matmul then computes garbage with no shape error. Check numeric parity on square and asymmetric
+> inputs so that a shape-compatible simplification cannot pass on output dimensions alone.
 >
 > **Workaround:** do every `cat` on **unpacked** tensors, before sub-byte injection. Concretely: do
 > your weight fusion in the PyTorch model definition or in the state-dict mutation step, never on a
@@ -2567,47 +2566,9 @@ and the narrowing map turns that into int32 before the reduction is emitted.
 > cheap, consistent with the Neural Engine's BC1S/4D orientation, and worth trying before you conclude
 > your quantization is at fault.
 
-**Historical 0.4.1 optimizer defect; fixed in the tested 0.4.3 path.**
-
-> 🟠 **COMMUNITY-MEASURED** — `coreai-torch` issue **#49**, author `dkomoroske`, 2026-07-23. macOS 27.0
-> builds `26A5378j` and `26A5388g`, `coreai-torch 0.4.1`, `coreai-core 1.0.0b2`, torch 2.11.0. Also
-> filed as Feedback Assistant **FB23695952**. `optimize()` deletes an `expand_dims`/`transpose` that
-> is **semantically load-bearing for broadcasting**, in the expanded squared-distance form.
->
-> Minimal failing shape:
->
-> ```python
-> s1 = torch.sum(x ** 2, dim=-1).unsqueeze(-1)  # (1,N,1)
-> s2 = torch.sum(y ** 2, dim=-1).unsqueeze(-2)  # (1,1,N)
-> out = (s1 - 2 * z + s2).clamp(min=0.0)
-> ```
->
-> Reporter-measured harness output, verbatim:
->
-> ```text
-> Chain           optimize=False: max|d| = 1.907e-06  OK
-> Chain           optimize=True : max|d| = 1.022e+01  MISCOMPILED
-> ChainReordered  optimize=False: max|d| = 3.815e-06  OK
-> ChainReordered  optimize=True : max|d| = 3.815e-06  OK
-> ```
->
-> Impact, verbatim: *"In a larger GeoTransformer conversion, this appeared as approximately **17 dB
-> PSNR** versus eager PyTorch and scrambled nearest-neighbor relationships. **Disabling `optimize()`
-> restored approximately 78–85 dB parity.**"*
->
-> Two things make this generalisable rather than a one-off. First, `SpecializationOptions.cpu_only()`
-> reproduces it — *"so it is a compiler/optimizer bug, not a delegate bug"*. Second, and more
-> important for your test design: **unequal input lengths (17×23) come out correct**, and only
-> shape-compatible (square) cases miscompile, because the wrong operand still broadcasts. **A parity
-> test only on rectangular tensors can pass while the square production case fails.**
->
-> **Historical 0.4.1 workarounds:** (1) do not call `optimize()` — *"Conversion, `save_asset`,
-> specialization, loading, and inference work correctly without it"*; (2) reorder to
-> `(||x||² + ||y||²) − 2·x·y`.
->
-> **Current disposition:** closed 2026-10-02 after a 0.4.3 retest passed all three minimal patterns.
-> Version 0.4.2 was not tested. In 0.4.3 `to_coreai()` returns an already optimized program, so use
-> the shipped-asset parity gate in §10 rather than trying to construct an unoptimized arm.
+The resolved optimizer case is recorded in [§9.7](#97-the-register). Its detailed reproducer,
+measurements, and obsolete workarounds are preserved in the
+[historical evidence note](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md#historical-issue-49-regression).
 
 ### 9.6 Recovering 0.4.0 artifacts without re-converting
 <!-- defect-ref:apple.coreai-torch:pull:32 -->
@@ -2659,7 +2620,7 @@ Nine defects, in one table, so you can check your own model against it:
 | 3 | `cat` on packed intx ignores `dim` | every backend | `apple/coreai-torch#41` merged 2026-09-25; fix outside the 0.4.3 tag | `cat` before packing |
 | 4 | int64→int32 accumulator narrowing in `sum`/`prod` | every backend | `apple/coreai-torch#45` **closed unmerged** | Reduce in fp32 |
 <!-- defect-ref:apple.coreai-torch:issue:49 -->
-| 5 | 0.4.1 optimizer drops broadcast-significant axis moves | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate |
+| 5 | 0.4.1 optimizer axis-move defect | every backend (incl. `cpu_only`) in 0.4.1 | `apple/coreai-torch#49` closed 2026-10-02; fixed in the tested 0.4.3 path with `coreai-core 1.0.0b3`; 0.4.2 unverified | Upgrade; retain shipped-asset parity gate; [historical evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md#historical-issue-49-regression) |
 <!-- defect-ref:apple.coreai-torch:issue:9 -->
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 <!-- defect-ref:apple.coreai-torch:issue:10 -->
@@ -2793,11 +2754,11 @@ asyncio.run(compare_units(Path("model.aimodel"), {"image": np.random.randn(1, 3,
 ```
 
 <!-- callout-id: callout-46ddd6cac4576e39 -->
-> ⚠️ **Exercise both square and asymmetric gate inputs.** In coreai-torch 0.4.1,
-> `apple/coreai-torch#49` silently miscompiled square/equal-length results; the tested 17×23 control
-> passed. The issue closed after the tested 0.4.3/1.0.0b3 path no longer reproduced the failure;
-> 0.4.2 remains unverified. `apple/coreai-torch#9`'s cast round-trip is an identity on values that
-> happen to be integral. A gate using only one shape and value distribution can miss these classes.
+> ⚠️ **Exercise both square and asymmetric gate inputs.** Numeric parity needs more than a
+> shape check. `apple/coreai-torch#9`'s cast round-trip is an identity on values that
+> happen to be integral. **The issue #9 gate must include non-integral float inputs such as `0.3`
+> and `-0.4`**, so the expected truncation differs from an incorrect identity. A gate using only
+> one shape and value distribution can miss these classes.
 > **Use square and asymmetric shapes, values that straddle zero, values above 10 (§9.1's threshold), and integer
 > tensors large enough to overflow int32 (§9.4) where your model actually has them.**
 
@@ -3119,7 +3080,6 @@ Every one also carries `version` (always `1`).
 |---|---|---|
 | Prompt 1066.4→1103.7 tok/s, generation 62.1→69.2 tok/s (Qwen3-MoE) | **Apple-published** | `coreai-models` PR #69. **Hardware and OS build not stated in the PR** — the ~11% delta is the citable part, not the absolutes |
 | MobileNetV3 vs V2 ANE fp16 divergence (0.199 vs 0.0027 max abs) | **Community-measured** | `coreai-torch`#51, single reporter `zli96`, macOS 27 beta 3, coreai-torch 0.4.1, 2026-07-23 |
-| `optimize()` miscompile 1.02e+01 vs 1.9e-06; 17 dB vs 78–85 dB PSNR | **Community-measured** | `coreai-torch`#49, `dkomoroske`, macOS 27.0 `26A5378j`/`26A5388g`, torch 2.11.0, 2026-07-23, FB23695952 |
 | fp16 overflow thresholds (10.4 / 7.63 / 11.09) | **Community-measured** | `coreai-torch`#21, `Ashutosh0x`, macOS 26 / Apple silicon, PyTorch 2.7+, 2026-06-21 |
 | Partial-rotary RoPE PSNR ≈ 21.6 dB, max-abs ≈ 8.2 | **Community-measured** | `coreai-models`#66, `kylejfrost`; maintainer acknowledged the defect, not the number |
 | Prefix reuse 23.28 s → 0.230 s (101×); 15.2× at 357 tokens | **Community-measured**, uncontrolled | qwen3-0.6b on a Mac, 2026-06; single author, self-declared uncontrolled benchmarks. Directionally strong, absolutely unanchored |
