@@ -71,15 +71,18 @@ final class ProbeSupportTests: XCTestCase {
 
     func testParentCancelledBeforeEntryDoesNotStartWork() async {
         let ran = Probe.Counter()
+        let entryGate = SuspensionGate()
         let task = Task {
-            await Task.yield()
+            await entryGate.wait()
             return try await Probe.withTimeout(seconds: 30) { () async throws -> Int in
-                try await Task.sleep(for: .seconds(30))
                 ran.increment()
+                try await Task.sleep(for: .seconds(30))
                 return 1
             }
         }
+        await entryGate.waitUntilOccupied()
         task.cancel()
+        await entryGate.open()
         do {
             _ = try await task.value
             XCTFail("expected parent cancellation")
@@ -92,9 +95,11 @@ final class ProbeSupportTests: XCTestCase {
     }
 
     func testParentCancellationCancelsBothRacers() async {
+        let operationStarted = expectation(description: "operation started")
         let operationCancelled = expectation(description: "operation cancelled")
         let task = Task {
             try await Probe.withTimeout(seconds: 30) {
+                operationStarted.fulfill()
                 do {
                     try await Task.sleep(for: .seconds(30))
                     return 1
@@ -104,7 +109,7 @@ final class ProbeSupportTests: XCTestCase {
                 }
             }
         }
-        await Task.yield()
+        await fulfillment(of: [operationStarted], timeout: 1)
         task.cancel()
         do {
             _ = try await task.value
@@ -115,5 +120,28 @@ final class ProbeSupportTests: XCTestCase {
             XCTFail("unexpected error: \(error)")
         }
         await fulfillment(of: [operationCancelled], timeout: 1)
+    }
+}
+
+private actor SuspensionGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var observers: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            for observer in observers { observer.resume() }
+            observers.removeAll()
+        }
+    }
+
+    func waitUntilOccupied() async {
+        if continuation != nil { return }
+        await withCheckedContinuation { observers.append($0) }
+    }
+
+    func open() {
+        continuation?.resume()
+        continuation = nil
     }
 }

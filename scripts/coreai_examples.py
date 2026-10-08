@@ -216,7 +216,7 @@ def contract_errors(text: str, contract: str) -> list[str]:
                     return errors
     elif contract == "overwrite":
         for sentence in prose_segments(text):
-            for predicate in re.finditer(r"\b(?:overwrites?|overwritten)\b", sentence, re.I):
+            for predicate in re.finditer(r"\b(?:overwrites?|overwritten|replaces?|replaced)\b", sentence, re.I):
                 if negated_predicate(sentence[:predicate.start()]):
                     errors.append("b3 overwrite behavior incorrect")
                     return errors

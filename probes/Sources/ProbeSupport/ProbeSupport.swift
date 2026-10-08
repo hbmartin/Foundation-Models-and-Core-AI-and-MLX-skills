@@ -88,6 +88,7 @@ public enum Probe {
         seconds: Double,
         _ op: @escaping @Sendable () async throws -> T
     ) async throws -> TimeoutResult<T> {
+        try Task.checkCancellation()
         let race = TimeoutRace<T>()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
