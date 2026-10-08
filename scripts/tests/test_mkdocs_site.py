@@ -176,15 +176,35 @@ class MkDocsHookTests(unittest.TestCase):
             (site / "%20/index.html").write_text('<h1 id="literal">Literal</h1>')
             mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/my%20repo/")
 
+    def test_site_fragments_preserve_literal_percent_in_deployment_base(self):
+        with tempfile.TemporaryDirectory() as folder:
+            docs, site = self.fragment_site(Path(folder), '''
+                <span id="heading-1"></span>
+                <a href="#heading-1">Same page</a>
+                <a href="guide/#guide">Relative directory</a>
+                <a href="/repo%2541/guide/#guide">Absolute directory</a>
+                <a href="/repo%2541/guide/index.html#legacy">Absolute file</a>
+            ''')
+            # The nested page also links back via ../#heading-1.
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo%2541/")
+            for href in ("/repoA/guide/#guide", "/repo%41/guide/#guide", "../guide/#guide",
+                         "/repo%2541/%2e%2e/guide/#guide"):
+                with self.subTest(href=href):
+                    (site / "index.html").write_text(
+                        f'<span id="heading-1"></span><a href="{href}">Outside</a>')
+                    with self.assertRaisesRegex(ValueError, "outside configured site path"):
+                        mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/repo%2541/")
+
     def test_repeated_fragment_links_do_not_repeat_filesystem_resolution(self):
         with tempfile.TemporaryDirectory() as folder:
             docs, site = self.fragment_site(Path(folder), '<span id="heading-1"></span>' +
                 '<a href="guide/#guide">Guide</a>' * 100)
-            original_resolve = Path.resolve
-            with mock.patch.object(Path, "resolve", autospec=True, side_effect=original_resolve) as resolve:
-                with mock.patch.object(Path, "is_dir", side_effect=AssertionError("per-link stat")):
-                    mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
-            self.assertEqual(1, resolve.call_count)
+            mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
+            with mock.patch.object(Path, "is_dir", side_effect=AssertionError("per-link stat")):
+                mkdocs_hooks._verify_site_fragments(site, site_url="https://example.test/")
+                (site / "index.html").write_text('<a href="guide/#missing">Broken</a>' * 100)
+                with self.assertRaisesRegex(ValueError, "fragment missing in guide/index.html"):
+                    mkdocs_hooks._verify_site_fragments(site, site_url="https://example.test/")
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")

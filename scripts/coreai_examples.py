@@ -179,11 +179,20 @@ def negated_predicate(prefix: str) -> bool:
         r"[\s`*]*$", prefix, re.I))
 
 
-_ASSET_DESTINATION = r"(?:\b(?:destinations?|assets?|files?|director(?:y|ies))\b|[^\s;,]+\.aimodel\b)"
+_ASSET_DESTINATION = (
+    r"(?:\b(?:destinations?|assets?|files?|director(?:y|ies)|paths?|outputs?|bundles?|targets?)\b"
+    r"|[^\s;,]+\.aimodel\b)"
+    r"(?!\s+(?:metadata|validation|parity|gates?|checks?|records?|fields?)\b)"
+)
+_REPLACEMENT = r"(?:overwrites?|overwrote|overwritten|overwriting|replace[sd]?|replacing)"
+_OVERWRITE_CONTRACT = (
+    "AIProgram.save_asset in coreai-core 1.0.0b3 replaces an existing file or directory "
+    "at the destination."
+)
 
 
 def asset_replacement_claim(prefix: str, suffix: str) -> bool:
-    """Recognize a file object, passive file subject, or save_asset verb phrase."""
+    """Recognize bounded destination claims, not arbitrary English predicates."""
     modifiers = r"(?:\s+(?:of|the|an?|any|existing|specified|current|old|output))*"
     auxiliaries = (
         r"(?:\s+(?:will|would|can|could|is|are|was|were|be|been|being|has|have|had|do|does|did|"
@@ -191,12 +200,32 @@ def asset_replacement_claim(prefix: str, suffix: str) -> bool:
     )
     if re.match(rf"{modifiers}\s+{_ASSET_DESTINATION}", suffix, re.I):
         return True
-    if re.search(rf"{_ASSET_DESTINATION}{auxiliaries}\s*$", prefix, re.I):
+    compound = rf"(?:\s+and\s+(?:(?:its|their)\s+contents|(?:the\s+)?{_ASSET_DESTINATION}))?"
+    if re.search(rf"{_ASSET_DESTINATION}{compound}{auxiliaries}\s*$", prefix, re.I):
         return True
-    # A bare API claim still has an unambiguous implied destination. An explicit
-    # unrelated object (for example a parity gate) must not inherit that context.
-    return bool(not suffix.strip() and re.search(
-        rf"\b(?:AIProgram\.)?save_asset(?:\(\))?{auxiliaries}\s*$", prefix, re.I))
+    # Bare API claims and pronoun objects imply the destination. Other explicit
+    # objects (for example metadata or a parity gate) do not inherit that context.
+    api_subject = re.search(
+        rf"\b(?:AIProgram\.)?save_asset(?:\(\))?{auxiliaries}\s*$", prefix, re.I)
+    return bool(api_subject and (not suffix.strip() or re.match(
+        r"\s+(?:it|them|this|that)\b", suffix, re.I)))
+
+
+def overwrite_contract_errors(text: str) -> list[str]:
+    """Require the versioned prose contract and lint known contradiction families.
+
+    The canonical statement is the positive guarantee. The accompanying bounded
+    checks catch known regressions; they do not attempt to parse arbitrary English.
+    Fences and hidden comments cannot stand in for the reader-visible statement.
+    """
+    visible = re.sub(r"<!--.*?(?:-->|$)", "\n", text, flags=re.S)
+    visible = "".join(line + newline for line, newline, fenced in iter_lines(visible) if not fenced)
+    visible = re.sub(r"(?m)^(?: {0,3}>[ \t]?)+", "", visible)
+    visible = re.sub(r"[`*]|(?<!\w)_{1,2}|_{1,2}(?!\w)", "", visible)
+    errors = []
+    if _OVERWRITE_CONTRACT not in " ".join(visible.split()):
+        errors.append("b3 overwrite contract statement missing")
+    return errors + contract_errors(text, "overwrite")
 
 
 def contract_errors(text: str, contract: str) -> list[str]:
@@ -235,20 +264,25 @@ def contract_errors(text: str, contract: str) -> list[str]:
                     errors.append("square/rectangular #49 explanation reversed")
                     return errors
     elif contract == "overwrite":
-        for clause in prose_segments(text, contrast=True):
+        for clause in prose_segments(text):
             clause = re.sub(r"[`*]", "", clause)
-            for predicate in re.finditer(
-                r"\b(?:overwrites?|overwrote|overwritten|overwriting|replace[sd]?|replacing)\b",
-                clause, re.I,
-            ):
+            clause = re.sub(r"(?m)^(?: {0,3}>[ \t]?)+", "", clause)
+            for predicate in re.finditer(rf"\b{_REPLACEMENT}\b", clause, re.I):
                 prefix, suffix = clause[:predicate.start()], clause[predicate.end():]
+                # A coordinated replacement verb inherits the same negation.
+                prefix = re.sub(rf"(?:\b{_REPLACEMENT}\s+(?:and|or)\s+)+$", "", prefix, flags=re.I)
                 if asset_replacement_claim(prefix, suffix) and negated_predicate(prefix):
                     errors.append("b3 overwrite behavior incorrect")
                     return errors
-            failure = re.search(r"\bwill\s+fail\b.*?\b(?:exists?|existing)\b", clause, re.I | re.S)
+            failure = re.search(r"\bwill\s+fail\b", clause, re.I)
+            existence = re.search(
+                rf"\b(?:if|when|because)\s+(?:(?:the|an?|any|existing|specified|current|old)\s+)*"
+                rf"{_ASSET_DESTINATION}(?:\s+path)?\s+(?:already\s+)?exists?\b"
+                rf"|\bon\s+(?:an?\s+)?existing\s+{_ASSET_DESTINATION}", clause, re.I)
             if (failure
                     and re.search(r"\b(?:save_asset|converter|b3|sav(?:e|es|ing))\b", clause[:failure.start()], re.I)
-                    and re.search(_ASSET_DESTINATION, clause[failure.start():], re.I)):
+                    and not negated_predicate(clause[:failure.start()])
+                    and existence):
                 errors.append("b3 overwrite behavior incorrect")
                 return errors
     else:

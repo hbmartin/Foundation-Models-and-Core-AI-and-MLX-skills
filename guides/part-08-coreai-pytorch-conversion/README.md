@@ -110,11 +110,11 @@ multi-function split; and the Python-side verification gate that catches everyth
 > Loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
 > **GPU preference** instead of its Neural Engine preference, with a log line rather than an error. Direct
 > Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
->
-> 🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
-> the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog; the character
-> set allowed in IO names; the semantics of
-> `ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
+
+🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
+the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog; the character
+set allowed in IO names; the semantics of
+`ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
 
 ### [8.2 — When an op will not convert: coverage, composite ops, custom lowerings, externalization](references/02-op-coverage-composites-and-externalization.md)
 

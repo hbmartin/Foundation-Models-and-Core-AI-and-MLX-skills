@@ -9,7 +9,9 @@ from urllib.parse import unquote
 
 from scripts import mdlinks
 from scripts import refresh_defect_statuses as defects
-from scripts.coreai_examples import removed_optimizer_errors, contract_errors, section
+from scripts.coreai_examples import (
+    removed_optimizer_errors, contract_errors, overwrite_contract_errors, section,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -386,7 +388,7 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
             self.assertEqual([], contract_errors(section(conversion, heading), contract))
         self.assertEqual([], current_issue49_errors(ROOT))
         deployment = self.read("guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md")
-        self.assertEqual([], contract_errors(section(deployment, "### 9.3 "), "overwrite"))
+        self.assertEqual([], overwrite_contract_errors(section(deployment, "### 9.3 ")))
 
         self.assertIn(
             "`to_coreai()` returns an already optimized program",

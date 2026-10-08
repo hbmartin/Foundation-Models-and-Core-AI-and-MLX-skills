@@ -2705,7 +2705,7 @@ cheap relative to what they find, and each one catches a defect class the others
 |---|---|---|
 | **A · Eager vs Core AI** | `model(x)` vs the `.aimodel`'s output for the same `x` | Lowering arithmetic (§9.1–9.4), composite mismatch (§5.5, §5.7) |
 | **B · ExportedProgram vs eager** | The decomposed exported module and eager PyTorch on the same inputs | Export and decomposition changes before Core AI conversion |
-| **C · CPU vs GPU vs ANE** | The *same* `.aimodel`, three `SpecializationOptions` | Delegate divergence (§9.5, issue #10), ANE fp16 (§9.5) |
+| **C · CPU vs GPU vs ANE** | The *same* `.aimodel`, three `SpecializationOptions` | Delegate divergence (§9.7, issue #10), ANE fp16 (§9.5) |
 | **D · Token-exact greedy oracle** (LLMs only) | Greedy generation vs an fp32 reference, token by token | Everything above, compounded over many steps |
 
 Gate C's harness, assembled from the API surface confirmed across issues #51 and #10:
