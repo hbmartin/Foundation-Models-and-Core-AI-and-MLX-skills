@@ -206,6 +206,93 @@ class CoreAIExampleTests(unittest.TestCase):
                 self.assertTrue(contract_errors(f"save_asset never {predicate} the destination", "overwrite"))
                 self.assertEqual([], contract_errors(f"Metadata never {predicate} a parity gate", "overwrite"))
 
+    def test_overwrite_claim_boundaries_and_filesystem_noun_phrases(self):
+        cases = (
+            ("save_asset will fail if the destination directory already exists", True),
+            ("save_asset will fail when the destination file exists", True),
+            ("save_asset will fail on the existing destination", True),
+            ("Loading will fail if the source is missing, and save_asset will fail if the destination already exists", True),
+            ("save_asset does not overwrite the asset metadata file", True),
+            ("save_asset does not overwrite the asset metadata record", False),
+            ("save_asset replaces an existing destination, whereas mlx_lm.convert will fail if the output path already exists", False),
+            ("save_asset replaces an existing destination, and mlx_lm.convert will fail if the output path already exists", False),
+            ("save_asset will fail validation, mlx_lm.convert will fail if the destination already exists", False),
+            ("save_asset does not replace the output path", True),
+            ("Quantization does not replace the output dtype", False),
+            ("save_asset does not replace the target path", True),
+            ("Quantization does not replace the target device", False),
+            ("Targets cannot replace validation", False),
+            ("Existing targets cannot be replaced", True),
+            ("Paths are not replaced by tildes", False),
+            ("The existing path is not replaced by save_asset", True),
+            ("The destination is not replaced by another_tool", False),
+            ("save_asset does not overwrite that metadata", False),
+            ("save_asset does not overwrite metadata", False),
+            ("save_asset does not overwrite that", True),
+            ("save_asset does not overwrite this metadata", False),
+            ("save_asset does not overwrite this", True),
+            ("save_asset neither replaces nor overwrites the destination", True),
+            ("save_asset does not replace nor overwrite the destination", True),
+            ("save_asset replaces and overwrites the destination", False),
+            ("The file and directory are not replaced", True),
+            ("The destination and its contents are not overwritten", True),
+            ("Metadata neither replaces nor overwrites a parity gate", False),
+        )
+        for text, rejected in cases:
+            with self.subTest(text=text):
+                expected = ["b3 overwrite behavior incorrect"] if rejected else []
+                self.assertEqual(expected, contract_errors(text, "overwrite"))
+                self.assertEqual(expected, overwrite_contract_errors(OVERWRITE_STATEMENT + "\n" + text))
+
+    def test_destination_failure_forms_keep_their_subject_and_condition(self):
+        for predicate in ("will fail", "fails", "raises FileExistsError", "errors out"):
+            for text in (
+                f"save_asset {predicate} if the destination already exists",
+                f"If the destination already exists, save_asset {predicate}",
+                f"save_asset {predicate} on the existing destination",
+            ):
+                with self.subTest(text=text):
+                    self.assertEqual(["b3 overwrite behavior incorrect"], contract_errors(text, "overwrite"))
+            for text in (
+                f"save_asset {predicate} if the metadata record already exists",
+                f"save_asset saves the destination, whereas mlx_lm.convert {predicate} if the destination already exists",
+                f"mlx_lm.convert {predicate} if the destination already exists",
+            ):
+                with self.subTest(text=text):
+                    self.assertEqual([], contract_errors(text, "overwrite"))
+        for text in (
+            "save_asset will not fail if the destination already exists",
+            "save_asset never fails if the destination already exists",
+            "save_asset does not raise FileExistsError if the destination already exists",
+            "save_asset does not error out if the destination already exists",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual([], contract_errors(text, "overwrite"))
+
+    def test_required_overwrite_statement_is_affirmative_prose(self):
+        for text in (
+            "    " + OVERWRITE_STATEMENT,
+            "\t" + OVERWRITE_STATEMENT,
+            ">     " + OVERWRITE_STATEMENT,
+            "~~" + OVERWRITE_STATEMENT + "~~",
+            "`" + OVERWRITE_STATEMENT + "`",
+            "It is false that " + OVERWRITE_STATEMENT,
+            "Do not assume that " + OVERWRITE_STATEMENT,
+            OVERWRITE_STATEMENT.replace("replaces an existing", "replaces an\n\nexisting"),
+            OVERWRITE_STATEMENT.replace("replaces an existing", "replaces an\n>\n> existing"),
+            OVERWRITE_STATEMENT.replace("replaces", "~~replaces~~"),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(["b3 overwrite contract statement missing"], overwrite_contract_errors(text))
+        for text in (
+            OVERWRITE_STATEMENT.replace("replaces an existing", "replaces an\nexisting"),
+            "> > ✅ **VERIFIED (b3 source)** — " + OVERWRITE_STATEMENT.replace("replaces an existing", "replaces an\n> > existing"),
+            OVERWRITE_STATEMENT + " Redundant deletion is unnecessary.",
+            "A separate paragraph.\n\n" + OVERWRITE_STATEMENT,
+        ):
+            with self.subTest(text=text):
+                self.assertEqual([], overwrite_contract_errors(text))
+
     def test_invalid_identifiers_fail_across_tokenizer_versions(self):
         for code in ("x = …", "x = €", "program.…()"):
             with self.subTest(code=code), self.assertRaises(ValueError):

@@ -5,7 +5,7 @@
 **Version note.** The original defect evidence and overload inventory were captured against
 `coreai-torch` **0.4.1** (published 2026-07-06), which pins `coreai-core==**1.0.0b2**` exactly.
 The current pipeline uses **coreai-torch 0.4.3 / coreai-core 1.0.0b3**; `to_coreai()` returns an
-already optimized program and the separate `.optimize()` method no longer exists. Both require
+already optimized program. `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method. Both require
 **Python ≥ 3.11**, and accept **torch ≥ 2.8.0** with no
 upper bound but warns above **2.13.0**. The `.aimodel` assets it produces run on **iOS 27.0 /
 iPadOS 27.0 / macOS 27.0** and are compiled with **Xcode 27.0+**; nothing in this guide back-deploys

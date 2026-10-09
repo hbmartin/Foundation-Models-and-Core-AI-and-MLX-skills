@@ -125,6 +125,11 @@ two methods on it.
 > `swift-lm`'s `python/src/swiftlm_coreai/program.py` calls `TorchConverter().to_coreai()` →
 > `program.optimize()` → `program.save_asset(output_path)`. Same terminal API, two producers.
 
+These optimizer calls describe the bridges' pinned `coreai-core` b1/b2 APIs. In the current
+`coreai-torch 0.4.3` / `coreai-core 1.0.0b3` workflow, rewriting runs during `to_coreai()` and
+`AIProgram.optimize()` is absent. A bridge port to b3 must account for that authoring API change;
+the pinned examples here retain their historical calls.
+
 ⚠️ **Note the leading underscore.** `AIProgram._from_mlir_module` is a **private** `coreai` API.
 `mlx2coreai` depends on it for its entire existence. A wheel bump can break the converter without
 breaking anything Apple documents. This is the single most fragile line in the bridge and it is why

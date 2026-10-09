@@ -140,12 +140,12 @@ recurrence** — Core AI's IR has first-class MoE and SSM support.
 > `cat` on packed sub-byte tensors ignores `dim`, and `sum`/`prod` narrow their int64 accumulator to int32.
 > And an inverted trap worth naming: passing PyTorch's *default* decomposition table gives you a graph that
 > **fails to convert** — you decomposed *more*, the error says *unsupported*, the fix is to decompose *less*.
->
-> 🔴 **GAP — nobody has measured what externalizing a composite is worth.** The mechanism is documented in
-> Apple's own words; the magnitude is published nowhere, by Apple or by the community. Externalize as Apple
-> does — it costs a list literal — but do not promise a stakeholder a percentage. Also open: which
-> `composite_attrs` the compiler's `gated_delta_update` pattern actually expects (the doc page and Apple's
-> shipping export disagree), and `HardwareConstraints` semantics.
+
+🔴 **GAP — nobody has measured what externalizing a composite is worth.** The mechanism is documented in
+Apple's own words; the magnitude is published nowhere, by Apple or by the community. Externalize as Apple
+does — it costs a list literal — but do not promise a stakeholder a percentage. Also open: which
+`composite_attrs` the compiler's `gated_delta_update` pattern actually expects (the doc page and Apple's
+shipping export disagree), and `HardwareConstraints` semantics.
 
 ### [8.3 — `TorchMetalKernel`: writing and embedding a custom Metal kernel](references/03-custom-metal-kernels.md)
 

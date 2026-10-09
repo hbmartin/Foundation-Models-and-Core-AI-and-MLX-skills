@@ -905,8 +905,9 @@ The critical 0.4.3 property, which Apple has dedicated tests for:
 
 > ✅ **VERIFIED** — `TorchConverter.to_coreai()` documents that the returned `AIProgram` is already
 > optimized. `tests/test_converter.py::TestConvertToCoreaiIR` verifies that the pre-compilation rewrite
-> has already folded the cast chain when `to_coreai()` returns. The separate `AIProgram.optimize()`
-> method used by 0.4.1 no longer exists.
+> has already folded the cast chain when `to_coreai()` returns in `coreai-torch 0.4.3`.
+> `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method; that method exists in
+> the historical `coreai-core 1.0.0b2` API used with converter 0.4.1.
 
 ### 6.2 The pre-compilation rewrite runs during conversion
 

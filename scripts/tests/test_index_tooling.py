@@ -276,6 +276,20 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(first_row[5:7], changed_row[5:7])
             self.assertNotEqual(first_row[7], changed_row[7])
 
+    def test_part08_gap_is_outside_the_warning_content(self):
+        source = (REPO / 'guides/part-08-coreai-pytorch-conversion/README.md').read_text(encoding='utf-8')
+        self.assertIn('\n\n🔴 **GAP — nobody has measured what externalizing a composite is worth.', source)
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            guide.write_text(source, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            guide.write_text(source.replace('nobody has measured what externalizing a composite is worth',
+                                            'the separate gap paragraph changed'), encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            self.assertEqual(first.stdout, changed.stdout)
+
     def test_duplicate_semantic_callout_requires_explicit_override(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)

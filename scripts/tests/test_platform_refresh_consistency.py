@@ -371,6 +371,16 @@ class PlatformRefreshConsistencyTests(unittest.TestCase):
         ):
             self.assertIn(required, history)
         self.assertIn("0.4.3/1.0.0b3 retest", migration)
+        for path in (
+            "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md",
+            "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md",
+            "guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md",
+            "guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md",
+        ):
+            self.assertIn("`coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method", self.read(path))
+        bridge = self.read("guides/part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md")
+        self.assertIn("bridges' pinned `coreai-core` b1/b2 APIs", bridge)
+        self.assertIn("`program.optimize()`", bridge)
         self.assertIn("#114-️-the-shipped-asset-parity-gate", migration)
         self.assertIn("notes/evidence/core-ai/README.md#historical-issue-49-regression", migration)
 

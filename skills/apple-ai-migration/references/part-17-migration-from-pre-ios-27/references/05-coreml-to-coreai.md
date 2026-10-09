@@ -895,7 +895,7 @@ and [Part 7 reference 02 §4](https://github.com/hbmartin/Foundation-Models-and-
 ### 3.4 ⚠️ Numeric parity at the conversion boundary
 
 In `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program.
-The separate `AIProgram.optimize()` method is unavailable in 0.4.3.
+`coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method.
 Validate the exact artifact your application ships against eager PyTorch and the decomposed
 export on production inputs, including square and asymmetric shapes.
 
@@ -1716,7 +1716,7 @@ coreai_program.save_asset("MyModel.aimodel")
 > raises an actionable error otherwise, and even `aten.linear` trips it — and **`get_decomp_table()`
 > is not interchangeable with `torch.export.default_decompositions()`**, which decomposes
 > `instance_norm` into an op Core AI does not support. **Rewriting runs on successful exit from `with module:` inside `to_coreai()`**, before
-> `AIProgram(module)` is returned. The separate `AIProgram.optimize()` method is unavailable in 0.4.3.
+> `AIProgram(module)` is returned. `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method.
 
 Now compare that with where a Core ML model comes from 🟡: `coremltools` has historically accepted a
 traced or scripted PyTorch model, a TensorFlow graph, and — importantly — could round-trip its own

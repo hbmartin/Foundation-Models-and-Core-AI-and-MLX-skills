@@ -200,11 +200,16 @@ class MkDocsHookTests(unittest.TestCase):
             docs, site = self.fragment_site(Path(folder), '<span id="heading-1"></span>' +
                 '<a href="guide/#guide">Guide</a>' * 100)
             mkdocs_hooks.verify_site_routes(docs, site, site_url="https://example.test/")
+            original_resolve = Path.resolve
             with mock.patch.object(Path, "is_dir", side_effect=AssertionError("per-link stat")):
-                mkdocs_hooks._verify_site_fragments(site, site_url="https://example.test/")
-                (site / "index.html").write_text('<a href="guide/#missing">Broken</a>' * 100)
-                with self.assertRaisesRegex(ValueError, "fragment missing in guide/index.html"):
+                with mock.patch.object(Path, "resolve", autospec=True, side_effect=original_resolve) as resolve:
                     mkdocs_hooks._verify_site_fragments(site, site_url="https://example.test/")
+                self.assertEqual(1, resolve.call_count)
+                (site / "index.html").write_text('<a href="guide/#missing">Broken</a>' * 100)
+                with mock.patch.object(Path, "resolve", autospec=True, side_effect=original_resolve) as resolve:
+                    with self.assertRaisesRegex(ValueError, "fragment missing in guide/index.html"):
+                        mkdocs_hooks._verify_site_fragments(site, site_url="https://example.test/")
+                self.assertEqual(1, resolve.call_count)
 
     def test_navigation_titles_strip_inline_code(self):
         navigation = mkdocs_hooks.build_navigation(REPOSITORY_ROOT / "guides")
