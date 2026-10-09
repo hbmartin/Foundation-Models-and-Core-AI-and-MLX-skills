@@ -1321,6 +1321,7 @@ Two prerequisites nobody mentions until you hit them:
 
 Two verified operational notes:
 
+<!-- callout-id: callout-fe4bb6a7e4c586b4 -->
 > ⚠️ **The gauge only appears if your target links `CoreAI.framework` directly.** ✅ **VERIFIED** —
 > Apple: *"**The gauge only appears in projects that link the Core AI framework. The gauge does not
 > support the Core ML framework.**"* Transitive linkage through a package is not enough; check

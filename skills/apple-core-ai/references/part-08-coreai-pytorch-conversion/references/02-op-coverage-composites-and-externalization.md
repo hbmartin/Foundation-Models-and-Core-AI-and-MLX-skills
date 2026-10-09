@@ -1059,13 +1059,13 @@ composite, you get the unmatched-class `UserWarning`, and you ship without the c
 The resolution order is documented and worth memorising, because passing a redundant argument
 silently does nothing:
 
-<!-- callout-id: callout-356886e0d7764b53 -->
 > ✅ **VERIFIED** — `docs/api/composite-ops/rope.md`: *"1. If `cos` and `sin` are both provided, use
 > them directly. 2. Else, build `cos`/`sin` from `position_ids` and `freqs`."* And on the arguments:
 > *"`position_ids` … **Ignored if `cos` and `sin` are provided.**"*, *"`freqs` … **Ignored if `cos`
 > and `sin` are provided.**"*, and for `offset`: *"If a tensor is provided alongside the int
 > attribute, **the tensor wins**."*
 
+<!-- callout-id: callout-356886e0d7764b53 -->
 > ⚠️ **SILENT FAILURE — partial-rotary RoPE can pair the wrong dimensions.**
 > `apple/coreai-models` #66 reports that the composite pairs within the first `dims`, while
 > transformers proportional rotary pairs across `head_dim/2` with zero-padded frequencies. For
@@ -1658,6 +1658,7 @@ noinline` graph with a `composite_decl` that the compiler can pattern-match — 
 >     ).to_coreai_attr(context)
 > ```
 
+<!-- callout-id: callout-f79952e97af35c58 -->
 > ⚠️ **Two documentation defects here, both verified.**
 > 1. `docs/api/generate-composite-decl.md` documents the second parameter as `op_name` and omits
 >    `version` entirely. The real name is **`composite_name`** and there is a sixth parameter.

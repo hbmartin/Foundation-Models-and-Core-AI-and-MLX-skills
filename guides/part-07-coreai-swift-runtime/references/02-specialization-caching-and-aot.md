@@ -264,6 +264,7 @@ The reason the download step is in there is a number worth remembering:
 You do not have to guess whether you are paying specialization; three Apple tools will tell you,
 and they disagree with each other in small ways that will confuse you if nobody warns you first.
 
+<!-- callout-id: callout-4dc7ac52ec55b68b -->
 > ✅ **VERIFIED** — Apple, *Monitoring model performance with the debug gauge* and *Analyzing model
 > runtime performance with Instruments*:
 >

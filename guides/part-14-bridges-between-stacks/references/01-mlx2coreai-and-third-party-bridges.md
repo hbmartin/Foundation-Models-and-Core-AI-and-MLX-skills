@@ -1680,6 +1680,7 @@ asyncio.run(main())
 verbatim because it is the one mistake in that document that *"costs a reboot instead of an
 afternoon"*:
 
+<!-- callout-id: callout-8b78ce1215af319b -->
 > ⚠️ **"Never execute an iOS-compiled bundle on a Mac. It can wedge the GPU/ANE stack and take the
 > whole machine down (watchdog reboot). Mac bundles on Mac, iOS bundles on device."**
 

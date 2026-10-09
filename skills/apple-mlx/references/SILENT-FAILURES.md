@@ -1,12 +1,12 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**328 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**329 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 40 |
+| [Wrong output](#wrong-output) | 41 |
 | [Empty output / no-op](#empty-output--no-op) | 7 |
 | [Truncation & limits](#truncation--limits) | 5 |
 | [Ignored input](#ignored-input) | 30 |
@@ -38,10 +38,11 @@
 - [External mutation of MLX memory is invisible to autodiff: Apple's own demo returns the wrong gradient with no error.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1 🔇
 - [DLPack hands over a pointer without synchronising; reading in torch before MLX's stream finishes yields wrong values.](part-12-mlx-python/references/01-core-fundamentals.md#125-pytorch-interop) — 12.1
 - [Skip mx.eval before exporting a module and the .mlxfn captures the initialiser - it runs with fresh random weights.](part-12-mlx-python/references/01-core-fundamentals.md#127-️-exporting-a-module-mxeval-first-or-you-export-the-initialiser) — 12.1
+- [A historical complex unary autodiff bug produced wrong gradients; affected release coverage remains unverified](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#17-complex-support-exactly-one-dtype) — 12.2
 - [MLX_SDPA_BLOCKS not a multiple of 32 silently corrupts attention every decode step on mlx <=0.32.0 (fixed in PR #3875).](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#57-two-adjacent-sdpa-traps) — 12.2 🔇
 - [math_mode relaxed/fast stops guaranteeing exp(-inf)==0; masked positions leak into softmax: plausible, wrong attention.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#75-math-mode) — 12.2 🔇
 - [ensure_row_contiguous=False with raw linear indexing reads strided buffers wrong: right shape, wrong contents, no error.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#91-strides-and-non-contiguous-inputs) — 12.2 🔇
-- [Custom-kernel outputs are uninitialized by default; without init_value, unwritten slots hold recycled buffer contents.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2 🔇
+- [Partially written custom-kernel outputs can retain recycled buffer contents; initialize or write every element](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2 🔇
 - [A kernel weight captured by closure gets no gradient under custom_function; pass tensors as arguments instead.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#94-atomic-outputs-and-init_value--the-vjp-pattern) — 12.2
 - [TOC: the register of quantized-matmul corruption bugs.](part-12-mlx-python/references/03-quantization.md#contents) — 12.3
 - [Seven quantized-matmul defects, five exclusive to M5-generation hardware; the register with statuses.](part-12-mlx-python/references/03-quantization.md#9-️-the-corruption-bugs) — 12.3

@@ -831,6 +831,7 @@ The emitted IR is worth seeing once, because it is what the compiler pattern-mat
 
 Three externalization footguns, all verified, all silent or nearly so:
 
+<!-- callout-id: callout-e20b39d76d497998 -->
 > ⚠️ **`target_class` must be `RMSNormImpl`, never `RMSNorm`.** `RMSNorm` is a convenience wrapper
 > that owns the weight and delegates to `RMSNormImpl`. The docs are explicit: *"`target_class` in the
 > `ExternalizeSpec` must still be `RMSNormImpl` (the inner module the converter recognizes as the

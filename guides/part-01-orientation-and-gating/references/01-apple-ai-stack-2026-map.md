@@ -506,6 +506,7 @@ Apple's docs add that reasoning segments do not appear in the final response con
 **Lead with eligibility, because for many readers the answer is "you can't".** This is the single
 most important product fact about PCC and it is *not* fully stated in any WWDC session we have.
 
+<!-- callout-id: callout-38d4b131645ff070 -->
 > ✅ **VERIFIED (three conditions, assembled)** — no-cost PCC access requires **all three** of:
 > 1. Enrolment in the **App Store Small Business Program**;
 > 2. Fewer than **2 million total first-time App Store downloads**, cumulative/lifetime across your

@@ -634,6 +634,7 @@ it is emitted solo (`:560-568`). This is directly test-covered
 
 Two streaming behaviours in the same area are worth flagging because they lose data:
 
+<!-- callout-id: callout-d71437c5bbd6f5cc -->
 > ⚠️ **SILENT FAILURE — a chunk carrying both `tool_calls` and `content` drops the `content`.** The
 > branch at `ChatCompletionsLanguageModel.swift:335` is an `else if`, so tool-call deltas suppress
 > text in the same chunk. Servers that interleave a partial sentence with a tool-call delta lose the
@@ -1145,6 +1146,7 @@ The `configuration:` argument is a `ModelConfiguration`, and it carries more tha
 >
 > The **`init(directory:)`** overload is the one you want for weights you ship or download yourself.
 
+<!-- callout-id: callout-335f8a121e334c1a -->
 > ⚠️ **`stopStrings == nil` falls back to `extraEOSTokens`.** To genuinely disable stop strings you
 > must set `stopStrings: []` explicitly. This is the difference between "the model stops where the
 > template says" and "the model runs to `maximumResponseTokens`", and it is invisible at the call site.

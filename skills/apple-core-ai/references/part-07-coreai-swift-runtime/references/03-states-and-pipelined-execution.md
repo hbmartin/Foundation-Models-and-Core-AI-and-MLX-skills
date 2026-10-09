@@ -2370,6 +2370,7 @@ And the one comparative claim the same author makes, with its own caveat attache
 
 Pipelining buys throughput and costs *controllability*. Two consequences, both community-reported:
 
+<!-- callout-id: callout-dc9ad85d68226342 -->
 > ⚠️ **Community-measured** (Noema): *"**Cross-turn KV reuse is NOT possible on this engine**: the
 > pipelined GPU loop overshoots the consumer's EOS break by its pipeline depth (extra tokens land in
 > device-resident KV and the SSM states, which can't be rolled back), so the exact fed sequence is

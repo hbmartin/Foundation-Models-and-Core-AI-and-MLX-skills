@@ -290,6 +290,61 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(changed.returncode, 0, changed.stderr)
             self.assertEqual(first.stdout, changed.stdout)
 
+    def test_unquoted_blank_separates_warning_blocks_and_their_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            text = '# Section\n\n> ⚠️ **First** — first warning.\n\n> ⚠️ **SILENT FAILURE** — second warning.\n'
+            guide.write_text(text, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            rows = [line.split('\t') for line in first.stdout.splitlines()]
+            self.assertEqual(2, len(rows))
+            self.assertEqual(['3', '5'], [row[1] for row in rows])
+            self.assertEqual(['CALLOUT', 'SILENT-FAILURE'], [row[3] for row in rows])
+            self.assertNotEqual(rows[0][6], rows[1][6])
+            self.assertNotIn('second warning', rows[0][5])
+            guide.write_text(text.replace('second warning', 'edited second warning'), encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            changed_rows = [line.split('\t') for line in changed.stdout.splitlines()]
+            self.assertEqual(rows[0], changed_rows[0])
+            self.assertNotEqual(rows[1][7], changed_rows[1][7])
+
+    def test_quoted_blank_preserves_the_complete_warning_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            text = '# Section\n\n> context before warning\n>\n> ⚠️ **Warning** — stable text.\n>\n> after warning\n'
+            guide.write_text(text, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            self.assertEqual(1, len(first.stdout.splitlines()))
+            row = first.stdout.strip().split('\t')
+            self.assertIn('after warning', row[5])
+            guide.write_text(text.replace('context before warning', 'edited preceding context'), encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            changed_row = changed.stdout.strip().split('\t')
+            self.assertEqual(row[5:7], changed_row[5:7])
+            self.assertNotEqual(row[7], changed_row[7])
+
+    def test_callout_marker_must_follow_a_separate_context_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            guide.write_text('# Section\n\n<!-- callout-id: kept-warning -->\n> separate context\n\n> ⚠️ **Warning** — stable text.\n', encoding='utf-8')
+            invalid = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertIn('not followed by its designated callout', invalid.stderr)
+            text = '# Section\n\n> separate context\n\n<!-- callout-id: kept-warning -->\n> ⚠️ **Warning** — stable text.\n'
+            guide.write_text(text, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            row = first.stdout.strip().split('\t')
+            self.assertEqual('kept-warning', row[6])
+            guide.write_text(text.replace('separate context', 'edited separate context'), encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            self.assertEqual(first.stdout, changed.stdout)
+
     def test_duplicate_semantic_callout_requires_explicit_override(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)

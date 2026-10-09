@@ -2585,6 +2585,7 @@ model that can interface with servers using the Chat Completions standard"* (✅
 
 Two facts you need before you point it at anything:
 
+<!-- callout-id: callout-cb6df62b245eccf8 -->
 > ⚠️ **The base-URL version detection is broken, was never fixed, and has no escape hatch.**
 >
 > ✅ **VERIFIED** — `ChatCompletionsLanguageModel.swift:635-637`:
