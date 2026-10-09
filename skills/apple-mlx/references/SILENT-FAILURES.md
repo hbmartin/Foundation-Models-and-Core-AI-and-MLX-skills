@@ -1,26 +1,26 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**329 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**340 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 41 |
+| [Wrong output](#wrong-output) | 46 |
 | [Empty output / no-op](#empty-output--no-op) | 7 |
 | [Truncation & limits](#truncation--limits) | 5 |
 | [Ignored input](#ignored-input) | 30 |
 | [Stale state](#stale-state) | 7 |
 | [Data & artifact loss](#data--artifact-loss) | 6 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 6 |
-| [Performance cliffs](#performance-cliffs) | 34 |
+| [Performance cliffs](#performance-cliffs) | 36 |
 | [Resource growth](#resource-growth) | 6 |
 | [Precision loss](#precision-loss) | 8 |
 | [Misleading signals](#misleading-signals) | 33 |
-| [Version drift](#version-drift) | 8 |
-| [Docs vs reality](#docs-vs-reality) | 13 |
+| [Version drift](#version-drift) | 9 |
+| [Docs vs reality](#docs-vs-reality) | 14 |
 | [API footguns](#api-footguns) | 59 |
-| [General cautions](#general-cautions) | 66 |
+| [General cautions](#general-cautions) | 68 |
 
 ## Wrong output
 
@@ -31,11 +31,14 @@
 - [Adapters train under a chat template serving may not reproduce (enable_thinking auto-defaults); quality quietly shifts.](part-12-mlx-python/README.md#126--lora-and-dora-fine-tuning-and-adding-a-new-architecture) — 12.README 🔇
 - [custom_function silently zeroes gradients for arrays captured by closure.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Arrays captured by custom_function become constants; their gradients are silently 0.0 and training never updates them.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1 🔇
+- [A scale captured by a custom_function closure receives no gradient; pass it as an argument to train it.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Under shapeless=True, Python arithmetic on x.shape freezes at trace time and later shapes compute with stale values.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [shapeless compile bakes shape-derived arithmetic from the first call; new shapes silently reuse the frozen numbers.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1 🔇
+- [Shapeless tracing freezes the first sequence length in a masked mean; later lengths silently use the wrong divisor.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [apply(astype) casts packed uint32 quantized weights and integer params to bfloat16, destroying them; use set_dtype.](part-12-mlx-python/references/01-core-fundamentals.md#115-the-rest-of-the-module-surface) — 12.1
 - [Writing through a NumPy view mutates MLX memory invisibly to autodiff; gradients come back wrong.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1
 - [External mutation of MLX memory is invisible to autodiff: Apple's own demo returns the wrong gradient with no error.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1 🔇
+- [Converting through NumPy breaks the autodiff chain and produces incorrect gradients even without in-place mutation.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1
 - [DLPack hands over a pointer without synchronising; reading in torch before MLX's stream finishes yields wrong values.](part-12-mlx-python/references/01-core-fundamentals.md#125-pytorch-interop) — 12.1
 - [Skip mx.eval before exporting a module and the .mlxfn captures the initialiser - it runs with fresh random weights.](part-12-mlx-python/references/01-core-fundamentals.md#127-️-exporting-a-module-mxeval-first-or-you-export-the-initialiser) — 12.1
 - [A historical complex unary autodiff bug produced wrong gradients; affected release coverage remains unverified](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#17-complex-support-exactly-one-dtype) — 12.2
@@ -54,6 +57,7 @@
 **Part 13**
 
 - [A missing or mismatched chat template yields fluent but degraded output blamed on the model — nothing checks it](part-13-mlx-swift/README.md#132--generation-tool-calling-and-kv-cache-management-in-swift) — 13.README 🔇
+- [KV quantization can leave stale caller references; speculative rollback can retain tokens that were never emitted.](part-13-mlx-swift/README.md#132--generation-tool-calling-and-kv-cache-management-in-swift) — 13.README
 - [A VLM factory processor-selection gotcha produces wrong output rather than an error](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#72-the-processor-pipeline) — 13.1
 - [Dropped EXIF orientation feeds the model a rotated photo — wrong answers, no error; Apple fixed it in their own sample](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#74-️-exif-orientation--the-bug-apple-fixed-in-their-own-sample) — 13.1
 - [An empty assistant placeholder passed to UserInput(chat:) closes the turn — garbage or empty output blamed on the model](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#76-the-third-bug-in-the-same-commit-trailing-empty-assistant-message) — 13.1
@@ -66,6 +70,7 @@
 **Part 14**
 
 - [Pass anything but the full monotonic position_ids and KV lands at the wrong cache slice — logits stay plausible](part-14-bridges-between-stacks/README.md#141--bridges-into-core-ai-mlx2coreai-swift-lm-and-the-community-zoo) — 14.README 🔇
+- [Boolean attention masks become additive 0/1 values in the bridge, leaving masked positions unmasked.](part-14-bridges-between-stacks/README.md#141--bridges-into-core-ai-mlx2coreai-swift-lm-and-the-community-zoo) — 14.README 🔇
 - [A position_ids max that isn't the last query position writes KV to the wrong offset — valid math, wrong cache](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#35-position_ids-is-the-full-position-vector) — 14.1
 - [Skip the bf16→fp16 logit cast and the Swift runner's hard-coded Float16 view reports garbage argmax — no crash](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#36-precision-and-the-flag-that-couples-to-the-swift-runner) — 14.1
 - [allow_unknown_sources=True (default) invents scalar fp32 specs for unknown tensors — converts fine, can be badly wrong](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md#52-conversionconfig-every-field) — 14.1
@@ -190,9 +195,11 @@
 
 **Part 12**
 
+- [Fused attention can fall back to matmul-softmax-matmul, preserving results while materializing large score tensors.](part-12-mlx-python/README.md#122--numerics-hardware-gating-and-writing-custom-metal-kernels-from-python) — 12.README 🔇
 - [Evaluating loss and gradients separately runs the graph twice per step; batch both into one mx.eval.](part-12-mlx-python/references/01-core-fundamentals.md#34-the-partial-evaluation-trap) — 12.1
 - [A varying Python scalar argument recompiles a compiled function on every call; it presents as compile being slower.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [int/float/str/None args are baked into the compile cache key; a varying scalar silently recompiles every call.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1 🔇
+- [A Python integer position enters the compile cache key, causing a fresh compilation at every decode step.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [shapeless=True only exempts shape changes; scalar constants varying across calls still create distinct cache entries.](part-12-mlx-python/references/01-core-fundamentals.md#92-what-it-does-not-exempt-you-from) — 12.1
 - [The default-stream context manager is part of the compile cache key; calling under another device recompiles.](part-12-mlx-python/references/01-core-fundamentals.md#102-the-default-and-how-to-change-it) — 12.1
 - [Per-call stream setup costs a uniform 55-77 ms TTFT regression (mlx-lm#1435); hoist it out of the hot path.](part-12-mlx-python/references/01-core-fundamentals.md#104-️-streams-are-thread-affine) — 12.1
@@ -314,6 +321,7 @@
 **Part 13**
 
 - [3.x main is a breaking major: download and tokenization become protocols you must implement yourself](part-13-mlx-swift/README.md#part-13--mlx-in-swift) — 13.README
+- [The beta SDK declares a three-argument updateUsage symbol missing from its dylib, causing a launch-time abort.](part-13-mlx-swift/README.md#133--mlxfoundationmodels-and-mlxguidedgeneration-backing-languagemodelsession-with-an-mlx-model) — 13.README 🔇
 - [The GPU cache API was renamed and both spellings circulate — verify which your version exports](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#62-️-the-gpu-cache-api-changed-name--and-both-spellings-are-in-the-wild) — 13.1
 - [Two ticket(...) spellings for wired memory exist in the repo and one is stale](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#65-wired-memory-the-part-with-a-dedicated-reference) — 13.1
 - [27-beta SDK churn: an interface/dylib mismatch escalates from silent drift to a SIGSEGV process abort](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#93-the-27-beta-sdk-churns-and-one-of-the-drifts-is-a-sigsegv) — 13.1
@@ -329,7 +337,7 @@
 **Part 12**
 
 - [LEARNED_QUANTS.md's DWQ and AWQ defaults don't match the code (1024/8 vs 2048/4; 32/10 vs 128/20); trust --help.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#25-the-four-learned-quantization-clis) — 12.4
-- [LORA.md says to pass --hf-path to mlx_lm.fuse, but the flag doesn't exist; GGUF export covers only three model types.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#27-mlx_lmlora-and-mlx_lmfuse) — 12.4
+- [LORA.md tells users to pass --hf-path to mlx_lm.fuse, but the inspected command has no such flag.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#27-mlx_lmlora-and-mlx_lmfuse) — 12.4
 - [The two best sources give different RDMA setup sequences; both are quoted - pick one deliberately.](part-12-mlx-python/references/05-serving-and-distributed.md#16-turning-rdma-on--the-setup-sequence) — 12.5
 - [--output does not exist on the launcher; the real flag is --output-hostfile.](part-12-mlx-python/references/05-serving-and-distributed.md#️---output-does-not-exist-the-flag-is---output-hostfile) — 12.5
 - [The docs' NCCL example passes --no-verify-script, a flag the launcher does not have.](part-12-mlx-python/references/05-serving-and-distributed.md#193-the-full-launcher-flag-set) — 12.5
@@ -344,6 +352,10 @@
 - [The bundled skill's loading code is stale against the 3.x API in the same repo](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md#51-the-shipped-skill-and-how-far-to-trust-it) — 13.1
 - [The MLXLLM and MLXVLM README links are genuinely dead — not a transcription error](part-13-mlx-swift/references/02-generation-tools-and-caching.md#11-two-repositories-and-which-one-you-actually-depend-on) — 13.2
 - [Session 339's one-argument MLXLanguageModel init does not exist — code written from the session will not compile](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md#51-the-signature) — 13.3
+
+**Part 14**
+
+- [The public run_aimodel API has no state argument, so it cannot execute the stateful asset its converter produces.](part-14-bridges-between-stacks/README.md#141--bridges-into-core-ai-mlx2coreai-swift-lm-and-the-community-zoo) — 14.README 🔇
 
 ## API footguns
 
@@ -422,6 +434,7 @@
 - [Scope note: the MLX stack moves weekly; pin versions or every dated claim in this part may have drifted.](part-12-mlx-python/README.md#️-pin-your-versions-every-date-in-this-part-is-suspect) — 12.README
 - [Scope note: signatures below are verified against source and docs; check the evidence ladder before trusting.](part-12-mlx-python/references/01-core-fundamentals.md#️-read-this-before-you-trust-a-signature-below) — 12.1
 - [The mx.metal.* memory spellings are deprecated and print to stderr on first call; use the top-level equivalents.](part-12-mlx-python/references/01-core-fundamentals.md#15-where-unified-memory-stops-being-free) — 12.1
+- [Compiled-step comparison assumes determinism; capture and seed random state when checking a sampling step.](part-12-mlx-python/references/01-core-fundamentals.md#71-️-silent-failure-captured-arrays-are-frozen-constants) — 12.1
 - [The applegpu g/s suffix-to-product mapping is disputed between MLX source and community; don't identify products by it.](part-12-mlx-python/references/01-core-fundamentals.md#106-querying-the-device) — 12.1
 - [cross_entropy's reduction defaults to 'none' and accepted literals are unverified; omit it and average yourself.](part-12-mlx-python/references/01-core-fundamentals.md#114-the-update-model-and-how-it-differs-from-pytorch) — 12.1
 - [Scope note: verify signatures below against source; the NAX story is new and evidence is mixed.](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md#️-read-this-before-you-trust-a-signature-below) — 12.2
@@ -437,6 +450,7 @@
 - [Scope note: quantization numbers below carry mixed provenance; check each one's sourcing before quoting.](part-12-mlx-python/references/03-quantization.md#️-read-this-before-you-trust-a-number-below) — 12.3
 - [The routed-only read numbers are community-measured (john-rocky, partly agent-generated repo), not Apple-published.](part-12-mlx-python/references/03-quantization.md#74-what-routed-only-reads-are-worth--community-measurements) — 12.3
 - [Scope note: flag names below were verified against argparse declarations, not the docs.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#️-read-this-before-you-trust-a-flag-name-below) — 12.4
+- [GGUF export supports only llama, mixtral and mistral in fp16; other model types raise ValueError.](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md#27-mlx_lmlora-and-mlx_lmfuse) — 12.4
 - [Scope note: server signatures verified from source at a pinned commit; PyPI lags main by months.](part-12-mlx-python/references/05-serving-and-distributed.md#️-read-this-before-you-trust-a-signature-below) — 12.5
 - [Freshness: NAX code paths are new and moving, with three correctness fixes within days of writing.](part-12-mlx-python/references/05-serving-and-distributed.md#101-the-m5-neural-accelerators) — 12.5
 - [--host 0.0.0.0 exposes a server with no authentication; anyone on the network can drive your model.](part-12-mlx-python/references/05-serving-and-distributed.md#113-xcode-27--the-one-most-readers-will-use) — 12.5

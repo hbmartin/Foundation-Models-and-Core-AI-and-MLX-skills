@@ -174,24 +174,29 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                         f"{path}:{pending_marker_line[0]}: occurrence is only valid "
                         "for an in-fence callout"
                     )
-                warning_index = warning_indexes[0]
-                raw_text = ''.join(block)
-                display_text = ''.join(block[warning_index:])
-                tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', display_text)
-                title = flatten(tm.group(1), 160) if tm else ''
-                kind = (
-                    'SILENT-FAILURE'
-                    if re.search(r'SILENT FAILURE', display_text, re.I)
-                    else 'CALLOUT'
-                )
-                append_row(
-                    start + warning_index + 1,
-                    heading_anchor,
-                    kind,
-                    title,
-                    raw_text,
-                    display_text=display_text,
-                )
+                for position, warning_index in enumerate(warning_indexes):
+                    end = (warning_indexes[position + 1]
+                           if position + 1 < len(warning_indexes) else len(block))
+                    # Only the first warning owns the preceding context. Quoted
+                    # blank lines belong to the explanation, not a new warning.
+                    begin = 0 if position == 0 else warning_index
+                    raw_text = ''.join(block[begin:end])
+                    display_text = ''.join(block[warning_index:end])
+                    tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', display_text)
+                    title = flatten(tm.group(1), 160) if tm else ''
+                    kind = (
+                        'SILENT-FAILURE'
+                        if re.search(r'SILENT FAILURE', display_text, re.I)
+                        else 'CALLOUT'
+                    )
+                    append_row(
+                        start + warning_index + 1,
+                        heading_anchor,
+                        kind,
+                        title,
+                        raw_text,
+                        display_text=display_text,
+                    )
                 continue
 
             if (

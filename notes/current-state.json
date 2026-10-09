@@ -1,9 +1,9 @@
 {
-  "asOf": "2026-10-08",
+  "asOf": "2026-10-09",
   "corpus": {
     "callouts": {
-      "concreteSilentFailures": 1436,
-      "total": 1785
+      "concreteSilentFailures": 1474,
+      "total": 1837
     },
     "externalLinks": 199,
     "generatedSkills": 10,
@@ -101,17 +101,17 @@
   "generatedOutputs": {
     "currentStateBlocks": {
       "checkCommand": "./scripts/current-state.py render --check",
-      "checkedAt": "2026-10-08",
+      "checkedAt": "2026-10-09",
       "status": "current"
     },
     "indexes": {
       "checkCommand": "python3 -m unittest scripts.tests.test_repository_indexes.RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
-      "checkedAt": "2026-10-08",
+      "checkedAt": "2026-10-09",
       "status": "current"
     },
     "skills": {
       "checkCommand": "python3 -m unittest scripts.tests.test_skills.CommittedSkillsTests.test_committed_skills_match_clean_generation",
-      "checkedAt": "2026-10-08",
+      "checkedAt": "2026-10-09",
       "status": "current"
     }
   },

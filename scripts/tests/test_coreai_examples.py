@@ -206,6 +206,101 @@ class CoreAIExampleTests(unittest.TestCase):
                 self.assertTrue(contract_errors(f"save_asset never {predicate} the destination", "overwrite"))
                 self.assertEqual([], contract_errors(f"Metadata never {predicate} a parity gate", "overwrite"))
 
+    def test_overwrite_claims_survive_formatting_and_saving_subject_modifiers(self):
+        for claim in (
+            OVERWRITE_STATEMENT.replace('replaces', 'does not replace'),
+            'save_asset by default does not overwrite the destination.',
+            'save_asset also does not overwrite the destination.',
+            'save_asset, unlike b2, does not overwrite the destination.',
+            'save_asset validates the path but does not overwrite the destination.',
+            'save_asset validates the path and does not overwrite the destination.',
+            '> ⚠️ **SILENT FAILURE** — the destination is not overwritten.',
+            'Note: the destination is not overwritten.',
+            '- The destination is not overwritten.',
+            '1. The destination is not overwritten.',
+            '| The destination is not overwritten |',
+            'AIProgram.save_asset(out) does not overwrite the destination.',
+            'prog.save_asset(out, rt.AIModelAssetMetadata()) does not overwrite the destination.',
+            'prog.save_asset(Path("model_(copy).aimodel"), metadata=make_metadata(version())) does not overwrite the destination.',
+            'prog.save_asset(out, description="text. A sentence with )") does not overwrite the destination.',
+            'prog.save_asset(out,\n# Save the supplied metadata.\nmetadata) does not overwrite the destination.',
+            'The destination is not overwritten, so delete it first.',
+            'The destination is not overwritten so delete it first.',
+            'The destination is not overwritten, so delete it by hand.',
+            'The saved bundle is not overwritten.',
+            '* Metadata is unchanged\n* The destination is not overwritten',
+        ):
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+                self.assertEqual(['b3 overwrite behavior incorrect'],
+                                 overwrite_contract_errors(OVERWRITE_STATEMENT + '\n\n' + claim))
+                affirmative = claim.replace('does not', 'does').replace('is not', 'is')
+                self.assertEqual([], contract_errors(affirmative, 'overwrite'))
+
+    def test_overwrite_pronouns_need_a_saving_antecedent(self):
+        for subject in ('save_asset', 'AIProgram.save_asset', 'prog.save_asset(out)', 'The converter'):
+            with self.subTest(subject=subject):
+                prefix = subject + ' writes the bundle. '
+                self.assertEqual(['b3 overwrite behavior incorrect'],
+                                 contract_errors(prefix + 'It will not overwrite the destination.', 'overwrite'))
+                self.assertEqual([], contract_errors(prefix + 'It will overwrite the destination.', 'overwrite'))
+        for text in (
+            'It will not overwrite the destination.',
+            'mlx_lm.convert writes a bundle. It will not overwrite the destination.',
+            'save_asset writes a bundle. mlx_lm.convert writes another. It will not overwrite the destination.',
+            'save_asset writes a bundle.\n\nIt will not overwrite the destination.',
+            'AIProgram.save_asset in coreai-core 1.0.0b2 preserves files. It will not overwrite the destination.',
+        ):
+            with self.subTest(text=text):
+                self.assertEqual([], contract_errors(text, 'overwrite'))
+
+    def test_overwrite_failure_reason_is_destination_existence(self):
+        for claim in (
+            'save_asset will fail when writing to an existing destination.',
+            'save_asset will fail if something already exists at the destination.',
+            'save_asset raises a FileExistsError.',
+            'prog.save_asset(out) raises FileExistsError if the destination already exists.',
+        ):
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+                negated = claim.replace('will fail', 'will not fail').replace('raises', 'does not raise')
+                self.assertEqual([], contract_errors(negated, 'overwrite'))
+        for predicate in ('fails', 'will fail'):
+            for reason in (
+                'if the path lacks the .aimodel suffix, even when the destination already exists',
+                'if the destination exists but is read-only',
+                'if the destination exists and is read-only',
+                'if the destination exists, but is read-only',
+            ):
+                with self.subTest(predicate=predicate, reason=reason):
+                    self.assertEqual([], contract_errors(f'save_asset {predicate} {reason}', 'overwrite'))
+
+    def test_passive_explanation_does_not_inherit_an_unrelated_agent(self):
+        self.assertEqual([], contract_errors(
+            'The destination is not overwritten by another_tool, so delete it first.', 'overwrite'))
+        self.assertEqual([], contract_errors(
+            'AIProgram.save_asset in coreai-core 1.0.0b2 does not overwrite the destination.', 'overwrite'))
+
+    def test_html_delimiters_in_code_do_not_hide_affirmative_prose(self):
+        for code in ('```python\nmarker = "<!--"\n```', '`<!--`', '``<!--``'):
+            with self.subTest(code=code):
+                self.assertEqual([], overwrite_contract_errors(code + '\n\n' + OVERWRITE_STATEMENT))
+        self.assertEqual([], overwrite_contract_errors('<!--\n```\n-->\n\n' + OVERWRITE_STATEMENT))
+
+    def test_overwrite_guard_checks_comments_inside_call_arguments(self):
+        text = ('```python\nprog.save_asset(out,\n'
+                '    # save_asset will NOT overwrite\n'
+                '    rt.AIModelAssetMetadata())\n```')
+        self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(text, 'overwrite'))
+
+    def test_html_delimiters_in_code_do_not_expose_fenced_statements(self):
+        for text in (
+            '```text\n<!--\n```\n\n-->\n\n```\n' + OVERWRITE_STATEMENT + '\n```',
+            '`<!--`\n\n```text\n-->\n\n' + OVERWRITE_STATEMENT + '\n```',
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(['b3 overwrite contract statement missing'], overwrite_contract_errors(text))
+
     def test_overwrite_claim_boundaries_and_filesystem_noun_phrases(self):
         cases = (
             ("save_asset will fail if the destination directory already exists", True),

@@ -16,6 +16,9 @@ literal characters, and no field may contain a tab or newline. Do not paste csv-
 [`../SYMPTOM-TAXONOMY.md`](../SYMPTOM-TAXONOMY.md). File plus `callout-id` identifies a semantic
 warning emitted by `scripts/extract-callouts.py`; the hash, anchor, and kind are review guards.
 Line-only movement is harmless, while changed warning text, kind, or section fails closed.
+Each warning-bearing line in a blockquote has its own row. Its explanation includes quoted blank
+lines and ends at the next warning or an unquoted boundary. Preceding context belongs to the first
+warning only; edits to a later warning do not invalidate earlier warnings' review hashes.
 The default ID is derived from normalized semantic content. If exact duplicates are intentional,
 place `<!-- callout-id: unique-slug -->` immediately before a Markdown callout. For the Nth warning
 inside a code fence, place `<!-- callout-id: unique-slug occurrence:N -->` immediately before the

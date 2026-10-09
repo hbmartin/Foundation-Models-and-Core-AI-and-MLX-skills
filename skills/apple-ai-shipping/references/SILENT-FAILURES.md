@@ -1,14 +1,14 @@
 # Silent-failure index — Shipping and operating on-device AI in a released app
 
-**47 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**48 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
 | [Data & artifact loss](#data--artifact-loss) | 4 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 8 |
-| [Performance cliffs](#performance-cliffs) | 3 |
+| [Performance cliffs](#performance-cliffs) | 4 |
 | [Resource growth](#resource-growth) | 12 |
 | [Misleading signals](#misleading-signals) | 7 |
 | [Version drift](#version-drift) | 1 |
@@ -42,6 +42,7 @@
 
 **Part 15**
 
+- [The same export recipe can run 2.2 times slower with twice the memory when built on a different macOS host.](part-15-shipping-and-operating/README.md#152--memory-jetsam-thermals-energy-and-measuring-honestly) — 15.README 🔇
 - [expectFrequentReshapes=true on a fixed-shape graph abandons the AOT specialization — device-validated, can SIGSEGV](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#54-a-second-way-a-compiled-asset-fails-to-load-with-the-same-shape) — 15.1
 - [Code comment: set expectFrequentReshapes explicitly false on static graphs — asking was measured to kill AOT and SIGSEGV](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md#94-the-fix-is-structural) — 15.1
 - [Your build machine is a benchmark variable — the same export can be 2.2× slower and 2× heavier with zero diagnostics](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md#95-the-artifact-is-not-a-function-of-the-recipe) — 15.2 🔇

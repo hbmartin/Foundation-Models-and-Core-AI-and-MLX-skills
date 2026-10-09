@@ -174,18 +174,21 @@ def prose_segments(text: str, *, contrast: bool = False) -> list[str]:
 def negated_predicate(prefix: str) -> bool:
     # Limit negation to the predicate's verb phrase, including passive auxiliaries.
     return bool(re.search(
-        r"(?:\b(?:not|never|no|cannot)|\b\w+n['’]t)"
-        r"(?:\s+(?:yet|still|currently|silently|automatically|ever|been|be|being|have|has|had|will|do|does|did))*"
-        r"[\s`*]*$", prefix, re.I))
+        rf"(?:\b(?:not|never|no|cannot|neither)|\b\w+n['’]t)"
+        rf"(?:\s+{_CLAIM_AUXILIARY})*[\s`*]*$", prefix, re.I))
 
 
 _REPLACEMENT = r"(?:overwrites?|overwrote|overwritten|overwriting|replace[sd]?|replacing)"
-_FAILURE = r"(?:will\s+fail|fails?|raises?\s+FileExistsError|errors?\s+out)"
+_FAILURE = r"(?:will\s+fail|fails?|raises?\s+(?:a\s+)?FileExistsError|errors?\s+out)"
 _CLAIM_AUXILIARY = (
     r"(?:will|would|can|could|is|are|was|were|be|been|being|has|have|had|do|does|did|"
     r"not|never|no|cannot|neither|yet|still|currently|silently|automatically|ever|performs|\w+n['’]t)"
 )
-_SAVING_SUBJECT = r"(?:\b(?:AIProgram\.)?save_asset(?:\(\))?|\b(?:converter|b3|save|saves|saving))"
+_SAVING_SUBJECT = r"(?:\b(?:\w+\.)?save_asset(?:\(\))?|\b(?:converter|b3|save|saves|saving))"
+_CLAIM_MODIFIER = (
+    rf"(?:\s+{_CLAIM_AUXILIARY}|\s+also|\s+by\s+default|"
+    r"\s+in\s+coreai-core\s+1\.0\.0b3\b|\s*,\s*unlike\s+[\w.-]+\s*,)"
+)
 _DESTINATION_PHRASE = re.compile(
     r"(?P<modifiers>(?:(?:the|an?|any|existing|specified|current|old|output|target|destinations?|asset|"
     r"metadata|its|their|this|that|saved)\s+)*)"
@@ -201,8 +204,50 @@ _OVERWRITE_CONTRACT = (
 )
 
 
+def _saving_call_names(text: str, *, comments: list[str] | None = None) -> str:
+    """Mask balanced arguments so their punctuation cannot split a prose claim."""
+    result, start = [], 0
+    for call in re.finditer(r"\b(?:\w+\.)?save_asset\s*\(", text):
+        if call.start() < start:
+            continue
+        i, depth, quote = call.end(), 1, None
+        call_comments = []
+        while i < len(text) and depth:
+            if quote:
+                if text[i] == "\\":
+                    i += 2
+                    continue
+                if text.startswith(quote, i):
+                    i += len(quote)
+                    quote = None
+                    continue
+            elif text[i] in "\"'":
+                quote = text[i] * (3 if text.startswith(text[i] * 3, i) else 1)
+                i += len(quote)
+                continue
+            elif text[i] == "#":
+                end = text.find("\n", i)
+                end = len(text) if end < 0 else end
+                call_comments.append(text[i:end])
+                i = end
+                continue
+            elif text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+            i += 1
+        if not depth:
+            result.extend((text[start:call.start()], call[0].rstrip()[:-1].strip() + "()"))
+            if comments is not None:
+                comments.extend(call_comments)
+            start = i
+    result.append(text[start:])
+    return "".join(result)
+
+
 def _saving_subject(prefix: str) -> bool:
-    return bool(re.search(rf"{_SAVING_SUBJECT}(?:\s+{_CLAIM_AUXILIARY})*\s*$", prefix, re.I))
+    prefix = _saving_call_names(prefix)
+    return bool(re.search(rf"{_SAVING_SUBJECT}{_CLAIM_MODIFIER}*\s*$", prefix, re.I))
 
 
 def _destination_phrase(text: str, *, qualified: bool = False, complete: bool = False) -> bool:
@@ -218,7 +263,7 @@ def _destination_phrase(text: str, *, qualified: bool = False, complete: bool = 
     # Bare paths/targets/outputs can describe strings, devices or dtypes. Passive
     # claims need an existing/qualified destination or a concrete filesystem head.
     return not (qualified and re.fullmatch(r"paths?|outputs?|bundles?|targets?", match["head"], re.I)
-                and not re.search(r"\b(?:existing|specified|current|old|output|target)\b",
+                and not re.search(r"\b(?:existing|specified|current|old|output|target|saved)\b",
                                   match["modifiers"], re.I))
 
 
@@ -230,27 +275,54 @@ def _destination_subject(prefix: str) -> bool:
                         or _destination_phrase(noun, qualified=True, complete=True) for noun in nouns[1:]))
 
 
-def _negated_claim(prefix: str) -> bool:
-    return bool(re.search(rf"(?:\b(?:not|never|no|cannot|neither)|\b\w+n['’]t)"
-                          rf"(?:\s+{_CLAIM_AUXILIARY})*\s*$", prefix, re.I))
-
-
 def _overwrite_clauses(text: str) -> list[str]:
     """Separate independent subjects without breaking coordinated verbs or nouns."""
-    text = re.sub(r"[`*]", "", text)
+    comments = []
+    text = _saving_call_names(text, comments=comments)
+    if comments:
+        text += "\n\n" + "\n\n".join(comments)
     text = re.sub(r"(?m)^(?: {0,3}>[ \t]?)+", "", text)
-    new_subject = (rf"(?:[\w.]+(?:\(\))?|the\s+[\w.]+)\s+"
+    text = re.sub(r"(?m)^\s*⚠️\s*\*\*[^*\n]+\*\*\s*[—–:-]\s*", "", text)
+    text = text.replace("|", ";")
+    new_subject = (rf"(?!but\b|and\b|while\b|whereas\b|{_CLAIM_AUXILIARY}\b)"
+                   rf"(?:{_SAVING_SUBJECT}|[\w.]+|the\s+(?:(?:saved|existing)\s+)?[\w.]+)\s+"
                    rf"(?:{_CLAIM_AUXILIARY}|{_FAILURE}|{_REPLACEMENT})\b")
+    inherited_predicate = rf"(?:{_CLAIM_AUXILIARY}\s+)*(?:{_REPLACEMENT}|{_FAILURE})\b"
     clauses = []
-    for sentence in prose_segments(text):
-        for contrast in re.split(r"\b(?:while|whereas|but)\b|\n\s*\n", sentence, flags=re.I):
-            start = 0
-            for boundary in re.finditer(rf"(?:\band\s+|,\s*)(?={new_subject})", contrast, re.I):
-                # A noun coordination before the first predicate is one subject.
-                if re.search(rf"\b(?:{_REPLACEMENT}|{_FAILURE})\b", contrast[start:boundary.start()], re.I):
-                    clauses.append(contrast[start:boundary.start()].strip())
-                    start = boundary.end()
-            clauses.append(contrast[start:].strip())
+    for paragraph in re.split(r"\n\s*\n", text):
+        antecedent = None
+        for sentence in prose_segments(paragraph):
+            sentence = re.sub(r"[`*]", "", sentence).strip()
+            sentence = re.sub(r"^(?:[-+]\s+|\d+[.)]\s+|Note:\s*)", "", sentence, flags=re.I)
+            contrasts = re.split(
+                rf"\b(?:(?:while|whereas|but)\s+(?={new_subject}|{inherited_predicate})"
+                rf"|and\s+(?={_CLAIM_AUXILIARY}\s+{inherited_predicate}))",
+                sentence, flags=re.I,
+            )
+            for position, contrast in enumerate(contrasts):
+                start = 0
+                parts = []
+                for boundary in re.finditer(rf"(?:\band\s+|,\s*)(?={new_subject})", contrast, re.I):
+                    # Noun coordinations and leading conditions stay together.
+                    if re.search(rf"\b(?:{_REPLACEMENT}|{_FAILURE})\b", contrast[start:boundary.start()], re.I):
+                        parts.append(contrast[start:boundary.start()].strip())
+                        start = boundary.end()
+                parts.append(contrast[start:].strip())
+                for part in parts:
+                    if not part:
+                        continue
+                    saving = re.match(rf"(?:the\s+)?({_SAVING_SUBJECT})\b", part, re.I)
+                    if saving:
+                        historical = re.search(r"\bin\s+coreai-core\s+(?!1\.0\.0b3\b)[\w.]+", part, re.I)
+                        antecedent = None if historical else saving[1]
+                    elif re.match(r"it\s+", part, re.I):
+                        if antecedent:
+                            part = re.sub(r"^it\b", lambda _: antecedent, part, flags=re.I)
+                    elif position and antecedent and re.match(inherited_predicate, part, re.I):
+                        part = antecedent + " " + part
+                    else:
+                        antecedent = None
+                    clauses.append(part)
     return clauses
 
 
@@ -265,41 +337,106 @@ def asset_replacement_claim(prefix: str, suffix: str) -> bool:
         return True
     # A passive destination claim may name save_asset as its agent, but another
     # explicit agent must not inherit the surrounding section's API context.
-    return bool(destination_subject and (not suffix or re.fullmatch(
-        rf"by\s+{_SAVING_SUBJECT}[\s.!?]*", suffix, re.I)))
+    if not destination_subject:
+        return False
+    if re.match(r"(?:,\s*)?by\s+", suffix, re.I):
+        return bool(re.fullmatch(
+            rf"(?:,\s*)?by\s+{_SAVING_SUBJECT}(?:\s*[,].*)?[\s.!?]*", suffix, re.I))
+    return not suffix or suffix.startswith(",") or bool(re.match(r"(?:so|therefore|because)\b", suffix, re.I))
 
 
 def _destination_existence(clause: str) -> bool:
-    for condition in re.finditer(r"\b(?:if|when|because)\s+([^,;]+?)\s+(?:already\s+)?exists?\b", clause, re.I):
-        if _destination_phrase(condition[1], complete=True):
-            return True
-    for condition in re.finditer(r"\bon\s+((?:(?:an?|the)\s+)?existing\s+[^,;]+)", clause, re.I):
-        if _destination_phrase(condition[1]):
-            return True
-    return False
+    if re.search(r",\s*(?:but|and|only|provided)\b", clause, re.I):
+        return False
+    condition = clause.split(",", 1)[0].strip().rstrip(".!?")
+    match = re.fullmatch(r"(?:if|when|because)\s+(.+?)\s+(?:already\s+)?exists?", condition, re.I)
+    if match:
+        return _destination_phrase(match[1], complete=True)
+    match = re.fullmatch(r"(?:if|when|because)\s+something\s+(?:already\s+)?exists?\s+at\s+(.+)", condition, re.I)
+    if match:
+        return _destination_phrase(match[1], complete=True)
+    match = re.fullmatch(r"(?:on|when\s+writing\s+to)\s+((?:(?:an?|the)\s+)?existing\s+.+)", condition, re.I)
+    return bool(match and _destination_phrase(match[1], complete=True))
 
 
 def _destination_failure(clause: str) -> bool:
-    return _destination_existence(clause) and any(
-        _saving_subject(clause[:failure.start()]) and not _negated_claim(clause[:failure.start()])
-        for failure in re.finditer(rf"\b{_FAILURE}\b", clause, re.I)
-    )
+    for failure in re.finditer(rf"\b{_FAILURE}\b", clause, re.I):
+        prefix, suffix = clause[:failure.start()], clause[failure.end():].strip()
+        if not _saving_subject(prefix) or negated_predicate(prefix):
+            continue
+        if _destination_existence(suffix):
+            return True
+        if not suffix:
+            condition = prefix.split(",", 1)
+            if len(condition) == 2 and _destination_existence(condition[0]):
+                return True
+            if "fileexistserror" in failure[0].lower() and len(condition) == 1:
+                return True
+    return False
 
 
 def _contract_paragraphs(text: str) -> list[str]:
     """Extract the bounded prose forms used for the affirmative guarantee."""
-    text = re.sub(r"<!--.*?(?:-->|$)", "\n\n", text, flags=re.S)
     paragraphs, lines = [], []
-    for line, _, fenced in iter_lines(text):
+    fence, comment, code_delimiter = None, False, 0
+
+    def flush():
+        if lines:
+            paragraphs.append(" ".join(lines))
+            lines.clear()
+
+    for line in text.splitlines():
         line = re.sub(r"^(?: {0,3}>[ \t]?)+", "", line)
-        if fenced or not line.strip() or line.expandtabs(4).startswith("    "):
-            if lines:
-                paragraphs.append(" ".join(lines))
-                lines = []
-        else:
-            lines.append(line.strip())
-    if lines:
-        paragraphs.append(" ".join(lines))
+        closer = FENCE.match(line)
+        if fence:
+            if (closer and closer[1][0] == fence[0] and len(closer[1]) >= len(fence)
+                    and not line[closer.end():].strip()):
+                fence = None
+            continue
+        opener = fence_opener(line) if not comment and not code_delimiter else None
+        if opener:
+            flush()
+            fence = opener[1]
+            continue
+        if not line.strip() or (not comment and not code_delimiter
+                               and line.expandtabs(4).startswith("    ")):
+            flush()
+            code_delimiter = 0
+            continue
+        visible = []
+        i = 0
+        while i < len(line):
+            if comment:
+                end = line.find("-->", i)
+                if end < 0:
+                    break
+                comment, i = False, end + 3
+            elif line[i] == "\\" and not code_delimiter:
+                visible.append(line[i:i + 2])
+                i += 2
+            elif line[i] == "`":
+                end = i + 1
+                while end < len(line) and line[end] == "`":
+                    end += 1
+                run = end - i
+                if not code_delimiter:
+                    code_delimiter = run
+                elif run == code_delimiter:
+                    code_delimiter = 0
+                visible.append(line[i:end])
+                i = end
+            elif not code_delimiter and line.startswith("<!--", i):
+                if "".join(visible).strip():
+                    lines.append("".join(visible).strip())
+                visible.clear()
+                flush()
+                comment, i = True, i + 4
+            else:
+                visible.append(line[i])
+                i += 1
+        if "".join(visible).strip():
+            lines.append("".join(visible).strip())
+    flush()
     return paragraphs
 
 
@@ -372,7 +509,7 @@ def contract_errors(text: str, contract: str) -> list[str]:
                 prefix, suffix = clause[:predicate.start()], clause[predicate.end():]
                 # A coordinated replacement verb inherits the same negation.
                 prefix = re.sub(rf"(?:\b{_REPLACEMENT}\s+(?:and|or|nor)\s+)+$", "", prefix, flags=re.I)
-                if asset_replacement_claim(prefix, suffix) and _negated_claim(prefix):
+                if asset_replacement_claim(prefix, suffix) and negated_predicate(prefix):
                     errors.append("b3 overwrite behavior incorrect")
                     return errors
             if _destination_failure(clause):

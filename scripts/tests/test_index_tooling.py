@@ -276,19 +276,47 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(first_row[5:7], changed_row[5:7])
             self.assertNotEqual(first_row[7], changed_row[7])
 
-    def test_part08_gap_is_outside_the_warning_content(self):
-        source = (REPO / 'guides/part-08-coreai-pytorch-conversion/README.md').read_text(encoding='utf-8')
-        self.assertIn('\n\n🔴 **GAP — nobody has measured what externalizing a composite is worth.', source)
+    def test_unquoted_gap_is_outside_the_warning_content(self):
+        source = '# Section\n\n> ⚠️ **Warning** — stable explanation.\n\n🔴 **GAP** — separate unknown.\n'
         with tempfile.TemporaryDirectory() as directory:
             guide = Path(directory) / 'guide.md'
             guide.write_text(source, encoding='utf-8')
             first = self.run_python(EXTRACT_CALLOUTS, directory)
             self.assertEqual(first.returncode, 0, first.stderr)
-            guide.write_text(source.replace('nobody has measured what externalizing a composite is worth',
-                                            'the separate gap paragraph changed'), encoding='utf-8')
+            guide.write_text(source.replace('separate unknown', 'changed unknown'), encoding='utf-8')
             changed = self.run_python(EXTRACT_CALLOUTS, directory)
             self.assertEqual(changed.returncode, 0, changed.stderr)
             self.assertEqual(first.stdout, changed.stdout)
+
+    def test_quoted_warnings_have_independent_content_and_classification(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            text = ('# Section\n\n> preceding context\n> ⚠️ **First** — first warning.\n'
+                    '>\n> first explanation.\n>\n> ⚠️ **SILENT FAILURE** — second warning.\n'
+                    '>\n> second explanation.\n')
+            guide.write_text(text, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, first.returncode, first.stderr)
+            rows = [line.split('\t') for line in first.stdout.splitlines()]
+            self.assertEqual(['4', '8'], [row[1] for row in rows])
+            self.assertEqual(['CALLOUT', 'SILENT-FAILURE'], [row[3] for row in rows])
+            self.assertEqual(['First', 'SILENT FAILURE'], [row[4] for row in rows])
+            self.assertIn('first explanation', rows[0][5])
+            self.assertIn('second explanation', rows[1][5])
+            self.assertNotIn('second warning', rows[0][5])
+            self.assertNotIn('preceding context', rows[1][5])
+            self.assertNotEqual(rows[0][6], rows[1][6])
+            for old, new, changed_index in (
+                ('second explanation', 'edited explanation', 1),
+                ('preceding context', 'edited context', 0),
+            ):
+                with self.subTest(old=old):
+                    guide.write_text(text.replace(old, new), encoding='utf-8')
+                    changed = self.run_python(EXTRACT_CALLOUTS, directory)
+                    self.assertEqual(0, changed.returncode, changed.stderr)
+                    changed_rows = [line.split('\t') for line in changed.stdout.splitlines()]
+                    self.assertEqual(rows[1 - changed_index], changed_rows[1 - changed_index])
+                    self.assertNotEqual(rows[changed_index][7], changed_rows[changed_index][7])
 
     def test_unquoted_blank_separates_warning_blocks_and_their_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -326,6 +354,21 @@ class IndexToolingTests(unittest.TestCase):
             changed_row = changed.stdout.strip().split('\t')
             self.assertEqual(row[5:7], changed_row[5:7])
             self.assertNotEqual(row[7], changed_row[7])
+
+    def test_blockquote_explicit_id_applies_only_to_its_first_warning(self):
+        with tempfile.TemporaryDirectory() as directory:
+            guide = Path(directory) / 'guide.md'
+            guide.write_text(
+                '# Section\n\n<!-- callout-id: first-warning -->\n'
+                '> ⚠️ **First** — first warning.\n>\n> ⚠️ **Second** — second warning.\n',
+                encoding='utf-8',
+            )
+            result = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, result.returncode, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(2, len(rows))
+            self.assertEqual('first-warning', rows[0][6])
+            self.assertTrue(rows[1][6].startswith('callout-'))
 
     def test_callout_marker_must_follow_a_separate_context_block(self):
         with tempfile.TemporaryDirectory() as directory:

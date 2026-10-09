@@ -1,8 +1,8 @@
 # Silent-failure index — Evaluations: measuring on-device model output
 
-**70 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**71 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -11,7 +11,7 @@
 | [Truncation & limits](#truncation--limits) | 9 |
 | [Ignored input](#ignored-input) | 1 |
 | [Stale state](#stale-state) | 3 |
-| [Misleading signals](#misleading-signals) | 11 |
+| [Misleading signals](#misleading-signals) | 12 |
 | [Docs vs reality](#docs-vs-reality) | 11 |
 | [API footguns](#api-footguns) | 8 |
 | [General cautions](#general-cautions) | 17 |
@@ -77,6 +77,7 @@
 
 **Part 6**
 
+- [Positional judge/expert joins can misalign scores and report low kappa, falsely suggesting a badly calibrated judge.](part-06-evaluations/README.md#62--model-judges-score-dimensions-drift-and-cohens-kappa) — 6.README 🔇
 - [An eval whose model config differs from the app's (guardrails, options) scores a system you don't ship, and stays green.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#4-step-1--subjectfrom-the-code-under-measurement) — 6.1 🔇
 - [(3...8).contains reads 100% for a constant 8 — @Guide(.count(3...8)) fixed the range and collapsed the distribution…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#pairing-a-passfail-metric-with-a-scored-one) — 6.1 🔇
 - [Omit ModelJudgePrompt and the judge falls back to defaultInstructions — stable, plausible scores with zero app context.](part-06-evaluations/references/02-model-judges-and-alignment.md#83-what-good-instructions-contain) — 6.2 🔇
@@ -93,7 +94,7 @@
 
 **Part 6**
 
-- [Session 335 presents Cohen's kappa as built-in; MetricsAggregator has no agreement statistic — Apple hand-writes 72…](part-06-evaluations/README.md#62--model-judges-score-dimensions-drift-and-cohens-kappa) — 6.README 🔇
+- [Session 335 presents Cohen's kappa as built-in; MetricsAggregator has no agreement statistic — Apple hand-writes 72…](part-06-evaluations/README.md#62--model-judges-score-dimensions-drift-and-cohens-kappa) — 6.README
 - [The evaluates trait's second parameter is info: [String: String]; session 298 calls it 'notes' — trust the API spelling.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#81-the-trait-is-evaluates-and-the-second-label-is-info) — 6.1
 - [Reconstructions show func f(results:); the real shape is plain func f() reading EvaluationContext.current.result…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#83-the-dataset-runs-before-the-test-body-and-the-body-never-iterates) — 6.1
 - [reference returns [String: String] — each pair a labelled prompt section — not the String circulating material claims.](part-06-evaluations/references/02-model-judges-and-alignment.md#81-the-type) — 6.2
