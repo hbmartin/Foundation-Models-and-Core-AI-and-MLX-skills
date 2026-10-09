@@ -5,7 +5,7 @@
 **Version note.** The original defect evidence and overload inventory were captured against
 `coreai-torch` **0.4.1** (published 2026-07-06), which pins `coreai-core==**1.0.0b2**` exactly.
 The current pipeline uses **coreai-torch 0.4.3 / coreai-core 1.0.0b3**; `to_coreai()` returns an
-already optimized program and the separate `.optimize()` method no longer exists. Both require
+already optimized program. `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method. Both require
 **Python ≥ 3.11**, and accept **torch ≥ 2.8.0** with no
 upper bound but warns above **2.13.0**. The `.aimodel` assets it produces run on **iOS 27.0 /
 iPadOS 27.0 / macOS 27.0** and are compiled with **Xcode 27.0+**; nothing in this guide back-deploys
@@ -1059,13 +1059,13 @@ composite, you get the unmatched-class `UserWarning`, and you ship without the c
 The resolution order is documented and worth memorising, because passing a redundant argument
 silently does nothing:
 
-<!-- callout-id: callout-356886e0d7764b53 -->
 > ✅ **VERIFIED** — `docs/api/composite-ops/rope.md`: *"1. If `cos` and `sin` are both provided, use
 > them directly. 2. Else, build `cos`/`sin` from `position_ids` and `freqs`."* And on the arguments:
 > *"`position_ids` … **Ignored if `cos` and `sin` are provided.**"*, *"`freqs` … **Ignored if `cos`
 > and `sin` are provided.**"*, and for `offset`: *"If a tensor is provided alongside the int
 > attribute, **the tensor wins**."*
 
+<!-- callout-id: callout-356886e0d7764b53 -->
 > ⚠️ **SILENT FAILURE — partial-rotary RoPE can pair the wrong dimensions.**
 > `apple/coreai-models` #66 reports that the composite pairs within the first `dims`, while
 > transformers proportional rotary pairs across `head_dim/2` with zero-padded frequencies. For
@@ -1658,6 +1658,7 @@ noinline` graph with a `composite_decl` that the compiler can pattern-match — 
 >     ).to_coreai_attr(context)
 > ```
 
+<!-- callout-id: callout-f79952e97af35c58 -->
 > ⚠️ **Two documentation defects here, both verified.**
 > 1. `docs/api/generate-composite-decl.md` documents the second parameter as `op_name` and omits
 >    `version` entirely. The real name is **`composite_name`** and there is a sixth parameter.
@@ -2705,7 +2706,7 @@ cheap relative to what they find, and each one catches a defect class the others
 |---|---|---|
 | **A · Eager vs Core AI** | `model(x)` vs the `.aimodel`'s output for the same `x` | Lowering arithmetic (§9.1–9.4), composite mismatch (§5.5, §5.7) |
 | **B · ExportedProgram vs eager** | The decomposed exported module and eager PyTorch on the same inputs | Export and decomposition changes before Core AI conversion |
-| **C · CPU vs GPU vs ANE** | The *same* `.aimodel`, three `SpecializationOptions` | Delegate divergence (§9.5, issue #10), ANE fp16 (§9.5) |
+| **C · CPU vs GPU vs ANE** | The *same* `.aimodel`, three `SpecializationOptions` | Delegate divergence (§9.7, issue #10), ANE fp16 (§9.5) |
 | **D · Token-exact greedy oracle** (LLMs only) | Greedy generation vs an fp32 reference, token by token | Everything above, compounded over many steps |
 
 Gate C's harness, assembled from the API surface confirmed across issues #51 and #10:

@@ -1337,6 +1337,7 @@ re-obtaining it inside the loop is at best redundant and at worst does not compi
 When you need Core AI to read memory you already own — a Metal buffer you filled with a compute
 kernel, an `IOSurface` from a capture session — the raw views are the door.
 
+<!-- callout-id: callout-c1998482b9e9acc9 -->
 > ✅ **VERIFIED** — `/documentation/coreai/ndarray/rawview`:
 >
 > ```swift

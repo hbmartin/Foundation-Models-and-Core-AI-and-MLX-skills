@@ -921,6 +921,7 @@ The 2026 release reshuffled the error types. For context overflow specifically:
 > until you rebuild with Xcode 27. You must update to Xcode 27 to catch the new error types before
 > submitting your app.**"*
 
+<!-- callout-id: callout-188539311fda3fa2 -->
 > ⚠️ **The two names coexist in current Apple material, and that is the migration story.** **TN3193**
 > — fetched 2026-07-27, i.e. not a stale page — names the overflow error as
 > **`LanguageModelSession.GenerationError.exceededContextWindowSize(_:)`**, nested under
@@ -2282,6 +2283,7 @@ between a hybrid model and a pure-attention model of similar quality for a conve
 Two related constraints belong in the same decision, both from the same community corpus and both
 about bring-your-own-model paths:
 
+<!-- callout-id: callout-2ed6d02957772390 -->
 > ⚠️ **Community-measured** — grammar-constrained decoding (`@Generable` / guided generation)
 > requires access to engine **logits**, and GPU-pipelined Core AI bundles never expose them. An app
 > that brings its own model on the fastest backend **loses Apple's flagship structured-generation

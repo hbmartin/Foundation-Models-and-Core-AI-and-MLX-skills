@@ -539,6 +539,7 @@ final class FeedbackCollector {
 }
 ```
 
+<!-- callout-id: callout-1b161a91b051044d -->
 > ⚠️ **This payload contains the session transcript — instructions, prompts, responses, tool arguments.**
 > Apple's own description of the attachment says so outright. Treat it exactly like the trace files in
 > §5.2: get consent, do not auto-upload, do not log it to your own analytics, and scrub before sharing.

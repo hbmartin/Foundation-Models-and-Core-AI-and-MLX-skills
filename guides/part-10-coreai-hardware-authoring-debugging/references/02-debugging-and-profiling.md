@@ -1023,6 +1023,7 @@ Everything before this section was about *time*. Everything after it is about *n
 > 2. *execute your model on **specific hardware** for **true runtime results**, and*
 > 3. *validate **inference correctness against a reference run** — all in one place."*
 
+<!-- callout-id: callout-59cbb06aa1083571 -->
 > ✅ **VERIFIED** — `https://developer.apple.com/core-ai-debugger/`, the download page:
 > *"Core AI Debugger bridges the gap between modeling and deployment. It allows you to visualize,
 > run, and validate Core AI models across every Apple platform with actionable feedback built for
@@ -2561,6 +2562,7 @@ have versions.**
 
 ### 15.1 What happened
 
+<!-- callout-id: callout-01ea3fbd184b22e9 -->
 > ⚠️ **Community-reported** — `notes/repos/john-rocky-models.md`
 > (`conversion/coreai-torch-041-ir-incident.md`, 2026-07-18), corroborated by
 > `apple/coreai-torch` issue **#37** and by `apple/coreai-models` issue #77. Attribute as
@@ -2721,6 +2723,7 @@ Strip to ship, never to debug.
 
 ### 15.5 The environment that avoids the whole problem
 
+<!-- callout-id: callout-281ae31ae9239ab5 -->
 > ⚠️ **Community-reported** — the working pin set as of 2026-07-18: `coreai-torch` **0.4.1+**,
 > `coreai-core` **1.0.0b2**, `coreai-opt` **0.2.1**, on a pinned **`torch==2.9.0`** — with the
 > warning *"do NOT let `uv` bump torch to 2.11 — it breaks torchvision with a circular import and

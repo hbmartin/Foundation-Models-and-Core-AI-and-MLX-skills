@@ -1,25 +1,25 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**386 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**400 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 24 |
-| [Empty output / no-op](#empty-output--no-op) | 26 |
+| [Wrong output](#wrong-output) | 25 |
+| [Empty output / no-op](#empty-output--no-op) | 29 |
 | [Truncation & limits](#truncation--limits) | 6 |
 | [Ignored input](#ignored-input) | 30 |
-| [Stale state](#stale-state) | 17 |
+| [Stale state](#stale-state) | 18 |
 | [Data & artifact loss](#data--artifact-loss) | 14 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 30 |
-| [Performance cliffs](#performance-cliffs) | 13 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 31 |
+| [Performance cliffs](#performance-cliffs) | 15 |
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
-| [Version drift](#version-drift) | 30 |
+| [Version drift](#version-drift) | 31 |
 | [Docs vs reality](#docs-vs-reality) | 37 |
-| [API footguns](#api-footguns) | 69 |
-| [General cautions](#general-cautions) | 53 |
+| [API footguns](#api-footguns) | 73 |
+| [General cautions](#general-cautions) | 54 |
 
 ## Wrong output
 
@@ -39,6 +39,7 @@
 
 **Part 3**
 
+- [Small or thinking models can emit invalid tool JSON; third-party results need model-specific validation](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#104-how-this-should-change-your-decision-table) — 3.1
 - [Heading: the consultation that quietly returns nonsense.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#36-️-silent-failure--the-consultation-that-quietly-returns-nonsense) — 3.4
 - [A failed child-session consultation reaches the parent as ordinary tool output — and the parent model believes it.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#36-️-silent-failure--the-consultation-that-quietly-returns-nonsense) — 3.4 🔇
 
@@ -74,6 +75,7 @@
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
 - [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
+- [Unknown image labels resolve to nil instead of producing a matching image](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
 
@@ -92,10 +94,12 @@
 **Part 4**
 
 - [First-token spinners can hang two ways at .deep — tool-call-only turns yield zero partials, and reasoning runs unseen.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#65-the-reasoning-segment-and-using-it-for-progress-ui) — 4.1 🔇
+- [Legal SSE data: lines without a following space are silently dropped by the parser](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#26-what-crosses-the-wire-and-what-is-quietly-dropped) — 4.2 🔇
 
 **Part 5**
 
 - [A turn that is only a tool call completes streamResponse with zero partials; spinner-until-first-partial UIs hang…](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#91-the-three-from-the-session) — 5.1 🔇
+- [Looking up a missing GeneratedContent key returns None without an error](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#98-reading-a-generatedcontent) — 5.2
 - [A tool call() that never returns leaves the Swift continuation unresumed — the session hangs forever, no timeout, no…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#104-️-a-tool-that-never-returns-hangs-the-session-forever) — 5.2
 - [pytest collects test_memory_stress.py and runs nothing — it defines no test_ functions; invoke it with python directly.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#136-how-to-know-whether-you-are-leaking) — 5.2
 
@@ -129,7 +133,7 @@
 
 **Part 3**
 
-- [Endpoint building recognises only 'v1' — any other version path silently gets /v1/chat/completions appended.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#19-chatcompletionslanguagemodel-briefly) — 3.3 🔇
+- [Endpoint building recognises only 'v1' — any other version path silently gets /v1/chat/completions appended.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#19-chatcompletionslanguagemodel-briefly) — 3.3
 - [A call-site GenerationOptions(toolCallingMode:) silently overrides the profile's conditioned exit — loop or no tools.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#52-two-places-to-set-it-one-precedence-rule) — 3.4 🔇
 
 **Part 4**
@@ -180,6 +184,7 @@
 - [Models differing only in URLSessionConfiguration are cache-equal — the second silently inherits the first's transport.](part-04-beyond-the-built-in-model/README.md#44--executor-lifecycle-configuration-identity-and-preserving-work-across-calls) — 4.README 🔇
 - [The executor cache is keyed on Configuration, not your model value — equal configs silently share one executor.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#what-does-not-hold-constant) — 4.2 🔇
 - [Configuration's == deliberately excludes the URLSession — your timeout config can silently be the other model's.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#28-transport-timeouts-and-the-executor-cache-wrinkle) — 4.2 🔇
+- [MLX executors share a model-ID cache key despite differing capabilities; isolate IDs when comparing capability sets](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
 - [A hand-written == ignoring a behavioural field makes the framework return the wrong cached executor.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#32-configuration-is-a-cache-key-and-that-is-a-design-constraint) — 4.3 🔇
 - [Contents entry: the urlSession that isn't in the cache key.](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#contents) — 4.4
 - [Heading: the urlSession that isn't in the key.](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#3-️-the-urlsession-that-isnt-in-the-key) — 4.4
@@ -217,7 +222,7 @@
 - [Contents entry: backends that sample on the GPU expose no logits, so guided generation is lost there.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#contents) — 2.2
 - [Heading: the logits problem — the fastest backend can lose guided generation.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#6-️-the-logits-problem-when-your-fastest-backend-loses-guided-generation) — 2.2
 - [Engines that sample on the GPU never expose per-step logits — guided generation there is impossible, not degraded.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#6-️-the-logits-problem-when-your-fastest-backend-loses-guided-generation) — 2.2 🔇
-- [BarcodeReaderTool lists watchOS, OCRTool does not — gate watchOS OCR paths; cut feature or doc slip is unresolved.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#what-the-two-declarations-actually-say) — 2.3
+- [OCRTool is unavailable on watchOS and tvOS; BarcodeReaderTool supports watchOS, so gate OCR paths separately](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#what-the-two-declarations-actually-say) — 2.3
 - [Symbol table: OCRTool has no watchOS row; its Arguments/Output are absent from the captured Vision interface.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#131-symbols-with-version-floor-and-evidence) — 2.3
 - [Model availability is not tool availability — every documented check passes while SpotlightSearchTool fails to init.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#141-the-model-catalog-error--thread-838904) — 2.4 🔇
 - [On Linux the Python SDK buffers whole responses — streaming arrives in one burst — and @Generable is Darwin-gated.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#102-the-platform-asymmetry--in-memory-images-are-apple-only) — 2.5
@@ -244,6 +249,7 @@
 - [Contents entry: the logits constraint — why the fastest backend loses @Generable.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#contents) — 4.2
 - [On Linux streamResponse still compiles and yields partials — but all at once, when the request completes.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#29-linux-and-the-streaming-you-do-not-get-there) — 4.2
 - [Factories load via NSClassFromString — skip linking MLXLLM and there is nothing to find; loading fails at runtime.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#33-a-consumer-packageswift-that-works) — 4.2
+- [Community 4B loads hit GPU JIT scratch-disk or ANE warmup failures; the reported AOT GPU path worked](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#45-where-the-bundle-comes-from) — 4.2
 - [Heading: the logits constraint — why the fastest backend loses @Generable.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#5-️-the-logits-constraint-why-the-fastest-backend-loses-generable) — 4.2
 - [Verified on 27.0 beta: hybrid/SSM bundles run behind LanguageModelSession, but pipelined engines expose no logits.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#52-what-the-fast-engine-does) — 4.2
 - [On non-Darwin the executor buffers the entire response — 'streaming' delivers everything at once at completion.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#22-should-you-support-linux) — 4.3 🔇
@@ -260,11 +266,13 @@
 
 - [Cache invalidation never throws — a reordering transform or time-interpolated instructions makes every turn O(N) again.](part-03-context-profiles-agentic/README.md#31--token-budgeting-transcript-anatomy-and-kv-cache-economics) — 3.README 🔇
 - [Contents entry: architectures that cannot prefix-cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#contents) — 3.1
+- [A measured context overflow took 92.7 seconds; enforce an outer deadline as well as catching the typed error](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1
 - [Cache invalidation's only symptom is a longer prefill bar in Instruments — no error, no log line exists.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#84-taking-the-training-wheels-off) — 3.1 🔇
 - [Model switching re-prefills the shared transcript on the new engine — 2.35 s switch-in measured; KV reuse is per-model.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#89-profile-switching-is-a-deliberate-reset) — 3.1
 - [Heading: the model-selection consequence — architectures that cannot prefix-cache.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#10-️-the-model-selection-consequence-architectures-that-cannot-prefix-cache) — 3.1
 - [A conditional above static instructions silently invalidates the cache — TTFT climbs turn over turn, no diagnostic.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#43-the-ordering-rule--static-first-conditional-last) — 3.2 🔇
 - [trimKVCache returns -1 whenever SSM state exists — Qwen3.5, LFM2.5, Granite 4 re-prefill every turn, silently.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#121-the-economics-first) — 3.3
+- [Linux streaming buffers the whole response and delivers one burst instead of incremental output](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#19-chatcompletionslanguagemodel-briefly) — 3.3 🔇
 - [Hybrid and linear-attention models refuse the KV trim — every turn re-prefills; the efficiency pick makes chat slower.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#83-what-switching-actually-measured-on-real-hardware) — 3.4
 
 **Part 4**
@@ -319,7 +327,7 @@
 - [availability == .available says nothing about quota — the most common real failure is invisible to every check.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#54-️-silent-failure--availability-is-not-a-health-check) — 4.1 🔇
 - [PCC in the Simulator throws a content-free error that reads as your bug — a known issue per Apple engineering.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#55-️-the-simulator-does-not-run-pcc) — 4.1
 - [This executor never throws rateLimited/contextSizeExceeded/timeout — a 429 arrives as generic httpError with raw bytes.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#27-the-errors-you-will-actually-see) — 4.2
-- [The cited beta adapter omits usage to avoid a missing symbol; verify stable behavior before token accounting.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2 🔇
+- [The cited beta adapter omits usage to avoid a missing symbol; verify stable behavior before token accounting.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#39-the-mlx-specific-traps) — 4.2
 - [A backend is not obliged to use the typed error vocabulary — and Apple's own executor mostly doesn't.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#64-the-rest-of-the-error-vocabulary) — 4.2
 - [Comparison table: MLX may report token usage absent or zero — the deliberate omission documented in §3.9.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#82-the-comparison-that-actually-decides-it) — 4.2
 - [Heading: Apple's own executor throws none of the typed LanguageModelError cases.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#113-️-apples-own-executor-throws-none-of-them) — 4.3
@@ -359,7 +367,8 @@
 
 - [history is Transcript.HistoryView since beta 5 — same element type, its own SubSequence, opaque non-Int Index.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#1-the-transcript-is-the-context-window) — 3.1
 - [Transcript.Entry switches exhaustive on 26 fail to compile on 27 (.reasoning) — add @unknown default deliberately.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#2-anatomy-six-entry-types-and-what-each-one-costs) — 3.1
-- [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
+- [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1
+- [SDK 27 renamed the generation error type; catches written for the earlier namespace need migration](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1
 - [Beta 5 retyped history to Transcript.HistoryView; suffix trims survive, but Int indexing breaks.](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md#123-the-two-types-are-not-the-same-type) — 3.2
 - [Contents entry: SkillActivations and the ForEach that stopped compiling.](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md#contents) — 3.3
@@ -450,6 +459,7 @@
 - [Heading: .required is a while loop and you own the exit.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#7-️-required-is-a-while-loop-and-you-own-the-exit) — 2.3
 - [Apple verbatim: with required tool calling the model is in a while loop — providing an exit condition is your job.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#7-️-required-is-a-while-loop-and-you-own-the-exit) — 2.3 🔇
 - [Profile body is re-evaluated per request — 7 evaluations across 3 turns measured; read state there, never mutate.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#71-exit-a--conditionalise-the-mode-on-state-the-tool-moves) — 2.3
+- [If a tool throws before setting its exit flag, repeated calls remain unbounded; count invocations](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#71-exit-a--conditionalise-the-mode-on-state-the-tool-moves) — 2.3
 - [Heading: the tool you named but never registered.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#8-️-the-tool-you-named-but-never-registered) — 2.3
 - [Instructions naming an unregistered tool loop with no thrown error — WWDC26 session 243 exists to teach the diagnosis.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#8-️-the-tool-you-named-but-never-registered) — 2.3 🔇
 - [Corrective strings for bad .anyOf args can wedge the model re-calling with invalid args — bound retries yourself.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#92-throw-or-return-a-corrective-string) — 2.3
@@ -489,6 +499,7 @@
 - [Heading: .required is a while loop and you supply the exit.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#6-️-required-is-a-while-loop-and-you-supply-the-exit) — 3.4
 - [Apple verbatim: with required tool calling the model is essentially in a while loop — the exit condition is your job.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#6-️-required-is-a-while-loop-and-you-supply-the-exit) — 3.4 🔇
 - [Profile body re-evaluates per request — 7 evaluations in 3 turns measured; read your route variable, never mutate.](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#61-exit-a--conditionalise-the-mode-on-a-variable-the-loop-moves) — 3.4
+- [An exit flag alone can leave throwing tools in an unbounded loop; use a plain invocation counter](part-03-context-profiles-agentic/references/04-agentic-orchestration.md#61-exit-a--conditionalise-the-mode-on-a-variable-the-loop-moves) — 3.4
 
 **Part 4**
 
@@ -507,6 +518,7 @@
 - [includeSchemaInPrompt: false without a one-shot example leaves neither schema nor pattern — structured output degrades.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#91-the-three-from-the-session) — 5.1
 - [_stream_response skips the session request lock every respond path takes; a stream and respond() interleave…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#85-streaming-yields-snapshots-and-only-text) — 5.2
 - [GuideType members are camelCase (maxItems) while factories are snake_case (max_items) — an autocomplete trap.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#92-fmguide) — 5.2
+- [Dictionary-built GeneratedContent has no native pointer; to_json and is_complete fail on it](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#98-reading-a-generatedcontent) — 5.2
 - [Tool validation is bare asserts, disabled under python -O — a tool missing description fails later and less legibly.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#105-two-more-sharp-edges) — 5.2
 - [ImageAttachment path must be pathlib.Path; a plain str dies on path.is_file() with AttributeError, not a friendly error.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#111-the-prompt-model) — 5.2
 - [Prompts expand any non-str iterable: a consumed generator retries as an empty prompt; a dict contributes only its keys.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#112-the-iterable-trap) — 5.2
@@ -514,6 +526,7 @@
 - [Manual cleanup of native session resources crashes the interpreter — never call the internal _release() yourself.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-️-the-cleanup-that-crashes-the-interpreter) — 5.2
 - [session._release() double-frees when GC releases again — EXC_BREAKPOINT/SIGTRAP in libswiftCore.dylib.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#134-️-the-cleanup-that-crashes-the-interpreter) — 5.2
 - [except fm.FoundationModelsError misses image failures — PromptError/ImagePromptError subclass plain Exception; catch…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#14-what-the-python-sdk-cannot-do) — 5.2
+- [Native cancellation surfaces as GenerationError rather than asyncio.CancelledError](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#14-what-the-python-sdk-cannot-do) — 5.2
 
 ## General cautions
 
@@ -579,6 +592,7 @@
 - [The coffee-game and SpeechAnalyzer samples are iOS 26-era harvests — do not read them as evidence of 27 behaviour.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#16-sources) — 5.1
 - [Evidence in this guide is the weakest of Parts 1-6 — read the provenance warning before trusting details.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#️-read-this-before-you-read-anything-else-the-evidence-here-is-the-weakest-in-parts-16) — 5.2
 - [The Swift/Python parity fixtures differ (Int .range vs prose-bounded nested type) — parity is schema-level only.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#99-the-parity-fixtures-the-best-translation-reference-that-exists) — 5.2
+- [The Python SDK lacks the tool interception needed to reproduce consent-gated execution](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#105-two-more-sharp-edges) — 5.2
 - [Transcripts are user words: exporting them off-device is a data-collection decision — consent, redaction, retention.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#125-what-this-workflow-is-good-for) — 5.2
 - [Symptom-to-cause table of the SDK's non-throwing failures: dropped options, failed seed casts, ignored guides, hung…](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#162-️-it-does-not-throw--the-expensive-ones) — 5.2
 

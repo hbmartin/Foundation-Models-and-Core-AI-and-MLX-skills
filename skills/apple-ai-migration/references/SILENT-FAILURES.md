@@ -1,6 +1,6 @@
 # Silent-failure index — Migrating an Apple AI integration from 26 to 27
 
-**170 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**185 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -8,18 +8,18 @@
 |---|---:|
 | [Wrong output](#wrong-output) | 6 |
 | [Empty output / no-op](#empty-output--no-op) | 4 |
-| [Ignored input](#ignored-input) | 10 |
+| [Ignored input](#ignored-input) | 11 |
 | [Stale state](#stale-state) | 2 |
 | [Data & artifact loss](#data--artifact-loss) | 8 |
-| [Compiles but unavailable](#compiles-but-unavailable) | 13 |
-| [Performance cliffs](#performance-cliffs) | 6 |
+| [Compiles but unavailable](#compiles-but-unavailable) | 14 |
+| [Performance cliffs](#performance-cliffs) | 9 |
 | [Resource growth](#resource-growth) | 4 |
 | [Precision loss](#precision-loss) | 1 |
-| [Misleading signals](#misleading-signals) | 23 |
+| [Misleading signals](#misleading-signals) | 24 |
 | [Version drift](#version-drift) | 24 |
-| [Docs vs reality](#docs-vs-reality) | 12 |
-| [API footguns](#api-footguns) | 19 |
-| [General cautions](#general-cautions) | 38 |
+| [Docs vs reality](#docs-vs-reality) | 14 |
+| [API footguns](#api-footguns) | 24 |
+| [General cautions](#general-cautions) | 40 |
 
 ## Wrong output
 
@@ -54,6 +54,7 @@
 - [Apple reproduced it: @Guide with .anyOf compiles and runs but generation ignores the allowed-value list](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#64-️-the-one-guide-that-does-not-do-what-it-says) — 17.2 🔇
 - [Set permissiveContentTransformations then call respond(generating:) and the setting is inert; guardrails run as usual](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#103-the-contradiction-presented-with-both-sides) — 17.3 🔇
 - [Palettization silently skips layers incompatible with the configured granularity; the model ships partly uncompressed](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#32-️-silent-failure-numeric-drift-with-no-exception) — 17.5
+- [Incompatible granularity disables palettization for the layer with only a log message](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#64-what-does-carry-over-the-optimization-stage) — 17.5
 - [Running python from the coreai-torch clone shadows installed 0.4.1 with the 0.4.0 egg-info; exports silently regress](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#34-the-negative-list-four-things-that-do-not-fix-it) — 17.6 🔇
 
 ## Stale state
@@ -90,6 +91,7 @@
 - [TOC pointer: the load-time crash from an interface/dylib mismatch that no runtime guard can catch](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
 - [The load-time failure no guard can catch: interface/dylib mismatch SIGSEGVs before main](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4
 - [The FM-27 beta interface declared a symbol the dylib lacked; respond() SIGSEGVed emitting usage until mlx fix #439](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#13-️-the-load-time-failure-no-runtime-guard-can-catch) — 17.4 🔇
+- [Core AI Debugger requires a macOS 27 host and lists only iOS, iPadOS, and macOS paired devices](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#43-the-core-ai-debugger-sync-points-and-psnr-against-a-pytorch-reference) — 17.5
 - [AOT compiles only for Apple Intelligence hardware (A17 Pro+, M1+); older devices silently specialize on device instead](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#44-ahead-of-time-compilation) — 17.5
 - [CoreAI.framework is absent from the iOS Simulator SDK; every file importing CoreAI fails to compile for simulator](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#and-one-that-is-not-about-architectures-at-all) — 17.6
 - [The beta .swiftinterface declared API the dylib lacked: code compiled fine and segfaulted at load, before main](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#the-27-only-surface-and-the-trait-that-gates-it) — 17.6
@@ -102,6 +104,9 @@
 - [Refusal.explanation re-runs the model for seconds; awaiting it near the main actor freezes the UI with no crash report](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#11-reading-a-refusal-explanation-and-explanationstream) — 17.3 🔇
 - [An optional sample-loader pattern can request an unintended compute unit; inference silently runs on the wrong backend](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#31-️-silent-failure-the-optional-sample-loader-may-request-an-unintended-compute-unit) — 17.5
 - [Apple's own CoreAISegmentationEngine re-runs image_encode per call; the 76% saving requires a cache you must write](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#31-️-silent-failure-the-optional-sample-loader-may-request-an-unintended-compute-unit) — 17.5
+- [Hybrid linear states cannot rewind to a cached prefix, so reuse falls back to a full prefill](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#41-states-kv-caches-as-first-class-in-place-model-inputs) — 17.5
+- [The segmentation engine re-runs image encoding on every call unless the caller caches features](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#42-multi-function-assets--and-the-finding-that-reframes-them) — 17.5
+- [AOT assets still require device specialization; the community example reported a 194-second wait](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#44-ahead-of-time-compilation) — 17.5
 - [Specialization replaces .mlmodelc compilation and its cache entry is invalidated on every OS update](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#91-the-translation-table-condensed) — 17.5
 - [The stale-host 2.2x slowdown hides on large bandwidth-bound models; only small-model benchmarks reveal it](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#41-the-ab) — 17.6
 
@@ -137,6 +142,7 @@
 - [availability/isAvailable can report healthy while the call still throws (catalog asset and PCC entitlement failures)](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#132-comappleunifiedassetframework-code5000--the-model-catalog) — 17.3 🔇
 - [A green Xcode 26 run proves MLX inference only; the FM adapter is not in that binary, so one check covers half](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#84-what-ran-where) — 17.4
 - [On 27 betas availability returns appleIntelligenceNotEnabled unless a Siri toggle is on; Apple confirmed it is a bug](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#101-model-availability) — 17.4
+- [Diffusion quantization failures warn while export continues; a completed export does not prove compression](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#32-️-silent-failure-numeric-drift-with-no-exception) — 17.5
 - [The Core AI gauge and Instruments swap Load and Specialization colors; do not carry color intuition across tools](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#43-the-core-ai-debugger-sync-points-and-psnr-against-a-pytorch-reference) — 17.5
 - [The Core AI Xcode gauge appears only with direct CoreAI.framework linkage; transitive linkage shows no gauge at all](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#43-the-core-ai-debugger-sync-points-and-psnr-against-a-pytorch-reference) — 17.5
 - [TOC pointer: coreai-build inspect succeeds on assets the runtime rejects, making them look healthy](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#contents) — 17.6
@@ -160,7 +166,7 @@
 - [catch GenerationError clauses still compile after an Xcode 27 rebuild but stop firing; the catch-all absorbs them](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#71-renamed--generationerror--languagemodelerror-and-two-siblings) — 17.1 🔇
 - [A wheel built with Xcode 26 permanently lacks image support; ImagePromptError surfaces on the first image call](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#9-the-python-sdk-generation-lag) — 17.1
 - [Xcode 26 gives no build-time signal of the adapter sunset: no attested deprecation, and the packaging CLI still ships](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#the-adapter-sunset-migrating-off-custom-lora-adapters) — 17.2 🔇
-- [Revised: Xcode 27 now emits adapter deprecation warnings, and hard obsolete errors once you target OS 27](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
+- [Xcode 27 diagnoses adapter removal, but dual-target binaries need evaluations for unverified runtime behavior](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#21-️-the-three-unknowns-and-what-to-do-about-each) — 17.2 🔇
 - [MLXFoundationModels compiles only when the trait and the 27-SDK canImport both hold; otherwise it is an empty library](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md#82-where-mlxfoundationmodels-actually-is) — 17.2
 - [GenerationError was deprecated, not deleted: catch clauses compile but stop firing once you rebuild with Xcode 27](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#error-taxonomy-migration-generationerror--languagemodelerror) — 17.3 🔇
 - [TOC pointer: the empty library — a green 26-SDK build of MLXFoundationModels contains nothing](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#contents) — 17.4
@@ -184,7 +190,9 @@
 - [The apple-intelligence/private-cloud-compute doc path 404s; the live page is developer.apple.com/private-cloud-compute](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#42-additive--privatecloudcomputelanguagemodel) — 17.1
 - [Utilities package traps: from: 1.0.0 never resolves, SkillActivations lost its collection shape, API is experimental](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#45-additive--skills-and-history-modifiers-the-utilities-package) — 17.1
 - [Evaluations ships no agreement statistic; the sample's Statistics.cohensKappa is 72 lines of hand-rolled Swift](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#51-additive--the-evaluations-framework-xcode-27) — 17.1
+- [The README example puts the port inside the URL path, producing a malformed endpoint](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#53-additive--chatcompletionslanguagemodel-turns-your-existing-stack-into-a-backend) — 17.1
 - [.coreaimodel, .aiasset and a coreai-torch convert CLI are fabrications; real forms are .aimodel/.aimodelc directories](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
+- [The claimed on-device LoRA training API does not exist; the historical adapter workflow trained off-device](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#81-withdrawn--custom-lora-adapters) — 17.1
 - [The apple-intelligence/private-cloud-compute documentation path 404s; use the shorter private-cloud-compute URL](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#144-apple-documentation-pages) — 17.1
 - [Docs build Transcript.Response(segments:) but Apple's Origami sample also passes assetIDs; the SDK seems to require it](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md#136-when-the-answer-really-is-file-a-feedback) — 17.3
 - ['8K context on iOS 27' is retired third-party provenance; Apple's TN3193 states 4096 tokens per session](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#111-the-264-trap) — 17.4
@@ -199,7 +207,8 @@
 **Part 17**
 
 - [ToolCallingMode.required loops tool calls forever unless a tool throws or a DynamicProfile switches the mode](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#48-additive--toolcallingmode-and-its-exit-condition-trap) — 17.1 🔇
-- [toolCallingMode exists on both GenerationOptions and DynamicProfile; precedence when both are set is unverified](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#48-additive--toolcallingmode-and-its-exit-condition-trap) — 17.1
+- [Call-site .disallowed overrides a tool-allowing profile; the reverse precedence remains unverified](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#48-additive--toolcallingmode-and-its-exit-condition-trap) — 17.1
+- [The four-argument GenerationOptions initializer requires toolCallingMode even though its other arguments default](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#48-additive--toolcallingmode-and-its-exit-condition-trap) — 17.1
 - [Returning a corrective string for invalid .anyOf arguments makes the model loop re-calling; add a counter and hard exit](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#66-behavioural--anyof-still-does-not-constrain) — 17.1
 - [The sampling factory is random(top:seed:) but the Kind case is randomTopK; two spellings at two API levels](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#73-renamed--sampling-mode-cases) — 17.1
 - [urlSessionConfiguration is excluded from Configuration ==/hash; a cached executor may carry the wrong session](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#74-renamed--model_-moved-from-the-utilities-package-into-the-framework) — 17.1
@@ -209,9 +218,13 @@
 - [A misspelled canImport module or undefined condition makes an #if silently false and deletes the guarded code](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#building-for-two-sdks-conditional-compilation-across-26-and-27) — 17.4 🔇
 - [Misspelled canImport, undefined conditions and wrong version forms all make gates quietly always-false](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#46-️-silent-failure-three-ways-to-write-a-gate-that-is-quietly-always-false) — 17.4
 - [loadFunction returns nil for a missing name but throws for a load failure; try? collapses two different diagnoses](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#22-mlmodel--aimodel--but-the-runnable-object-is-a-third-type) — 17.5
+- [Span is not a Sequence; Sequence-based map, reduce, and iteration patterns need different access](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#23-mlmultiarray--ndarray--and-the-view-discipline) — 17.5
 - [Outputs.remove(_:) is destructive: read an output twice (log, then return) and the second read is silently nil](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#24-mlfeatureprovider--a-dictionary-and-a-destructive-output-bag) — 17.5
 - [InferenceValue.ndArray looks like an ordinary getter but consumes the value and transfers ownership on access](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#24-mlfeatureprovider--a-dictionary-and-a-destructive-output-bag) — 17.5
 - [Segment.box origin is bottom-left on macOS and top-left on iOS; detection's boundingBox uses yet another convention](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#35-️-silent-failure-orientation-and-coordinate-conventions-which-used-to-be-someone-elses-job) — 17.5
+- [A borrowed state view cannot outlive its owning state collection](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#41-states-kv-caches-as-first-class-in-place-model-inputs) — 17.5
+- [More-menu hand-offs require opening the gauge report before recording the event to investigate](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#43-the-core-ai-debugger-sync-points-and-psnr-against-a-pytorch-reference) — 17.5
+- [mmap_dir is a CoreAI export path; deleting its mapped files invalidates the model weights](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#64-what-does-carry-over-the-optimization-stage) — 17.5
 - [Translation table: Core ML output reads become destructive Outputs.remove(_:) — take each value exactly once](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#91-the-translation-table-condensed) — 17.5
 - [A bundle holds two different metadata.json files at different depths; only the inner one is the producer fingerprint](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#35-the-audit-the-producer-fingerprint) — 17.6
 - [strip_debug_info mutates in place and returns None; transcribing the snippet as an assignment nulls your program](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md#what-strip_debug_info-actually-does) — 17.6
@@ -226,6 +239,7 @@
 - [TensorOps availability is per-symbol, not a blanket 26.2; quote each header annotation as a header annotation](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#2-the-tensorops-ladder-is-a-different-ladder) — 17.1
 - [Mutating session.transcript during an in-flight request throws the new transcriptMutationWhileResponding error](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#49-additive--a-mutable-transcript-and-transcripthistory) — 17.1
 - [Pointer: watchOS 27 beta 2 has an Apple-confirmed build break, covered in the checklist's section 10](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#412-additive--watchos) — 17.1
+- [The Evaluations forum sample contains only three threads, so community coverage is limited](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#51-additive--the-evaluations-framework-xcode-27) — 17.1
 - [Core AI ships zero Apple sample-code projects; unlike Foundation Models there is no first-party compiling reference](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#54-additive--core-ai) — 17.1
 - [Apple's own data: detailed prompts raise generation-error rates via context pressure; terse prompts yield excess items](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#61-behavioural--the-on-device-model-was-rebuilt) — 17.1
 - [Whether the concurrency/thermal restriction also covers SystemLanguageModel is unanswered on the forums](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md#68-behavioural--concurrency-and-thermals-throttle-you-invisibly) — 17.1
@@ -244,6 +258,7 @@
 - [Support matrix: simulators validate compile and launch only; behavioral results need physical 27 hardware](part-17-migration-from-pre-ios-27/references/04-dual-sdk-builds.md#161-the-two-axes) — 17.4
 - [Core AI succeeds Core ML for neural networks only; decision trees and tabular pipelines stay on Core ML by design](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#core-ml-to-core-ai-what-moves-what-stays-and-how) — 17.5
 - [TOC pointer to the guide's collection of failures that do not announce themselves](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#contents) — 17.5
+- [Sub-byte and float8 Swift view mappings are undocumented; keep public I/O in float32 or float16](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#23-mlmultiarray--ndarray--and-the-view-discipline) — 17.5
 - [Section heading for the Core AI failures that do not announce themselves: compute units, drift, caches, miscompiles](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#3-️-what-does-not-announce-itself) — 17.5
 - [Validate numeric parity at the conversion boundary with the exact shipped asset](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5

@@ -1072,6 +1072,7 @@ Apple's Book Tracker sample is the full worked ladder — `#Playground` → heur
 model judge → generated samples → **κ-calibration of the judge** → `.evaluates(info:)` for diffable
 runs.
 
+<!-- callout-id: callout-7289036abd7ca40d -->
 > ⚠️ **One correction worth carrying:** the sample calibrates its model judge against human labels
 > using Cohen's κ (threshold κ > 0.6), but **the framework does not ship an agreement statistic.**
 > `Statistics.cohensKappa` is **72 lines of hand-rolled Swift in the sample.** ✅ verified against the

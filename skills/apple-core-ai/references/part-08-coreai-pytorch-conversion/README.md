@@ -110,11 +110,11 @@ multi-function split; and the Python-side verification gate that catches everyth
 > Loading a differently named segmenter through `coreai-models.PreparedModel` selects that helper’s dynamic
 > **GPU preference** instead of its Neural Engine preference, with a log line rather than an error. Direct
 > Core AI callers are unaffected unless they reproduce the helper’s policy.[^sample-routing-policy]
->
-> 🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
-> the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog; the character
-> set allowed in IO names; the semantics of
-> `ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
+
+🔴 **GAP — `coreai-torch` declares no minimum OS for the artifacts it produces**, anywhere in its own tree;
+the 27.0 floor comes from the framework docs. Also open: the full `CorePasses` catalog; the character
+set allowed in IO names; the semantics of
+`ENABLE_DEBUG_INFO` / `USE_LOCAL_COREAI`, which `coreai-torch` never reads.
 
 ### [8.2 — When an op will not convert: coverage, composite ops, custom lowerings, externalization](references/02-op-coverage-composites-and-externalization.md)
 
@@ -140,12 +140,12 @@ recurrence** — Core AI's IR has first-class MoE and SSM support.
 > `cat` on packed sub-byte tensors ignores `dim`, and `sum`/`prod` narrow their int64 accumulator to int32.
 > And an inverted trap worth naming: passing PyTorch's *default* decomposition table gives you a graph that
 > **fails to convert** — you decomposed *more*, the error says *unsupported*, the fix is to decompose *less*.
->
-> 🔴 **GAP — nobody has measured what externalizing a composite is worth.** The mechanism is documented in
-> Apple's own words; the magnitude is published nowhere, by Apple or by the community. Externalize as Apple
-> does — it costs a list literal — but do not promise a stakeholder a percentage. Also open: which
-> `composite_attrs` the compiler's `gated_delta_update` pattern actually expects (the doc page and Apple's
-> shipping export disagree), and `HardwareConstraints` semantics.
+
+🔴 **GAP — nobody has measured what externalizing a composite is worth.** The mechanism is documented in
+Apple's own words; the magnitude is published nowhere, by Apple or by the community. Externalize as Apple
+does — it costs a list literal — but do not promise a stakeholder a percentage. Also open: which
+`composite_attrs` the compiler's `gated_delta_update` pattern actually expects (the doc page and Apple's
+shipping export disagree), and `HardwareConstraints` semantics.
 
 ### [8.3 — `TorchMetalKernel`: writing and embedding a custom Metal kernel](references/03-custom-metal-kernels.md)
 

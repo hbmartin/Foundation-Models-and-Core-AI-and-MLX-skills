@@ -157,11 +157,9 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 # covers context that appears before the warning line too.
                 start = i
                 block = []
-                while i < n and (lines[i].lstrip().startswith('>') or lines[i].strip() == ''):
-                    if lines[i].strip() == '' and not (
-                        i + 1 < n and lines[i + 1].lstrip().startswith('>')
-                    ):
-                        break
+                # An unquoted blank separates blocks. A quoted blank ('>') is
+                # a paragraph boundary within this same block and stays hashed.
+                while i < n and lines[i].lstrip().startswith('>'):
                     block.append(re.sub(r'^\s*>\s?', '', lines[i]))
                     i += 1
                 warning_indexes = [

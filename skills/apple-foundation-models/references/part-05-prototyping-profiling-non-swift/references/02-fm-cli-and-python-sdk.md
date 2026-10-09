@@ -1964,6 +1964,7 @@ Both schema paths return `GeneratedContent` rather than a typed object.
 
 Three behaviours that surprise people:
 
+<!-- callout-id: callout-4713e2ea8fc2125f -->
 > ⚠️ **`value()` does not coerce types.** ✅ Verified: the `type_class` argument drives *Generable
 > unpacking only* — if the property holds a raw value it is returned untouched. There is a
 > `_convert_value` helper with string→int/float/bool coercion at `generable.py:175-226` and **it is
@@ -2240,6 +2241,7 @@ except asyncio.TimeoutError:
 
 ### 10.5 Two more sharp edges
 
+<!-- callout-id: callout-3714845dfb604c0e -->
 > ⚠️ **Tool validation uses bare `assert`s, so `python -O` disables it.** ✅ Verified,
 > `tool.py:356-374`: `assert hasattr(self, "name")`, `assert hasattr(self, "description")`, and so
 > on. Under `-O` a tool missing `description` gets past `__init__` and fails later, deeper, and
@@ -2900,6 +2902,7 @@ If you find one from Python, you have to reproduce it in Swift to report it.
 
 Two error-hierarchy facts that catch people writing `except` clauses:
 
+<!-- callout-id: callout-8ba1bca9a8a0dc28 -->
 > ⚠️ **`PromptError` and `ImagePromptError` are NOT `FoundationModelsError` subclasses.** ✅ Verified,
 > `prompt.py` — they inherit from plain `Exception`. So `except fm.FoundationModelsError` **does not
 > catch an image failure.** Apple's own tests hedge with

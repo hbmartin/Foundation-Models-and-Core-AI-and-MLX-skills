@@ -58,8 +58,9 @@ The reporter's **2026-10-02** retest passed all three minimal patterns with maxi
 errors `1.907e-06` to `3.815e-06` using `coreai-torch 0.4.3` / `coreai-core 1.0.0b3` on an M5,
 macOS 27.2 `26B5091g`, and Xcode 27.2 `27B5028f`. The issue closed as completed; **0.4.2 remains
 unverified**. The retest did not establish full end-to-end registration parity or an expanded
-boundary sweep. The separate optimizer is absent in 0.4.3: `to_coreai()` returns an already
-optimized program. Use the [shipped-asset parity gate](../../../guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate)
+boundary sweep. `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method;
+`coreai-torch 0.4.3` returns an already optimized program from `to_coreai()`.
+Use the [shipped-asset parity gate](../../../guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md#114-️-the-shipped-asset-parity-gate)
 and [current defect register](../../../guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md#97-the-register)
 with production shapes and value ranges. The distinct native evidence above retains its original
 2026-10-06 execution date and trusted-runner provenance.

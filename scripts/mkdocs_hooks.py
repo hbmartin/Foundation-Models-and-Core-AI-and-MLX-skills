@@ -527,7 +527,7 @@ def _fragment_destination(source: str, path: str, site_path: str,
     """Map a browser URL to output using only lexical paths and the inventory."""
     if not path:
         return source
-    source_url = site_path.rstrip("/") + "/" + quote(source, safe="/")
+    source_url = quote(site_path.rstrip("/"), safe="/") + "/" + quote(source, safe="/")
     decoded = unquote(urljoin(source_url, path))
     normalized = posixpath.normpath("/" + decoded.lstrip("/"))
     if site_path == "/":

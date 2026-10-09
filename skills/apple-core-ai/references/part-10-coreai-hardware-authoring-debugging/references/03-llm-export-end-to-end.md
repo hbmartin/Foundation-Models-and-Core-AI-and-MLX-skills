@@ -2134,7 +2134,7 @@ asset = coreai_program.save_asset(Path("model.aimodel"))
 ```
 
 > ✅ **VERIFIED** — in `coreai-torch 0.4.3`, `to_coreai()` returns an already optimized program and
-> the separate `AIProgram.optimize()` method has been removed. Session 325:48's description—converted,
+> `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method. Session 325:48's description—converted,
 > optimized, then saved—now occurs inside the conversion call.
 
 Two costs to know about.

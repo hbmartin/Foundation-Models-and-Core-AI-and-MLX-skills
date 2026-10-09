@@ -831,6 +831,7 @@ The emitted IR is worth seeing once, because it is what the compiler pattern-mat
 
 Three externalization footguns, all verified, all silent or nearly so:
 
+<!-- callout-id: callout-e20b39d76d497998 -->
 > ⚠️ **`target_class` must be `RMSNormImpl`, never `RMSNorm`.** `RMSNorm` is a convenience wrapper
 > that owns the weight and delegates to `RMSNormImpl`. The docs are explicit: *"`target_class` in the
 > `ExternalizeSpec` must still be `RMSNormImpl` (the inner module the converter recognizes as the
@@ -905,8 +906,9 @@ The critical 0.4.3 property, which Apple has dedicated tests for:
 
 > ✅ **VERIFIED** — `TorchConverter.to_coreai()` documents that the returned `AIProgram` is already
 > optimized. `tests/test_converter.py::TestConvertToCoreaiIR` verifies that the pre-compilation rewrite
-> has already folded the cast chain when `to_coreai()` returns. The separate `AIProgram.optimize()`
-> method used by 0.4.1 no longer exists.
+> has already folded the cast chain when `to_coreai()` returns in `coreai-torch 0.4.3`.
+> `coreai-core 1.0.0b3` has no separate `AIProgram.optimize()` method; that method exists in
+> the historical `coreai-core 1.0.0b2` API used with converter 0.4.1.
 
 ### 6.2 The pre-compilation rewrite runs during conversion
 
