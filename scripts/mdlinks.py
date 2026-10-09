@@ -148,6 +148,18 @@ def fence_opener(line: str) -> re.Match[str] | None:
     return match if valid_fence_opener(line, match) else None
 
 
+def fence_closer(line: str, fence: str) -> bool:
+    """A bare delimiter of the opener's character and at least its length."""
+    match = FENCE.match(line)
+    return bool(match and match[1][0] == fence[0] and len(match[1]) >= len(fence)
+                and not line[match.end(1):].strip())
+
+
+def code_span_delimiter(current: int, run: int) -> int:
+    """Only a matching backtick run closes an inline code span."""
+    return run if not current else (0 if run == current else current)
+
+
 def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
     """Yield (body, newline, inside_fence) for every line, tracking fences.
 
@@ -172,12 +184,7 @@ def iter_lines(text: str) -> Iterator[tuple[str, str, bool]]:
         # as the opener, and — per CommonMark — carries no info string. Without
         # that last condition a line like ```` ```swift ```` inside a block would
         # end it, and the link rewriter would start editing source code.
-        if (
-            match
-            and match.group(1)[0] == fence[0]
-            and len(match.group(1)) >= len(fence)
-            and not body[match.end(1) :].strip()
-        ):
+        if fence_closer(body, fence):
             fence = None
         yield body, newline, True
 
@@ -227,10 +234,7 @@ def _scan_line(
             while end < len(line) and line[end] == "`":
                 end += 1
             run = end - index
-            if scanner.code_delimiter == 0:
-                scanner.code_delimiter = run
-            elif scanner.code_delimiter == run:
-                scanner.code_delimiter = 0
+            scanner.code_delimiter = code_span_delimiter(scanner.code_delimiter, run)
             result.append(line[index:end])
             index = end
             continue

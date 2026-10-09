@@ -1,6 +1,6 @@
 # Silent-failure index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**544 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**541 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -17,10 +17,10 @@
 | [Resource growth](#resource-growth) | 11 |
 | [Precision loss](#precision-loss) | 9 |
 | [Misleading signals](#misleading-signals) | 48 |
-| [Version drift](#version-drift) | 22 |
+| [Version drift](#version-drift) | 21 |
 | [Docs vs reality](#docs-vs-reality) | 45 |
 | [API footguns](#api-footguns) | 64 |
-| [General cautions](#general-cautions) | 119 |
+| [General cautions](#general-cautions) | 117 |
 
 ## Wrong output
 
@@ -235,7 +235,7 @@
 **Part 9**
 
 - [Registry preset YAMLs exist only in the source tree — wheel installs SystemExit; clone coreai-models to read the recipes](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#145-writing-the-yaml) — 9.2
-- [AOT compiles only for Apple-Intelligence hardware: A17 Pro+, M1+ Macs, M2+ Vision Pro — one .aimodelc per arch](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
+- [AOT targets only Apple-Intelligence hardware, with one .aimodelc per arch; device-side specialization still remains.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 
 **Part 10**
 
@@ -467,8 +467,7 @@
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
-- [Pinned file and line citations target an older coreai-models snapshot; re-verify them against a fresh clone.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
-- [VLM exports changed from name.llmasset to name directories; scripts globbing the old extension break.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [Pinned citations need re-verification; VLM exports now use name/ rather than name.llmasset/, breaking old globs.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 ## Docs vs reality
 
@@ -541,7 +540,7 @@
 - [InferenceValue.ndArray is a consuming read dressed as a getter — a nil-check consumes the value](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
 - [The ndArray property consumes the InferenceValue on first access despite reading like a plain getter](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
 - [if value.ndArray != nil consumes the value — the later real read then yields nothing](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
-- [Dictionary-backed state views force-unwrap and check exclusivity per iteration; prefer named stored arrays.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
+- [Dictionary state views force-unwrap and check exclusivity per iteration; use named arrays or community recursion.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
 - [Small MPSNDArray allocations still require the reported 64-byte buffer floor](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#minimumbytecount-for-manual-allocation) — 7.1
 - [Segment.box origin flips per platform — Apple's decoder flips Y on macOS; assuming one convention misplaces every box](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#125-one-more-coordinate-trap-for-completeness) — 7.1
 - [catch let error as AssetError placed after a bare catch compiles but never runs — keep the bare catch last](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#132-the-practice-catch-asseterror-then-catch-broadly-log-richly-degrade) — 7.1
@@ -618,7 +617,6 @@
 - [Xcode's model viewer shows ? for a dynamic dimension; NDArrayDescriptor.shape reports -1 — same fact, two spellings](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#64-ndarraydescriptor-and-the--1-sentinel) — 7.1
 - [Community input validator: check unexpected/missing inputs, scalarType, rank, and per-axis -1-or-equal before run()](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#65-a-reusable-validator) — 7.1
 - [run() requires a mutable view for every state — omitting any state is an error; drive allocation from stateNames](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
-- [Community code recursively borrows non-copyable state views; distinguish this general-N pattern from Apple APIs.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
 - [Community state allocation: MTLBuffer sized by minimumByteCount with .storageModeShared, then memset to zero](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#minimumbytecount-for-manual-allocation) — 7.1
 - [Community swift-lm defines rich typed asset errors (shape/dtype/state mismatches) the Apple runtime does not give you](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#134-what-the-rest-of-the-stack-throws-for-contrast) — 7.1
 - [specialize() and init have no progress, stages, or cancellation contract — your Preparing UI must be indeterminate](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#where-to-actually-call-it) — 7.2
@@ -703,7 +701,6 @@
 - [The one-line check: if you targeted the ANE, confirm the viewer's Compute types show no float32](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [The Xcode model viewer itself requires the Metal Toolchain, which is not installed by default](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [Summary asymmetry: storageTypes and operationDistribution carry counts; the compute-side listing does not](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#82-aimodelassetsummary--the-same-data-programmatically) — 9.3
-- [Ahead-of-time compiled assets still need device-side specialization; the remaining work depends on model and hardware.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 - [Consolidated index of format-related silent failures](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#10-️-silent-failures-consolidated) — 9.3
 - [The M5 talk's baselines differ per claim — M4 for images, M1 for video; cite the baseline with the number](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3
 - [ResNet50 PTQ row: int8 and FP8-E4M3 land within ~2.4 points of fp32 — the most directly useful format-choice datum](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3

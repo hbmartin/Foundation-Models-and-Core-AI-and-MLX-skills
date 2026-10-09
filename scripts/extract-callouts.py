@@ -15,7 +15,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdslug import slugify, unique_slug
-from mdlinks import is_site_only_guide, valid_fence_opener
+from mdlinks import is_site_only_guide, iter_lines, valid_fence_opener
 from stable_identity import content_hash, semantic_id
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
@@ -26,6 +26,12 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 # Blockquote-wrapped fences ('> ```') never match — every line inside them is
 # '>'-prefixed, so nothing there can match the column-anchored heading regex.
 FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
+IDENTITY_MARKER = re.compile(
+    r'^\s*<!--\s*callout-id:\s*([^\s]+)(?:\s+occurrence:(\d+))?\s*-->\s*$', re.I,
+)
+WARNING_START = re.compile(
+    r'^ {0,3}(?:(?:#{1,6}|[-*+]|\d+[.)])\s+)?(?:\*{1,2}|_{1,2}|["“])?⚠️',
+)
 
 def flatten(text, limit=400):
     t = re.sub(r'\s+', ' ', text).strip()
@@ -91,7 +97,7 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 sys.exit(
                     f"{path}:{lineno}: duplicate callout id {callout_id!r}; "
                     f"first seen at line {prior}; add a unique hidden "
-                    f"{'<!-- callout-id: slug occurrence:N --> marker before the fence' if inside_fence else '<!-- callout-id: slug --> marker before one callout'}"
+                    f"{'<!-- callout-id: slug occurrence:N --> marker before the fence' if inside_fence else '<!-- callout-id: slug --> marker before one callout (prefix it with > inside a blockquote)'}"
                 )
             seen_ids[callout_id] = lineno
             rows.append((rel, lineno, anchor, kind, title, excerpt, callout_id, digest))
@@ -130,17 +136,12 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             # Inside a fence a '#' line is code, not a heading, and never mints
             # an anchor; in-fence ⚠️ lines still extract below as INLINE,
             # anchored to the nearest real heading.
-            if fence_len and re.match(r'^\s*//\s*callout-id:', line, re.IGNORECASE):
+            if fence_len and re.match(r'^\s*(?://|#)\s*callout-id:', line, re.IGNORECASE):
                 sys.exit(
                     f"{path}:{i + 1}: callout-id metadata must not appear inside "
                     "a published code fence; use a hidden Markdown marker before the fence"
                 )
-            identity_marker = None if fence_len else re.match(
-                r'^\s*<!--\s*callout-id:\s*([^\s]+)'
-                r'(?:\s+occurrence:(\d+))?\s*-->\s*$',
-                line,
-                re.IGNORECASE,
-            )
+            identity_marker = None if fence_len else IDENTITY_MARKER.match(line)
             if identity_marker:
                 if pending_explicit_id[0] is not None:
                     sys.exit(f"{path}:{i + 1}: callout-id marker replaces an unused marker")
@@ -160,11 +161,38 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 # An unquoted blank separates blocks. A quoted blank ('>') is
                 # a paragraph boundary within this same block and stays hashed.
                 while i < n and lines[i].lstrip().startswith('>'):
-                    block.append(re.sub(r'^\s*>\s?', '', lines[i]))
+                    block.append(re.sub(r'^[ \t]*>[ \t]?', '', lines[i]))
                     i += 1
-                warning_indexes = [
-                    index for index, block_line in enumerate(block) if '⚠️' in block_line
-                ]
+                # Inspect quote-stripped source for fences and structural warning
+                # starts, while preserving the original text for identity/hash.
+                visible = [re.sub(r'^(?: {0,3}>[ \t]?)+', '', body) for body in block]
+                warning_indexes, annotation_indexes, markers = [], [], {}
+                for index, (body, _, fenced) in enumerate(iter_lines(''.join(visible))):
+                    if fenced and re.match(r'^\s*(?:(?://|#)\s*|<!--\s*)?callout-id:', body, re.I):
+                        sys.exit(f"{path}:{start + index + 1}: callout-id metadata must not appear "
+                                 "inside a published code fence; use a hidden Markdown marker")
+                    marker = None if fenced else IDENTITY_MARKER.match(body)
+                    if marker:
+                        if marker.group(2) is not None:
+                            sys.exit(f"{path}:{start + index + 1}: occurrence is only valid for an in-fence callout")
+                        markers[index] = marker.group(1)
+                        continue
+                    if '⚠️' in body:
+                        annotation_indexes.append(index)
+                        if not fenced and WARNING_START.match(body):
+                            warning_indexes.append(index)
+                prose_warnings = bool(warning_indexes)
+                if not prose_warnings:
+                    warning_indexes = annotation_indexes
+                marker_targets = {}
+                for marker_index, explicit_id in markers.items():
+                    target = next((index for index in warning_indexes if index > marker_index), None)
+                    if target is None or any(visible[index].strip() for index in range(marker_index + 1, target)):
+                        sys.exit(f"{path}:{start + marker_index + 1}: callout-id marker is not followed "
+                                 "by its designated callout")
+                    if target in marker_targets:
+                        sys.exit(f"{path}:{start + marker_index + 1}: callout-id marker replaces an unused marker")
+                    marker_targets[target] = (explicit_id, start + marker_index + 1)
                 if not warning_indexes:
                     if pending_explicit_id[0] is not None:
                         unused_marker(start + 1)
@@ -175,16 +203,23 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                         "for an in-fence callout"
                     )
                 for position, warning_index in enumerate(warning_indexes):
+                    if warning_index in marker_targets:
+                        if pending_explicit_id[0] is not None:
+                            sys.exit(f"{path}:{marker_targets[warning_index][1]}: callout-id marker replaces an unused marker")
+                        pending_explicit_id[0], pending_marker_line[0] = marker_targets[warning_index]
                     end = (warning_indexes[position + 1]
                            if position + 1 < len(warning_indexes) else len(block))
                     # Only the first warning owns the preceding context. Quoted
                     # blank lines belong to the explanation, not a new warning.
                     begin = 0 if position == 0 else warning_index
-                    raw_text = ''.join(block[begin:end])
-                    display_text = ''.join(block[warning_index:end])
-                    tm = re.search(r'⚠️\s*\*\*([^*]+)\*\*', display_text)
+                    raw_text = ''.join(body for index, body in enumerate(block[begin:end], begin)
+                                       if index not in markers) if prose_warnings else block[warning_index]
+                    display_text = ''.join(body for index, body in enumerate(block[warning_index:end], warning_index)
+                                           if index not in markers) if prose_warnings else raw_text
+                    marker_text = display_text[display_text.find('⚠️'):]
+                    tm = re.match(r'(?:⚠️\s*)+\*\*([^*]+)\*\*', marker_text)
                     title = flatten(tm.group(1), 160) if tm else ''
-                    kind = (
+                    kind = 'INLINE' if not prose_warnings else (
                         'SILENT-FAILURE'
                         if re.search(r'SILENT FAILURE', display_text, re.I)
                         else 'CALLOUT'

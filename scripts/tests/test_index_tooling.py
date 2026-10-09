@@ -2,6 +2,7 @@
 """Regression tests for the guide index extraction and validation tooling."""
 
 import os
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -17,6 +18,84 @@ ANCHOR_SECTION_LINKS = REPO / 'scripts' / 'anchor-section-links.py'
 
 
 class IndexToolingTests(unittest.TestCase):
+    def test_repository_passages_keep_annotations_inside_their_warning(self):
+        fixtures = json.loads((REPO / 'scripts/tests/fixtures/callout-review-passages.json').read_text())
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture['name']), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / 'guide.md'
+                text = '# Source\n\n' + fixture['text']
+                path.write_text(text, encoding='utf-8')
+                first = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, first.returncode, first.stderr)
+                rows = [line.split('\t') for line in first.stdout.splitlines()]
+                self.assertEqual(1, len(rows))
+                self.assertEqual(fixture['kind'], rows[0][3])
+                if fixture['name'] == 'inline-community-badge':
+                    self.assertEqual('', rows[0][4])
+                self.assertNotIn(fixture['edit_from'], rows[0][5])  # beyond the excerpt
+                path.write_text(text.replace(fixture['edit_from'], fixture['edit_to']), encoding='utf-8')
+                changed = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, changed.returncode, changed.stderr)
+                changed_row = changed.stdout.strip().split('\t')
+                self.assertEqual(rows[0][5:7], changed_row[5:7])
+                self.assertNotEqual(rows[0][7], changed_row[7])
+
+    def test_structural_warning_forms_and_standalone_quoted_annotations(self):
+        text = ('# Source\n\n> ## ⚠️ SILENT FAILURE\n> explanation\n>\n'
+                '> **⚠️ Bold warning**\n> explanation\n>\n> - ⚠️ **List warning**\n'
+                '> > ⚠️ **Nested warning**\n\n'
+                '> ✅ **VERIFIED** — (⚠️ **community**)\n> ```swift\n'
+                '> // ⚠️ code annotation\n> ```\n\n'
+                '> ```text\n> ⚠️ not a prose warning\n> ```\n')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'guide.md'
+            path.write_text(text, encoding='utf-8')
+            result = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, result.returncode, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(['SILENT-FAILURE', 'CALLOUT', 'CALLOUT', 'CALLOUT',
+                              'INLINE', 'INLINE', 'INLINE'], [row[3] for row in rows])
+            self.assertEqual(['3', '6', '9', '10', '12', '14', '18'], [row[1] for row in rows])
+
+    def test_quoted_ids_target_later_warnings_without_changing_hashes(self):
+        text = '# Source\n\n> ⚠️ **First** — text.\n>\n> ⚠️ **Second** — text.\n'
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'guide.md'
+            path.write_text(text, encoding='utf-8')
+            first = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, first.returncode, first.stderr)
+            rows = [line.split('\t') for line in first.stdout.splitlines()]
+            path.write_text(text.replace('> ⚠️ **Second**', '> <!-- callout-id: second -->\n>\n> ⚠️ **Second**'), encoding='utf-8')
+            changed = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, changed.returncode, changed.stderr)
+            new_rows = [line.split('\t') for line in changed.stdout.splitlines()]
+            self.assertEqual(rows[0], new_rows[0])
+            self.assertEqual('second', new_rows[1][6])
+            self.assertEqual(rows[1][7], new_rows[1][7])
+            self.assertNotIn('callout-id', new_rows[0][5] + new_rows[1][5])
+            path.write_text('# Source\n\n> ⚠️ duplicate\n>\n> <!-- callout-id: unique -->\n> ⚠️ duplicate\n', encoding='utf-8')
+            duplicate = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, duplicate.returncode, duplicate.stderr)
+            self.assertEqual('unique', duplicate.stdout.splitlines()[1].split('\t')[6])
+
+    def test_quoted_marker_failures_explain_supported_placement(self):
+        cases = (
+            ('> <!-- callout-id: unused -->\n> ordinary text\n', 'not followed'),
+            ('> <!-- callout-id: a -->\n> <!-- callout-id: b -->\n> ⚠️ warning\n', 'not followed'),
+            ('<!-- callout-id: a -->\n> <!-- callout-id: b -->\n> ⚠️ warning\n', 'replaces an unused'),
+            ('> ```swift\n> // callout-id: visible\n> // ⚠️ warning\n> ```\n', 'published code fence'),
+            ('> ```python\n> # callout-id: visible\n> # ⚠️ warning\n> ```\n', 'published code fence'),
+            ('> ⚠️ duplicate\n> ⚠️ duplicate\n', 'prefix it with >'),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'guide.md'
+            for text, error in cases:
+                with self.subTest(text=text):
+                    path.write_text('# Source\n\n' + text, encoding='utf-8')
+                    result = self.run_python(EXTRACT_CALLOUTS, directory)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn(error, result.stderr)
+
     def run_python(self, script, *arguments, env=None):
         return subprocess.run(
             [sys.executable, str(script), *(str(argument) for argument in arguments)],

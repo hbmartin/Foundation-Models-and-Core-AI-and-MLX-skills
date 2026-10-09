@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1837 of them, 1474 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1829 of them, 1468 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -16,21 +16,21 @@ Start from the symptom column that matches what you observe. Within each section
 
 | Symptom | Entries | What it means |
 |---|---:|---|
-| [Wrong output](#wrong-output) | 181 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
-| [Empty output / no-op](#empty-output--no-op) | 69 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
+| [Wrong output](#wrong-output) | 179 | Runs and returns output that is wrong — wrong numbers, garbled or wrong-language text, corrupted tensors. |
+| [Empty output / no-op](#empty-output--no-op) | 67 | Runs and returns nothing where content is expected — nil, empty results, operations that quietly do nothing. |
 | [Truncation & limits](#truncation--limits) | 27 | Input or output silently truncated or capped — context windows, response sizes, token budgets. |
 | [Ignored input](#ignored-input) | 114 | A parameter, flag, option, file or annotation is silently ignored, dropped, or overridden. |
 | [Stale state](#stale-state) | 41 | Stale or cached data served; invalidation that did not happen (or happened unexpectedly). |
 | [Data & artifact loss](#data--artifact-loss) | 39 | Silent loss or overwrite of data or build artifacts — purged assets, dead bookmarks, unrebuildable builds. |
 | [Compiles but unavailable](#compiles-but-unavailable) | 90 | Builds fine, then fails or degrades at runtime for some users — OS floors, device eligibility, missing assets, entitlements. |
-| [Performance cliffs](#performance-cliffs) | 157 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
+| [Performance cliffs](#performance-cliffs) | 156 | Silent slowdowns — CPU/GPU fallback, ANE ineligibility, cache misses, respecialization, sync stalls. |
 | [Resource growth](#resource-growth) | 40 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 167 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 102 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Version drift](#version-drift) | 101 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
 | [Docs vs reality](#docs-vs-reality) | 159 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 270 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 363 | Warnings and considerations that are not themselves silent failures. |
+| [General cautions](#general-cautions) | 361 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -195,10 +195,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Adapters train under a chat template serving may not reproduce (enable_thinking auto-defaults); quality quietly shifts.](part-12-mlx-python/README.md#126--lora-and-dora-fine-tuning-and-adding-a-new-architecture) — 12.README 🔇
 - [custom_function silently zeroes gradients for arrays captured by closure.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Arrays captured by custom_function become constants; their gradients are silently 0.0 and training never updates them.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1 🔇
-- [A scale captured by a custom_function closure receives no gradient; pass it as an argument to train it.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Under shapeless=True, Python arithmetic on x.shape freezes at trace time and later shapes compute with stale values.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [shapeless compile bakes shape-derived arithmetic from the first call; new shapes silently reuse the frozen numbers.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1 🔇
-- [Shapeless tracing freezes the first sequence length in a masked mean; later lengths silently use the wrong divisor.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [apply(astype) casts packed uint32 quantized weights and integer params to bfloat16, destroying them; use set_dtype.](part-12-mlx-python/references/01-core-fundamentals.md#115-the-rest-of-the-module-surface) — 12.1
 - [Writing through a NumPy view mutates MLX memory invisibly to autodiff; gradients come back wrong.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1
 - [External mutation of MLX memory is invisible to autodiff: Apple's own demo returns the wrong gradient with no error.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1 🔇
@@ -285,12 +283,10 @@ Start from the symptom column that matches what you observe. Within each section
 - [Tool-only turns are normal in agentic sessions — zero-snapshot streams occur in routine operation; design for them.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2
 - [A turn whose entire output is a tool call streams nothing — streamResponse completes without yielding one partial.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#1-the-loop-in-apples-own-words) — 2.3 🔇
 - [Device-tested: unlabelled attachments still reach tools; the hazard is no stable identity for ImageReference lookup.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
-- [An unlabelled attachment may reach a tool but supplies no stable identity for ImageReference resolution.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
 - [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
-- [A file-URL attachment without a label has no stable ImageReference identity, even when a generic tool runs.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5
 - [Unknown image labels resolve to nil instead of producing a matching image](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
@@ -822,7 +818,7 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 9**
 
 - [Registry preset YAMLs exist only in the source tree — wheel installs SystemExit; clone coreai-models to read the recipes](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#145-writing-the-yaml) — 9.2
-- [AOT compiles only for Apple-Intelligence hardware: A17 Pro+, M1+ Macs, M2+ Vision Pro — one .aimodelc per arch](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
+- [AOT targets only Apple-Intelligence hardware, with one .aimodelc per arch; device-side specialization still remains.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 
 **Part 10**
 
@@ -1027,7 +1023,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Evaluating loss and gradients separately runs the graph twice per step; batch both into one mx.eval.](part-12-mlx-python/references/01-core-fundamentals.md#34-the-partial-evaluation-trap) — 12.1
 - [A varying Python scalar argument recompiles a compiled function on every call; it presents as compile being slower.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [int/float/str/None args are baked into the compile cache key; a varying scalar silently recompiles every call.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1 🔇
-- [A Python integer position enters the compile cache key, causing a fresh compilation at every decode step.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [shapeless=True only exempts shape changes; scalar constants varying across calls still create distinct cache entries.](part-12-mlx-python/references/01-core-fundamentals.md#92-what-it-does-not-exempt-you-from) — 12.1
 - [The default-stream context manager is part of the compile cache key; calling under another device recompiles.](part-12-mlx-python/references/01-core-fundamentals.md#102-the-default-and-how-to-change-it) — 12.1
 - [Per-call stream setup costs a uniform 55-77 ms TTFT regression (mlx-lm#1435); hoist it out of the hot path.](part-12-mlx-python/references/01-core-fundamentals.md#104-️-streams-are-thread-affine) — 12.1
@@ -1515,8 +1510,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
-- [Pinned file and line citations target an older coreai-models snapshot; re-verify them against a fresh clone.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
-- [VLM exports changed from name.llmasset to name directories; scripts globbing the old extension break.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [Pinned citations need re-verification; VLM exports now use name/ rather than name.llmasset/, breaking old globs.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 **Part 11**
 
@@ -1749,7 +1743,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 16**
 
-- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README 🔇
+- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README
 - [The downloadable SpeechAnalyzer sample is the WWDC25 leftover — stale for the 2026 APIs](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) — 16.1
 - [Don't verify the 2026 API from the downloadable sample — it compiles and runs but teaches only iOS 26 patterns](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#12-the-speechanalyzer-sample-project-is-a-wwdc25-leftover) — 16.1
 - [Apple's option-enum snippet is missing commas and does not compile as printed](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md#43-the-option-enums-and-how-to-modify-a-preset) — 16.1
@@ -1909,7 +1903,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [InferenceValue.ndArray is a consuming read dressed as a getter — a nil-check consumes the value](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
 - [The ndArray property consumes the InferenceValue on first access despite reading like a plain getter](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
 - [if value.ndArray != nil consumes the value — the later real read then yields nothing](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#92-️-inferencevaluendarray-is-a-consuming-read-wearing-a-getters-clothes) — 7.1
-- [Dictionary-backed state views force-unwrap and check exclusivity per iteration; prefer named stored arrays.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
+- [Dictionary state views force-unwrap and check exclusivity per iteration; use named arrays or community recursion.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
 - [Small MPSNDArray allocations still require the reported 64-byte buffer floor](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#minimumbytecount-for-manual-allocation) — 7.1
 - [Segment.box origin flips per platform — Apple's decoder flips Y on macOS; assuming one convention misplaces every box](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#125-one-more-coordinate-trap-for-completeness) — 7.1
 - [catch let error as AssetError placed after a bare catch compiles but never runs — keep the bare catch last](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#132-the-practice-catch-asseterror-then-catch-broadly-log-richly-degrade) — 7.1
@@ -2242,7 +2236,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [Xcode's model viewer shows ? for a dynamic dimension; NDArrayDescriptor.shape reports -1 — same fact, two spellings](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#64-ndarraydescriptor-and-the--1-sentinel) — 7.1
 - [Community input validator: check unexpected/missing inputs, scalarType, rank, and per-axis -1-or-equal before run()](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#65-a-reusable-validator) — 7.1
 - [run() requires a mutable view for every state — omitting any state is an error; drive allocation from stateNames](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
-- [Community code recursively borrows non-copyable state views; distinguish this general-N pattern from Apple APIs.](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#103-️-you-must-supply-a-view-for-every-state) — 7.1
 - [Community state allocation: MTLBuffer sized by minimumByteCount with .storageModeShared, then memset to zero](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#minimumbytecount-for-manual-allocation) — 7.1
 - [Community swift-lm defines rich typed asset errors (shape/dtype/state mismatches) the Apple runtime does not give you](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md#134-what-the-rest-of-the-stack-throws-for-contrast) — 7.1
 - [specialize() and init have no progress, stages, or cancellation contract — your Preparing UI must be indeterminate](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#where-to-actually-call-it) — 7.2
@@ -2327,7 +2320,6 @@ Start from the symptom column that matches what you observe. Within each section
 - [The one-line check: if you targeted the ANE, confirm the viewer's Compute types show no float32](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [The Xcode model viewer itself requires the Metal Toolchain, which is not installed by default](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [Summary asymmetry: storageTypes and operationDistribution carry counts; the compute-side listing does not](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#82-aimodelassetsummary--the-same-data-programmatically) — 9.3
-- [Ahead-of-time compiled assets still need device-side specialization; the remaining work depends on model and hardware.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 - [Consolidated index of format-related silent failures](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#10-️-silent-failures-consolidated) — 9.3
 - [The M5 talk's baselines differ per claim — M4 for images, M1 for video; cite the baseline with the number](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3
 - [ResNet50 PTQ row: int8 and FP8-E4M3 land within ~2.4 points of fp32 — the most directly useful format-choice datum](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3

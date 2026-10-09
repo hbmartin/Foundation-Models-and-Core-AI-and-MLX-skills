@@ -1,13 +1,13 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**412 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**410 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
 | [Wrong output](#wrong-output) | 26 |
-| [Empty output / no-op](#empty-output--no-op) | 32 |
+| [Empty output / no-op](#empty-output--no-op) | 30 |
 | [Truncation & limits](#truncation--limits) | 6 |
 | [Ignored input](#ignored-input) | 31 |
 | [Stale state](#stale-state) | 18 |
@@ -73,12 +73,10 @@
 - [Tool-only turns are normal in agentic sessions — zero-snapshot streams occur in routine operation; design for them.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2
 - [A turn whose entire output is a tool call streams nothing — streamResponse completes without yielding one partial.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#1-the-loop-in-apples-own-words) — 2.3 🔇
 - [Device-tested: unlabelled attachments still reach tools; the hazard is no stable identity for ImageReference lookup.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
-- [An unlabelled attachment may reach a tool but supplies no stable identity for ImageReference resolution.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
 - [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
-- [A file-URL attachment without a label has no stable ImageReference identity, even when a generic tool runs.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5
 - [Unknown image labels resolve to nil instead of producing a matching image](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
