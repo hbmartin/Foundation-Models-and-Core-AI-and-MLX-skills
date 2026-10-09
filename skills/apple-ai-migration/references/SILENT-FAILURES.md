@@ -1,8 +1,8 @@
 # Silent-failure index — Migrating an Apple AI integration from 26 to 27
 
-**185 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**186 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -19,7 +19,7 @@
 | [Version drift](#version-drift) | 24 |
 | [Docs vs reality](#docs-vs-reality) | 14 |
 | [API footguns](#api-footguns) | 24 |
-| [General cautions](#general-cautions) | 40 |
+| [General cautions](#general-cautions) | 41 |
 
 ## Wrong output
 
@@ -264,6 +264,7 @@
 - [Compare the saved asset with eager and decomposed export using separate error budgets](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#34-️-numeric-parity-at-the-conversion-boundary) — 17.5
 - [states: requires a mutable view for every declared state; omitting any produces an error — enumerate stateNames first](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#41-states-kv-caches-as-first-class-in-place-model-inputs) — 17.5
 - [The 76% multi-function saving is Apple's demo number with no device or protocol stated; treat it as an existence proof](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#42-multi-function-assets--and-the-finding-that-reframes-them) — 17.5
+- [Debug locations caused historical artifact incompatibility; keep debug metadata for development builds only.](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#43-the-core-ai-debugger-sync-points-and-psnr-against-a-pytorch-reference) — 17.5
 - [Verified: 0 sample-code entries across all 312 indexed Core AI symbols; no first-party compiling reference exists](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#51-the-hard-fact-core-ai-ships-with-zero-apple-sample-code-projects) — 17.5
 - [Span<Int> is not a Sequence: no shape.last; use shape.count and manual index arithmetic in the shim](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#81-step-1-put-both-behind-one-protocol) — 17.5
 - [MLState maps to states: mutable views, and every declared state must be supplied or the call errors](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md#91-the-translation-table-condensed) — 17.5

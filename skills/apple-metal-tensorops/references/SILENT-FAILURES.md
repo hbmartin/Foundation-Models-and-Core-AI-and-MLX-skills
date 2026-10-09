@@ -1,23 +1,25 @@
 # Silent-failure index — Metal TensorOps and Performance Primitives for ML kernels
 
-**40 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**44 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 19 |
+| [Wrong output](#wrong-output) | 21 |
 | [Performance cliffs](#performance-cliffs) | 2 |
 | [Version drift](#version-drift) | 2 |
-| [Docs vs reality](#docs-vs-reality) | 5 |
+| [Docs vs reality](#docs-vs-reality) | 6 |
 | [API footguns](#api-footguns) | 5 |
-| [General cautions](#general-cautions) | 7 |
+| [General cautions](#general-cautions) | 8 |
 
 ## Wrong output
 
 **Part 11**
 
 - [set() on a masked cooperative-tensor element does nothing and get() returns 0 - the wrong identity for max reductions.](part-11-metal-and-tensorops/README.md#111--tensorops-matmul2d-tensor-types-and-what-quantization-actually-looks-like) — 11.README 🔇
+- [The default reduction identity is zero even for max; three-argument row or column reductions clamp negative maxima.](part-11-metal-and-tensorops/README.md#111--tensorops-matmul2d-tensor-types-and-what-quantization-actually-looks-like) — 11.README 🔇
+- [Uninitialized cooperative tensors can look correct on the first launch and expose stale GPU register contents later.](part-11-metal-and-tensorops/README.md#112--cooperative-tensors-reductions-and-building-a-fused-attention-kernel) — 11.README 🔇
 - [A K loop left in the default multiply mode overwrites instead of accumulating, keeping only the last tile's product.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#35-️-the-default-mode-is-multiply-and-the-semantics-are-not-fully-settled) — 11.1
 - [execution_simdgroups<N>, simdGroupsPerTG and descriptor (m,n) must agree; mismatch corrupts tiles like a numerics bug.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#45-matching-the-host-dispatch) — 11.1
 - [Masked-element set/get silently no-op or return zero, and a widely cited guard method name does not exist.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#64-️-silent-failure-masked-elements-and-the-method-name-that-does-not-exist) — 11.1
@@ -55,6 +57,7 @@
 
 **Part 11**
 
+- [This guide uses get_mask, but the inspected header has no such API; use is_valid_element instead.](part-11-metal-and-tensorops/README.md#112--cooperative-tensors-reductions-and-building-a-fused-attention-kernel) — 11.README
 - [Circulating material calls tensor_offset a descriptor; in the header it is a Tag.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#52-️-correction-tensor_offset-is-a-tag-not-a-descriptor) — 11.1
 - [static_slice does not exist in the SDK; the real spelling is a templated slice.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#54-️-static_slice-does-not-exist--the-real-spelling-is-templated-slice) — 11.1
 - [The shipping header's example loop writes a comma where a semicolon belongs; pasted verbatim it will not compile.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#52-get_capacity--get_mask-the-idiomatic-loop) — 11.2
@@ -76,6 +79,7 @@
 **Part 11**
 
 - [Scope note: session 330 material and circulating names diverge from shipped headers; verify against the SDK first.](part-11-metal-and-tensorops/README.md#️-read-this-before-you-start-especially-if-you-arrived-from-wwdc26-session-330) — 11.README
+- [The Metal kernel skeleton was not compiled or executed; validate it against headers and a CPU reference.](part-11-metal-and-tensorops/README.md#112--cooperative-tensors-reductions-and-building-a-fused-attention-kernel) — 11.README
 - [The 4-bit path is a pointer cast to tensor<int4b_format>; the 26.x matmul2d op does the unpacking itself.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#56-declaring-tensors) — 11.1
 - [MLX writes cooperative tensors through unchecked operator[] and never calls is_valid_element, relying on known layouts.](part-11-metal-and-tensorops/references/01-tensorops-and-quantized-operands.md#67-mlxs-cooperative-tensor-usage-annotated) — 11.1
 - [TOC: NAX is new and still settling; expect churn.](part-11-metal-and-tensorops/references/02-cooperative-tensors-and-flash-attention.md#contents) — 11.2

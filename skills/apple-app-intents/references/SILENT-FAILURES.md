@@ -1,8 +1,8 @@
 # Silent-failure index — App Intents, Siri schema domains, and Spotlight entity indexing
 
-**93 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**94 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -16,7 +16,7 @@
 | [Version drift](#version-drift) | 1 |
 | [Docs vs reality](#docs-vs-reality) | 18 |
 | [API footguns](#api-footguns) | 22 |
-| [General cautions](#general-cautions) | 20 |
+| [General cautions](#general-cautions) | 21 |
 
 ## Wrong output
 
@@ -146,6 +146,7 @@
 **Part 16**
 
 - [Read-first: two planning-level facts gate everything in this part — learn them before scoping work](part-16-adjacent-capabilities/README.md#️-two-things-to-learn-before-you-plan-anything) — 16.README
+- [The AppEntity files recipe is community device evidence, without a verified official resolution.](part-16-adjacent-capabilities/README.md#163--on-screen-awareness-making-siri-understand-this) — 16.README
 - [Symbol-name trust note: verified against the SDK interface — re-check before reusing elsewhere](part-16-adjacent-capabilities/references/02-app-schema-domains.md#️-read-this-before-you-trust-a-symbol-name-below) — 16.2
 - [Scope note: the third schema tier matters more than its billing suggests](part-16-adjacent-capabilities/references/02-app-schema-domains.md#️-why-the-third-tier-matters-more-than-it-looks) — 16.2
 - [Payoff 2 of interaction donations is a hard-scoped limit, not a general capability](part-16-adjacent-capabilities/references/02-app-schema-domains.md#121-interaction-donations--teaching-siri-what-happens-in-your-ui) — 16.2

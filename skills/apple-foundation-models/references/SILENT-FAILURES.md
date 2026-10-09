@@ -1,25 +1,25 @@
 # Silent-failure index — Foundation Models: the on-device LLM API
 
-**400 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**412 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-08. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 25 |
-| [Empty output / no-op](#empty-output--no-op) | 29 |
+| [Wrong output](#wrong-output) | 26 |
+| [Empty output / no-op](#empty-output--no-op) | 32 |
 | [Truncation & limits](#truncation--limits) | 6 |
-| [Ignored input](#ignored-input) | 30 |
+| [Ignored input](#ignored-input) | 31 |
 | [Stale state](#stale-state) | 18 |
-| [Data & artifact loss](#data--artifact-loss) | 14 |
+| [Data & artifact loss](#data--artifact-loss) | 15 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 31 |
-| [Performance cliffs](#performance-cliffs) | 15 |
+| [Performance cliffs](#performance-cliffs) | 16 |
 | [Resource growth](#resource-growth) | 7 |
 | [Misleading signals](#misleading-signals) | 30 |
-| [Version drift](#version-drift) | 31 |
+| [Version drift](#version-drift) | 32 |
 | [Docs vs reality](#docs-vs-reality) | 37 |
 | [API footguns](#api-footguns) | 73 |
-| [General cautions](#general-cautions) | 54 |
+| [General cautions](#general-cautions) | 58 |
 
 ## Wrong output
 
@@ -45,6 +45,7 @@
 
 **Part 4**
 
+- [Over-declaring supportsGuidedGeneration for a local server can return well-formed JSON with invented fields.](part-04-beyond-the-built-in-model/README.md#42--core-ai-mlx-and-any-openai-compatible-server-behind-languagemodelsession) — 4.README 🔇
 - [Declaring guided generation a server ignores yields parse failures or well-formed output with invented fields.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#25-supportsguidedgeneration-is-a-promise-you-are-making-for-the-server) — 4.2 🔇
 - [Backend table: ChatCompletions delegates schema enforcement to the server — strictness is whatever the server does.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#54-the-consequence-stated-plainly) — 4.2
 - [Comparison table: @Generable is server-delegated on ChatCompletions and lost on Core AI's pipelined engine.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#82-the-comparison-that-actually-decides-it) — 4.2
@@ -64,6 +65,7 @@
 
 **Part 2**
 
+- [Skipping the searchableItems completion handler leaves Spotlight waiting forever without an error or timeout.](part-02-foundation-models-everyday-api/README.md#24--local-rag-with-spotlightsearchtool-plus-ocr-and-barcodes) — 2.README 🔇
 - [A tool-call-only turn ends the stream after zero partials — spinner UIs waiting on a first partial hang forever.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#64-a-stream-can-finish-having-yielded-zero-partials) — 2.1 🔇
 - [Python's contents.value returns None for a missing key where Swift throws — ported code silently reads null.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#82-reading-values) — 2.2
 - [Heading: a stream can finish having yielded zero snapshots.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2
@@ -71,10 +73,12 @@
 - [Tool-only turns are normal in agentic sessions — zero-snapshot streams occur in routine operation; design for them.](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md#96-️-a-stream-can-finish-having-yielded-zero-snapshots) — 2.2
 - [A turn whose entire output is a tool call streams nothing — streamResponse completes without yielding one partial.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#1-the-loop-in-apples-own-words) — 2.3 🔇
 - [Device-tested: unlabelled attachments still reach tools; the hazard is no stable identity for ImageReference lookup.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3 🔇
+- [An unlabelled attachment may reach a tool but supplies no stable identity for ImageReference resolution.](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md#10-built-in-system-tools-ocrtool-and-barcodereadertool) — 2.3
 - [Skip calling searchableItemsHandler on any path and Spotlight waits forever — no error, no visible timeout, no results.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#7-searchableitemsforidentifierssearchableitemshandler--the-intended-fix-and-the-conflict) — 2.4 🔇
 - [Your searchableItems delegate can be wired, compiled, and simply never called — verify it fires before building on it.](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md#71-the-conflict--and-it-is-a-real-one) — 2.4 🔇
 - [A ResponseStream can end with zero partials on tool-call turns — multimodal turns hit this disproportionately.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#62-the-mechanism-end-to-end) — 2.5 🔇
 - [Labels are identity, not a gate; omit one and identity lookups resolve to nil.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
+- [A file-URL attachment without a label has no stable ImageReference identity, even when a generic tool runs.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5
 - [Unknown image labels resolve to nil instead of producing a matching image](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#64-labelling-rules) — 2.5 🔇
 - [The DETR postprocessor suits set-prediction only — with anchor-based YOLO, decode returns [] and you 'detect nothing'.](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md#94-the-core-ai-route-real-detection-and-real-segmentation) — 2.5
 - [Modifiers apply outside-in — composed in the obvious order, summarizeHistory can never fire.](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md#63-what-developers-hand-rolled-and-what-replaced-it) — 2.6
@@ -150,6 +154,7 @@
 **Part 5**
 
 - [A schema flag that fails to apply still yields prose on stdout with exit 0; jq errors lines later, blaming the wrong…](part-05-prototyping-profiling-non-swift/README.md#52--the-fm-cli-and-the-foundation-models-sdk-for-python) — 5.README 🔇
+- [The Python typed-response path drops options, so temperature, sampling controls and token caps do not reach Swift.](part-05-prototyping-profiling-non-swift/README.md#52--the-fm-cli-and-the-foundation-models-sdk-for-python) — 5.README 🔇
 - [fm respond writes prose to stdout when a schema isn't applied, exit 0; jq errors later naming the wrong culprit.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#31-why-this-gap-is-worse-than-it-looks) — 5.2 🔇
 - [In the generating=Cat branch of respond, your options are dropped.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) — 5.2
 - [respond(generating:options:) silently discards options — session.py:473 calls _respond_with_schema without them.](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md#83-respond--five-paths-through-one-method) — 5.2 🔇
@@ -210,6 +215,7 @@
 
 **Part 4**
 
+- [Metadata and usage updates replace whole snapshots; omitting a previously sent key deletes it.](part-04-beyond-the-built-in-model/README.md#43--authoring-a-languagemodel-provider-package) — 4.README 🔇
 - [summarizeHistory condenses everything to one .prompt entry — .toolCalls entries are destroyed; roll your own modifier.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#101-the-bug-switching-back-to-the-on-device-model-mid-conversation) — 4.1
 - [A chunk carrying both tool_calls and content loses the content — the else-if drops interleaved text; nothing throws.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#26-what-crosses-the-wire-and-what-is-quietly-dropped) — 4.2 🔇
 - [Heading: wholesale, not additive.](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md#94-️-wholesale-not-additive) — 4.3
@@ -277,6 +283,7 @@
 
 **Part 4**
 
+- [Linear-attention state cannot rewind for prefix reuse, so SSM models re-prefill the entire conversation each turn.](part-04-beyond-the-built-in-model/README.md#44--executor-lifecycle-configuration-identity-and-preserving-work-across-calls) — 4.README 🔇
 - [The OS specialises a shipped .aimodel per device before it runs — large models take long; keep it out of user flows.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#45-where-the-bundle-comes-from) — 4.2
 - [Prefix KV reuse measured 101x on turn-2 TTFT — but hybrid/SSM models return -1 and silently re-prefill every turn.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#84-the-models-that-quietly-cannot-do-multi-turn-cheaply) — 4.2
 - [Heading: linear attention forfeits prefix caching entirely.](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md#94-️-linear-attention-forfeits-prefix-caching-entirely) — 4.4
@@ -349,6 +356,7 @@
 
 **Part 2**
 
+- [Apple can update built-in guardrails independently of app and OS versions, changing safety without notification.](part-02-foundation-models-everyday-api/README.md#26--the-complete-failure-taxonomy-availability-errors-guardrails-and-refusals) — 2.README
 - [Beta 5 retyped history from ArraySlice<Transcript.Entry> to Transcript.HistoryView — suffix trims survive, raw-Int…](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#91-what-changed) — 2.1
 - [Exhaustive Transcript.Entry switches break compiling on the 27 SDK; 'fixing' with default: silently drops new cases.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#121-six-entry-types) — 2.1 🔇
 - [The .custom segment case the docs list is not present in the beta 5 interface.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
@@ -568,8 +576,10 @@
 
 **Part 4**
 
+- [Core AI prefix-cache trimming is a community fork API; do not treat it as an upstream Apple capability.](part-04-beyond-the-built-in-model/README.md#44--executor-lifecycle-configuration-identity-and-preserving-work-across-calls) — 4.README
 - [Heading: you cannot build a usage meter.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#76-️-you-cannot-build-a-usage-meter) — 4.1
 - [The quota API exposes three coarse states and no numbers — progress bars and request counters cannot be built.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#76-️-you-cannot-build-a-usage-meter) — 4.1
+- [Utilities release independently of the OS and contain emerging APIs; pin and review their package versions.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#121-the-three-replacements) — 4.1
 - [Source note: the coffee/generative-game and SpeechAnalyzer samples are excluded as stale iOS 26 evidence.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#151-apple-sample-code-strongest) — 4.1
 - [Source note: where transcripts and docs disagree (menu strings, context size), this guide prefers the docs.](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md#154-wwdc26-transcripts) — 4.1
 - [Passing capabilities yourself makes you the author — declare only what the checkpoint honours, or the guard inverts.](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md#36-capabilities-is-routing-not-documentation) — 4.2
@@ -583,6 +593,8 @@
 
 **Part 5**
 
+- [Instruments records unencrypted prompts and responses; use fixtures and keep trace files out of source control.](part-05-prototyping-profiling-non-swift/README.md#51--playground-scheme-simulation-and-reading-a-foundation-models-trace) — 5.README
+- [The Python SDK exposes the OS-26 feature set, without PCC, BYO backends or the newer session controls.](part-05-prototyping-profiling-non-swift/README.md#52--the-fm-cli-and-the-foundation-models-sdk-for-python) — 5.README
 - [No one here ran Xcode 27 Instruments; UI claims trace to the session or preserved direct Apple documentation.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#what-you-need) — 5.1
 - [The code-along targets macOS Tahoe/Xcode 26 — treat its Playground UI details as 'at least true in 26', not 27.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#21-the-macro-the-canvas-and-the-refresh-button) — 5.1
 - [LanguageModelFeedback attachments carry the full session transcript — consent, no auto-upload, scrub before sharing.](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md#31-the-programmatic-path-languagemodelfeedback) — 5.1

@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from scripts.mdlinks import is_site_only_guide
+
 
 REPO = Path(__file__).resolve().parents[2]
 GUIDES = REPO / 'guides'
@@ -20,6 +22,27 @@ ANCHOR_SECTION_LINKS = REPO / 'scripts' / 'anchor-section-links.py'
 
 class RepositoryIndexTests(unittest.TestCase):
     maxDiff = 2000
+
+    def test_every_quoted_warning_line_has_its_own_extracted_row(self):
+        result = self.run_command(sys.executable, 'scripts/extract-callouts.py', 'guides')
+        self.assertEqual(0, result.returncode, result.stderr)
+        locations = {(row[0], int(row[1])) for row in
+                     (line.split('\t') for line in result.stdout.splitlines())}
+        expected = set()
+        for path in GUIDES.rglob('*.md'):
+            relative = path.relative_to(GUIDES).as_posix()
+            if path.name in ('SILENT-FAILURES.md', 'API-INDEX.md') or is_site_only_guide(relative):
+                continue
+            for lineno, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+                if line.lstrip().startswith('>') and '⚠️' in line:
+                    expected.add((relative, lineno))
+        self.assertFalse(expected - locations, f'quoted warnings missing rows: {sorted(expected - locations)}')
+        part01 = 'part-01-orientation-and-gating/README.md'
+        for trigger in ('a response stream can finish', 'rebuilding with Xcode 27 changes',
+                        'the canonical three-arm'):
+            lines = (GUIDES / part01).read_text(encoding='utf-8').splitlines()
+            lineno = next(i for i, line in enumerate(lines, 1) if trigger in line)
+            self.assertIn((part01, lineno), locations)
 
     def test_only_canonical_classification_directory_has_files(self):
         self.assertTrue(CLASSIFIED.is_dir())
