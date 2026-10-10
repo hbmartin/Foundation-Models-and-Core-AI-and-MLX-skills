@@ -15,7 +15,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mdslug import slugify, unique_slug
-from mdlinks import is_site_only_guide, iter_lines, valid_fence_opener
+from mdlinks import fence_closer, fence_opener, is_site_only_guide, valid_fence_opener
 from stable_identity import content_hash, semantic_id
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
@@ -23,8 +23,7 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else "guides"
 # CommonMark-ish fence delimiter: up to 3 leading spaces, then 3+ backticks or
 # tildes. A backtick opener's info string may not contain a backtick; a closer
 # must use the same character, be bare, and be at least as long as its opener.
-# Blockquote-wrapped fences ('> ```') never match — every line inside them is
-# '>'-prefixed, so nothing there can match the column-anchored heading regex.
+# Quoted fences are tracked separately after stripping the quote prefixes.
 FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
 IDENTITY_MARKER = re.compile(
     r'^\s*<!--\s*callout-id:\s*([^\s]+)(?:\s+occurrence:(\d+))?\s*-->\s*$', re.I,
@@ -32,6 +31,15 @@ IDENTITY_MARKER = re.compile(
 WARNING_START = re.compile(
     r'^ {0,3}(?:(?:#{1,6}|[-*+]|\d+[.)])\s+)?(?:\*{1,2}|_{1,2}|["“])?⚠️',
 )
+PROVENANCE_BADGE = re.compile(
+    r'^\s*(?P<emphasis>\*{1,2}|_{1,2})?community(?:-reported|-published)?'
+    r'(?(emphasis)(?P=emphasis))(?![\w-])', re.I,
+)
+
+def prose_warning(line):
+    return bool(WARNING_START.match(line) or any(
+        not PROVENANCE_BADGE.match(part) for part in line.split('⚠️')[1:]
+    ))
 
 def flatten(text, limit=400):
     t = re.sub(r'\s+', ' ', text).strip()
@@ -136,11 +144,6 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
             # Inside a fence a '#' line is code, not a heading, and never mints
             # an anchor; in-fence ⚠️ lines still extract below as INLINE,
             # anchored to the nearest real heading.
-            if fence_len and re.match(r'^\s*(?://|#)\s*callout-id:', line, re.IGNORECASE):
-                sys.exit(
-                    f"{path}:{i + 1}: callout-id metadata must not appear inside "
-                    "a published code fence; use a hidden Markdown marker before the fence"
-                )
             identity_marker = None if fence_len else IDENTITY_MARKER.match(line)
             if identity_marker:
                 if pending_explicit_id[0] is not None:
@@ -163,14 +166,21 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                 while i < n and lines[i].lstrip().startswith('>'):
                     block.append(re.sub(r'^[ \t]*>[ \t]?', '', lines[i]))
                     i += 1
-                # Inspect quote-stripped source for fences and structural warning
-                # starts, while preserving the original text for identity/hash.
+                # Keep scanner indexes aligned with the original physical lines.
+                # Fenced annotations and provenance badges belong to their warning.
                 visible = [re.sub(r'^(?: {0,3}>[ \t]?)+', '', body) for body in block]
                 warning_indexes, annotation_indexes, markers = [], [], {}
-                for index, (body, _, fenced) in enumerate(iter_lines(''.join(visible))):
-                    if fenced and re.match(r'^\s*(?:(?://|#)\s*|<!--\s*)?callout-id:', body, re.I):
-                        sys.exit(f"{path}:{start + index + 1}: callout-id metadata must not appear "
-                                 "inside a published code fence; use a hidden Markdown marker")
+                quoted_fence, quoted_fence_line, structural_warning = None, None, False
+                for index, body in enumerate(visible):
+                    fenced = bool(quoted_fence)
+                    if quoted_fence:
+                        if fence_closer(body, quoted_fence):
+                            quoted_fence = None
+                    else:
+                        opener = fence_opener(body)
+                        if opener:
+                            quoted_fence, quoted_fence_line = opener[1], start + index + 1
+                            fenced = True
                     marker = None if fenced else IDENTITY_MARKER.match(body)
                     if marker:
                         if marker.group(2) is not None:
@@ -179,9 +189,13 @@ for dirpath, dirnames, filenames in os.walk(ROOT):
                         continue
                     if '⚠️' in body:
                         annotation_indexes.append(index)
-                        if not fenced and WARNING_START.match(body):
-                            warning_indexes.append(index)
-                prose_warnings = bool(warning_indexes)
+                        if not fenced:
+                            structural_warning |= bool(WARNING_START.match(body))
+                            if prose_warning(body):
+                                warning_indexes.append(index)
+                if quoted_fence:
+                    sys.exit(f"{path}:{quoted_fence_line}: unterminated {quoted_fence} fence")
+                prose_warnings = structural_warning
                 if not prose_warnings:
                     warning_indexes = annotation_indexes
                 marker_targets = {}

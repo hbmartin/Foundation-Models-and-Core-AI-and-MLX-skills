@@ -16,8 +16,11 @@ literal characters, and no field may contain a tab or newline. Do not paste csv-
 [`../SYMPTOM-TAXONOMY.md`](../SYMPTOM-TAXONOMY.md). File plus `callout-id` identifies a semantic
 warning emitted by `scripts/extract-callouts.py`; the hash, anchor, and kind are review guards.
 Line-only movement is harmless, while changed warning text, kind, or section fails closed.
-Each prose warning start in a blockquote has its own row, including warning headings, list items,
-and bold warnings. Its explanation includes quoted blanks, inline badges, and code comments, and
+In a blockquote containing a structural prose warning, each non-fenced warning-bearing line has
+its own row, including mid-line warnings and table cells. Inline provenance labels `community`,
+`community-reported`, and `community-published` (case-insensitive, optionally emphasized) stay
+with their warning; those labels at a structural warning start still get a row.
+Its explanation includes quoted blanks, inline badges, and code comments, and
 ends at the next prose warning or an unquoted boundary. Preceding context belongs to the first
 warning only; edits to a later warning do not invalidate earlier warnings' review hashes. Quoted
 blocks without prose warning starts emit their warning-bearing lines as `INLINE`, hashing each
@@ -27,7 +30,9 @@ place `<!-- callout-id: unique-slug -->` immediately before a Markdown callout. 
 use `> <!-- callout-id: unique-slug -->` before the designated warning; quoted blank lines may
 intervene. Hidden identity markers are excluded from the content hash and excerpt. For the Nth warning
 inside a code fence, place `<!-- callout-id: unique-slug occurrence:N -->` immediately before the
-fence. Callout metadata must never be inserted into the reader-visible code itself.
+fence. Identity-marker text inside any code fence, including quoted fences, is inert code: it
+neither assigns an ID nor consumes a pending marker. Place active metadata outside the fence.
+Quoted fences must close before the blockquote ends; an unterminated fence is an extraction error.
 
 After editing a guide:
 

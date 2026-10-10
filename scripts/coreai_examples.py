@@ -204,6 +204,38 @@ _OVERWRITE_CONTRACT = (
     "AIProgram.save_asset in coreai-core 1.0.0b3 replaces an existing file or directory "
     "at the destination."
 )
+_CORE_VERSION = r"\w+(?:\.\w+)*"
+
+
+@dataclass(frozen=True)
+class _OverwriteClause:
+    text: str
+    version: str | None = None
+
+
+def _scoped_overwrite_clause(text: str) -> _OverwriteClause:
+    """A version modifies a leading assertion or its subject, never a comparison."""
+    text = re.sub(rf"^Unlike\s+(?:in\s+)?coreai-core\s+{_CORE_VERSION}\s*,\s*", "", text, flags=re.I)
+    leading = re.match(rf"^In\s+coreai-core\s+({_CORE_VERSION})\s*,?\s+", text, re.I)
+    if leading:
+        return _OverwriteClause(text[leading.end():], leading[1])
+    subject = re.match(
+        rf"^(?:the\s+)?(?:{_SAVING_SUBJECT}|{_DESTINATION_MODIFIERS}{_DESTINATION_HEAD}|it)"
+        rf"(?P<version_phrase>\s+in\s+coreai-core\s+(?P<version>{_CORE_VERSION}))\b", text, re.I,
+    )
+    if subject:
+        begin, end = subject.span('version_phrase')
+        return _OverwriteClause(text[:begin] + text[end:], subject['version'])
+    return _OverwriteClause(text)
+
+
+def _callout_claims(match: re.Match[str]) -> str:
+    """Keep claims in bold titles as well as the text following the title."""
+    title = re.sub(
+        r"^(?:SILENT FAILURE|WARNING|CAUTION|NOTE|VERIFIED)(?:\s*\([^)]*\))?"
+        r"\s*(?:[—–:-]\s*|$)", "", match[1].strip(), flags=re.I,
+    )
+    return "\n\n" + title + "\n\n"
 
 
 def _saving_call_names(text: str, *, comments: list[tuple[str, str]] | None = None) -> str:
@@ -271,16 +303,12 @@ def _saving_call_names(text: str, *, comments: list[tuple[str, str]] | None = No
 
 def _saving_subject(prefix: str) -> bool:
     prefix = _saving_call_names(prefix)
-    return not _historical_claim(prefix) and bool(re.search(
-        rf"{_SAVING_SUBJECT}{_CLAIM_MODIFIER}*\s*$", prefix, re.I))
-
-
-def _historical_claim(text: str) -> bool:
-    return bool(re.search(r"\b(?:in|as\s+in)\s+coreai-core\s+(?!1\.0\.0b3\b)[\w.]+", text, re.I))
+    return bool(re.search(rf"{_SAVING_SUBJECT}{_CLAIM_MODIFIER}*\s*$", prefix, re.I))
 
 
 def _saving_antecedent(text: str) -> str | None:
     match = re.match(
+        rf"(?:in\s+coreai-core\s+{_CORE_VERSION}\s*,\s*)?"
         rf"(?:the\s+)?({_SAVING_ANTECEDENT})\b(?:\(\))?"
         rf"(?=\s*$|\s+(?:{_CLAIM_AUXILIARY}|writes?|saves?|validates?|preserves?|"
         rf"{_REPLACEMENT}|{_FAILURE}|also|by|in)\b|\s*,\s*unlike\b)", text, re.I,
@@ -342,7 +370,7 @@ def _destination_subject(prefix: str) -> bool:
                         or _destination_phrase(noun, qualified=True, complete=True) for noun in nouns[1:]))
 
 
-def _overwrite_clauses(text: str) -> list[str]:
+def _overwrite_clauses(text: str) -> list[_OverwriteClause]:
     """Separate independent subjects without breaking coordinated verbs or nouns."""
     comments = []
     text = re.sub(r"(?m)^(?: {0,3}>[ \t]?)+", "", text)
@@ -350,10 +378,12 @@ def _overwrite_clauses(text: str) -> list[str]:
     text = "\n".join("\n\n" + _table_prose(line) + "\n\n"
                      if line.strip().startswith("|") else line for line in text.splitlines())
     text = re.sub(r"(?m)^ {0,3}(?:[-*+]\s+|\d+[.)]\s+)", "\n\n", text)
-    text = re.sub(r"(?m)^ {0,3}(?:⚠️|✅)\s*\*\*[^*\n]+\*\*(?:[ \t]*[—–:-][ \t]*|[ \t]+)", "", text)
-    text = re.sub(r"(?im)^\s*In\s+coreai-core\s+1\.0\.0b3\s*,\s*", "", text)
+    text = re.sub(r"(?m)^ {0,3}(?:⚠️|✅)\s*\*\*([^*]+?)\*\*"
+                  r"(?:[ \t]*[—–:-][ \t]*|[ \t]+)?", _callout_claims, text)
     new_subject = (rf"(?!but\b|and\b|while\b|whereas\b|{_CLAIM_AUXILIARY}\b)"
+                   rf"(?:in\s+coreai-core\s+{_CORE_VERSION}\s*,\s*)?"
                    rf"(?:{_SAVING_SUBJECT}|{_DESTINATION_MODIFIERS}{_DESTINATION_HEAD}|(?:the\s+)?[\w.]+)\s+"
+                   rf"(?:in\s+coreai-core\s+{_CORE_VERSION}\s+)?"
                    rf"(?:{_CLAIM_AUXILIARY}\s+)*(?:{_FAILURE}|{_REPLACEMENT})\b")
     inherited_predicate = rf"(?:{_CLAIM_AUXILIARY}\s+)*(?:{_REPLACEMENT}|{_FAILURE})\b"
     clauses = []
@@ -381,18 +411,20 @@ def _overwrite_clauses(text: str) -> list[str]:
                 for part in parts:
                     if not part:
                         continue
+                    scoped = _scoped_overwrite_clause(part)
+                    part = scoped.text
                     saving = _saving_antecedent(part)
                     if saving:
-                        historical = _historical_claim(part)
-                        antecedent = None if historical else saving
+                        antecedent = (saving, scoped.version)
                     elif re.match(r"it\s+", part, re.I):
                         if antecedent:
-                            part = re.sub(r"^it\b", lambda _: antecedent, part, flags=re.I)
+                            part = re.sub(r"^it\b", lambda _: antecedent[0], part, flags=re.I)
+                            scoped = _OverwriteClause(part, scoped.version or antecedent[1])
                     elif position and antecedent and re.match(inherited_predicate, part, re.I):
-                        part = antecedent + " " + part
+                        scoped = _OverwriteClause(antecedent[0] + " " + part, scoped.version or antecedent[1])
                     else:
                         antecedent = None
-                    clauses.append(part)
+                    clauses.append(scoped)
     for owner, comment in comments:
         clauses.extend(_overwrite_clauses(owner + ". " + comment))
     return clauses
@@ -401,8 +433,6 @@ def _overwrite_clauses(text: str) -> list[str]:
 def asset_replacement_claim(prefix: str, suffix: str) -> bool:
     """Require a local saving/destination subject and a filesystem replacement."""
     api_subject, destination_subject = _saving_subject(prefix), _destination_subject(prefix)
-    if _historical_claim(prefix + " " + suffix):
-        return False
     suffix = re.sub(rf"^(?:\s+(?:and|or|nor)\s+{_REPLACEMENT})+", "", suffix, flags=re.I)
     suffix = re.sub(r"^\s+of\s+", " ", suffix, flags=re.I).strip()
     if _destination_phrase(suffix):
@@ -416,12 +446,15 @@ def asset_replacement_claim(prefix: str, suffix: str) -> bool:
     dependency = re.match(r",\s*which\s+(?:the\s+)?([\w.]+)\s+relies\s+on\b", suffix, re.I)
     if dependency and not re.fullmatch(_SAVING_ANTECEDENT, dependency[1], re.I):
         return False
+    preservation = re.match(r"but\s+(?:preserved|retained|kept)\b\s*", suffix, re.I)
+    if preservation:
+        suffix = suffix[preservation.end():]
     suffix = re.sub(r"^(?:,\s*)?by\s+default\b\s*", "", suffix, flags=re.I)
     if re.match(r"(?:,\s*)?by\s+", suffix, re.I):
         return bool(re.fullmatch(
             rf"(?:,\s*)?by\s+{_SAVING_SUBJECT}(?:\s*[,].*)?[\s.!?]*", suffix, re.I))
-    return not suffix or suffix.startswith(",") or bool(re.match(
-        r"(?:so|therefore|because|but\s+(?:preserved|retained|kept))\b", suffix, re.I))
+    return bool(preservation) or not suffix or suffix.startswith(",") or bool(re.match(
+        r"(?:so|therefore|because)\b", suffix, re.I))
 
 
 def _destination_existence(clause: str) -> bool:
@@ -430,6 +463,7 @@ def _destination_existence(clause: str) -> bool:
                  r"(?:is|are|has|have|must|needs?)\b", clause, re.I):
         return False
     condition = clause.split(",", 1)[0].strip().rstrip(".!?")
+    condition = re.sub(r"\s+already$", "", condition, flags=re.I)
     match = re.fullmatch(r"(?:if|when|because)\s+(.+?)\s+(?:already\s+)?exists?"
                          r"(?:\s+already)?(?:\s+on\s+disk|\s+at\s+(.+))?", condition, re.I)
     if match:
@@ -441,10 +475,9 @@ def _destination_existence(clause: str) -> bool:
 
 
 def _destination_failure(clause: str) -> bool:
-    if _historical_claim(clause):
-        return False
     for failure in re.finditer(rf"\b{_FAILURE}\b", clause, re.I):
         prefix, suffix = clause[:failure.start()], clause[failure.end():].strip()
+        file_exists_error = bool(re.search(r"\bFileExistsError\b", failure[0] + " " + suffix, re.I))
         suffix = re.sub(r"^(?:(?:immediately|silently|automatically|unexpectedly)\s*|"
                         r"with\s+(?:an?\s+)?(?:FileExistsError|error)\b\s*)*", "", suffix, flags=re.I)
         if not _saving_subject(prefix) or negated_predicate(prefix):
@@ -455,7 +488,7 @@ def _destination_failure(clause: str) -> bool:
             condition = prefix.split(",", 1)
             if len(condition) == 2 and _destination_existence(condition[0]):
                 return True
-            if "fileexistserror" in failure[0].lower() and len(condition) == 1:
+            if file_exists_error and len(condition) == 1:
                 return True
     return False
 
@@ -584,7 +617,10 @@ def contract_errors(text: str, contract: str) -> list[str]:
                     errors.append("square/rectangular #49 explanation reversed")
                     return errors
     elif contract == "overwrite":
-        for clause in _overwrite_clauses(text):
+        for scoped in _overwrite_clauses(text):
+            if scoped.version not in (None, '1.0.0b3'):
+                continue
+            clause = scoped.text
             for predicate in re.finditer(rf"\b{_REPLACEMENT}\b", clause, re.I):
                 prefix, suffix = clause[:predicate.start()], clause[predicate.end():]
                 # A coordinated replacement verb inherits the same negation.

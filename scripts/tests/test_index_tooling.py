@@ -21,6 +21,8 @@ class IndexToolingTests(unittest.TestCase):
     def test_repository_passages_keep_annotations_inside_their_warning(self):
         fixtures = json.loads((REPO / 'scripts/tests/fixtures/callout-review-passages.json').read_text())
         for fixture in fixtures:
+            if fixture.get('expected_rows', 1) != 1:
+                continue
             with self.subTest(fixture=fixture['name']), tempfile.TemporaryDirectory() as directory:
                 path = Path(directory) / 'guide.md'
                 text = '# Source\n\n' + fixture['text']
@@ -83,8 +85,6 @@ class IndexToolingTests(unittest.TestCase):
             ('> <!-- callout-id: unused -->\n> ordinary text\n', 'not followed'),
             ('> <!-- callout-id: a -->\n> <!-- callout-id: b -->\n> ⚠️ warning\n', 'not followed'),
             ('<!-- callout-id: a -->\n> <!-- callout-id: b -->\n> ⚠️ warning\n', 'replaces an unused'),
-            ('> ```swift\n> // callout-id: visible\n> // ⚠️ warning\n> ```\n', 'published code fence'),
-            ('> ```python\n> # callout-id: visible\n> # ⚠️ warning\n> ```\n', 'published code fence'),
             ('> ⚠️ duplicate\n> ⚠️ duplicate\n', 'prefix it with >'),
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -95,6 +95,114 @@ class IndexToolingTests(unittest.TestCase):
                     result = self.run_python(EXTRACT_CALLOUTS, directory)
                     self.assertNotEqual(0, result.returncode)
                     self.assertIn(error, result.stderr)
+
+    def test_mid_line_corpus_warnings_have_independent_rows_and_hashes(self):
+        fixtures = json.loads((REPO / 'scripts/tests/fixtures/callout-review-passages.json').read_text())
+        for fixture in fixtures:
+            if fixture.get('expected_rows') != 2:
+                continue
+            with self.subTest(fixture=fixture['name']), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / 'guide.md'
+                text = '# Source\n\n' + fixture['text']
+                path.write_text(text, encoding='utf-8')
+                result = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, result.returncode, result.stderr)
+                rows = [line.split('\t') for line in result.stdout.splitlines()]
+                self.assertEqual(2, len(rows))
+                self.assertEqual([str(3 + offset) for offset in fixture['warning_offsets']],
+                                 [row[1] for row in rows])
+                self.assertTrue(all(row[3] == 'CALLOUT' for row in rows))
+                self.assertIn(fixture['edit_from'], rows[1][5])
+                self.assertNotIn(fixture['edit_from'], rows[0][5])
+                path.write_text(text.replace(fixture['edit_from'], fixture['edit_to']), encoding='utf-8')
+                changed = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, changed.returncode, changed.stderr)
+                changed_rows = [line.split('\t') for line in changed.stdout.splitlines()]
+                self.assertEqual(rows[0], changed_rows[0])
+                self.assertNotEqual(rows[1][7], changed_rows[1][7])
+
+    def test_only_narrow_inline_provenance_badges_stay_with_their_warning(self):
+        for label in ('community', '**COMMUNITY**', '*community-reported*', '**community-published**',
+                      '_community_', '__community-reported__'):
+            text = ('# Source\n> ⚠️ **First** — explanation.\n'
+                    f'> Attribution (⚠️ {label}).\n'
+                    '> A caveat (⚠️ **Breaking change** — real warning).\n'
+                    f'> ⚠️ {label} — a structural warning.\n')
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                Path(directory, 'guide.md').write_text(text, encoding='utf-8')
+                result = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, result.returncode, result.stderr)
+                rows = [line.split('\t') for line in result.stdout.splitlines()]
+                self.assertEqual(['2', '4', '5'], [row[1] for row in rows])
+                self.assertIn('Attribution', rows[0][5])
+
+    def test_quoted_fence_must_close_before_block_boundary_or_eof(self):
+        for fence in ('```', '~~~~'):
+            for ending in ('', '\n# After quote\n⚠️ outside\n'):
+                text = f'# Source\n> ⚠️ **A**\n> {fence}swift\n> ⚠️ **B**\n' + ending
+                with self.subTest(fence=fence, ending=ending), tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / 'guide.md'
+                    path.write_text(text, encoding='utf-8')
+                    result = self.run_python(EXTRACT_CALLOUTS, directory)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn(f'{path}:3: unterminated {fence} fence', result.stderr)
+                    self.assertEqual('', result.stdout)
+
+    def test_quoted_fence_closers_match_character_length_and_bare_suffix(self):
+        text = ('# Source\n> ⚠️ **A**\n> ````swift\n> ```\n> ~~~~\n'
+                '> ````swift\n> ⚠️ code annotation\n> `````\n> ⚠️ **B**\n')
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, 'guide.md').write_text(text, encoding='utf-8')
+            result = self.run_python(EXTRACT_CALLOUTS, directory)
+            self.assertEqual(0, result.returncode, result.stderr)
+            rows = [line.split('\t') for line in result.stdout.splitlines()]
+            self.assertEqual(['2', '9'], [row[1] for row in rows])
+            self.assertIn('code annotation', rows[0][5])
+
+    def test_quoted_source_indexes_use_physical_lines_for_all_separators(self):
+        for separator in ('\v', '\f', '\x1c', '\x1d', '\x1e', '\x85', '\u2028', '\u2029'):
+            text = f'# Source\n> ⚠️ **A**\n> context{separator}more\n> ⚠️ **B**\n> filler\n> ⚠️ **C**\n'
+            with self.subTest(separator=repr(separator)), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / 'guide.md'
+                path.write_text(text, encoding='utf-8')
+                result = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, result.returncode, result.stderr)
+                rows = [line.split('\t') for line in result.stdout.splitlines()]
+                self.assertEqual(['2', '4', '6'], [row[1] for row in rows])
+                self.assertEqual(['A', 'B', 'C'], [row[4] for row in rows])
+                self.assertTrue(all(row[5] for row in rows))
+                path.write_text(text.replace('> ⚠️ **B**', '> <!-- callout-id: second -->\n> ⚠️ **B**'),
+                                encoding='utf-8')
+                marked = self.run_python(EXTRACT_CALLOUTS, directory)
+                self.assertEqual(0, marked.returncode, marked.stderr)
+                self.assertEqual('second', marked.stdout.splitlines()[1].split('\t')[6])
+
+    def test_fenced_identity_text_is_inert_in_both_contexts(self):
+        for prefix in ('', '> '):
+            for marker in ('<!-- callout-id: ignored -->', '// callout-id: ignored',
+                           '# callout-id: ignored', 'callout-id: ignored'):
+                text = '# Source\n' + ''.join(prefix + line + '\n' for line in
+                    ('```text', marker, '⚠️ **A**', '⚠️ **B**', '```'))
+                with self.subTest(prefix=prefix, marker=marker), tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / 'guide.md'
+                    path.write_text(text, encoding='utf-8')
+                    result = self.run_python(EXTRACT_CALLOUTS, directory)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    rows = [line.split('\t') for line in result.stdout.splitlines()]
+                    self.assertEqual(['INLINE', 'INLINE'], [row[3] for row in rows])
+                    self.assertTrue(all(row[6] != 'ignored' for row in rows))
+                    if not prefix:
+                        path.write_text(text.replace('```text', '<!-- callout-id: chosen occurrence:2 -->\n```text'),
+                                        encoding='utf-8')
+                        marked = self.run_python(EXTRACT_CALLOUTS, directory)
+                        self.assertEqual(0, marked.returncode, marked.stderr)
+                        self.assertEqual('chosen', marked.stdout.splitlines()[1].split('\t')[6])
+                    else:
+                        path.write_text(text.replace('> ```text', '> <!-- callout-id: chosen -->\n> ```text'),
+                                        encoding='utf-8')
+                        marked = self.run_python(EXTRACT_CALLOUTS, directory)
+                        self.assertNotEqual(0, marked.returncode)
+                        self.assertIn('not followed', marked.stderr)
 
     def run_python(self, script, *arguments, env=None):
         return subprocess.run(
@@ -502,7 +610,7 @@ class IndexToolingTests(unittest.TestCase):
             self.assertEqual(explicit.returncode, 0, explicit.stderr)
             self.assertEqual(explicit.stdout.splitlines()[1].split('\t')[6], 'second')
 
-    def test_unconsumed_and_reader_visible_callout_markers_are_errors(self):
+    def test_unconsumed_callout_markers_are_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             guides = Path(directory)
             path = guides / 'guide.md'
@@ -512,13 +620,6 @@ class IndexToolingTests(unittest.TestCase):
             unused = self.run_python(EXTRACT_CALLOUTS, guides)
             self.assertNotEqual(unused.returncode, 0)
             self.assertIn('not followed by its designated callout', unused.stderr)
-            path.write_text(
-                '```swift\n// callout-id: visible\n// ⚠️ warning\n```\n',
-                encoding='utf-8',
-            )
-            visible = self.run_python(EXTRACT_CALLOUTS, guides)
-            self.assertNotEqual(visible.returncode, 0)
-            self.assertIn('must not appear inside a published code fence', visible.stderr)
 
     def test_callout_marker_cannot_cross_heading_or_use_occurrence_outside_fence(self):
         with tempfile.TemporaryDirectory() as directory:
