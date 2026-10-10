@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 
+from scripts.mdlinks import fence_closer, fence_opener, is_site_only_guide
 
 REPO = Path(__file__).resolve().parents[2]
 GUIDES = REPO / 'guides'
@@ -20,6 +21,45 @@ ANCHOR_SECTION_LINKS = REPO / 'scripts' / 'anchor-section-links.py'
 
 class RepositoryIndexTests(unittest.TestCase):
     maxDiff = 2000
+
+    def test_non_fenced_quoted_warnings_have_extracted_rows(self):
+        result = self.run_command(sys.executable, 'scripts/extract-callouts.py', 'guides')
+        self.assertEqual(0, result.returncode, result.stderr)
+        locations = {(row[0], int(row[1])) for row in
+                     (line.split('\t') for line in result.stdout.splitlines())}
+        expected = set()
+        for path in GUIDES.rglob('*.md'):
+            relative = path.relative_to(GUIDES).as_posix()
+            if path.name in ('SILENT-FAILURES.md', 'API-INDEX.md') or is_site_only_guide(relative):
+                continue
+            fence, quoted_fence = None, False
+            with path.open(encoding='utf-8') as source:
+                for lineno, line in enumerate(source, 1):
+                    quoted = line.lstrip().startswith('>')
+                    visible = re.sub(r'^(?: {0,3}>[ \t]?)+', '', line) if quoted else line
+                    if fence:
+                        self.assertTrue(not quoted_fence or quoted, f'{relative}:{lineno}: unclosed quoted fence')
+                        if fence_closer(visible if quoted_fence else line, fence):
+                            fence = None
+                        continue
+                    opener = fence_opener(visible)
+                    if opener:
+                        fence, quoted_fence = opener[1], quoted
+                        continue
+                    if not quoted:
+                        continue
+                    for warning in re.finditer('⚠️', visible):
+                        prefix, suffix = visible[:warning.start()], visible[warning.end():]
+                        # Check the readable label independently of the extractor's regex.
+                        label_words = suffix.strip().replace('*', '').replace('_', '').split()
+                        label = label_words[0].rstrip('),.;:!?') if label_words else ''
+                        standalone = not prefix.strip('*_#-+ 0123456789.)"“')
+                        if standalone or label.lower() not in ('community', 'community-reported', 'community-published'):
+                            expected.add((relative, lineno))
+                            break
+        self.assertFalse(expected - locations, f'quoted warnings missing rows: {sorted(expected - locations)}')
+        self.assertIn(('part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md', 2182), locations)
+        self.assertIn(('part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md', 3782), locations)
 
     def test_only_canonical_classification_directory_has_files(self):
         self.assertTrue(CLASSIFIED.is_dir())

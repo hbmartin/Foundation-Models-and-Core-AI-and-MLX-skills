@@ -5,7 +5,7 @@ Start here for current project state and maintained instructions. Stable release
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-10-09**, the corpus has 60 reference guides in 17 parts, 1829 classified callouts (1468 concrete silent failures), 1201 indexed symbols, and 10 generated skills.
+**As of 2026-10-09**, the corpus has 60 reference guides in 17 parts, 1831 classified callouts (1469 concrete silent failures), 1201 indexed symbols, and 10 generated skills.
 
 Snippet verification covers 1327 fences: 478 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 661 `PRELUDE-NEEDED`, 184 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.
 

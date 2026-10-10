@@ -1,6 +1,6 @@
 # The silent-failure index
 
-**Every ⚠️ callout in the series — 1829 of them, 1468 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
+**Every ⚠️ callout in the series — 1831 of them, 1469 describing a concrete silent failure — in one place, sorted by the symptom you would observe.**
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
@@ -27,10 +27,10 @@ Start from the symptom column that matches what you observe. Within each section
 | [Resource growth](#resource-growth) | 40 | Silent memory or disk growth, leaks, quota consumption. |
 | [Precision loss](#precision-loss) | 18 | Silent numeric precision or dtype changes — TF32, quantization side-effects, accumulation regimes. |
 | [Misleading signals](#misleading-signals) | 167 | Errors, logs or metrics that name the wrong cause; swallowed errors; observation APIs that emit nothing. |
-| [Version drift](#version-drift) | 101 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
+| [Version drift](#version-drift) | 102 | The same code or artifact behaves differently across OS/SDK/tool versions with no signal. |
 | [Docs vs reality](#docs-vs-reality) | 159 | Documented behavior differs from what ships — samples that don't compile, wrong signatures, naming mismatches. |
 | [API footguns](#api-footguns) | 270 | API shapes that invite silent misuse — surprising defaults, order-dependence, overload traps. |
-| [General cautions](#general-cautions) | 361 | Warnings and considerations that are not themselves silent failures. |
+| [General cautions](#general-cautions) | 362 | Warnings and considerations that are not themselves silent failures. |
 
 
 ## Wrong output
@@ -818,7 +818,7 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 9**
 
 - [Registry preset YAMLs exist only in the source tree — wheel installs SystemExit; clone coreai-models to read the recipes](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#145-writing-the-yaml) — 9.2
-- [AOT targets only Apple-Intelligence hardware, with one .aimodelc per arch; device-side specialization still remains.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
+- [AOT compiles only for Apple-Intelligence hardware: A17 Pro+, M1+ Macs, M2+ Vision Pro — one .aimodelc per arch](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 
 **Part 10**
 
@@ -1510,7 +1510,8 @@ Start from the symptom column that matches what you observe. Within each section
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
-- [Pinned citations need re-verification; VLM exports now use name/ rather than name.llmasset/, breaking old globs.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [Pinned file and line citations target an older coreai-models snapshot; re-verify them against a fresh clone.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [VLM exports changed from name.llmasset to name directories; scripts globbing the old extension break.](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 **Part 11**
 
@@ -2320,6 +2321,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [The one-line check: if you targeted the ANE, confirm the viewer's Compute types show no float32](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [The Xcode model viewer itself requires the Metal Toolchain, which is not installed by default](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [Summary asymmetry: storageTypes and operationDistribution carry counts; the compute-side listing does not](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#82-aimodelassetsummary--the-same-data-programmatically) — 9.3
+- [Ahead-of-time compiled assets still need device-side specialization; the remaining work depends on model and hardware.](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 - [Consolidated index of format-related silent failures](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#10-️-silent-failures-consolidated) — 9.3
 - [The M5 talk's baselines differ per claim — M4 for images, M1 for video; cite the baseline with the number](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3
 - [ResNet50 PTQ row: int8 and FP8-E4M3 land within ~2.4 points of fp32 — the most directly useful format-choice datum](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3

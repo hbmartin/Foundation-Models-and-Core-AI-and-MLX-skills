@@ -16,6 +16,80 @@ OVERWRITE_STATEMENT = (
 
 
 class CoreAIExampleTests(unittest.TestCase):
+    def test_version_comparisons_do_not_exempt_current_claims(self):
+        for claim in (
+            'Unlike in coreai-core 1.0.0b2, save_asset does not overwrite the destination.',
+            'save_asset does not overwrite the destination, as it did in coreai-core 1.0.0b2.',
+            'The b3 converter does not overwrite the destination (it did in coreai-core 1.0.0b2).',
+            'The destination is not overwritten, as in coreai-core 1.0.0b2.',
+            'Unlike in coreai-core 1.0.0b2, the destination is not overwritten.',
+            'save_asset writes a bundle, as in coreai-core 1.0.0b2. It does not overwrite the destination.',
+            'In coreai-core 1.0.0b2, save_asset does not overwrite the destination, but save_asset does not overwrite the destination.',
+            'save_asset in coreai-core 1.0.0b2 preserves files, and save_asset does not overwrite the destination.',
+        ):
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+                self.assertEqual(['b3 overwrite behavior incorrect'],
+                                 overwrite_contract_errors(OVERWRITE_STATEMENT + '\n\n' + claim))
+        for claim in (
+            'In coreai-core 1.0.0b2, save_asset does not overwrite the destination.',
+            'save_asset in coreai-core 1.0.0b2 does not overwrite the destination.',
+            'The destination in coreai-core 1.0.0b2 is not overwritten.',
+            'In coreai-core 1.0.0b2, save_asset writes a bundle. It does not overwrite the destination.',
+            'save_asset in coreai-core 1.0.0b2 validates the destination but does not overwrite it.',
+            'save_asset in coreai-core 1.0.0b2 preserves files. It raises FileExistsError.',
+            'In coreai-core 1.0.0b2, save_asset preserves files. mlx_lm.convert writes a bundle. It does not overwrite the destination.',
+        ):
+            with self.subTest(claim=claim):
+                self.assertEqual([], contract_errors(claim, 'overwrite'))
+
+    def test_bold_callout_titles_and_bodies_keep_their_claims(self):
+        for claim in (
+            '> ⚠️ **SILENT FAILURE — The destination is not overwritten.**',
+            '> ⚠️ **SILENT FAILURE — The destination\n> is not overwritten.**',
+            '> ⚠️ **SILENT FAILURE — save_asset does not overwrite the destination.**',
+            '> ⚠️ **The destination is not overwritten.** Later explanation.',
+            '> ⚠️ **WARNING — The destination is not overwritten.** Later explanation.',
+            '> ⚠️ **A descriptive title** — The destination is not overwritten.',
+            '> ✅ **VERIFIED (b3 source)** — The destination is not overwritten.',
+        ):
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+                self.assertEqual([], contract_errors(claim.replace('not ', ''), 'overwrite'))
+
+    def test_preservation_continuations_keep_their_explicit_agent(self):
+        for verb in ('preserved', 'retained', 'kept'):
+            for agent, rejected in (('', True), (' by save_asset', True),
+                                    (' by mlx_lm.convert', False), (' by another_tool', False),
+                                    (' by default', True)):
+                claim = f'The destination is not overwritten but {verb}{agent}.'
+                with self.subTest(claim=claim):
+                    self.assertEqual(['b3 overwrite behavior incorrect'] if rejected else [],
+                                     contract_errors(claim, 'overwrite'))
+
+    def test_bare_file_exists_error_and_existence_word_orders(self):
+        for claim in ('save_asset will fail with FileExistsError.',
+                      'save_asset fails immediately with a FileExistsError.',
+                      'save_asset raises FileExistsError.'):
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+        for condition in ('the destination already exists', 'the destination exists already',
+                          'the destination exists on disk', 'the destination exists on disk already',
+                          'the destination already exists on disk',
+                          'something exists at the destination already'):
+            with self.subTest(condition=condition):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(
+                    f'save_asset will fail if {condition}.', 'overwrite'))
+                self.assertEqual([], contract_errors(
+                    f'save_asset will not fail if {condition}.', 'overwrite'))
+        for claim in ('save_asset will not fail with FileExistsError.',
+                      'mlx_lm.convert will fail with FileExistsError.',
+                      'save_asset will fail with an error.',
+                      'save_asset will fail with FileExistsError if the metadata record already exists.',
+                      'save_asset will fail if the destination exists on disk already, and is read-only.'):
+            with self.subTest(claim=claim):
+                self.assertEqual([], contract_errors(claim, 'overwrite'))
+
     def test_reviewed_overwrite_regressions_and_coverage_gaps(self):
         claims = (
             'save_asset writes the bundle, but an existing destination is not overwritten.',
@@ -50,7 +124,6 @@ class CoreAIExampleTests(unittest.TestCase):
 
     def test_reviewed_false_positives_and_condition_ownership(self):
         for text in (
-            'The destination is not overwritten, as in coreai-core 1.0.0b2.',
             'The destination is not overwritten, which mlx_lm.convert relies on.',
             'Save the tokenizer with save_pretrained(dir); it will not overwrite existing files.',
             'save_asset will fail validation if the destination already exists.',

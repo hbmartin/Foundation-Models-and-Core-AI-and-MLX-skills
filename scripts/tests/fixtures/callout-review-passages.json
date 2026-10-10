@@ -43,5 +43,31 @@
     "kind": "SILENT-FAILURE",
     "edit_from": "return mx.sum(x * mask, axis=1) / x.shape[1]",
     "edit_to": "return mx.sum(x * mask, axis=1) / x.shape[2]"
+  },
+  {
+    "name": "aot-specialization-caveat",
+    "source": "part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md",
+    "source_line": 2173,
+    "text": "> ✅ **VERIFIED** — Apple documentation, *Compiling Core AI models ahead of time*:\n> ```shell\n> % xcrun coreai-build compile MyModel.aimodel --platform iOS --min-deployment-version 27.0 --output compiled/\n> ```\n> ⚠️ **NOTE, verbatim:** *\"Ahead-of-time compilation only compiles for devices that support Apple\n> Intelligence, including **iPhone or iPad with the A17 Pro chipset or later, a Mac with the M1\n> chipset or later, or Apple Vision Pro with the M2 chipset or later**.\"*\n>\n> Output naming: one `.aimodelc` per architecture, `MyModel.<arch>.aimodelc`, where `<arch>` is\n> `AIModel.deviceArchitectureName`. ⚠️ And the caveat that keeps expectations honest: *\"**Even with\n> ahead-of-time compilation, the compiled asset still requires some specialization on the device.**\n> The amount of compilation that remains depends on the model and the compute units it uses.\"*\n",
+    "expected_rows": 2,
+    "warning_offsets": [
+      4,
+      9
+    ],
+    "edit_from": "still requires some specialization",
+    "edit_to": "still requires additional specialization"
+  },
+  {
+    "name": "vlm-breaking-path-change",
+    "source": "part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md",
+    "source_line": 3775,
+    "text": "> ⚠️ **Upstream drift, checked 2026-08-02 — the pin above is a snapshot, and upstream has moved\n> six commits past it to `49becc6` (2026-07-31).** Every `file:line` citation in this guide remains\n> correct *for `5ed9981`*, which is what the pin means. Three of the six commits land on files this\n> guide reads, so re-verify before you trust a line number against a fresh clone:\n>\n> | Commit | Date | Touches |\n> |---|---|---|\n> | `86b4c04` \"Remove Deprecated LLMAsset Terminology\" | 07-28 | ⚠️ **Breaking path change** — VLM export now writes `<name>/`, **not `<name>.llmasset/`** (`python/src/coreai_models/vlm/export.py`, `models/README.md`, `models/vlm/README.md`). Any script that globs `*.llmasset` breaks. |\n> | `367ad52` \"New custom op for KV cache update\" | 07-29 | `export/mlir_ops.py` (+337/−…), `primitives/_ops.py`, **`primitives/ios/cache.py`**, **`primitives/macos/cache.py`** — i.e. the exact files behind §627, §939 and §2011 here, and Part 7.3's cache-shape claims. |\n> | `f3e8689` \"Fix compiler warnings from macOS 27 Beta 4 SDKs\" | 07-31 | Swift sources; cosmetic, but confirms upstream is tracking beta 4. |\n>\n> The other three (`49becc6` guided-decoding extensions, `aa3bbf6` `--clear-coreai-cache`,\n> `c7421ba` flux2 quantization cast) are folded into\n> [Part 7.4 §7.3.1](../../part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md#731-three-additions-at-49becc6--and-what-they-tell-you-about-where-this-is-going)\n> and [Part 7.2 §7.1](../../part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md#71-how-apples-own-tools-clear-the-cache--and-the-measurement-pattern-worth-stealing).\n> 🔴 **Not yet re-read: what `367ad52` changed about the KV-cache primitive.** That is the\n> highest-value follow-up in this file — it may invalidate the cache-shape and `seq_len_dim()`\n> claims at §627/§939.\n",
+    "expected_rows": 2,
+    "warning_offsets": [
+      0,
+      7
+    ],
+    "edit_from": "Any script that globs",
+    "edit_to": "Any program that globs"
   }
 ]

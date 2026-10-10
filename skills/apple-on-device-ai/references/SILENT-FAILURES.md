@@ -1,6 +1,6 @@
 # Silent-failure index — Apple on-device AI: choosing a stack and getting the gates right
 
-**1829 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**1831 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
@@ -17,10 +17,10 @@
 | [Resource growth](#resource-growth) | 40 |
 | [Precision loss](#precision-loss) | 18 |
 | [Misleading signals](#misleading-signals) | 167 |
-| [Version drift](#version-drift) | 101 |
+| [Version drift](#version-drift) | 102 |
 | [Docs vs reality](#docs-vs-reality) | 159 |
 | [API footguns](#api-footguns) | 270 |
-| [General cautions](#general-cautions) | 361 |
+| [General cautions](#general-cautions) | 362 |
 
 ## Wrong output
 
@@ -780,7 +780,7 @@
 **Part 9**
 
 - [Registry preset YAMLs exist only in the source tree — wheel installs SystemExit; clone coreai-models to read the recipes](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md#145-writing-the-yaml) — 9.2
-- [AOT targets only Apple-Intelligence hardware, with one .aimodelc per arch; device-side specialization still remains.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
+- [AOT compiles only for Apple-Intelligence hardware: A17 Pro+, M1+ Macs, M2+ Vision Pro — one .aimodelc per arch](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 
 **Part 10**
 
@@ -1452,7 +1452,8 @@
 - [Running python from the coreai-torch clone shadows 0.4.1 with 0.4.0 egg-info; exports silently use the broken version.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#95-the-producer-fingerprint-and-the-incident-that-made-it-matter) — 10.3
 - [The package pins mlc-ai/xgrammar to branch main, not a version; resolve and commit your own revision.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#111-the-whole-integration) — 10.3
 - [The fork snapshots an older upstream; commit 04a3fd6 upstream already stops pipelined generation when the stream drops.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#134-the-related-multi-turn-bug-worth-knowing-about-regardless) — 10.3
-- [Pinned citations need re-verification; VLM exports now use name/ rather than name.llmasset/, breaking old globs.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [Pinned file and line citations target an older coreai-models snapshot; re-verify them against a fresh clone.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
+- [VLM exports changed from name.llmasset to name directories; scripts globbing the old extension break.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md#181-primary--shipping-source-read-this-session) — 10.3
 
 **Part 11**
 
@@ -2250,6 +2251,7 @@
 - [The one-line check: if you targeted the ANE, confirm the viewer's Compute types show no float32](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [The Xcode model viewer itself requires the Metal Toolchain, which is not installed by default](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#81-the-xcode-model-viewer--compute-types-vs-storage-types) — 9.3
 - [Summary asymmetry: storageTypes and operationDistribution carry counts; the compute-side listing does not](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#82-aimodelassetsummary--the-same-data-programmatically) — 9.3
+- [Ahead-of-time compiled assets still need device-side specialization; the remaining work depends on model and hardware.](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#94-ahead-of-time-compilation-does-not-change-the-format-question) — 9.3
 - [Consolidated index of format-related silent failures](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#10-️-silent-failures-consolidated) — 9.3
 - [The M5 talk's baselines differ per claim — M4 for images, M1 for video; cite the baseline with the number](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3
 - [ResNet50 PTQ row: int8 and FP8-E4M3 land within ~2.4 points of fp32 — the most directly useful format-choice datum](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md#111-apple-published) — 9.3
