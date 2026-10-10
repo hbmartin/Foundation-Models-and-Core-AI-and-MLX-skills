@@ -16,6 +16,96 @@ OVERWRITE_STATEMENT = (
 
 
 class CoreAIExampleTests(unittest.TestCase):
+    def test_reviewed_overwrite_regressions_and_coverage_gaps(self):
+        claims = (
+            'save_asset writes the bundle, but an existing destination is not overwritten.',
+            'save_asset writes the bundle, while the destination directory is not overwritten.',
+            'save_asset writes the bundle, whereas an existing destination is not overwritten.',
+            'save_asset will fail if a file already exists at the destination.',
+            'save_asset will fail if the destination exists on disk.',
+            'save_asset will fail if the destination exists already.',
+            'save_asset will fail with FileExistsError if the destination already exists.',
+            'save_asset fails immediately when the destination already exists.',
+            'If the destination exists, save_asset will fail with an error.',
+            'save_asset will fail if the destination exists, and you must delete it first.',
+            'save_asset will fail if the destination exists, but you should choose another name.',
+            'The destination is not replaced but preserved.',
+            'The destination is not overwritten by default.',
+            'The destination is not overwritten, by default.',
+            'The destination is not overwritten, which save_asset relies on.',
+            '> ✅ **VERIFIED (b3 source)** — The destination is not overwritten.',
+            '- ⚠️ **Warning** — The destination is not overwritten.',
+            '> ⚠️ **SILENT FAILURE:** The destination is not overwritten.',
+            'In coreai-core 1.0.0b3, the destination is not overwritten.',
+            '| save_asset | does not overwrite the destination |',
+            'save_asset saves the bundle, and it does not overwrite the destination.',
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(claim, 'overwrite'))
+                self.assertEqual(['b3 overwrite behavior incorrect'],
+                                 overwrite_contract_errors(OVERWRITE_STATEMENT + '\n\n' + claim))
+                affirmative = claim.replace('not ', '').replace('will fail', 'will not fail').replace('fails ', 'never fails ')
+                self.assertEqual([], contract_errors(affirmative, 'overwrite'))
+
+    def test_reviewed_false_positives_and_condition_ownership(self):
+        for text in (
+            'The destination is not overwritten, as in coreai-core 1.0.0b2.',
+            'The destination is not overwritten, which mlx_lm.convert relies on.',
+            'Save the tokenizer with save_pretrained(dir); it will not overwrite existing files.',
+            'save_asset will fail validation if the destination already exists.',
+            'save_asset will fail if the destination exists, and is read-only.',
+            'save_asset will fail if the destination exists, and the destination is read-only.',
+            'save_asset will fail if the destination exists, and the existing destination is read-only.',
+            'save_asset will fail if the destination exists but is read-only.',
+            'save_asset will not fail with FileExistsError if the destination already exists.',
+            'mlx_lm.convert will fail with FileExistsError if the destination already exists.',
+            'The destination is not overwritten by another_tool.',
+            'In coreai-core 1.0.0b2, the destination is not overwritten.',
+            '- save_asset saves the bundle.\n- It does not overwrite the destination.',
+            '| save_asset | saves the bundle |\n| it | does not overwrite the destination |',
+            '| mlx_lm.convert | does not overwrite the destination |',
+            'save_asset writes the bundle, and mlx_lm.convert does not overwrite the destination.',
+            'save_asset metadata writes a record. It does not overwrite the destination.',
+        ):
+            with self.subTest(text=text):
+                self.assertEqual([], contract_errors(text, 'overwrite'))
+                self.assertEqual([], overwrite_contract_errors(OVERWRITE_STATEMENT + '\n\n' + text))
+
+    def test_call_argument_comments_retain_their_owner(self):
+        for comment in ('save_asset will NOT overwrite the destination.',
+                        'It will not overwrite the destination.',
+                        'The destination is not overwritten.'):
+            for owner, rejected in (('prog.save_asset', True), ('save_pretrained', False)):
+                with self.subTest(comment=comment, owner=owner):
+                    # An explicitly named save_asset claim remains attributable
+                    # to that API even inside another call's comment.
+                    expected = rejected or comment.startswith('save_asset')
+                    text = f'```python\n{owner}(out,\n    # {comment}\n    metadata)\n```'
+                    self.assertEqual(['b3 overwrite behavior incorrect'] if expected else [],
+                                     contract_errors(text, 'overwrite'))
+
+    def test_argument_masking_cannot_swallow_later_prose(self):
+        for prefix in ("The save_asset (the converter's API) writes a bundle.",
+                       "save_asset(unclosed, description='broken"):
+            text = prefix + "\n\nThe destination is not overwritten.\n\nSee the maintainer's note)."
+            with self.subTest(prefix=prefix):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(text, 'overwrite'))
+        self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(
+            "save_asset (the converter's API) does not overwrite the destination.", 'overwrite'))
+        for arguments in ('r"path_(copy)"', "'can\\'t )'", 'make_metadata(version())',
+                          'description="""first\n\nsecond )"""'):
+            text = f'```python\nprog.save_asset(out, {arguments}) does not overwrite the destination.\n```'
+            with self.subTest(arguments=arguments):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(text, 'overwrite'))
+
+    def test_table_delimiters_do_not_split_code_or_escaped_pipes(self):
+        for text in ('| `prog.save_asset("a|b")` | does not overwrite the destination |',
+                     '| save_asset | does not overwrite the destination | notes \\| details |'):
+            with self.subTest(text=text):
+                self.assertEqual(['b3 overwrite behavior incorrect'], contract_errors(text, 'overwrite'))
+        self.assertEqual([], contract_errors('| --- | :---: |', 'overwrite'))
+
     def calls(self, code, fence="```", prefix=""):
         text = f"{prefix}{fence}python\n" + "\n".join(prefix + x for x in code.splitlines())
         text += f"\n{prefix}{fence}\n"

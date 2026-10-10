@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 import tokenize
 
-from scripts.mdlinks import FENCE, fence_opener, iter_lines
+from scripts.mdlinks import FENCE, code_span_delimiter, fence_closer, fence_opener, iter_lines
 
 PARTS = (7, 8, 9, 10, 17)
 MARKER = re.compile(r"<!-- coreai-example: (.+) -->")
@@ -185,15 +185,17 @@ _CLAIM_AUXILIARY = (
     r"not|never|no|cannot|neither|yet|still|currently|silently|automatically|ever|performs|\w+n['’]t)"
 )
 _SAVING_SUBJECT = r"(?:\b(?:\w+\.)?save_asset(?:\(\))?|\b(?:converter|b3|save|saves|saving))"
+_SAVING_ANTECEDENT = r"(?:\b(?:\w+\.)?save_asset(?:\(\))?|\b(?:converter|b3))"
 _CLAIM_MODIFIER = (
     rf"(?:\s+{_CLAIM_AUXILIARY}|\s+also|\s+by\s+default|"
     r"\s+in\s+coreai-core\s+1\.0\.0b3\b|\s*,\s*unlike\s+[\w.-]+\s*,)"
 )
+_DESTINATION_MODIFIERS = (r"(?:(?:the|an?|any|existing|specified|current|old|output|target|destinations?|"
+                          r"asset|metadata|its|their|this|that|saved)\s+)*")
+_DESTINATION_HEAD = (r"(?:[^\s;,]+\.aimodel\b|(?:destinations?|assets?|files?|director(?:y|ies)|"
+                     r"paths?|outputs?|bundles?|targets?)\b)")
 _DESTINATION_PHRASE = re.compile(
-    r"(?P<modifiers>(?:(?:the|an?|any|existing|specified|current|old|output|target|destinations?|asset|"
-    r"metadata|its|their|this|that|saved)\s+)*)"
-    r"(?P<head>[^\s;,]+\.aimodel\b|(?:destinations?|assets?|files?|director(?:y|ies)|"
-    r"paths?|outputs?|bundles?|targets?)\b)", re.I,
+    rf"(?P<modifiers>{_DESTINATION_MODIFIERS})(?P<head>{_DESTINATION_HEAD})", re.I,
 )
 _NON_FILESYSTEM = re.compile(
     r"\s+(?:metadata|validation|parity|gates?|checks?|records?|fields?|dtype|devices?|tildes?)\b", re.I,
@@ -204,15 +206,29 @@ _OVERWRITE_CONTRACT = (
 )
 
 
-def _saving_call_names(text: str, *, comments: list[str] | None = None) -> str:
+def _saving_call_names(text: str, *, comments: list[tuple[str, str]] | None = None) -> str:
     """Mask balanced arguments so their punctuation cannot split a prose claim."""
     result, start = [], 0
+    fenced_ranges, offset, fence_start = [], 0, None
+    for body, newline, fenced in iter_lines(text):
+        if fenced and fence_start is None:
+            fence_start = offset
+        elif not fenced and fence_start is not None:
+            fenced_ranges.append((fence_start, offset))
+            fence_start = None
+        offset += len(body) + len(newline)
+    if fence_start is not None:
+        fenced_ranges.append((fence_start, offset))
     for call in re.finditer(r"\b(?:\w+\.)?save_asset\s*\(", text):
         if call.start() < start:
             continue
         i, depth, quote = call.end(), 1, None
+        limit = next((end for begin, end in fenced_ranges if begin <= call.start() < end), None)
+        if limit is None:
+            boundary = re.search(r"\n[ \t]*\n", text[call.end():])
+            limit = call.end() + boundary.start() if boundary else len(text)
         call_comments = []
-        while i < len(text) and depth:
+        while i < limit and depth:
             if quote:
                 if text[i] == "\\":
                     i += 2
@@ -222,12 +238,19 @@ def _saving_call_names(text: str, *, comments: list[str] | None = None) -> str:
                     quote = None
                     continue
             elif text[i] in "\"'":
+                # A prose possessive isn't a Python string opener. Keep actual
+                # Python string prefixes (r'...', f'...', etc.) working.
+                word = re.search(r"[A-Za-z]+$", text[:i])
+                if (text[i] == "'" and word and i + 1 < limit and text[i + 1].isalnum()
+                        and word[0].lower() not in {"r", "b", "u", "f", "br", "rb", "fr", "rf"}):
+                    i += 1
+                    continue
                 quote = text[i] * (3 if text.startswith(text[i] * 3, i) else 1)
                 i += len(quote)
                 continue
             elif text[i] == "#":
                 end = text.find("\n", i)
-                end = len(text) if end < 0 else end
+                end = limit if end < 0 else min(end, limit)
                 call_comments.append(text[i:end])
                 i = end
                 continue
@@ -239,7 +262,8 @@ def _saving_call_names(text: str, *, comments: list[str] | None = None) -> str:
         if not depth:
             result.extend((text[start:call.start()], call[0].rstrip()[:-1].strip() + "()"))
             if comments is not None:
-                comments.extend(call_comments)
+                owner = call[0].rstrip()[:-1].strip() + "()"
+                comments.extend((owner, comment.lstrip("# ")) for comment in call_comments)
             start = i
     result.append(text[start:])
     return "".join(result)
@@ -247,7 +271,50 @@ def _saving_call_names(text: str, *, comments: list[str] | None = None) -> str:
 
 def _saving_subject(prefix: str) -> bool:
     prefix = _saving_call_names(prefix)
-    return bool(re.search(rf"{_SAVING_SUBJECT}{_CLAIM_MODIFIER}*\s*$", prefix, re.I))
+    return not _historical_claim(prefix) and bool(re.search(
+        rf"{_SAVING_SUBJECT}{_CLAIM_MODIFIER}*\s*$", prefix, re.I))
+
+
+def _historical_claim(text: str) -> bool:
+    return bool(re.search(r"\b(?:in|as\s+in)\s+coreai-core\s+(?!1\.0\.0b3\b)[\w.]+", text, re.I))
+
+
+def _saving_antecedent(text: str) -> str | None:
+    match = re.match(
+        rf"(?:the\s+)?({_SAVING_ANTECEDENT})\b(?:\(\))?"
+        rf"(?=\s*$|\s+(?:{_CLAIM_AUXILIARY}|writes?|saves?|validates?|preserves?|"
+        rf"{_REPLACEMENT}|{_FAILURE}|also|by|in)\b|\s*,\s*unlike\b)", text, re.I,
+    )
+    return match[1] if match else None
+
+
+def _table_prose(line: str) -> str:
+    """Join actual table cells, leaving escaped and inline-code pipes intact."""
+    cells, cell, delimiter, i = [], [], 0, 0
+    while i < len(line):
+        if line[i] == "\\" and i + 1 < len(line):
+            cell.append(line[i:i + 2])
+            i += 2
+            continue
+        if line[i] == "`":
+            end = i + 1
+            while end < len(line) and line[end] == "`":
+                end += 1
+            delimiter = code_span_delimiter(delimiter, end - i)
+            cell.append(line[i:end])
+            i = end
+            continue
+        if line[i] == "|" and not delimiter:
+            cells.append("".join(cell).strip())
+            cell.clear()
+        else:
+            cell.append(line[i])
+        i += 1
+    cells.append("".join(cell).strip())
+    cells = [cell for cell in cells if cell]
+    if cells and all(re.fullmatch(r":?-+:?", cell) for cell in cells):
+        return ""
+    return " ".join(cells)
 
 
 def _destination_phrase(text: str, *, qualified: bool = False, complete: bool = False) -> bool:
@@ -278,15 +345,16 @@ def _destination_subject(prefix: str) -> bool:
 def _overwrite_clauses(text: str) -> list[str]:
     """Separate independent subjects without breaking coordinated verbs or nouns."""
     comments = []
-    text = _saving_call_names(text, comments=comments)
-    if comments:
-        text += "\n\n" + "\n\n".join(comments)
     text = re.sub(r"(?m)^(?: {0,3}>[ \t]?)+", "", text)
-    text = re.sub(r"(?m)^\s*⚠️\s*\*\*[^*\n]+\*\*\s*[—–:-]\s*", "", text)
-    text = text.replace("|", ";")
+    text = _saving_call_names(text, comments=comments)
+    text = "\n".join("\n\n" + _table_prose(line) + "\n\n"
+                     if line.strip().startswith("|") else line for line in text.splitlines())
+    text = re.sub(r"(?m)^ {0,3}(?:[-*+]\s+|\d+[.)]\s+)", "\n\n", text)
+    text = re.sub(r"(?m)^ {0,3}(?:⚠️|✅)\s*\*\*[^*\n]+\*\*(?:[ \t]*[—–:-][ \t]*|[ \t]+)", "", text)
+    text = re.sub(r"(?im)^\s*In\s+coreai-core\s+1\.0\.0b3\s*,\s*", "", text)
     new_subject = (rf"(?!but\b|and\b|while\b|whereas\b|{_CLAIM_AUXILIARY}\b)"
-                   rf"(?:{_SAVING_SUBJECT}|[\w.]+|the\s+(?:(?:saved|existing)\s+)?[\w.]+)\s+"
-                   rf"(?:{_CLAIM_AUXILIARY}|{_FAILURE}|{_REPLACEMENT})\b")
+                   rf"(?:{_SAVING_SUBJECT}|{_DESTINATION_MODIFIERS}{_DESTINATION_HEAD}|(?:the\s+)?[\w.]+)\s+"
+                   rf"(?:{_CLAIM_AUXILIARY}\s+)*(?:{_FAILURE}|{_REPLACEMENT})\b")
     inherited_predicate = rf"(?:{_CLAIM_AUXILIARY}\s+)*(?:{_REPLACEMENT}|{_FAILURE})\b"
     clauses = []
     for paragraph in re.split(r"\n\s*\n", text):
@@ -304,17 +372,19 @@ def _overwrite_clauses(text: str) -> list[str]:
                 parts = []
                 for boundary in re.finditer(rf"(?:\band\s+|,\s*)(?={new_subject})", contrast, re.I):
                     # Noun coordinations and leading conditions stay together.
-                    if re.search(rf"\b(?:{_REPLACEMENT}|{_FAILURE})\b", contrast[start:boundary.start()], re.I):
+                    preceding = contrast[start:boundary.start()]
+                    if (re.search(rf"\b(?:{_REPLACEMENT}|{_FAILURE})\b", preceding, re.I)
+                            or _saving_antecedent(preceding)):
                         parts.append(contrast[start:boundary.start()].strip())
                         start = boundary.end()
                 parts.append(contrast[start:].strip())
                 for part in parts:
                     if not part:
                         continue
-                    saving = re.match(rf"(?:the\s+)?({_SAVING_SUBJECT})\b", part, re.I)
+                    saving = _saving_antecedent(part)
                     if saving:
-                        historical = re.search(r"\bin\s+coreai-core\s+(?!1\.0\.0b3\b)[\w.]+", part, re.I)
-                        antecedent = None if historical else saving[1]
+                        historical = _historical_claim(part)
+                        antecedent = None if historical else saving
                     elif re.match(r"it\s+", part, re.I):
                         if antecedent:
                             part = re.sub(r"^it\b", lambda _: antecedent, part, flags=re.I)
@@ -323,12 +393,16 @@ def _overwrite_clauses(text: str) -> list[str]:
                     else:
                         antecedent = None
                     clauses.append(part)
+    for owner, comment in comments:
+        clauses.extend(_overwrite_clauses(owner + ". " + comment))
     return clauses
 
 
 def asset_replacement_claim(prefix: str, suffix: str) -> bool:
     """Require a local saving/destination subject and a filesystem replacement."""
     api_subject, destination_subject = _saving_subject(prefix), _destination_subject(prefix)
+    if _historical_claim(prefix + " " + suffix):
+        return False
     suffix = re.sub(rf"^(?:\s+(?:and|or|nor)\s+{_REPLACEMENT})+", "", suffix, flags=re.I)
     suffix = re.sub(r"^\s+of\s+", " ", suffix, flags=re.I).strip()
     if _destination_phrase(suffix):
@@ -339,29 +413,40 @@ def asset_replacement_claim(prefix: str, suffix: str) -> bool:
     # explicit agent must not inherit the surrounding section's API context.
     if not destination_subject:
         return False
+    dependency = re.match(r",\s*which\s+(?:the\s+)?([\w.]+)\s+relies\s+on\b", suffix, re.I)
+    if dependency and not re.fullmatch(_SAVING_ANTECEDENT, dependency[1], re.I):
+        return False
+    suffix = re.sub(r"^(?:,\s*)?by\s+default\b\s*", "", suffix, flags=re.I)
     if re.match(r"(?:,\s*)?by\s+", suffix, re.I):
         return bool(re.fullmatch(
             rf"(?:,\s*)?by\s+{_SAVING_SUBJECT}(?:\s*[,].*)?[\s.!?]*", suffix, re.I))
-    return not suffix or suffix.startswith(",") or bool(re.match(r"(?:so|therefore|because)\b", suffix, re.I))
+    return not suffix or suffix.startswith(",") or bool(re.match(
+        r"(?:so|therefore|because|but\s+(?:preserved|retained|kept))\b", suffix, re.I))
 
 
 def _destination_existence(clause: str) -> bool:
-    if re.search(r",\s*(?:but|and|only|provided)\b", clause, re.I):
+    if re.search(r",\s*(?:only|provided)\b|,\s*(?:but|and)\s+"
+                 rf"(?:(?:it|{_DESTINATION_MODIFIERS}{_DESTINATION_HEAD})\s+)?"
+                 r"(?:is|are|has|have|must|needs?)\b", clause, re.I):
         return False
     condition = clause.split(",", 1)[0].strip().rstrip(".!?")
-    match = re.fullmatch(r"(?:if|when|because)\s+(.+?)\s+(?:already\s+)?exists?", condition, re.I)
+    match = re.fullmatch(r"(?:if|when|because)\s+(.+?)\s+(?:already\s+)?exists?"
+                         r"(?:\s+already)?(?:\s+on\s+disk|\s+at\s+(.+))?", condition, re.I)
     if match:
-        return _destination_phrase(match[1], complete=True)
-    match = re.fullmatch(r"(?:if|when|because)\s+something\s+(?:already\s+)?exists?\s+at\s+(.+)", condition, re.I)
-    if match:
-        return _destination_phrase(match[1], complete=True)
+        return ((_destination_phrase(match[1], complete=True)
+                 or (match[1].lower() == "something" and bool(match[2])))
+                and (not match[2] or _destination_phrase(match[2], complete=True)))
     match = re.fullmatch(r"(?:on|when\s+writing\s+to)\s+((?:(?:an?|the)\s+)?existing\s+.+)", condition, re.I)
     return bool(match and _destination_phrase(match[1], complete=True))
 
 
 def _destination_failure(clause: str) -> bool:
+    if _historical_claim(clause):
+        return False
     for failure in re.finditer(rf"\b{_FAILURE}\b", clause, re.I):
         prefix, suffix = clause[:failure.start()], clause[failure.end():].strip()
+        suffix = re.sub(r"^(?:(?:immediately|silently|automatically|unexpectedly)\s*|"
+                        r"with\s+(?:an?\s+)?(?:FileExistsError|error)\b\s*)*", "", suffix, flags=re.I)
         if not _saving_subject(prefix) or negated_predicate(prefix):
             continue
         if _destination_existence(suffix):
@@ -387,10 +472,8 @@ def _contract_paragraphs(text: str) -> list[str]:
 
     for line in text.splitlines():
         line = re.sub(r"^(?: {0,3}>[ \t]?)+", "", line)
-        closer = FENCE.match(line)
         if fence:
-            if (closer and closer[1][0] == fence[0] and len(closer[1]) >= len(fence)
-                    and not line[closer.end():].strip()):
+            if fence_closer(line, fence):
                 fence = None
             continue
         opener = fence_opener(line) if not comment and not code_delimiter else None
@@ -419,10 +502,7 @@ def _contract_paragraphs(text: str) -> list[str]:
                 while end < len(line) and line[end] == "`":
                     end += 1
                 run = end - i
-                if not code_delimiter:
-                    code_delimiter = run
-                elif run == code_delimiter:
-                    code_delimiter = 0
+                code_delimiter = code_span_delimiter(code_delimiter, run)
                 visible.append(line[i:end])
                 i = end
             elif not code_delimiter and line.startswith("<!--", i):

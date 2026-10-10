@@ -103,7 +103,7 @@
 
 **Part 16**
 
-- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README 🔇
+- [Familiarity's sign is documented backwards; PFA drops layers with a mere warning; pre-fix Keras 3 analyses nothing](part-16-adjacent-capabilities/README.md#165--dnikit-auditing-datasets-and-networks-before-you-convert) — 16.README
 - [The docs' math has Familiarity's sign backwards — higher is more familiar; sort the documented way and results invert](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#62-familiarity--out-of-distribution-and-rare-data-scoring) — 16.5 🔇
 - [The notebook reports difference of mean log-scores (log of the ratio) — log the thresholds before comparing](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#62-familiarity--out-of-distribution-and-rare-data-scoring) — 16.5
 - [The notebook's FieldRenamer literal is TF1-style 'input_1:0'; TF2 names it 'input_1' — check model.input_layers](part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md#64-iua--inactive-unit-analysis) — 16.5

@@ -1,19 +1,19 @@
 # Silent-failure index — MLX in Python and Swift, and bridges to Core AI
 
-**340 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
+**337 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
 > Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
-| [Wrong output](#wrong-output) | 46 |
+| [Wrong output](#wrong-output) | 44 |
 | [Empty output / no-op](#empty-output--no-op) | 7 |
 | [Truncation & limits](#truncation--limits) | 5 |
 | [Ignored input](#ignored-input) | 30 |
 | [Stale state](#stale-state) | 7 |
 | [Data & artifact loss](#data--artifact-loss) | 6 |
 | [Compiles but unavailable](#compiles-but-unavailable) | 6 |
-| [Performance cliffs](#performance-cliffs) | 36 |
+| [Performance cliffs](#performance-cliffs) | 35 |
 | [Resource growth](#resource-growth) | 6 |
 | [Precision loss](#precision-loss) | 8 |
 | [Misleading signals](#misleading-signals) | 33 |
@@ -31,10 +31,8 @@
 - [Adapters train under a chat template serving may not reproduce (enable_thinking auto-defaults); quality quietly shifts.](part-12-mlx-python/README.md#126--lora-and-dora-fine-tuning-and-adding-a-new-architecture) — 12.README 🔇
 - [custom_function silently zeroes gradients for arrays captured by closure.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Arrays captured by custom_function become constants; their gradients are silently 0.0 and training never updates them.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1 🔇
-- [A scale captured by a custom_function closure receives no gradient; pass it as an argument to train it.](part-12-mlx-python/references/01-core-fundamentals.md#53-️-silent-failure-custom_function-silently-zeroes-gradients-for-captured-arrays) — 12.1
 - [Under shapeless=True, Python arithmetic on x.shape freezes at trace time and later shapes compute with stale values.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [shapeless compile bakes shape-derived arithmetic from the first call; new shapes silently reuse the frozen numbers.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1 🔇
-- [Shapeless tracing freezes the first sequence length in a masked mean; later lengths silently use the wrong divisor.](part-12-mlx-python/references/01-core-fundamentals.md#93-️-silent-failure-shape-derived-arithmetic-bakes-in-the-first-shape) — 12.1
 - [apply(astype) casts packed uint32 quantized weights and integer params to bfloat16, destroying them; use set_dtype.](part-12-mlx-python/references/01-core-fundamentals.md#115-the-rest-of-the-module-surface) — 12.1
 - [Writing through a NumPy view mutates MLX memory invisibly to autodiff; gradients come back wrong.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1
 - [External mutation of MLX memory is invisible to autodiff: Apple's own demo returns the wrong gradient with no error.](part-12-mlx-python/references/01-core-fundamentals.md#124-️-silent-failure-writing-through-a-numpy-view-destroys-gradients) — 12.1 🔇
@@ -199,7 +197,6 @@
 - [Evaluating loss and gradients separately runs the graph twice per step; batch both into one mx.eval.](part-12-mlx-python/references/01-core-fundamentals.md#34-the-partial-evaluation-trap) — 12.1
 - [A varying Python scalar argument recompiles a compiled function on every call; it presents as compile being slower.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [int/float/str/None args are baked into the compile cache key; a varying scalar silently recompiles every call.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1 🔇
-- [A Python integer position enters the compile cache key, causing a fresh compilation at every decode step.](part-12-mlx-python/references/01-core-fundamentals.md#84-️-silent-failure-python-scalars-are-baked-into-the-cache-key) — 12.1
 - [shapeless=True only exempts shape changes; scalar constants varying across calls still create distinct cache entries.](part-12-mlx-python/references/01-core-fundamentals.md#92-what-it-does-not-exempt-you-from) — 12.1
 - [The default-stream context manager is part of the compile cache key; calling under another device recompiles.](part-12-mlx-python/references/01-core-fundamentals.md#102-the-default-and-how-to-change-it) — 12.1
 - [Per-call stream setup costs a uniform 55-77 ms TTFT regression (mlx-lm#1435); hoist it out of the hot path.](part-12-mlx-python/references/01-core-fundamentals.md#104-️-streams-are-thread-affine) — 12.1
