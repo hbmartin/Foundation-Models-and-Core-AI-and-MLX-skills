@@ -346,9 +346,9 @@ Four things to notice, all of which contradict something that has been written a
 4. `aggregateMetrics` takes the aggregator **`inout`**, and the type is **`MetricsAggregator`**
    (plural "Metrics").
 
-> ⚠️ Note the shadowing in Apple's own snippet: `let metric = Metric("Match")` is declared as a stored
-> property **and again inside the closure**. Do not copy that habit — see §17.4 for why it is a hazard
-> and what the safe form is.
+> ⚠️ A fresh `Metric("Match")` uses the same lookup name as the stored property; it does not
+> create an independent measurement. Give distinct evaluators unique metric names: Xcode 27.2
+> rejects duplicate registration, while the historical Simulator experiment pooled values (§17.4).
 
 ---
 
@@ -1076,21 +1076,22 @@ Not stylistic. The test body needs to reach the *same* `Metric` values the evalu
 that by reading them off the evaluation instance: `BookTagEvaluationTests.evaluation.tagCount`. A fresh
 `BookTaggingEvaluation()` constructed inside the test body would be a different instance.
 
-> ✅ **Probe-verified, 2026-07-31 — `Metric` identity is BY NAME.** (was a 🔴 GAP; `probes/`
-> `eval.metric-identity`, run offline on the 27.0 sim runtime via `Evaluation.run(info:)`.) Two
-> evaluators each constructing a **fresh** `Metric("Match")` instance produce **one** detailed
-> column and **one** `"Mean of Match"` summary column — and
-> `aggregateValue(.mean(of: Metric("Match")))` through yet another fresh instance works, returning
-> 0.5. That 0.5 is the second half of the finding: **same-named metrics from different evaluators
-> POOL into one aggregate** (both evaluators' values averaged together). Apple's minimal example
-> constructing `Metric("Match")` inside the evaluator closure was the correct reading; Book
-> Tracker's hold-the-instance structure is a style choice, not a requirement.
+> ✅ **Probe-verified, 2026-10-30 — lookup is by name; duplicate-name policy is a separate question.**
+> With Xcode 27.2 (`27B52`), one evaluator constructs `Metric("Match")` while aggregation and
+> lookup use fresh instances with that name. `aggregateValue(.mean(of: Metric("Match")))`
+> returns **0.5** for scores 1 and 0. The independent `eval.metric-identity` probe checks that
+> lookup without introducing a second evaluator.
 >
-> **The safe default barely changes, and the reason sharpens:** declare each metric exactly once as
-> a stored property and reference it everywhere — no longer because instance identity might matter
-> (it does not), but because name-keyed pooling means a *typo'd or duplicated* name silently forks
-> or merges columns (§17.4). Fresh instances with the same name are safe; same names for different
-> measurements are the hazard.
+> The earlier 2026-07-31 iOS 27.0 Simulator experiment also used two evaluators with the same
+> name and observed one pooled column. On the 2026-10-30 host and Simulator runs with Xcode
+> 27.2, that separate experiment throws **`EvaluationError.duplicateMetricName(name: "Match")`**.
+> `eval.duplicate-metric-names` records pooling or the known rejection and still fails on
+> unrelated errors. Evaluations is bundled with Xcode, so record its Xcode build as well as
+> the destination OS; these observations do not establish the exact release where policy changed.
+>
+> **Safe default:** give distinct measurements unique names and keep one stored property per
+> metric. A fresh lookup instance with the same name is supported by the measured topology;
+> registering the same name from multiple evaluators is rejected there. See §17.4.
 
 ### 8.3 The dataset runs *before* the test body, and the body never iterates
 
@@ -2255,15 +2256,17 @@ and then **shadows it inside the evaluator closure** with a locally constructed 
 Tracker never does this, and its test body deliberately reaches through `static let evaluation` to get
 the *instance*.
 
-> ✅ **Probe-verified, 2026-07-31 — identity is by NAME, so the merge arm is the live hazard.**
-> (was a 🔴 GAP; `probes/` `eval.metric-identity`, 27.0 sim runtime — full result in §8.2.) Two
-> metrics with the same string **silently merge into one column and one pooled aggregate**, and
-> nothing throws. The instance arm of the old dilemma is dead: a locally constructed
-> `Metric("Match")` is found by `aggregateMetrics` and `aggregateValue` just fine.
+> ✅ **Probe-verified, 2026-10-30 — distinguish name-based lookup from duplicate registration.**
+> The current single-evaluator lookup experiment succeeds through a fresh `Metric("Match")`.
+> The separate two-evaluator experiment throws `EvaluationError.duplicateMetricName(name: "Match")`
+> with Xcode 27.2 (`27B52`) on macOS 27.0.1 (`26A434`) and iOS Simulator 27.0 (`24A5408d`).
+> The 2026-07-31 Simulator experiment instead silently pooled both evaluators' values into one
+> column and one mean; retain that result as historical evidence rather than a current guarantee.
 >
-> **Safe default unchanged, sharper reason:** one stored property per metric, unique names,
-> referenced everywhere. The thing to police is the *name*: two evaluators reusing a name
-> unintentionally pools unrelated measurements into one mean, silently.
+> **Safe default:** use unique names for different measurements and reference each stored metric
+> consistently. Do not rely on cross-evaluator pooling. The two probe IDs are
+> `eval.metric-identity` and `eval.duplicate-metric-names`; neither measurement proves the
+> behavior of an untested Xcode/OS combination.
 
 ### 17.5 An aggregate computed over nothing
 
@@ -2649,9 +2652,10 @@ kept and marked, so you can see what moved:
 1. **Non-text / multimodal evaluation** (§2). Hook exists (`ModelSampleInput` and the generic
    protocols, all present in the interface); no compiling example anywhere; the forum question is
    unanswered. **Open.**
-2. **`Metric` identity — by name or by instance?** (§8.2, §17.4). **Closed, probe-verified
-   2026-07-31:** by NAME, and same-named metrics pool into one aggregate (`probes/`
-   `eval.metric-identity`, 27.0 sim runtime).
+2. **`Metric` identity and duplicate registration** (§8.2, §17.4). **Measured separately,
+   2026-10-30:** fresh-instance lookup is by name; duplicate names across evaluators throw
+   with Xcode 27.2 (`27B52`) on the host and iOS 27.0 Simulator. Earlier 2026-07-31
+   Simulator pooling remains historical evidence. The change's exact release boundary is unknown.
 3. **`AggregationOperation`'s full case list** (§9). **Closed:** seven statistic cases plus
    `custom(label:)`, ✅ SDK-verified (`Evaluations-27.0-macos.swiftinterface:431-444`).
 4. **What an all-`.ignore()` metric aggregates to** (§17.5). **Closed, probe-verified 2026-07-31:**

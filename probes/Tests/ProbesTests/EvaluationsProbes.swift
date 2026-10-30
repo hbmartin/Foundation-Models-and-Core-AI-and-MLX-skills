@@ -59,17 +59,8 @@ final class EvaluationsProbes: XCTestCase {
 
     // MARK: eval.metric-identity  [SIM-27 · MAC-27]
     //
-    // GAP: part-06 …/01-foundations-and-hill-climbing.md §8.2 (restated §17) — is `Metric`
-    //      identity by NAME or by INSTANCE? Apple's minimal example constructs
-    //      Metric("Match") inside the evaluator closure (name-keyed reading); Book
-    //      Tracker's static-let structure implies instance-keyed. The interface's
-    //      hand-written == is consistent with either. Guide-named experiment: two
-    //      Metric("X") values in one evaluation; one column or two?
-    // Candidates: (a) one column + aggregateValue reachable via a FRESH Metric("X")
-    //             → identity by name; (b) two columns / fresh-instance lookup fails
-    //             → identity by instance.
-    // Write-back: §8.2's GAP box + the §17 safe-default (which is correct either way,
-    //      but the reason changes).
+    // Use one evaluator so fresh-instance lookup does not depend on whether the
+    // selected Evaluations framework accepts duplicate metric names.
     func testMetricIdentityByNameOrInstance() async throws {
         try requireOS27()
         guard #available(macOS 27.0, iOS 27.0, *) else { return }
@@ -79,7 +70,39 @@ final class EvaluationsProbes: XCTestCase {
                       FixedSample(input: "b", expected: 0)],
             makeSubject: { ModelSubject(value: $0.expected ?? 0) },
             evaluatorList: [
-                // Two separate evaluators, each constructing a FRESH Metric("Match").
+                Evaluator<FixedSample> { _, subject in
+                    Metric("Match").scoring(subject.value)
+                },
+            ],
+            aggregateMeans: [Metric("Match")]
+        )
+        let result = try await evaluation.run()
+        let summaryColumns = result.summary.columns.map(\.name)
+        let detailedColumns = result.detailed.columns.map(\.name)
+        let freshLookup = result.aggregateValue(.mean(of: Metric("Match")))
+        XCTAssertEqual(freshLookup, 0.5, accuracy: 0.000_001)
+        Probe.result(
+            "eval.metric-identity",
+            "summaryColumns=\(summaryColumns)",
+            detail: "detailedColumns=\(detailedColumns) meanViaFreshInstance=\(freshLookup) \(Probe.runtimeDescription)"
+        )
+    }
+
+    // MARK: eval.duplicate-metric-names  [SIM-27 · MAC-27]
+    //
+    // Earlier framework builds pooled two evaluators' same-named metrics.
+    // Xcode 27.2 rejects that input. Both are measured outcomes; unrelated errors
+    // still fail the probe. Keep source compatibility with the 27.0 interface,
+    // which does not declare the newer duplicateMetricName enum case.
+    func testDuplicateMetricNames() async throws {
+        try requireOS27()
+        guard #available(macOS 27.0, iOS 27.0, *) else { return }
+
+        let evaluation = OfflineEvaluation<FixedSample>(
+            samples: [FixedSample(input: "a", expected: 1),
+                      FixedSample(input: "b", expected: 0)],
+            makeSubject: { ModelSubject(value: $0.expected ?? 0) },
+            evaluatorList: [
                 Evaluator<FixedSample> { _, subject in
                     Metric("Match").scoring(subject.value)
                 },
@@ -89,15 +112,19 @@ final class EvaluationsProbes: XCTestCase {
             ],
             aggregateMeans: [Metric("Match")]
         )
-        let result = try await evaluation.run()
-        let summaryColumns = result.summary.columns.map(\.name)
-        let detailedColumns = result.detailed.columns.map(\.name)
-        let freshLookup = result.aggregateValue(.mean(of: Metric("Match")))
-        Probe.result(
-            "eval.metric-identity",
-            "summaryColumns=\(summaryColumns)",
-            detail: "detailedColumns=\(detailedColumns) meanViaFreshInstance=\(freshLookup) \(Probe.runtimeDescription)"
-        )
+        do {
+            let result = try await evaluation.run()
+            let mean = result.aggregateValue(.mean(of: Metric("Match")))
+            XCTAssertEqual(mean, 0.5, accuracy: 0.000_001)
+            Probe.result("eval.duplicate-metric-names", "pooled",
+                         detail: "mean=\(mean) \(Probe.runtimeDescription)")
+        } catch let error as EvaluationError {
+            guard String(describing: error) == #"duplicateMetricName(name: "Match")"# else {
+                throw error
+            }
+            Probe.result("eval.duplicate-metric-names", "rejected",
+                         detail: "error=\(error) \(Probe.runtimeDescription)")
+        }
     }
 
     // MARK: eval.mean-over-all-ignored  [SIM-27 · MAC-27]

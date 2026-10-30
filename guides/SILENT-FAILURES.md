@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-10-09 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-10-30 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -1890,7 +1890,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 **Part 6**
 
-- [Apple's snippet shadows Metric('Match') in the closure — same-name metrics merge or produce results aggregation never…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-shape-before-the-details) — 6.1
+- [Fresh metric instances share names; Xcode 27.2 rejects duplicate evaluator names, while older builds pooled scores.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-shape-before-the-details) — 6.1
 - [Metric labels are unchecked strings written twice; a case typo makes #expect read a label that was never registered.](part-06-evaluations/references/02-model-judges-and-alignment.md#196-️-a-custom-label-typo-tests-nothing) — 6.2
 - [The samples result includes the seeds too — appending it to an existing dataset duplicates every seed.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#4-samplegenerator-parameter-by-parameter) — 6.3
 

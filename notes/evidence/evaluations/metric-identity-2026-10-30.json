@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-30",
+  "observations": [
+    {
+      "lane": "host",
+      "hostingMode": "tool-hosted",
+      "osVersion": "27.0.1",
+      "osBuild": "26A434",
+      "device": "Mac14,12",
+      "xcodeVersion": "27.2",
+      "xcodeBuild": "27B52",
+      "results": [
+        "PROBE-RESULT name=eval.duplicate-metric-names value=rejected detail=error=duplicateMetricName(name: \"Match\") os=27.0.1 platform=macOS",
+        "PROBE-RESULT name=eval.metric-identity value=summaryColumns=[\"Mean of Match\"] detail=detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.1 platform=macOS"
+      ],
+      "tests": 2,
+      "failures": 0
+    },
+    {
+      "lane": "simulator",
+      "hostingMode": "tool-hosted",
+      "osVersion": "27.0",
+      "osBuild": "24A5408d",
+      "device": "iPhone 18 Pro",
+      "xcodeVersion": "27.2",
+      "xcodeBuild": "27B52",
+      "results": [
+        "PROBE-RESULT name=eval.duplicate-metric-names value=rejected detail=error=duplicateMetricName(name: \"Match\") os=27.0.0-simulator platform=iOS",
+        "PROBE-RESULT name=eval.metric-identity value=summaryColumns=[\"Mean of Match\"] detail=detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.0-simulator platform=iOS"
+      ],
+      "tests": 2,
+      "failures": 0
+    }
+  ],
+  "historicalBoundary": "The 2026-07-31 simulator run pooled two evaluators. The first release that rejects duplicate names has not been established.",
+  "sourceCompatibility": "Known rejection is matched on typed EvaluationError description because the SDK 27.0 interface does not declare that case; unrelated errors propagate."
+}

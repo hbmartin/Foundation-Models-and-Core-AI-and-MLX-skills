@@ -1,8 +1,8 @@
 # API & symbol index
 
-**1201 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**1199 symbols referenced across the series, by framework — with where each is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**
 
-> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-10-09; regenerate rather than hand-edit.
+> `26.5` / `27.0` = the leading type name appears in the corresponding captured `.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-10-30; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>164 symbols</sub>
@@ -252,12 +252,11 @@
 | `SpecializationOptions.default()` |  | ✓ | [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `SpecializationOptions.expectFrequentReshapes` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [14.README](part-14-bridges-between-stacks/README.md) |
 
-## Evaluations  <sub>8 symbols</sub>
+## Evaluations  <sub>7 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
 | `Evaluation` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.README](part-06-evaluations/README.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) +4 more |
-| `Evaluation.run(info:)` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
 | `EvaluationResult` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluationResult.errors` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluationResult.saveJSON(to:)` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.README](part-06-evaluations/README.md) |
@@ -481,7 +480,7 @@
 | `URLSessionConfiguration.default` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `UUID` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## other  <sub>785 symbols</sub>
+## other  <sub>784 symbols</sub>
 
 | Symbol | 26.5 | 27.0 | Covered in |
 |---|:-:|:-:|---|
@@ -701,7 +700,6 @@
 | `EvaluationContext.current.result` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `EvaluationError.metricsNotFound` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluationError.missingTranscript` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
-| `EvaluatorError` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EvaluatorProtocol` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `Evaluators` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `EvaluatorsBuilder` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
@@ -897,7 +895,7 @@
 | `Memory.Snapshot.delta(_:)` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.2](part-15-shipping-and-operating/references/02-memory-thermals-and-honest-benchmarking.md) |
 | `MemoryArguments` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `Metadata` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
-| `Metric` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.README](part-06-evaluations/README.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) +4 more |
+| `Metric` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.README](part-06-evaluations/README.md) +4 more |
 | `MetricsAggregator` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [6.README](part-06-evaluations/README.md), [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md) |
 | `MiniMaxM2ToolCallParser` |  |  | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `MINVAL` |  |  | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md) |
@@ -1160,7 +1158,7 @@
 | `StoreDownloaderExtension` |  |  | [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `StructuredSegment` | ✓ | ✓ | [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md) |
 | `Subject` | ✓ | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
-| `SubjectInferenceError` |  | ✓ | [6.README](part-06-evaluations/README.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
+| `SubjectInferenceError` |  | ✓ | [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md) |
 | `SubSequence` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md) +2 more |
 | `Summary.computeTypes` | ✓ | ✓ | [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) |
 | `SwiftTranscriptionSampleApp` |  |  | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
