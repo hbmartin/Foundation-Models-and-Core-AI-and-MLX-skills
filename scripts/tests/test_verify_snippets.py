@@ -670,8 +670,11 @@ class ChangedFilesTests(unittest.TestCase):
         td, repo = self.make_repo()
         with td:
             write_guide(repo, "guides/new file.md", "```swift\nlet newValue = 1\n```\n")
-            r = run_script(["--guides", "guides", "--stub-compiler", "pass",
-                            "--changed"], cwd=repo)
+            # Exercise origin/HEAD independently of a surrounding stacked PR's
+            # GITHUB_BASE_REF, which does not exist in this temporary repository.
+            with mock.patch.dict(os.environ, {"GITHUB_BASE_REF": ""}):
+                r = run_script(["--guides", "guides", "--stub-compiler", "pass",
+                                "--changed"], cwd=repo)
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual([row["file"] for row in tsv_rows(r.stdout)], ["new file.md"])
 
