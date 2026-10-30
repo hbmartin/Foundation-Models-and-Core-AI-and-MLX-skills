@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-10-30T23:35:59.022802Z",
+  "captures": [
+    {
+      "bytes": 2813,
+      "methodSpellings": [
+        "resolved"
+      ],
+      "name": "overview",
+      "path": "overview.md",
+      "sha256": "f5d5c82dac83d8be5d54518a88fbffeaaf6d7229c46b2ff5e7bce54fc360800c",
+      "source": "https://developer.apple.com/documentation/foundationmodels/imagereference.md",
+      "status": "captured"
+    },
+    {
+      "bytes": 1613,
+      "methodSpellings": [
+        "resolved"
+      ],
+      "name": "member",
+      "path": "member.md",
+      "sha256": "ca3546c07791512b2c61ff20defd38414aba6baec78b684cfedb617d4af919d1",
+      "source": "https://developer.apple.com/documentation/foundationmodels/imagereference/resolved%28in%3A%29.md",
+      "status": "captured"
+    }
+  ],
+  "expectedCurrentSpelling": "resolved",
+  "pagesAgree": true,
+  "schemaVersion": 1
+}

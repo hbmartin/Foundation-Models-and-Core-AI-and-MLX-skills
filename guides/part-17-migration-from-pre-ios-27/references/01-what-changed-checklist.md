@@ -6,8 +6,8 @@
 and are moving to 27.** Four OS floors are load-bearing and are routinely confused —
 **26.0** (the Foundation Models framework itself), **26.4** (`contextSize`, `tokenCount(for:)`,
 reduced guardrail false positives, a new on-device model), **27.0** (the `LanguageModel` protocol,
-`PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, Core AI, watchOS), and a
-*fifth* ladder that belongs to a different framework entirely — Metal Performance Primitives /
+`PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, Core AI, watchOS),
+**27.2** (typed transcript data entries and data attachments), and a *fifth* ladder that belongs to a different framework entirely — Metal Performance Primitives /
 TensorOps, which advances at **26.0 → 26.1 → 26.3 → 26.4** and has no 26.2 step. Build with
 **Xcode 27**; nothing below about the new error taxonomy takes effect until you do, and that is the
 single most expensive sentence in this guide.
@@ -75,7 +75,16 @@ them (26.4 and 27.0) landed within a few months of each other.
 |---|---|---|---|
 | **26.0** | The Foundation Models framework itself: `SystemLanguageModel`, `LanguageModelSession`, `@Generable`, `@Guide`, `Tool`, `Transcript`, `Prompt`, `Instructions`, `GenerationOptions`, `GenerationSchema`, `DynamicGenerationSchema`, `GeneratedContent`, `Response`, `ResponseStream`, `LanguageModelFeedback`, `SystemLanguageModel.supportsLocale(_:)` | `iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+, macOS 26.0+, visionOS 26.0+` — **no watchOS** | The 2025 release. `supportsLocale(_:)` is part of the OS 26.0 model declaration.[^supports-locale-floor] |
 | **26.4** | `SystemLanguageModel.contextSize`, `SystemLanguageModel.tokenCount(for:)`, a **new on-device model**, and **reduced guardrail false positives** | `iOS 26.4+, iPadOS 26.4+, Mac Catalyst 26.4+, macOS 26.4+, visionOS 26.4+` | A mid-cycle model swap, not just an API addition. See §3. |
-| **27.0** | The `LanguageModel` / `LanguageModelExecutor` protocol pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, `LanguageModelError`, `Attachment` / image input, `GenerationOptions.ToolCallingMode`, `TranscriptErrorHandlingPolicy`, `LanguageModelSession.Usage`, `Transcript.history`, `Transcript.structuredTranscript`, Core AI, **watchOS** | `iOS 27.0+ Beta, … watchOS 27.0+ Beta` | The 2026 release. Everything marked *Beta* as of this writing. |
+| **27.0** | The `LanguageModel` / `LanguageModelExecutor` protocol pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, `LanguageModelError`, `Attachment` / image input, `GenerationOptions.ToolCallingMode`, `TranscriptErrorHandlingPolicy`, `LanguageModelSession.Usage`, `Transcript.history`, `Transcript.structuredTranscript`, Core AI, **watchOS** | `iOS 27.0+, … watchOS 27.0+` | The stable 2026 release; 27.2 additions have their own floor below. |
+
+The 27.2 SDK adds another explicit availability boundary. **SDK-verified 2026-10-30** in
+`FoundationModels-27.2-macos.swiftinterface`: `Transcript.DataEntry`, `Transcript.DataAttachment`,
+`DataEntryRepresentable`, and `DataAttachmentRepresentable` are annotated iOS/macOS/visionOS/watchOS
+**27.2**, with tvOS unavailable. Typed data entries extend `Transcript.Entry` and the executor's
+generation channel; data attachments extend `Transcript.Attachment` and the generic `Attachment`
+initializer. They carry a `UTType`, raw `Data`, and `GeneratedContent` metadata. This confirms the
+public declaration surface, not acceptance by a particular model. The current host is macOS
+27.0.1, so 27.2-only runtime behavior remains unmeasured.
 
 And the floor that isn't an OS floor at all:
 

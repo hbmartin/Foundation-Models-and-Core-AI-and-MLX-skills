@@ -195,3 +195,21 @@ case; the other Swift declaration bodies are unchanged. Compiler headers and the
 help surface were reviewed separately. SDK 26.5 and unrelated legacy records remain.
 Superseded evidence is available at commit `2b12a8544deb7b7c4a807d1e83ad35be2079dabf`.
 See [the promotion and validation record](../evidence/core-ai/README.md).
+
+## Xcode 27.2 capture — 2026-10-30
+
+The reviewed capture adds seventeen distinct 27.2 artifacts for Xcode `27B52`, macOS SDK
+`26B118`, iPhoneOS SDK `24B8118`, and Metal Toolchain `27B47`. Every 26.5, 27.0, and unrelated
+legacy capture remains managed with its original provenance and hashes. The selected host is
+macOS 27.0.1 (`26A434`); a 27.2 SDK capture does not establish 27.2 runtime behavior.
+
+Reviewed declaration changes include Foundation Models data entries, data attachments and their
+representable protocols (OS 27.2 floors); Evaluations `duplicateMetricName` and array-literal
+`ArrayLoader` conformance; an App Intents importing initializer and schema-kind conformances;
+and an additional tvOS-unavailable annotation in CoreAIDelegates. Core AI's other captured
+framework declarations, Speech, Vision, and Spotlight retain their reviewed surface. Compiler
+printing now uses `::` qualification in places; diagnostic comparisons normalize that spelling
+without altering the raw evidence. MPP remains a header-based surface.
+
+See [the release validation record](../evidence/release-27.2/validation.json) for probe and snippet
+coverage. The older SDK-26 verdicts remain dated historical evidence because SDK 26 is not installed.

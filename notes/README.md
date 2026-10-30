@@ -5,11 +5,11 @@ Start here for current project state and maintained instructions. Stable release
 ## Current snapshot
 
 <!-- current-state:notes:start -->
-**As of 2026-10-09**, the corpus has 60 reference guides in 17 parts, 1831 classified callouts (1469 concrete silent failures), 1201 indexed symbols, and 10 generated skills.
+**As of 2026-10-30**, the corpus has 60 reference guides in 17 parts, 1831 classified callouts (1469 concrete silent failures), 1200 indexed symbols, and 10 generated skills.
 
-Snippet verification covers 1327 fences: 478 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 661 `PRELUDE-NEEDED`, 184 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: /Applications/Xcode.app contains SDK 27. Fresh partial verification records available SDK-27 targets; unchanged historical SDK-26 verdicts retain their prior provenance.
+Snippet verification covers 1327 fences: 478 `ILLUSTRATIVE`, 2 `MIGRATION-PROVEN`, 661 `PRELUDE-NEEDED`, 184 `VERIFIED`, 2 `XFAIL-PROVEN`. Blocker: SDK-26 targets unavailable: selected Xcode contains SDK 27.2. Available SDK-27 targets were checked on 2026-10-30; five unchanged SDK-26 target verdicts retain their historical dates and provenance.
 
-Installed: macOS 27.0 (26A428), Xcode 27.0 (27A266a), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A428). Latest observed: Xcode 27.2 beta 2 (27B5028f), iOS 27.2 beta 3 (24B5099f), and macOS 27.2 beta 3 (26B5101f); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-10-09), indexes=current (2026-10-09), skills=current (2026-10-09). Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
+Installed: macOS 27.0.1 (26A434), Xcode 27.2 (27B52), and `fm` at `/usr/bin/fm` (no independent version; macOS build 26A434). Latest observed: Xcode 27.2 (27B52), iOS 27.2 (24B119), and macOS 27.2 (26B123); SDK and runtime versions are recorded separately in the manifest, and `fm` has no independent version surface. Generated outputs: currentStateBlocks=current (2026-10-30), indexes=current (2026-10-30), skills=current (2026-10-30). Installed macOS build 26A434 differs from observed build 26B123.
 <!-- current-state:notes:end -->
 
 Historical evidence and open writing work remain in the dated notes and
