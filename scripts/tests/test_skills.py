@@ -140,7 +140,7 @@ API_INDEX = """\
 
 ## CoreAI  <sub>1 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIModel` | ✓ | ✓ | [1.1](part-01-orientation/references/01-map.md) |
 """
