@@ -39,8 +39,10 @@ never restamped. It never edits tracked files.
 The observation report records `collection.complete=false` and exact blockers when a host tool
 cannot be queried. A failed GitHub lookup remains blocked even if changed-only rows are empty.
 Official release/news RSS and Foundation Models Markdown are captured with hashes; content
-changes are observations for review, not automatic semantic or baseline promotions. The first
-Markdown snapshot establishes a comparison baseline. State is stored in
+changes are observations for review, not automatic semantic or baseline promotions. Release
+ranking distinguishes beta and RC sequence numbers while retaining build variants of the same
+release. New and updated news entries appear in findings before their identities are saved for
+the next comparison. The first news and Markdown snapshots establish comparison baselines. State is stored in
 `artifacts/freshness/state/official-source-watch.json`.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)

@@ -104,6 +104,67 @@ class FreshnessJobTests(unittest.TestCase):
             self.assertEqual([f["component"] for f in releases], ["Xcode"])
             self.assertEqual(releases[0]["observed"][0]["build"], "27B52")
 
+    def test_source_watch_detects_successive_betas_and_release_candidates(self):
+        for prior, newer in (("28.0 beta", "28.0 beta 2"), ("28.0 RC", "28.0 RC 2")):
+            with self.subTest(prior=prior), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                runner = jobs.Runner(root, root, cycle)
+                xml = ('<rss><channel>' + ''.join(
+                    f'<item><title>Xcode {version} ({build})</title>'
+                    '<pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item>'
+                    for version, build in ((prior, "old"), (newer, "new-a"), (newer, "new-b"))
+                ) + '</channel></rss>').encode()
+                baseline = {"environment": {"latestObserved": {
+                    "xcode": {"version": prior, "build": "old"}, "ios": {}, "macos": {}}}}
+                def response(request, timeout):
+                    return io.BytesIO(b"# Foundation Models updates\n" if request.full_url.endswith(".md") else xml)
+                with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response):
+                    jobs.watch_sources(runner, baseline, root / "state.json")
+                finding = next(f for f in runner.findings if f["kind"] == "release-changed")
+                self.assertEqual([r["build"] for r in finding["observed"]], ["new-a", "new-b"])
+        self.assertGreater(jobs.release_rank({"version": "28.0"}),
+                           jobs.release_rank({"version": "28.0.0 RC 2"}))
+        self.assertGreater(jobs.release_rank({"version": "28.0 Release Candidate 2"}),
+                           jobs.release_rank({"version": "28.0 beta 10"}))
+
+    def test_source_watch_reports_new_and_updated_news_before_advancing_state(self):
+        releases = b'<rss><channel><item><title>Xcode 27.2 (27B52)</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item></channel></rss>'
+        old_news = b'<rss><channel><item><guid>old</guid><title>Earlier announcement</title><link>https://developer.apple.com/news/old</link></item></channel></rss>'
+        new_news = b'<rss><channel><item><guid>new</guid><title>Foundation Models update</title><link>https://developer.apple.com/news/new</link></item><item><guid>old</guid><title>Earlier announcement revised</title><link>https://developer.apple.com/news/old</link></item></channel></rss>'
+        baseline = {"environment": {"latestObserved": {
+            "xcode": {"version": "27.2", "build": "27B52"}, "ios": {}, "macos": {}}}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            state = root / "state.json"
+            news = old_news
+            def response(request, timeout):
+                return io.BytesIO(news if request.full_url == jobs.SOURCES["news"] else
+                                  releases if request.full_url == jobs.SOURCES["releases"] else b"# Updates\n")
+            with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response):
+                runner = jobs.Runner(root, root, cycle)
+                jobs.watch_sources(runner, baseline, state)
+                self.assertEqual(runner.findings, [])
+                old_state = json.loads(state.read_text())
+                news = new_news
+                runner = jobs.Runner(root, root, cycle)
+                jobs.watch_sources(runner, baseline, state)
+                self.assertEqual(len(runner.findings), 1)
+                finding = runner.findings[0]
+                self.assertEqual(finding["kind"], "developer-news-changed")
+                self.assertEqual([item["id"] for item in finding["newItems"]], ["new"])
+                self.assertEqual([item["id"] for item in finding["updatedItems"]], ["old"])
+                self.assertEqual(json.loads(state.read_text())["newsItems"], jobs.news_records(new_news))
+                runner = jobs.Runner(root, root, cycle)
+                jobs.watch_sources(runner, baseline, state)
+                self.assertEqual(runner.findings, [])
+                # Hash-only state from the first runner version must also report
+                # a changed news feed before recording structured identities.
+                old_state.pop("newsItems")
+                state.write_text(json.dumps(old_state))
+                runner = jobs.Runner(root, root, cycle)
+                jobs.watch_sources(runner, baseline, state)
+                self.assertEqual(len(runner.findings[0]["newItems"]), 2)
+
     def test_native_task_links_are_validated_and_instruction_fields_rejected(self):
         ids = ["01a154e4-6d2c-76e3-84a7-d85c793fe60e", "01a178ee-484b-7ae1-b990-bce0a814555b"]
         evidence = [{"taskId": i, "taskUrl": f"codex://threads/{i}", "updatedAt": "2026-10-30T12:00:00Z", "repositoryIdentity": "repo", "patternKey": "p", "observation": "A validator failed."} for i in ids]

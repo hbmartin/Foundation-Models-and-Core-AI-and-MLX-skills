@@ -168,7 +168,29 @@ def release_records(payload):
 def release_rank(record):
     version = record["version"]
     numbers = tuple(map(int, re.match(r"\d+(?:\.\d+)*", version)[0].split(".")))
-    return numbers, 0 if "beta" in version.lower() else 1 if "rc" in version.lower() else 2
+    numbers += (0,) * max(0, 3 - len(numbers))
+    prerelease = re.search(r"\b(beta|rc|release candidate)(?:\s*(\d+))?\b", version, re.I)
+    if not prerelease:
+        return numbers, 2, 0
+    return numbers, 0 if prerelease[1].lower() == "beta" else 1, int(prerelease[2] or 1)
+
+
+def news_records(payload):
+    items = ET.fromstring(payload).findall(".//item")
+    if not items:
+        raise ValueError("news feed contains no items")
+    records = []
+    for item in items:
+        title = item.findtext("title", "").strip()
+        if not title:
+            raise ValueError("news item has no title")
+        url = item.findtext("link", "").strip()
+        published = item.findtext("pubDate", "").strip()
+        identity = item.findtext("guid", "").strip() or url or hashlib.sha256(
+            json.dumps([title, published]).encode()).hexdigest()
+        records.append({"id": identity, "title": title, "url": url or SOURCES["news"],
+                        "published": published})
+    return records
 
 
 def watch_sources(runner, baseline, state_path, timeout=40):
@@ -176,10 +198,16 @@ def watch_sources(runner, baseline, state_path, timeout=40):
         previous = runner.cycle.read_json(state_path, {})
         if not isinstance(previous, dict):
             raise ValueError("source-watch state must be an object")
+        if "newsItems" in previous and (
+                not isinstance(previous["newsItems"], list)
+                or any(not isinstance(item, dict)
+                       or any(not isinstance(item.get(key), str) for key in ("id", "title", "url", "published"))
+                       for item in previous["newsItems"])):
+            raise ValueError("source-watch newsItems must contain structured news records")
     except (ValueError, runner.cycle.CycleError) as error:
         runner.record("official-source-state", "blocked", error=str(error))
         previous = {}
-    captures, releases = [], []
+    captures, releases, news = [], [], []
     directory = runner.root / "official-sources"
     directory.mkdir(exist_ok=True)
     for name, url in SOURCES.items():
@@ -193,8 +221,7 @@ def watch_sources(runner, baseline, state_path, timeout=40):
             if name == "releases":
                 releases = release_records(data)
             elif name == "news":
-                if not ET.fromstring(data).findall(".//item"):
-                    raise ValueError("news feed contains no items")
+                news = news_records(data)
             elif not data.decode("utf-8").strip().startswith(("<!--", "#")):
                 raise ValueError("expected Foundation Models Markdown documentation")
             digest = hashlib.sha256(data).hexdigest()
@@ -202,6 +229,21 @@ def watch_sources(runner, baseline, state_path, timeout=40):
             if name == "foundationmodels" and previous.get(name) not in (None, digest):
                 runner.findings.append({"kind": "documentation-changed", "url": url,
                                         "oldHash": previous[name], "newHash": digest})
+            if name == "news":
+                prior_items = previous.get("newsItems")
+                if prior_items is not None:
+                    prior_by_id = {item["id"]: item for item in prior_items}
+                    new_items = [item for item in news if item["id"] not in prior_by_id]
+                    updated_items = [item for item in news if item["id"] in prior_by_id
+                                     and item != prior_by_id[item["id"]]]
+                else:
+                    # Upgrade a hash-only state without silently swallowing a
+                    # changed feed whose prior entry identities were not saved.
+                    new_items = news if previous.get(name) not in (None, digest) else []
+                    updated_items = []
+                if new_items or updated_items:
+                    runner.findings.append({"kind": "developer-news-changed", "url": url,
+                                            "newItems": new_items, "updatedItems": updated_items})
             runner.record(f"official-{name}", "passed", url=url, sha256=digest)
         except (OSError, ValueError, ET.ParseError, TypeError) as error:
             runner.record(f"official-{name}", "blocked", url=url, error=str(error))
@@ -216,9 +258,10 @@ def watch_sources(runner, baseline, state_path, timeout=40):
             runner.findings.append({"kind": "release-changed", "component": component,
                                     "recorded": old, "observed": newest})
     runner.cycle.atomic_json(directory / "manifest.json", {"schemaVersion": 1,
-                             "captures": captures, "releases": releases})
+                             "captures": captures, "releases": releases, "newsItems": news})
     if len(captures) == len(SOURCES):
-        runner.cycle.atomic_json(state_path, {r["name"]: r["sha256"] for r in captures})
+        runner.cycle.atomic_json(state_path, {**{r["name"]: r["sha256"] for r in captures},
+                                             "newsItems": news})
 
 
 def collect(runner, mode, baseline, thread_review, args):
