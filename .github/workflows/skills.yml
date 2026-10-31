@@ -19,7 +19,6 @@ on:
       - 'scripts/verify-skills.py'
       - 'scripts/mdlinks.py'
       - 'scripts/mdslug.py'
-      - 'scripts/extract-symbols.py'
       - 'scripts/tests/test_skills.py'
       - '.github/workflows/skills.yml'
   pull_request:
@@ -32,7 +31,6 @@ on:
       - 'scripts/verify-skills.py'
       - 'scripts/mdlinks.py'
       - 'scripts/mdslug.py'
-      - 'scripts/extract-symbols.py'
       - 'scripts/tests/test_skills.py'
       - '.github/workflows/skills.yml'
   workflow_dispatch:
@@ -125,6 +123,30 @@ jobs:
               diff -r "$skill" "$installed/$name"
             done
             echo "Installed $(find "$installed" -mindepth 1 -maxdepth 1 -type d | wc -l) byte-identical skills for $agent"
+          done
+
+      - name: Install the hub and speech skills independently with the pinned CLI
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          for agent in codex claude-code; do
+            for name in apple-on-device-ai apple-speech; do
+              project="$(mktemp -d)"
+              cd "$project"
+              npx -y skills@1.5.21 add "$GITHUB_WORKSPACE" \
+                --skill "$name" --agent "$agent" --copy -y
+              if [ "$agent" = codex ]; then
+                installed="$project/.agents/skills"
+              else
+                installed="$project/.claude/skills"
+              fi
+              test "$(find "$installed" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1
+              diff -r "$GITHUB_WORKSPACE/skills/$name" "$installed/$name"
+              echo "Installed $name independently for $agent"
+            done
           done
 
       - name: Verify the guides were not modified

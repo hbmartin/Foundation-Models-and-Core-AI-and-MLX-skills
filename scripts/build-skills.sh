@@ -3,8 +3,9 @@
 #
 # guides/ is canonical and is never written by this script; scripts/tests/test_skills.py
 # asserts that, and asserts the committed tree matches a clean regeneration.
-# Run this after ./scripts/build-indexes.sh whenever guide headings, callouts or
-# API references change.
+# Run this whenever numbered guides or part READMEs change. Website indexes
+# are generated separately by ./scripts/build-indexes.sh; SDK captures and
+# generated indexes are not inputs to skill generation.
 #
 # Usage: ./scripts/build-skills.sh [skill-manifest.json]
 set -euo pipefail

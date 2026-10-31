@@ -9,9 +9,6 @@ transformed copies into skills/, which is committed so `npx skills add
     skills/<name>/agents/openai.yaml             OpenAI UI metadata
     skills/<name>/evals/eval_queries.json        trigger evaluation prompts
     skills/<name>/references/<guides-relative>  copied owned guides
-    skills/<name>/references/API-INDEX.md       symbol slice
-    skills/<name>/references/SILENT-FAILURES.md symptom slice
-    skills/<name>/references/SECTION-MAPS.md    heading maps for the deep guides
 
 references/ mirrors the guides-relative path layout on purpose. That keeps every
 intra-document anchor and every link between two owned part READMEs valid
@@ -31,10 +28,8 @@ never a copy of a guide.
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
 from dataclasses import dataclass, replace
 import datetime
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -58,23 +53,7 @@ from mdlinks import (  # noqa: E402  (path set above so the sibling modules reso
     source_snapshot,
     split_destination,
 )
-from mdslug import slugify, unique_slug  # noqa: E402
-
-def _load_sibling(name: str, filename: str):
-    """Import a kebab-case sibling script, as scripts/tests/ already does."""
-    spec = importlib.util.spec_from_file_location(
-        name, Path(__file__).resolve().parent / filename
-    )
-    module = importlib.util.module_from_spec(spec)
-    # Register before executing, so anything the sibling defines that resolves
-    # annotations through sys.modules (dataclasses do) still works.
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-extract_symbols = _load_sibling("extract_symbols", "extract-symbols.py")
-
+from mdslug import slugify  # noqa: E402
 
 PART_README = re.compile(r"^part-(\d{2})-[^/]+/README\.md$")
 REFERENCE = re.compile(r"^part-(\d{2})-[^/]+/references/(\d{2})-[^/]+\.md$")
@@ -85,7 +64,6 @@ FOOTNOTE_REF = re.compile(r"\[\^[^\]]+\]")
 GUIDE_LINK = re.compile(
     r"\[([^\]]*)\]\(https?://[^)\s]*/guides/part-\d{2}-[^)\s]*/references/[^)\s]*\)"
 )
-HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SENTENCE_END = re.compile(r"(?<=[a-zA-Z*)\]`\"])\.(?:\s|$)")
 
 GENERATED_MARKER = ".generated-by-build-skills"
@@ -104,29 +82,17 @@ MAX_DESCRIPTION_CHARS = 1024
 MAX_SKILL_NAME_CHARS = 64
 MAX_BODY_LINES = 260
 MIN_TRIGGER_EVALS_PER_CLASS = 4
-API_LINKS_SHOWN = 4
 
 # The complete manifest-entry schema. Anything else is rejected rather than
 # silently dropped, so a typo'd key or a field the schema has since removed
 # (when_to_use) fails the build instead of quietly changing the output.
 ALLOWED_MANIFEST_ENTRY_KEYS = frozenset({
     "name", "title", "short_description", "description",
-    "trigger_evals", "related", "owns", "max_triage_rows", "full_indexes",
+    "trigger_evals", "related", "owns", "max_triage_rows",
 })
 
-# A guide card's abstract, as carried into SECTION-MAPS.md and, shorter, into the
-# SKILL.md router. Measured against the corpus: the first sentence of all 60 cards
-# fits the first budget, and 51 fit the second. Truncating below that costs real
-# information — at 300 the third migration path in 17.2 lost the class name that
-# is the whole point of the row.
-CARD_ABSTRACT_CHARS = 900
+# Keep guide summaries short in the router.
 ROUTER_ABSTRACT_CHARS = 400
-
-FW_ORDER = [
-    "FoundationModels", "CoreAI", "Evaluations", "MLX", "Speech", "AppIntents",
-    "CoreSpotlight", "Vision", "Metal/MPP", "SwiftUI", "Media/Core*",
-    "Swift/Foundation", "other",
-]
 
 # Emitted verbatim into every SKILL.md and asserted byte-identical by
 # verify-skills.py. Dropping a class here teaches the model to promote a
@@ -150,24 +116,11 @@ with the claim into anything you say, write, or put in a code comment.
 """
 
 READ_PROTOCOL = """\
-`references/` holds far more than fits in context. Route to the section you need:
-
-1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — search `references/SILENT-FAILURES.md` for words from what
-   you actually observed. Entries are grouped by symptom and each links to the
-   guide section that explains it.
-2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   search `references/API-INDEX.md`. The row shows whether the symbol appears in
-   any captured 26.x or 27.x SDK interface. These columns aggregate minor versions;
-   a checkmark does not establish a minimum SDK or OS version. Check the guide's
-   availability notes. **Blank in both columns means the spelling is not
-   SDK-confirmed**, so treat it as provisional.
-3. **You have a task** — use the triage table below, then the part README it
-   points at.
-
-The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
-guide and lists each top-level section anchor. Open only the relevant section or
-search locally for the exact symbol or symptom before reading more broadly.
+Use the triage table for tasks and the linked guide list below to resolve `N.M`
+labels. For a symbol or symptom, search the bundled guides under `references/`.
+Use the matching guide's contents or headings to locate the relevant section,
+then open only that section. Guide evidence establishes API availability;
+absence from a search does not prove an API is unavailable.
 """
 
 
@@ -195,7 +148,6 @@ class SkillSpec:
     related: tuple[str, ...]
     owns: dict[int, frozenset[int] | None]  # part -> reference numbers, None = all
     max_triage_rows: int
-    full_indexes: bool
 
 
 @dataclass(frozen=True)
@@ -232,27 +184,6 @@ def generation_date() -> str:
     except ValueError:
         raise SkillError(f"SOURCE_DATE_EPOCH must be an integer, got {epoch!r}")
     return datetime.datetime.fromtimestamp(stamp, datetime.timezone.utc).date().isoformat()
-
-
-def part_num(path: str) -> int:
-    match = re.match(r"part-(\d+)", path)
-    return int(match.group(1)) if match else 0
-
-
-def guide_label(path: str) -> str:
-    """The series' own N.M / N.README notation, matching scripts/build-indexes.py."""
-    part = part_num(path)
-    match = re.search(r"references/(\d+)-", path)
-    if match:
-        return f"{part}.{int(match.group(1))}"
-    if path.endswith("README.md") and part:
-        return f"{part}.README"
-    return "root"
-
-
-def guide_number(path: str) -> int | None:
-    match = re.search(r"references/(\d+)-", path)
-    return int(match.group(1)) if match else None
 
 
 def close_code_spans(text: str) -> str:
@@ -460,7 +391,6 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
                 related=tuple(entry.get("related", ())),
                 owns=owns,
                 max_triage_rows=entry.get("max_triage_rows", default_rows),
-                full_indexes=bool(entry.get("full_indexes")),
             )
         )
 
@@ -471,7 +401,7 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
                 raise SkillError(f"{path}: {spec.name} relates to unknown skill {sibling!r}")
 
     # A part README with no owner would silently vanish from every skill, and an
-    # unowned reference would vanish from the section maps, so demand a total cover.
+    # unowned reference would vanish from installed skills, so demand a total cover.
     for part, references in sorted(available.items()):
         if (part, None) not in claimed and not any(
             (part, number) in claimed for number in references
@@ -490,14 +420,14 @@ def owns_row(row: str, owned: frozenset[int] | None) -> bool:
     """Does this triage row cite any guide the skill carries?
 
     Three skills share part 16, so an unfiltered table routes a reader to a deep
-    guide that is missing from their own section map. A row citing no guide at
+    guide that is missing from their own package. A row citing no guide at
     all (a plain cross-part pointer) is kept.
 
     Deliberately *any* rather than *all*. A row citing both an owned and an
     unowned guide would, under an all-rule, be dropped from every skill and lost
     outright; kept, it still routes correctly, because the link to the unowned
     guide is rewritten to an absolute GitHub URL that resolves from anywhere —
-    it is only absent from this skill's own SECTION-MAPS.md. Part 16, the only
+    it is only absent from this skill's bundled guides. Part 16, the only
     split part, has no such row today; the rule is here so that authoring one
     degrades to a remote link rather than to silence.
     """
@@ -507,36 +437,9 @@ def owns_row(row: str, owned: frozenset[int] | None) -> bool:
     return not cited or bool(cited & owned)
 
 
-README_CARD_ANCHOR = re.compile(r"#(\d{1,2})(\d)--")
-
-
-def owns_readme_entry(line: str, guide_id: str, spec: SkillSpec) -> bool:
-    """Attribute a part-README index entry to the reference guide it describes.
-
-    Three skills share the part-16 README, so every `16.README` entry would
-    otherwise land in all three — putting speech symptoms in the evaluations
-    skill. Those entries link to a card heading whose anchor starts with the
-    card number (`#164--one-index-three-consumers…`), which is enough to tell
-    which guide the entry is really about. Entries that point somewhere else in
-    the README are part-wide and stay.
-    """
-    if not guide_id.endswith(".README"):
-        return True
-    part = int(guide_id.split(".")[0])
-    owned = spec.owns.get(part)
-    if owned is None:
-        return True
-    match = README_CARD_ANCHOR.search(line)
-    if not match or int(match.group(1)) != part:
-        return True
-    return int(match.group(2)) in owned
-
-
 def owns_page(spec: SkillSpec, page: GuidePage) -> bool:
-    if page.role == "root":
-        return spec.full_indexes
-    if page.role == "index":
-        return spec.full_indexes
+    if page.role in ("root", "index"):
+        return False
     if page.part not in spec.owns:
         return False
     references = spec.owns[page.part]
@@ -675,7 +578,7 @@ def parse_cards(page: GuidePage, body: list[str]) -> list[GuideCard]:
         match = GUIDE_CARD.match(line)
         if match:
             if pending:
-                cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), CARD_ABSTRACT_CHARS)))
+                cards.append(replace(pending, abstract=" ".join(abstract)))
             part, guide = int(match.group(1)), int(match.group(2))
             if part != page.part:
                 raise SkillError(f"{page.relative}: card {part}.{guide} is not in part {page.part}")
@@ -694,7 +597,7 @@ def parse_cards(page: GuidePage, body: list[str]) -> list[GuideCard]:
         if pending and line.strip() and not line.startswith((">", "|", "#")):
             abstract.append(line.strip())
     if pending:
-        cards.append(replace(pending, abstract=first_sentence(" ".join(abstract), CARD_ABSTRACT_CHARS)))
+        cards.append(replace(pending, abstract=" ".join(abstract)))
     return cards
 
 
@@ -791,217 +694,6 @@ def rewrite_text(
 
 # ------------------------------------------------------------------ rendering
 
-def render_silent_slice(
-    text: str, spec: SkillSpec, owned_ids: set[str], date: str, series_url: str
-) -> str:
-    """Filter SILENT-FAILURES.md to this skill's guides.
-
-    Slicing the rendered page is safe here in a way it is not for the symbol
-    index: every bullet carries its guide id anchored at end of line, and no
-    bullet is truncated. Anchor the match at '$' or a blurb ending '— 2.35 s'
-    reads as a guide id.
-    """
-    entry = re.compile(r"^- \[.*\]\(.*\) — (root|\d{1,2}\.(?:README|\d{1,2}))( 🔇)?$")
-    sections: list[tuple[str, list[str]]] = []
-    current: tuple[str, list[str]] | None = None
-    group: str | None = None
-    for line in text.splitlines():
-        if line.startswith("## "):
-            if current:
-                sections.append(current)
-            current = (line[3:].strip(), [])
-            group = None
-            continue
-        if current is None:
-            continue
-        if line.startswith("**Part ") and line.endswith("**"):
-            group = line
-            continue
-        match = entry.match(line)
-        if not match:
-            continue
-        if match.group(1) not in owned_ids:
-            continue
-        if not owns_readme_entry(line, match.group(1), spec):
-            continue
-        if group:
-            current[1].append("")
-            current[1].append(group)
-            current[1].append("")
-            group = None
-        current[1].append(line)
-    if current:
-        sections.append(current)
-
-    kept = [(name, body) for name, body in sections if body]
-    total = sum(1 for name, body in kept for line in body if line.startswith("- ["))
-    out = [
-        "# Silent-failure index — " + spec.title,
-        "",
-        f"**{total} ⚠️ callouts from the guide parts this skill covers, sorted by the symptom "
-        "you would observe.** Most defects in this stack do not throw, so the symptom is what "
-        "you start from.",
-        "",
-        f"> Sliced from the series index on {date}. The full index across all 17 parts is at "
-        f"{series_url}. Generated — regenerate with `./scripts/build-skills.sh` rather than "
-        "editing by hand.",
-        "",
-        "| Symptom | Entries |",
-        "|---|---:|",
-    ]
-    for name, body in kept:
-        count = sum(1 for line in body if line.startswith("- ["))
-        out.append(f"| [{name}](#{slugify(name)}) | {count} |")
-    for name, body in kept:
-        out.append("")
-        out.append(f"## {name}")
-        out.extend(body)
-    out += ["", "---", "", "🔇 = the guide marks this as an explicit **SILENT FAILURE** callout.", ""]
-    return "\n".join(out)
-
-
-def render_api_slice(
-    rows: list[tuple], spec: SkillSpec, owned_ids: set[str], date: str,
-    series_url: str, link_for: "callable",
-) -> str:
-    """Render this skill's symbols from uncapped counts.
-
-    The noise floor, keep filter and framework grouping stay corpus-wide so the
-    result is a true subset of the series index rather than a different index.
-    Only the 'Covered in' column is narrowed, and its '+N more' is recomputed
-    against owned guides.
-    """
-    by_framework: dict[str, list[tuple]] = {}
-    total_series = 0
-    for symbol, framework, total, nguides, in26, in27, guides in rows:
-        if not (nguides >= 2 or total >= 4 or in26 or in27):
-            continue
-        total_series += 1
-        pairs = []
-        for chunk in guides.split(";"):
-            path, _, count = chunk.rpartition(":")
-            # By owned guide, not owned part: three skills share part 16, and a
-            # slice that linked to guides the skill does not carry would send a
-            # reader to a section map that has never heard of them.
-            if path and guide_label(path) in owned_ids:
-                pairs.append((path, int(count)))
-        if not pairs:
-            continue
-        by_framework.setdefault(framework, []).append(
-            (symbol, in26, in27, sorted(pairs, key=lambda pair: (-pair[1], pair[0])))
-        )
-
-    unplaced = sorted(set(by_framework) - set(FW_ORDER))
-    if unplaced:
-        raise SkillError(
-            f"{spec.name}: FW_ORDER has no place for {unplaced}; those symbols would "
-            "vanish from the index rather than fail"
-        )
-    kept = sum(len(entries) for entries in by_framework.values())
-    out = [
-        "# API & symbol index — " + spec.title,
-        "",
-        f"**{kept} symbols, of {total_series} across the series, that the guide parts in this "
-        "skill cover — with whether each appears in the captured 26.x / 27.x SDK "
-        "interfaces.**",
-        "",
-        "> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including "
-        "27.2. A `✓` means the leading type name appears in at least one corresponding captured "
-        "`.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence "
-        "in 27.0. Check the guide's availability notes and the versioned capture before choosing "
-        "a deployment target. Dotted uppercase type paths must be one contiguous subpath of a "
-        "qualified or declared type chain. A longer chain may prove any contiguous type subpath, "
-        "but `::` module qualifiers never become nested types. Lowercase members are not "
-        "signature-matched — the guides carry the "
-        "signature-level citations. **Blank in both columns means the spelling is not "
-        "SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so "
-        "does a reconstruction. A symbol absent from this page may still be covered elsewhere "
-        f"in the series — the full index is at {series_url}. Sliced on {date}; regenerate with "
-        "`./scripts/build-skills.sh` rather than editing by hand.",
-    ]
-    for framework in FW_ORDER:
-        entries = by_framework.get(framework, [])
-        if not entries:
-            continue
-        entries.sort(key=lambda entry: entry[0].lstrip("@.").lower())
-        noun = "symbol" if len(entries) == 1 else "symbols"
-        out += ["", f"## {framework}  <sub>{len(entries)} {noun}</sub>", ""]
-        out.append("| Symbol | 26.x | 27.x | Covered in |")
-        out.append("|---|:-:|:-:|---|")
-        for symbol, in26, in27, pairs in entries:
-            shown = [f"[{guide_label(path)}]({link_for(path)})" for path, _ in pairs[:API_LINKS_SHOWN]]
-            more = len(pairs) - len(shown)
-            tail = f" +{more} more" if more > 0 else ""
-            out.append(
-                f"| `{symbol}` | {'✓' if in26 else ''} | {'✓' if in27 else ''} | "
-                f"{', '.join(shown)}{tail} |"
-            )
-    out.append("")
-    return "\n".join(out)
-
-
-def render_section_maps(
-    spec: SkillSpec, routers: list[PartRouter], source_root: Path,
-    repository_root: Path, repository_url: str, branch: str, date: str,
-    to_references: "callable",
-) -> str:
-    """A heading map plus local path for every deep guide this skill covers.
-
-    Derived from the real '## ' headings rather than each file's hand-written
-    '## Contents', which one reference lacks entirely and which can drift.
-    """
-    out = [
-        "# Section maps for the deep reference guides",
-        "",
-        "The deep guides are bundled with this skill. Each entry links the local file, then "
-        "lists every **top-level** (`##`) section as an anchor; a guide's own `## Contents` "
-        "lists its subsections. Open the narrowest relevant section first.",
-        "",
-        f"> Generated {date} from the guide headings. Regenerate with "
-        "`./scripts/build-skills.sh` rather than editing by hand.",
-    ]
-    for router in routers:
-        owned = spec.owns[router.part]
-        cards = [card for card in router.cards if owned is None or card.guide in owned]
-        if not cards:
-            continue
-        out += ["", f"## Part {router.part} — {router.title}"]
-        for card in cards:
-            target = (source_root / router.directory / card.destination).resolve()
-            if not target.exists():
-                raise SkillError(f"part {router.part}: card {card.guide_id} has no file")
-            out += ["", f"### {card.guide_id} — {card.title}", ""]
-            if card.abstract:
-                out += [to_references(card.abstract, router), ""]
-            local = f"{router.directory}/{card.destination}"
-            out += [
-                f"**Local reference:** [{local}]({local})",
-                "",
-                "| Section | Anchor |",
-                "|---|---|",
-            ]
-            used: set[str] = set()
-            next_suffix: dict[str, int] = defaultdict(int)
-            for body, _, inside_fence in iter_lines(target.read_text(encoding="utf-8")):
-                if inside_fence:
-                    continue
-                found = HEADING.match(body)
-                if not found:
-                    continue
-                # Every heading level shares one anchor namespace on GitHub, so
-                # all of them must be allocated even though only top-level
-                # sections are listed; otherwise a '##' that collides with an
-                # earlier '###' is recorded without the suffix GitHub gives it.
-                heading = found.group(2)
-                anchor = unique_slug(slugify(heading), used, next_suffix)
-                if len(found.group(1)) != 2:
-                    continue
-                cell = heading.replace("|", "\\|")
-                out.append(f"| {cell} | `#{anchor}` |")
-    out.append("")
-    return "\n".join(out)
-
-
 def render_frontmatter(name: str, description: str) -> str:
     """The exact YAML block emitted into SKILL.md, so its size can be budgeted."""
     return "\n".join(
@@ -1038,7 +730,7 @@ def render_trigger_evals(spec: SkillSpec) -> str:
 
 
 def render_skill_md(
-    spec: SkillSpec, routers: list[PartRouter], date: str, to_root: 'callable'
+    spec: SkillSpec, routers: list[PartRouter], to_root: 'callable'
 ) -> str:
     parts = ", ".join(f"Part {router.part}" for router in routers)
     lines = render_frontmatter(spec.name, spec.description).splitlines()
@@ -1055,7 +747,7 @@ def render_skill_md(
         "",
         EVIDENCE_LEGEND.rstrip(),
         "",
-        "## Find the answer in three moves",
+        "## Find the relevant section",
         "",
         READ_PROTOCOL.rstrip(),
         "",
@@ -1084,8 +776,7 @@ def render_skill_md(
 
     lines += [
         "", "## Triage", "",
-        "A `N.M` label is a deep reference guide; look it up in "
-        "`references/SECTION-MAPS.md` for its local file and section anchors.", "",
+        "A `N.M` label identifies a guide in the linked list below.", "",
     ]
     quota = max(3, spec.max_triage_rows // max(len(routers), 1))
     for router in routers:
@@ -1107,7 +798,7 @@ def render_skill_md(
     lines += [
         "## The deep reference guides",
         "",
-        "Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.",
+        "Bundled locally. Use each guide's contents or headings to find a section.",
         "",
     ]
     for router in routers:
@@ -1193,7 +884,6 @@ def build_skills(
     skills_root: Path,
     manifest_path: Path,
     repository_root: Path,
-    interfaces: Path,
 ) -> dict:
     source_root = source_root.resolve()
     skills_root = skills_root.resolve()
@@ -1215,11 +905,6 @@ def build_skills(
                 page, page.source.read_text(encoding="utf-8")
             )
 
-    counts = extract_symbols.collect_symbol_counts(str(source_root))
-    sdk26, sdk27 = extract_symbols.sdk_presence(str(interfaces))
-    symbol_rows = extract_symbols.symbol_rows(counts, sdk26, sdk27, cap=None)
-    silent_text = (source_root / "SILENT-FAILURES.md").read_text(encoding="utf-8")
-
     skills_root.parent.mkdir(parents=True, exist_ok=True)
     staged = Path(tempfile.mkdtemp(prefix=".skills-stage-", dir=skills_root.parent))
     files: dict[str, str] = {}
@@ -1228,23 +913,9 @@ def build_skills(
             owned_pages = [page for page in pages if owns_page(spec, page)]
             # Every owned page is bundled so an installed skill remains complete
             # without a network connection. Reference ownership is disjoint; the
-            # shared part READMEs and hub README are the only intentional overlap.
+            # shared part READMEs are the only intentional overlap.
             bundled_pages = owned_pages
             owned = {page.relative for page in bundled_pages}
-            owned_ids: set[str] = set()
-            for part, references in spec.owns.items():
-                owned_ids.add(f"{part}.README")
-                for page in pages:
-                    if page.role == "guide" and page.part == part:
-                        if references is None or page.guide in references:
-                            owned_ids.add(f"{part}.{page.guide}")
-            # The hub skill is where you land when you do not yet know which
-            # framework owns the problem, so its two indexes span the whole
-            # series rather than just the part it bundles.
-            if spec.full_indexes:
-                owned_ids = {guide_label(page.relative) for page in pages} | {"root"}
-            index_ids = owned_ids
-
             skill_dir = staged / spec.name
             (skill_dir / "references").mkdir(parents=True)
             spec_routers = [routers[part] for part in sorted(spec.owns)]
@@ -1261,13 +932,6 @@ def build_skills(
                     encoding="utf-8",
                 )
 
-            def link_for(path: str, _owned=owned) -> str:
-                if path in _owned:
-                    return path
-                return github_url(
-                    source_root / path, repository_root, repository_url, branch, ""
-                )
-
             def to_root(text: str, router: PartRouter, _owned=owned) -> str:
                 """Re-point links in text lifted from a part README into SKILL.md.
 
@@ -1275,9 +939,8 @@ def build_skills(
                 clickable relative paths. A link to a deep guide another skill
                 owns would become a ~150-character GitHub URL, which is a poor
                 trade inside a body that persists for a whole session — the
-                `N.M §K` label already identifies the section, and
-                SECTION-MAPS.md locates the file. So those are flattened to
-                their text.
+                `N.M §K` label already identifies the guide and section. The
+                part README retains the remote link. Flatten these to text.
                 """
                 rewritten = rewrite_text(
                     text, f"{router.directory}/README.md", "", _owned,
@@ -1285,45 +948,12 @@ def build_skills(
                 )
                 return GUIDE_LINK.sub(r"\1", rewritten)
 
-            def to_references(text: str, router: PartRouter, _owned=owned) -> str:
-                """Same, for text lifted into a file under references/."""
-                return rewrite_text(
-                    text, f"{router.directory}/README.md", "references", _owned,
-                    source_root, repository_root, repository_url, branch,
-                )
-
-            series = f"{repository_url}/blob/{branch}/guides"
-            write(skill_dir / "SKILL.md", render_skill_md(spec, spec_routers, date, to_root))
+            write(skill_dir / "SKILL.md", render_skill_md(spec, spec_routers, to_root))
             write(skill_dir / "agents" / "openai.yaml", render_openai_yaml(spec))
             write(
                 skill_dir / "evals" / "eval_queries.json",
                 render_trigger_evals(spec),
             )
-            write(
-                skill_dir / "references" / "SILENT-FAILURES.md",
-                rewrite_text(
-                    render_silent_slice(
-                        silent_text, spec, owned_ids, date, f"{series}/SILENT-FAILURES.md"
-                    ),
-                    "SILENT-FAILURES.md", "references", owned, source_root,
-                    repository_root, repository_url, branch,
-                ),
-            )
-            write(
-                skill_dir / "references" / "API-INDEX.md",
-                render_api_slice(
-                    symbol_rows, spec, index_ids, date,
-                    f"{series}/API-INDEX.md", link_for,
-                ),
-            )
-            write(
-                skill_dir / "references" / "SECTION-MAPS.md",
-                render_section_maps(
-                    spec, spec_routers, source_root, repository_root,
-                    repository_url, branch, date, to_references,
-                ),
-            )
-
             rendered = (skill_dir / "SKILL.md").read_text(encoding="utf-8").splitlines()
             body_lines = len(rendered) - rendered.index("---", 1) - 1
             if body_lines > MAX_BODY_LINES:
@@ -1416,10 +1046,11 @@ def render_roster(specs: list[SkillSpec], repository_url: str, date: str) -> str
         "",
         "Each skill's `SKILL.md` is a router: it carries the evidence-marker legend, the "
         "version floors, a triage table, and a lookup protocol. The bulk of the material sits "
-        "in `references/`, which costs nothing until read — the part READMEs, a symbol index "
-        "sliced to that skill, a silent-failure index sliced to that skill, and section maps "
-        "addressing the bundled deep reference guides. Each skill also includes OpenAI UI metadata "
-        "and portable trigger-evaluation fixtures.",
+        "in `references/`: owned guides and their part READMEs, available offline and read only "
+        "when needed. Use triage for tasks, search the local guides for symbols or symptoms, "
+        "and use their contents or headings to find a section. The full API and silent-failure "
+        "indexes remain on the website. Each skill also includes OpenAI UI metadata and "
+        "portable trigger-evaluation fixtures.",
         "",
         f"Generated {date}.",
         "",
@@ -1439,7 +1070,6 @@ def parse_arguments() -> argparse.Namespace:
         help="where to write the generated file manifest (default: <skills>/skills-manifest.json)",
     )
     parser.add_argument("--repository-root", type=Path, default=Path("."))
-    parser.add_argument("--interfaces", type=Path, default=Path("notes/sdk-interfaces"))
     return parser.parse_args()
 
 
@@ -1451,7 +1081,6 @@ def main() -> int:
             arguments.skills,
             arguments.manifest,
             arguments.repository_root,
-            arguments.interfaces,
         )
     except SkillError as error:
         print(f"error: {error}", file=sys.stderr)
