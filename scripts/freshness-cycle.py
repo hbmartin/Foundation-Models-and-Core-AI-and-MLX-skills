@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 from typing import Any
 
 from automation_policy import (
@@ -21,6 +22,7 @@ from automation_policy import (
     FORBIDDEN_COMPONENTS,
     GENERATED_OUTPUTS,
     PROTECTED_PATHS,
+    primary_checkout,
 )
 
 
@@ -196,11 +198,12 @@ def prepare(args: argparse.Namespace) -> int:
             if existing:
                 raise CycleError(f"automation PR already open: {existing['url']}")
         git(repository, "fetch", "origin", "main")
-        base_sha = git(repository, "rev-parse", "origin/main^{commit}")
+        ref = getattr(args, "ref", None) or "origin/main"
+        base_sha = git(repository, "rev-parse", f"{ref}^{{commit}}")
         if worktree.exists():
             raise CycleError(f"worktree path already exists: {worktree}")
         worktree.parent.mkdir(parents=True, exist_ok=True)
-        git(repository, "worktree", "add", "-b", branch, str(worktree), "origin/main")
+        git(repository, "worktree", "add", "-b", branch, str(worktree), base_sha)
         for name in ("logs", "results", "probe-artifacts"):
             (run_root / name).mkdir(parents=True, exist_ok=True)
         manifest = {
@@ -356,6 +359,22 @@ def regression_test_is_valid(value: Any, manifest: dict[str, Any]) -> bool:
     return (pathlib.Path(root_value) / pathlib.Path(*relative.parts)).is_file()
 
 
+def task_url_valid(value: str, task_id: str) -> bool:
+    if not isinstance(value, str) or any(c.isspace() for c in value):
+        return False
+    try:
+        url = urllib.parse.urlsplit(value)
+    except ValueError:
+        return False
+    if url.scheme in {"https", "http"}:
+        return bool(url.hostname) and url.username is None and url.password is None
+    if url.scheme == "codex":
+        return (url.netloc == "threads" and not url.query and not url.fragment
+                and url.path == f"/{task_id}"
+                and re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", task_id) is not None)
+    return False
+
+
 def thread_evidence_status(
     action: dict[str, Any], repository_identity: str,
 ) -> tuple[bool, int]:
@@ -371,7 +390,7 @@ def thread_evidence_status(
             not isinstance(item.get("taskId"), str)
             or not item["taskId"]
             or not isinstance(item.get("taskUrl"), str)
-            or not item["taskUrl"].startswith(("https://", "http://"))
+            or not task_url_valid(item["taskUrl"], item["taskId"])
             or not ISO_TIMESTAMP.fullmatch(str(item.get("updatedAt", "")))
             or item.get("repositoryIdentity") != repository_identity
             or item.get("patternKey") != pattern_key
@@ -763,18 +782,21 @@ def finalize(args: argparse.Namespace) -> int:
     manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"],
                     prUrl=args.pr_url)
     atomic_json(run_root / "run.json", manifest)
-    if worktree.exists():
-        try:
+    try:
+        from freshness_jobs import clean_builds
+        removed = clean_builds(run_root)
+        atomic_json(run_root / "cleanup.json", {"removedBuildDirectories": removed})
+        if worktree.exists():
             for build in worktree.rglob("Build"):
                 if build.is_dir():
                     shutil.rmtree(build)
             git(repository, "worktree", "remove", "--force", str(worktree))
-        except (OSError, CycleError) as error:
-            state["pending"] = {**entry, "cleanupPending": True, "cleanupError": str(error)}
-            atomic_json(state_path, state)
-            manifest.update(status="cleanup-failed", cleanupError=str(error))
-            atomic_json(run_root / "run.json", manifest)
-            raise
+    except (OSError, CycleError, ValueError) as error:
+        state["pending"] = {**entry, "cleanupPending": True, "cleanupError": str(error)}
+        atomic_json(state_path, state)
+        manifest.update(status="cleanup-failed", cleanupError=str(error))
+        atomic_json(run_root / "run.json", manifest)
+        raise CycleError(str(error)) from error
     if args.outcome in {"no-change", "blocked"}:
         git(repository, "branch", "-D", manifest["branch"], check=False)
     if successful:
@@ -820,6 +842,7 @@ def parse_args() -> argparse.Namespace:
     prepare_parser.add_argument("--artifact-root", type=pathlib.Path,
                                 default=DEFAULT_ARTIFACT_ROOT)
     prepare_parser.add_argument("--worktree-root", type=pathlib.Path)
+    prepare_parser.add_argument("--ref", help="explicit reviewed candidate ref; default origin/main")
     prepare_parser.add_argument("--skip-remote-check", action="store_true",
                                 help=argparse.SUPPRESS)
     evaluate_parser = sub.add_parser("evaluate")
@@ -836,19 +859,46 @@ def parse_args() -> argparse.Namespace:
                                  choices=("no-change", "blocked", "draft", "ready"))
     finalize_parser.add_argument("--pr-url")
     finalize_parser.add_argument("--state-path", type=pathlib.Path)
+    run_parser = sub.add_parser("run", help="collect and report a complete daily or weekly run")
+    run_parser.add_argument("cycle", choices=("daily", "weekly"))
+    run_parser.add_argument("--run-id")
+    run_parser.add_argument("--repository", type=pathlib.Path, default=ROOT)
+    run_parser.add_argument("--artifact-root", type=pathlib.Path,
+                            default=primary_checkout(ROOT) / "artifacts/freshness")
+    run_parser.add_argument("--installed-root", type=pathlib.Path,
+                            help="validate an isolated installed-contract projection before deployment")
+    run_parser.add_argument("--ref", help="weekly candidate ref; default origin/main")
+    run_parser.add_argument("--thread-review", type=pathlib.Path,
+                            help="reviewed repository-task observations, schema version 2")
+    run_parser.add_argument("--keep-worktree", action="store_true",
+                            help="retain weekly preparation for reviewed implementation and finalize")
+    run_parser.add_argument("--skip-web", action="store_true",
+                            help="record web coverage as blocked while running independent local checks")
+    run_parser.add_argument("--command-timeout", type=float, default=600)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
+        if args.command == "run":
+            import math
+            from freshness_jobs import run
+            if not math.isfinite(args.command_timeout) or args.command_timeout <= 0:
+                raise CycleError("command timeout must be finite and positive")
+            if args.cycle == "daily" and (args.ref or args.keep_worktree or args.thread_review):
+                raise CycleError("ref, keep-worktree, and thread-review apply only to weekly runs")
+            return run(args, sys.modules[__name__])
         return {
             "prepare": prepare,
             "evaluate": evaluate,
             "record-failure": record_failure,
             "finalize": finalize,
         }[args.command](args)
-    except (CycleError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
+    except KeyboardInterrupt:
+        print("freshness cycle: interrupted", file=sys.stderr)
+        return 130
+    except (CycleError, OSError, subprocess.SubprocessError, ValueError) as error:
         print(f"freshness cycle: {error}", file=sys.stderr)
         return 1
 

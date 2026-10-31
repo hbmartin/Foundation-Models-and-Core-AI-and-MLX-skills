@@ -14,7 +14,7 @@ import tomllib
 from dataclasses import dataclass
 from typing import Any
 
-from automation_policy import ALLOWED_ROOTS, PROTECTED_PATHS
+from automation_policy import ALLOWED_ROOTS, PROTECTED_PATHS, primary_checkout
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -304,7 +304,7 @@ def validate_installed(
                 Diagnostic(label, "installed-drift", f"installed {key} differs from the contract")
             )
 
-    expected_cwds = [str((ROOT / item).resolve()) for item in contract["cwds"]]
+    expected_cwds = [str((primary_checkout(ROOT) / item).resolve()) for item in contract["cwds"]]
     if installed.get("cwds") != expected_cwds:
         diagnostics.append(
             Diagnostic(
