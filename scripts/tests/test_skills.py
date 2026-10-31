@@ -189,7 +189,6 @@ def make_fixture(root):
     (notes / "skill-manifest.json").write_text(
         json.dumps(SKILL_MANIFEST), encoding="utf-8"
     )
-    (root / "notes" / "sdk-interfaces").mkdir()
     return guides
 
 
@@ -200,7 +199,6 @@ class SkillBuildTests(unittest.TestCase):
             skills_root=root / "skills",
             manifest_path=root / "notes" / "skill-manifest.json",
             repository_root=root,
-            interfaces=root / "notes" / "sdk-interfaces",
         )
         arguments.update(overrides)
         return builder.build_skills(**arguments)
@@ -237,7 +235,8 @@ class SkillBuildTests(unittest.TestCase):
                 ).is_file()
             )
             for name in ("API-INDEX.md", "SILENT-FAILURES.md", "SECTION-MAPS.md"):
-                self.assertTrue((skill / "references" / name).is_file(), name)
+                self.assertFalse((skill / "references" / name).exists(), name)
+            self.assertFalse((skill / "references" / "README.md").exists())
 
     def test_mirrored_layout_leaves_intra_document_anchors_alone(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -285,17 +284,12 @@ class SkillBuildTests(unittest.TestCase):
             guides = make_fixture(root)
             self.build(root, guides)
             skill = root / "skills" / "apple-test-skill"
-            maps = (skill / "references" / "SECTION-MAPS.md").read_text(encoding="utf-8")
             router = (skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn(
-                "[part-01-orientation/references/01-map.md]"
-                "(part-01-orientation/references/01-map.md)",
-                maps,
+                "references/part-01-orientation/references/01-map.md",
+                verifier.destinations(router),
             )
-            self.assertIn("Open the narrowest relevant section first.", maps)
-            self.assertIn("Search the local guide first", router)
             for host_specific_name in ("Grep", "WebFetch"):
-                self.assertNotIn(host_specific_name, maps)
                 self.assertNotIn(host_specific_name, router)
 
     def test_generates_openai_metadata_and_trigger_evals(self):
@@ -322,50 +316,39 @@ class SkillBuildTests(unittest.TestCase):
             self.assertEqual(set(fields), {"name", "description"})
             self.assertIn("Use when choosing", fields["description"])
 
-    def test_section_maps_use_github_faithful_anchors(self):
+    def test_bundled_guides_preserve_headings_and_code_fences(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             guides = make_fixture(root)
             self.build(root, guides)
-            maps = (
-                root / "skills" / "apple-test-skill" / "references" / "SECTION-MAPS.md"
-            ).read_text(encoding="utf-8")
-            # GitHub drops U+26A0 as a symbol but keeps its U+FE0F variation
-            # selector, so the anchor for '## 2. ⚠️ The trap' keeps the mark.
-            self.assertIn("`#2-️-the-trap`", maps)
-            # A '##' inside a fence is not a heading.
-            self.assertNotIn("not a heading", maps)
-
-    def test_silent_failure_slice_keeps_only_owned_entries(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            guides = make_fixture(root)
-            self.build(root, guides)
-            sliced = (
-                root / "skills" / "apple-test-skill" / "references" / "SILENT-FAILURES.md"
-            ).read_text(encoding="utf-8")
-            self.assertIn("The wrong backend returns plausible output.", sliced)
-            self.assertIn("A trap that does not throw.", sliced)
-            self.assertIn("🔇", sliced)
-
-    def test_silent_failure_slice_does_not_read_a_blurb_as_a_guide_id(self):
-        # '— 2.35 s switch-in' appears mid-blurb in the real corpus; only a
-        # match anchored at end of line is a guide id.
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            guides = make_fixture(root)
-            (guides / "SILENT-FAILURES.md").write_text(
-                SILENT_FAILURES.replace(
-                    "A trap that does not throw.",
-                    "Switching re-prefills — 2.35 s measured.",
-                ),
-                encoding="utf-8",
+            copied = (
+                root / "skills" / "apple-test-skill" / "references"
+                / "part-01-orientation" / "references" / "01-map.md"
             )
-            self.build(root, guides)
-            sliced = (
-                root / "skills" / "apple-test-skill" / "references" / "SILENT-FAILURES.md"
-            ).read_text(encoding="utf-8")
-            self.assertIn("2.35 s measured", sliced)
+            text = copied.read_text(encoding="utf-8")
+            self.assertIn("## 2. ⚠️ The trap", text)
+            self.assertIn("2-️-the-trap", verifier.anchors_of(copied))
+            self.assertNotIn("not-a-heading", verifier.anchors_of(copied))
+            source_fences = [
+                (body, newline) for body, newline, fenced in mdlinks.iter_lines(REFERENCE)
+                if fenced
+            ]
+            copied_fences = [
+                (body, newline) for body, newline, fenced in mdlinks.iter_lines(text)
+                if fenced
+            ]
+            self.assertEqual(copied_fences, source_fences)
+
+    def test_build_does_not_require_sdk_captures_or_website_indexes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            with_indexes = self.build(root, guides)
+            for name in ("API-INDEX.md", "SILENT-FAILURES.md"):
+                (guides / name).unlink()
+            self.assertFalse((root / "notes" / "sdk-interfaces").exists())
+            without_indexes = self.build(root, guides)
+            self.assertEqual(with_indexes["files"], without_indexes["files"])
 
     def test_skill_md_carries_the_full_evidence_legend(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -483,6 +466,21 @@ class SkillBuildTests(unittest.TestCase):
             first = self.build(root, guides)
             second = self.build(root, guides)
             self.assertEqual(first["files"], second["files"])
+
+    def test_regeneration_removes_obsolete_catalogs_and_hub_readme(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            guides = make_fixture(root)
+            first = self.build(root, guides)
+            references = root / "skills" / "apple-test-skill" / "references"
+            obsolete = [references / name for name in (
+                "API-INDEX.md", "SILENT-FAILURES.md", "SECTION-MAPS.md", "README.md"
+            )]
+            for path in obsolete:
+                path.write_text("# Obsolete output\n", encoding="utf-8")
+            second = self.build(root, guides)
+            self.assertEqual(first["files"], second["files"])
+            self.assertFalse(any(path.exists() for path in obsolete))
 
     def test_skills_root_may_not_sit_inside_the_guides(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -685,7 +683,6 @@ class SkillVerifierTests(unittest.TestCase):
             skills_root=root / "skills",
             manifest_path=root / "notes" / "skill-manifest.json",
             repository_root=root,
-            interfaces=root / "notes" / "sdk-interfaces",
         )
         path = root / "skills" / "skills-manifest.json"
         path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
@@ -704,9 +701,10 @@ class SkillVerifierTests(unittest.TestCase):
             root = Path(directory)
             self.build_and_verify(root)
             skill = root / "skills" / "apple-test-skill"
-            path = skill / "references" / "SECTION-MAPS.md"
+            path = (skill / "references" / "part-01-orientation"
+                    / "references" / "01-map.md")
             path.write_text(
-                path.read_text(encoding="utf-8") + "\n[out](../../elsewhere.md)\n",
+                path.read_text(encoding="utf-8") + "\n[out](../../../../elsewhere.md)\n",
                 encoding="utf-8",
             )
             with self.assertRaises(verifier.VerificationError) as caught:
@@ -718,10 +716,11 @@ class SkillVerifierTests(unittest.TestCase):
             root = Path(directory)
             self.build_and_verify(root)
             skill = root / "skills" / "apple-test-skill"
-            path = skill / "references" / "SECTION-MAPS.md"
+            path = (skill / "references" / "part-01-orientation"
+                    / "references" / "01-map.md")
             path.write_text(
                 path.read_text(encoding="utf-8")
-                + "\nSee [the notes][runbook].\n\n[runbook]: ../../../notes/x.md\n",
+                + "\nSee [the notes][runbook].\n\n[runbook]: ../../../../notes/x.md\n",
                 encoding="utf-8",
             )
             with self.assertRaises(verifier.VerificationError) as caught:
@@ -739,10 +738,11 @@ class SkillVerifierTests(unittest.TestCase):
             root = Path(directory)
             self.build_and_verify(root)
             skill = root / "skills" / "apple-test-skill"
-            path = skill / "references" / "SECTION-MAPS.md"
+            path = (skill / "references" / "part-01-orientation"
+                    / "references" / "01-map.md")
             path.write_text(
                 path.read_text(encoding="utf-8")
-                + "\n[bad](part-01-orientation/README.md#no-such-heading)\n",
+                + "\n[bad](../README.md#no-such-heading)\n",
                 encoding="utf-8",
             )
             with self.assertRaises(verifier.VerificationError) as caught:
@@ -897,7 +897,6 @@ class CommittedSkillsTests(unittest.TestCase):
     def test_portable_docs_and_routers_avoid_host_specific_tool_names(self):
         paths = [REPO / "README.md", SKILLS / "README.md"]
         paths += sorted(SKILLS.glob("*/SKILL.md"))
-        paths += sorted(SKILLS.glob("*/references/SECTION-MAPS.md"))
         host_specific = re.compile(r"\b(?:Grep|WebFetch)\b")
         for path in paths:
             self.assertIsNone(
@@ -946,35 +945,37 @@ class CommittedSkillsTests(unittest.TestCase):
             with self.assertRaisesRegex(builder.SkillError, "unrecognized guide path"):
                 builder.discover_pages(guides)
 
-    def test_no_skill_cites_a_guide_it_does_not_own(self):
-        # Three skills share part 16, so filtering by part rather than by guide
-        # would point a reader at deep guides missing from their section map.
+    def test_routers_link_exactly_the_owned_guides(self):
+        # Shared part READMEs remain whole, but each router must link only to
+        # its own deep guides, including the hub now that catalogs are gone.
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-        cited = re.compile(r"(?:^### |\[)(\d{1,2}\.\d{1,2})(?=[\] ])", re.M)
         pages = builder.discover_pages(GUIDES)
         for entry in manifest["skills"]:
-            if entry.get("full_indexes"):
-                continue
-            owned = set()
+            expected = set()
             for owns in entry["owns"]:
-                part = owns["part"]
                 references = owns.get("references")
-                if references is None:
-                    owned.update(
-                        f"{part}.{page.guide}"
-                        for page in pages
-                        if page.role == "guide" and page.part == part
-                    )
-                else:
-                    owned.update(f"{part}.{number}" for number in references)
+                expected.update(
+                    f"references/{page.relative}"
+                    for page in pages
+                    if page.role == "guide" and page.part == owns["part"]
+                    and (references is None or page.guide in references)
+                )
             skill = SKILLS / entry["name"]
-            for name in ("API-INDEX.md", "SECTION-MAPS.md"):
-                text = (skill / "references" / name).read_text(encoding="utf-8")
-                for identifier in set(cited.findall(text)):
-                    self.assertIn(
-                        identifier, owned,
-                        f"{entry['name']}/{name} cites unowned guide {identifier}",
-                    )
+            text = (skill / "SKILL.md").read_text(encoding="utf-8")
+            linked = {
+                destination.partition("#")[0]
+                for destination in verifier.destinations(text)
+                if destination.startswith("references/")
+                and re.search(r"/references/\d{2}-", destination)
+            }
+            self.assertEqual(linked, expected, entry["name"])
+            bundled = {
+                path.relative_to(skill).as_posix()
+                for path in skill.glob("references/part-*/references/*.md")
+            }
+            self.assertEqual(bundled, expected, entry["name"])
+            for name in ("API-INDEX.md", "SILENT-FAILURES.md", "SECTION-MAPS.md", "README.md"):
+                self.assertFalse((skill / "references" / name).exists(), entry["name"])
 
     def test_discovery_matches_the_cli_two_level_walk(self):
         # `npx skills` walks skills/ two levels deep for SKILL.md and lets a

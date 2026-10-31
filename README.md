@@ -38,10 +38,11 @@ stack to use, and platform gating), `apple-foundation-models`, `apple-core-ai`, 
 each one covers.
 
 Each skill's `SKILL.md` is a router, not a copy of a guide: it carries the evidence-marker
-conventions, the version floors, a triage table, and a lookup protocol. The material sits in
-`references/`, which costs nothing until read — the part READMEs, a symbol index and a
-silent-failure index both sliced to that skill, and section maps addressing the deep reference
-guides bundled into that skill for offline use. Each package also includes `agents/openai.yaml`
+conventions, the version floors, a triage table, and direct links to the owned guides. The material
+sits in `references/`: full guides and their part READMEs, bundled for independent offline use and
+read only when needed. Use triage for tasks, search the local guides for symbols or symptoms, and
+use their contents or headings to find a section. The full API and silent-failure indexes remain
+on the website. Each package also includes `agents/openai.yaml`
 for Codex and ChatGPT presentation and `evals/eval_queries.json` for portable activation testing.
 
 `skills/` is generated and committed; edit the guides and run `./scripts/build-skills.sh`. A
@@ -116,7 +117,7 @@ New silent-failure callouts require classification before regeneration; see the
 Callout and snippet records use semantic IDs plus content hashes, so line movement does not trigger
 an ordinal re-key and edited content still fails closed.
 
-Then refresh the installable skills, which derive from the same guides:
+Refresh the installable skills whenever the numbered guides or their part READMEs change:
 
 ```bash
 ./scripts/build-skills.sh
@@ -124,6 +125,8 @@ Then refresh the installable skills, which derive from the same guides:
 
 This refuses to run if a part README grew a heading the router generator does not recognize, so a
 structural guide edit fails here rather than quietly dropping a section from a published skill.
+Skill generation reads the guides directly and does not require generated website indexes or SDK
+captures; website index generation is a separate workflow.
 Ownership of parts and the hand-tuned skill descriptions live in
 [`notes/synthesis/skill-manifest.json`](notes/synthesis/skill-manifest.json).
 

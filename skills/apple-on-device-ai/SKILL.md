@@ -24,26 +24,13 @@ with the claim into anything you say, write, or put in a code comment.
 - ⚠️ **SILENT FAILURE** — fails without throwing. Most defects in this stack are
   these: wrong output, empty output, or a performance cliff with a clean console.
 
-## Find the answer in three moves
+## Find the relevant section
 
-`references/` holds far more than fits in context. Route to the section you need:
-
-1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — search `references/SILENT-FAILURES.md` for words from what
-   you actually observed. Entries are grouped by symptom and each links to the
-   guide section that explains it.
-2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   search `references/API-INDEX.md`. The row shows whether the symbol appears in
-   any captured 26.x or 27.x SDK interface. These columns aggregate minor versions;
-   a checkmark does not establish a minimum SDK or OS version. Check the guide's
-   availability notes. **Blank in both columns means the spelling is not
-   SDK-confirmed**, so treat it as provisional.
-3. **You have a task** — use the triage table below, then the part README it
-   points at.
-
-The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
-guide and lists each top-level section anchor. Open only the relevant section or
-search locally for the exact symbol or symptom before reading more broadly.
+Use the triage table for tasks and the linked guide list below to resolve `N.M`
+labels. For a symbol or symptom, search the bundled guides under `references/`.
+Use the matching guide's contents or headings to locate the relevant section,
+then open only that section. Guide evidence establishes API availability;
+absence from a search does not prove an API is unavailable.
 
 ## Version floors
 
@@ -53,7 +40,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
+A `N.M` label identifies a guide in the linked list below.
 
 **Part 1 — Orientation and gating** ([all 18 rows](references/part-01-orientation-and-gating/README.md#read-this-first-the-triage-table))
 
@@ -80,7 +67,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 ## The deep reference guides
 
-Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.
+Bundled locally. Use each guide's contents or headings to find a section.
 
 - **[1.1 The 2026 Apple AI stack, and how to choose a model backend](references/part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md)** — The map, and the decision it replaced.
 - **[1.2 Every version, hardware, entitlement and runtime-surface gate](references/part-01-orientation-and-gating/references/02-platform-and-version-gating.md)** — The complete inventory of everything sitting between the code you write and a feature that runs: the four OS floors and what each one *means*, a per-symbol decoder ring for FoundationModels, Core AI, Evaluations, Speech and TensorOps, the SDK-versus-runtime distinction that `@available` cannot paper over, the Apple Intelligence hardware floor (A17 Pro / M1 / M2) and the **two on-device model …

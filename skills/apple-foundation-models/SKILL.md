@@ -24,26 +24,13 @@ with the claim into anything you say, write, or put in a code comment.
 - ⚠️ **SILENT FAILURE** — fails without throwing. Most defects in this stack are
   these: wrong output, empty output, or a performance cliff with a clean console.
 
-## Find the answer in three moves
+## Find the relevant section
 
-`references/` holds far more than fits in context. Route to the section you need:
-
-1. **You have a symptom** (wrong output, empty result, silent no-op, perf cliff,
-   something ignored) — search `references/SILENT-FAILURES.md` for words from what
-   you actually observed. Entries are grouped by symptom and each links to the
-   guide section that explains it.
-2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
-   search `references/API-INDEX.md`. The row shows whether the symbol appears in
-   any captured 26.x or 27.x SDK interface. These columns aggregate minor versions;
-   a checkmark does not establish a minimum SDK or OS version. Check the guide's
-   availability notes. **Blank in both columns means the spelling is not
-   SDK-confirmed**, so treat it as provisional.
-3. **You have a task** — use the triage table below, then the part README it
-   points at.
-
-The deep reference guides are bundled. `references/SECTION-MAPS.md` links every
-guide and lists each top-level section anchor. Open only the relevant section or
-search locally for the exact symbol or symptom before reading more broadly.
+Use the triage table for tasks and the linked guide list below to resolve `N.M`
+labels. For a symbol or symptom, search the bundled guides under `references/`.
+Use the matching guide's contents or headings to locate the relevant section,
+then open only that section. Guide evidence establishes API availability;
+absence from a search does not prove an API is unavailable.
 
 ## Version floors
 
@@ -56,7 +43,7 @@ search locally for the exact symbol or symptom before reading more broadly.
 
 ## Triage
 
-A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.md` for its local file and section anchors.
+A `N.M` label identifies a guide in the linked list below.
 
 **Part 2 — Foundation Models: the everyday API** ([all 17 rows](references/part-02-foundation-models-everyday-api/README.md#read-this-first-the-triage-table))
 
@@ -96,7 +83,7 @@ A `N.M` label is a deep reference guide; look it up in `references/SECTION-MAPS.
 
 ## The deep reference guides
 
-Bundled locally. `references/SECTION-MAPS.md` has every top-level section anchor.
+Bundled locally. Use each guide's contents or headings to find a section.
 
 - **[2.1 `LanguageModelSession` end to end](references/part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md)** — The foundational guide: every initializer form, `Instructions`/`Prompt` and their result builders, the 24-method `respond`/`streamResponse` matrix, `prewarm(promptPrefix:)`, `isResponding`, the now-mutable `transcript`, all of `GenerationOptions`, `Response.usage`, and the six-case `Transcript` data model.
 - **[2.2 Guided generation and snapshot streaming](references/part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md)** — What the `@Generable` macro synthesises, every `@Guide` form with evidence, the guide-to-type compatibility matrix, runtime schemas, `GeneratedContent`, and why streaming gives you *snapshots* rather than deltas (you assign, never append).
