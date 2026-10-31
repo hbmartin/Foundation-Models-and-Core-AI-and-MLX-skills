@@ -215,8 +215,9 @@ configuration update; the runner never silently changes schedules or repairs con
 For a reviewed candidate, `run weekly --ref <candidate-ref>` prepares that exact commit rather
 than `origin/main`. `--installed-root <isolated-projection>` validates a proposed installation
 without changing the app. These are explicit candidate-validation options; scheduled runs use the
-normal installed gate and default `origin/main`. Synchronize installed copies after the runner and
-contract changes merge, preserving the paused daily and active weekly settings. `--skip-web`
+normal installed gate and default `origin/main`. After the runner and contract changes merge,
+update the scheduled checkout to the merged revision, then synchronize installed copies while
+preserving the paused daily and active weekly settings. `--skip-web`
 continues local checks but explicitly records incomplete web coverage; it cannot yield a clean run.
 
 ## 5. Cadence summary

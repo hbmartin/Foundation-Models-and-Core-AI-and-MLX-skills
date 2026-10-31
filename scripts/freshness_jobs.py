@@ -232,8 +232,15 @@ def collect(runner, mode, baseline, thread_review, args):
         verdicts = data["summary"]["verdicts"]
         if verdicts["UNREACHABLE"] or verdicts["AMBIGUOUS"]:
             runner.record("defect-coverage", "blocked", verdicts=verdicts)
+            runner.findings.append({"kind": "defect-coverage", "verdicts": verdicts,
+                                    "unreachableReferences": data.get("unreachableReferences", []),
+                                    "artifact": str(root / "defects.json")})
         if verdicts["STATE-CHANGED"]:
             runner.findings.append({"kind": "defect-state-changed", "count": verdicts["STATE-CHANGED"],
+                                    "references": [{key: row[key] for key in
+                                                    ("ref", "registryId", "liveUrl", "claims", "liveState", "latestClaimDate", "closedAt", "mergeTimestamp", "sightingIds")
+                                                    if key in row}
+                                                   for row in data["references"] if isinstance(row, dict) and row.get("verdict") == "STATE-CHANGED"],
                                     "artifact": str(root / "defects.json")})
     command = ["./scripts/current-state.py", "collect", "--output", str(root / "observed-state.json")]
     if mode == "daily":
@@ -306,6 +313,11 @@ def collect(runner, mode, baseline, thread_review, args):
         runner.cycle.atomic_json(root / "validation.json", {"schemaVersion": 1, "actions": [], "steps": runner.steps})
         with contextlib.redirect_stdout(sys.stderr):
             runner.cycle.evaluate(SimpleNamespace(run_root=root))
+        for action in runner.cycle.read_json(root / "actions.json")["actions"]:
+            runner.findings.append({"kind": "action-review", "id": action["id"],
+                                    "summary": action.get("summary"),
+                                    "automaticFixEligible": action["automaticFixEligible"],
+                                    "eligibilityBlockers": action["eligibilityBlockers"]})
 
 
 def clean_builds(root):

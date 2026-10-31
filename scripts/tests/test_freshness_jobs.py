@@ -183,12 +183,28 @@ class FreshnessJobIntegrationTests(unittest.TestCase):
             root = pathlib.Path(directory)
             repository, env = self.fixture(root)
             review = root / "review.json"
-            review.write_text(json.dumps({"schemaVersion": 2, "repositoryIdentity": str(root / "remote.git"), "actions": []}))
+            identity = str(root / "remote.git")
+            sha = subprocess.check_output(["git", "-C", str(repository), "rev-parse", "HEAD"], text=True).strip()
+            action = {"id": "reviewed-candidate", "summary": "Repair a documented stale block.",
+                      "confidence": 0.99, "resolutionDisposition": "fixed", "changeKind": "docs",
+                      "evidenceUrls": ["https://example.com/evidence"], "evidenceDate": "2026-10-30",
+                      "targetSha": sha, "exactCurrentTarget": True, "paths": ["notes/base.md"],
+                      "patternKey": "stale-block", "diagnostics": [],
+                      **{flag: False for flag in cycle.PROHIBITED_FLAGS},
+                      "taskEvidence": [{"taskId": task, "taskUrl": f"https://example.com/tasks/{task}",
+                                        "updatedAt": "2026-10-30T12:00:00Z", "repositoryIdentity": identity,
+                                        "patternKey": "stale-block", "observation": "The generated block was stale."}
+                                       for task in ("one", "two")]}
+            review.write_text(json.dumps({"schemaVersion": 2, "repositoryIdentity": identity, "actions": [action]}))
             result = subprocess.run([ROOT / "scripts/freshness-cycle.py", "run", "weekly", "--repository", repository, "--artifact-root", root / "artifacts", "--run-id", "weekly", "--thread-review", review, "--skip-web"], text=True, capture_output=True, env=env)
             self.assertEqual(result.returncode, 1, result.stderr)
             report = json.loads(result.stdout)
             self.assertEqual(report["outcome"], "blocked")
             run = root / "artifacts/weekly-improvements/weekly"
+            full_report = json.loads((run / "report.json").read_text())
+            candidate = next(f for f in full_report["findings"] if f["kind"] == "action-review")
+            self.assertTrue(candidate["automaticFixEligible"])
+            self.assertTrue((run / "results/implementation.json").exists())
             self.assertEqual(json.loads((run / "results/research-mirrors.json").read_text())["status"], "passed")
             self.assertFalse((root / "artifacts/worktrees/weekly").exists())
             self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
