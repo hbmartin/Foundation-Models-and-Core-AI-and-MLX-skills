@@ -114,14 +114,12 @@ structural rather than a testing convenience.
 > evaluation that constructs its session differently from the app — a dropped `guardrails:` argument is
 > enough — reports a number about a model you do not ship.
 >
-> 🔴 **GAP — several, and each has a stated safe default.** Whether `Metric` identity is by **name or by
-> instance** (Apple's doc example and Apple's sample code imply opposite answers; the interface shows a
-> hand-written `==` but not its semantics); what `aggregateValue(.mean(of:))` returns when every sample
-> was `.ignore()`d; and what happens to a run when `subject(from:)` throws for a subset of samples —
-> `SubjectInferenceError` and `EvaluatorError`'s cases are now SDK-verified, and a deprecation message
-> in the interface says missing metrics are *"materialized as ignored columns and logged"*, but the
-> thrown-subject path itself is still unconfirmed. All three are neutralised by the same one-line habit:
-> assert the scored row count before you assert anything computed from it.
+> ✅ **Runtime findings have explicit version boundaries.** Fresh-instance metric lookup works
+> by name, while duplicate names across evaluators are rejected by the Xcode 27.2 framework;
+> earlier Simulator builds pooled them. The detailed guide separates both experiments. An
+> all-ignored mean returns the measured `-1.0` sentinel, and run error counters track subject
+> and evaluator failures independently of scoring coverage. Assert scored row counts and
+> inspect failure counters alongside aggregates. Untested toolchain/OS combinations remain open.
 
 ### [6.2 — Model judges, score dimensions, drift, and Cohen's kappa](references/02-model-judges-and-alignment.md)
 

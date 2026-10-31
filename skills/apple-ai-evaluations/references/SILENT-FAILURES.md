@@ -2,7 +2,7 @@
 
 **71 ⚠️ callouts from the guide parts this skill covers, sorted by the symptom you would observe.** Most defects in this stack do not throw, so the symptom is what you start from.
 
-> Sliced from the series index on 2026-10-09. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> Sliced from the series index on 2026-10-30. The full index across all 17 parts is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/SILENT-FAILURES.md. Generated — regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 | Symptom | Entries |
 |---|---:|
@@ -113,7 +113,7 @@
 
 **Part 6**
 
-- [Apple's snippet shadows Metric('Match') in the closure — same-name metrics merge or produce results aggregation never…](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-shape-before-the-details) — 6.1
+- [Fresh metric instances share names; Xcode 27.2 rejects duplicate evaluator names, while older builds pooled scores.](part-06-evaluations/references/01-foundations-and-hill-climbing.md#the-shape-before-the-details) — 6.1
 - [Metric labels are unchecked strings written twice; a case typo makes #expect read a label that was never registered.](part-06-evaluations/references/02-model-judges-and-alignment.md#196-️-a-custom-label-typo-tests-nothing) — 6.2
 - [The samples result includes the seeds too — appending it to an existing dataset duplicates every seed.](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md#4-samplegenerator-parameter-by-parameter) — 6.3
 

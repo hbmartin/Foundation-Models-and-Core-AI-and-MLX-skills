@@ -167,6 +167,15 @@ Simulator block later in this file:
 PROBE-RESULT name=fm.error-domain-context-overflow value=threw detail=type=LanguageModelError domain=FoundationModels.LanguageModelError code=0 casts=[LanguageModelError] fmcase=contextSizeExceeded(contextSize:4096,tokenCount:168951) desc=Content contains 168951 tokens, which exceeds the maximum allowed context size of 4096. os=27.0.0 platform=macOS
 ```
 
+## Metric experiments refreshed 2026-10-30
+
+The single-evaluator `eval.metric-identity` experiment observes fresh-instance lookup independently
+of duplicate registration. The separate `eval.duplicate-metric-names` experiment records either
+historical pooling or the known `EvaluationError.duplicateMetricName` rejection. Other errors
+propagate. This avoids treating the duplicate-name policy change as a broken identity lookup.
+The Xcode 27.2 (`27B52`) host and Simulator observations are summarized in
+[`notes/evidence/evaluations/metric-identity-2026-10-30.json`](../notes/evidence/evaluations/metric-identity-2026-10-30.json).
+
 ## Probe inventory
 
 Guide refs abbreviated: `2.3 §4.4` = `guides/part-02-…/references/03-… .md` §4.4.
@@ -201,7 +210,8 @@ knob (asset/entitlement).
 | `coreai.specialize-cancellation` | is specialization cancellable | 7.2 §5 · 17.6 §5 | MAC-27 / DEVICE-27 | 🟠 Mac/device reported completed after ~10 s with cache entry present; still inconclusive, retry with a slow asset |
 | `coreai.cache-location-size` | cache location and entry size | 7.2 §6 | MAC-27 / DEVICE-27 | 🟠 default cache observed at `Library/Caches/coreai-cache`; one toy-model size result below |
 | `coreai.specialize-return-identity` | `specialize()` return vs `model(for:)` | 7.2 §9 | MAC-27 / DEVICE-27 | 🟠 default cache: identical 181-byte bookmarks; entitled app-group variant remains |
-| `eval.metric-identity` | `Metric` identity: name or instance | 6.1 §8.2, §17 | SIM-27 · MAC-27 | ✅ BY NAME |
+| `eval.metric-identity` | fresh-instance lookup with one evaluator | 6.1 §8.2, §17 | SIM-27 · MAC-27 | ✅ by name with Xcode 27.2 (`27B52`) |
+| `eval.duplicate-metric-names` | two evaluators registering the same name | 6.1 §8.2, §17.4 | SIM-27 · MAC-27 | ✅ rejected with Xcode 27.2; earlier pooling is historical |
 | `eval.mean-over-all-ignored` | mean over zero scored samples | 6.1 §17.5 | SIM-27 · MAC-27 | ✅ sentinel `-1.0` |
 | `eval.subject-throws` | per-sample subject failure handling | 6.1 §17.7 | SIM-27 · MAC-27 | ✅ run continues; failures excluded from aggregate |
 | `eval.disallowed-arguments-narrowing` | do `disallowed` matchers narrow | 6.3 | SIM-27 · MAC-27 | ✅ YES, arguments narrow |
@@ -360,7 +370,7 @@ Readings, one line each:
 - **2.2 §11.3 ledger 13** — `.permissiveContentTransformations` did NOT change the outcome
   of a guardrail-blocked `@Generable` request (both threw `LanguageModelError` code 2) —
   supports "inert on the structured path" on this runtime.
-- **6.1 §8.2** — `Metric` identity is **by name**: two evaluators emitting fresh
+- **6.1 §8.2, historical 2026-07-31 experiment** — `Metric` identity is **by name**: two evaluators emitting fresh
   `Metric("Match")` instances produce ONE detailed column and one `"Mean of Match"`
   summary column, and `aggregateValue(.mean(of: Metric("Match")))` through a fresh
   instance works (0.5 = both evaluators' values pooled — also note the pooling!).
