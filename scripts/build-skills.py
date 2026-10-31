@@ -158,8 +158,10 @@ READ_PROTOCOL = """\
    guide section that explains it.
 2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
    search `references/API-INDEX.md`. The row shows whether the symbol appears in
-   the captured 26.5 and 27.0 SDK interfaces; **blank in both columns means the
-   spelling is not SDK-confirmed**, so treat it as provisional.
+   any captured 26.x or 27.x SDK interface. These columns aggregate minor versions;
+   a checkmark does not establish a minimum SDK or OS version. Check the guide's
+   availability notes. **Blank in both columns means the spelling is not
+   SDK-confirmed**, so treat it as provisional.
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 
@@ -900,11 +902,14 @@ def render_api_slice(
         "# API & symbol index — " + spec.title,
         "",
         f"**{kept} symbols, of {total_series} across the series, that the guide parts in this "
-        "skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK "
+        "skill cover — with whether each appears in the captured 26.x / 27.x SDK "
         "interfaces.**",
         "",
-        "> A `✓` means the leading type name appears in the corresponding captured "
-        "`.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a "
+        "> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including "
+        "27.2. A `✓` means the leading type name appears in at least one corresponding captured "
+        "`.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence "
+        "in 27.0. Check the guide's availability notes and the versioned capture before choosing "
+        "a deployment target. Dotted uppercase type paths must be one contiguous subpath of a "
         "qualified or declared type chain. A longer chain may prove any contiguous type subpath, "
         "but `::` module qualifiers never become nested types. Lowercase members are not "
         "signature-matched — the guides carry the "
@@ -921,7 +926,7 @@ def render_api_slice(
         entries.sort(key=lambda entry: entry[0].lstrip("@.").lower())
         noun = "symbol" if len(entries) == 1 else "symbols"
         out += ["", f"## {framework}  <sub>{len(entries)} {noun}</sub>", ""]
-        out.append("| Symbol | 26.5 | 27.0 | Covered in |")
+        out.append("| Symbol | 26.x | 27.x | Covered in |")
         out.append("|---|:-:|:-:|---|")
         for symbol, in26, in27, pairs in entries:
             shown = [f"[{guide_label(path)}]({link_for(path)})" for path, _ in pairs[:API_LINKS_SHOWN]]

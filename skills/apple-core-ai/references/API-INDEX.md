@@ -1,12 +1,12 @@
 # API & symbol index — Core AI: the 27-cycle inference runtime and its conversion pipeline
 
-**384 symbols, of 1200 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**384 symbols, of 1200 across the series, that the guide parts in this skill cover — with whether each appears in the captured 26.x / 27.x SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding captured `.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>13 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `ChatCompletionsLanguageModel` |  |  | [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md) |
 | `CoreAILanguageModel` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md), [10.3](part-10-coreai-hardware-authoring-debugging/references/03-llm-export-end-to-end.md), [7.README](part-07-coreai-swift-runtime/README.md) +2 more |
@@ -24,7 +24,7 @@
 
 ## CoreAI  <sub>71 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIModel` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md), [7.README](part-07-coreai-swift-runtime/README.md) +12 more |
 | `AIModel.bookmarkData` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
@@ -100,7 +100,7 @@
 
 ## MLX  <sub>5 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `MLX` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `MLXCXGrammar` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
@@ -110,7 +110,7 @@
 
 ## Speech  <sub>4 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `SpeechAnalyzer` | ✓ | ✓ | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |
 | `SpeechBundle` |  |  | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) |
@@ -119,7 +119,7 @@
 
 ## Metal/MPP  <sub>15 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Metal.framework` |  | ✓ | [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md) |
 | `MetalParameter` |  |  | [8.3](part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md), [8.README](part-08-coreai-pytorch-conversion/README.md) |
@@ -139,13 +139,13 @@
 
 ## SwiftUI  <sub>1 symbol</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `View` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
 
 ## Media/Core*  <sub>6 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CGImage` | ✓ | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) |
 | `CGImageSourceCreateImageAtIndex` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md) |
@@ -156,7 +156,7 @@
 
 ## Swift/Foundation  <sub>11 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Array` | ✓ | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.3](part-07-coreai-swift-runtime/references/03-states-and-pipelined-execution.md) |
 | `ArrayAttr` |  |  | [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md) |
@@ -172,7 +172,7 @@
 
 ## other  <sub>258 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIProgram` |  |  | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md) +3 more |
 | `AIProgram.optimize()` |  |  | [8.README](part-08-coreai-pytorch-conversion/README.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [10.1](part-10-coreai-hardware-authoring-debugging/references/01-ane-vs-gpu-authoring-rules.md) +1 more |
