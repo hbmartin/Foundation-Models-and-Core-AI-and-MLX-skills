@@ -58,6 +58,20 @@ or OS release. For a toolchain change, follow the
 Machine-readable current state is committed in [`notes/current-state.json`](notes/current-state.json);
 `scripts/current-state.py` collects observed state and verifies or regenerates its marked summaries.
 
+Run the deterministic maintenance lanes with one command each:
+
+```bash
+./scripts/freshness-cycle.py run daily
+./scripts/freshness-cycle.py run weekly --thread-review artifacts/freshness/review-inputs/review.json
+```
+
+The weekly input is a completed repository-task review, validated as schema version 2. An absent
+review is reported as blocked. Reports retain command failures while independent checks continue;
+weekly temporary worktrees and build products are cleaned automatically. The improvement agent
+uses `--keep-worktree` for reviewed implementation and finalizes it through the existing policy
+checks. See the runbook for the input contract and explicit candidate-validation options.
+
+
 ### Evidence conventions
 
 Every non-obvious API claim in the guides uses an explicit evidence state:

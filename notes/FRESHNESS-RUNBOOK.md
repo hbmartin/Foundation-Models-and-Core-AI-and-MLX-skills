@@ -26,17 +26,24 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 ### Step 0 — verify the installed contract and capture observed state
 
 ```bash
-./scripts/validate-automation-contracts.py --installed
-run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-report_dir="artifacts/freshness/daily-defects/$run_id"
-./scripts/current-state.py collect --skip-generated-checks --output "$report_dir/observed-state.json"
+./scripts/freshness-cycle.py run daily
 ```
 
-Stop on installed-contract drift. The observation report records `collection.complete=false` and
-the exact blockers when a host tool cannot be queried; preserved prior values are not fresh
-observations. Generated-output checks are skipped explicitly in the daily lane; prior validation
-dates are preserved. Default collection and weekly runs perform the full checks. This daily lane
-remains report-only.
+This command runs installed-contract preflight before reserving a collision-free UTC run id.
+It performs the defect, observed-state, ground, and official-source checks, writes `report.json`
+and `report.txt`, and prints one JSON result containing the durable report path. Each command has
+its own log and JSON result. Failures return nonzero while independent checks continue. The daily
+lane uses `--changed-only` and `--skip-generated-checks`; preserved generated-check dates are
+never restamped. It never edits tracked files.
+
+The observation report records `collection.complete=false` and exact blockers when a host tool
+cannot be queried. A failed GitHub lookup remains blocked even if changed-only rows are empty.
+Official release/news RSS and Foundation Models Markdown are captured with hashes; content
+changes are observations for review, not automatic semantic or baseline promotions. Release
+ranking distinguishes beta and RC sequence numbers while retaining build variants of the same
+release. New and updated news entries appear in findings before their identities are saved for
+the next comparison. The first news and Markdown snapshots establish comparison baselines. State is stored in
+`artifacts/freshness/state/official-source-watch.json`.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
@@ -85,15 +92,36 @@ indexes unchanged), or re-date untouched hedges.
 The checked-in `weekly-corpus-freshness-batch` contract is the executable specification. Its
 orchestrator separates preparation, evidence evaluation, and cleanup:
 
+First review repository-associated tasks since the last successful run and save a schema-v2
+`thread-review.json` input. Use the exact `git config --get remote.origin.url` identity. An empty
+`actions` array means the review completed with no proposed changes; omitting the input records
+that lane as blocked. Raw task bodies and instruction-like fields are rejected. Task observations
+may use HTTP(S) URLs or `codex://threads/<matching-task-UUID>` links. Structural validation happens
+before preparation; `evaluate` still enforces corroboration or a run-bound deterministic failure.
+
 ```bash
-./scripts/validate-automation-contracts.py --installed
-run_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-run_root="$(./scripts/freshness-cycle.py prepare weekly --run-id "$run_id" | \
-  python3 -c 'import json,sys; print(json.load(sys.stdin)["runRoot"])')"
-# Run defect, state, probe, mirror, official-doc, and repository-task review lanes.
+./scripts/freshness-cycle.py run weekly \
+  --thread-review artifacts/freshness/review-inputs/review.json
+```
+
+The default command collects all deterministic lanes, evaluates supplied candidates, writes the
+report, removes temporary worktrees and disposable build directories, and retains logs, result
+bundles, and attachments. Its report outcome is `clean`, `findings`, or `blocked`; the existing
+weekly authority records completed collection without changes as `no-change`. Eligible actions
+that need implementation cause a blocked result unless preparation was explicitly retained.
+
+The scheduled improvement agent uses the same command with `--keep-worktree`. The returned JSON
+includes `runRoot` and `worktree`; all subsequent repository work stays there. After evidence-backed
+triage and any eligible implementation, finish with the existing gates:
+
+```bash
 ./scripts/freshness-cycle.py evaluate "$run_root"
 ./scripts/freshness-cycle.py finalize "$run_root" --outcome no-change
 ```
+
+Use `blocked`, `draft`, or `ready` instead when appropriate. A retained worktree is an explicit
+handoff, not a completed run: its lock remains until finalization. The runner never writes an
+empty task review and claims it was collected.
 
 `prepare` acquires a 24-hour lock, refuses a second open automation PR, fetches `origin/main`, and
 creates a unique branch in a temporary worktree. The caller writes durable `run.json`,
@@ -125,7 +153,8 @@ At most one automation PR may be open. It starts as a draft and becomes ready on
 and remote checks pass and GitHub reports it mergeable. When `main` moves, merge `origin/main` and
 rerun the gates; never rebase, force-push, or merge automatically. A failed or conflicted run stays draft.
 `finalize` records the outcome, releases the lock, removes the temporary worktree and disposable
-Build directories, and retains the evidence.
+Build directories, and retains the evidence. The one-command runner also removes only this run's
+external probe `Build` directories; `.xcresult` bundles, logs, and attachments remain.
 
 ---
 
@@ -178,6 +207,20 @@ a hard stop, not permission to improvise. Repository state and semantic resoluti
 scripts can establish the former, while edits require the evidence-bounded disposition in §2.
 
 ---
+
+### Candidate validation and installation
+
+Installed working directories are checked against the stable primary checkout, including when
+validation runs from a linked worktree. A relocated repository still requires an explicit installed
+configuration update; the runner never silently changes schedules or repairs contract drift.
+
+For a reviewed candidate, `run weekly --ref <candidate-ref>` prepares that exact commit rather
+than `origin/main`. `--installed-root <isolated-projection>` validates a proposed installation
+without changing the app. These are explicit candidate-validation options; scheduled runs use the
+normal installed gate and default `origin/main`. After the runner and contract changes merge,
+update the scheduled checkout to the merged revision, then synchronize installed copies while
+preserving the paused daily and active weekly settings. `--skip-web`
+continues local checks but explicitly records incomplete web coverage; it cannot yield a clean run.
 
 ## 5. Cadence summary
 

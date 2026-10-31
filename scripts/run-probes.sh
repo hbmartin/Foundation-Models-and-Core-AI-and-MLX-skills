@@ -68,7 +68,7 @@ case "$mode" in
     }
     ;;
   simulator)
-    destination="${destination:-${PROBE_SIMULATOR_DESTINATION:-platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0}}"
+    destination="${destination:-${PROBE_SIMULATOR_DESTINATION:-}}"
     command -v xcodebuild >/dev/null 2>&1 || {
       echo "xcodebuild is required" >&2
       exit 69
@@ -77,6 +77,9 @@ case "$mode" in
       echo "python3 is required" >&2
       exit 69
     }
+    if [[ -z "$destination" ]]; then
+      destination="$(python3 "$repo_root/scripts/simulator_destination.py")" || exit "$?"
+    fi
     ;;
   device)
     [[ -n "$destination" ]] || {

@@ -5,6 +5,7 @@ import pathlib
 import plistlib
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -179,6 +180,14 @@ fi
             shims = root / "bin"
             shims.mkdir()
             self.make_xcodebuild_shim(shims)
+            selector = shims / "xcrun"
+            selector.write_text(
+                f"#!{sys.executable}\nimport json,sys\n"
+                "runtime='com.apple.CoreSimulator.SimRuntime.iOS-27-2'\n"
+                "print(json.dumps({'devices':{runtime:[{'name':'iPhone Discovered','udid':'discovered-device','isAvailable':True}]}} "
+                "if 'devices' in sys.argv else {'runtimes':[{'identifier':runtime,'version':'27.2','buildversion':'new','isAvailable':True}]}))\n"
+            )
+            selector.chmod(0o755)
             command_log = root / "simulator-command.txt"
 
             result = self.run_runner(
@@ -210,7 +219,7 @@ fi
         self.assertIn("command=test-without-building", log)
         self.assertIn(f"pwd={ROOT / 'probes'}", log)
         self.assertIn("arg=Probes-Package", log)
-        self.assertIn("arg=platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0", log)
+        self.assertIn("arg=platform=iOS Simulator,id=discovered-device", log)
         self.assertIn("arg=-only-testing:ProbesTests/ExampleTests/testExample", log)
         self.assertNotIn("DeviceProbes", log)
         self.assertIn(
