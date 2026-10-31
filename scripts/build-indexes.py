@@ -300,9 +300,12 @@ for v in by_fw.values():
 out = []
 out.append("# API & symbol index\n")
 out.append(f"**{len(keep)} symbols referenced across the series, by framework — with where each "
-           "is covered and whether it exists in the captured 26.5 / 27.0 beta SDK interfaces.**\n")
-out.append("> `26.5` / `27.0` = the leading type name appears in the corresponding captured "
-           "`.swiftinterface` in `notes/sdk-interfaces/`; dotted uppercase type paths must be one "
+           "is covered and whether it appears in the captured 26.x / 27.x SDK interfaces.**\n")
+out.append("> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including "
+           "27.2. A `✓` means the leading type name appears in at least one corresponding "
+           "`.swiftinterface` in `notes/sdk-interfaces/`; it does not establish a minimum SDK or "
+           "OS version, or imply presence in 27.0. Check the guide's availability notes and the "
+           "versioned capture before choosing a deployment target. Dotted uppercase type paths must be one "
            "contiguous subpath of a qualified or declared type chain. A longer chain may prove "
            "any contiguous type subpath, but `::` module qualifiers never become nested types. "
            "Lowercase members are not signature-matched "
@@ -314,7 +317,7 @@ for fw in FW_ORDER:
     if not entries:
         continue
     out.append(f"\n## {fw}  <sub>{len(entries)} symbols</sub>\n")
-    out.append("| Symbol | 26.5 | 27.0 | Covered in |")
+    out.append("| Symbol | 26.x | 27.x | Covered in |")
     out.append("|---|:-:|:-:|---|")
     for s in entries:
         gl = []

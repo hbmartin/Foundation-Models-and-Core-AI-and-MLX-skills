@@ -1,12 +1,12 @@
 # API & symbol index — MLX in Python and Swift, and bridges to Core AI
 
-**331 symbols, of 1199 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**331 symbols, of 1200 across the series, that the guide parts in this skill cover — with whether each appears in the captured 26.x / 27.x SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding captured `.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>21 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `ChatCompletionsLanguageModel` |  |  | [12.5](part-12-mlx-python/references/05-serving-and-distributed.md), [12.README](part-12-mlx-python/README.md), [12.4](part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md), [12.6](part-12-mlx-python/references/06-finetuning-and-porting-models.md) |
 | `CoreAILanguageModel` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [14.README](part-14-bridges-between-stacks/README.md), [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
@@ -32,7 +32,7 @@
 
 ## CoreAI  <sub>14 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIModel` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |
 | `AIModel.load` |  | ✓ | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
@@ -51,7 +51,7 @@
 
 ## MLX  <sub>23 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `MLX` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `MLXArray` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.README](part-13-mlx-swift/README.md) |
@@ -79,19 +79,19 @@
 
 ## Speech  <sub>1 symbol</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `SpeechBundle` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 
 ## CoreSpotlight  <sub>1 symbol</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `SpotlightSearchTool` |  | ✓ | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 
 ## Metal/MPP  <sub>6 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `MetalPerformancePrimitives` |  |  | [12.3](part-12-mlx-python/references/03-quantization.md) |
 | `MTLBuffer` |  | ✓ | [12.README](part-12-mlx-python/README.md), [12.2](part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md), [12.3](part-12-mlx-python/references/03-quantization.md) |
@@ -102,7 +102,7 @@
 
 ## Media/Core*  <sub>3 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CGImageSourceCreateImageAtIndex` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md) |
 | `CIImage` | ✓ | ✓ | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md) |
@@ -110,7 +110,7 @@
 
 ## Swift/Foundation  <sub>20 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Array` | ✓ | ✓ | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `ArrayAttr` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
@@ -135,7 +135,7 @@
 
 ## other  <sub>242 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIProgram` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md) |
 | `AIProgram._from_mlir_module` |  |  | [14.1](part-14-bridges-between-stacks/references/01-mlx2coreai-and-third-party-bridges.md), [14.README](part-14-bridges-between-stacks/README.md) |

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-30",
+  "lanes": {
+    "host": {
+      "topology": {
+        "hostingMode": "tool-hosted",
+        "platform": "macOS",
+        "osVersion": "27.0.1",
+        "osBuild": "26A434",
+        "xcodeVersion": "27.2",
+        "xcodeBuild": "27B52",
+        "destination": "local arm64 host",
+        "device": "Mac14,12",
+        "tests": 51,
+        "skipped": 26,
+        "failures": 0,
+        "observedAt": "2026-10-30",
+        "exceptions": "Default bounded lane. Model-backed opt-ins, PCC and interactive Instruments excluded. Context size was not freshly measured; no prior default is carried into this topology."
+      },
+      "results": [
+        {
+          "name": "coreai.deviceArchitectureName",
+          "value": "h14s"
+        },
+        {
+          "name": "coreai.ndarray-zero-init",
+          "value": "all-zero-inconclusive"
+        },
+        {
+          "name": "coreai.specializationOptions-defaults",
+          "value": "default.expectFrequentReshapes=false"
+        },
+        {
+          "name": "eval.allowsAdditionalCalls-false",
+          "value": "control(allPass=1.0) withExtraCall(allPass=0.0)"
+        },
+        {
+          "name": "eval.disallowed-arguments-narrowing",
+          "value": "differentArgs(allPass=1.0) matchingArgs(allPass=0.0)"
+        },
+        {
+          "name": "eval.duplicate-metric-names",
+          "value": "rejected"
+        },
+        {
+          "name": "eval.mean-over-all-ignored",
+          "value": "-1.0"
+        },
+        {
+          "name": "eval.metric-identity",
+          "value": "summaryColumns=[\"Mean of Match\"]"
+        },
+        {
+          "name": "eval.run-errors.clean",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.subject",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.evaluator",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.all-subject",
+          "value": "completed"
+        },
+        {
+          "name": "eval.subject-throws",
+          "value": "run-completed"
+        },
+        {
+          "name": "fm.tool-derived-name",
+          "value": "instance=FetchWeatherReportTool definition=FetchWeatherReportTool"
+        },
+        {
+          "name": "fm.tool-schema-flag-default",
+          "value": "true"
+        },
+        {
+          "name": "speech.assetInventory-status-order",
+          "value": "sorted=[unsupported,downloading,supported,installed]"
+        },
+        {
+          "name": "fm.spotlight-direct-call",
+          "value": "donation=threw(CSIndexErrorDomain:-1003) naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3"
+        },
+        {
+          "name": "fm.spotlight-tool-surface",
+          "value": "name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-mac-os27.0.1-26A434-xcode-27B52.txt artifactWrite=ok"
+        }
+      ]
+    },
+    "simulator": {
+      "topology": {
+        "hostingMode": "tool-hosted",
+        "platform": "iOS Simulator",
+        "osVersion": "27.0",
+        "osBuild": "24A5408d",
+        "xcodeVersion": "27.2",
+        "xcodeBuild": "27B52",
+        "destination": "iPhone 18 Pro, OS=27.0",
+        "device": "iPhone 18 Pro",
+        "tests": 44,
+        "skipped": 22,
+        "failures": 0,
+        "observedAt": "2026-10-30",
+        "exceptions": "Default bounded lane. Model-backed opt-ins, PCC and interactive Instruments excluded. Context size was not freshly measured; no prior default is carried into this topology."
+      },
+      "results": [
+        {
+          "name": "eval.allowsAdditionalCalls-false",
+          "value": "control(allPass=1.0) withExtraCall(allPass=0.0)"
+        },
+        {
+          "name": "eval.disallowed-arguments-narrowing",
+          "value": "differentArgs(allPass=1.0) matchingArgs(allPass=0.0)"
+        },
+        {
+          "name": "eval.duplicate-metric-names",
+          "value": "rejected"
+        },
+        {
+          "name": "eval.mean-over-all-ignored",
+          "value": "-1.0"
+        },
+        {
+          "name": "eval.metric-identity",
+          "value": "summaryColumns=[\"Mean of Match\"]"
+        },
+        {
+          "name": "eval.run-errors.clean",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.subject",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.evaluator",
+          "value": "completed"
+        },
+        {
+          "name": "eval.run-errors.all-subject",
+          "value": "completed"
+        },
+        {
+          "name": "eval.subject-throws",
+          "value": "run-completed"
+        },
+        {
+          "name": "fm.tool-derived-name",
+          "value": "instance=FetchWeatherReportTool definition=FetchWeatherReportTool"
+        },
+        {
+          "name": "fm.tool-schema-flag-default",
+          "value": "true"
+        },
+        {
+          "name": "speech.assetInventory-status-order",
+          "value": "sorted=[unsupported,downloading,supported,installed]"
+        },
+        {
+          "name": "fm.spotlight-direct-call",
+          "value": "donation=ok naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3"
+        },
+        {
+          "name": "fm.spotlight-tool-surface",
+          "value": "name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-simulator-os27.0.0-24A5408d-xcode-27B52.txt artifactWrite=ok"
+        }
+      ]
+    }
+  }
+}

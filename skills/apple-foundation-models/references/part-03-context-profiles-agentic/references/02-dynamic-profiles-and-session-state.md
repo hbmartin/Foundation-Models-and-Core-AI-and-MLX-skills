@@ -1748,7 +1748,12 @@ Profile {
 > code that filters a transcript.
 
 Because `Transcript.Entry` is non-frozen, always write your `switch` with a `default` that **keeps**
-unknown entries. A future OS adding a new entry kind should not silently start dropping it.
+unknown entries. A future OS adding a new entry kind should not silently start dropping it. The
+27.2 SDK now provides a concrete example: `Transcript.Entry.data(_:)` wraps `Transcript.DataEntry`,
+with `contentType: UTType`, `content: Data`, and `metadata: GeneratedContent`. These declarations
+have iOS/macOS/visionOS/watchOS 27.2 floors and remain unavailable on tvOS
+(`FoundationModels-27.2-macos.swiftinterface`, captured 2026-10-30). Keep unknown entries when
+filtering history; model support and 27.2 runtime behavior require independent verification.
 
 ---
 

@@ -34,8 +34,10 @@ with the claim into anything you say, write, or put in a code comment.
    guide section that explains it.
 2. **You have a symbol** (`LanguageModelSession`, `AIModel`, `mx.compile`, …) —
    search `references/API-INDEX.md`. The row shows whether the symbol appears in
-   the captured 26.5 and 27.0 SDK interfaces; **blank in both columns means the
-   spelling is not SDK-confirmed**, so treat it as provisional.
+   any captured 26.x or 27.x SDK interface. These columns aggregate minor versions;
+   a checkmark does not establish a minimum SDK or OS version. Check the guide's
+   availability notes. **Blank in both columns means the spelling is not
+   SDK-confirmed**, so treat it as provisional.
 3. **You have a task** — use the triage table below, then the part README it
    points at.
 

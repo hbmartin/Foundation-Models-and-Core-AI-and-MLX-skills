@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "sdkVersion": "27.2",
+  "sdkBuild": "26B118",
+  "reviewedAt": "2026-10-30",
+  "headers": [
+    {
+      "path": "MPPTensorOpsConvolution2d.h",
+      "sha256": "2872f797d8c5d4553fd8687ca9e00db214323f5d58bc4620ea3719956c645115",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)"
+      ]
+    },
+    {
+      "path": "MPPTensorOpsMatMul2d.h",
+      "sha256": "2f572492dbdd7328799522fb4dd00094f8d6c59537ed4b7a5734b6725303f1b0",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)"
+      ]
+    },
+    {
+      "path": "MetalPerformancePrimitives.h",
+      "sha256": "cbbb0400a4f96d343135ec87c719ce01ca5fe29b56a6e9b54ba86d308e667350",
+      "availability": []
+    },
+    {
+      "path": "__impl/MPPTensorOpsAvailability.h",
+      "sha256": "c08806247037f097d85f59f743b9d3ef8f2ddf3aeb9c0b3a68b01c221cfc0dda",
+      "availability": []
+    },
+    {
+      "path": "__impl/MPPTensorOpsBase.h",
+      "sha256": "0e67de82e9d471b3f6b3aff228cac541ff09ec5a443ee86824c3a1e09d9bdb64",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)"
+      ]
+    },
+    {
+      "path": "__impl/MPPTensorOpsConvolution2dImpl.h",
+      "sha256": "6b9fc38f6b758272f876c828b3ce393bcebb18d93a2b61cdd7657f3c166c89cd",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_BFLOAT__"
+      ]
+    },
+    {
+      "path": "__impl/MPPTensorOpsMatMul2dImpl.h",
+      "sha256": "7b344600caeca7391f15b113654d77faf99832f445ac23cb764f28d92910bdbb",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)",
+        "#if __HAVE_INT2B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP4_E2M1_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E4M3_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E5M2_FORMAT_TYPE__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_INT2B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP4_E2M1_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E4M3_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E5M2_FORMAT_TYPE__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if defined(__HAVE_TENSOR_MULTIPLANE__)",
+        "#if defined(__HAVE_TENSOR_MULTIPLANE__)",
+        "#if defined(__HAVE_TENSOR_MULTIPLANE__)",
+        "#if defined(__HAVE_INT2B_FORMAT_TYPE__)",
+        "#if defined(__HAVE_INT4B_FORMAT_TYPE__)",
+        "#if defined(__HAVE_METAL_FP4_E2M1_FORMAT_TYPE__)",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__"
+      ]
+    },
+    {
+      "path": "__impl/MPPTensorOpsTraits.h",
+      "sha256": "6070d504b5ce2122649bba7dd7bf10effd8d941c31d85c3569469ec44a2f474f",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)",
+        "#if __HAVE_BFLOAT__",
+        "#if defined(__HAVE_TENSOR_MULTIPLANE__)"
+      ]
+    },
+    {
+      "path": "__impl/MPPTensorOpsTypes.h",
+      "sha256": "77c9bb42b5a361415fc57a3e618eaaff8aa01731a1a3f728ff3422e9b6b87e46",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_INT2B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP4_E2M1_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E4M3_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E5M2_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_UE8M0_FORMAT_TYPE__",
+        "#endif // (__METAL_VERSION__)"
+      ]
+    },
+    {
+      "path": "__impl/MPPTensorOpsUtility.h",
+      "sha256": "24e93e1d694971be0fb1ccf230827d53cb33690772635b762c3bb65ccc0b4a88",
+      "availability": [
+        "#if defined(__METAL_VERSION__) && defined(__HAVE_TENSOR__)",
+        "#if __HAVE_BFLOAT__",
+        "#if __HAVE_INT2B_FORMAT_TYPE__",
+        "#if __HAVE_INT4B_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP4_E2M1_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E4M3_FORMAT_TYPE__",
+        "#if __HAVE_METAL_FP8_E5M2_FORMAT_TYPE__"
+      ]
+    }
+  ],
+  "limitation": "SDK headers were reviewed; accelerator execution on hardware with GPU neural accelerators was not measured."
+}

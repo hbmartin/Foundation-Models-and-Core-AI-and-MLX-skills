@@ -1,12 +1,12 @@
 # API & symbol index — SpeechAnalyzer: live and file-based transcription
 
-**111 symbols, of 1199 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**111 symbols, of 1200 across the series, that the guide parts in this skill cover — with whether each appears in the captured 26.x / 27.x SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding captured `.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
 ## FoundationModels  <sub>6 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CoreAILanguageModel` |  |  | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `CoreAILanguageModels` |  |  | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
@@ -17,14 +17,14 @@
 
 ## CoreAI  <sub>2 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIModel` |  | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md), [16.README](part-16-adjacent-capabilities/README.md) |
 | `InferenceFunction` |  | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md), [16.README](part-16-adjacent-capabilities/README.md) |
 
 ## Speech  <sub>24 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AnalyzerInput` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `AnalyzerInputConverter` |  | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md), [16.README](part-16-adjacent-capabilities/README.md) |
@@ -53,7 +53,7 @@
 
 ## AppIntents  <sub>13 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AppEntity` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `AppIntent` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
@@ -71,7 +71,7 @@
 
 ## CoreSpotlight  <sub>3 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CSSearchableIndex.indexAppEntities(_:)` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
 | `CSSearchableItem` | ✓ | ✓ | [16.README](part-16-adjacent-capabilities/README.md) |
@@ -79,13 +79,13 @@
 
 ## SwiftUI  <sub>1 symbol</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `ObservableObject` |  |  | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 
 ## Media/Core*  <sub>9 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AVAsset` |  | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `AVAudioBuffer` |  | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
@@ -99,7 +99,7 @@
 
 ## Swift/Foundation  <sub>6 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Foundation` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `Sendable` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
@@ -110,7 +110,7 @@
 
 ## other  <sub>47 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AnalysisContext` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |
 | `AnalysisContext.contextualStrings` | ✓ | ✓ | [16.1](part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md) |

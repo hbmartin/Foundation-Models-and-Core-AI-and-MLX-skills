@@ -1,0 +1,164 @@
+{
+  "normalization": "Diagnostic only: :: replaced by . to separate compiler-printing changes from declarations; raw captures remain unchanged.",
+  "frameworks": [
+    {
+      "framework": "AppIntents",
+      "declarationLinesChanged": 16347,
+      "changes": [
+        "-@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)",
+        "-@available(*, deprecated, renamed: \"AppSchema\")",
+        "-public struct AssistantSchema : Swift.Sendable {",
+        "-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-public enum AssistantSchemas {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated, renamed: \"AppSchema.Schema\")",
+        "-  @_marker public protocol Model {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated, renamed: \"AppIntentSchema\")",
+        "-  @_marker public protocol Intent : AppIntents.AssistantSchemas.AppIntents.Model {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated, renamed: \"AppEntitySchema\")",
+        "-  @_marker public protocol Entity : AppIntents.AssistantSchemas.AppIntents.Model {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated, renamed: \"AppEnumSchema\")",
+        "-  @_marker public protocol Enum : AppIntents.AssistantSchemas.AppIntents.Model {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated)",
+        "-  public struct IntentSchema : AppIntents.AssistantSchemas.AppIntents.Intent {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated)",
+        "-  public struct EntitySchema : AppIntents.AssistantSchemas.AppIntents.Entity {",
+        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-  @available(*, deprecated)",
+        "-  public struct EnumSchema : AppIntents.AssistantSchemas.AppIntents.Enum {",
+        "-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
+        "-@available(*, deprecated, renamed: \"AppEntity\")",
+        "-@attached(memberAttribute) @attached(extension, conformances: AppIntents.AppEntity, AppIntents.AssistantSchemaEntity, names: named(__assistantSchemaEntity)) public macro AssistantEntity<T>(schema: T) = #externalMacro(module: \"AppIntentsMacros\", type: \"AssistantEntityMacros\") where T : AppIntents.AssistantSchemas.AppIntents.Entity",
+        "-@available(iOS 18.0, macOS 26.0, watchOS 26.0, *)",
+        "-@available(tvOS, unavailable)",
+        "-@available(visionOS, unavailable)",
+        "-public protocol ControlConfigurationIntent : AppIntents.AppIntent {",
+        "-@available(iOS 18.0, macOS 26.0, watchOS 26.0, *)",
+        "-@available(tvOS, unavailable)"
+      ]
+    },
+    {
+      "framework": "CoreAI",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreAIAsset",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreAICache",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreAICommon",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreAICompiler",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreAIDelegates",
+      "declarationLinesChanged": 1,
+      "changes": [
+        "+    @available(tvOS, unavailable)"
+      ]
+    },
+    {
+      "framework": "CoreAIRuntime",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "CoreSpotlight",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "Evaluations",
+      "declarationLinesChanged": 9,
+      "changes": [
+        "+  case duplicateMetricName(name: Swift.String)",
+        "-  public var reportMetadata: [Swift.String : any Swift.Sendable]",
+        "+  public var reportMetadata: [Swift.String : any Swift.Sendable] {",
+        "-public struct ArrayLoader<Sample> : Evaluations.Loader where Sample : Evaluations.SampleProtocol {",
+        "+public struct ArrayLoader<Sample> : Evaluations.Loader, Swift.ExpressibleByArrayLiteral where Sample : Evaluations.SampleProtocol {",
+        "+  public init(arrayLiteral elements: Sample...)",
+        "+  @available(anyAppleOS 27.0, *)",
+        "+  @available(tvOS, unavailable)",
+        "+  public typealias ArrayLiteralElement = Sample"
+      ]
+    },
+    {
+      "framework": "FoundationModels",
+      "declarationLinesChanged": 201,
+      "changes": [
+        "+public import UniformTypeIdentifiers",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)",
+        "-  @available(tvOS, unavailable)",
+        "+  @available(tvOS, unavailable)",
+        "-@available(tvOS, unavailable)",
+        "+@available(tvOS, unavailable)"
+      ]
+    },
+    {
+      "framework": "Speech",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "Vision",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "_CoreSpotlight_FoundationModels",
+      "declarationLinesChanged": 0,
+      "changes": []
+    },
+    {
+      "framework": "_Vision_FoundationModels",
+      "declarationLinesChanged": 0,
+      "changes": []
+    }
+  ]
+}

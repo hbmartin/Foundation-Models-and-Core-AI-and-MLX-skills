@@ -1,12 +1,12 @@
 # API & symbol index — Foundation Models: the on-device LLM API
 
-**529 symbols, of 1199 across the series, that the guide parts in this skill cover — with whether each exists in the captured 26.5 / 27.0 beta SDK interfaces.**
+**530 symbols, of 1200 across the series, that the guide parts in this skill cover — with whether each appears in the captured 26.x / 27.x SDK interfaces.**
 
-> A `✓` means the leading type name appears in the corresponding captured `.swiftinterface`; dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
+> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding captured `.swiftinterface`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry the signature-level citations. **Blank in both columns means the spelling is not SDK-confirmed**: package types and C/ObjC-only API legitimately show neither, but so does a reconstruction. A symbol absent from this page may still be covered elsewhere in the series — the full index is at https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/API-INDEX.md. Sliced on 2026-10-30; regenerate with `./scripts/build-skills.sh` rather than editing by hand.
 
-## FoundationModels  <sub>153 symbols</sub>
+## FoundationModels  <sub>154 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Adapter` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md) |
 | `ChatCompletions` |  |  | [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) |
@@ -134,6 +134,7 @@
 | `Transcript.Attachment` |  | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
 | `Transcript.AttachmentSegment` |  | ✓ | [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
 | `Transcript.CustomSegment` |  |  | [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.README](part-04-beyond-the-built-in-model/README.md) |
+| `Transcript.DataEntry` |  | ✓ | [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md) |
 | `Transcript.Entry` | ✓ | ✓ | [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md) +7 more |
 | `Transcript.Entry.prompt` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md) |
 | `Transcript.Entry.reasoning` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.1](part-04-beyond-the-built-in-model/references/01-private-cloud-compute.md) |
@@ -164,7 +165,7 @@
 
 ## CoreAI  <sub>6 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AIModel` |  | ✓ | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `CoreAI` |  | ✓ | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
@@ -175,14 +176,14 @@
 
 ## Evaluations  <sub>2 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Evaluation` |  | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [5.1](part-05-prototyping-profiling-non-swift/references/01-playground-and-instruments.md) |
 | `Evaluator` |  | ✓ | [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md), [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
 
 ## MLX  <sub>10 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `MLX` |  |  | [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
 | `MLXCXGrammar` |  |  | [2.2](part-02-foundation-models-everyday-api/references/02-guided-generation-and-streaming.md) |
@@ -197,7 +198,7 @@
 
 ## AppIntents  <sub>3 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AppEntity` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
 | `IndexedEntity` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
@@ -205,7 +206,7 @@
 
 ## CoreSpotlight  <sub>9 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CSSearchableIndex` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
 | `CSSearchableIndex.indexAppEntities(_:)` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
@@ -219,14 +220,14 @@
 
 ## Vision  <sub>2 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `BarcodeReaderTool` |  | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [2.README](part-02-foundation-models-everyday-api/README.md) |
 | `OCRTool` |  | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [2.3](part-02-foundation-models-everyday-api/references/03-tools-and-tool-calling.md), [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [2.README](part-02-foundation-models-everyday-api/README.md) |
 
 ## SwiftUI  <sub>5 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Image` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) |
 | `List` | ✓ | ✓ | [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md) |
@@ -236,7 +237,7 @@
 
 ## Media/Core*  <sub>7 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `CGImage` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.1](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md), [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) +1 more |
 | `CGImageDestinationCreateWithData` |  |  | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [4.2](part-04-beyond-the-built-in-model/references/02-bring-your-own-model.md) |
@@ -248,7 +249,7 @@
 
 ## Swift/Foundation  <sub>27 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `Array` | ✓ | ✓ | [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md), [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md) |
 | `ArraySlice` | ✓ | ✓ | [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md), [2.1](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md) |
@@ -280,7 +281,7 @@
 
 ## other  <sub>305 symbols</sub>
 
-| Symbol | 26.5 | 27.0 | Covered in |
+| Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
 | `AnyDynamicInstructions` |  | ✓ | [3.3](part-03-context-profiles-agentic/references/03-skills-and-history-modifiers.md), [3.2](part-03-context-profiles-agentic/references/02-dynamic-profiles-and-session-state.md) |
 | `AnyHashable` | ✓ | ✓ | [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md) |

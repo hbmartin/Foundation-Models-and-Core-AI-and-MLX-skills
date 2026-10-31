@@ -3,7 +3,7 @@
 Run when Xcode, an SDK, the OS, a simulator runtime, or relevant Apple documentation changes. Keep installed verification and latest observed releases separate; a beta announcement does not verify local runtime behavior.
 
 <!-- current-state:next-beta:start -->
-Current installed baseline: Xcode 27.0 `27A266a`, macOS 27.0 `26A428`, macOS SDK `26A425`, iOS SDK `24A430`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 beta 2 `27B5028f`, iOS 27.2 beta 3 `24B5099f`, and macOS 27.2 beta 3 `26B5101f`. Installed Xcode build 27A266a differs from observed build 27B5028f. Installed macOS build 26A428 differs from observed build 26B5101f.
+Current installed baseline: Xcode 27.2 `27B52`, macOS 27.0.1 `26A434`, macOS SDK `26B118`, iOS SDK `24B8118`, and newest iOS Simulator runtime `24A5408d`. Latest observed releases are Xcode 27.2 `27B52`, iOS 27.2 `24B119`, and macOS 27.2 `26B123`. Installed macOS build 26A434 differs from observed build 26B123.
 <!-- current-state:next-beta:end -->
 
 ## 0. The re-dump ritual (do this first, in order)
