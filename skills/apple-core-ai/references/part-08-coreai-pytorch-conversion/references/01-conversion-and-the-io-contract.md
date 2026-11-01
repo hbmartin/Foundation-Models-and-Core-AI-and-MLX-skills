@@ -6,7 +6,7 @@
 
 Assets from converter 0.4.0 fail to load/specialize from OS 27 beta 2 onward. Reconvert with 0.4.1 or later; §2.3 retains the compatibility and recovery evidence. The optional `coreai-models` package additionally requires macOS/iOS 27 and Xcode 27.
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 

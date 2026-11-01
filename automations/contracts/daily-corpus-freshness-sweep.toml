@@ -7,11 +7,11 @@ cwds = ["."]
 prompt = """
 Work in this repository. Read notes/FRESHNESS-RUNBOOK.md first and follow Section 1 as the source of truth.
 
-Contract policy fingerprint: 6a60bc82444a78066d176cbe972a0bc926d5583aabe4829d03bd85d90e0c29f9
+Contract policy fingerprint: f6e2530ef66376af5783e1d1f26d7c56f9540dadbb9d8effe3f4a5a8578e450f
 
-Run ./scripts/freshness-cycle.py run daily. The runner executes ./scripts/validate-automation-contracts.py --installed before reserving a run and stops on drift. It creates a collision-free UTC run id and saves the complete report, logs, official-source snapshots, defects.json, and observed-state.json under artifacts/freshness/daily-defects/<UTC-run-id>/. Official-source comparison state is retained in artifacts/freshness/state/official-source-watch.json.
+Run ./scripts/freshness-cycle.py run daily --watch-consumer daily. The runner executes ./scripts/validate-automation-contracts.py --installed before reserving a run and stops on drift. It creates a collision-free UTC run id and saves the complete report, logs, official-source snapshots, defects.json, and observed-state.json under artifacts/freshness/daily-defects/<UTC-run-id>/. Official-source comparison state is retained in artifacts/freshness/state/source-watch/daily.json.
 
-The daily defect lane uses --changed-only, --format json, and --output; summary UNREACHABLE counts still cover all references even when the references array is empty. Daily collection uses --skip-generated-checks and preserves prior generated-check dates. The runner checks xcodebuild -version, simulator runtimes, xcrun --no-cache --find fm and the discovered fm help surface, Apple Developer releases/news, and Foundation Models updates. It never treats public OS builds as installed Simulator builds. A first documentation snapshot establishes a comparison baseline; later content changes require source review.
+The daily defect lane uses --changed-only, --format json, and --output; summary UNREACHABLE counts still cover all references even when the references array is empty. Daily collection uses --skip-generated-checks and preserves prior generated-check dates. The runner checks xcodebuild -version, simulator runtimes, xcrun --no-cache --find fm and the discovered fm help surface, Apple Developer releases/news, and Foundation Models updates. It never treats public OS builds as installed Simulator builds. First documentation/news captures require source review; later findings remain pending until explicitly acknowledged with ./scripts/freshness-cycle.py acknowledge-sources <run-root>. Never acknowledge captures automatically or promote legacy observations to a reviewed baseline.
 
 Read report.json and report.txt. Report only actionable changes, exact issue or PR references, old versus live state, source dates, and the affected guide or release-event checklist item. Link the durable report. If coverage is complete and nothing changed, state that the daily sweep is clean. Do not edit guides or notes, create branches, commit, or push. If a command or web check cannot run, preserve its exact blocker and continue with the remaining independent checks."""
 
@@ -21,7 +21,7 @@ mutation_policy = "tracked-read-only"
 allowed_paths = ["artifacts/"]
 artifact_patterns = [
   "artifacts/freshness/daily-defects/<UTC-run-id>/",
-  "artifacts/freshness/state/official-source-watch.json",
+  "artifacts/freshness/state/source-watch/daily.json",
 ]
 required_prompt_fragments = [
   "./scripts/validate-automation-contracts.py --installed",

@@ -1,0 +1,6 @@
+warning: optional fm help capture is partial (subcommand-help-failed); inspect capture-manifest.json and the fm help artifact
+warning: optional fm help capture is partial (recursion-depth-exhausted); inspect capture-manifest.json and the fm help artifact
+warning: optional fm help capture is partial (subcommand-help-failed); inspect capture-manifest.json and the fm help artifact
+warning: optional fm help capture is partial (subcommand-help-failed); inspect capture-manifest.json and the fm help artifact
+warning: optional fm help capture is partial (subcommand-help-failed); inspect capture-manifest.json and the fm help artifact
+PASS: SDK capture safety and idempotence

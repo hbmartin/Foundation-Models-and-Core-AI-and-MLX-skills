@@ -44,7 +44,7 @@ Related references: [guide 17.3](03-error-taxonomy-migration.md), [guide 17.2](0
 
 ## Contents
 
-1. [The four version floors — the table](#1-the-four-version-floors--the-table)
+1. [The version floors — the table](#1-the-version-floors--the-table)
 2. [The TensorOps ladder is a different ladder](#2-the-tensorops-ladder-is-a-different-ladder)
 3. [The three on-device model versions](#3-the-three-on-device-model-versions)
 4. [ADDITIVE — Foundation Models](#4-additive--foundation-models)
@@ -61,21 +61,23 @@ Related references: [guide 17.3](03-error-taxonomy-migration.md), [guide 17.2](0
 
 ---
 
-## 1. The four version floors — the table
+## 1. The version floors — the table
 
 Start here. In the Developer Forums, version confusion is the single largest generator of bug
-reports that turn out not to be bugs. Four floors matter, they are not evenly spaced, and two of
+reports that turn out not to be bugs. The feature floors are not evenly spaced, and two of
 them (26.4 and 27.0) landed within a few months of each other.
 
-> ✅ **VERIFIED** — the availability strings below are quoted from Apple's own documentation
-> pages, which render an explicit availability line per symbol. Source:
-> `/documentation/foundationmodels/*` symbol pages, harvested 2026-07-27.
+> ✅ **VERIFIED sources, normalized summaries** — the platform strings below summarize Apple's
+> symbol pages harvested 2026-07-27 and the dated 27.2 SDK capture. Beta labels are omitted
+> from these summaries; they are not verbatim quotations of the July pages.
 
-| Floor | What arrived | Platforms as declared | Notes |
+| Floor | What arrived | Platform summary | Notes |
 |---|---|---|---|
 | **26.0** | The Foundation Models framework itself: `SystemLanguageModel`, `LanguageModelSession`, `@Generable`, `@Guide`, `Tool`, `Transcript`, `Prompt`, `Instructions`, `GenerationOptions`, `GenerationSchema`, `DynamicGenerationSchema`, `GeneratedContent`, `Response`, `ResponseStream`, `LanguageModelFeedback`, `SystemLanguageModel.supportsLocale(_:)` | `iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+, macOS 26.0+, visionOS 26.0+` — **no watchOS** | The 2025 release. `supportsLocale(_:)` is part of the OS 26.0 model declaration.[^supports-locale-floor] |
 | **26.4** | `SystemLanguageModel.contextSize`, `SystemLanguageModel.tokenCount(for:)`, a **new on-device model**, and **reduced guardrail false positives** | `iOS 26.4+, iPadOS 26.4+, Mac Catalyst 26.4+, macOS 26.4+, visionOS 26.4+` | A mid-cycle model swap, not just an API addition. See §3. |
 | **27.0** | The `LanguageModel` / `LanguageModelExecutor` protocol pair, `PrivateCloudComputeLanguageModel`, `ContextOptions`, Dynamic Profiles, `LanguageModelError`, `Attachment` / image input, `GenerationOptions.ToolCallingMode`, `TranscriptErrorHandlingPolicy`, `LanguageModelSession.Usage`, `Transcript.history`, `Transcript.structuredTranscript`, Core AI, **watchOS** | `iOS 27.0+, … watchOS 27.0+` | The stable 2026 release; 27.2 additions have their own floor below. |
+
+| **27.2** | Typed transcript data entries and attachments, representable protocols, and data-type capability queries | `iOS 27.2+, macOS 27.2+, visionOS 27.2+, watchOS 27.2+`; tvOS unavailable | Requires the 27.2 SDK (FoundationModels module 2.1+) as well as runtime availability. |
 
 The 27.2 SDK adds another explicit availability boundary. **SDK-verified 2026-10-30** in
 `FoundationModels-27.2-macos.swiftinterface`: `Transcript.DataEntry`, `Transcript.DataAttachment`,
@@ -83,7 +85,11 @@ The 27.2 SDK adds another explicit availability boundary. **SDK-verified 2026-10
 **27.2**, with tvOS unavailable. Typed data entries extend `Transcript.Entry` and the executor's
 generation channel; data attachments extend `Transcript.Attachment` and the generic `Attachment`
 initializer. They carry a `UTType`, raw `Data`, and `GeneratedContent` metadata. This confirms the
-public declaration surface, not acceptance by a particular model. The current host is macOS
+public declaration surface. On an available 27.2 runtime, call
+`LanguageModel.supportsDataEntryType(_:)` or `supportsDataAttachmentType(_:)` for the intended
+`UTType`; a support query does not guarantee acceptance of every payload. Use
+`#if canImport(FoundationModels, _version: 2.1)` to exclude the spellings from older SDK builds,
+then an OS 27.2 availability check for execution. The retained host observation is macOS
 27.0.1, so 27.2-only runtime behavior remains unmeasured.
 
 And the floor that isn't an OS floor at all:

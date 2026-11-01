@@ -113,6 +113,20 @@ if [[ -e "$run_root" ]]; then
 fi
 
 mkdir -p "$run_root/Build" "$run_root/Logs" "$run_root/ProbeArtifacts" "$run_root/Results"
+context_arguments=("$run_root/run-context.json" "$mode" "$destination")
+if ((extra_argument_count)); then
+  context_arguments+=("${extra_arguments[@]}")
+fi
+python3 - "${context_arguments[@]}" <<'PYCONTEXT'
+import json, pathlib, sys
+arguments = sys.argv[4:]
+pathlib.Path(sys.argv[1]).write_text(json.dumps({
+    "schemaVersion": 1, "mode": sys.argv[2], "destination": sys.argv[3],
+    "arguments": arguments,
+    "excludedTests": [value.split(":", 1)[1] for value in arguments if value.startswith("-skip-testing:")],
+    "includedTests": [value.split(":", 1)[1] for value in arguments if value.startswith("-only-testing:")],
+}, indent=2) + "\n")
+PYCONTEXT
 echo "Probe artifacts: $run_root"
 export PROBE_ARTIFACT_DIR="$run_root/ProbeArtifacts"
 

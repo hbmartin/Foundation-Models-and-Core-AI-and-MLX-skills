@@ -23,6 +23,14 @@ says who measured it.
 
 ---
 
+
+✅ **SDK-verified platform restriction (27.2):** `AIModelCache.Policy.persistent` is
+unavailable on tvOS (`CoreAIDelegates-27.2-macos.swiftinterface:45-49`). All `.persistent`
+examples below target the other supported platforms; for tvOS choose `.default` inside
+`#if os(tvOS)` and place `.persistent` in the `#else` branch. A runtime version check
+cannot make an unavailable tvOS declaration compile.
+
+
 ## What this covers
 
 Version-stamp and validate the exact model artifact you ship. The incident comparisons show why converter, OS, toolchain, architecture, and compiled cache identity matter independently, and how to recover from incompatible assets.
@@ -144,7 +152,7 @@ moment at which anyone is forced to look. This is the reason §10 exists.
 
 ### A note on evidence
 
-Incident 1 combines Apple's converter issue #37/release notes and repair recipe in #44 with community operational forensics. Incident 2 is a community A/B from 2026-06-11 on one Mac and iPhone running beta software; its magnitude requires validation on the intended artifact and hardware. Keep those distinctions when using the recovery procedures. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Incident 1 combines Apple's converter issue #37/release notes and repair recipe in #44 with community operational forensics. Incident 2 is a community A/B from 2026-06-11 on one Mac and iPhone running beta software; its magnitude requires validation on the intended artifact and hardware. Keep those distinctions when using the recovery procedures. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## 2. The artifact inventory: five classes, five invalidation rules
 

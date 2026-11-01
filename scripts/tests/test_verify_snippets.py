@@ -678,6 +678,27 @@ class ChangedFilesTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual([row["file"] for row in tsv_rows(r.stdout)], ["new file.md"])
 
+    def test_missing_github_base_is_fetched_without_using_default_branch(self):
+        td, repo = self.make_repo()
+        with td, tempfile.TemporaryDirectory() as remote_dir:
+            remote = os.path.join(remote_dir, "origin.git")
+            self.git(repo, "clone", "--bare", repo, remote)
+            self.git(repo, "remote", "add", "origin", remote)
+            self.git(repo, "push", "origin", "HEAD:refs/heads/stacked-base")
+            write_guide(repo, "guides/new file.md", "```swift\nlet value = 1\n```\n")
+            with mock.patch.dict(os.environ, {"GITHUB_BASE_REF": "stacked-base"}):
+                result = run_script(["--guides", "guides", "--stub-compiler", "pass", "--changed"], cwd=repo)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.git(repo, "rev-parse", "--verify", "origin/stacked-base")
+            self.assertEqual([row["file"] for row in tsv_rows(result.stdout)], ["new file.md"])
+
+    def test_unavailable_github_base_fails_even_with_origin_head(self):
+        td, repo = self.make_repo()
+        with td, mock.patch.dict(os.environ, {"GITHUB_BASE_REF": "unavailable-stacked-base"}):
+            result = run_script(["--guides", "guides", "--stub-compiler", "pass", "--changed"], cwd=repo)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("fetch", result.stderr)
+
     def test_changed_invalid_ref_fails_instead_of_reporting_zero(self):
         td, repo = self.make_repo()
         with td:

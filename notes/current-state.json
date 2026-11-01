@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-10-30",
+  "asOf": "2026-11-01",
   "corpus": {
     "callouts": {
       "concreteSilentFailures": 1469,
@@ -106,17 +106,17 @@
   "generatedOutputs": {
     "currentStateBlocks": {
       "checkCommand": "./scripts/current-state.py render --check",
-      "checkedAt": "2026-10-30",
+      "checkedAt": "2026-11-01",
       "status": "current"
     },
     "indexes": {
       "checkCommand": "python3 -m unittest scripts.tests.test_repository_indexes.RepositoryIndexTests.test_committed_indexes_match_clean_generation_and_links",
-      "checkedAt": "2026-10-30",
+      "checkedAt": "2026-11-01",
       "status": "current"
     },
     "skills": {
       "checkCommand": "python3 -m unittest scripts.tests.test_skills.CommittedSkillsTests.test_committed_skills_match_clean_generation",
-      "checkedAt": "2026-10-30",
+      "checkedAt": "2026-11-01",
       "status": "current"
     }
   },
@@ -266,10 +266,10 @@
     }
   ],
   "verification": {
-    "blocker": "SDK-26 targets unavailable: selected Xcode contains SDK 27.2. Available SDK-27 targets were checked on 2026-10-30; five unchanged SDK-26 target verdicts retain their historical dates and provenance.",
+    "blocker": "SDK-26 targets unavailable. Available SDK-27 targets checked 2026-11-01; 5 unchanged SDK-26 target verdicts retain historical provenance.",
     "errors": 0,
-    "freshPartialResult": "notes/evidence/release-27.2/swift-results.tsv",
-    "lastAvailableRun": "2026-10-30",
+    "freshPartialResult": "notes/evidence/review-repairs-2026-11-01/results.tsv",
+    "lastAvailableRun": "2026-11-01",
     "lastFullRun": "2026-08-02",
     "snippetFences": 1327,
     "statusCounts": {

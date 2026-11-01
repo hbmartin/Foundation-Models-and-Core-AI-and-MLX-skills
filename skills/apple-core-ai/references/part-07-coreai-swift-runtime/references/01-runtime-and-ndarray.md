@@ -52,7 +52,7 @@ Related references: [Part 3](https://github.com/hbmartin/Foundation-Models-and-C
 
 Use the SDK declarations for API spelling and the pinned `apple/coreai-models` source for package behavior. Reconstructed examples remain labelled. Some documentation examples need corrections (§16.2).
 
-[Recorded native checks](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) cover their named fixtures and profiles, not every API or device. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+[Recorded native checks](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) cover their named fixtures and profiles, not every API or device. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 

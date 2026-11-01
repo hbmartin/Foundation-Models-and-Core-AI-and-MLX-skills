@@ -26,11 +26,14 @@ with the claim into anything you say, write, or put in a code comment.
 
 ## Find the relevant section
 
-Use the triage table for tasks and the linked guide list below to resolve `N.M`
-labels. For a symbol or symptom, search the bundled guides under `references/`.
-Use the matching guide's contents or headings to locate the relevant section,
-then open only that section. Guide evidence establishes API availability;
-absence from a search does not prove an API is unavailable.
+Use triage for tasks and the linked guide list to resolve `N.M` labels. For a symbol
+or symptom, search the owned deep guides first; use shared part READMEs for orientation.
+Use the matching guide's contents or headings, then open only the relevant section.
+Cited SDK interfaces and headers establish API availability. RECONSTRUCTED spellings
+remain provisional and GAP claims remain unverified; preserve those qualifications.
+An unsuccessful local search does not establish unavailability. Use the website indexes
+below or route to the owning sibling skill. Read [offline conventions](references/CONVENTIONS.md)
+for source precedence and measurement attribution.
 
 ## Version floors
 
@@ -77,3 +80,22 @@ Search the local guide first, then open only the section needed for the answer. 
 ## Related skills
 
 Adjacent parts of the series live in these sibling skills: `apple-foundation-models`, `apple-core-ai`, `apple-mlx`, `apple-ai-migration`.
+
+## Website lookup fallback
+
+- [API and symbol index](https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/API-INDEX/)
+- [Silent-failure index](https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/SILENT-FAILURES/)
+
+## Route to the owning skill
+
+| Skill | Use for |
+|---|---|
+| `apple-foundation-models` | Build and debug Apple Foundation Models apps |
+| `apple-ai-evaluations` | Evaluate Apple on-device model quality |
+| `apple-core-ai` | Build, convert, and optimize Core AI models |
+| `apple-metal-tensorops` | Build and debug Metal and TensorOps ML kernels |
+| `apple-mlx` | Build and debug MLX Python and Swift systems |
+| `apple-ai-shipping` | Ship and benchmark on-device AI models |
+| `apple-speech` | Build and debug Apple speech recognition |
+| `apple-app-intents` | Build App Intents for Siri and Apple Intelligence |
+| `apple-ai-migration` | Migrate Apple AI apps and models to SDK 27 |

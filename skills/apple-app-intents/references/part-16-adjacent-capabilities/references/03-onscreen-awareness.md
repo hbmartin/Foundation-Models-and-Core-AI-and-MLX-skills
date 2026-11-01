@@ -54,7 +54,7 @@ Related references: [Part 16 guide 02](02-app-schema-domains.md), [Part 16 guide
 
 The `.files.file` workaround (§5) is community evidence from forum thread 838329, reported working on an iOS 27 device; it is not a documented Apple contract. Whether plain custom `AppEntity` plus `Transferable` should work remains unanswered (§5.7). Keep a fallback and validate on your target device.
 
-Apple's session excerpts establish API shapes, not a complete locally tested app. No entity-resolution latency budget is published here. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Apple's session excerpts establish API shapes, not a complete locally tested app. No entity-resolution latency budget is published here. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 

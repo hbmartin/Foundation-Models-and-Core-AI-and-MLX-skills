@@ -41,6 +41,19 @@ class CurrentStateTests(unittest.TestCase):
                 with self.subTest(kind=kind), self.assertRaises(SystemExit):
                     STATE.load_manifest(path)
 
+    def test_reviewed_build_variants_require_a_nonempty_set_including_primary(self):
+        payload = STATE.load_manifest(STATE.DEFAULT_MANIFEST)
+        release = payload["environment"]["latestObserved"]["ios"]
+        for builds, accepted in (([release["build"], "reviewed-variant"], True), ([], False), (["other"], False), ([release["build"], None], False)):
+            with self.subTest(builds=builds), tempfile.TemporaryDirectory() as directory:
+                release["reviewedBuilds"] = builds
+                path = pathlib.Path(directory) / "state.json";path.write_text(json.dumps(payload))
+                if accepted:
+                    STATE.load_manifest(path)
+                else:
+                    with self.assertRaises(SystemExit):
+                        STATE.load_manifest(path)
+
     def test_checked_in_blocks_are_current(self) -> None:
         result = subprocess.run([SCRIPT, "render", "--check"], cwd=ROOT, text=True,
                                 capture_output=True, check=False)

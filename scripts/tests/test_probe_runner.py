@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import pathlib
 import plistlib
 import re
@@ -180,12 +181,13 @@ fi
             shims = root / "bin"
             shims.mkdir()
             self.make_xcodebuild_shim(shims)
+            pinned = json.loads((ROOT / "notes/current-state.json").read_text())["probeBaselines"]["tool-hosted-current-simulator"]
             selector = shims / "xcrun"
             selector.write_text(
                 f"#!{sys.executable}\nimport json,sys\n"
-                "runtime='com.apple.CoreSimulator.SimRuntime.iOS-27-2'\n"
-                "print(json.dumps({'devices':{runtime:[{'name':'iPhone Discovered','udid':'discovered-device','isAvailable':True}]}} "
-                "if 'devices' in sys.argv else {'runtimes':[{'identifier':runtime,'version':'27.2','buildversion':'new','isAvailable':True}]}))\n"
+                f"runtime='com.apple.CoreSimulator.SimRuntime.iOS-{pinned['osVersion'].replace('.', '-')}'\n"
+                f"print(json.dumps({{'devices':{{runtime:[{{'name':{pinned['device']!r},'udid':'discovered-device','isAvailable':True}}]}}}} "
+                f"if 'devices' in sys.argv else {{'runtimes':[{{'identifier':runtime,'version':{pinned['osVersion']!r},'buildversion':{pinned['osBuild']!r},'isAvailable':True}}]}}))\n"
             )
             selector.chmod(0o755)
             command_log = root / "simulator-command.txt"

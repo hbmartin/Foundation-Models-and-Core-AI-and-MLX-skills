@@ -24,7 +24,7 @@ Two floors *inside* that floor matter here:
   `Package.swift:57-63`). Adding `CoreAILM` to your app target
   pulls a C++ dependency in whether or not you ever call `@Generable`.
 
-Package implementation citations below retain the inspected `coreai-models` revision `5ed9981` (2026-07-23). They describe that source snapshot. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Package implementation citations below retain the inspected `coreai-models` revision `5ed9981` (2026-07-23). They describe that source snapshot. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ---
 

@@ -27,7 +27,7 @@ The `coreai-models` export profile also requires `torchao<0.18`; it is narrower 
 
 Use the cited SDK declarations and pinned Apple package implementations for signatures. The [native evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) identifies the exact converter, compression profile, and fixture tested; it does not attest the complete LLM deployment path on every device.
 
-`john-rocky/coreai-model-zoo` and `lucasnewman/mlx2coreai` are community projects. Their performance figures are observations with uncontrolled load and thermal conditions, not universal capacity or speed guarantees. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+`john-rocky/coreai-model-zoo` and `lucasnewman/mlx2coreai` are community projects. Their performance figures are observations with uncontrolled load and thermal conditions, not universal capacity or speed guarantees. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## What this covers
 

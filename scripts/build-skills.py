@@ -116,12 +116,16 @@ with the claim into anything you say, write, or put in a code comment.
 """
 
 READ_PROTOCOL = """\
-Use the triage table for tasks and the linked guide list below to resolve `N.M`
-labels. For a symbol or symptom, search the bundled guides under `references/`.
-Use the matching guide's contents or headings to locate the relevant section,
-then open only that section. Guide evidence establishes API availability;
-absence from a search does not prove an API is unavailable.
+Use triage for tasks and the linked guide list to resolve `N.M` labels. For a symbol
+or symptom, search the owned deep guides first; use shared part READMEs for orientation.
+Use the matching guide's contents or headings, then open only the relevant section.
+Cited SDK interfaces and headers establish API availability. RECONSTRUCTED spellings
+remain provisional and GAP claims remain unverified; preserve those qualifications.
+An unsuccessful local search does not establish unavailability. Use the website indexes
+below or route to the owning sibling skill. Read [offline conventions](references/CONVENTIONS.md)
+for source precedence and measurement attribution.
 """
+
 
 
 class SkillError(RuntimeError):
@@ -639,6 +643,11 @@ def resolve_destination(
 
     if is_within(target, source_root):
         relative = target.relative_to(source_root).as_posix()
+        convention_anchors = {"editorial-conventions", "evidence-conventions", "version-floor",
+                              "measurement-attribution", "defect-state-and-resolution", "precedence-when-sources-conflict"}
+        if relative == "README.md" and fragment in convention_anchors:
+            inside = posixpath.relpath("references/CONVENTIONS.md", output_dir or ".")
+            return f"{inside}#{fragment}"
         if relative in owned:
             inside = posixpath.relpath(f"references/{relative}", output_dir or ".")
             return f"{inside}#{fragment}" if fragment else inside
@@ -727,6 +736,30 @@ def render_trigger_evals(spec: SkillSpec) -> str:
         for query, should_trigger in spec.trigger_evals
     ]
     return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
+def conventions_text(source_root: Path) -> str:
+    text = (source_root / "README.md").read_text(encoding="utf-8")
+    _, sections = split_sections(text)
+    by_heading = dict(sections)
+    if not {"Evidence conventions", "Editorial conventions"} <= by_heading.keys():
+        raise SkillError("series README must retain evidence and editorial conventions")
+    lines = ["# Evidence and editorial conventions", ""]
+    if "Evidence conventions" in by_heading:
+        lines += ["## Evidence conventions", "", *by_heading["Evidence conventions"]]
+    lines += ["## Editorial conventions", ""]
+    editorial = by_heading.get("Editorial conventions", [])
+    selected = {"Version floor", "Measurement attribution", "Defect state and resolution", "Precedence when sources conflict"}
+    present = {line[4:].strip() for line in editorial if line.startswith("### ")}
+    if not selected <= present:
+        raise SkillError(f"series README missing convention sections: {sorted(selected - present)}")
+    active = False
+    for line in editorial:
+        if line.startswith("### "):
+            active = line[4:].strip() in selected
+        if active:
+            lines.append(line)
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def render_skill_md(
@@ -897,6 +930,11 @@ def build_skills(
     date = generation_date()
     pages = discover_pages(source_root)
     repository_url, branch, specs = load_manifest(manifest_path, pages)
+    repository = json.loads(manifest_path.read_text())["repository"]
+    website_url = repository.get("site_url", "")
+    if not isinstance(website_url, str) or website_url and not website_url.startswith(("https://", "http://")):
+        raise SkillError("repository.site_url must be an HTTP(S) URL")
+    website_url = website_url.rstrip("/")
 
     routers: dict[int, PartRouter] = {}
     for page in pages:
@@ -913,14 +951,13 @@ def build_skills(
             owned_pages = [page for page in pages if owns_page(spec, page)]
             # Every owned page is bundled so an installed skill remains complete
             # without a network connection. Reference ownership is disjoint; the
-            # shared part READMEs are the only intentional overlap.
-            bundled_pages = owned_pages
-            owned = {page.relative for page in bundled_pages}
+            # shared part READMEs and offline conventions intentionally overlap.
+            owned = {page.relative for page in owned_pages}
             skill_dir = staged / spec.name
             (skill_dir / "references").mkdir(parents=True)
             spec_routers = [routers[part] for part in sorted(spec.owns)]
 
-            for page in bundled_pages:
+            for page in owned_pages:
                 destination = skill_dir / "references" / page.relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_text(
@@ -948,7 +985,19 @@ def build_skills(
                 )
                 return GUIDE_LINK.sub(r"\1", rewritten)
 
-            write(skill_dir / "SKILL.md", render_skill_md(spec, spec_routers, to_root))
+            router_text = render_skill_md(spec, spec_routers, to_root)
+            api_url = f"{website_url}/API-INDEX/" if website_url else f"{repository_url}/blob/{branch}/guides/API-INDEX.md"
+            failures_url = f"{website_url}/SILENT-FAILURES/" if website_url else f"{repository_url}/blob/{branch}/guides/SILENT-FAILURES.md"
+            indexes = ("\n## Website lookup fallback\n\n"
+                       f"- [API and symbol index]({api_url})\n"
+                       f"- [Silent-failure index]({failures_url})\n")
+            if spec.name == "apple-on-device-ai":
+                indexes += "\n## Route to the owning skill\n\n| Skill | Use for |\n|---|---|\n"
+                for sibling in specs:
+                    if sibling.name != spec.name:
+                        indexes += f"| `{sibling.name}` | {sibling.short_description} |\n"
+            write(skill_dir / "SKILL.md", router_text + indexes)
+            write(skill_dir / "references/CONVENTIONS.md", conventions_text(source_root))
             write(skill_dir / "agents" / "openai.yaml", render_openai_yaml(spec))
             write(
                 skill_dir / "evals" / "eval_queries.json",

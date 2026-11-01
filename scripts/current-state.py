@@ -190,6 +190,11 @@ def load_manifest(path: pathlib.Path) -> dict:
         require_iso_date(
             release["released"], f"current-state latestObserved {name!r} release date"
         )
+        if "reviewedBuilds" in release:
+            builds = release["reviewedBuilds"]
+            if (not isinstance(builds, list) or not builds or release["build"] not in builds
+                    or not all(isinstance(build, str) and build for build in builds)):
+                raise SystemExit(f"error: current-state latestObserved {name!r} has invalid reviewedBuilds")
         if not str(release["sourceUrl"]).startswith(("https://", "http://")):
             raise SystemExit(f"error: current-state latestObserved {name!r} lacks dated source evidence")
     latest_sdks = require_object(latest, "sdks", {"macosx", "iphoneos"})

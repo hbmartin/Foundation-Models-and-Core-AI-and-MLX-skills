@@ -1,8 +1,8 @@
 # API & symbol index
 
-**1200 symbols referenced across the series, by framework — with where each is covered and whether it appears in the captured 26.x / 27.x SDK interfaces.**
+**1202 symbols referenced across the series, by framework — with where each is covered and whether it appears in the captured 26.x / 27.x SDK interfaces.**
 
-> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding `.swiftinterface` in `notes/sdk-interfaces/`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-10-30; regenerate rather than hand-edit.
+> `26.x` / `27.x` aggregate all captured minor versions of each SDK family, including 27.2. A `✓` means the leading type name appears in at least one corresponding `.swiftinterface` in `notes/sdk-interfaces/`; it does not establish a minimum SDK or OS version, or imply presence in 27.0. Check the guide's availability notes and the versioned capture before choosing a deployment target. Dotted uppercase type paths must be one contiguous subpath of a qualified or declared type chain. A longer chain may prove any contiguous type subpath, but `::` module qualifiers never become nested types. Lowercase members are not signature-matched — the guides carry signature-level citations. Package types (MLX, `ChatCompletionsLanguageModel`, …) and C/ObjC-only API legitimately show neither. Generated 2026-11-01; regenerate rather than hand-edit.
 
 
 ## FoundationModels  <sub>165 symbols</sub>
@@ -175,7 +175,7 @@
 | `TranscriptRecorder` |  |  | [3.4](part-03-context-profiles-agentic/references/04-agentic-orchestration.md), [5.README](part-05-prototyping-profiling-non-swift/README.md) |
 | `UnavailableReason` | ✓ | ✓ | [2.6](part-02-foundation-models-everyday-api/references/06-availability-errors-and-guardrails.md), [1.1](part-01-orientation-and-gating/references/01-apple-ai-stack-2026-map.md), [1.2](part-01-orientation-and-gating/references/02-platform-and-version-gating.md) |
 
-## CoreAI  <sub>73 symbols</sub>
+## CoreAI  <sub>74 symbols</sub>
 
 | Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
@@ -199,6 +199,7 @@
 | `AIModelCache.default.model(for:options:)` |  | ✓ | [10.2](part-10-coreai-hardware-authoring-debugging/references/02-debugging-and-profiling.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
 | `AIModelCache.model(for:options:)` |  | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.5](part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md) +1 more |
 | `AIModelCache.Policy` |  | ✓ | [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md), [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md) |
+| `AIModelCache.Policy.persistent` |  | ✓ | [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [17.5](part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md), [17.6](part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md) |
 | `AIModelCacheError.failedToPurge` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `AIModelError` |  |  | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md) +2 more |
 | `AssetError` | ✓ | ✓ | [7.1](part-07-coreai-swift-runtime/references/01-runtime-and-ndarray.md), [7.README](part-07-coreai-swift-runtime/README.md), [7.2](part-07-coreai-swift-runtime/references/02-specialization-caching-and-aot.md), [9.3](part-09-coreai-compression-numerics/references/03-numeric-formats-across-the-stack.md) +6 more |
@@ -481,7 +482,7 @@
 | `URLSessionConfiguration.default` |  |  | [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [15.1](part-15-shipping-and-operating/references/01-model-distribution-and-updates.md) |
 | `UUID` | ✓ | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md), [4.4](part-04-beyond-the-built-in-model/references/04-executor-lifecycle-and-kv-reuse.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 
-## other  <sub>784 symbols</sub>
+## other  <sub>785 symbols</sub>
 
 | Symbol | 26.x | 27.x | Covered in |
 |---|:-:|:-:|---|
@@ -704,6 +705,7 @@
 | `EvaluatorProtocol` |  | ✓ | [6.3](part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `Evaluators` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md), [17.2](part-17-migration-from-pre-ios-27/references/02-adapter-sunset.md) |
 | `EvaluatorsBuilder` |  | ✓ | [17.3](part-17-migration-from-pre-ios-27/references/03-error-taxonomy-migration.md), [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md) |
+| `@EvaluatorsBuilder` |  | ✓ | [6.1](part-06-evaluations/references/01-foundations-and-hill-climbing.md), [6.2](part-06-evaluations/references/02-model-judges-and-alignment.md) |
 | `EventEntity` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `EventEntityStatus` |  | ✓ | [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `Exception` |  |  | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) |
@@ -1250,7 +1252,7 @@
 | `UserInput` |  |  | [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.README](part-13-mlx-swift/README.md) |
 | `UserInputProcessor` |  |  | [13.3](part-13-mlx-swift/references/03-fm-bridge-and-guided-generation.md), [13.1](part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md), [13.2](part-13-mlx-swift/references/02-generation-tools-and-caching.md) |
 | `UserWarning` |  |  | [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md), [8.README](part-08-coreai-pytorch-conversion/README.md) +3 more |
-| `UTType` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md) |
+| `UTType` | ✓ | ✓ | [2.5](part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md), [17.1](part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md), [4.3](part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md), [16.3](part-16-adjacent-capabilities/references/03-onscreen-awareness.md) |
 | `Value` | ✓ | ✓ | [8.2](part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md), [2.4](part-02-foundation-models-everyday-api/references/04-spotlight-rag-and-system-tools.md), [16.2](part-16-adjacent-capabilities/references/02-app-schema-domains.md) |
 | `ValueError` |  |  | [9.2](part-09-coreai-compression-numerics/references/02-palettization-pruning-and-joint.md), [9.1](part-09-coreai-compression-numerics/references/01-quantization.md), [8.1](part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md), [5.2](part-05-prototyping-profiling-non-swift/references/02-fm-cli-and-python-sdk.md) +11 more |
 | `Variant` |  | ✓ | [7.4](part-07-coreai-swift-runtime/references/04-bundles-engines-and-guided-decoding.md) |

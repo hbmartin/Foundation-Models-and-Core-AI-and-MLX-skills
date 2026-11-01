@@ -49,7 +49,7 @@ Related references: [`04-executor-lifecycle-and-kv-reuse.md`](04-executor-lifecy
 5. [Capabilities: four flags that route requests](#5-capabilities-four-flags-that-route-requests)
 6. [Reading a request: all seven fields](#6-reading-a-request-all-seven-fields)
 7. [`ContextOptions` vs `GenerationOptions` — the split that matters](#7-contextoptions-vs-generationoptions--the-split-that-matters)
-8. [Transcript translation: six entries in, your roles out](#8-transcript-translation-six-entries-in-your-roles-out)
+8. [Transcript translation: entries in, your roles out](#8-transcript-translation-entries-in-your-roles-out)
 9. [The generation channel: what flows out](#9-the-generation-channel-what-flows-out)
 10. [The prescribed event order — and why not to follow it literally](#10-the-prescribed-event-order--and-why-not-to-follow-it-literally)
 11. [Errors: approximate or throw](#11-errors-approximate-or-throw)
@@ -1427,7 +1427,7 @@ who may know their model responds better to one or the other — control it.
 
 ---
 
-## 8. Transcript translation: six entries in, your roles out
+## 8. Transcript translation: entries in, your roles out
 
 This is the part of a provider package that is genuinely yours. The framework has one vocabulary;
 your model has another; your executor is the dictionary.
@@ -1438,7 +1438,7 @@ your model has another; your executor is the dictionary.
 > **the same translation runs in reverse: your messages back to transcript entries, streamed to the
 > session.**"*
 
-### 8.1 The six entry types
+### 8.1 Entry types by SDK version
 
 > ✅ **VERIFIED** — `SKILL.md:502-511`, verbatim, with Apple's own comments:
 >
@@ -1458,6 +1458,13 @@ your model has another; your executor is the dictionary.
 > switch (`:482-557`), and MLX's `TranscriptConverter` switch
 > (`TranscriptConverter.swift:26-113`). The enum is **non-frozen** — every switch over it in shipping
 > code carries an `@unknown default` or a `default`.
+
+
+✅ **SDK-verified 27.2 update** — `FoundationModels-27.2-macos.swiftinterface:2332-2371`
+adds `.data(Transcript.DataEntry)`: seven entry cases now exist. The six-case quotation above
+is historical. A provider that cannot translate typed data must throw an explicit error.
+`supportsDataEntryType(_:)` advertises support for a `UTType`; runtime acceptance is still
+model-specific. New spellings need the module 2.1 compile gate and OS 27.2 runtime availability.
 
 ### 8.2 The mapping is yours, and Apple says so
 
@@ -1488,6 +1495,8 @@ The complete entry loop, verbatim from
 have:
 
 ```swift prelude:guide-context
+enum TranscriptTranslationError: Error { case unsupportedEntry, unsupportedAttachment }
+
 var messages: [ChatCompletionsClient.ChatMessage] = []
 // Reasoning entries are buffered and attached to the next assistant
 // message (response or toolCalls) via `reasoning_content`. If a turn
@@ -1572,8 +1581,12 @@ for entry in entries {
     }.joined()
     pendingReasoning = (pendingReasoning ?? "") + text
 
+  #if canImport(FoundationModels, _version: 2.1)
+  case .data:
+    throw TranscriptTranslationError.unsupportedEntry
+  #endif
   @unknown default:
-    continue
+    throw TranscriptTranslationError.unsupportedEntry
   }
 }
 

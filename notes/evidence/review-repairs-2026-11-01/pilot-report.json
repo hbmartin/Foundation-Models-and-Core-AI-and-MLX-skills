@@ -1,0 +1,180 @@
+{
+  "findings": [],
+  "mode": "weekly",
+  "outcome": "blocked",
+  "reportedAt": "2026-11-01T16:51:40Z",
+  "runId": "review-repairs-pilot-verified-20261101",
+  "schemaVersion": 1,
+  "sourceWatch": null,
+  "steps": [
+    {
+      "error": "remote PR check and ref refresh explicitly skipped; using recorded local ref",
+      "name": "remote-preparation-coverage",
+      "status": "blocked"
+    },
+    {
+      "error": "GitHub defect lookups explicitly skipped",
+      "name": "defects",
+      "status": "blocked"
+    },
+    {
+      "command": [
+        "./scripts/current-state.py",
+        "collect",
+        "--output",
+        "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/observed-state.json"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:49:44Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/current-state.log",
+      "name": "current-state",
+      "startedAt": "2026-11-01T16:49:41Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/current-state.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/current-state.stdout"
+    },
+    {
+      "artifact": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/observed-state.json",
+      "name": "observed-state",
+      "status": "passed"
+    },
+    {
+      "command": [
+        "xcodebuild",
+        "-version"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:49:45Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/xcode.log",
+      "name": "xcode",
+      "startedAt": "2026-11-01T16:49:44Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/xcode.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/xcode.stdout"
+    },
+    {
+      "command": [
+        "sw_vers"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:49:45Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/os.log",
+      "name": "os",
+      "startedAt": "2026-11-01T16:49:45Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/os.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/os.stdout"
+    },
+    {
+      "command": [
+        "xcrun",
+        "--no-cache",
+        "--find",
+        "fm"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:49:46Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-path.log",
+      "name": "fm-path",
+      "startedAt": "2026-11-01T16:49:45Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-path.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-path.stdout"
+    },
+    {
+      "command": [
+        "/usr/bin/fm",
+        "--help"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:49:46Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-help.log",
+      "name": "fm-help",
+      "startedAt": "2026-11-01T16:49:46Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-help.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/fm-help.stdout"
+    },
+    {
+      "error": "official-source checks explicitly skipped",
+      "name": "official-sources",
+      "status": "blocked"
+    },
+    {
+      "command": [
+        "env",
+        "AUTOMATION_ID=weekly-improvements",
+        "PROBE_ARTIFACT_ROOT=/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/probe-artifacts",
+        "PROBE_RUN_ID=review-repairs-pilot-verified-20261101-host",
+        "./scripts/run-probes.sh",
+        "host"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:50:31Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/host-probes.log",
+      "name": "host-probes",
+      "startedAt": "2026-11-01T16:49:46Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/host-probes.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/host-probes.stdout"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/simulator_destination.py",
+        "--json"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:50:32Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-destination.log",
+      "name": "simulator-destination",
+      "startedAt": "2026-11-01T16:50:31Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-destination.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-destination.stdout"
+    },
+    {
+      "command": [
+        "env",
+        "AUTOMATION_ID=weekly-improvements",
+        "PROBE_ARTIFACT_ROOT=/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/probe-artifacts",
+        "PROBE_RUN_ID=review-repairs-pilot-verified-20261101-simulator",
+        "./scripts/run-probes.sh",
+        "simulator",
+        "--destination",
+        "platform=iOS Simulator,id=31B09574-9781-45A7-816D-6A1916E1BA16"
+      ],
+      "error": null,
+      "exitCode": 0,
+      "finishedAt": "2026-11-01T16:51:39Z",
+      "log": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-probes.log",
+      "name": "simulator-probes",
+      "startedAt": "2026-11-01T16:50:32Z",
+      "status": "passed",
+      "stderr": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-probes.stderr",
+      "stdout": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/logs/simulator-probes.stdout"
+    },
+    {
+      "error": "mirror fetches explicitly skipped",
+      "name": "research-mirrors",
+      "status": "blocked"
+    },
+    {
+      "error": "documentation fetches explicitly skipped",
+      "name": "apple-docs-watch",
+      "status": "blocked"
+    },
+    {
+      "candidateActions": 0,
+      "name": "thread-review",
+      "status": "passed"
+    }
+  ]
+}

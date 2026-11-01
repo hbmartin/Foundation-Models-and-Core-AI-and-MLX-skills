@@ -13,7 +13,7 @@ machine learning workloads with the M5 and A19 GPUs"*, quoted in
 the shipped Xcode 26.6 SDK annotates the relevant TensorOps symbols with a 26.2 deployment macro.
 Both statements are true and they are about different things — §11 untangles them.
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 

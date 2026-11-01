@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-11-01",
+  "scope": "Accepted repairs and explicitly preserved design choices from the supplied review comments",
+  "findings": [
+    {
+      "id": "api-family-index",
+      "comment": "guides/API-INDEX.md:149",
+      "disposition": "qualified",
+      "fix": "Label the intentional aggregate columns 26.x/27.x and document that they indicate family visibility, rather than claiming an exact 27.0 floor.",
+      "files": [
+        "guides/API-INDEX.md",
+        "scripts/extract-symbols.py"
+      ],
+      "validation": "Clean index regeneration"
+    },
+    {
+      "id": "current-runtime-evidence",
+      "comment": "probes/README.md:4",
+      "disposition": "accepted",
+      "fix": "Reconstruct the October 30 host/simulator observations from retained logs and refresh runtime-current with provenance and topology, without transferring historical defaults.",
+      "files": [
+        "notes/evidence/runtime-current.json",
+        "scripts/refresh-release-evidence.py"
+      ],
+      "validation": "Raw-log reconciliation tests"
+    },
+    {
+      "id": "evaluation-requirements-and-drift",
+      "comment": "guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md:231",
+      "disposition": "accepted",
+      "fix": "Record the name requirement and surviving default implementation, the get-only reportMetadata accessor, and scoped protocol requirements in interface drift.",
+      "files": [
+        "scripts/interface_drift.py",
+        "notes/sdk-interfaces/README.md",
+        "guides/part-06-evaluations/references/01-foundations-and-hill-climbing.md"
+      ],
+      "validation": "Requirement/accessor drift fixtures; snippet compilation"
+    },
+    {
+      "id": "snippet-report-reconciliation",
+      "comment": "notes/snippet-verification/report.md:15",
+      "disposition": "accepted",
+      "fix": "Restore the reconciliation preamble, retain immutable partial output, and explain the merged 184/2/0 ledger and unavailable SDK-26 coverage.",
+      "files": [
+        "scripts/reconcile-snippets.py",
+        "notes/snippet-verification/report.md"
+      ],
+      "validation": "Identity/hash reconciliation tests"
+    },
+    {
+      "id": "edited-availability-strings",
+      "comment": "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md:78",
+      "disposition": "accepted",
+      "fix": "Describe edited platform strings as summaries and preserve historical source dates.",
+      "files": [
+        "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md"
+      ],
+      "validation": "Strict documentation build"
+    },
+    {
+      "id": "transcript-inventories-and-data",
+      "comment": "guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md:174",
+      "disposition": "accepted",
+      "fix": "Distinguish 27.0 and 27.2 entry/attachment counts; explicitly reject unsupported data and unknown entries in translation.",
+      "files": [
+        "guides/part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md",
+        "guides/part-02-foundation-models-everyday-api/references/05-image-input-and-attachments.md",
+        "guides/part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md",
+        "guides/part-04-beyond-the-built-in-model/references/03-authoring-a-languagemodel-provider.md"
+      ],
+      "validation": "Available-SDK snippet compilation; controlled gate fixture"
+    },
+    {
+      "id": "data-capability-queries",
+      "comment": "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md:85",
+      "disposition": "accepted",
+      "fix": "Document supportsDataEntryType and supportsDataAttachmentType, with SDK and runtime gates.",
+      "files": [
+        "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md"
+      ],
+      "validation": "SDK compatibility type checks"
+    },
+    {
+      "id": "sdk-27-2-floor",
+      "comment": "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md:93",
+      "disposition": "accepted",
+      "fix": "Add the 27.2 floor and verified canImport module-version gate independently of platform availability.",
+      "files": [
+        "guides/part-17-migration-from-pre-ios-27/references/01-what-changed-checklist.md",
+        "scripts/verify-sdk-compatibility.py"
+      ],
+      "validation": "Controlled module 2.0.68 and 2.1.14 compiles"
+    },
+    {
+      "id": "app-intents-inlined-changes",
+      "comment": "notes/sdk-interfaces/README.md:208",
+      "disposition": "accepted",
+      "fix": "Document the CustomReaction schema ID, new inputConnectionBehavior initializers and caseDisplayRepresentations; retain inlined bodies in drift.",
+      "files": [
+        "notes/sdk-interfaces/README.md",
+        "scripts/interface_drift.py"
+      ],
+      "validation": "Inlined-body and retained-evidence tests"
+    },
+    {
+      "id": "persistent-tvos-restriction",
+      "comment": "notes/sdk-interfaces/README.md:209",
+      "disposition": "accepted",
+      "fix": "Name the persistent policy restriction, update four guides, and guard executable samples on tvOS.",
+      "files": [
+        "notes/sdk-interfaces/README.md",
+        "scripts/verify-sdk-compatibility.py"
+      ],
+      "validation": "macOS and tvOS policy compilation; fresh snippet verdicts"
+    },
+    {
+      "id": "order-independent-interface-evidence",
+      "comment": "notes/evidence/release-27.2/interface-drift.json:10",
+      "disposition": "accepted",
+      "fix": "Use one scoped declaration comparator for scripts and retained evidence; ignore order/spelling noise while retaining meaningful accessors, availability, conformances and client bodies.",
+      "files": [
+        "scripts/interface_drift.py",
+        "scripts/diff-interfaces.sh",
+        "notes/evidence/release-27.2/interface-drift.json"
+      ],
+      "validation": "Reordering, accessor, conformance and inlined-body fixtures"
+    },
+    {
+      "id": "complete-probe-evidence",
+      "comment": "notes/evidence/release-27.2/probe-results.json:21",
+      "disposition": "accepted",
+      "fix": "Use a shared parser and retain details, skip reasons, exclusions, run directories, source hashes and complete topology.",
+      "files": [
+        "scripts/probe_evidence.py",
+        "scripts/freshness_jobs.py",
+        "notes/evidence/release-27.2/probe-results.json"
+      ],
+      "validation": "Raw-log reconciliation and live isolated pilot"
+    },
+    {
+      "id": "mpp-availability-defines",
+      "comment": "notes/evidence/release-27.2/mpp-header-provenance.json:27",
+      "disposition": "accepted",
+      "fix": "Capture availability #define directives as well as #if directives, verifying header hashes first.",
+      "files": [
+        "scripts/refresh-release-evidence.py",
+        "notes/evidence/release-27.2/mpp-header-provenance.json"
+      ],
+      "validation": "Retained MPP availability tests"
+    },
+    {
+      "id": "snippet-location-provenance",
+      "comment": "notes/evidence/release-27.2/swift-results.tsv:278",
+      "disposition": "qualified",
+      "fix": "Keep valid historical hash-based attestations and original partial runs; freshly compile changed executable samples and refresh current locations separately.",
+      "files": [
+        "scripts/reconcile-snippets.py",
+        "notes/snippet-verification/target-provenance.json",
+        "notes/evidence/review-repairs-2026-11-01/results.tsv"
+      ],
+      "validation": "Fresh available-target compile; reconciliation tests"
+    },
+    {
+      "id": "missing-stacked-pr-base",
+      "comment": "scripts/tests/test_verify_snippets.py:675",
+      "disposition": "qualified",
+      "fix": "Fetch the explicitly intended missing PR base and fail clearly if unavailable; retain the isolated origin/HEAD test without silently substituting it.",
+      "files": [
+        "scripts/verify-snippets.py",
+        "scripts/tests/test_verify_snippets.py"
+      ],
+      "validation": "Populated GITHUB_BASE_REF fetch and failure tests"
+    },
+    {
+      "id": "runner-finalization-refusal",
+      "comment": "scripts/freshness_jobs.py:466",
+      "disposition": "accepted",
+      "fix": "Record refusal, finalize as blocked, and tear down unless there is an explicitly recorded review handoff or genuine recoverable cleanup failure.",
+      "files": [
+        "scripts/freshness_jobs.py",
+        "scripts/freshness-cycle.py"
+      ],
+      "validation": "Finalization-refusal fault injection"
+    },
+    {
+      "id": "unguarded-post-prepare-operations",
+      "comment": "scripts/freshness_jobs.py:430",
+      "disposition": "accepted",
+      "fix": "Guard resource ownership across manifest/state reads, Runner construction, writes, collection and finalization using in-memory preparation identity.",
+      "files": [
+        "scripts/freshness_jobs.py",
+        "scripts/freshness-cycle.py"
+      ],
+      "validation": "Manifest, baseline, actions, preflight and authority fault injection"
+    },
+    {
+      "id": "source-consumer-state",
+      "comment": "scripts/freshness_jobs.py:263",
+      "disposition": "accepted",
+      "fix": "Separate daily/weekly consumers and isolate unnamed manual runs; retain reviewed/latest/pending state with serialized exact-capture acknowledgment and unreviewed legacy migration.",
+      "files": [
+        "scripts/source_watch.py",
+        "scripts/freshness_jobs.py",
+        "automations/contracts/daily-corpus-freshness-sweep.toml",
+        "automations/contracts/weekly-corpus-freshness-batch.toml"
+      ],
+      "validation": "Retention, isolation, migration, durability and stale-ack tests"
+    },
+    {
+      "id": "release-version-normalization",
+      "comment": "scripts/freshness_jobs.py:257",
+      "disposition": "accepted",
+      "fix": "Normalize numeric aliases and prerelease stages/numbers before release comparison.",
+      "files": [
+        "scripts/freshness_jobs.py"
+      ],
+      "validation": "Equivalent spelling and prerelease ranking tests"
+    },
+    {
+      "id": "findings-finalization",
+      "comment": "scripts/freshness_jobs.py:465",
+      "disposition": "accepted",
+      "fix": "Add findings as a completed-collection outcome; update lastCollectedRun, retain pending, and preserve lastSuccessfulRun.",
+      "files": [
+        "scripts/freshness-cycle.py",
+        "scripts/freshness_jobs.py"
+      ],
+      "validation": "Findings authority-state test"
+    },
+    {
+      "id": "independent-collection-lanes",
+      "comment": "scripts/freshness_jobs.py:256",
+      "disposition": "accepted",
+      "fix": "Validate nested input shapes and isolate lane errors while propagating interruptions to teardown.",
+      "files": [
+        "scripts/freshness_jobs.py"
+      ],
+      "validation": "Malformed-lane continuation and interruption tests"
+    },
+    {
+      "id": "same-version-build-sets",
+      "comment": "scripts/freshness_jobs.py:257 (respins)",
+      "disposition": "accepted",
+      "fix": "Report changed/ambiguous same-version build sets with publication evidence even when the old build remains; reviewedBuilds is an explicit repository baseline.",
+      "files": [
+        "scripts/freshness_jobs.py",
+        "scripts/current-state.py"
+      ],
+      "validation": "Simultaneous builds, retained-old-build respin and explicit review tests"
+    },
+    {
+      "id": "documentation-findings-and-offline-mode",
+      "comment": "scripts/freshness_jobs.py:349",
+      "disposition": "accepted",
+      "fix": "Treat valid complete disagreement as a finding and malformed/failed captures as blocked; skip every network lane explicitly in offline mode.",
+      "files": [
+        "scripts/freshness_jobs.py",
+        "scripts/source_watch.py"
+      ],
+      "validation": "Capture completeness/hash, disagreement and offline tests; isolated pilot"
+    },
+    {
+      "id": "stdout-stderr-contamination",
+      "comment": "scripts/freshness_jobs.py:311",
+      "disposition": "accepted",
+      "fix": "Retain separate stdout/stderr artifacts and a diagnostic log; parse paths and simulator JSON only from stdout.",
+      "files": [
+        "scripts/freshness_jobs.py"
+      ],
+      "validation": "Injected stderr warning test"
+    },
+    {
+      "id": "research-mirror-reuse",
+      "comment": "scripts/freshness_jobs.py:348",
+      "disposition": "accepted",
+      "fix": "Reuse verified pinned mirrors under the stable artifact cache rather than each disposable worktree.",
+      "files": [
+        "scripts/freshness_jobs.py"
+      ],
+      "validation": "Mirror origin/pin reuse tests"
+    },
+    {
+      "id": "automation-shared-helpers",
+      "comment": "scripts/freshness_jobs.py:30",
+      "disposition": "accepted",
+      "fix": "Reuse the existing clock and deterministic-failure validation; move cleanup ownership into cycle to remove the reverse import.",
+      "files": [
+        "scripts/freshness_jobs.py",
+        "scripts/freshness-cycle.py"
+      ],
+      "validation": "Full portable suite"
+    },
+    {
+      "id": "prepare-interruption-recovery",
+      "comment": "scripts/freshness-cycle.py:226",
+      "disposition": "accepted",
+      "fix": "Recover ordinary exceptions and interruptions from lock acquisition onward, claiming Git creation before partial resources can be left behind and masking further teardown signals.",
+      "files": [
+        "scripts/freshness-cycle.py"
+      ],
+      "validation": "Partial/complete Git-creation, post-prepare and SIGTERM tests"
+    },
+    {
+      "id": "reviewed-candidate-ref",
+      "comment": "scripts/freshness-cycle.py:201",
+      "disposition": "qualified",
+      "fix": "Preserve reviewed-candidate semantics, record requested and resolved identity, refresh explicit remote refs, and retain local/SHA semantics.",
+      "files": [
+        "scripts/freshness-cycle.py",
+        "notes/FRESHNESS-RUNBOOK.md"
+      ],
+      "validation": "Remote-ref and candidate-base tests; final candidate pilot"
+    },
+    {
+      "id": "artifact-default-root",
+      "comment": "scripts/freshness-cycle.py:867",
+      "disposition": "accepted",
+      "fix": "Use the stable primary checkout for prepare and run artifact/lock defaults.",
+      "files": [
+        "scripts/freshness-cycle.py"
+      ],
+      "validation": "Linked-worktree default-root tests"
+    },
+    {
+      "id": "pinned-simulator-topology",
+      "comment": "scripts/simulator_destination.py:33",
+      "disposition": "accepted",
+      "fix": "Require the retained SIM-27 device/version/build by default, preserve explicit destinations and include actual runtime/destination in summaries.",
+      "files": [
+        "scripts/simulator_destination.py",
+        "scripts/freshness_jobs.py",
+        "scripts/run-probes.sh"
+      ],
+      "validation": "Unavailable/future topology fixtures; pinned live pilot"
+    },
+    {
+      "id": "complete-hub-routing",
+      "comment": "notes/synthesis/skill-manifest.json:42",
+      "disposition": "accepted",
+      "fix": "Provide a compact table covering all nine sibling skills while retaining the curated related list.",
+      "files": [
+        "scripts/build-skills.py",
+        "skills/apple-on-device-ai/SKILL.md"
+      ],
+      "validation": "Hub coverage and detached-link tests"
+    },
+    {
+      "id": "availability-evidence-protocol",
+      "comment": "scripts/build-skills.py:122",
+      "disposition": "accepted",
+      "fix": "Require cited SDK/header evidence for availability and preserve reconstructed/unknown qualifications.",
+      "files": [
+        "scripts/build-skills.py"
+      ],
+      "validation": "Generated router assertions"
+    },
+    {
+      "id": "installed-index-fallbacks",
+      "comment": "scripts/build-skills.py:120",
+      "disposition": "accepted",
+      "fix": "Install direct API-index and silent-failure-index website URLs in every router.",
+      "files": [
+        "scripts/build-skills.py",
+        "notes/synthesis/skill-manifest.json"
+      ],
+      "validation": "Fallback URL tests"
+    },
+    {
+      "id": "shared-part-16-orientation",
+      "comment": "scripts/build-skills.py:913",
+      "disposition": "qualified",
+      "fix": "Preserve intentional shared Part 16 READMEs and require searching owned deep guides before shared orientation material.",
+      "files": [
+        "scripts/build-skills.py"
+      ],
+      "validation": "Shared README and search-order tests"
+    },
+    {
+      "id": "heading-based-navigation",
+      "comment": "scripts/build-skills.py:801",
+      "disposition": "preserved",
+      "fix": "Keep heading-based navigation and its fallback for guides without a Contents section.",
+      "files": [
+        "scripts/build-skills.py",
+        "scripts/tests/test_skills.py"
+      ],
+      "validation": "Router/navigation tests"
+    },
+    {
+      "id": "offline-editorial-conventions",
+      "comment": "scripts/build-skills.py:441",
+      "disposition": "accepted",
+      "fix": "Generate a compact canonical conventions reference, including source precedence and measurement attribution, and bundle it in every skill.",
+      "files": [
+        "scripts/build-skills.py",
+        "skills/apple-on-device-ai/references/CONVENTIONS.md"
+      ],
+      "validation": "Required-section, offline-link and detached-copy verification"
+    },
+    {
+      "id": "redundant-page-alias",
+      "comment": "scripts/build-skills.py:917",
+      "disposition": "accepted",
+      "fix": "Remove the redundant bundled_pages alias.",
+      "files": [
+        "scripts/build-skills.py"
+      ],
+      "validation": "Clean regeneration"
+    },
+    {
+      "id": "fenced-heading-fixture",
+      "comment": "scripts/tests/test_skills.py:331",
+      "disposition": "accepted",
+      "fix": "Put a real Markdown heading inside the fence so the anchor exclusion assertion can fail meaningfully.",
+      "files": [
+        "scripts/tests/test_skills.py"
+      ],
+      "validation": "Fenced heading test"
+    },
+    {
+      "id": "owned-router-links",
+      "comment": "scripts/tests/test_skills.py:965",
+      "disposition": "preserved",
+      "fix": "Retain the meaningful ownership test and its exact locally bundled link expectations.",
+      "files": [
+        "scripts/tests/test_skills.py"
+      ],
+      "validation": "Owned-guide routing assertions"
+    },
+    {
+      "id": "generation-dates-and-obsolete-removal",
+      "comment": "scripts/tests/test_skills.py:351",
+      "disposition": "qualified",
+      "fix": "Freeze generation dates for repeated-build comparisons and preserve the meaningful obsolete-file-removal check.",
+      "files": [
+        "scripts/tests/test_skills.py"
+      ],
+      "validation": "Determinism and obsolete-file tests"
+    },
+    {
+      "id": "regeneration-input-guidance",
+      "comment": "README.md:120",
+      "disposition": "accepted",
+      "fix": "List manifest and canonical conventions changes among regeneration inputs.",
+      "files": [
+        "README.md",
+        "scripts/build-skills.sh"
+      ],
+      "validation": "Documentation and clean regeneration"
+    },
+    {
+      "id": "symbol-extractor-cleanup",
+      "comment": "scripts/extract-symbols.py:11",
+      "disposition": "accepted",
+      "fix": "Remove obsolete caller documentation and the unused uncapped row path.",
+      "files": [
+        "scripts/extract-symbols.py"
+      ],
+      "validation": "Symbol/index and full suite"
+    },
+    {
+      "id": "independent-cli-install-coverage",
+      "comment": ".github/workflows/skills.yml:128",
+      "disposition": "preserved",
+      "fix": "Keep single-skill real CLI installations for both agents and preserve the existing CI matrix.",
+      "files": [
+        ".github/workflows/skills.yml"
+      ],
+      "validation": "Detached local verification; unchanged real CLI workflow"
+    }
+  ]
+}

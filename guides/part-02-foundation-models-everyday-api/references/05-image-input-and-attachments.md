@@ -84,7 +84,7 @@ written from memory; if a spelling is inferred rather than read, it says so.
 Two of those deserve immediate expansion.
 
 **`Attachment` is generic.** The declaration is `struct Attachment<Content>`, not `struct
-ImageAttachment`. Today the only `Content` anyone has documented is image content
+ImageAttachment`. The 27.0 surface documented here uses image content
 (`ImageAttachmentContent`), and Apple's own framing in the utilities package is unambiguous —
 the transcript-side enum is
 
@@ -94,7 +94,12 @@ public enum Attachment: Sendable, Equatable {
 }
 ```
 
-— a one-case enum, which is exactly the shape you use when you expect a second case later. Write
+— the **one-case 27.0 enum**. SDK 27.2 adds `.data(Transcript.DataAttachment)`, so the current
+enum has **two cases**. ✅ **SDK-verified** — `FoundationModels-27.2-macos.swiftinterface:2483-2501`.
+The generic attachment initializer also accepts typed data content. Query
+`supportsDataAttachmentType(_:)` for the intended `UTType` on an available 27.2 runtime.
+Guard the new SDK spellings with `canImport(FoundationModels, _version: 2.1)` and handle or
+explicitly reject data attachments; an unknown-case fallback must not silently discard them. Write
 your `switch` over `Transcript.Segment` and `Transcript.Attachment` with a `@unknown default` from
 day one. (✅ verified: `skills/foundation-models-language-model-protocol/SKILL.md:455-463` in
 `github.com/apple/foundation-models-utilities`.)
@@ -862,7 +867,7 @@ init(id:content:label:)
 var content
 var label
 
-// Transcript.Attachment  — one-case enum today
+// Transcript.Attachment — historical 27.0 shape; 27.2 also has .data(DataAttachment)
 public enum Attachment: Sendable, Equatable {
   case image(ImageAttachment)
 }

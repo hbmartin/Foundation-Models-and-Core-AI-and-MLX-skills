@@ -67,7 +67,7 @@ Related references: [Part 2 guide 04 — Local RAG with `SpotlightSearchTool`](h
 
 The session-246 sample `LLMSearchUsingCoreSpotlightApp` supplies the search and hydration patterns (iOS 27, Swift 6). Entity indexing uses Apple's documentation and session-343 excerpts; community behavioral observations remain attributed beside the affected advice.
 
-SDK citations retain the 2026-07-29 macOS captures for AppIntents, CoreSpotlight, and `_CoreSpotlight_FoundationModels` from SDKs 26.5 and 27 beta. Swift interfaces omit Objective-C declarations, so absence does not invalidate the sample's delegate/property APIs. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+SDK citations retain the 2026-07-29 macOS captures for AppIntents, CoreSpotlight, and `_CoreSpotlight_FoundationModels` from SDKs 26.5 and 27 beta. Swift interfaces omit Objective-C declarations, so absence does not invalidate the sample's delegate/property APIs. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 

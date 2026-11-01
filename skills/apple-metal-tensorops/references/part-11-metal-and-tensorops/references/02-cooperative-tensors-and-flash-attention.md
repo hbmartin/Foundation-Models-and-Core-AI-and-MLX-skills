@@ -316,7 +316,7 @@ when you need older deployment or custom layout/control.[^metal27-multiplane]
 
 ### 0.4 How to read the evidence markers in this guide
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Header/source citations attest individual symbols; a reconstructed block does not establish a tested complete kernel. Header typos and transcript disagreements are flagged where they affect the example.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). Header/source citations attest individual symbols; a reconstructed block does not establish a tested complete kernel. Header typos and transcript disagreements are flagged where they affect the example.
 
 ## §1 — Why cooperative tensors exist
 

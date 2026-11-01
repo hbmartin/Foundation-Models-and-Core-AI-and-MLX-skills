@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import datetime as dt
 import hashlib
 import json
@@ -27,7 +28,7 @@ from automation_policy import (
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-DEFAULT_ARTIFACT_ROOT = ROOT / "artifacts/freshness"
+DEFAULT_ARTIFACT_ROOT = primary_checkout(ROOT) / "artifacts/freshness"
 SAFE_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$")
 DISPOSITIONS = {
     "fixed", "fixed-with-residual", "merged-unreleased", "closed-unfixed",
@@ -160,9 +161,13 @@ def acquire_lock(lock_path: pathlib.Path, run_id: str) -> dict[str, Any]:
              "recoveredLock": recovered}
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     descriptor = os.open(lock_path, flags, 0o600)
-    with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-        json.dump(value, output, indent=2, sort_keys=True)
-        output.write("\n")
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            json.dump(value, output, indent=2, sort_keys=True)
+            output.write("\n")
+    except BaseException:
+        lock_path.unlink(missing_ok=True)
+        raise
     return value
 
 
@@ -180,7 +185,7 @@ def open_automation_pr(repository: pathlib.Path) -> dict[str, Any] | None:
     return None
 
 
-def prepare(args: argparse.Namespace) -> int:
+def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     if not SAFE_RUN_ID.fullmatch(args.run_id):
         raise CycleError("run id must be collision-safe ASCII without path separators")
     repository = args.repository.resolve()
@@ -189,46 +194,75 @@ def prepare(args: argparse.Namespace) -> int:
     lock_path = artifact_root / "state/weekly-improvement.lock.json"
     if run_root.exists():
         raise CycleError(f"refusing to reuse run directory {run_root}")
-    lock = acquire_lock(lock_path, args.run_id)
     worktree = (args.worktree_root or artifact_root / "worktrees").resolve() / args.run_id
     branch = f"codex/weekly-improvement-{args.run_id.lower()}"
+    if worktree.exists():
+        raise CycleError(f"worktree path already exists: {worktree}")
+    identity = git(repository, "config", "--get", "remote.origin.url")
+    manifest = {
+        "schemaVersion": 1, "runId": args.run_id, "createdAt": iso(),
+        "repository": str(repository), "repositoryIdentity": identity,
+        "baseSha": None, "requestedRef": getattr(args, "ref", None) or "origin/main",
+        "branch": branch, "branchCreated": False, "worktree": str(worktree),
+        "lockPath": str(lock_path), "recoveredLock": None,
+        "status": "preparing", "remoteChecksSkipped": bool(getattr(args, "skip_fetch", False)),
+    }
     try:
+        lock = acquire_lock(lock_path, args.run_id)
+        manifest["recoveredLock"] = lock.get("recoveredLock")
+        atomic_json(run_root / "run.json", manifest)
         if not args.skip_remote_check:
             existing = open_automation_pr(repository)
             if existing:
                 raise CycleError(f"automation PR already open: {existing['url']}")
-        git(repository, "fetch", "origin", "main")
+        if not getattr(args, "skip_fetch", False):
+            git(repository, "fetch", "origin", "main")
         ref = getattr(args, "ref", None) or "origin/main"
+        remote_prefix = "refs/remotes/origin/" if ref.startswith("refs/remotes/origin/") else "origin/"
+        if ref.startswith(remote_prefix) and ref != "origin/main" and not getattr(args, "skip_fetch", False):
+            remote_branch = ref.removeprefix(remote_prefix)
+            git(repository, "fetch", "origin", f"+refs/heads/{remote_branch}:refs/remotes/origin/{remote_branch}")
         base_sha = git(repository, "rev-parse", f"{ref}^{{commit}}")
-        if worktree.exists():
-            raise CycleError(f"worktree path already exists: {worktree}")
+        manifest["baseSha"] = base_sha
         worktree.parent.mkdir(parents=True, exist_ok=True)
+        if git(repository, "show-ref", "--verify", f"refs/heads/{branch}", check=False):
+            raise CycleError(f"automation branch already exists: {branch}")
+        # Claim creation before invoking Git: termination can occur after Git
+        # creates the branch/worktree but before the subprocess returns.
+        manifest["branchCreated"] = True
+        atomic_json(run_root / "run.json", manifest)
         git(repository, "worktree", "add", "-b", branch, str(worktree), base_sha)
         for name in ("logs", "results", "probe-artifacts"):
             (run_root / name).mkdir(parents=True, exist_ok=True)
-        manifest = {
-            "schemaVersion": 1,
-            "runId": args.run_id,
-            "createdAt": iso(),
-            "repository": str(repository),
-            "repositoryIdentity": git(repository, "config", "--get", "remote.origin.url"),
-            "baseSha": base_sha,
-            "branch": branch,
-            "worktree": str(worktree),
-            "lockPath": str(lock_path),
-            "recoveredLock": lock.get("recoveredLock"),
-            "status": "prepared",
-        }
+        manifest["status"] = "prepared"
         atomic_json(run_root / "run.json", manifest)
         lock.update({"runRoot": str(run_root), "worktree": str(worktree),
                      "branch": branch, "baseSha": base_sha})
         atomic_json(lock_path, lock)
-    except Exception:
-        if worktree.exists():
-            git(repository, "worktree", "remove", "--force", str(worktree), check=False)
-        if lock_path.exists() and read_json(lock_path, {}).get("runId") == args.run_id:
-            lock_path.unlink()
+    except BaseException as error:
+        manifest["preparationError"] = str(error) or type(error).__name__
+        previous_signals = {}
+        try:
+            for number in (signal.SIGTERM, signal.SIGINT):
+                previous_signals[number] = signal.signal(number, signal.SIG_IGN)
+        except ValueError:
+            pass
+        try:
+            finalize(argparse.Namespace(run_root=run_root, outcome="blocked", pr_url=None,
+                                        state_path=None, manifest=manifest))
+        except (Exception, KeyboardInterrupt) as cleanup_error:
+            print(f"preparation recovery: {cleanup_error}", file=sys.stderr)
+        finally:
+            for number, handler in previous_signals.items():
+                signal.signal(number, handler)
         raise
+    return manifest
+
+
+def prepare(args: argparse.Namespace) -> int:
+    manifest = prepare_run(args)
+    run_root = args.artifact_root.resolve() / "weekly-improvements" / args.run_id
+    worktree, branch, base_sha = manifest["worktree"], manifest["branch"], manifest["baseSha"]
     print(json.dumps({"runRoot": str(run_root), "worktree": str(worktree),
                       "branch": branch, "baseSha": base_sha}, sort_keys=True))
     return 0
@@ -312,9 +346,7 @@ def validation_attestation(
     }
 
 
-def deterministic_failure_is_recorded(
-    value: Any, run_root: pathlib.Path, manifest: dict[str, Any],
-) -> bool:
+def deterministic_failure_shape(value: Any) -> bool:
     if not isinstance(value, dict) or set(value) != {
         "validator", "artifact", "targetSha", "failed",
     }:
@@ -325,6 +357,16 @@ def deterministic_failure_is_recorded(
         or validator not in DETERMINISTIC_VALIDATORS
     ):
         return False
+    return (value.get("failed") is True
+            and all(isinstance(value.get(k), str) for k in ("artifact", "targetSha")))
+
+
+def deterministic_failure_is_recorded(
+    value: Any, run_root: pathlib.Path, manifest: dict[str, Any],
+) -> bool:
+    if not deterministic_failure_shape(value):
+        return False
+    validator = value["validator"]
     evidence_path = artifact_path(run_root, value.get("artifact"))
     if evidence_path is None or not evidence_path.is_file():
         return False
@@ -712,15 +754,28 @@ def generated_validation_failures(worktree: pathlib.Path, paths: list[str]) -> l
     return failures
 
 
+def clean_builds(root: pathlib.Path) -> list[str]:
+    removed = []
+    for build in (root / "probe-artifacts").glob("*/Build"):
+        if build.is_symlink() or not build.resolve().is_relative_to(root.resolve()):
+            raise ValueError(f"refusing to clean build outside this run: {build}")
+        if build.is_dir():
+            shutil.rmtree(build)
+            removed.append(str(build))
+    return removed
+
+
 def finalize(args: argparse.Namespace) -> int:
     run_root = args.run_root.resolve()
-    manifest = read_json(run_root / "run.json")
+    manifest = dict(getattr(args, "manifest", None) or read_json(run_root / "run.json") or {})
     if not manifest:
         raise CycleError(f"missing run manifest in {run_root}")
     worktree = pathlib.Path(manifest["worktree"])
     repository = pathlib.Path(manifest["repository"])
     lock_path = pathlib.Path(manifest["lockPath"])
     lock = read_json(lock_path, {})
+    if not lock and not worktree.exists() and manifest.get("status") in {"no-change", "findings", "blocked", "draft", "ready"}:
+        return 0  # A completed finalization can safely be retried.
     if lock.get("runId") != manifest["runId"]:
         raise CycleError("active lock belongs to another run; refusing to finalize")
     paths = changed_paths(worktree, manifest["baseSha"]) if worktree.exists() else []
@@ -749,8 +804,8 @@ def finalize(args: argparse.Namespace) -> int:
         policy_violations.append(f"changed paths lack an eligible action: {unapproved}")
     if policy_violations and args.outcome != "blocked":
         raise CycleError("refusing to finalize: " + "; ".join(policy_violations))
-    if args.outcome == "no-change" and paths:
-        raise CycleError("no-change outcome requires a clean worktree")
+    if args.outcome in {"no-change", "findings"} and paths:
+        raise CycleError(f"{args.outcome} outcome requires a clean worktree")
     if args.outcome in {"draft", "ready"} and (not paths or not eligible):
         raise CycleError(f"{args.outcome} outcome requires changed paths backed by eligible actions")
     generated_failures = (
@@ -763,7 +818,22 @@ def finalize(args: argparse.Namespace) -> int:
             "ready outcome requires current generated outputs: " + "; ".join(generated_failures)
         )
     state_path = args.state_path or run_root.parents[1] / "state/weekly-improvement.json"
-    state = read_json(state_path, {"schemaVersion": 1, "runs": []})
+    errors = []
+    try:
+        state = read_json(state_path, {"schemaVersion": 2, "runs": []})
+        if not isinstance(state, dict) or not isinstance(state.get("runs", []), list):
+            raise CycleError("weekly authority state must contain a runs array")
+    except (OSError, CycleError) as error:
+        # Preserve malformed authority bytes before rebuilding recoverable state.
+        errors.append(f"authority state: {error}")
+        state = {"schemaVersion": 2, "runs": []}
+        try:
+            if state_path.exists():
+                (run_root / "previous-authority-state.txt").write_bytes(state_path.read_bytes())
+        except OSError as backup_error:
+            errors.append(f"authority backup: {backup_error}")
+    state["schemaVersion"] = 2
+    previous_collection = {key: state[key] for key in ("lastCollectedRun", "lastSuccessfulRun") if key in state}
     entry = {"runId": manifest["runId"], "finishedAt": iso(), "outcome": args.outcome,
              "baseSha": manifest["baseSha"], "branch": manifest["branch"],
              "prUrl": args.pr_url, "changedPaths": paths}
@@ -771,42 +841,85 @@ def finalize(args: argparse.Namespace) -> int:
         entry["policyViolations"] = policy_violations
     if generated_failures:
         entry["generatedOutputFailures"] = generated_failures
+    if manifest.get("preparationError"):
+        entry["preparationError"] = manifest["preparationError"]
     state.setdefault("runs", []).append(entry)
     state["runs"] = state["runs"][-20:]
     state["lastRun"] = entry
-    successful = args.outcome in {"no-change", "ready"}
-    # Record the accepted outcome before cleanup, but do not call it successful
-    # until the worktree and disposable products are actually gone.
     state["pending"] = {**entry, "cleanupPending": True}
-    atomic_json(state_path, state)
-    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"],
-                    prUrl=args.pr_url)
-    atomic_json(run_root / "run.json", manifest)
+
+    def persist(path, payload):
+        try:
+            atomic_json(path, payload)
+        except OSError as error:
+            errors.append(f"write {path.name}: {error}")
+
+    persist(state_path, state)
+    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"], prUrl=args.pr_url)
+    persist(run_root / "run.json", manifest)
+    cleanup_error = None
     try:
-        from freshness_jobs import clean_builds
         removed = clean_builds(run_root)
-        atomic_json(run_root / "cleanup.json", {"removedBuildDirectories": removed})
+        persist(run_root / "cleanup.json", {"removedBuildDirectories": removed})
         if worktree.exists():
+            if not manifest.get("branchCreated", True):
+                raise CycleError("refusing to remove a worktree not created by this run")
+            if git(worktree, "symbolic-ref", "--short", "HEAD") != manifest["branch"]:
+                raise CycleError("worktree branch changed ownership; refusing removal")
             for build in worktree.rglob("Build"):
+                if build.is_symlink():
+                    continue
                 if build.is_dir():
                     shutil.rmtree(build)
             git(repository, "worktree", "remove", "--force", str(worktree))
+        if args.outcome in {"no-change", "findings", "blocked"} and manifest.get("branchCreated", True):
+            if git(repository, "show-ref", "--verify", f"refs/heads/{manifest['branch']}", check=False):
+                git(repository, "branch", "-D", manifest["branch"])
     except (OSError, CycleError, ValueError) as error:
-        state["pending"] = {**entry, "cleanupPending": True, "cleanupError": str(error)}
-        atomic_json(state_path, state)
-        manifest.update(status="cleanup-failed", cleanupError=str(error))
-        atomic_json(run_root / "run.json", manifest)
-        raise CycleError(str(error)) from error
-    if args.outcome in {"no-change", "blocked"}:
-        git(repository, "branch", "-D", manifest["branch"], check=False)
-    if successful:
-        state["lastSuccessfulRun"] = entry
-    state["pending"] = None if successful else entry
-    atomic_json(state_path, state)
-    manifest.update(status=args.outcome)
-    manifest.pop("cleanupError", None)
-    atomic_json(run_root / "run.json", manifest)
-    lock_path.unlink(missing_ok=True)
+        cleanup_error = str(error)
+        errors.append(cleanup_error)
+    if cleanup_error:
+        state["pending"] = {**entry, "cleanupPending": True, "cleanupError": cleanup_error}
+        manifest.update(status="cleanup-failed", cleanupError=cleanup_error)
+    else:
+        if errors:
+            entry["outcome"] = "blocked"
+            entry["errors"] = list(errors)
+        successful = entry["outcome"] in {"no-change", "ready"}
+        if entry["outcome"] in {"no-change", "findings", "draft", "ready"}:
+            state["lastCollectedRun"] = dict(entry)
+        if successful:
+            state["lastSuccessfulRun"] = dict(entry)
+        state["pending"] = None if successful else dict(entry)
+        manifest.update(status=entry["outcome"])
+        manifest.pop("cleanupError", None)
+    terminal_error_count = len(errors)
+    persist(state_path, state)
+    persist(run_root / "run.json", manifest)
+    if not cleanup_error:
+        if len(errors) != terminal_error_count:
+            cleanup_error = "terminal authority state could not be persisted"
+        else:
+            try:
+                lock_path.unlink(missing_ok=True)
+            except OSError as error:
+                cleanup_error = f"lock release: {error}"
+        if cleanup_error:
+            errors.append(cleanup_error)
+            # A terminal write or lock-release failure must not leave a newly
+            # promoted success behind. Retain ownership for a recoverable retry.
+            for key in ("lastCollectedRun", "lastSuccessfulRun"):
+                if key in previous_collection:
+                    state[key] = previous_collection[key]
+                else:
+                    state.pop(key, None)
+            entry["outcome"] = "blocked"
+            state["pending"] = {**entry, "cleanupPending": True, "cleanupError": cleanup_error}
+            manifest.update(status="cleanup-failed", cleanupError=cleanup_error)
+            persist(state_path, state)
+            persist(run_root / "run.json", manifest)
+    if errors:
+        raise CycleError("; ".join(errors))
     print(json.dumps(entry, sort_keys=True))
     return 0
 
@@ -847,6 +960,8 @@ def parse_args() -> argparse.Namespace:
                                 help=argparse.SUPPRESS)
     evaluate_parser = sub.add_parser("evaluate")
     evaluate_parser.add_argument("run_root", type=pathlib.Path)
+    acknowledge_parser = sub.add_parser("acknowledge-sources", help="acknowledge the exact documentation/news captures in a report")
+    acknowledge_parser.add_argument("run_root", type=pathlib.Path)
     record_parser = sub.add_parser("record-failure")
     record_parser.add_argument("run_root", type=pathlib.Path)
     record_parser.add_argument(
@@ -856,15 +971,16 @@ def parse_args() -> argparse.Namespace:
     finalize_parser = sub.add_parser("finalize")
     finalize_parser.add_argument("run_root", type=pathlib.Path)
     finalize_parser.add_argument("--outcome", required=True,
-                                 choices=("no-change", "blocked", "draft", "ready"))
+                                 choices=("no-change", "findings", "blocked", "draft", "ready"))
     finalize_parser.add_argument("--pr-url")
     finalize_parser.add_argument("--state-path", type=pathlib.Path)
     run_parser = sub.add_parser("run", help="collect and report a complete daily or weekly run")
     run_parser.add_argument("cycle", choices=("daily", "weekly"))
     run_parser.add_argument("--run-id")
+    run_parser.add_argument("--watch-consumer", help="named reviewed source-watch state; default: isolated run-local state")
     run_parser.add_argument("--repository", type=pathlib.Path, default=ROOT)
     run_parser.add_argument("--artifact-root", type=pathlib.Path,
-                            default=primary_checkout(ROOT) / "artifacts/freshness")
+                            default=DEFAULT_ARTIFACT_ROOT)
     run_parser.add_argument("--installed-root", type=pathlib.Path,
                             help="validate an isolated installed-contract projection before deployment")
     run_parser.add_argument("--ref", help="weekly candidate ref; default origin/main")
@@ -889,6 +1005,9 @@ def main() -> int:
             if args.cycle == "daily" and (args.ref or args.keep_worktree or args.thread_review):
                 raise CycleError("ref, keep-worktree, and thread-review apply only to weekly runs")
             return run(args, sys.modules[__name__])
+        if args.command == "acknowledge-sources":
+            from source_watch import acknowledge
+            return acknowledge(args, sys.modules[__name__])
         return {
             "prepare": prepare,
             "evaluate": evaluate,

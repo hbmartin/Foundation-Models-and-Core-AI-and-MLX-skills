@@ -27,7 +27,7 @@ know before you read anything else:
 > (`docs/guides/custom-op-lowering.ipynb`, cell 0.) A `coreai-core` wheel bump can break every
 > custom lowering you wrote. Pin it.
 
-The overload inventory and custom-lowering citations retain the inspected `coreai-torch` 0.4.1 revision `4529671`. Current conversion uses 0.4.3; historical defect demonstrations remain labelled. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+The overload inventory and custom-lowering citations retain the inspected `coreai-torch` 0.4.1 revision `4529671`. Current conversion uses 0.4.3; historical defect demonstrations remain labelled. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ---
 

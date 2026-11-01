@@ -203,13 +203,32 @@ The reviewed capture adds seventeen distinct 27.2 artifacts for Xcode `27B52`, m
 legacy capture remains managed with its original provenance and hashes. The selected host is
 macOS 27.0.1 (`26A434`); a 27.2 SDK capture does not establish 27.2 runtime behavior.
 
-Reviewed declaration changes include Foundation Models data entries, data attachments and their
-representable protocols (OS 27.2 floors); Evaluations `duplicateMetricName` and array-literal
-`ArrayLoader` conformance; an App Intents importing initializer and schema-kind conformances;
-and an additional tvOS-unavailable annotation in CoreAIDelegates. Core AI's other captured
-framework declarations, Speech, Vision, and Spotlight retain their reviewed surface. Compiler
-printing now uses `::` qualification in places; diagnostic comparisons normalize that spelling
-without altering the raw evidence. MPP remains a header-based surface.
+Reviewed declaration changes include:
+
+- Foundation Models typed data entries and attachments, representable protocols, and
+  `supportsDataEntryType(_:)` / `supportsDataAttachmentType(_:)` (OS 27.2 floors).
+- Evaluations `Evaluation.name` becoming a requirement with its default implementation retained;
+  `EvaluationResult.reportMetadata` becoming get-only; `duplicateMetricName`; and array-literal
+  `ArrayLoader` conformance.
+- App Intents importing initializers and schema-kind conformances, new `IntentParameter`
+  `inputConnectionBehavior` overloads, and `AssistantSchemaEnum.caseDisplayRepresentations`.
+  The inlined `messages.customReaction` implementation changes the emitted schema ID from
+  `"Tapback"` to `"CustomReaction"`; clients built against the two SDKs can emit different IDs.
+- `AIModelCache.Policy.persistent` becoming unavailable on tvOS in CoreAIDelegates. Shared
+  examples must select a supported policy with a platform compilation guard.
+
+Core AI's other captured framework declarations, Speech, Vision, and Spotlight retain their
+reviewed surface. The shared scoped comparison normalizes `::` qualification and declaration/
+availability order while retaining requirements, accessors, and inlined client bodies. Raw
+captures remain unchanged. MPP header evidence includes availability `#define` gates as well
+as conditional directives. See the [scoped drift evidence](../evidence/release-27.2/interface-drift.json).
 
 See [the release validation record](../evidence/release-27.2/validation.json) for probe and snippet
 coverage. The older SDK-26 verdicts remain dated historical evidence because SDK 26 is not installed.
+
+The November 1 review reconstruction uses `scripts/refresh-release-evidence.py` with
+`--reconstructed-at 2026-11-01`, the retained October 30 `--raw-runs` directory, and the matching
+MPP `--header-root`. It verifies retained header hashes before extracting availability definitions.
+Probe logs are retained alongside the reconstructed summaries. Reconstruction dates are separate
+from SDK capture and runtime observation dates. The newer compile-only compatibility checks and
+partial-run reconciliation are recorded in `notes/evidence/review-repairs-2026-11-01/`.

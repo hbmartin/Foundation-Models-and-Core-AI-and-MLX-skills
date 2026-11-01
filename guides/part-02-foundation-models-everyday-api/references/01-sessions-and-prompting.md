@@ -1077,7 +1077,7 @@ the model to call a tool, the empty stream stops being an edge case and becomes 
 
 If you want to know whether a tool ran, do not infer it from an empty stream: read the entries the
 call appended (`response.transcriptEntries`, or the tail of `session.transcript`) and look for
-`.toolCalls` / `.toolOutput`. See [§12.1](#121-six-entry-types).
+`.toolCalls` / `.toolOutput`. See [§12.1](#121-entry-types-by-sdk-version).
 
 ---
 
@@ -1787,7 +1787,7 @@ Full treatment in [Part 4 · Beyond the built-in model](../../part-04-beyond-the
 
 Everything the model has ever seen in this session, in order, as typed Swift values.
 
-### 12.1 Six entry types
+### 12.1 Entry types by SDK version
 
 ```swift illustrative
 enum Transcript.Entry {
@@ -1797,12 +1797,16 @@ enum Transcript.Entry {
     case reasoning(Transcript.Reasoning)         // "Reasoning from the model."          ← NEW in 27.0
     case toolCalls(Transcript.ToolCalls)         // "A tool call containing a tool name and the arguments to invoke it with."
     case toolOutput(Transcript.ToolOutput)       // "An tool output provided back to the model."
+    // SDK 27.2 adds case data(Transcript.DataEntry), with an OS 27.2 floor.
 }
 // Conforms: Copyable, CustomStringConvertible, Equatable, Escapable, Identifiable, Sendable
 ```
 
 ✅ **VERIFIED** — `/transcript/entry`, descriptions verbatim including Apple's *"An tool output"*
-typo. The same six cases and the same order appear in `apple/foundation-models-utilities`'
+typo. These are the **six 27.0 cases**; the 27.2 interface adds `.data(Transcript.DataEntry)`,
+bringing the total to **seven** (✅ SDK-verified: `FoundationModels-27.2-macos.swiftinterface:2332-2371`).
+Compile references to `.data` behind `#if canImport(FoundationModels, _version: 2.1)` and
+check OS 27.2 availability separately. The same six historical cases and their order appear in `apple/foundation-models-utilities`'
 `TranscriptRendering.swift` and `EntrySummary.swift`, so this is corroborated by compiled source.
 
 > ⚠️ **SILENT FAILURE — except this one is loud, and that is the point.** Any exhaustive `switch`

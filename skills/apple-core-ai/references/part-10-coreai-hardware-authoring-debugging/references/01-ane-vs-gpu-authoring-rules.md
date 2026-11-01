@@ -40,7 +40,7 @@ See the other references in this part for adjacent workflows.
 
 The authoring rules below cite Apple's pinned `coreai-models` source, especially `neural_engine_rules.md`, `gpu_rules.md`, and `common_issues.md`. Package policy and framework guarantees are identified separately.
 
-Community benchmarks retain their hardware and date. [Native fixture results](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) do not establish ANE placement, device thermals, or production-model quality. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Community benchmarks retain their hardware and date. [Native fixture results](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md) do not establish ANE placement, device thermals, or production-model quality. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 
