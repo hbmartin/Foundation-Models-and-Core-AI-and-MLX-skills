@@ -1,0 +1,89 @@
+..................................................................earlier PASS
+unsupported FAIL
+nonfinite FAIL
+exit FAIL
+later PASS
+.earlier PASS
+.earlier PASS
+.....NumPy scalar/array fixture details PASS
+...........................stale generated current-state block: /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp2am2d9el/guides.md
+stale generated current-state block: /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp2am2d9el/notes.md
+stale generated current-state block: /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp2am2d9el/runbook.md
+stale generated current-state block: /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp2am2d9el/next-beta.md
+stale generated current-state block: /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp2am2d9el/probes.md
+...............................................defects: passed
+defect-report: passed
+defect-coverage: blocked
+xcode: passed
+os: passed
+fm-path: passed
+fm-help: passed
+....official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+.official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+.official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+.slow: running
+slow: blocked
+independent: running
+independent: passed
+....research-mirrors: passed
+apple-docs-watch: blocked
+apple-docs-manifest: passed
+.collection-lane: blocked
+.research-mirrors: blocked
+apple-docs-watch: blocked
+defects: blocked
+...path: running
+path: passed
+..........official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+.official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+..official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+official-releases: passed
+official-news: passed
+official-foundationmodels: passed
+.....................................................................................................................................................................................................................................................................# wrote /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmpxjw0t4g2/out/results.tsv and /var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmpxjw0t4g2/out/report.md
+# total fences: 1
+# by status: {'TOOLCHAIN-UNAVAILABLE': 1}
+.....
+----------------------------------------------------------------------
+Ran 442 tests in 73.378s
+
+OK
+Updated 5 current-state blocks.
+Verified 5 current-state blocks.
+{"statePath": "/var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmpkizk2e49/state.json", "acknowledged": ["foundationmodels", "news"]}
+{"statePath": "/var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp77fuf9fo/state/daily.json", "acknowledged": ["foundationmodels", "news"]}
+{"statePath": "/var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp3jz4p1s0/state/weekly.json", "acknowledged": ["foundationmodels", "news"]}
+{"statePath": "/var/folders/zk/m1t80b0n64z5sphqvc6kkmzc0000gn/T/tmp3jz4p1s0/state/weekly.json", "acknowledged": ["foundationmodels", "news"]}

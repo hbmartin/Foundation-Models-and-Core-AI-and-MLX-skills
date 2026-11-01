@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "mode": "simulator",
+  "destination": "platform=iOS Simulator,id=31B09574-9781-45A7-816D-6A1916E1BA16",
+  "arguments": [],
+  "excludedTests": [],
+  "includedTests": []
+}

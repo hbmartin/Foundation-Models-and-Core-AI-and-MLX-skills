@@ -1,0 +1,486 @@
+{
+  "comparison": "Counts and measured defaults are not compared across different complete topologies.",
+  "lanes": {
+    "host": {
+      "excludedTests": [],
+      "includedTests": [],
+      "results": [
+        {
+          "detail": "hw.model=Mac14,12 os=27.0.1 platform=macOS",
+          "name": "coreai.deviceArchitectureName",
+          "raw": "PROBE-RESULT name=coreai.deviceArchitectureName value=h14s detail=hw.model=Mac14,12 os=27.0.1 platform=macOS",
+          "value": "h14s"
+        },
+        {
+          "detail": "rounds=6 roundsWithGarbage=0 nonzeroBytesTotal=0 os=27.0.1 platform=macOS",
+          "name": "coreai.ndarray-zero-init",
+          "raw": "PROBE-RESULT name=coreai.ndarray-zero-init value=all-zero-inconclusive detail=rounds=6 roundsWithGarbage=0 nonzeroBytesTotal=0 os=27.0.1 platform=macOS",
+          "value": "all-zero-inconclusive"
+        },
+        {
+          "detail": "default.allowed=[CoreAIDelegates.ComputeUnitKind.gpu, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.neuralEngine] default.preferred=nil cpuOnly.allowed=[CoreAIDelegates.ComputeUnitKind.cpu] cpuOnly.expectFrequentReshapes=false availableKinds=[CoreAIDelegates.ComputeUnitKind.neuralEngine, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.gpu] os=27.0.1 platform=macOS",
+          "name": "coreai.specializationOptions-defaults",
+          "raw": "PROBE-RESULT name=coreai.specializationOptions-defaults value=default.expectFrequentReshapes=false detail=default.allowed=[CoreAIDelegates.ComputeUnitKind.gpu, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.neuralEngine] default.preferred=nil cpuOnly.allowed=[CoreAIDelegates.ComputeUnitKind.cpu] cpuOnly.expectFrequentReshapes=false availableKinds=[CoreAIDelegates.ComputeUnitKind.neuralEngine, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.gpu] os=27.0.1 platform=macOS",
+          "value": "default.expectFrequentReshapes=false"
+        },
+        {
+          "detail": "controlPct=1.0 withExtraCallPct=0.5 \u2014 control=1.0 with extra=0.0 means false is enforced \u2014 controlFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 extraFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.1 platform=macOS",
+          "name": "eval.allowsAdditionalCalls-false",
+          "raw": "PROBE-RESULT name=eval.allowsAdditionalCalls-false value=control(allPass=1.0) withExtraCall(allPass=0.0) detail=controlPct=1.0 withExtraCallPct=0.5 \u2014 control=1.0 with extra=0.0 means false is enforced \u2014 controlFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 extraFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.1 platform=macOS",
+          "value": "control(allPass=1.0) withExtraCall(allPass=0.0)"
+        },
+        {
+          "detail": "differentArgsPct=1.0 matchingArgsPct=0.0 \u2014 differentArgs=1.0 with matchingArgs=0.0 means arguments DO narrow \u2014 differentArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 matchingArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.1 platform=macOS",
+          "name": "eval.disallowed-arguments-narrowing",
+          "raw": "PROBE-RESULT name=eval.disallowed-arguments-narrowing value=differentArgs(allPass=1.0) matchingArgs(allPass=0.0) detail=differentArgsPct=1.0 matchingArgsPct=0.0 \u2014 differentArgs=1.0 with matchingArgs=0.0 means arguments DO narrow \u2014 differentArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 matchingArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.1 platform=macOS",
+          "value": "differentArgs(allPass=1.0) matchingArgs(allPass=0.0)"
+        },
+        {
+          "detail": "error=duplicateMetricName(name: \"Match\") os=27.0.1 platform=macOS",
+          "name": "eval.duplicate-metric-names",
+          "raw": "PROBE-RESULT name=eval.duplicate-metric-names value=rejected detail=error=duplicateMetricName(name: \"Match\") os=27.0.1 platform=macOS",
+          "value": "rejected"
+        },
+        {
+          "detail": "detailedRows=4 os=27.0.1 platform=macOS",
+          "name": "eval.mean-over-all-ignored",
+          "raw": "PROBE-RESULT name=eval.mean-over-all-ignored value=-1.0 detail=detailedRows=4 os=27.0.1 platform=macOS",
+          "value": "-1.0"
+        },
+        {
+          "detail": "detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.1 platform=macOS",
+          "name": "eval.metric-identity",
+          "raw": "PROBE-RESULT name=eval.metric-identity value=summaryColumns=[\"Mean of Match\"] detail=detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.1 platform=macOS",
+          "value": "summaryColumns=[\"Mean of Match\"]"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=0 hasFailures=false anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "name": "eval.run-errors.clean",
+          "raw": "PROBE-RESULT name=eval.run-errors.clean value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=0 hasFailures=false anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=1 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "name": "eval.run-errors.subject",
+          "raw": "PROBE-RESULT name=eval.run-errors.subject value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=1 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=1 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "name": "eval.run-errors.evaluator",
+          "raw": "PROBE-RESULT name=eval.run-errors.evaluator value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=1 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=-1.0 inferenceFailures=4 evaluatorFailures=0 hasFailures=true anyInferenceProduced=false os=27.0.1 platform=macOS",
+          "name": "eval.run-errors.all-subject",
+          "raw": "PROBE-RESULT name=eval.run-errors.all-subject value=completed detail=rows=4 scored=4 mean=-1.0 inferenceFailures=4 evaluatorFailures=0 hasFailures=true anyInferenceProduced=false os=27.0.1 platform=macOS",
+          "value": "completed"
+        },
+        {
+          "detail": "samples=5 detailedRows=5 meanMatch=1.0 inferenceFailures=2 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "name": "eval.subject-throws",
+          "raw": "PROBE-RESULT name=eval.subject-throws value=run-completed detail=samples=5 detailedRows=5 meanMatch=1.0 inferenceFailures=2 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS",
+          "value": "run-completed"
+        },
+        {
+          "detail": "type=FetchWeatherReportTool os=27.0.1 platform=macOS",
+          "name": "fm.tool-derived-name",
+          "raw": "PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool definition=FetchWeatherReportTool detail=type=FetchWeatherReportTool os=27.0.1 platform=macOS",
+          "value": "instance=FetchWeatherReportTool definition=FetchWeatherReportTool"
+        },
+        {
+          "detail": "os=27.0.1 platform=macOS",
+          "name": "fm.tool-schema-flag-default",
+          "raw": "PROBE-RESULT name=fm.tool-schema-flag-default value=true detail=os=27.0.1 platform=macOS",
+          "value": "true"
+        },
+        {
+          "detail": "unsupported<supported=true unsupported<downloading=true unsupported<installed=true supported<unsupported=false supported<downloading=false supported<installed=true downloading<unsupported=false downloading<supported=true downloading<installed=true installed<unsupported=false installed<supported=false installed<downloading=false os=27.0.1 platform=macOS",
+          "name": "speech.assetInventory-status-order",
+          "raw": "PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed] detail=unsupported<supported=true unsupported<downloading=true unsupported<installed=true supported<unsupported=false supported<downloading=false supported<installed=true downloading<unsupported=false downloading<supported=true downloading<installed=true installed<unsupported=false installed<supported=false installed<downloading=false os=27.0.1 platform=macOS",
+          "value": "sorted=[unsupported,downloading,supported,installed]"
+        },
+        {
+          "detail": "indexingAvailable=true donate=threw(CSIndexErrorDomain:-1003) detail=Error Domain=CSIndexErrorDomain Code=-1003 \"(null)\" UserInfo={NSUnderlyingError=0x7aa96b80f0 {Error Domain=NSCocoaErrorD naiveCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor fre schemaCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"terms\\\\\\\":[\\\\\\\"E59D0DCE\\\\\\\"]}}}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ orderedCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"E59D0DCE\\\\\\\"],\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\"},\\\\\\\"pageSize\\\\\\\":15}}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ replyCollector=deadline replyCount=3 reply[0]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 76E16C5C-2113-4D09-A403-E6E512577B09), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[1]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 1BC5957F-AAFD-4EDB-B04A-6CFBE14A41B2), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[2]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 86367ECC-143B-4488-A9E3-6FD704BCA903), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) cleanup=threw(type=NSError domain=CSIndexErrorDomain code=-1003 casts=[] desc=Error Domain=CSIndexErrorDomain Code=-1003 \"(null)\" UserInfo={NSUnderlyingError=0x7aa96b86c0 {Error Domain=NSCocoaErrorDomain Code=4097 \"Couldn\u2019t communicate with a helper application.\"}}) os=27.0.1 platform=macOS",
+          "name": "fm.spotlight-direct-call",
+          "raw": "PROBE-RESULT name=fm.spotlight-direct-call value=donation=threw(CSIndexErrorDomain:-1003) naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3 detail=indexingAvailable=true donate=threw(CSIndexErrorDomain:-1003) detail=Error Domain=CSIndexErrorDomain Code=-1003 \"(null)\" UserInfo={NSUnderlyingError=0x7aa96b80f0 {Error Domain=NSCocoaErrorD naiveCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor fre schemaCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"terms\\\\\\\":[\\\\\\\"E59D0DCE\\\\\\\"]}}}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ orderedCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"E59D0DCE\\\\\\\"],\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\"},\\\\\\\"pageSize\\\\\\\":15}}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ replyCollector=deadline replyCount=3 reply[0]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 76E16C5C-2113-4D09-A403-E6E512577B09), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[1]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 1BC5957F-AAFD-4EDB-B04A-6CFBE14A41B2), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[2]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 86367ECC-143B-4488-A9E3-6FD704BCA903), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) cleanup=threw(type=NSError domain=CSIndexErrorDomain code=-1003 casts=[] desc=Error Domain=CSIndexErrorDomain Code=-1003 \"(null)\" UserInfo={NSUnderlyingError=0x7aa96b86c0 {Error Domain=NSCocoaErrorDomain Code=4097 \"Couldn\u2019t communicate with a helper application.\"}}) os=27.0.1 platform=macOS",
+          "value": "donation=threw(CSIndexErrorDomain:-1003) naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3"
+        },
+        {
+          "detail": "Version 27.0.1 (Build 26A434) os=27.0.1 platform=macOS",
+          "name": "fm.spotlight-tool-surface",
+          "raw": "PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-mac-os27.0.1-26A434-xcode-27B52.txt artifactWrite=ok detail=Version 27.0.1 (Build 26A434) os=27.0.1 platform=macOS",
+          "value": "name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-mac-os27.0.1-26A434-xcode-27B52.txt artifactWrite=ok"
+        }
+      ],
+      "runDirectory": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/probe-artifacts/review-repairs-pilot-verified-20261101-host",
+      "skipReasons": [
+        {
+          "reason": "SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets",
+          "test": "[ProbesTests.CoreAIProbes testCacheDeleteWhileReferenced]"
+        },
+        {
+          "reason": "SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets",
+          "test": "[ProbesTests.CoreAIProbes testCacheLocationAndSize]"
+        },
+        {
+          "reason": "SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets",
+          "test": "[ProbesTests.CoreAIProbes testSpecializeCancellation]"
+        },
+        {
+          "reason": "SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets",
+          "test": "[ProbesTests.CoreAIProbes testSpecializeReturnIdentity]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_GENERATOR=1 to run",
+          "test": "[ProbesTests.EvaluationsProbes testSampleGeneratorUnreachableTarget]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testAnyOfVocabularyEnforcement]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_ATTACHMENT=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testAttachmentLabelRecording]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testCollectAfterManualIteration]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testConcurrentSessionCeiling]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testErrorTypeForContextOverflow]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testImageAttachmentTokenCost]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testIncludeSchemaInPromptRecording]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testOnToolCallThrowEffect]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testParsingErrorThrownOnTruncation]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testPermissiveGuardrailsOnGenerable]"
+        },
+        {
+          "reason": "SKIPPED: set PROBE_ENABLE_PCC=1 (unentitled processes may fatalError constructing PCC \u2014 guide 2.6 \u00a78.5)",
+          "test": "[ProbesTests.FoundationModelsProbes testPrivateCloudComputeAvailability]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testRequiredToolCallingModeWithNoTools]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testStreamEarlyBreakTranscriptState]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testStreamZeroPartialsOnToolTurn]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemLanguageModelContextSize]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemModelAvailability]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemModelCapabilities]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testToolCallingModePrecedence]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testTranscriptErrorPolicyNilDefault]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testUnsupportedLocaleError]"
+        },
+        {
+          "reason": "SKIPPED: set PROBE_INSTRUMENTS_WORKLOAD=1 (see probes/INSTRUMENTS-RECORDING.md)",
+          "test": "[ProbesTests.InstrumentsWorkloadProbes testInstrumentsRecordingWorkload]"
+        }
+      ],
+      "sources": [
+        {
+          "path": "notes/evidence/review-repairs-2026-11-01/pilot-logs/host.log",
+          "sha256": "e9ef0c0c6d133b70bfa442aa8c9e3fa765e41f88f2c6a0ee1d92abd69bde30a6"
+        },
+        {
+          "path": "notes/evidence/review-repairs-2026-11-01/pilot-logs/host-context.json",
+          "sha256": "a9ff80d441ae47af1c5a2a5004fecfcfebccc2033ee1ba04c901835cbd967f31"
+        }
+      ],
+      "topology": {
+        "buildConfiguration": "Debug",
+        "destination": "local arm64 host",
+        "device": "Mac14,12",
+        "failures": 0,
+        "hostingMode": "tool-hosted",
+        "observedAt": "2026-11-01T16:51:39Z",
+        "osBuild": "26A434",
+        "osVersion": "27.0.1",
+        "platform": "macOS",
+        "sdks": {
+          "iphoneos": {
+            "build": "24B8118",
+            "version": "27.2"
+          },
+          "macosx": {
+            "build": "26B118",
+            "version": "27.2"
+          }
+        },
+        "skipped": 26,
+        "tests": 51,
+        "xcodeBuild": "27B52",
+        "xcodeVersion": "27.2"
+      }
+    },
+    "simulator": {
+      "excludedTests": [],
+      "includedTests": [],
+      "results": [
+        {
+          "detail": "controlPct=1.0 withExtraCallPct=0.5 \u2014 control=1.0 with extra=0.0 means false is enforced \u2014 controlFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 extraFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.0-simulator platform=iOS",
+          "name": "eval.allowsAdditionalCalls-false",
+          "raw": "PROBE-RESULT name=eval.allowsAdditionalCalls-false value=control(allPass=1.0) withExtraCall(allPass=0.0) detail=controlPct=1.0 withExtraCallPct=0.5 \u2014 control=1.0 with extra=0.0 means false is enforced \u2014 controlFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 extraFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.0-simulator platform=iOS",
+          "value": "control(allPass=1.0) withExtraCall(allPass=0.0)"
+        },
+        {
+          "detail": "differentArgsPct=1.0 matchingArgsPct=0.0 \u2014 differentArgs=1.0 with matchingArgs=0.0 means arguments DO narrow \u2014 differentArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 matchingArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.0-simulator platform=iOS",
+          "name": "eval.disallowed-arguments-narrowing",
+          "raw": "PROBE-RESULT name=eval.disallowed-arguments-narrowing value=differentArgs(allPass=1.0) matchingArgs(allPass=0.0) detail=differentArgsPct=1.0 matchingArgsPct=0.0 \u2014 differentArgs=1.0 with matchingArgs=0.0 means arguments DO narrow \u2014 differentArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured \u2014 matchingArgsFrame: \u250f\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u254d\u254d\u254d\u254d\u254d\u254d\u2513\u23ce\u2503   \u2503 Input                                              \u2503 Response                                           \u2503 Expected \u2503 Transcript                                         \u2503 2    \u2507\u23ce\u2503   \u2503 <ModelSample<Double>>                              \u2503 <ModelSubject<Double>>                             \u2503 <Double> \u2503 <Structured os=27.0.0-simulator platform=iOS",
+          "value": "differentArgs(allPass=1.0) matchingArgs(allPass=0.0)"
+        },
+        {
+          "detail": "error=duplicateMetricName(name: \"Match\") os=27.0.0-simulator platform=iOS",
+          "name": "eval.duplicate-metric-names",
+          "raw": "PROBE-RESULT name=eval.duplicate-metric-names value=rejected detail=error=duplicateMetricName(name: \"Match\") os=27.0.0-simulator platform=iOS",
+          "value": "rejected"
+        },
+        {
+          "detail": "detailedRows=4 os=27.0.0-simulator platform=iOS",
+          "name": "eval.mean-over-all-ignored",
+          "raw": "PROBE-RESULT name=eval.mean-over-all-ignored value=-1.0 detail=detailedRows=4 os=27.0.0-simulator platform=iOS",
+          "value": "-1.0"
+        },
+        {
+          "detail": "detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.0-simulator platform=iOS",
+          "name": "eval.metric-identity",
+          "raw": "PROBE-RESULT name=eval.metric-identity value=summaryColumns=[\"Mean of Match\"] detail=detailedColumns=[\"Input\", \"Response\", \"Expected\", \"Match\"] meanViaFreshInstance=0.5 os=27.0.0-simulator platform=iOS",
+          "value": "summaryColumns=[\"Mean of Match\"]"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=0 hasFailures=false anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "name": "eval.run-errors.clean",
+          "raw": "PROBE-RESULT name=eval.run-errors.clean value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=0 hasFailures=false anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=1 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "name": "eval.run-errors.subject",
+          "raw": "PROBE-RESULT name=eval.run-errors.subject value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=1 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=1 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "name": "eval.run-errors.evaluator",
+          "raw": "PROBE-RESULT name=eval.run-errors.evaluator value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=1 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "value": "completed"
+        },
+        {
+          "detail": "rows=4 scored=4 mean=-1.0 inferenceFailures=4 evaluatorFailures=0 hasFailures=true anyInferenceProduced=false os=27.0.0-simulator platform=iOS",
+          "name": "eval.run-errors.all-subject",
+          "raw": "PROBE-RESULT name=eval.run-errors.all-subject value=completed detail=rows=4 scored=4 mean=-1.0 inferenceFailures=4 evaluatorFailures=0 hasFailures=true anyInferenceProduced=false os=27.0.0-simulator platform=iOS",
+          "value": "completed"
+        },
+        {
+          "detail": "samples=5 detailedRows=5 meanMatch=1.0 inferenceFailures=2 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "name": "eval.subject-throws",
+          "raw": "PROBE-RESULT name=eval.subject-throws value=run-completed detail=samples=5 detailedRows=5 meanMatch=1.0 inferenceFailures=2 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.0-simulator platform=iOS",
+          "value": "run-completed"
+        },
+        {
+          "detail": "type=FetchWeatherReportTool os=27.0.0-simulator platform=iOS",
+          "name": "fm.tool-derived-name",
+          "raw": "PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool definition=FetchWeatherReportTool detail=type=FetchWeatherReportTool os=27.0.0-simulator platform=iOS",
+          "value": "instance=FetchWeatherReportTool definition=FetchWeatherReportTool"
+        },
+        {
+          "detail": "os=27.0.0-simulator platform=iOS",
+          "name": "fm.tool-schema-flag-default",
+          "raw": "PROBE-RESULT name=fm.tool-schema-flag-default value=true detail=os=27.0.0-simulator platform=iOS",
+          "value": "true"
+        },
+        {
+          "detail": "unsupported<supported=true unsupported<downloading=true unsupported<installed=true supported<unsupported=false supported<downloading=false supported<installed=true downloading<unsupported=false downloading<supported=true downloading<installed=true installed<unsupported=false installed<supported=false installed<downloading=false os=27.0.0-simulator platform=iOS",
+          "name": "speech.assetInventory-status-order",
+          "raw": "PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed] detail=unsupported<supported=true unsupported<downloading=true unsupported<installed=true supported<unsupported=false supported<downloading=false supported<installed=true downloading<unsupported=false downloading<supported=true downloading<installed=true installed<unsupported=false installed<supported=false installed<downloading=false os=27.0.0-simulator platform=iOS",
+          "value": "sorted=[unsupported,downloading,supported,installed]"
+        },
+        {
+          "detail": "indexingAvailable=true donate=ok naiveCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor fre schemaCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"532AA3A5\\\\\\\"],\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\"}},\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\"}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ orderedCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"terms\\\\\\\":[\\\\\\\"532AA3A5\\\\\\\"]}},\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\"}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ replyCollector=deadline replyCount=3 reply[0]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 5A95D879-BD9F-45A5-91C3-A47A204A4816), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[1]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: C39AA485-A9A8-4912-BC1E-4CAD16F2B37F), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[2]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: E518C33E-FAC1-44C3-BA80-50B007E87EB5), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) cleanup=ok os=27.0.0-simulator platform=iOS",
+          "name": "fm.spotlight-direct-call",
+          "raw": "PROBE-RESULT name=fm.spotlight-direct-call value=donation=ok naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3 detail=indexingAvailable=true donate=ok naiveCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor fre schemaCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"532AA3A5\\\\\\\"],\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\"}},\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\"}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ orderedCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: \"{\\n  \\\"response\\\" : {\\n    \\\"error\\\" : {\\n      \\\"_0\\\" : {\\n        \\\"code\\\" : 100,\\n        \\\"context\\\" : \\\"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\", \\\\\\\"value\\\\\\\":<SearchArguments>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"schema\\\\\\\", \\\\\\\"value\\\\\\\":<SchemaQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"help\\\\\\\",   \\\\\\\"value\\\\\\\":<HelpQuery>}\\\\n  {\\\\\\\"type\\\\\\\":\\\\\\\"display\\\\\\\",\\\\\\\"value\\\\\\\":<DisplayQuery>}\\\\n\\\\nFor free-text search across all indexed text fields, retry with:\\\\n  {\\\\\\\"query\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"value\\\\\\\":{\\\\\\\"terms\\\\\\\":[\\\\\\\"<your terms>\\\\\\\"]}},\\\\\\\"pageSize\\\\\\\":15}}}\\\\n\\\\nDecode error: Failed to parse generated content.\\\\nReceived: {\\\\\\\"query\\\\\\\":{\\\\\\\"value\\\\\\\":{\\\\\\\"pageSize\\\\\\\":15,\\\\\\\"root\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"allText\\\\\\\",\\\\\\\"terms\\\\\\\":[\\\\\\\"532AA3A5\\\\\\\"]}},\\\\\\\"type\\\\\\\":\\\\\\\"search\\\\\\\"}}\\\",\\n        \\\"error\\\" : true,\\n        \\\"message\\\" : \\\"Malformed tool arguments \u2014 retry with the schema below.\\\"\\n      }\\n    }\\n  }\\ replyCollector=deadline replyCount=3 reply[0]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 5A95D879-BD9F-45A5-91C3-A47A204A4816), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[1]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: C39AA485-A9A8-4912-BC1E-4CAD16F2B37F), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[2]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: E518C33E-FAC1-44C3-BA80-50B007E87EB5), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: \"search\"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) cleanup=ok os=27.0.0-simulator platform=iOS",
+          "value": "donation=ok naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3"
+        },
+        {
+          "detail": "Version 27.0 (Build 24A5408d) os=27.0.0-simulator platform=iOS",
+          "name": "fm.spotlight-tool-surface",
+          "raw": "PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-simulator-os27.0.0-24A5408d-xcode-27B52.txt artifactWrite=ok detail=Version 27.0 (Build 24A5408d) os=27.0.0-simulator platform=iOS",
+          "value": "name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-simulator-os27.0.0-24A5408d-xcode-27B52.txt artifactWrite=ok"
+        }
+      ],
+      "runDirectory": "/Volumes/Pro2T/FM and MLX and CoreAI/artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101/probe-artifacts/review-repairs-pilot-verified-20261101-simulator",
+      "skipReasons": [
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_GENERATOR=1 to run",
+          "test": "[ProbesTests.EvaluationsProbes testSampleGeneratorUnreachableTarget]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testAnyOfVocabularyEnforcement]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_ATTACHMENT=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testAttachmentLabelRecording]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testCollectAfterManualIteration]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testConcurrentSessionCeiling]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testErrorTypeForContextOverflow]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testImageAttachmentTokenCost]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testIncludeSchemaInPromptRecording]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testOnToolCallThrowEffect]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testParsingErrorThrownOnTruncation]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testPermissiveGuardrailsOnGenerable]"
+        },
+        {
+          "reason": "SKIPPED: set PROBE_ENABLE_PCC=1 (unentitled processes may fatalError constructing PCC \u2014 guide 2.6 \u00a78.5)",
+          "test": "[ProbesTests.FoundationModelsProbes testPrivateCloudComputeAvailability]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testRequiredToolCallingModeWithNoTools]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testStreamEarlyBreakTranscriptState]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testStreamZeroPartialsOnToolTurn]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemLanguageModelContextSize]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemModelAvailability]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testSystemModelCapabilities]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testToolCallingModePrecedence]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testTranscriptErrorPolicyNilDefault]"
+        },
+        {
+          "reason": "SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 24A5408d (known broken: iOS 27 beta 5 Simulator runtime); set PROBE_ENABLE_HOST_MODEL=1 to run",
+          "test": "[ProbesTests.FoundationModelsProbes testUnsupportedLocaleError]"
+        },
+        {
+          "reason": "SKIPPED: set PROBE_INSTRUMENTS_WORKLOAD=1 (see probes/INSTRUMENTS-RECORDING.md)",
+          "test": "[ProbesTests.InstrumentsWorkloadProbes testInstrumentsRecordingWorkload]"
+        }
+      ],
+      "sources": [
+        {
+          "path": "notes/evidence/review-repairs-2026-11-01/pilot-logs/simulator.log",
+          "sha256": "0b6791c9f91e888289fbba508ed915a3cf0ad64d05fe55551998c1e8b9a08063"
+        },
+        {
+          "path": "notes/evidence/review-repairs-2026-11-01/pilot-logs/simulator-context.json",
+          "sha256": "1144b61ac00d28928b8cfc77f24ba5039407817811bb5f37bb881c758eb5d4ac"
+        }
+      ],
+      "topology": {
+        "buildConfiguration": "Debug",
+        "destination": "platform=iOS Simulator,id=31B09574-9781-45A7-816D-6A1916E1BA16",
+        "device": "iPhone 18 Pro",
+        "failures": 0,
+        "hostingMode": "tool-hosted",
+        "observedAt": "2026-11-01T16:51:39Z",
+        "osBuild": "24A5408d",
+        "osVersion": "27.0",
+        "platform": "iOS Simulator",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+        "sdks": {
+          "iphoneos": {
+            "build": "24B8118",
+            "version": "27.2"
+          },
+          "macosx": {
+            "build": "26B118",
+            "version": "27.2"
+          }
+        },
+        "skipped": 22,
+        "tests": 44,
+        "udid": "31B09574-9781-45A7-816D-6A1916E1BA16",
+        "xcodeBuild": "27B52",
+        "xcodeVersion": "27.2"
+      }
+    }
+  },
+  "schemaVersion": 2
+}

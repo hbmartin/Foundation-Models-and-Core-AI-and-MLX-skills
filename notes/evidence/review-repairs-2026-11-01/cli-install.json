@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "cli": "skills@1.5.21",
+  "commandTemplate": "npx -y skills@1.5.21 add <repository> --skill <selection> --agent <agent> --copy -y",
+  "checks": [
+    {
+      "agent": "codex",
+      "selection": "*",
+      "skillsInstalled": 10,
+      "byteIdentical": true,
+      "status": "passed"
+    },
+    {
+      "agent": "codex",
+      "selection": "apple-on-device-ai",
+      "skillsInstalled": 1,
+      "byteIdentical": true,
+      "status": "passed"
+    },
+    {
+      "agent": "codex",
+      "selection": "apple-speech",
+      "skillsInstalled": 1,
+      "byteIdentical": true,
+      "status": "passed"
+    },
+    {
+      "agent": "claude-code",
+      "selection": "*",
+      "skillsInstalled": 10,
+      "byteIdentical": true,
+      "status": "passed"
+    },
+    {
+      "agent": "claude-code",
+      "selection": "apple-on-device-ai",
+      "skillsInstalled": 1,
+      "byteIdentical": true,
+      "status": "passed"
+    },
+    {
+      "agent": "claude-code",
+      "selection": "apple-speech",
+      "skillsInstalled": 1,
+      "byteIdentical": true,
+      "status": "passed"
+    }
+  ],
+  "personalInstallationsModified": false
+}

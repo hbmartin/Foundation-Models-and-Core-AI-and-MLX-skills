@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01",
+  "validatedImplementationCommit": "98d7aa3679dead4aa8cdcbcb6f0ffe5ca887cc4d",
+  "findingMap": "finding-map.json",
+  "mappedComments": 43,
+  "checks": {
+    "portableTests": {
+      "command": "python3 -m unittest discover -s scripts/tests -p 'test_*.py'",
+      "exitCode": 0,
+      "tests": 442,
+      "durationSeconds": 73.378,
+      "log": "tooling-tests.log",
+      "sha256": "aeb647cdcbd37a885ff4cd5f546ee1b4d77857c26577af867af1e10824d0738e"
+    },
+    "strictDocumentation": {
+      "command": "NO_MKDOCS_2_WARNING=true python -m mkdocs build --strict --clean",
+      "exitCode": 0,
+      "dependencies": {
+        "mkdocs": "1.6.1",
+        "mkdocs-material": "9.7.7",
+        "pymdown-extensions": "11.0.1"
+      },
+      "log": "docs-build.log",
+      "sha256": "254f99f3c967b2dca9bc0cbf00d3793ee64121851507cdf596c195496134c7bf"
+    },
+    "sdkCaptureSafety": {
+      "command": "bash scripts/tests/test-sdk-interface-capture.sh",
+      "exitCode": 0,
+      "log": "sdk-capture-tests.log",
+      "sha256": "49581764bc99c8ca96b9cbf1610507955628fc9f435d5505e0b9d6cd3e152e01"
+    },
+    "skills": {
+      "command": "python3 scripts/verify-skills.py --skills skills",
+      "exitCode": 0,
+      "skills": 10,
+      "files": 121,
+      "links": 2338,
+      "triggerEvaluations": 80,
+      "detachedCodexAndClaudeCopies": true,
+      "realCliChecks": "cli-install.json"
+    },
+    "cleanRegeneration": {
+      "status": "passed",
+      "indexAndSkillGenerationChecks": 2,
+      "coveredByFullPortableSuite": true
+    },
+    "currentStateBlocks": {
+      "command": "python3 scripts/current-state.py render --check",
+      "exitCode": 0,
+      "blocks": 5
+    },
+    "automationContracts": {
+      "command": "python3 scripts/validate-automation-contracts.py",
+      "exitCode": 0,
+      "contracts": 2
+    },
+    "sdkCompatibility": {
+      "evidence": "sdk-compatibility.json",
+      "status": "passed",
+      "runtimeExecution": false
+    },
+    "snippets": {
+      "rawReport": "report.md",
+      "rawResults": "results.tsv",
+      "targetProvenance": "../../snippet-verification/target-provenance.json",
+      "freshAvailableTargetVerdicts": 187,
+      "historicalUnchangedSdk26TargetVerdicts": 5,
+      "unavailableFreshTargets": [
+        "26"
+      ],
+      "unexpectedCompileFailures": 0,
+      "mergedLedgerCounts": {
+        "ILLUSTRATIVE": 478,
+        "MIGRATION-PROVEN": 2,
+        "PRELUDE-NEEDED": 661,
+        "VERIFIED": 184,
+        "XFAIL-PROVEN": 2
+      },
+      "guideTreeSha256": "4ba033a3c9962f1bbf400bf5bfd7a1f6e3460cc200a576dbd82f7b7d778fb539"
+    }
+  },
+  "isolatedWeeklyPilot": {
+    "command": "env -u PROBE_AIMODEL_URL PROBE_ENABLE_HOST_MODEL=0 PROBE_ENABLE_ATTACHMENT=0 PROBE_ENABLE_GENERATOR=0 PROBE_ENABLE_PCC=0 PROBE_INSTRUMENTS_WORKLOAD=0 python3 scripts/freshness-cycle.py run weekly --run-id review-repairs-pilot-verified-20261101 --artifact-root artifacts/repair-review-findings/pilot/freshness --installed-root artifacts/repair-review-findings/pilot/installed --ref codex/repair-review-findings --thread-review artifacts/repair-review-findings/pilot/review.json --skip-web --command-timeout 180",
+    "runId": "review-repairs-pilot-verified-20261101",
+    "requestedRef": "codex/repair-review-findings",
+    "resolvedStartingCommit": "98d7aa3679dead4aa8cdcbcb6f0ffe5ca887cc4d",
+    "exitCode": 1,
+    "outcome": "blocked",
+    "expectedBlockedCoverage": [
+      "apple-docs-watch",
+      "defects",
+      "official-sources",
+      "remote-preparation-coverage",
+      "research-mirrors"
+    ],
+    "report": "pilot-report.json",
+    "probeSummary": "pilot-probe-summary.json",
+    "lanes": {
+      "host": {
+        "buildConfiguration": "Debug",
+        "destination": "local arm64 host",
+        "device": "Mac14,12",
+        "failures": 0,
+        "hostingMode": "tool-hosted",
+        "observedAt": "2026-11-01T16:51:39Z",
+        "osBuild": "26A434",
+        "osVersion": "27.0.1",
+        "platform": "macOS",
+        "sdks": {
+          "iphoneos": {
+            "build": "24B8118",
+            "version": "27.2"
+          },
+          "macosx": {
+            "build": "26B118",
+            "version": "27.2"
+          }
+        },
+        "skipped": 26,
+        "tests": 51,
+        "xcodeBuild": "27B52",
+        "xcodeVersion": "27.2",
+        "recordedSkipReasons": 26,
+        "excludedTests": []
+      },
+      "simulator": {
+        "buildConfiguration": "Debug",
+        "destination": "platform=iOS Simulator,id=31B09574-9781-45A7-816D-6A1916E1BA16",
+        "device": "iPhone 18 Pro",
+        "failures": 0,
+        "hostingMode": "tool-hosted",
+        "observedAt": "2026-11-01T16:51:39Z",
+        "osBuild": "24A5408d",
+        "osVersion": "27.0",
+        "platform": "iOS Simulator",
+        "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+        "sdks": {
+          "iphoneos": {
+            "build": "24B8118",
+            "version": "27.2"
+          },
+          "macosx": {
+            "build": "26B118",
+            "version": "27.2"
+          }
+        },
+        "skipped": 22,
+        "tests": 44,
+        "udid": "31B09574-9781-45A7-816D-6A1916E1BA16",
+        "xcodeBuild": "27B52",
+        "xcodeVersion": "27.2",
+        "recordedSkipReasons": 22,
+        "excludedTests": []
+      }
+    },
+    "cleanup": {
+      "worktreeRemoved": true,
+      "branchRemoved": true,
+      "ownershipLockRemoved": true,
+      "buildDirectoriesRemoved": 2,
+      "resultsBundlesRetained": 1,
+      "lastSuccessfulRunAdvanced": false,
+      "cleanupPending": false
+    },
+    "retainedLocalRunDirectory": "artifacts/repair-review-findings/pilot/freshness/weekly-improvements/review-repairs-pilot-verified-20261101",
+    "baselinePromoted": false,
+    "sourceWatchStateChanged": false,
+    "installedAutomationsModified": false
+  },
+  "coverageLimits": [
+    "SDK-26 toolchain was unavailable; five unchanged historical target attestations retain their original dates and SDK builds.",
+    "The pilot deliberately skipped all network lanes, so blocked/1 is the expected coverage outcome. Network collection behavior was tested with controlled fixtures.",
+    "27.2-only data APIs were type-checked, not executed on the older installed runtimes.",
+    "Model-backed opt-in probes were disabled. No unavailable hardware or SDK execution is claimed.",
+    "The reference Agent Skills validator and hosted workflow checks are recorded by the draft PR CI, separately from this local validation."
+  ],
+  "postMerge": {
+    "runbook": "../../FRESHNESS-RUNBOOK.md#repair-rollout-and-recovery",
+    "steps": [
+      "Update the scheduled primary checkout to the merged revision.",
+      "Synchronize the checked-in prompt/contract changes into installed copies while preserving schedules, daily paused status and weekly active status.",
+      "Run ./scripts/validate-automation-contracts.py --installed before collection.",
+      "Retain legacy official-source-watch.json as unreviewed seed material. Daily and weekly consumers migrate independently and require first-capture review.",
+      "Review each complete documentation/news report, then explicitly run ./scripts/freshness-cycle.py acknowledge-sources <run-root>; do not acknowledge the offline pilot.",
+      "Review release/build findings through repository baseline updates; source acknowledgment does not promote release baselines."
+    ]
+  }
+}
