@@ -13,7 +13,7 @@
     "SKILL.md links into and each install is independent — a skill carrying 16.1 but no part-16",
     "README would have dangling links. Keeping it whole also preserves its section anchors.",
     "The triage rows lifted into SKILL.md and the deep-guide list are filtered per skill.",
-    "Root pages and website indexes are accepted as source pages but are not bundled.",
+    "Root pages and website indexes are not bundled whole; selected editorial rules become CONVENTIONS.md.",
     "",
     "'related' is a curated, deliberately directional list, not a symmetric graph. It answers 'where",
     "would a reader of THIS skill go next', which is hub-and-spoke: a spoke names the hub it depends",
@@ -28,7 +28,8 @@
   "schema_version": 1,
   "repository": {
     "url": "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills",
-    "branch": "main"
+    "branch": "main",
+    "site_url": "https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/"
   },
   "defaults": {
     "max_triage_rows": 18

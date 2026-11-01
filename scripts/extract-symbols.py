@@ -8,10 +8,7 @@ Output TSV: symbol<TAB>framework-guess<TAB>total-mentions<TAB>n-guides<TAB>sdk26
   the start of a recorded path and are never treated as nested type components.
   guides: semicolon list of "path:count", highest count first, capped at GUIDE_CAP.
 
-Importable as well as runnable: scripts/build-skills.py calls collect_symbol_counts()
-and symbol_rows() directly so it can slice per skill against the *uncapped* guide
-list. Slicing the rendered guides/API-INDEX.md instead would lose coverage twice
-over, because that page shows only the first 4 of a list already capped here.
+The helpers are importable for symbol extraction and SDK-presence tests.
 """
 import os, re, sys
 from collections import defaultdict
@@ -19,8 +16,7 @@ from collections import defaultdict
 from mdlinks import is_site_only_guide, iter_lines
 
 # Guides shown per symbol in the TSV. The committed API-INDEX.md is generated
-# from this cap, so changing it changes that page; callers who need the full
-# association set pass cap=None to symbol_rows().
+# from this cap, so changing it changes that page.
 GUIDE_CAP = 12
 # A symbol is: a CamelCase identifier, optionally dotted / parenthesised, found in `code`.
 SPAN = re.compile(r'`([^`\n]{2,90})`')
@@ -246,12 +242,7 @@ def sdk_presence(iface_dir):
 
 
 def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
-    """Rendered rows in TSV order. cap=None keeps every guide association.
-
-    The noise floor and the sort are corpus-wide on purpose: a caller slicing
-    per skill must start from the same symbol set the series index uses, or it
-    produces a different index rather than a subset of one.
-    """
+    """Render the corpus-wide symbol set in deterministic TSV order."""
     sdk26 = sdk26 if isinstance(sdk26, SDKPresence) else SDKPresence([(None, sdk26)])
     sdk27 = sdk27 if isinstance(sdk27, SDKPresence) else SDKPresence([(None, sdk27)])
     out = []
@@ -264,8 +255,7 @@ def symbol_rows(counts, sdk26, sdk27, cap=GUIDE_CAP):
         # Counts often tie at the visible cutoff. Use the guide path as an explicit
         # secondary key so selection stays stable independently of traversal order.
         top = sorted(files.items(), key=lambda kv: (-kv[1], kv[0]))
-        if cap is not None:
-            top = top[:cap]
+        top = top[:cap]
         out.append((sym, guess_fw(sym), total, len(files), in26, in27,
                     ';'.join(f'{p}:{c}' for p, c in top)))
     out.sort(key=lambda r: (-r[2], r[0]))

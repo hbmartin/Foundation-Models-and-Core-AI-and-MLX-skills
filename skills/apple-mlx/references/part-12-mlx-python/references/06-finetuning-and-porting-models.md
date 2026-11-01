@@ -33,7 +33,7 @@ Related references: [Part 13](../../part-13-mlx-swift/README.md), [Part 14](../.
 
 ## Evidence ladder used in this guide
 
-Source/API citations below retain mlx-lm revision `e5baded`; search for the symbol when using another revision, because line numbers drift. Current package requirements are stated above. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Source/API citations below retain mlx-lm revision `e5baded`; search for the symbol when using another revision, because line numbers drift. Current package requirements are stated above. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 

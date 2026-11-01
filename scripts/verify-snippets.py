@@ -1310,7 +1310,16 @@ def resolve_changed_base(repo_root, requested):
         remote_candidate = f"origin/{github_base}"
         probe = subprocess.run(["git", "-C", repo_root, "rev-parse", "--verify",
                                 f"{remote_candidate}^{{commit}}"], capture_output=True)
-        base = remote_candidate if probe.returncode == 0 else github_base
+        if probe.returncode != 0:
+            local_probe = subprocess.run(["git", "-C", repo_root, "rev-parse", "--verify",
+                                          f"{github_base}^{{commit}}"], capture_output=True)
+            if local_probe.returncode == 0:
+                base = github_base
+            else:
+                run_git(repo_root, ["fetch", "origin", f"+refs/heads/{github_base}:refs/remotes/origin/{github_base}"])
+                base = remote_candidate
+        else:
+            base = remote_candidate
     else:
         symbolic = run_git(repo_root, ["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"])
         base = symbolic.strip().removeprefix("refs/remotes/")

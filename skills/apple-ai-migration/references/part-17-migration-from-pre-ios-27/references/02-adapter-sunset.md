@@ -139,7 +139,7 @@ adapter successor, that blessing is in a different conversation about a differen
 
 ### 1.3 Why "two forum replies" is stronger evidence than it sounds
 
-Apple-staff replies in threads 829108 and 831314 independently announce the adapter withdrawal. The captured SDK's obsoletion attributes establish the migration boundary (§1.4); the forum discussion explains intent. See the [source precedence convention](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#precedence-when-sources-conflict).
+Apple-staff replies in threads 829108 and 831314 independently announce the adapter withdrawal. The captured SDK's obsoletion attributes establish the migration boundary (§1.4); the forum discussion explains intent. See the [source precedence convention](../../CONVENTIONS.md#precedence-when-sources-conflict).
 
 ### 1.4 What the evidence does *not* include — and this matters
 

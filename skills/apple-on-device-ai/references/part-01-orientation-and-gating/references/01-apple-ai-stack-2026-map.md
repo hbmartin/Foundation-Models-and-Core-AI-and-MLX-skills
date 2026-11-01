@@ -30,7 +30,7 @@ If you already know which backend you want, skip to [§5, the decision table](#5
 then go to the part that covers it.
 
 > **Sourcing.** Every non-obvious claim below carries ✅ **VERIFIED**, 🟡 **RECONSTRUCTED**, or
-> 🔴 **GAP**, per the [series conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#editorial-conventions). Every number
+> 🔴 **GAP**, per the [series conventions](../../CONVENTIONS.md#editorial-conventions). Every number
 > carries its provenance: **Apple-published** or **community-measured**, with hardware, OS and date
 > where the source gave them. A large fraction of the measured data in this guide is
 > community-measured on **beta** operating systems and will move.
@@ -1817,7 +1817,7 @@ Two more honest notes about this guide's own sourcing:
 - **Several WWDC transcript claims in this corpus are already superseded** by forum answers from
   Apple staff — custom adapters, PCC eligibility, the prescribed provider event ordering. Where they
   conflict, the series takes the forum answer and says so. That precedence order is in the
-  [series README](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#precedence-when-sources-conflict).
+  [series README](../../CONVENTIONS.md#precedence-when-sources-conflict).
 
 ---
 

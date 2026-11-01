@@ -117,7 +117,8 @@ New silent-failure callouts require classification before regeneration; see the
 Callout and snippet records use semantic IDs plus content hashes, so line movement does not trigger
 an ordinal re-key and edited content still fails closed.
 
-Refresh the installable skills whenever the numbered guides or their part READMEs change:
+Refresh the installable skills whenever numbered guides, part READMEs, the series editorial conventions in `guides/README.md`,
+or `notes/synthesis/skill-manifest.json` change:
 
 ```bash
 ./scripts/build-skills.sh

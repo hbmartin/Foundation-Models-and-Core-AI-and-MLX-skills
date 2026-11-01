@@ -35,6 +35,14 @@ Nothing in this guide requires Apple Intelligence to be *enabled*, and nothing h
 
 ---
 
+
+✅ **SDK-verified platform restriction (27.2):** `AIModelCache.Policy.persistent` is
+unavailable on tvOS (`CoreAIDelegates-27.2-macos.swiftinterface:45-49`). All `.persistent`
+examples below target the other supported platforms; for tvOS choose `.default` inside
+`#if os(tvOS)` and place `.persistent` in the `#else` branch. A runtime version check
+cannot make an unavailable tvOS declaration compile.
+
+
 ## What this covers
 
 Deliver models only to users who need them, prepare specialization outside interactive flows, and ship recoverable updates. The workflows cover Background Assets, downloaded bundles, AOT architectures, bookmarks, storage, integrity, and rollback.
@@ -72,7 +80,7 @@ Related references: [Part 8](https://github.com/hbmartin/Foundation-Models-and-C
 
 ## Evidence markers used in this guide
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Architecture and startup measurements below retain their original community source, hardware, beta OS, and observation date; they are not Apple guarantees.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). Architecture and startup measurements below retain their original community source, hardware, beta OS, and observation date; they are not Apple guarantees.
 
 ## 1. The size problem
 
@@ -509,7 +517,13 @@ final class ModelFeatureCoordinator {
                 contentsOf: localURL,
                 options: options,
                 cache: .default,
-                cachePolicy: .persistent
+                cachePolicy: { () -> AIModelCache.Policy in
+                  #if os(tvOS)
+                  return .default
+                  #else
+                  return .persistent
+                  #endif
+                }()
             )
             state = .ready
         } catch {
@@ -1787,7 +1801,13 @@ struct FeaturePreparer {
             contentsOf: localURL,
             options: options,
             cache: .default,
-            cachePolicy: .persistent
+            cachePolicy: { () -> AIModelCache.Policy in
+              #if os(tvOS)
+              return .default
+              #else
+              return .persistent
+              #endif
+            }()
         )
 
         // 4. Optional warmup, guarded (see §6.2).
@@ -2069,7 +2089,13 @@ actor VersionedModelStore {
             contentsOf: assetURL,
             options: options,
             cache: .default,
-            cachePolicy: .persistent
+            cachePolicy: { () -> AIModelCache.Policy in
+              #if os(tvOS)
+              return .default
+              #else
+              return .persistent
+              #endif
+            }()
         )
 
         let installed = Installed(version: version,
@@ -2609,7 +2635,13 @@ constructing the same options.
 func prepareOnFirstRun(url: URL) async throws {
     let options = SpecializationOptions(preferredComputeUnitKind: .gpu)
     try await AIModel.specialize(contentsOf: url, options: options,
-                                 cachePolicy: .persistent)
+                                 cachePolicy: { () -> AIModelCache.Policy in
+                                   #if os(tvOS)
+                                   return .default
+                                   #else
+                                   return .persistent
+                                   #endif
+                                 }())
 }
 
 // Call site B — the cache probe on every appearance of the feature screen.
@@ -2804,7 +2836,13 @@ func prepare(url: URL) async throws {
         contentsOf: url,
         options: ModelOptions.shared.options(for: url),
         cache: .default,
-        cachePolicy: .persistent)
+        cachePolicy: { () -> AIModelCache.Policy in
+          #if os(tvOS)
+          return .default
+          #else
+          return .persistent
+          #endif
+        }())
 }
 
 func load(url: URL) async throws -> AIModel {

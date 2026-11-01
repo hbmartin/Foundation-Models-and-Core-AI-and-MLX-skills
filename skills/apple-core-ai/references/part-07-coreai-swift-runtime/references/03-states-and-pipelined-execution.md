@@ -17,7 +17,7 @@ of it is built on Metal:
   page lists it. That is a documentation-generation bug — `coreai-build`, the Core AI Debugger and
   the Instruments template are all macOS-hosted — but do not be surprised by it.
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 

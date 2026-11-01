@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from scripts import mdlinks
 
@@ -92,7 +93,7 @@ The stack.
 Text.
 
 ```swift compile:27 imports:CoreAI
-// ## not a heading, and this fence must survive byte-for-byte
+## not a heading
 let x = [Int](repeating: 0, count: rank)
 ```
 
@@ -109,9 +110,27 @@ The frozen app evidence is in [Noema](../../../notes/repos/noema-ios.md).
 SERIES_README = """\
 # Apple on-device AI
 
-## Editorial conventions
+## Evidence conventions
 
 Markers are load-bearing.
+
+## Editorial conventions
+
+### Version floor
+
+Keep the SDK and runtime floors distinct.
+
+### Measurement attribution
+
+Retain the exact measured topology.
+
+### Defect state and resolution
+
+Closure is not demonstrated remediation.
+
+### Precedence when sources conflict
+
+Headers precede documentation and narration.
 """
 
 SILENT_FAILURES = """\
@@ -201,7 +220,8 @@ class SkillBuildTests(unittest.TestCase):
             repository_root=root,
         )
         arguments.update(overrides)
-        return builder.build_skills(**arguments)
+        with mock.patch.object(builder, "generation_date", return_value="2026-10-30"):
+            return builder.build_skills(**arguments)
 
     def test_sources_are_untouched_by_a_build(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -481,6 +501,14 @@ class SkillBuildTests(unittest.TestCase):
             second = self.build(root, guides)
             self.assertEqual(first["files"], second["files"])
             self.assertFalse(any(path.exists() for path in obsolete))
+
+    def test_conventions_cannot_silently_lose_source_precedence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory);guides = make_fixture(root)
+            readme = guides / "README.md"
+            readme.write_text(readme.read_text().replace("Precedence when sources conflict", "Renamed without updating generator"))
+            with self.assertRaisesRegex(builder.SkillError, "missing convention sections"):
+                self.build(root, guides)
 
     def test_skills_root_may_not_sit_inside_the_guides(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -976,6 +1004,20 @@ class CommittedSkillsTests(unittest.TestCase):
             self.assertEqual(bundled, expected, entry["name"])
             for name in ("API-INDEX.md", "SILENT-FAILURES.md", "SECTION-MAPS.md", "README.md"):
                 self.assertFalse((skill / "references" / name).exists(), entry["name"])
+
+    def test_installed_routers_have_lookup_fallback_and_offline_precedence(self):
+        manifest = json.loads(MANIFEST.read_text())
+        names = {entry["name"] for entry in manifest["skills"]}
+        hub = (SKILLS / "apple-on-device-ai/SKILL.md").read_text()
+        for name in names - {"apple-on-device-ai"}:
+            self.assertIn(f"`{name}`", hub)
+        for name in names:
+            text = (SKILLS / name / "SKILL.md").read_text()
+            self.assertIn("https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/API-INDEX/", text)
+            self.assertIn("https://hbmartin.github.io/Foundation-Models-and-Core-AI-and-MLX-skills/SILENT-FAILURES/", text)
+            conventions = (SKILLS / name / "references/CONVENTIONS.md").read_text()
+            self.assertIn("Precedence when sources conflict", conventions)
+            self.assertIn("Measurement attribution", conventions)
 
     def test_discovery_matches_the_cli_two_level_walk(self):
         # `npx skills` walks skills/ two levels deep for SKILL.md and lets a

@@ -95,7 +95,7 @@ Related references: [Part 6 — Evaluations](../../part-06-evaluations/README.md
 
 ## Evidence markers used in this guide
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). The examples are transcribed from the cited DNIKit source and notebooks; that research pass executed none of them. Runtime compatibility under TF 2.16+/Keras 3 remains unverified (§11 G1).
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). The examples are transcribed from the cited DNIKit source and notebooks; that research pass executed none of them. Runtime compatibility under TF 2.16+/Keras 3 remains unverified (§11 G1).
 
 ## Contents
 

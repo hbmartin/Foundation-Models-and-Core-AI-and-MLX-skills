@@ -65,7 +65,7 @@ Related references: [Part 16 guide 03](03-onscreen-awareness.md), [Part 16 guide
 
 SDK citations retain the 2026-07-29 macOS captures `AppIntents-26.5-macos.swiftinterface` and `AppIntents-27.0-macos.swiftinterface`. A symbol missing there may still exist on iOS. The SDK confirms `AppEntity.ValueRepresentation` is an alias for `IntentValueRepresentation` (§13.1).
 
-Published session code, transcript reconstructions, Apple-staff replies, and community findings remain attributed individually. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Published session code, transcript reconstructions, Apple-staff replies, and community findings remain attributed individually. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ## Contents
 

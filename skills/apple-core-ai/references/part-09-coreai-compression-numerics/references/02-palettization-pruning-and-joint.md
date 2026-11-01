@@ -19,7 +19,7 @@ and Torch 2.9.0/AO 0.17.0. Core AI artifacts target OS 27. Source review and fix
 recorded separately in [the refresh evidence](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/evidence/core-ai/README.md).
 Published model benchmarks retain their original dates and environments.
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). API citations and runtime checks attest their named source revision or fixture.
 
 ---
 

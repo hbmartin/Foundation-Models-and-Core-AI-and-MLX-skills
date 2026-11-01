@@ -12,7 +12,7 @@ watchOS in the paired-device list). On the Python side the debugging APIs descri
 is the closing story of this guide — alongside `coreai-core 1.0.0b3`, `coreai-opt 0.3.0`, and a
 pinned `torch==2.9.0`. Nothing here back-deploys to 26.x, because Core AI did not exist in 26.x.
 
-Interactive Instruments and Core AI Debugger walkthroughs remain unperformed locally. Their UI descriptions come from the cited Apple material, not a fresh manual recording. See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+Interactive Instruments and Core AI Debugger walkthroughs remain unperformed locally. Their UI descriptions come from the cited Apple material, not a fresh manual recording. See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 
 The `coreai-models` export profile also requires `torchao<0.18`; it is narrower than standalone compression in [Part 9](../../part-09-coreai-compression-numerics/README.md).

@@ -20,7 +20,7 @@ text-to-speech API. The other is a sample project demonstrating the 2026 APIs.
 
 ## Evidence markers used in this guide
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). Swift-native signature citations retain the 2026-07-29 captures `Speech-26.5-macos.swiftinterface` and `Speech-27.0-macos.swiftinterface` in `notes/sdk-interfaces/`. Those macOS interfaces do not enumerate Objective-C APIs, so absence is not proof that `SFSpeechRecognizer` or a device-only symbol is unavailable.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). Swift-native signature citations retain the 2026-07-29 captures `Speech-26.5-macos.swiftinterface` and `Speech-27.0-macos.swiftinterface` in `notes/sdk-interfaces/`. Those macOS interfaces do not enumerate Objective-C APIs, so absence is not proof that `SFSpeechRecognizer` or a device-only symbol is unavailable.
 
 Apple's “Recognizing speech in live audio” article was captured 2026-07-27. The downloadable sample has different API coverage (§1.2); do not assume it demonstrates every OS 27 addition.
 

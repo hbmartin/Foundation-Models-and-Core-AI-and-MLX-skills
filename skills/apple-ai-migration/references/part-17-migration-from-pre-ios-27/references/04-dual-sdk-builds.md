@@ -42,7 +42,7 @@ Related references: [17.1](01-what-changed-checklist.md), [17.3](03-error-taxono
 
 ## How evidence is marked in this guide
 
-See the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions). “MEASURED BY US” in this guide retains the original macOS 26.5.2 (25F84), Xcode 26.6 (17F113), macOS SDK 26.5 measurements from 2026-07-28. They establish the 26-SDK behavior only. Separate Xcode 27 compiler checks are recorded in [snippet verification](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/snippet-verification/report.md); unchanged identity and content hashes are required to carry a verdict forward. Community package behavior remains attributed to its pinned source.
+See the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions). “MEASURED BY US” in this guide retains the original macOS 26.5.2 (25F84), Xcode 26.6 (17F113), macOS SDK 26.5 measurements from 2026-07-28. They establish the 26-SDK behavior only. Separate Xcode 27 compiler checks are recorded in [snippet verification](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/notes/snippet-verification/report.md); unchanged identity and content hashes are required to carry a verdict forward. Community package behavior remains attributed to its pinned source.
 
 ## Contents
 

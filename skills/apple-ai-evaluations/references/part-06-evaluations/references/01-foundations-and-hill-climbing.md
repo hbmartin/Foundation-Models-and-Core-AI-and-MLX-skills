@@ -228,10 +228,11 @@ model was involved:
 > func aggregateMetrics(using aggregator: inout MetricsAggregator)
 > ```
 >
-> ✅ **SDK-verified nuance:** in the shipped interface `name` is not a protocol *requirement* at all —
-> it is a computed property in an extension (`Evaluations-27.0-macos.swiftinterface:482-487`), so a
-> conformance never has to supply it; and the `evaluators` requirement carries the builder attribute
-> directly — `@EvaluatorsBuilder var evaluators` (`:469-479`).
+> ✅ **SDK-verified, version-specific:** `name` is extension-only in the 27.0 capture
+> (`Evaluations-27.0-macos.swiftinterface:469-487`). In 27.2 it is a protocol requirement
+> (`Evaluations-27.2-macos.swiftinterface:471-490`), with the default extension implementation
+> still supplied. Conformances therefore need not implement it, but a custom implementation now
+> participates in protocol dispatch. `evaluators` retains its `@EvaluatorsBuilder` requirement.
 
 `Sample`, `Subject` and `SampleLoader` are all associated types. `ModelSample` and `ModelSubject` are
 *the language-model-shaped conformances* of `SampleProtocol` / `EvaluationSubject`, not the protocol
@@ -1149,6 +1150,10 @@ reconstructions of this API show — does not exist. The signature is a plain
 > loose: `saveJSON(to:)`'s parameter is labelled **`to directory:`** — it takes a directory, writes
 > a file into it, and returns the file's URL (`@discardableResult`) — and `jsonData`'s options
 > default to `[.prettyPrinted, .sortedKeys]` (`:600-629`).
+
+✅ **SDK-verified 27.2 change:** the historical excerpt above predates the get-only
+`EvaluationResult.reportMetadata` declaration (`Evaluations-27.2-macos.swiftinterface:561-563`).
+It was stored/settable in the 27.0 capture; code must not assign it against 27.2.
 
 `aggregateValue` takes an `AggregationOperation` and returns a `Double`. Two forms are attested in
 shipping code:

@@ -85,7 +85,7 @@ Resolve the compiler with `xcrun`; its mount token and location vary. If a newly
 
 The original comparisons used Xcode 26.6 (17F113), 2026-07-27, and Xcode 27 beta's Metal component (27A5228f), 2026-07-31. Those captures remain the provenance for historical compile results. Inspection on 2026-10-07 of Xcode 27 final (27A266a), macOS SDK 27.0 (26A425), confirms that the public matmul header includes int2/uint2, FP4/FP8 operands, and the `__is_unqualified_v` getter constraints. This is source inspection; individual deployment and compile requirements remain in §0.2, §1, and §5.4.
 
-MLX kernels provide concrete call sites. Header declarations and those call sites take precedence over transcript spellings; see the [shared evidence conventions](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/README.md#evidence-conventions).
+MLX kernels provide concrete call sites. Header declarations and those call sites take precedence over transcript spellings; see the [shared evidence conventions](../../CONVENTIONS.md#evidence-conventions).
 
 ```
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
