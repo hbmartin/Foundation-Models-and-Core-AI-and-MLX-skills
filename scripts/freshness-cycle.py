@@ -206,7 +206,7 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         "baseSha": None, "requestedRef": getattr(args, "ref", None) or "origin/main",
         "branch": branch, "branchCreated": False, "worktree": str(worktree),
         "lockPath": str(lock_path), "recoveredLock": lock.get("recoveredLock"),
-        "status": "preparing",
+        "status": "preparing", "remoteChecksSkipped": bool(getattr(args, "skip_fetch", False)),
     }
     try:
         atomic_json(run_root / "run.json", manifest)
@@ -214,10 +214,11 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
             existing = open_automation_pr(repository)
             if existing:
                 raise CycleError(f"automation PR already open: {existing['url']}")
-        git(repository, "fetch", "origin", "main")
+        if not getattr(args, "skip_fetch", False):
+            git(repository, "fetch", "origin", "main")
         ref = getattr(args, "ref", None) or "origin/main"
         remote_prefix = "refs/remotes/origin/" if ref.startswith("refs/remotes/origin/") else "origin/"
-        if ref.startswith(remote_prefix) and ref != "origin/main":
+        if ref.startswith(remote_prefix) and ref != "origin/main" and not getattr(args, "skip_fetch", False):
             remote_branch = ref.removeprefix(remote_prefix)
             git(repository, "fetch", "origin", f"+refs/heads/{remote_branch}:refs/remotes/origin/{remote_branch}")
         base_sha = git(repository, "rev-parse", f"{ref}^{{commit}}")

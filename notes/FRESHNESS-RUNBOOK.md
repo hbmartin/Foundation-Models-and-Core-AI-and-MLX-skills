@@ -49,7 +49,9 @@ as an unreviewed migration seed. First captures require review. After reviewing 
 run `./scripts/freshness-cycle.py acknowledge-sources <run-root>`. Acknowledgment verifies
 captured bytes and rejects a hash superseded by a newer observation. Pending findings repeat
 until acknowledged. Release build sets remain observations requiring a reviewed repository
-baseline update, including same-version respins and ambiguous simultaneous variants.
+baseline update, including same-version respins and ambiguous simultaneous variants. A reviewed
+release may declare `reviewedBuilds` in its `latestObserved` record, including its primary `build`,
+to acknowledge simultaneous variants without treating a new unknown build as already reviewed.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
@@ -228,7 +230,8 @@ without changing the app. These are explicit candidate-validation options; sched
 normal installed gate and default `origin/main`. After the runner and contract changes merge,
 update the scheduled checkout to the merged revision, then synchronize installed copies while
 preserving the paused daily and active weekly settings. `--skip-web`
-skips GitHub defect lookups, official/documentation fetches, and mirror fetches while continuing
+also skips preparation PR lookups/ref refreshes and records that missing coverage. It skips
+GitHub defect lookups, official/documentation fetches, and mirror fetches while continuing
 local checks and explicitly recording incomplete web coverage; it cannot yield a clean run.
 
 ## 5. Cadence summary

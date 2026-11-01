@@ -49,7 +49,7 @@ class Runner:
         print(f"{name}: {status}", file=sys.stderr, flush=True)
         return result
 
-    def command(self, name, command, timeout=None):
+    def command(self, name, command, timeout=None, allowed_exit_codes=(0,)):
         log = self.root / "logs" / f"{name}.log"
         print(f"{name}: running", file=sys.stderr, flush=True)
         started = self.cycle.iso()
@@ -73,9 +73,9 @@ class Runner:
             except OSError as exception:
                 error = str(exception)
         log.write_text(stdout.read_text(errors="replace") + stderr.read_text(errors="replace"))
-        if code and error is None:
+        if code not in allowed_exit_codes and error is None:
             error = f"command exited {code}; see {log}"
-        return self.record(name, "passed" if code == 0 else "blocked",
+        return self.record(name, "passed" if code in allowed_exit_codes else "blocked",
                            command=list(map(str, command)), exitCode=code, error=error,
                            startedAt=started, finishedAt=self.cycle.iso(), log=str(log),
                            stdout=str(stdout), stderr=str(stderr))
@@ -257,10 +257,16 @@ def watch_sources(runner, baseline, state_path, timeout=40):
             if not isinstance(old, dict) or not isinstance(old.get("version"), str):
                 raise ValueError(f"missing recorded release for {component}")
             matching = release_rank(old) == rank
-            if not matching or old.get("build") not in {r["build"] for r in newest}:
+            reviewed_builds = old.get("reviewedBuilds", [old.get("build")])
+            if (not isinstance(reviewed_builds, list) or not reviewed_builds
+                    or not all(isinstance(build, str) and build for build in reviewed_builds)
+                    or old.get("build") not in reviewed_builds):
+                raise ValueError(f"invalid reviewed build set for {component}")
+            observed_builds = {r["build"] for r in newest}
+            if not matching or not observed_builds.intersection(reviewed_builds):
                 runner.findings.append({"kind": "release-changed", "component": component,
                                         "recorded": old, "observed": newest})
-            elif len({r["build"] for r in newest}) > 1:
+            elif observed_builds.difference(reviewed_builds):
                 runner.findings.append({"kind": "release-build-set-changed", "component": component,
                                         "recorded": old, "observed": newest,
                                         "interpretation": "Multiple same-version builds require review; no authoritative build inferred."})
@@ -399,9 +405,15 @@ def collect_auxiliary(runner, mode, baseline, thread_review, args):
         return
     mirrors = args.artifact_root / "cache/research-mirrors"
     runner.command("research-mirrors", ["env", f"RESEARCH_REPOS_ROOT={mirrors}", "./scripts/clone-research-repos.sh"])
-    result = runner.command("apple-docs-watch", ["./scripts/capture-apple-docs-watch.py", "--output", str(root / "apple-docs")])
+    result = runner.command("apple-docs-watch", ["./scripts/capture-apple-docs-watch.py", "--output", str(root / "apple-docs")], allowed_exit_codes=(0, 1))
     manifest = runner.document("apple-docs-manifest", root / "apple-docs/manifest.json", validate_docs_watch)
     if manifest and result.get("exitCode") in (0, 1):
+        for item in manifest["captures"]:
+            relative = pathlib.PurePosixPath(item["path"])
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError("documentation source path escapes capture directory")
+            if hashlib.sha256((root / "apple-docs" / relative).read_bytes()).hexdigest() != item["sha256"]:
+                raise ValueError("documentation source hash differs from manifest")
         result["status"], result["error"] = "passed", None
         runner.cycle.atomic_json(root / "results/apple-docs-watch.json", result)
         capture = {"pagesAgree": manifest["pagesAgree"], "captures": [
@@ -430,7 +442,11 @@ def validate_docs_watch(payload):
     captures = payload.get("captures")
     if (not isinstance(captures, list) or len(captures) != 2
             or {c.get("name") for c in captures if isinstance(c, dict)} != {"overview", "member"}
-            or any(c.get("status") != "captured" or not c.get("methodSpellings") for c in captures)):
+            or any(c.get("status") != "captured" or not isinstance(c.get("methodSpellings"), list)
+                   or not c["methodSpellings"] or not all(isinstance(m, str) for m in c["methodSpellings"])
+                   or not isinstance(c.get("path"), str)
+                   or not isinstance(c.get("sha256"), str) or not re.fullmatch(r"[0-9a-f]{64}", c["sha256"])
+                   for c in captures)):
         raise ValueError("documentation capture or declaration coverage incomplete")
 
 
@@ -517,7 +533,8 @@ def execute(args, cycle):
         with contextlib.redirect_stdout(sys.stderr):
             manifest = cycle.prepare_run(SimpleNamespace(repository=args.repository, artifact_root=args.artifact_root,
                                           worktree_root=None, run_id=args.run_id,
-                                          skip_remote_check=False, ref=args.ref))
+                                          skip_remote_check=getattr(args, "skip_web", False),
+                                          skip_fetch=getattr(args, "skip_web", False), ref=args.ref))
         root = args.artifact_root / "weekly-improvements" / args.run_id
         repository = pathlib.Path(manifest["worktree"])
     else:
@@ -544,6 +561,8 @@ def execute(args, cycle):
     try:
         runner = Runner(root, repository, cycle, args.command_timeout)
         cycle.atomic_json(root / "preflight.json", gate)
+        if manifest.get("remoteChecksSkipped"):
+            runner.record("remote-preparation-coverage", "blocked", error="remote PR check and ref refresh explicitly skipped; using recorded local ref")
         if args.cycle == "weekly":
             cycle.read_json(root / "run.json")  # Validate persistence; cleanup uses the in-memory identity.
             baseline = cycle.read_json(repository / "notes/current-state.json")

@@ -1,6 +1,7 @@
 """Regression checks for resource recovery and reviewed source monitoring."""
 import contextlib
 import io
+import hashlib
 import json
 import os
 import pathlib
@@ -82,6 +83,24 @@ class LifecycleRepairs(unittest.TestCase):
         self.assertEqual(state["lastCollectedRun"]["outcome"], "findings")
         self.assertEqual(state["pending"]["outcome"], "findings")
 
+    def test_offline_preparation_does_not_fetch_or_query_github(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+            real_git = cycle.git
+            calls = []
+            def git(repository, *args, **kwargs):
+                calls.append(args)
+                return real_git(repository, *args, **kwargs)
+            with mock.patch.object(cycle, "git", side_effect=git), mock.patch.object(cycle, "open_automation_pr") as query:
+                manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts", worktree_root=None,
+                    run_id="offline", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+                query.assert_not_called()
+                self.assertFalse(any(args[0] == "fetch" for args in calls))
+                self.assertTrue(manifest["remoteChecksSkipped"])
+                with contextlib.redirect_stdout(io.StringIO()):
+                    cycle.finalize(SimpleNamespace(run_root=root / "artifacts/weekly-improvements/offline", outcome="blocked", pr_url=None, state_path=None, manifest=manifest))
+
     def test_prepare_interrupt_after_worktree_creation_rolls_back(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -136,11 +155,17 @@ class CollectionRepairs(unittest.TestCase):
             root = pathlib.Path(directory)
             runner = jobs.Runner(root, root, cycle)
             captured_commands = []
-            def command(name, argv):
+            def command(name, argv, **options):
                 captured_commands.append(argv)
                 if name == "apple-docs-watch":
-                    cycle.atomic_json(root / "apple-docs/manifest.json", {"schemaVersion": 1, "pagesAgree": False,
-                        "captures": [{"name": n, "status": "captured", "methodSpellings": [m]} for n, m in (("overview", "resolve"), ("member", "resolved"))]})
+                    captures = []
+                    (root / "apple-docs").mkdir()
+                    for n, m in (("overview", "resolve"), ("member", "resolved")):
+                        payload = f"func {m}(in:)".encode()
+                        (root / "apple-docs" / f"{n}.md").write_bytes(payload)
+                        captures.append({"name": n, "status": "captured", "path": f"{n}.md",
+                                         "sha256": hashlib.sha256(payload).hexdigest(), "methodSpellings": [m]})
+                    cycle.atomic_json(root / "apple-docs/manifest.json", {"schemaVersion": 1, "pagesAgree": False, "captures": captures})
                 return runner.record(name, "blocked" if name == "apple-docs-watch" else "passed", exitCode=1 if name == "apple-docs-watch" else 0)
             with mock.patch.object(runner, "command", side_effect=command):
                 jobs.collect_auxiliary(runner, "weekly", {}, None, SimpleNamespace(skip_web=False, artifact_root=root))
@@ -167,12 +192,14 @@ class CollectionRepairs(unittest.TestCase):
 
 
 class SourceWatchRepairs(unittest.TestCase):
-    def capture(self, root, state, docs="# Initial\n", versions=(("27.2", "27B52"),)):
+    def capture(self, root, state, docs="# Initial\n", versions=(("27.2", "27B52"),), reviewed_builds=None):
         runner = jobs.Runner(root, root, cycle)
         feed = ('<rss><channel>' + ''.join(f'<item><title>Xcode {v} ({b})</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item>' for v, b in versions) + '</channel></rss>').encode()
         def response(request, timeout):
             return io.BytesIO(docs.encode() if request.full_url.endswith(".md") else feed)
         baseline = {"environment": {"latestObserved": {"xcode": {"version": "27.2", "build": "27B52"}}}}
+        if reviewed_builds is not None:
+            baseline["environment"]["latestObserved"]["xcode"]["reviewedBuilds"] = reviewed_builds
         with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response):
             jobs.watch_sources(runner, baseline, state)
         jobs.write_report(runner, "daily", "findings", emit=False)
@@ -220,3 +247,5 @@ class SourceWatchRepairs(unittest.TestCase):
             self.assertFalse(any(f["kind"].startswith("release-") for f in alias.findings))
             respin = self.capture(root / "respin", root / "state2.json", versions=(("27.2", "27B52"), ("27.2", "new")))
             self.assertTrue(any(f["kind"] == "release-build-set-changed" for f in respin.findings))
+            reviewed = self.capture(root / "reviewed", root / "state3.json", versions=(("27.2", "27B52"), ("27.2", "new")), reviewed_builds=["27B52", "new"])
+            self.assertFalse(any(f["kind"].startswith("release-") for f in reviewed.findings))
