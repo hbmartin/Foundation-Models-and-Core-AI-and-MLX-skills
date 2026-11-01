@@ -1,0 +1,211 @@
+Building for debugging...
+[Planning deferred tasks]
+[27 / 50]
+[28 / 51] ProbeSupport
+[38 / 87]
+[43 / 87]
+[46 / 87]
+[47 / 87]
+[51 / 87]
+[53 / 87]
+[56 / 87]
+[59 / 87]
+[61 / 87]
+[62 / 87]
+[72 / 87] ProbesTests-product
+[72 / 87] ProbeSupport
+[77 / 88] ProbesTests-product
+[88 / 149]
+[97 / 149]
+[104 / 149]
+[106 / 149]
+[109 / 149]
+[114 / 149]
+[117 / 149]
+[119 / 149]
+[122 / 149]
+[123 / 149]
+[127 / 149]
+[128 / 149]
+[129 / 149]
+[138 / 149] ProbesTests-product
+[143 / 149] ProbesTests-product
+[145 / 149] ProbesTests-product
+Build complete! (9.75 sec)
+Test Suite 'All tests' started at 2026-10-30 16:33:42.892.
+Test Suite 'ProbesTests.xctest' started at 2026-10-30 16:33:42.893.
+Test Suite 'CoreAIProbes' started at 2026-10-30 16:33:42.893.
+Test Case '-[ProbesTests.CoreAIProbes testCacheDeleteWhileReferenced]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/CoreAIProbes.swift:62: -[ProbesTests.CoreAIProbes testCacheDeleteWhileReferenced] : Test skipped - SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets
+Test Case '-[ProbesTests.CoreAIProbes testCacheDeleteWhileReferenced]' skipped (0.001 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testCacheLocationAndSize]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/CoreAIProbes.swift:62: -[ProbesTests.CoreAIProbes testCacheLocationAndSize] : Test skipped - SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets
+Test Case '-[ProbesTests.CoreAIProbes testCacheLocationAndSize]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testDeviceArchitectureName]' started.
+PROBE-RESULT name=coreai.deviceArchitectureName value=h14s detail=hw.model=Mac14,12 os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.CoreAIProbes testDeviceArchitectureName]' passed (0.001 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testNDArrayZeroInitialization]' started.
+PROBE-RESULT name=coreai.ndarray-zero-init value=all-zero-inconclusive detail=rounds=6 roundsWithGarbage=0 nonzeroBytesTotal=0 os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.CoreAIProbes testNDArrayZeroInitialization]' passed (13.183 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testSpecializationOptionsDefaults]' started.
+PROBE-RESULT name=coreai.specializationOptions-defaults value=default.expectFrequentReshapes=false detail=default.allowed=[CoreAIDelegates.ComputeUnitKind.neuralEngine, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.gpu] default.preferred=nil cpuOnly.allowed=[CoreAIDelegates.ComputeUnitKind.cpu] cpuOnly.expectFrequentReshapes=false availableKinds=[CoreAIDelegates.ComputeUnitKind.gpu, CoreAIDelegates.ComputeUnitKind.cpu, CoreAIDelegates.ComputeUnitKind.neuralEngine] os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.CoreAIProbes testSpecializationOptionsDefaults]' passed (0.001 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testSpecializeCancellation]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/CoreAIProbes.swift:62: -[ProbesTests.CoreAIProbes testSpecializeCancellation] : Test skipped - SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets
+Test Case '-[ProbesTests.CoreAIProbes testSpecializeCancellation]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.CoreAIProbes testSpecializeReturnIdentity]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/CoreAIProbes.swift:62: -[ProbesTests.CoreAIProbes testSpecializeReturnIdentity] : Test skipped - SKIPPED: no usable Core AI model (requested=none); set PROBE_AIMODEL_URL or bundle exactly one asset in DeviceProbeAssets
+Test Case '-[ProbesTests.CoreAIProbes testSpecializeReturnIdentity]' skipped (0.000 seconds).
+Test Suite 'CoreAIProbes' passed at 2026-10-30 16:33:56.081.
+	 Executed 7 tests, with 4 tests skipped and 0 failures (0 unexpected) in 13.187 (13.188) seconds
+Test Suite 'EvaluationsProbes' started at 2026-10-30 16:33:56.081.
+Test Case '-[ProbesTests.EvaluationsProbes testAllowsAdditionalCallsFalseSemantics]' started.
+PROBE-RESULT name=eval.allowsAdditionalCalls-false value=control(allPass=1.0) withExtraCall(allPass=0.0) detail=controlPct=1.0 withExtraCallPct=0.5 — control=1.0 with extra=0.0 means false is enforced — controlFrame: ┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳╍╍╍╍╍╍┓⏎┃   ┃ Input                                              ┃ Response                                           ┃ Expected ┃ Transcript                                         ┃ 2    ┇⏎┃   ┃ <ModelSample<Double>>                              ┃ <ModelSubject<Double>>                             ┃ <Double> ┃ <Structured — extraFrame: ┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳╍╍╍╍╍╍┓⏎┃   ┃ Input                                              ┃ Response                                           ┃ Expected ┃ Transcript                                         ┃ 2    ┇⏎┃   ┃ <ModelSample<Double>>                              ┃ <ModelSubject<Double>>                             ┃ <Double> ┃ <Structured os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testAllowsAdditionalCallsFalseSemantics]' passed (0.020 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testDisallowedArgumentsNarrowing]' started.
+PROBE-RESULT name=eval.disallowed-arguments-narrowing value=differentArgs(allPass=1.0) matchingArgs(allPass=0.0) detail=differentArgsPct=1.0 matchingArgsPct=0.0 — differentArgs=1.0 with matchingArgs=0.0 means arguments DO narrow — differentArgsFrame: ┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳╍╍╍╍╍╍┓⏎┃   ┃ Input                                              ┃ Response                                           ┃ Expected ┃ Transcript                                         ┃ 2    ┇⏎┃   ┃ <ModelSample<Double>>                              ┃ <ModelSubject<Double>>                             ┃ <Double> ┃ <Structured — matchingArgsFrame: ┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳╍╍╍╍╍╍┓⏎┃   ┃ Input                                              ┃ Response                                           ┃ Expected ┃ Transcript                                         ┃ 2    ┇⏎┃   ┃ <ModelSample<Double>>                              ┃ <ModelSubject<Double>>                             ┃ <Double> ┃ <Structured os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testDisallowedArgumentsNarrowing]' passed (0.004 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testDuplicateMetricNames]' started.
+PROBE-RESULT name=eval.duplicate-metric-names value=rejected detail=error=duplicateMetricName(name: "Match") os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testDuplicateMetricNames]' passed (0.001 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testMeanAggregateOverAllIgnored]' started.
+PROBE-RESULT name=eval.mean-over-all-ignored value=-1.0 detail=detailedRows=4 os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testMeanAggregateOverAllIgnored]' passed (0.001 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testMetricIdentityByNameOrInstance]' started.
+PROBE-RESULT name=eval.metric-identity value=summaryColumns=["Mean of Match"] detail=detailedColumns=["Input", "Response", "Expected", "Match"] meanViaFreshInstance=0.5 os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testMetricIdentityByNameOrInstance]' passed (0.001 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testRunErrorCounters]' started.
+PROBE-RESULT name=eval.run-errors.clean value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=0 hasFailures=false anyInferenceProduced=true os=27.0.1 platform=macOS
+PROBE-RESULT name=eval.run-errors.subject value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=1 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS
+PROBE-RESULT name=eval.run-errors.evaluator value=completed detail=rows=4 scored=4 mean=1.0 inferenceFailures=0 evaluatorFailures=1 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS
+PROBE-RESULT name=eval.run-errors.all-subject value=completed detail=rows=4 scored=4 mean=-1.0 inferenceFailures=4 evaluatorFailures=0 hasFailures=true anyInferenceProduced=false os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testRunErrorCounters]' passed (0.004 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testSampleGeneratorUnreachableTarget]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.EvaluationsProbes testSampleGeneratorUnreachableTarget] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_GENERATOR=1 to run
+Test Case '-[ProbesTests.EvaluationsProbes testSampleGeneratorUnreachableTarget]' skipped (0.001 seconds).
+Test Case '-[ProbesTests.EvaluationsProbes testSubjectInferenceFailureHandling]' started.
+PROBE-RESULT name=eval.subject-throws value=run-completed detail=samples=5 detailedRows=5 meanMatch=1.0 inferenceFailures=2 evaluatorFailures=0 hasFailures=true anyInferenceProduced=true os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.EvaluationsProbes testSubjectInferenceFailureHandling]' passed (0.001 seconds).
+Test Suite 'EvaluationsProbes' passed at 2026-10-30 16:33:56.113.
+	 Executed 8 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.032 (0.032) seconds
+Test Suite 'FoundationModelsProbes' started at 2026-10-30 16:33:56.113.
+Test Case '-[ProbesTests.FoundationModelsProbes testAnyOfVocabularyEnforcement]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testAnyOfVocabularyEnforcement] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testAnyOfVocabularyEnforcement]' skipped (0.001 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testAttachmentLabelRecording]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testAttachmentLabelRecording] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_ATTACHMENT=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testAttachmentLabelRecording]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testCollectAfterManualIteration]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testCollectAfterManualIteration] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testCollectAfterManualIteration]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testConcurrentSessionCeiling]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testConcurrentSessionCeiling] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testConcurrentSessionCeiling]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testErrorTypeForContextOverflow]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testErrorTypeForContextOverflow] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testErrorTypeForContextOverflow]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testImageAttachmentTokenCost]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testImageAttachmentTokenCost] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testImageAttachmentTokenCost]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testIncludeSchemaInPromptRecording]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testIncludeSchemaInPromptRecording] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testIncludeSchemaInPromptRecording]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testOnToolCallThrowEffect]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testOnToolCallThrowEffect] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testOnToolCallThrowEffect]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testParsingErrorThrownOnTruncation]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testParsingErrorThrownOnTruncation] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testParsingErrorThrownOnTruncation]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testPermissiveGuardrailsOnGenerable]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testPermissiveGuardrailsOnGenerable] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testPermissiveGuardrailsOnGenerable]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testPrivateCloudComputeAvailability]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:769: -[ProbesTests.FoundationModelsProbes testPrivateCloudComputeAvailability] : Test skipped - SKIPPED: set PROBE_ENABLE_PCC=1 (unentitled processes may fatalError constructing PCC — guide 2.6 §8.5)
+Test Case '-[ProbesTests.FoundationModelsProbes testPrivateCloudComputeAvailability]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testRequiredToolCallingModeWithNoTools]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testRequiredToolCallingModeWithNoTools] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testRequiredToolCallingModeWithNoTools]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testStreamEarlyBreakTranscriptState]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testStreamEarlyBreakTranscriptState] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testStreamEarlyBreakTranscriptState]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testStreamZeroPartialsOnToolTurn]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testStreamZeroPartialsOnToolTurn] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testStreamZeroPartialsOnToolTurn]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemLanguageModelContextSize]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testSystemLanguageModelContextSize] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemLanguageModelContextSize]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemModelAvailability]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testSystemModelAvailability] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemModelAvailability]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemModelCapabilities]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testSystemModelCapabilities] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testSystemModelCapabilities]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testToolCallingModePrecedence]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testToolCallingModePrecedence] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testToolCallingModePrecedence]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testToolDerivedNameDefault]' started.
+PROBE-RESULT name=fm.tool-derived-name value=instance=FetchWeatherReportTool definition=FetchWeatherReportTool detail=type=FetchWeatherReportTool os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.FoundationModelsProbes testToolDerivedNameDefault]' passed (0.001 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testToolIncludesSchemaInInstructionsDefault]' started.
+PROBE-RESULT name=fm.tool-schema-flag-default value=true detail=os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.FoundationModelsProbes testToolIncludesSchemaInInstructionsDefault]' passed (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testTranscriptErrorPolicyNilDefault]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testTranscriptErrorPolicyNilDefault] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testTranscriptErrorPolicyNilDefault]' skipped (0.000 seconds).
+Test Case '-[ProbesTests.FoundationModelsProbes testUnsupportedLocaleError]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/FoundationModelsProbes.swift:123: -[ProbesTests.FoundationModelsProbes testUnsupportedLocaleError] : Test skipped - SKIPPED: host-backed model calls require explicit consent because they may block non-cancellably; OS build 26A434 (runtime safety unverified); set PROBE_ENABLE_HOST_MODEL=1 to run
+Test Case '-[ProbesTests.FoundationModelsProbes testUnsupportedLocaleError]' skipped (0.000 seconds).
+Test Suite 'FoundationModelsProbes' passed at 2026-10-30 16:33:56.121.
+	 Executed 22 tests, with 20 tests skipped and 0 failures (0 unexpected) in 0.006 (0.008) seconds
+Test Suite 'InstrumentsWorkloadProbes' started at 2026-10-30 16:33:56.121.
+Test Case '-[ProbesTests.InstrumentsWorkloadProbes testInstrumentsRecordingWorkload]' started.
+/Users/haroldmartin/.codex/worktrees/freshness-refresh/FM and MLX and CoreAI/probes/Tests/ProbesTests/InstrumentsWorkloadProbes.swift:50: -[ProbesTests.InstrumentsWorkloadProbes testInstrumentsRecordingWorkload] : Test skipped - SKIPPED: set PROBE_INSTRUMENTS_WORKLOAD=1 (see probes/INSTRUMENTS-RECORDING.md)
+Test Case '-[ProbesTests.InstrumentsWorkloadProbes testInstrumentsRecordingWorkload]' skipped (0.000 seconds).
+Test Suite 'InstrumentsWorkloadProbes' passed at 2026-10-30 16:33:56.122.
+	 Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'ProbeSupportTests' started at 2026-10-30 16:33:56.122.
+Test Case '-[ProbesTests.ProbeSupportTests testCancellationBeforeAdmissionDoesNotStartWork]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testCancellationBeforeAdmissionDoesNotStartWork]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testCancellationBeforeRegistrationDoesNotCreateRacers]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testCancellationBeforeRegistrationDoesNotCreateRacers]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testNearSimultaneousCompletionResolvesToExactlyOneOutcome]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testNearSimultaneousCompletionResolvesToExactlyOneOutcome]' passed (0.614 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testOperationErrorAfterTimeoutIsSwallowed]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testOperationErrorAfterTimeoutIsSwallowed]' passed (0.056 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testParentCancellationCancelsBothRacers]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testParentCancellationCancelsBothRacers]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testParentCancelledBeforeEntryDoesNotStartWork]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testParentCancelledBeforeEntryDoesNotStartWork]' passed (0.104 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutBeforeAdmissionDoesNotStartWork]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutBeforeAdmissionDoesNotStartWork]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutPreservesOperationError]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutPreservesOperationError]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutPreservesSuccessfulValue]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutPreservesSuccessfulValue]' passed (0.000 seconds).
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutReturnsPromptlyWhenOperationIgnoresCancellation]' started.
+Test Case '-[ProbesTests.ProbeSupportTests testTimeoutReturnsPromptlyWhenOperationIgnoresCancellation]' passed (0.052 seconds).
+Test Suite 'ProbeSupportTests' passed at 2026-10-30 16:33:56.950.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.828 (0.829) seconds
+Test Suite 'SpeechProbes' started at 2026-10-30 16:33:56.950.
+Test Case '-[ProbesTests.SpeechProbes testAssetInventoryStatusOrdering]' started.
+PROBE-RESULT name=speech.assetInventory-status-order value=sorted=[unsupported,downloading,supported,installed] detail=unsupported<supported=true unsupported<downloading=true unsupported<installed=true supported<unsupported=false supported<downloading=false supported<installed=true downloading<unsupported=false downloading<supported=true downloading<installed=true installed<unsupported=false installed<supported=false installed<downloading=false os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.SpeechProbes testAssetInventoryStatusOrdering]' passed (0.002 seconds).
+Test Suite 'SpeechProbes' passed at 2026-10-30 16:33:56.952.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'SpotlightProbes' started at 2026-10-30 16:33:56.952.
+Test Case '-[ProbesTests.SpotlightProbes testSpotlightDirectCall]' started.
+PROBE-RESULT name=fm.spotlight-direct-call value=donation=threw(CSIndexErrorDomain:-1003) naive=rejected-code-100 schema=rejected-code-100 ordered=rejected-code-100 replies=3 detail=indexingAvailable=true donate=threw(CSIndexErrorDomain:-1003) detail=Error Domain=CSIndexErrorDomain Code=-1003 "(null)" UserInfo={NSUnderlyingError=0x75897046f0 {Error Domain=NSCocoaErrorD naiveCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: "{\n  \"response\" : {\n    \"error\" : {\n      \"_0\" : {\n        \"code\" : 100,\n        \"context\" : \"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\n  {\\\"type\\\":\\\"search\\\", \\\"value\\\":<SearchArguments>}\\n  {\\\"type\\\":\\\"schema\\\", \\\"value\\\":<SchemaQuery>}\\n  {\\\"type\\\":\\\"help\\\",   \\\"value\\\":<HelpQuery>}\\n  {\\\"type\\\":\\\"display\\\",\\\"value\\\":<DisplayQuery>}\\n\\nFor fre schemaCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: "{\n  \"response\" : {\n    \"error\" : {\n      \"_0\" : {\n        \"code\" : 100,\n        \"context\" : \"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\n  {\\\"type\\\":\\\"search\\\", \\\"value\\\":<SearchArguments>}\\n  {\\\"type\\\":\\\"schema\\\", \\\"value\\\":<SchemaQuery>}\\n  {\\\"type\\\":\\\"help\\\",   \\\"value\\\":<HelpQuery>}\\n  {\\\"type\\\":\\\"display\\\",\\\"value\\\":<DisplayQuery>}\\n\\nFor free-text search across all indexed text fields, retry with:\\n  {\\\"query\\\":{\\\"type\\\":\\\"search\\\",\\\"value\\\":{\\\"root\\\":{\\\"type\\\":\\\"allText\\\",\\\"value\\\":{\\\"terms\\\":[\\\"<your terms>\\\"]}},\\\"pageSize\\\":15}}}\\n\\nDecode error: Failed to parse generated content.\\nReceived: {\\\"query\\\":{\\\"type\\\":\\\"search\\\",\\\"value\\\":{\\\"root\\\":{\\\"terms\\\":[\\\"D9F70C12\\\"],\\\"type\\\":\\\"allText\\\"},\\\"pageSize\\\":15}}}\",\n        \"error\" : true,\n        \"message\" : \"Malformed tool arguments — retry with the schema below.\"\n      }\n    }\n  }\ orderedCall=rejected-code-100 output=Prompt(components: [FoundationModels.Prompt.Component.text(FoundationModels.Prompt.Text(value: "{\n  \"response\" : {\n    \"error\" : {\n      \"_0\" : {\n        \"code\" : 100,\n        \"context\" : \"The tool argument did not match the FullArguments schema. The tool expects a JSON object whose `query` field is exactly one of:\\n  {\\\"type\\\":\\\"search\\\", \\\"value\\\":<SearchArguments>}\\n  {\\\"type\\\":\\\"schema\\\", \\\"value\\\":<SchemaQuery>}\\n  {\\\"type\\\":\\\"help\\\",   \\\"value\\\":<HelpQuery>}\\n  {\\\"type\\\":\\\"display\\\",\\\"value\\\":<DisplayQuery>}\\n\\nFor free-text search across all indexed text fields, retry with:\\n  {\\\"query\\\":{\\\"type\\\":\\\"search\\\",\\\"value\\\":{\\\"root\\\":{\\\"type\\\":\\\"allText\\\",\\\"value\\\":{\\\"terms\\\":[\\\"<your terms>\\\"]}},\\\"pageSize\\\":15}}}\\n\\nDecode error: Failed to parse generated content.\\nReceived: {\\\"query\\\":{\\\"type\\\":\\\"search\\\",\\\"value\\\":{\\\"pageSize\\\":15,\\\"root\\\":{\\\"type\\\":\\\"allText\\\",\\\"terms\\\":[\\\"D9F70C12\\\"]}}}}\",\n        \"error\" : true,\n        \"message\" : \"Malformed tool arguments — retry with the schema below.\"\n      }\n    }\n  }\ replyCollector=deadline replyCount=3 reply[0]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: 7BAEA7AD-9646-4ACB-8C61-5FD8A5F8E409), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: "search"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[1]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: C859ECF1-9307-4894-BF82-7EBFAEAE12DB), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: "search"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) reply[2]=SearchReply(content: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Content.items([]), label: nil, queryToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.QueryToken(_uuid: F9184F7D-BEB3-41F7-922F-18D1C51BEB47), stageToken: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.StageToken(_value: "search"), status: _CoreSpotlight_FoundationModels.SpotlightSearchTool.SearchReply.Status.complete) cleanup=threw(type=NSError domain=CSIndexErrorDomain code=-1003 casts=[] desc=Error Domain=CSIndexErrorDomain Code=-1003 "(null)" UserInfo={NSUnderlyingError=0x75897f9170 {Error Domain=NSCocoaErrorDomain Code=4097 "Couldn’t communicate with a helper application."}}) os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.SpotlightProbes testSpotlightDirectCall]' passed (17.101 seconds).
+Test Case '-[ProbesTests.SpotlightProbes testSpotlightToolSurface]' started.
+PROBE-RESULT name=fm.spotlight-tool-surface value=name=spotlight_search includesSchema=true schemaCharacters=83570 artifact=spotlight-tool-schema-mac-os27.0.1-26A434-xcode-27B52.txt artifactWrite=ok detail=Version 27.0.1 (Build 26A434) os=27.0.1 platform=macOS
+Test Case '-[ProbesTests.SpotlightProbes testSpotlightToolSurface]' passed (0.027 seconds).
+Test Suite 'SpotlightProbes' passed at 2026-10-30 16:34:14.081.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 17.129 (17.129) seconds
+Test Suite 'ProbesTests.xctest' passed at 2026-10-30 16:34:14.081.
+	 Executed 51 tests, with 26 tests skipped and 0 failures (0 unexpected) in 31.183 (31.188) seconds
+Test Suite 'All tests' passed at 2026-10-30 16:34:14.081.
+	 Executed 51 tests, with 26 tests skipped and 0 failures (0 unexpected) in 31.183 (31.189) seconds
+􀟈  Test run started.
+􀄵  Testing Library Version: 2403
+􀄵  Target Platform: arm64e-apple-macos14.0
+􁁛  Test run with 0 tests in 0 suites passed after 0.001 seconds.

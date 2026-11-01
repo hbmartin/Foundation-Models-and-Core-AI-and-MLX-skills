@@ -8,6 +8,14 @@ See the [shared evidence conventions](../../README.md#evidence-conventions). API
 
 ---
 
+
+✅ **SDK-verified platform restriction (27.2):** `AIModelCache.Policy.persistent` is
+unavailable on tvOS (`CoreAIDelegates-27.2-macos.swiftinterface:45-49`). All `.persistent`
+examples below target the other supported platforms; for tvOS choose `.default` inside
+`#if os(tvOS)` and place `.persistent` in the `#else` branch. A runtime version check
+cannot make an unavailable tvOS declaration compile.
+
+
 ## What this covers
 
 Prepare models outside interactive flows. Use `AIModelCache` to distinguish a cache hit from specialization, select cache policy and options, persist bookmarks, and package architecture-specific AOT artifacts. Keep an OS-update recovery path.
@@ -425,7 +433,13 @@ final class ModelGate {
         defer { isPreparing = false }
         try await AIModel.specialize(contentsOf: modelURL,
                                      options: options,
-                                     cachePolicy: .persistent)
+                                     cachePolicy: { () -> AIModelCache.Policy in
+                                       #if os(tvOS)
+                                       return .default
+                                       #else
+                                       return .persistent
+                                       #endif
+                                     }())
         refreshReadiness()
     }
 }
@@ -631,7 +645,13 @@ func enableFeature(_ feature: Feature, progress: @MainActor (Double, String) -> 
     try await AIModel.specialize(
         contentsOf: modelURL,
         options: ModelSpecialization.options(for: modelURL),   // §4: one source of truth
-        cachePolicy: .persistent                               // §6: survive storage pressure
+        cachePolicy: { () -> AIModelCache.Policy in
+          #if os(tvOS)
+          return .default
+          #else
+          return .persistent
+          #endif
+        }()                               // §6: survive storage pressure
     )
 
     // 3. From here on, every load is a cache hit.
@@ -830,7 +850,13 @@ func downloadAndUpdateModel(from remoteURL: URL, localModelURL: URL) async throw
     try await AIModel.specialize(
         contentsOf: localModelURL,
         options: .default,
-        cachePolicy: .persistent
+        cachePolicy: { () -> AIModelCache.Policy in
+          #if os(tvOS)
+          return .default
+          #else
+          return .persistent
+          #endif
+        }()
     )
 }
 ```
@@ -997,7 +1023,13 @@ try await AIModel.specialize(
     contentsOf: sharedModelURL,
     options: .default,
     cache: groupCache,
-    cachePolicy: .persistent
+    cachePolicy: { () -> AIModelCache.Policy in
+      #if os(tvOS)
+      return .default
+      #else
+      return .persistent
+      #endif
+    }()
 )
 ```
 
@@ -1129,7 +1161,13 @@ Step 1 — specialize with `.persistent`, and capture the bookmark:
 let model = try await AIModel.specialize(
     contentsOf: llmURL,
     options: .default,
-    cachePolicy: .persistent
+    cachePolicy: { () -> AIModelCache.Policy in
+      #if os(tvOS)
+      return .default
+      #else
+      return .persistent
+      #endif
+    }()
 )
 
 // Save bookmark data to restore access after the app exits.

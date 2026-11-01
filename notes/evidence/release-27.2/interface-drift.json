@@ -1,163 +1,1099 @@
 {
-  "normalization": "Diagnostic only: :: replaced by . to separate compiler-printing changes from declarations; raw captures remain unchanged.",
+  "schemaVersion": 2,
+  "reconstructedAt": "2026-11-01",
+  "normalization": "Scoped declarations; order-independent attributes; :: normalized to .; protocol requirements, accessors and inlined bodies retained. Raw captures unchanged.",
   "frameworks": [
     {
       "framework": "AppIntents",
-      "declarationLinesChanged": 16347,
+      "declarationsChanged": 19,
       "changes": [
-        "-@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)",
-        "-@available(*, deprecated, renamed: \"AppSchema\")",
-        "-public struct AssistantSchema : Swift.Sendable {",
-        "-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-public enum AssistantSchemas {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated, renamed: \"AppSchema.Schema\")",
-        "-  @_marker public protocol Model {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated, renamed: \"AppIntentSchema\")",
-        "-  @_marker public protocol Intent : AppIntents.AssistantSchemas.AppIntents.Model {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated, renamed: \"AppEntitySchema\")",
-        "-  @_marker public protocol Entity : AppIntents.AssistantSchemas.AppIntents.Model {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated, renamed: \"AppEnumSchema\")",
-        "-  @_marker public protocol Enum : AppIntents.AssistantSchemas.AppIntents.Model {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated)",
-        "-  public struct IntentSchema : AppIntents.AssistantSchemas.AppIntents.Intent {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated)",
-        "-  public struct EntitySchema : AppIntents.AssistantSchemas.AppIntents.Entity {",
-        "-  @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-  @available(*, deprecated)",
-        "-  public struct EnumSchema : AppIntents.AssistantSchemas.AppIntents.Enum {",
-        "-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)",
-        "-@available(*, deprecated, renamed: \"AppEntity\")",
-        "-@attached(memberAttribute) @attached(extension, conformances: AppIntents.AppEntity, AppIntents.AssistantSchemaEntity, names: named(__assistantSchemaEntity)) public macro AssistantEntity<T>(schema: T) = #externalMacro(module: \"AppIntentsMacros\", type: \"AssistantEntityMacros\") where T : AppIntents.AssistantSchemas.AppIntents.Entity",
-        "-@available(iOS 18.0, macOS 26.0, watchOS 26.0, *)",
-        "-@available(tvOS, unavailable)",
-        "-@available(visionOS, unavailable)",
-        "-public protocol ControlConfigurationIntent : AppIntents.AppIntent {",
-        "-@available(iOS 18.0, macOS 26.0, watchOS 26.0, *)",
-        "-@available(tvOS, unavailable)"
+        {
+          "kind": "modified",
+          "owner": "AppIntents.AppSchema",
+          "before": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Entity : AppIntents.AppSchemaEntity",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Entity : AppIntents.AppSchemaEntity, AppIntents.AppSchema.AppIntents.Kind",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "modified",
+          "owner": "AppIntents.AppSchema",
+          "before": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Enum : AppIntents.AppSchemaEnum",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Enum : AppIntents.AppSchemaEnum, AppIntents.AppSchema.AppIntents.Kind",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "modified",
+          "owner": "AppIntents.AppSchema",
+          "before": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Intent : AppIntents.AppSchemaIntent",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "AppIntents.AppSchema",
+            "declaration": "public struct Intent : AppIntents.AppSchemaIntent, AppIntents.AppSchema.AppIntents.Kind",
+            "attributes": [
+              "@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "modified",
+          "owner": "AppIntents.AppSchema.AppIntents.MessagesEnum",
+          "before": {
+            "owner": "AppIntents.AppSchema.AppIntents.MessagesEnum",
+            "declaration": "public var customReaction: some AppIntents.AppSchemaEnum",
+            "attributes": [
+              "@_alwaysEmitIntoClient",
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@available(watchOS, unavailable)"
+            ],
+            "body": "get { AppSchema.Enum(\"Tapback\") }"
+          },
+          "after": {
+            "owner": "AppIntents.AppSchema.AppIntents.MessagesEnum",
+            "declaration": "public var customReaction: some AppIntents.AppSchemaEnum",
+            "attributes": [
+              "@_alwaysEmitIntoClient",
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@available(watchOS, unavailable)"
+            ],
+            "body": "get { AppSchema.Enum(\"CustomReaction\") }"
+          }
+        },
+        {
+          "kind": "modified",
+          "owner": "AppIntents.AppSchema.AppIntents.PhotosEntity",
+          "before": {
+            "owner": "AppIntents.AppSchema.AppIntents.PhotosEntity",
+            "declaration": "public var asset: some AppIntents.AppSchemaEntity",
+            "attributes": [
+              "@_alwaysEmitIntoClient",
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@available(watchOS, unavailable)"
+            ],
+            "body": "get { AppSchema.Entity(\"PhotoEntity\") }"
+          },
+          "after": {
+            "owner": "AppIntents.AppSchema.AppIntents.PhotosEntity",
+            "declaration": "public var asset: some AppIntents.AppSchemaEntity",
+            "attributes": [
+              "@_alwaysEmitIntoClient",
+              "@available(iOS 18.0, macOS 15.0, visionOS 2.0, *)",
+              "@available(tvOS, unavailable)",
+              "@available(watchOS, unavailable)"
+            ],
+            "body": "get { AppSchema.Entity(\"PhotoEntity\") }"
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "AppIntents.AssistantSchemaEnum",
+          "after": {
+            "owner": "AppIntents.AssistantSchemaEnum",
+            "declaration": "public static var caseDisplayRepresentations: [Self : AppIntents.DisplayRepresentation]",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": "get"
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, size: AppIntents.IntentCollectionSize, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, size: [AppIntents.IntentWidgetFamily : AppIntents.IntentCollectionSize], inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, size: AppIntents.IntentCollectionSize, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, size: [AppIntents.IntentWidgetFamily : AppIntents.IntentCollectionSize], inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<OptionsProvider>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider) where OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<OptionsProvider>(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider) where OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<Spec, OptionsProvider>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification, OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<Spec, OptionsProvider>(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification, OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<Spec>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "AppIntents.IntentParameter",
+          "after": {
+            "owner": "AppIntents.IntentParameter",
+            "declaration": "convenience public init<Spec>(title: Foundation.LocalizedStringResource, description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "AppIntents.IntentValueRepresentation",
+          "after": {
+            "owner": "AppIntents.IntentValueRepresentation",
+            "declaration": "public init(importing: @escaping @Sendable (IntentValue) async throws -> Item)",
+            "attributes": [
+              "@available(anyAppleOS 26.4, *)",
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        }
       ]
     },
     {
       "framework": "CoreAI",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreAIAsset",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreAICache",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreAICommon",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreAICompiler",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreAIDelegates",
-      "declarationLinesChanged": 1,
+      "declarationsChanged": 1,
       "changes": [
-        "+    @available(tvOS, unavailable)"
+        {
+          "kind": "modified",
+          "owner": "CoreAIDelegates.AIModelCache.Policy",
+          "before": {
+            "owner": "CoreAIDelegates.AIModelCache.Policy",
+            "declaration": "public static let persistent: CoreAIDelegates.AIModelCache.CoreAIDelegates.Policy",
+            "attributes": [
+              "@available(macOS 27.0, iOS 27.0, watchOS 27.0, tvOS 27.0, visionOS 27.0, *)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "CoreAIDelegates.AIModelCache.Policy",
+            "declaration": "public static let persistent: CoreAIDelegates.AIModelCache.CoreAIDelegates.Policy",
+            "attributes": [
+              "@available(macOS 27.0, iOS 27.0, watchOS 27.0, tvOS 27.0, visionOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        }
       ]
     },
     {
       "framework": "CoreAIRuntime",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "CoreSpotlight",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "Evaluations",
-      "declarationLinesChanged": 9,
+      "declarationsChanged": 6,
       "changes": [
-        "+  case duplicateMetricName(name: Swift.String)",
-        "-  public var reportMetadata: [Swift.String : any Swift.Sendable]",
-        "+  public var reportMetadata: [Swift.String : any Swift.Sendable] {",
-        "-public struct ArrayLoader<Sample> : Evaluations.Loader where Sample : Evaluations.SampleProtocol {",
-        "+public struct ArrayLoader<Sample> : Evaluations.Loader, Swift.ExpressibleByArrayLiteral where Sample : Evaluations.SampleProtocol {",
-        "+  public init(arrayLiteral elements: Sample...)",
-        "+  @available(anyAppleOS 27.0, *)",
-        "+  @available(tvOS, unavailable)",
-        "+  public typealias ArrayLiteralElement = Sample"
+        {
+          "kind": "modified",
+          "owner": "<module>",
+          "before": {
+            "owner": "<module>",
+            "declaration": "public struct ArrayLoader<Sample> : Evaluations.Loader where Sample : Evaluations.SampleProtocol",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "<module>",
+            "declaration": "public struct ArrayLoader<Sample> : Evaluations.Loader, Swift.ExpressibleByArrayLiteral where Sample : Evaluations.SampleProtocol",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "ArrayLoader",
+          "after": {
+            "owner": "ArrayLoader",
+            "declaration": "public init(arrayLiteral elements: Sample...)",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "ArrayLoader",
+          "after": {
+            "owner": "ArrayLoader",
+            "declaration": "public typealias ArrayLiteralElement = Sample",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "Evaluation",
+          "after": {
+            "owner": "Evaluation",
+            "declaration": "var name: Swift.String",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": "get"
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "EvaluationError",
+          "after": {
+            "owner": "EvaluationError",
+            "declaration": "case duplicateMetricName(name: Swift.String)",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "modified",
+          "owner": "EvaluationResult",
+          "before": {
+            "owner": "EvaluationResult",
+            "declaration": "public var reportMetadata: [Swift.String : any Swift.Sendable]",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          },
+          "after": {
+            "owner": "EvaluationResult",
+            "declaration": "public var reportMetadata: [Swift.String : any Swift.Sendable]",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": "get"
+          }
+        }
       ]
     },
     {
       "framework": "FoundationModels",
-      "declarationLinesChanged": 201,
+      "declarationsChanged": 46,
       "changes": [
-        "+public import UniformTypeIdentifiers",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)",
-        "-  @available(tvOS, unavailable)",
-        "+  @available(tvOS, unavailable)",
-        "-@available(tvOS, unavailable)",
-        "+@available(tvOS, unavailable)"
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "public enum LanguageModelError : Foundation.LocalizedError",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "public protocol DataAttachmentRepresentable : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "public protocol DataEntryRepresentable : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "DataAttachmentRepresentable",
+          "after": {
+            "owner": "DataAttachmentRepresentable",
+            "declaration": "init(_ attachment: FoundationModels.Transcript.FoundationModels.DataAttachment) throws",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "DataAttachmentRepresentable",
+          "after": {
+            "owner": "DataAttachmentRepresentable",
+            "declaration": "var transcriptRepresentation: FoundationModels.Transcript.FoundationModels.DataAttachment",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": "get"
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "DataEntryRepresentable",
+          "after": {
+            "owner": "DataEntryRepresentable",
+            "declaration": "init(_ entry: FoundationModels.Transcript.FoundationModels.DataEntry) throws",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "DataEntryRepresentable",
+          "after": {
+            "owner": "DataEntryRepresentable",
+            "declaration": "var transcriptRepresentation: FoundationModels.Transcript.FoundationModels.DataEntry",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": "get"
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Attachment",
+          "after": {
+            "owner": "FoundationModels.Attachment",
+            "declaration": "public init(_ content: Content)",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "FoundationModels.GenerationSchema",
+          "after": {
+            "owner": "FoundationModels.GenerationSchema",
+            "declaration": "public enum SchemaError : Swift.Error, Foundation.LocalizedError",
+            "attributes": [
+              "@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModel",
+          "after": {
+            "owner": "FoundationModels.LanguageModel",
+            "declaration": "nonisolated(nonsending) public func supportsDataAttachmentType(_ type: UniformTypeIdentifiers.UTType) async throws -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModel",
+          "after": {
+            "owner": "FoundationModels.LanguageModel",
+            "declaration": "nonisolated(nonsending) public func supportsDataEntryType(_ type: UniformTypeIdentifiers.UTType) async throws -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel",
+            "declaration": "public struct DataEntry : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.DataEntry",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.DataEntry",
+            "declaration": "public var action: FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.DataEntry",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.DataEntry",
+            "declaration": "public var entryID: Swift.String?",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry",
+            "declaration": "public struct Action : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry",
+            "declaration": "public struct Update : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action",
+            "declaration": "public static func update(contentType: UniformTypeIdentifiers.UTType, content: Foundation.Data, metadata: FoundationModels.GeneratedContent = GeneratedContent(properties: [:])) -> FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+            "declaration": "public var content: Foundation.Data",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+            "declaration": "public var contentType: UniformTypeIdentifiers.UTType",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.Update",
+            "declaration": "public var metadata: FoundationModels.GeneratedContent",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.Event",
+          "after": {
+            "owner": "FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.Event",
+            "declaration": "public static func data(entryID: Swift.String? = nil, action: FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action) -> FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.Event",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "FoundationModels.Transcript",
+          "after": {
+            "owner": "FoundationModels.Transcript",
+            "declaration": "public enum Attachment : Swift.Sendable, Swift.Equatable",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "FoundationModels.Transcript",
+          "after": {
+            "owner": "FoundationModels.Transcript",
+            "declaration": "public enum Entry : Swift.Sendable, Swift.Identifiable, Swift.Equatable",
+            "attributes": [
+              "@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "FoundationModels.Transcript",
+          "after": {
+            "owner": "FoundationModels.Transcript",
+            "declaration": "public enum Segment : Swift.Sendable, Swift.Identifiable, Swift.Equatable",
+            "attributes": [
+              "@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript",
+          "after": {
+            "owner": "FoundationModels.Transcript",
+            "declaration": "public struct DataAttachment : Swift.Sendable, Swift.Equatable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript",
+          "after": {
+            "owner": "FoundationModels.Transcript",
+            "declaration": "public struct DataEntry : Swift.Sendable, Swift.Identifiable, Swift.Equatable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.Attachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.Attachment",
+            "declaration": "case data(FoundationModels.Transcript.FoundationModels.DataAttachment)",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.Attachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.Attachment",
+            "declaration": "public static func == (a: FoundationModels.Transcript.FoundationModels.Attachment, b: FoundationModels.Transcript.FoundationModels.Attachment) -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "removed",
+          "owner": "FoundationModels.Transcript.Attachment",
+          "before": {
+            "owner": "FoundationModels.Transcript.Attachment",
+            "declaration": "public static func == (lhs: FoundationModels.Transcript.FoundationModels.Attachment, rhs: FoundationModels.Transcript.FoundationModels.Attachment) -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataAttachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataAttachment",
+            "declaration": "public init(contentType: UniformTypeIdentifiers.UTType, content: Foundation.Data, metadata: FoundationModels.GeneratedContent = GeneratedContent(properties: [:]))",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataAttachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataAttachment",
+            "declaration": "public static func == (a: FoundationModels.Transcript.FoundationModels.DataAttachment, b: FoundationModels.Transcript.FoundationModels.DataAttachment) -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataAttachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataAttachment",
+            "declaration": "public var content: Foundation.Data",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataAttachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataAttachment",
+            "declaration": "public var contentType: UniformTypeIdentifiers.UTType",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataAttachment",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataAttachment",
+            "declaration": "public var metadata: FoundationModels.GeneratedContent",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public init(id: Swift.String = UUID().uuidString, contentType: UniformTypeIdentifiers.UTType, content: Foundation.Data, metadata: FoundationModels.GeneratedContent = GeneratedContent(properties: [:]))",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public static func == (a: FoundationModels.Transcript.FoundationModels.DataEntry, b: FoundationModels.Transcript.FoundationModels.DataEntry) -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public typealias ID = Swift.String",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(macOS 27.2, iOS 27.2, watchOS 27.2, visionOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public var content: Foundation.Data",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public var contentType: UniformTypeIdentifiers.UTType",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public var id: Swift.String",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.DataEntry",
+            "declaration": "public var metadata: FoundationModels.GeneratedContent",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.Entry",
+          "after": {
+            "owner": "FoundationModels.Transcript.Entry",
+            "declaration": "case data(FoundationModels.Transcript.FoundationModels.DataEntry)",
+            "attributes": [
+              "@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "FoundationModels.Transcript.FoundationModels.DataEntry",
+          "after": {
+            "owner": "FoundationModels.Transcript.FoundationModels.DataEntry",
+            "declaration": "public var description: Swift.String",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": "get"
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "FoundationModels.Transcript.FoundationModels.ResponseFormat",
+          "after": {
+            "owner": "FoundationModels.Transcript.FoundationModels.ResponseFormat",
+            "declaration": "public enum Kind : Swift.Sendable",
+            "attributes": [
+              "@available(iOS 26.0, macOS 26.0, visionOS 26.0, watchOS 27.0, *)",
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@nonexhaustive"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "LanguageModel",
+          "after": {
+            "owner": "LanguageModel",
+            "declaration": "nonisolated(nonsending) func supportsDataAttachmentType(_ type: UniformTypeIdentifiers.UTType) async throws -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "LanguageModel",
+          "after": {
+            "owner": "LanguageModel",
+            "declaration": "nonisolated(nonsending) func supportsDataEntryType(_ type: UniformTypeIdentifiers.UTType) async throws -> Swift.Bool",
+            "attributes": [
+              "@available(iOS 27.0, macOS 27.0, visionOS 27.0, watchOS 27.0, *)",
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        }
       ]
     },
     {
       "framework": "Speech",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "Vision",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "_CoreSpotlight_FoundationModels",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     },
     {
       "framework": "_Vision_FoundationModels",
-      "declarationLinesChanged": 0,
+      "declarationsChanged": 0,
       "changes": []
     }
   ]

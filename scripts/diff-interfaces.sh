@@ -84,29 +84,9 @@ case "$EXAMPLES" in
 esac
 command -v python3 >/dev/null 2>&1 || die 'python3 is required'
 
-# Unified-diff filter for public surface changes. The raw-line count is also
-# reported so changes below this intentionally narrow filter remain visible.
-DRIFT_RE='^[+-][[:space:]]*(public |open |@available|case )'
-
-report_drift() { # $1=label, $2=unified-diff file
-  local label="$1"
-  local diff_file="$2"
-  local added removed raw
-  added="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^+' || true)"
-  removed="$(grep -E "$DRIFT_RE" "$diff_file" | grep -c '^-' || true)"
-  raw="$(awk '/^[+-]/ && $0 !~ /^(\+\+\+|---)([[:space:]]|$)/ { count++ }
-    END { print count + 0 }' "$diff_file")"
-  if [ ! -s "$diff_file" ]; then
-    printf '  %-32s clean — no drift\n' "$label"
-  elif [ "$((added + removed))" -eq 0 ]; then
-    printf '  %-32s no declaration drift (%s raw +/- lines)\n' "$label" "$raw"
-  else
-    printf '  %-32s +%s / -%s declaration lines (%s raw +/- lines); first %s:\n' \
-      "$label" "$added" "$removed" "$raw" "$EXAMPLES"
-    if [ "$EXAMPLES" -gt 0 ]; then
-      grep -E "$DRIFT_RE" "$diff_file" | head -n "$EXAMPLES" | sed 's/^/      /' || true
-    fi
-  fi
+# Shared scoped comparison includes protocol requirements and serialized bodies.
+report_drift() { # label, unified diff, baseline, candidate
+  python3 "$SCRIPT_DIR/interface_drift.py" "$3" "$4" --framework "$1" --examples "$EXAMPLES"
 }
 
 report_help_drift() { # $1=label, $2=unified-diff file, $3=baseline filename
@@ -143,7 +123,7 @@ if [ -n "$BASELINE" ]; then
   [ -n "$newest" ] || die "no non-$BASELINE capture of $FRAMEWORK is tracked"
   printf '=== %s: %s -> %s ===\n' "$FRAMEWORK" "$(basename "$base")" "$(basename "$newest")"
   diff -u "$base" "$newest" > "$TMP/diff" || true
-  report_drift "$FRAMEWORK" "$TMP/diff"
+  report_drift "$FRAMEWORK" "$TMP/diff" "$base" "$newest"
   exit 0
 fi
 
@@ -194,7 +174,7 @@ for fresh in "$FRESH_DIR"/*-"$SDK_VERSION"-macos.swiftinterface; do
   fi
   git -C "$REPO_ROOT" show "$AGAINST:$tracked_path" > "$TMP/baseline"
   diff -u "$TMP/baseline" "$fresh" > "$TMP/diff" || true
-  report_drift "$framework" "$TMP/diff"
+  report_drift "$framework" "$TMP/diff" "$TMP/baseline" "$fresh"
 done
 
 if [ "$found" -ne 1 ]; then

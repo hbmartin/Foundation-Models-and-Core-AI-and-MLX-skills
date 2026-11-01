@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-10-30 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-11-01 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -1439,7 +1439,7 @@ Start from the symptom column that matches what you observe. Within each section
 
 - [Apple can update built-in guardrails independently of app and OS versions, changing safety without notification.](part-02-foundation-models-everyday-api/README.md#26--the-complete-failure-taxonomy-availability-errors-guardrails-and-refusals) — 2.README
 - [Beta 5 retyped history from ArraySlice<Transcript.Entry> to Transcript.HistoryView — suffix trims survive, raw-Int…](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#91-what-changed) — 2.1
-- [Exhaustive Transcript.Entry switches break compiling on the 27 SDK; 'fixing' with default: silently drops new cases.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#121-six-entry-types) — 2.1 🔇
+- [Exhaustive Transcript.Entry switches break compiling on the 27 SDK; 'fixing' with default: silently drops new cases.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#121-entry-types-by-sdk-version) — 2.1 🔇
 - [The .custom segment case the docs list is not present in the beta 5 interface.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
 - [Beta 5 declares exactly three Segment cases — .custom vanished between the 2026-07-29 capture and beta 5.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#123-four-segment-types) — 2.1
 - [Version matrix: LanguageModelSession.GenerationError is deprecated in the 27 SDK — the error surface moved.](part-02-foundation-models-everyday-api/references/01-sessions-and-prompting.md#version-matrix) — 2.1
@@ -1455,7 +1455,7 @@ Start from the symptom column that matches what you observe. Within each section
 **Part 3**
 
 - [history is Transcript.HistoryView since beta 5 — same element type, its own SubSequence, opaque non-Int Index.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#1-the-transcript-is-the-context-window) — 3.1
-- [Transcript.Entry switches exhaustive on 26 fail to compile on 27 (.reasoning) — add @unknown default deliberately.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#2-anatomy-six-entry-types-and-what-each-one-costs) — 3.1
+- [Transcript.Entry switches exhaustive on 26 fail to compile on 27 (.reasoning) — add @unknown default deliberately.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#2-anatomy-entry-types-and-what-each-one-costs) — 3.1
 - [The overflow error has two live spellings — TN3193's GenerationError name vs the 2026 LanguageModelError name.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1
 - [SDK 27 renamed the generation error type; catches written for the earlier namespace need migration](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#61-the-error-in-both-spellings) — 3.1 🔇
 - [Session-restore labels differ — Origami uses history: on 27, the older sample transcript: on 26; relation unverified.](part-03-context-profiles-agentic/references/01-context-window-and-kv-cache.md#811-restoring-a-session) — 3.1

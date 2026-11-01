@@ -23,6 +23,14 @@ every OS you already support. That asymmetry is the whole subject of this guide.
 
 ---
 
+
+✅ **SDK-verified platform restriction (27.2):** `AIModelCache.Policy.persistent` is
+unavailable on tvOS (`CoreAIDelegates-27.2-macos.swiftinterface:45-49`). All `.persistent`
+examples below target the other supported platforms; for tvOS choose `.default` inside
+`#if os(tvOS)` and place `.persistent` in the `#else` branch. A runtime version check
+cannot make an unavailable tvOS declaration compile.
+
+
 ## What this covers
 
 Decide whether Core AI solves a requirement that Core ML does not. Use the concept mapping and migration checklist for model IO, specialization, states, and deployment; account for the tooling and compatibility costs before committing.
@@ -2230,7 +2238,13 @@ summary?.functions.forEach { print($0.name, $0.inputs.map(\.name), $0.states.map
 let cached: AIModel? = try AIModelCache.default.model(for: url, options: .default)
 
 // Specialize deliberately, behind explanatory UI.
-try await AIModel.specialize(contentsOf: url, options: .default, cachePolicy: .persistent)
+try await AIModel.specialize(contentsOf: url, options: .default, cachePolicy: { () -> AIModelCache.Policy in
+  #if os(tvOS)
+  return .default
+  #else
+  return .persistent
+  #endif
+}())
 
 // Load, introspect, run.
 let model = try await AIModel(contentsOf: url, options: .default)

@@ -43,7 +43,7 @@ Budget the rendered transcript within the model’s context window. Preserve KV-
 ## Contents
 
 1. [The transcript *is* the context window](#1-the-transcript-is-the-context-window)
-2. [Anatomy: six entry types and what each one costs](#2-anatomy-six-entry-types-and-what-each-one-costs)
+2. [Anatomy: entry types and what each one costs](#2-anatomy-entry-types-and-what-each-one-costs)
 3. [Reading the budget: `contextSize` and the 4096-token window](#3-reading-the-budget-contextsize-and-the-4096-token-window)
 4. [Counting before you spend: `tokenCount(for:)`](#4-counting-before-you-spend-tokencountfor)
 5. [Counting after you spend: `Usage` and the cache-hit rate](#5-counting-after-you-spend-usage-and-the-cache-hit-rate)
@@ -169,9 +169,13 @@ reason "add a tool mid-conversation" is a much bigger deal than it sounds.
 
 ---
 
-## 2. Anatomy: six entry types and what each one costs
+## 2. Anatomy: entry types and what each one costs
 
-`Transcript.Entry` has **six cases**. Five are iOS 26; `.reasoning` is new in 27.
+`Transcript.Entry` has **six cases in SDK 27.0 and seven in SDK 27.2**. Five are iOS 26;
+`.reasoning` arrived in 27.0 and `.data(Transcript.DataEntry)` in 27.2.
+✅ **SDK-verified** — `FoundationModels-27.2-macos.swiftinterface:2332-2371`.
+The following documentation table and utility renderers describe the historical six;
+data entries need their own serialization or an explicit unsupported-input error.
 
 > ✅ **VERIFIED** — `/documentation/foundationmodels/transcript/entry`:
 >

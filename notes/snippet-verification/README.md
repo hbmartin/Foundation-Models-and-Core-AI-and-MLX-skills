@@ -26,6 +26,20 @@ directory holds the committed latest results:
   and hidden callout identity edits. Every semantic ID, content hash, and verdict matches the prior
   ledger; compiler and native verification dates retain their original provenance.
 
+## Partial-run reconciliation and current evidence
+
+The latest available-target compiler run and original partial report are retained under
+`notes/evidence/review-repairs-2026-11-01/`. `report.md` separates their counts from the merged
+ledger. Five unchanged SDK-26 attestations retain their historical toolchain metadata and dates.
+`target-provenance.json` records the verification base revision and reconciled
+guide-tree digest; unchanged snippet hashes remain valid across later prose-only movement.
+
+After a fresh run, `scripts/reconcile-snippets.py --fresh <run-directory> --checked-at <date>
+--evidence <retained-evidence-directory>` merges only hash-identical historical target verdicts.
+It rejects fresh failures. Changed code cannot inherit an unavailable-target result. Preserve the
+prior ledger and provenance until this reconciliation succeeds; do not replace them with the
+partial run's unavailable verdicts. Check the updated inventory and generated state afterward.
+
 ## The marker grammar (canonical)
 
 Space-separated tokens after the language word in the fence info string — invisible in

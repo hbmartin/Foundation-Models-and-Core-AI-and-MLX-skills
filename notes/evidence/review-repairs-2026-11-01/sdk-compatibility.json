@@ -1,0 +1,38 @@
+{
+  "checks": [
+    {
+      "check": "controlled-module-version-gate",
+      "version": "2.0.68",
+      "status": "passed"
+    },
+    {
+      "check": "controlled-module-version-gate",
+      "version": "2.1.14",
+      "status": "passed"
+    },
+    {
+      "check": "data-translation-and-capability-gates",
+      "status": "passed",
+      "runtimeExecution": false
+    },
+    {
+      "check": "cache-policy-macos",
+      "status": "passed"
+    },
+    {
+      "check": "cache-policy-tvos",
+      "status": "passed"
+    }
+  ],
+  "sdks": {
+    "macosx": {
+      "version": "27.2",
+      "build": "26B118"
+    },
+    "appletvos": {
+      "version": "27.2",
+      "build": "24K122"
+    }
+  },
+  "runtimeExecution": false
+}

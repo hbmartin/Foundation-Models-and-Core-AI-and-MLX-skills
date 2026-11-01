@@ -23,6 +23,14 @@ says who measured it.
 
 ---
 
+
+✅ **SDK-verified platform restriction (27.2):** `AIModelCache.Policy.persistent` is
+unavailable on tvOS (`CoreAIDelegates-27.2-macos.swiftinterface:45-49`). All `.persistent`
+examples below target the other supported platforms; for tvOS choose `.default` inside
+`#if os(tvOS)` and place `.persistent` in the `#else` branch. A runtime version check
+cannot make an unavailable tvOS declaration compile.
+
+
 ## What this covers
 
 Version-stamp and validate the exact model artifact you ship. The incident comparisons show why converter, OS, toolchain, architecture, and compiled cache identity matter independently, and how to recover from incompatible assets.
