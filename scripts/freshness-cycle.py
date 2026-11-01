@@ -224,8 +224,13 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
         base_sha = git(repository, "rev-parse", f"{ref}^{{commit}}")
         manifest["baseSha"] = base_sha
         worktree.parent.mkdir(parents=True, exist_ok=True)
-        git(repository, "worktree", "add", "-b", branch, str(worktree), base_sha)
+        if git(repository, "show-ref", "--verify", f"refs/heads/{branch}", check=False):
+            raise CycleError(f"automation branch already exists: {branch}")
+        # Claim creation before invoking Git: termination can occur after Git
+        # creates the branch/worktree but before the subprocess returns.
         manifest["branchCreated"] = True
+        atomic_json(run_root / "run.json", manifest)
+        git(repository, "worktree", "add", "-b", branch, str(worktree), base_sha)
         for name in ("logs", "results", "probe-artifacts"):
             (run_root / name).mkdir(parents=True, exist_ok=True)
         manifest["status"] = "prepared"

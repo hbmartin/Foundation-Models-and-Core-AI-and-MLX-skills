@@ -101,6 +101,28 @@ class LifecycleRepairs(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     cycle.finalize(SimpleNamespace(run_root=root / "artifacts/weekly-improvements/offline", outcome="blocked", pr_url=None, state_path=None, manifest=manifest))
 
+    def test_interrupt_inside_git_creation_removes_partial_and_complete_resources(self):
+        for complete in (False, True):
+            with self.subTest(complete=complete), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+                original = cycle.git
+                def git(repo, *args, **kwargs):
+                    if args[:2] == ("worktree", "add"):
+                        if complete:
+                            original(repo, *args, **kwargs)
+                        else:
+                            original(repo, "branch", args[3], args[5])
+                        raise KeyboardInterrupt("terminated during Git creation")
+                    return original(repo, *args, **kwargs)
+                with mock.patch.object(cycle, "git", side_effect=git), contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaises(KeyboardInterrupt):
+                        cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts", worktree_root=None,
+                            run_id="creation", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+                self.assertFalse((root / "artifacts/worktrees/creation").exists())
+                self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
+                self.assertFalse(original(repository, "show-ref", "--verify", "refs/heads/codex/weekly-improvement-creation", check=False))
+
     def test_prepare_interrupt_after_worktree_creation_rolls_back(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
