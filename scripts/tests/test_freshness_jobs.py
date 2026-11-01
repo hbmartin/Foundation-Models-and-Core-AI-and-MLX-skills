@@ -82,7 +82,8 @@ class FreshnessJobTests(unittest.TestCase):
                 log.write_text("/usr/bin/fm\n" if name == "fm-path" else "")
                 return runner.record(name, "passed", log=str(log))
             with mock.patch.object(runner, "command", side_effect=command):
-                jobs.collect(runner, "daily", baseline, None, SimpleNamespace(skip_web=True, artifact_root=root))
+                jobs.collect_defects(runner, "daily", baseline, None, SimpleNamespace(skip_web=False, artifact_root=root))
+                jobs.collect_tools(runner, "daily", baseline, None, SimpleNamespace(skip_web=True, artifact_root=root))
             self.assertEqual(next(s for s in runner.steps if s["name"] == "defect-coverage")["status"], "blocked")
             self.assertIn("fm-help", calls)
 
@@ -127,43 +128,23 @@ class FreshnessJobTests(unittest.TestCase):
         self.assertGreater(jobs.release_rank({"version": "28.0 Release Candidate 2"}),
                            jobs.release_rank({"version": "28.0 beta 10"}))
 
-    def test_source_watch_reports_new_and_updated_news_before_advancing_state(self):
+    def test_source_watch_requires_review_and_does_not_advance_on_capture(self):
         releases = b'<rss><channel><item><title>Xcode 27.2 (27B52)</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item></channel></rss>'
-        old_news = b'<rss><channel><item><guid>old</guid><title>Earlier announcement</title><link>https://developer.apple.com/news/old</link></item></channel></rss>'
-        new_news = b'<rss><channel><item><guid>new</guid><title>Foundation Models update</title><link>https://developer.apple.com/news/new</link></item><item><guid>old</guid><title>Earlier announcement revised</title><link>https://developer.apple.com/news/old</link></item></channel></rss>'
-        baseline = {"environment": {"latestObserved": {
-            "xcode": {"version": "27.2", "build": "27B52"}, "ios": {}, "macos": {}}}}
+        baseline = {"environment": {"latestObserved": {"xcode": {"version": "27.2", "build": "27B52"}}}}
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             state = root / "state.json"
-            news = old_news
+            runner = jobs.Runner(root, root, cycle)
             def response(request, timeout):
-                return io.BytesIO(news if request.full_url == jobs.SOURCES["news"] else
-                                  releases if request.full_url == jobs.SOURCES["releases"] else b"# Updates\n")
+                return io.BytesIO(b"# Updates\n" if request.full_url.endswith(".md") else releases)
             with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response):
-                runner = jobs.Runner(root, root, cycle)
                 jobs.watch_sources(runner, baseline, state)
-                self.assertEqual(runner.findings, [])
-                old_state = json.loads(state.read_text())
-                news = new_news
-                runner = jobs.Runner(root, root, cycle)
-                jobs.watch_sources(runner, baseline, state)
-                self.assertEqual(len(runner.findings), 1)
-                finding = runner.findings[0]
-                self.assertEqual(finding["kind"], "developer-news-changed")
-                self.assertEqual([item["id"] for item in finding["newItems"]], ["new"])
-                self.assertEqual([item["id"] for item in finding["updatedItems"]], ["old"])
-                self.assertEqual(json.loads(state.read_text())["newsItems"], jobs.news_records(new_news))
-                runner = jobs.Runner(root, root, cycle)
-                jobs.watch_sources(runner, baseline, state)
-                self.assertEqual(runner.findings, [])
-                # Hash-only state from the first runner version must also report
-                # a changed news feed before recording structured identities.
-                old_state.pop("newsItems")
-                state.write_text(json.dumps(old_state))
-                runner = jobs.Runner(root, root, cycle)
-                jobs.watch_sources(runner, baseline, state)
-                self.assertEqual(len(runner.findings[0]["newItems"]), 2)
+            self.assertFalse(state.exists())
+            self.assertEqual(len(runner.findings), 2)
+            jobs.write_report(runner, "daily", "findings", emit=False)
+            self.assertEqual(json.loads(state.read_text())["reviewed"], {})
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root), cycle)
+            self.assertEqual(json.loads(state.read_text())["pending"], {})
 
     def test_native_task_links_are_validated_and_instruction_fields_rejected(self):
         ids = ["01a154e4-6d2c-76e3-84a7-d85c793fe60e", "01a178ee-484b-7ae1-b990-bce0a814555b"]
@@ -188,11 +169,11 @@ class FreshnessJobTests(unittest.TestCase):
             (run / "Build").mkdir(parents=True)
             (run / "Results").mkdir()
             (run / "Results/result.txt").write_text("keep")
-            jobs.clean_builds(root)
+            cycle.clean_builds(root)
             self.assertTrue((run / "Results/result.txt").exists())
             (run / "Build").symlink_to(root, target_is_directory=True)
             with self.assertRaisesRegex(ValueError, "outside this run"):
-                jobs.clean_builds(root)
+                cycle.clean_builds(root)
 
     def test_primary_checkout_survives_relocation_and_linked_worktree(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -266,7 +247,7 @@ class FreshnessJobIntegrationTests(unittest.TestCase):
             candidate = next(f for f in full_report["findings"] if f["kind"] == "action-review")
             self.assertTrue(candidate["automaticFixEligible"])
             self.assertTrue((run / "results/implementation.json").exists())
-            self.assertEqual(json.loads((run / "results/research-mirrors.json").read_text())["status"], "passed")
+            self.assertEqual(json.loads((run / "results/research-mirrors.json").read_text())["status"], "blocked")
             self.assertFalse((root / "artifacts/worktrees/weekly").exists())
             self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
             self.assertFalse(list((run / "probe-artifacts").glob("*/Build")))

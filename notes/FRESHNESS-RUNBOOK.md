@@ -16,7 +16,7 @@ when a scheduler invokes a command. Keep reports, logs, `.xcresult` bundles, and
 there; `/tmp` is only for disposable intermediates that will never be linked from a task.
 
 <!-- current-state:runbook:start -->
-> **Current trigger, generated 2026-10-30:** Installed macOS build 26A434 differs from observed build 26B123. The installed topology is macOS 27.0.1 build `26A434`, Xcode 27.2 build `27B52`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
+> **Current trigger, generated 2026-11-01:** Installed macOS build 26A434 differs from observed build 26B123. The installed topology is macOS 27.0.1 build `26A434`, Xcode 27.2 build `27B52`, and the newest installed iOS Simulator runtime is `24A5408d`. Use the topology-keyed baselines in `probes/README.md`; counts are not universal.
 <!-- current-state:runbook:end -->
 
 ---
@@ -26,7 +26,7 @@ there; `/tmp` is only for disposable intermediates that will never be linked fro
 ### Step 0 — verify the installed contract and capture observed state
 
 ```bash
-./scripts/freshness-cycle.py run daily
+./scripts/freshness-cycle.py run daily --watch-consumer daily
 ```
 
 This command runs installed-contract preflight before reserving a collision-free UTC run id.
@@ -41,9 +41,15 @@ cannot be queried. A failed GitHub lookup remains blocked even if changed-only r
 Official release/news RSS and Foundation Models Markdown are captured with hashes; content
 changes are observations for review, not automatic semantic or baseline promotions. Release
 ranking distinguishes beta and RC sequence numbers while retaining build variants of the same
-release. New and updated news entries appear in findings before their identities are saved for
-the next comparison. The first news and Markdown snapshots establish comparison baselines. State is stored in
-`artifacts/freshness/state/official-source-watch.json`.
+release. Captures never advance reviewed documentation/news baselines. Scheduled consumers use
+separate `artifacts/freshness/state/source-watch/daily.json` and `weekly.json` state files;
+manual/pilot runs without `--watch-consumer` use isolated run-local state. Version-2 watcher
+state separates `reviewed`, `latestObserved`, and `pending`; legacy shared state is retained
+as an unreviewed migration seed. First captures require review. After reviewing a durable report,
+run `./scripts/freshness-cycle.py acknowledge-sources <run-root>`. Acknowledgment verifies
+captured bytes and rejects a hash superseded by a newer observation. Pending findings repeat
+until acknowledged. Release build sets remain observations requiring a reviewed repository
+baseline update, including same-version respins and ambiguous simultaneous variants.
 
 ### Step 1 — GitHub defect states (the only evidence class that moves daily)
 
@@ -100,14 +106,16 @@ may use HTTP(S) URLs or `codex://threads/<matching-task-UUID>` links. Structural
 before preparation; `evaluate` still enforces corroboration or a run-bound deterministic failure.
 
 ```bash
-./scripts/freshness-cycle.py run weekly \
+./scripts/freshness-cycle.py run weekly --watch-consumer weekly \
   --thread-review artifacts/freshness/review-inputs/review.json
 ```
 
 The default command collects all deterministic lanes, evaluates supplied candidates, writes the
 report, removes temporary worktrees and disposable build directories, and retains logs, result
 bundles, and attachments. Its report outcome is `clean`, `findings`, or `blocked`; the existing
-weekly authority records completed collection without changes as `no-change`. Eligible actions
+weekly authority records completed collection without findings as `no-change` and findings as
+`findings`. A findings run updates `lastCollectedRun`, remains pending, and does not advance
+`lastSuccessfulRun`. Exit status is 0 for clean/findings, 1 for blocked, and 130 for interruption. Eligible actions
 that need implementation cause a blocked result unless preparation was explicitly retained.
 
 The scheduled improvement agent uses the same command with `--keep-worktree`. The returned JSON
@@ -119,7 +127,7 @@ triage and any eligible implementation, finish with the existing gates:
 ./scripts/freshness-cycle.py finalize "$run_root" --outcome no-change
 ```
 
-Use `blocked`, `draft`, or `ready` instead when appropriate. A retained worktree is an explicit
+Use `findings`, `blocked`, `draft`, or `ready` instead when appropriate. A retained worktree is an explicit
 handoff, not a completed run: its lock remains until finalization. The runner never writes an
 empty task review and claims it was collected.
 
@@ -220,7 +228,8 @@ without changing the app. These are explicit candidate-validation options; sched
 normal installed gate and default `origin/main`. After the runner and contract changes merge,
 update the scheduled checkout to the merged revision, then synchronize installed copies while
 preserving the paused daily and active weekly settings. `--skip-web`
-continues local checks but explicitly records incomplete web coverage; it cannot yield a clean run.
+skips GitHub defect lookups, official/documentation fetches, and mirror fetches while continuing
+local checks and explicitly recording incomplete web coverage; it cannot yield a clean run.
 
 ## 5. Cadence summary
 
@@ -240,3 +249,18 @@ returns 3 for incomplete coverage. Write fresh results separately, then reconcil
 identity, content hash and target provenance. Do not restamp historical SDK-26 results as fresh.
 Apple's public iOS releases do not identify installed Simulator builds; leave the latest
 Simulator observation unknown until independently sourced. The daily schedule remains paused.
+
+### Repair rollout and recovery
+
+Merge the lifecycle, watcher, and contract changes together. Synchronize installed contract
+copies only after merge, preserving the paused daily and active weekly settings and existing
+schedules. This PR does not modify installed automations. Run installed-contract validation
+before resuming collection. The first named-consumer report retains legacy observations as
+unreviewed seed material; review and acknowledge its documentation/news captures explicitly.
+
+Runner failures after preparation attempt blocked finalization using in-memory preparation
+identity. A recorded review handoff is the only normal `--keep-worktree` retention. If physical
+cleanup fails, authority state remains `cleanupPending` with its error and ownership lock;
+retry finalization after correcting the recorded failure. Manual draft/ready policy refusals
+remain strict. Research mirrors live under the artifact root's `cache/research-mirrors` and
+are checked against their recorded origins and commit pins on reuse.
