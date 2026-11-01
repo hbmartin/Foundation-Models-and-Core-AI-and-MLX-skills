@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import pathlib
+import signal
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,8 @@ class LifecycleRepairs(unittest.TestCase):
                                    command_timeout=30, run_id="repair", thread_review=None, cycle="weekly",
                                    ref=None, keep_worktree=False, watch_consumer=None)
             real_read, real_write, real_finalize = cycle.read_json, cycle.atomic_json, cycle.finalize
+            real_acquire = cycle.acquire_lock
+            real_unlink = pathlib.Path.unlink
             injected = False
             def read(path, *rest):
                 if fault in ("manifest", "baseline", "actions") and not injected_flags[0]:
@@ -39,8 +42,12 @@ class LifecycleRepairs(unittest.TestCase):
                 return real_read(path, *rest)
             def write(path, payload):
                 nonlocal injected
+                if fault == "prepare-sigterm" and path.name == "run.json" and payload.get("status") == "prepared":
+                    os.kill(os.getpid(), signal.SIGTERM)
                 if not injected and ((fault == "preflight" and path.name == "preflight.json")
-                                     or (fault == "authority" and path.name == "weekly-improvement.json")):
+                                     or (fault == "authority" and path.name == "weekly-improvement.json")
+                                     or (fault == "terminal-manifest" and path.name == "run.json" and payload.get("status") == "no-change")
+                                     or (fault == "terminal-authority" and path.name == "weekly-improvement.json" and payload.get("pending") is None)):
                     injected = True
                     raise OSError("injected write failure")
                 return real_write(path, payload)
@@ -54,21 +61,47 @@ class LifecycleRepairs(unittest.TestCase):
                     runner.findings.append({"kind": "documentation-changed"})
                 if fault == "interrupt":
                     raise KeyboardInterrupt("injected termination")
+                if fault == "sigterm":
+                    os.kill(os.getpid(), signal.SIGTERM)
+            def acquire(*arguments):
+                value = real_acquire(*arguments)
+                if fault == "lock":
+                    raise OSError("injected failure after lock acquisition")
+                return value
+            def unlink(path, *arguments, **options):
+                nonlocal injected
+                if fault == "lock-release" and path.name == "weekly-improvement.lock.json" and not injected:
+                    injected = True
+                    raise OSError("injected lock release failure")
+                return real_unlink(path, *arguments, **options)
             injected_flags = [False]
             with mock.patch.dict(os.environ, env), mock.patch.object(cycle, "open_automation_pr", return_value=None), \
                  mock.patch.object(cycle, "read_json", side_effect=read), mock.patch.object(cycle, "atomic_json", side_effect=write), \
                  mock.patch.object(cycle, "finalize", side_effect=finalize), mock.patch.object(jobs, "collect", side_effect=collect), \
+                 mock.patch.object(cycle, "acquire_lock", side_effect=acquire), \
+                 mock.patch.object(pathlib.Path, "unlink", unlink), \
                  contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                code = jobs.execute(args, cycle)
+                try:
+                    code = jobs.run(args, cycle)
+                except OSError:
+                    if fault != "lock":
+                        raise
+                    code = 1
+                except KeyboardInterrupt:
+                    if fault != "prepare-sigterm":
+                        raise
+                    code = 130
             self.assertFalse((root / "artifacts/worktrees/repair").exists())
             self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
             state = real_read(root / "artifacts/state/weekly-improvement.json")
             self.assertNotIn("lastSuccessfulRun", state)
-            self.assertTrue((root / "artifacts/weekly-improvements/repair/report.json").exists())
+            self.assertTrue((root / "artifacts/weekly-improvements/repair/run.json").exists())
+            if fault not in ("lock", "prepare-sigterm"):
+                self.assertTrue((root / "artifacts/weekly-improvements/repair/report.json").exists())
             return code, state
 
     def test_post_prepare_failures_always_clean(self):
-        for fault in ("manifest", "baseline", "actions", "preflight", "authority", "refusal"):
+        for fault in ("lock", "manifest", "baseline", "actions", "preflight", "authority", "refusal", "lock-release", "terminal-manifest", "terminal-authority"):
             with self.subTest(fault=fault):
                 code, state = self.exercise(fault)
                 self.assertEqual(code, 1)
@@ -76,6 +109,55 @@ class LifecycleRepairs(unittest.TestCase):
 
     def test_interruption_cleans_and_preserves_exit_status(self):
         self.assertEqual(self.exercise("interrupt")[0], 130)
+
+    def test_sigterm_uses_run_handler_cleans_and_restores_previous_handler(self):
+        before = signal.getsignal(signal.SIGTERM)
+        self.assertEqual(self.exercise("sigterm")[0], 130)
+        self.assertEqual(signal.getsignal(signal.SIGTERM), before)
+        self.assertEqual(self.exercise("prepare-sigterm")[0], 130)
+        self.assertEqual(signal.getsignal(signal.SIGTERM), before)
+
+    def test_finalization_refuses_foreign_lock_and_worktree_ownership(self):
+        for foreign_lock in (False, True):
+            with self.subTest(foreign_lock=foreign_lock), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+                manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts", worktree_root=None,
+                    run_id="ownership", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+                worktree = pathlib.Path(manifest["worktree"])
+                lock = pathlib.Path(manifest["lockPath"])
+                if foreign_lock:
+                    cycle.atomic_json(lock, {"runId": "someone-else"})
+                else:
+                    cycle.git(worktree, "checkout", "-b", "someone-else")
+                with self.assertRaises(cycle.CycleError), contextlib.redirect_stdout(io.StringIO()):
+                    cycle.finalize(SimpleNamespace(run_root=root / "artifacts/weekly-improvements/ownership", outcome="blocked", pr_url=None,
+                        state_path=None, manifest=manifest))
+                self.assertTrue(worktree.exists())
+                self.assertTrue(lock.exists())
+                authority = cycle.read_json(root / "artifacts/state/weekly-improvement.json", {})
+                self.assertNotIn("lastSuccessfulRun", authority)
+
+    def test_explicit_remote_ref_is_refreshed_while_local_ref_and_sha_are_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+            old = cycle.git(repository, "rev-parse", "HEAD")
+            cycle.git(repository, "branch", "local-candidate", old)
+            (repository / "notes/candidate.md").write_text("reviewed candidate\n")
+            cycle.git(repository, "add", "notes/candidate.md")
+            cycle.git(repository, "commit", "-m", "candidate")
+            latest = cycle.git(repository, "rev-parse", "HEAD")
+            cycle.git(repository, "push", "origin", "HEAD:refs/heads/candidate")
+            for n, ref in enumerate(("origin/candidate", "refs/remotes/origin/candidate", "local-candidate", old)):
+                cycle.git(repository, "update-ref", "refs/remotes/origin/candidate", old)
+                manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts", worktree_root=None,
+                    run_id=f"ref-{n}", skip_remote_check=True, ref=ref))
+                self.assertEqual(manifest["requestedRef"], ref)
+                self.assertEqual(manifest["baseSha"], latest if n < 2 else old)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    cycle.finalize(SimpleNamespace(run_root=root / f"artifacts/weekly-improvements/ref-{n}", outcome="blocked", pr_url=None,
+                        state_path=None, manifest=manifest))
 
     def test_findings_are_collected_pending_and_not_success(self):
         code, state = self.exercise("findings")

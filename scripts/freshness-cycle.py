@@ -199,16 +199,17 @@ def prepare_run(args: argparse.Namespace) -> dict[str, Any]:
     if worktree.exists():
         raise CycleError(f"worktree path already exists: {worktree}")
     identity = git(repository, "config", "--get", "remote.origin.url")
-    lock = acquire_lock(lock_path, args.run_id)
     manifest = {
         "schemaVersion": 1, "runId": args.run_id, "createdAt": iso(),
         "repository": str(repository), "repositoryIdentity": identity,
         "baseSha": None, "requestedRef": getattr(args, "ref", None) or "origin/main",
         "branch": branch, "branchCreated": False, "worktree": str(worktree),
-        "lockPath": str(lock_path), "recoveredLock": lock.get("recoveredLock"),
+        "lockPath": str(lock_path), "recoveredLock": None,
         "status": "preparing", "remoteChecksSkipped": bool(getattr(args, "skip_fetch", False)),
     }
     try:
+        lock = acquire_lock(lock_path, args.run_id)
+        manifest["recoveredLock"] = lock.get("recoveredLock")
         atomic_json(run_root / "run.json", manifest)
         if not args.skip_remote_check:
             existing = open_automation_pr(repository)
@@ -832,6 +833,7 @@ def finalize(args: argparse.Namespace) -> int:
         except OSError as backup_error:
             errors.append(f"authority backup: {backup_error}")
     state["schemaVersion"] = 2
+    previous_collection = {key: state[key] for key in ("lastCollectedRun", "lastSuccessfulRun") if key in state}
     entry = {"runId": manifest["runId"], "finishedAt": iso(), "outcome": args.outcome,
              "baseSha": manifest["baseSha"], "branch": manifest["branch"],
              "prUrl": args.pr_url, "changedPaths": paths}
@@ -891,10 +893,31 @@ def finalize(args: argparse.Namespace) -> int:
         state["pending"] = None if successful else dict(entry)
         manifest.update(status=entry["outcome"])
         manifest.pop("cleanupError", None)
+    terminal_error_count = len(errors)
     persist(state_path, state)
     persist(run_root / "run.json", manifest)
     if not cleanup_error:
-        lock_path.unlink(missing_ok=True)
+        if len(errors) != terminal_error_count:
+            cleanup_error = "terminal authority state could not be persisted"
+        else:
+            try:
+                lock_path.unlink(missing_ok=True)
+            except OSError as error:
+                cleanup_error = f"lock release: {error}"
+        if cleanup_error:
+            errors.append(cleanup_error)
+            # A terminal write or lock-release failure must not leave a newly
+            # promoted success behind. Retain ownership for a recoverable retry.
+            for key in ("lastCollectedRun", "lastSuccessfulRun"):
+                if key in previous_collection:
+                    state[key] = previous_collection[key]
+                else:
+                    state.pop(key, None)
+            entry["outcome"] = "blocked"
+            state["pending"] = {**entry, "cleanupPending": True, "cleanupError": cleanup_error}
+            manifest.update(status="cleanup-failed", cleanupError=cleanup_error)
+            persist(state_path, state)
+            persist(run_root / "run.json", manifest)
     if errors:
         raise CycleError("; ".join(errors))
     print(json.dumps(entry, sort_keys=True))

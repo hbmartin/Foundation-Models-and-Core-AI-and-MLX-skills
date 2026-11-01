@@ -88,6 +88,30 @@ class CloneResearchRepositoriesTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Done. All research repositories match", result.stdout)
 
+    def test_cached_pin_is_reused_without_fetch_and_wrong_origin_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            source, sha = self.make_source(temporary)
+            remote = temporary / "remotes/example/good"
+            remote.parent.mkdir(parents=True)
+            self.run_git("clone", "--quiet", "--bare", str(source), str(remote), cwd=temporary)
+            entries = f"example/good {sha}"
+            first = self.run_script(temporary, entries)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            cached = temporary / "checkouts/example__good"
+            marker = cached / "retained-cache-marker"
+            marker.write_text("preserve\n")
+            remote.rename(remote.with_name("offline"))
+            reused = self.run_script(temporary, entries)
+            self.assertEqual(reused.returncode, 0, reused.stderr)
+            self.assertTrue(marker.exists())
+            self.assertEqual(self.run_git("rev-parse", "HEAD", cwd=cached), sha)
+            self.run_git("remote", "set-url", "origin", "https://example.invalid/unrelated", cwd=cached)
+            rejected = self.run_script(temporary, entries)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("unexpected origin", rejected.stderr)
+            self.assertEqual(self.run_git("rev-parse", "HEAD", cwd=cached), sha)
+
     def test_indented_and_tab_separated_entry_uses_the_parsed_slug(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
