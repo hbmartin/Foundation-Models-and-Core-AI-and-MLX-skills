@@ -2934,16 +2934,19 @@ three times". Treat 3× on four nodes as a ceiling, not a floor.
 ## 25. The distributed bug cluster
 
 This is the newest surface in the entire 2026 stack and the issue tracker shows it. Everything
-below is **community-reported on GitHub**, initially read 2026-07-27 and refreshed 2026-11-03;
-items were **open** at the initial read unless noted.
+below is **community-reported on GitHub** and was initially read 2026-07-27; **#3910** and **#3755**
+were rechecked 2026-11-03, while the other items retain their individual ledger dates. Items were
+**open** at the initial read unless noted.
 None of it should stop you from using distributed MLX; all of it should shape how you debug it.
 
 **mlx#3910 — JACCL `MeshImpl::recv` spins forever on peer loss.** The report was consolidated into
 **#4278** on 2026-11-03; maintainers closed that tracker via **merged PR #4767** (2026-10-30).
 The merged patch polls stalled QPs for `ERR`/`SQE`, latches group failure, and rethrows worker-thread
 exceptions; its two-Mac cable-pull test produced catchable errors on both ranks in under 300 ms.
-No containing release is verified. On shipped versions, a node that goes quiet can still produce an
-indefinite stall, so keep the no-progress watchdog and rebuild a failed group rather than reusing it.
+That demonstrates detected dead-link recovery, not a general progress deadline: on `main` and shipped
+versions, a still-connected peer that stops servicing collectives can remain active while the group
+stalls indefinitely. Keep the no-progress watchdog and rebuild a failed group rather than reusing it.
+No containing release is verified.
 
 **mlx#3777 — JACCL segfaults in `ibv_reg_mr` (null protection domain) when RDMA is absent.** This
 is the crash you get if you skipped §16 on one machine. It is a segfault, not a message, so the

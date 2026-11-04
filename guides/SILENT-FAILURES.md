@@ -1044,7 +1044,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [DoRA dequantises the full base weight twice per forward, materialising dense layer-size matrices; QLoRA savings vanish.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#42-dora) — 12.6
 - [Comparison table: DoRA runs on a quantized base but dequantises every step; don't use it where QLoRA memory matters.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#44-choosing-between-them) — 12.6
 - [The length sort keys on len() of the raw record dict, a constant: batches mix short and long rows, causing random OOMs.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#88-️-silent-failure--length-based-batching-does-not-work) — 12.6
-- [JACCL peer-loss fix is merged but unreleased; shipped versions still need watchdogs for distributed stalls.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#96-distributed-fine-tuning-in-one-paragraph) — 12.6
+- [JACCL dead-link detection is merged but still-connected quiet peers need watchdogs on main and released builds.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#96-distributed-fine-tuning-in-one-paragraph) — 12.6
 
 **Part 13**
 
