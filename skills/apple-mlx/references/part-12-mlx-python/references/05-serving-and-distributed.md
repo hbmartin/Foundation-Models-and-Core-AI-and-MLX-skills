@@ -2934,13 +2934,16 @@ three times". Treat 3× on four nodes as a ceiling, not a floor.
 ## 25. The distributed bug cluster
 
 This is the newest surface in the entire 2026 stack and the issue tracker shows it. Everything
-below is **community-reported on GitHub**, read 2026-07-27, **open** at that date unless noted.
+below is **community-reported on GitHub**, initially read 2026-07-27 and refreshed 2026-11-03;
+items were **open** at the initial read unless noted.
 None of it should stop you from using distributed MLX; all of it should shape how you debug it.
 
-**mlx#3910 — JACCL `MeshImpl::recv` spins forever on peer loss.** A silent hang with no timeout. If
-one node dies, sleeps, or loses a cable, the survivors do not error — they wait. Combined with
-`mlx.launch`'s "kill the rest if one fails" behaviour this is mostly survivable, but a node that
-goes *quiet* rather than *dying* produces an indefinite stall.
+**mlx#3910 — JACCL `MeshImpl::recv` spins forever on peer loss.** The report was consolidated into
+**#4278** on 2026-11-03; maintainers closed that tracker via **merged PR #4767** (2026-10-30).
+The merged patch polls stalled QPs for `ERR`/`SQE`, latches group failure, and rethrows worker-thread
+exceptions; its two-Mac cable-pull test produced catchable errors on both ranks in under 300 ms.
+No containing release is verified. On shipped versions, a node that goes quiet can still produce an
+indefinite stall, so keep the no-progress watchdog and rebuild a failed group rather than reusing it.
 
 **mlx#3777 — JACCL segfaults in `ibv_reg_mr` (null protection domain) when RDMA is absent.** This
 is the crash you get if you skipped §16 on one machine. It is a segfault, not a message, so the
@@ -2951,7 +2954,9 @@ optional.
 **mlx#3755 — ring and jaccl both fail to connect (errno 60/65) on a 4-node M3 Ultra cluster.**
 errno 60 is `ETIMEDOUT`, errno 65 is `EHOSTUNREACH`. The shape of a coordinator or per-cable
 subnet that is not reachable. Cross-check with §19.4: rank 0's IP plus `--starting-port` (32323)
-must be reachable from every node.
+must be reachable from every node. A maintainer closed the issue on 2026-11-03 as a network-
+configuration problem, without an MLX code fix; treat closure as diagnostic disposition, not
+evidence that affected deployments were remediated.
 
 <!-- defect-ref:ml-explore.mlx:issue:3862 -->
 **mlx#3862 — ring `SocketThread` dies silently on a transient connection reset**, after which all

@@ -184,8 +184,8 @@ depends on model size and architecture.
 > retry loops. Omitting `--allowed-origins` leaves it a *string*, degrading the membership check to a substring
 > test that matches everything. And in distributed fine-tuning `--batch-size` is the **global** batch.
 >
-> 🔴 **GAP + an open bug cluster (§25).** The distributed backends are the newest surface in the stack and the
-> tracker shows it: JACCL `MeshImpl::recv` spins forever on peer loss (mlx#3910); JACCL segfaults in
+> 🔴 **GAP + a recently active bug cluster (§25).** The distributed backends are the newest surface in the stack and the
+> tracker shows it: JACCL peer-loss hangs from mlx#3910 are fixed on `main` by merged PR #4767 but not in a verified release; JACCL segfaults in
 > `ibv_reg_mr` when RDMA is absent (mlx#3777); ring `SocketThread` dies silently on a transient reset and all
 > ranks wedge (mlx#3862). Unresolved: **which RDMA-enablement procedure is current on macOS 26.2+**, and
 > `mlx_lm.share`'s hostfile schema. Run `ibv_devices` on every node before you launch.
