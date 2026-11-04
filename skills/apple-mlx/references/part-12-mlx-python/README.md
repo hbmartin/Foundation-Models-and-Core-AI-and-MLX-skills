@@ -185,7 +185,7 @@ depends on model size and architecture.
 > test that matches everything. And in distributed fine-tuning `--batch-size` is the **global** batch.
 >
 > 🔴 **GAP + a recently active bug cluster (§25).** The distributed backends are the newest surface in the stack and the
-> tracker shows it: JACCL peer-loss hangs from mlx#3910 are fixed on `main` by merged PR #4767 but not in a verified release; JACCL segfaults in
+> tracker shows it: merged PR #4767 detects dead JACCL links on `main` but adds no general progress deadline, so a still-connected quiet peer can hang `main` and released builds; JACCL segfaults in
 > `ibv_reg_mr` when RDMA is absent (mlx#3777); ring `SocketThread` dies silently on a transient reset and all
 > ranks wedge (mlx#3862). Unresolved: **which RDMA-enablement procedure is current on macOS 26.2+**, and
 > `mlx_lm.share`'s hostfile schema. Run `ibv_devices` on every node before you launch.

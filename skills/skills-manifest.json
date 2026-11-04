@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated": "2026-11-03",
+  "generated": "2026-11-04",
   "repository": {
     "url": "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills",
     "branch": "main"
@@ -9,7 +9,7 @@
   "file_count": 121,
   "files": {
     ".generated-by-build-skills": "5c0ade55f143712122d30f0eb3a8f37fa593fc0bb161bd68c87e72ab4616ff4c",
-    "README.md": "6a710de5584de38f5d7cfc21ee23759c7e0f50a40ed6bc8fd2ba77126e30ab8a",
+    "README.md": "8d65cc773a99dc1effd7d0e9784dc4f0a005b74d142aaf51338773b53b696445",
     "apple-ai-evaluations/SKILL.md": "8547ed78f638a84ad9a2b06f8f6c9199446792150a97b7ad600f6b63d1c1e87b",
     "apple-ai-evaluations/agents/openai.yaml": "3d50da7c0ea0fc7378a5ced991e15d9e06e72638048a58d31a660a8df4a85ccc",
     "apple-ai-evaluations/evals/eval_queries.json": "347a5ad8a564a44cc4a543101a9fb41d151b94284b4f881a0f2473ad7aa3c0c9",
@@ -103,13 +103,13 @@
     "apple-mlx/agents/openai.yaml": "15dfec42898c89b16eadec378020099aaf59c58b0260bbeeac96848873f28d0b",
     "apple-mlx/evals/eval_queries.json": "e5a824d0b215fd87b32fc87abf83e6782b8fd6fb3f7ecbc4f46de8b7a36c6954",
     "apple-mlx/references/CONVENTIONS.md": "46accad65e432ba96cf61904b831e3725034e8d042efc2ce9609f3490cfa9079",
-    "apple-mlx/references/part-12-mlx-python/README.md": "d55798e3ae6d7c69547c93fe255f750ba42fbf1801b5b8ab3855cfa93a1b3aae",
+    "apple-mlx/references/part-12-mlx-python/README.md": "e617657205c5857a4585fe94d7f022bc4c711a98fc77953d100c5de2f18ca6d9",
     "apple-mlx/references/part-12-mlx-python/references/01-core-fundamentals.md": "764ce7c1d6bec74c4da1adeaa1439fe530fe28d65851688fab649f14d7acb9d3",
     "apple-mlx/references/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md": "56f6b7c1c60d6884a7dd21d49d6f7d2383c7bb7c6530d3079437ea5454d414f2",
     "apple-mlx/references/part-12-mlx-python/references/03-quantization.md": "1b10ef2382af82e94105ba99ed9b33f56e3f0260b731e09f7b01450c07cc7ab8",
     "apple-mlx/references/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md": "f64b0d04052e5d3bf424668c517af0219a50e9ec2af1f8387c154f7b4bbbf59c",
-    "apple-mlx/references/part-12-mlx-python/references/05-serving-and-distributed.md": "4911acc991d80e301dac8932dc59dae90c5cc1b78ca1847d12e57496188ad92e",
-    "apple-mlx/references/part-12-mlx-python/references/06-finetuning-and-porting-models.md": "f59afa840b2d23738e86729124f181333f495966b482d649933ca51bad1b82ea",
+    "apple-mlx/references/part-12-mlx-python/references/05-serving-and-distributed.md": "742c64b2d712f745d962679ee76dde237c4297b9fe224705eb3b90b929b5e8a9",
+    "apple-mlx/references/part-12-mlx-python/references/06-finetuning-and-porting-models.md": "352c5586990adda3be8f185d5df65cf3ff004b77133704bb2c71bd7b3983c230",
     "apple-mlx/references/part-13-mlx-swift/README.md": "03ff8558748bfa6781c94c100c6e194284264390d39792385ce374f20642fd1d",
     "apple-mlx/references/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md": "592b37e94cafb1bbe033096964c83264e7a1852f29be9303d73278e64ed579e2",
     "apple-mlx/references/part-13-mlx-swift/references/02-generation-tools-and-caching.md": "c0b8e6c4cf872a8b4ad059cb3e428f01f054bb7a2d8b91f21e2094d7b8161664",

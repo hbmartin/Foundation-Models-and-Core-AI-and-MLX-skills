@@ -1976,7 +1976,7 @@
           "https://github.com/ml-explore/mlx/pull/4767"
         ],
         "evidenceDate": "2026-11-03",
-        "rationale": "Issue #3910 was consolidated into #4278 on 2026-11-03. Maintainers closed #4278 via PR #4767, merged to main on 2026-10-30; that patch detects dead JACCL links and rethrows failures instead of hanging or dropping worker-thread exceptions. No release containing the merge has been verified, so shipped-version watchdog guidance remains.",
+        "rationale": "Issue #3910 was consolidated into #4278 on 2026-11-03. Maintainers closed #4278 via PR #4767, merged to main on 2026-10-30; its cable-pull reproduction demonstrates detection of dead JACCL links and rethrowing of failures instead of hangs or dropped worker-thread exceptions. The patch does not add a general progress deadline for a still-connected peer, so no-progress watchdog guidance remains for main builds and releases. No release containing the merge has been verified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "not-in-verified-release",
