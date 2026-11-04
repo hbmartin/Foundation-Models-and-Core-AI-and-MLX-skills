@@ -4,7 +4,7 @@
 
 The defining property of this stack is that most defects *do not throw*. Each entry below links to the guide section that documents the failure, its trigger, and the safe default. Entries are classified by **what you see** (or fail to see), not by which API is at fault, because the symptom is what you start from at 2 a.m.
 
-> Generated from the guides on 2026-11-01 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
+> Generated from the guides on 2026-11-04 by `scripts/` tooling; regenerate after editing guides rather than editing this file by hand.
 
 
 ## How to use this page
@@ -1044,7 +1044,7 @@ Start from the symptom column that matches what you observe. Within each section
 - [DoRA dequantises the full base weight twice per forward, materialising dense layer-size matrices; QLoRA savings vanish.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#42-dora) — 12.6
 - [Comparison table: DoRA runs on a quantized base but dequantises every step; don't use it where QLoRA memory matters.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#44-choosing-between-them) — 12.6
 - [The length sort keys on len() of the raw record dict, a constant: batches mix short and long rows, causing random OOMs.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#88-️-silent-failure--length-based-batching-does-not-work) — 12.6
-- [JACCL recv spins forever on peer loss and the ring socket thread dies silently, wedging all ranks (#3910, #3862, #3830).](part-12-mlx-python/references/06-finetuning-and-porting-models.md#96-distributed-fine-tuning-in-one-paragraph) — 12.6
+- [JACCL peer-loss fix is merged but unreleased; shipped versions still need watchdogs for distributed stalls.](part-12-mlx-python/references/06-finetuning-and-porting-models.md#96-distributed-fine-tuning-in-one-paragraph) — 12.6
 
 **Part 13**
 

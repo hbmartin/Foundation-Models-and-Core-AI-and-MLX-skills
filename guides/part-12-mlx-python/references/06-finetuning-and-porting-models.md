@@ -2181,8 +2181,9 @@ And remember §3.7: on the `run()` path your own callback is discarded.
 `161`). Four machines at `--batch-size 4` gives each machine a micro-batch of **one**, not four.
 This is easy to get silently wrong — you scale out and your effective batch does not change.
 
-⚠️ Also from the distributed cluster of open issues (`notes/repos/issues-mlx-stack.md` §11): JACCL
-`MeshImpl::recv` spins forever on peer loss with **no timeout** (#3910), the ring backend's
+⚠️ Also from the distributed issue cluster (`notes/repos/issues-mlx-stack.md` §11): JACCL
+`MeshImpl::recv` peer-loss hangs from #3910 are fixed on `main` by merged PR #4767 but remain
+unverified in a release; on shipped versions the ring backend's
 `SocketThread` dies silently on transient connection reset leaving all ranks wedged (#3862), and
 `MLX_METAL_FAST_SYNCH=1` can deadlock on a Metal fence handoff (#3830). PR #3933 "Fix crashes in
 the ring and jaccl distributed backends" was open at research time. Multi-machine training on this

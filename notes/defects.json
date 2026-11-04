@@ -1959,32 +1959,39 @@
       "url": "https://github.com/ml-explore/mlx/issues/3910",
       "kind": "issue",
       "title": "[BUG] JACCL MeshImpl::recv spins forever on peer loss — silent hang, no timeout (UC)",
-      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
+      "affectedVersions": "Reproduced in 0.32.0; the latest release v0.32.4 predates merged PR #4767.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
           "anchor": "24-apples-measured-numbers"
         }
       ],
-      "claimedState": "OPEN",
-      "asOf": "2026-10-07",
+      "claimedState": "CLOSED",
+      "asOf": "2026-11-03",
       "resolution": {
-        "disposition": "unknown",
+        "disposition": "merged-unreleased",
         "evidenceUrls": [
-          "https://github.com/ml-explore/mlx/issues/3910"
+          "https://github.com/ml-explore/mlx/issues/3910#issuecomment-6594739675",
+          "https://github.com/ml-explore/mlx/issues/4278#issuecomment-6594763810",
+          "https://github.com/ml-explore/mlx/pull/4767"
         ],
-        "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "evidenceDate": "2026-11-03",
+        "rationale": "Issue #3910 was consolidated into #4278 on 2026-11-03. Maintainers closed #4278 via PR #4767, merged to main on 2026-10-30; that patch detects dead JACCL links and rethrows failures instead of hanging or dropping worker-thread exceptions. No release containing the merge has been verified, so shipped-version watchdog guidance remains.",
         "confidence": 1.0,
         "releaseAvailability": {
-          "status": "unknown",
-          "version": null,
-          "evidenceUrls": []
+          "status": "not-in-verified-release",
+          "version": "v0.32.4",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/releases/tag/v0.32.4",
+            "https://github.com/ml-explore/mlx/pull/4767"
+          ]
         },
         "remediation": {
-          "status": "unverified",
-          "version": null,
-          "evidenceUrls": []
+          "status": "demonstrated",
+          "version": "main@1ba7f969ad05d86decfeeb83787cc9b79e440962",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/pull/4767"
+          ]
         }
       }
     },
@@ -2027,22 +2034,22 @@
       "url": "https://github.com/ml-explore/mlx/issues/3755",
       "kind": "issue",
       "title": "[BUG]  ring and jaccl both fail to connect (error 60/65) on 4-node M3 Ultra cluster — IP network verified routable, full mesh confirmed",
-      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
+      "affectedVersions": "Reproduced in 0.31.2; closed without a code fix, so the version boundary remains unverified.",
       "guideRefs": [
         {
           "file": "guides/part-12-mlx-python/references/05-serving-and-distributed.md",
           "anchor": "25-the-distributed-bug-cluster"
         }
       ],
-      "claimedState": "OPEN",
-      "asOf": "2026-10-07",
+      "claimedState": "CLOSED",
+      "asOf": "2026-11-03",
       "resolution": {
-        "disposition": "unknown",
+        "disposition": "closed-unfixed",
         "evidenceUrls": [
-          "https://github.com/ml-explore/mlx/issues/3755"
+          "https://github.com/ml-explore/mlx/issues/3755#issuecomment-6594860518"
         ],
-        "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "evidenceDate": "2026-11-03",
+        "rationale": "A maintainer closed the report on 2026-11-03 because it appeared to be a network-configuration problem that the project could not resolve. No MLX remediation or release was identified; the bind/routing diagnostics remain applicable.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -2050,9 +2057,11 @@
           "evidenceUrls": []
         },
         "remediation": {
-          "status": "unverified",
+          "status": "not-remediated",
           "version": null,
-          "evidenceUrls": []
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/issues/3755#issuecomment-6594860518"
+          ]
         }
       }
     },
