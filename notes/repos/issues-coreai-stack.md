@@ -279,8 +279,13 @@ Float-mask variant: all four `cos=1.000000`.
 
 ---
 
-### coreai-torch#10 — `GPU delegate executes aten.floor/trunc/ceil as identity; round uses away-from-zero ties; div(x,1,floor) folds to identity` — OPEN
+### coreai-torch#10 — `GPU delegate executes aten.floor/trunc/ceil as identity; round uses away-from-zero ties; div(x,1,floor) folds to identity` — CLOSED, FIXED WITH RESIDUAL
 Same author/env as #11.
+
+**Resolution (reviewed 2026-11-21):** two reporter retests found the six-operation reproducer correct
+on macOS 27.0. The first used `coreai-torch 0.4.2` with `coreai-core 1.0.0b2`; the closing confirmation
+used `coreai-torch` main `7a18c00` with `coreai-core 1.0.0b3`. The original 0.4.0/core b1 combination
+remains affected, so retain the workaround for that and any other unverified deployment combination.
 
 **Measured table (GPU unit), verbatim:**
 | op | got | expected |

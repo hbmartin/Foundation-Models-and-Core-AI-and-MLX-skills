@@ -179,6 +179,16 @@ domain**, so Siri cannot help users compare routes in Apple's own example. The d
 
 ## 2. Discovery versus action — the framing everything else follows from
 
+> 🟡 **27.3 DEVELOPER PREVIEW UPDATE (2026-11-03).** The discovery/action model below describes the
+> captured 27.0 surface. Apple now says the 27.3 betas let any app bring content and custom App Intent
+> actions to Siri AI, and that Siri AI can surface any entity in the Spotlight semantic index rather
+> than only entities matching an existing schema. That is a material relaxation of the schema wall,
+> not evidence that the 23 schema domains disappeared: schemas still provide shared system semantics
+> and contracts. Apple also announces *skills* for combining several actions, without enough stable
+> API detail in the announcement to document an implementation here. Do not rewrite the enumerated
+> 27.0 SDK evidence from this preview; recensus the 27.3 SDK and documentation when that toolchain is
+> installed. [Official announcement](https://developer.apple.com/news/?id=gdk2umrf).
+
 The cleanest statement in the entire documentation set is on the page *"Making actions and content
 discoverable by Apple Intelligence."* It splits the problem into two layers that are satisfied by
 two completely different mechanisms at two different times:
@@ -1294,6 +1304,13 @@ thirteen domains, of which one (`photos`) is 28.
 ---
 
 ## 6. The absences — what has no domain at all
+
+> 🟡 **27.3 preview qualification.** “No schema domain” no longer means “no announced Siri AI action
+> route.” As of Apple's 2026-11-03 Developer Preview announcement, custom App Intent actions from any
+> app can participate in Siri AI and indexed entities need not fit an existing schema to be surfaced.
+> The absences below remain accurate for the captured **schema enumeration** and still matter for
+> portability, shared vocabulary and system-defined contracts. The preview does not, by itself,
+> establish final availability or a stable replacement API.
 
 **If you read one section of this guide, read this one.** For most apps this is the answer.
 

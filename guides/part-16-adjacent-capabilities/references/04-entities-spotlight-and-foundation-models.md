@@ -1111,6 +1111,15 @@ overwrites, and you cannot predict which.
 
 ## 6. Consumer 1 — Siri entity resolution
 
+> 🟡 **27.3 DEVELOPER PREVIEW UPDATE (2026-11-03).** Apple says Siri AI in the 27.3 betas can surface
+> **any entity in the Spotlight semantic index, not just entities that fit an existing schema**. This
+> directly expands the captured 27.0 discovery/action boundary described below. It does not yet prove
+> the final runtime contract, deployment floor, ranking behavior or API shape: this repository has not
+> captured the 27.3 SDK/runtime, and Apple describes the feature as early access with App Store
+> submission opening in spring. Preserve the indexing hygiene in this guide and treat schema-independent
+> Siri action routing as preview-only until the beta-event ritual supplies interface and runtime
+> evidence. [Official announcement](https://developer.apple.com/news/?id=gdk2umrf).
+
 The first consumer of the index is the one Apple markets: Siri, and Apple Intelligence behind it,
 finding your content by name or description when the user speaks about it.
 
