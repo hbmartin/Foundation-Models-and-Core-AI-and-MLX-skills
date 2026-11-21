@@ -192,21 +192,7 @@ def release_rank(record):
 
 
 def news_records(payload):
-    items = ET.fromstring(payload).findall(".//item")
-    if not items:
-        raise ValueError("news feed contains no items")
-    records = []
-    for item in items:
-        title = item.findtext("title", "").strip()
-        if not title:
-            raise ValueError("news item has no title")
-        url = item.findtext("link", "").strip()
-        published = item.findtext("pubDate", "").strip()
-        identity = item.findtext("guid", "").strip() or url or hashlib.sha256(
-            json.dumps([title, published]).encode()).hexdigest()
-        records.append({"id": identity, "title": title, "url": url or SOURCES["news"],
-                        "published": published})
-    return records
+    return source_watch.news_records(payload, SOURCES["news"])
 
 
 def source_state_path(runner, args):
@@ -220,8 +206,13 @@ def source_state_path(runner, args):
 
 def watch_sources(runner, baseline, state_path, timeout=40):
     legacy = state_path.parent.parent / "official-source-watch.json" if state_path.parent.name == "source-watch" else None
-    with source_watch.locked(state_path):
-        previous = source_watch.load(state_path, runner.cycle, legacy)
+    state_blocked = False
+    try:
+        with source_watch.locked(state_path):
+            previous = source_watch.load(state_path, runner.cycle, legacy)
+    except (OSError, ValueError, runner.cycle.CycleError) as error:
+        runner.record("official-source-state", "blocked", error=str(error))
+        previous, state_blocked = source_watch.empty_state(), True
     captures, releases, observations = [], [], {}
     directory = runner.root / "official-sources"
     directory.mkdir(exist_ok=True)
@@ -275,11 +266,10 @@ def watch_sources(runner, baseline, state_path, timeout=40):
     state = source_watch.observe(previous, observations)
     runner.findings.extend(source_watch.findings(state))
     runner.source_update = {"statePath": str(state_path), "legacyPath": str(legacy) if legacy else None,
-                            "observations": observations}
+                            "observations": observations, "stateBlocked": state_blocked}
 
 
 def collect_defects(runner, mode, baseline, thread_review, args):
-    root = runner.root
     root = runner.root
     defects = ["./scripts/refresh-defect-statuses.sh", "--format", "json", "--output", str(root / "defects.json")]
     if mode == "daily":
@@ -405,7 +395,7 @@ def collect_auxiliary(runner, mode, baseline, thread_review, args):
         return
     mirrors = args.artifact_root / "cache/research-mirrors"
     runner.command("research-mirrors", ["env", f"RESEARCH_REPOS_ROOT={mirrors}", "./scripts/clone-research-repos.sh"])
-    result = runner.command("apple-docs-watch", ["./scripts/capture-apple-docs-watch.py", "--output", str(root / "apple-docs")], allowed_exit_codes=(0, 1))
+    result = runner.command("apple-docs-watch", ["./scripts/capture-apple-docs-watch.py", "--output", str(root / "apple-docs")])
     manifest = runner.document("apple-docs-manifest", root / "apple-docs/manifest.json", validate_docs_watch)
     if manifest and result.get("exitCode") in (0, 1):
         for item in manifest["captures"]:
@@ -414,6 +404,12 @@ def collect_auxiliary(runner, mode, baseline, thread_review, args):
                 raise ValueError("documentation source path escapes capture directory")
             if hashlib.sha256((root / "apple-docs" / relative).read_bytes()).hexdigest() != item["sha256"]:
                 raise ValueError("documentation source hash differs from manifest")
+        receipt = json.loads(pathlib.Path(result["stdout"]).read_text())
+        diagnostics = pathlib.Path(result["stderr"]).read_text()
+        if (receipt != manifest or result["exitCode"] != (0 if manifest["pagesAgree"] else 1)
+                or diagnostics.strip()):
+            runner.record("apple-docs-completion", "blocked", error="documentation command did not complete with its declared result")
+            return
         result["status"], result["error"] = "passed", None
         runner.cycle.atomic_json(root / "results/apple-docs-watch.json", result)
         capture = {"pagesAgree": manifest["pagesAgree"], "captures": [
@@ -429,8 +425,13 @@ def collect_auxiliary(runner, mode, baseline, thread_review, args):
             "capturedAt": runner.cycle.iso(dt.datetime.now(dt.timezone.utc)), "pagesAgree": manifest["pagesAgree"],
             "files": [{"path": f"apple-docs/{item.get('path', item['name'] + '.md')}", "sha256": item.get("sha256")} for item in manifest["captures"]]}
         path = pathlib.Path(runner.source_update["statePath"])
-        with source_watch.locked(path):
-            previous = source_watch.load(path, runner.cycle)
+        try:
+            with source_watch.locked(path):
+                previous = source_watch.load(path, runner.cycle)
+        except (OSError, ValueError, runner.cycle.CycleError) as error:
+            runner.record("official-source-state", "blocked", error=str(error))
+            runner.source_update["stateBlocked"] = True
+            previous = source_watch.empty_state()
         updated = source_watch.observe(previous, runner.source_update["observations"])
         runner.findings[:] = [finding for finding in runner.findings if finding.get("source") != "image-reference"]
         runner.findings.extend(finding for finding in source_watch.findings(updated) if finding["source"] == "image-reference")
@@ -487,8 +488,6 @@ def write_report(runner, mode, outcome, emit=True, **details):
     lines.extend(f"{s['name']}: {s['status']}" + (f" — {s['error']}" if s.get("error") else "") for s in runner.steps)
     lines.extend(["", "Findings:", *(json.dumps(f, sort_keys=True) for f in runner.findings)])
     (runner.root / "report.txt").write_text("\n".join(lines) + "\n")
-    if runner.source_update:
-        source_watch.commit(runner.source_update, runner.cycle)
     if emit:
         print(json.dumps({"runRoot": str(runner.root), "report": str(runner.root / "report.txt"),
                           "outcome": outcome, **details}, sort_keys=True))
@@ -548,7 +547,7 @@ def execute(args, cycle):
     runner = None
     error = None
     interrupted = False
-    retained = False
+    retained = args.cycle == "weekly" and args.keep_worktree
     outcome = "blocked"
 
     def note(name, exception):
@@ -569,6 +568,10 @@ def execute(args, cycle):
         else:
             cycle.atomic_json(root / "run.json", manifest)
         collect(runner, args.cycle, baseline, review, args)
+        if runner.source_update:
+            with runner.lane("source-watch-commit"):
+                source_watch.commit(runner.source_update, cycle)
+                runner.record("source-watch-commit", "passed")
         blocked = any(step["status"] == "blocked" for step in runner.steps)
         outcome = "blocked" if blocked else "findings" if runner.findings else "clean"
         if args.cycle == "weekly":
@@ -580,7 +583,6 @@ def execute(args, cycle):
             cycle.atomic_json(root / "pr.json", {"checksPassed": outcome != "blocked", "mergeable": False, "prUrl": None})
         details = {"worktree": str(repository), "retainedForReview": True} if args.cycle == "weekly" and args.keep_worktree else {}
         write_report(runner, args.cycle, outcome, emit=False, **details)
-        retained = bool(details)
     except (Exception, KeyboardInterrupt) as exception:
         error = str(exception) or "run interrupted"
         interrupted = isinstance(exception, KeyboardInterrupt)
@@ -623,5 +625,13 @@ def execute(args, cycle):
     if runner is None:
         raise cycle.CycleError(error or "runner initialization failed; cleanup attempted")
     details = {"worktree": str(repository), "retainedForReview": True} if retained else {}
-    write_report(runner, args.cycle, outcome, **details)
+    try:
+        write_report(runner, args.cycle, outcome, emit=False, **details)
+    except Exception as exception:
+        outcome = "blocked"
+        error = str(exception)
+        note("report", exception)
+        details["reportError"] = error
+    print(json.dumps({"runRoot": str(root), "report": str(root / "report.txt"),
+                      "outcome": outcome, **details}, sort_keys=True))
     return 130 if interrupted else 1 if outcome == "blocked" or error else 0

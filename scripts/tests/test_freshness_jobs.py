@@ -142,6 +142,8 @@ class FreshnessJobTests(unittest.TestCase):
             self.assertFalse(state.exists())
             self.assertEqual(len(runner.findings), 2)
             jobs.write_report(runner, "daily", "findings", emit=False)
+            self.assertFalse(state.exists())  # Reporting has no state-commit side effects.
+            jobs.source_watch.commit(runner.source_update, cycle)
             self.assertEqual(json.loads(state.read_text())["reviewed"], {})
             jobs.source_watch.acknowledge(SimpleNamespace(run_root=root), cycle)
             self.assertEqual(json.loads(state.read_text())["pending"], {})
@@ -187,6 +189,48 @@ class FreshnessJobTests(unittest.TestCase):
 
 
 class FreshnessJobIntegrationTests(unittest.TestCase):
+    def test_weekly_web_enabled_collection_uses_local_captures_and_commits_once(self):
+        import contextlib
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository, env = self.fixture(root)
+            overview, member = root / "overview.md", root / "member.md"
+            overview.write_text("func resolve(in:)\n")
+            member.write_text("func resolved(in:)\n")
+            capture = repository / "scripts/capture-apple-docs-watch.py"
+            capture.write_text(f"#!{sys.executable}\nimport runpy,sys\n"
+                f"sys.argv.extend(['--overview-source', {str(overview)!r}, '--member-source', {str(member)!r}])\n"
+                f"runpy.run_path({str(ROOT / 'scripts/capture-apple-docs-watch.py')!r}, run_name='__main__')\n")
+            baseline_path = repository / "notes/current-state.json"
+            baseline = json.loads(baseline_path.read_text())
+            baseline["environment"]["latestObserved"] = {"xcode": {"version": "27.2", "build": "27B52"}}
+            baseline_path.write_text(json.dumps(baseline))
+            cycle.git(repository, "add", ".")
+            cycle.git(repository, "commit", "-m", "local web capture fixtures")
+            feed = b'<rss><channel><item><title>Xcode 27.2 (27B52)</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item></channel></rss>'
+            def response(request, timeout):
+                return io.BytesIO(b'# Updates' if request.full_url.endswith('.md') else feed)
+            args = SimpleNamespace(repository=repository, artifact_root=root / "artifacts", installed_root=None,
+                command_timeout=30, run_id="web-enabled", thread_review=None, cycle="weekly", ref="HEAD",
+                keep_worktree=False, watch_consumer="weekly", skip_web=False)
+            output = io.StringIO()
+            with mock.patch.dict(os.environ, env), mock.patch.object(cycle, "open_automation_pr", return_value=None), \
+                 mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response), \
+                 mock.patch.object(jobs.source_watch, "commit", wraps=jobs.source_watch.commit) as commit, \
+                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                code = jobs.run(args, cycle)
+            self.assertEqual(code, 1)  # The separate task-review input is intentionally absent.
+            run = pathlib.Path(json.loads(output.getvalue())["runRoot"])
+            report = json.loads((run / "report.json").read_text())
+            steps = {step["name"]: step for step in report["steps"]}
+            for name in ("official-releases", "official-news", "official-foundationmodels", "research-mirrors",
+                         "apple-docs-watch", "apple-docs-manifest", "source-watch-commit"):
+                self.assertEqual(steps[name]["status"], "passed", steps[name])
+            self.assertTrue(any(f["kind"] == "documentation-disagreement" for f in report["findings"]))
+            self.assertFalse((root / "artifacts/worktrees/web-enabled").exists())
+            self.assertTrue((root / "artifacts/state/source-watch/weekly.json").exists())
+            commit.assert_called_once()
+
     def fixture(self, root):
         repository = cycle_tests.FreshnessCycleTests().repository(root)
         scripts = repository / "scripts"

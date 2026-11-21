@@ -1,6 +1,9 @@
 import importlib.util
 import pathlib
+import os
+import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('reconcile_snippets_test', ROOT / 'scripts/reconcile-snippets.py')
@@ -40,3 +43,33 @@ class ReconciliationTests(unittest.TestCase):
         row, prior, records = self.fixture();row['status'] = 'FAILED'
         with self.assertRaises(ValueError):
             reconciler.reconcile([row], prior, records, {}, '2026-11-01')
+
+    def test_literal_tsv_quotes_and_flattened_controls_round_trip(self):
+        row, _, _ = self.fixture()
+        row.update(first_error='"quoted" error with "nested" quotes\tand\nnewlines', info='"leading quotes"')
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'results.tsv'
+            path.write_bytes(reconciler.serialize_tsv([row]))
+            actual = next(iter(reconciler.verifier.read_prior_results(path).values()))
+        self.assertEqual(actual['info'], row['info'])
+        self.assertIn('"quoted" error with "nested" quotes', actual['first_error'])
+        self.assertNotIn('\t', actual['first_error'])
+        self.assertNotIn('\n', actual['first_error'])
+
+    def test_replace_failure_restores_ledger_and_does_not_publish_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            ledger, provenance, evidence = [root / name for name in ('results.tsv', 'provenance.json', 'evidence.tsv')]
+            ledger.write_bytes(b'original ledger')
+            provenance.write_bytes(b'original provenance')
+            replace = os.replace
+            def fail(source, target):
+                if target == provenance and pathlib.Path(source).read_bytes() == b'new provenance':
+                    raise OSError('injected replace failure')
+                replace(source, target)
+            with mock.patch.object(reconciler.os, 'replace', side_effect=fail), self.assertRaises(OSError):
+                reconciler.publish({ledger: b'new ledger', provenance: b'new provenance', evidence: b'evidence'})
+            self.assertEqual(ledger.read_bytes(), b'original ledger')
+            self.assertEqual(provenance.read_bytes(), b'original provenance')
+            self.assertFalse(evidence.exists())
+            self.assertEqual(len(list(root.iterdir())), 2)

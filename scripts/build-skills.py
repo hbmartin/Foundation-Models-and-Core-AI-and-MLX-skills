@@ -267,7 +267,7 @@ def discover_pages(source_root: Path) -> list[GuidePage]:
     return pages
 
 
-def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[SkillSpec]]:
+def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, str, list[SkillSpec]]:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
@@ -278,6 +278,10 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
     url, branch = repository.get("url"), repository.get("branch")
     if not url or not branch:
         raise SkillError(f"{path}: repository.url and repository.branch are required")
+    website_url = repository.get("site_url", "")
+    if not isinstance(website_url, str) or website_url and not website_url.startswith(("https://", "http://")):
+        raise SkillError("repository.site_url must be an HTTP(S) URL")
+    website_url = website_url.rstrip("/")
     default_rows = document.get("defaults", {}).get("max_triage_rows", 18)
 
     available: dict[int, set[int]] = {}
@@ -414,7 +418,7 @@ def load_manifest(path: Path, pages: list[GuidePage]) -> tuple[str, str, list[Sk
         for number in sorted(references):
             if (part, None) not in claimed and (part, number) not in claimed:
                 raise SkillError(f"{path}: part {part} reference {number} is not owned")
-    return url, branch, specs
+    return url, branch, website_url, specs
 
 
 TRIAGE_REFERENCE = re.compile(r"references/(\d{2})-")
@@ -745,10 +749,9 @@ def conventions_text(source_root: Path) -> str:
     if not {"Evidence conventions", "Editorial conventions"} <= by_heading.keys():
         raise SkillError("series README must retain evidence and editorial conventions")
     lines = ["# Evidence and editorial conventions", ""]
-    if "Evidence conventions" in by_heading:
-        lines += ["## Evidence conventions", "", *by_heading["Evidence conventions"]]
+    lines += ["## Evidence conventions", "", *by_heading["Evidence conventions"]]
     lines += ["## Editorial conventions", ""]
-    editorial = by_heading.get("Editorial conventions", [])
+    editorial = by_heading["Editorial conventions"]
     selected = {"Version floor", "Measurement attribution", "Defect state and resolution", "Precedence when sources conflict"}
     present = {line[4:].strip() for line in editorial if line.startswith("### ")}
     if not selected <= present:
@@ -929,12 +932,8 @@ def build_skills(
     before = source_snapshot(source_root)
     date = generation_date()
     pages = discover_pages(source_root)
-    repository_url, branch, specs = load_manifest(manifest_path, pages)
-    repository = json.loads(manifest_path.read_text())["repository"]
-    website_url = repository.get("site_url", "")
-    if not isinstance(website_url, str) or website_url and not website_url.startswith(("https://", "http://")):
-        raise SkillError("repository.site_url must be an HTTP(S) URL")
-    website_url = website_url.rstrip("/")
+    repository_url, branch, website_url, specs = load_manifest(manifest_path, pages)
+    conventions = conventions_text(source_root)
 
     routers: dict[int, PartRouter] = {}
     for page in pages:
@@ -997,7 +996,7 @@ def build_skills(
                     if sibling.name != spec.name:
                         indexes += f"| `{sibling.name}` | {sibling.short_description} |\n"
             write(skill_dir / "SKILL.md", router_text + indexes)
-            write(skill_dir / "references/CONVENTIONS.md", conventions_text(source_root))
+            write(skill_dir / "references/CONVENTIONS.md", conventions)
             write(skill_dir / "agents" / "openai.yaml", render_openai_yaml(spec))
             write(
                 skill_dir / "evals" / "eval_queries.json",

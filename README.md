@@ -62,8 +62,8 @@ Machine-readable current state is committed in [`notes/current-state.json`](note
 Run the deterministic maintenance lanes with one command each:
 
 ```bash
-./scripts/freshness-cycle.py run daily
-./scripts/freshness-cycle.py run weekly --thread-review artifacts/freshness/review-inputs/review.json
+./scripts/freshness-cycle.py run daily --watch-consumer daily
+./scripts/freshness-cycle.py run weekly --watch-consumer weekly --thread-review artifacts/freshness/review-inputs/review.json
 ```
 
 The weekly input is a completed repository-task review, validated as schema version 2. An absent

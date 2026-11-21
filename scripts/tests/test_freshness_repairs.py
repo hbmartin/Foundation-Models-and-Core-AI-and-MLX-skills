@@ -28,6 +28,7 @@ class LifecycleRepairs(unittest.TestCase):
                                    command_timeout=30, run_id="repair", thread_review=None, cycle="weekly",
                                    ref=None, keep_worktree=False, watch_consumer=None)
             real_read, real_write, real_finalize = cycle.read_json, cycle.atomic_json, cycle.finalize
+            real_report = jobs.write_report
             real_acquire = cycle.acquire_lock
             real_unlink = pathlib.Path.unlink
             injected = False
@@ -55,6 +56,12 @@ class LifecycleRepairs(unittest.TestCase):
                 if fault == "refusal" and options.outcome != "blocked":
                     raise cycle.CycleError("injected policy refusal")
                 return real_finalize(options)
+            def report(*arguments, **options):
+                nonlocal injected
+                if fault == "report-always" or fault == "report-once" and not injected:
+                    injected = True
+                    raise OSError("injected report failure")
+                return real_report(*arguments, **options)
             def collect(runner, *rest):
                 real_write(runner.root / "actions.json", {"summary": {"eligible": 0}})
                 if fault == "findings":
@@ -75,12 +82,14 @@ class LifecycleRepairs(unittest.TestCase):
                     raise OSError("injected lock release failure")
                 return real_unlink(path, *arguments, **options)
             injected_flags = [False]
+            output = io.StringIO()
             with mock.patch.dict(os.environ, env), mock.patch.object(cycle, "open_automation_pr", return_value=None), \
                  mock.patch.object(cycle, "read_json", side_effect=read), mock.patch.object(cycle, "atomic_json", side_effect=write), \
                  mock.patch.object(cycle, "finalize", side_effect=finalize), mock.patch.object(jobs, "collect", side_effect=collect), \
+                 mock.patch.object(jobs, "write_report", side_effect=report), \
                  mock.patch.object(cycle, "acquire_lock", side_effect=acquire), \
                  mock.patch.object(pathlib.Path, "unlink", unlink), \
-                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
                 try:
                     code = jobs.run(args, cycle)
                 except OSError:
@@ -94,10 +103,17 @@ class LifecycleRepairs(unittest.TestCase):
             self.assertFalse((root / "artifacts/worktrees/repair").exists())
             self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
             state = real_read(root / "artifacts/state/weekly-improvement.json")
+            self.assertEqual(len(state["runs"]), 1)
             self.assertNotIn("lastSuccessfulRun", state)
             self.assertTrue((root / "artifacts/weekly-improvements/repair/run.json").exists())
-            if fault not in ("lock", "prepare-sigterm"):
+            if fault not in ("lock", "prepare-sigterm", "report-always"):
                 self.assertTrue((root / "artifacts/weekly-improvements/repair/report.json").exists())
+            if fault.startswith("report-"):
+                result = json.loads(output.getvalue())
+                self.assertEqual(result["outcome"], "blocked")
+                self.assertIn("runRoot", result)
+                if fault == "report-always":
+                    self.assertIn("reportError", result)
             return code, state
 
     def test_post_prepare_failures_always_clean(self):
@@ -109,6 +125,11 @@ class LifecycleRepairs(unittest.TestCase):
 
     def test_interruption_cleans_and_preserves_exit_status(self):
         self.assertEqual(self.exercise("interrupt")[0], 130)
+
+    def test_report_failures_still_emit_result_and_clean(self):
+        for fault in ("report-once", "report-always"):
+            with self.subTest(fault=fault):
+                self.assertEqual(self.exercise(fault)[0], 1)
 
     def test_sigterm_uses_run_handler_cleans_and_restores_previous_handler(self):
         before = signal.getsignal(signal.SIGTERM)
@@ -137,6 +158,108 @@ class LifecycleRepairs(unittest.TestCase):
                 self.assertTrue(lock.exists())
                 authority = cycle.read_json(root / "artifacts/state/weekly-improvement.json", {})
                 self.assertNotIn("lastSuccessfulRun", authority)
+
+    def test_commit_failure_keeps_requested_worktree_and_emits_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository, env = fixtures.FreshnessJobIntegrationTests().fixture(root)
+            args = SimpleNamespace(repository=repository, artifact_root=root / "artifacts", installed_root=None,
+                command_timeout=30, run_id="retained", thread_review=None, cycle="weekly", ref=None,
+                keep_worktree=True, watch_consumer=None, skip_web=True)
+            def collect(runner, *rest):
+                cycle.atomic_json(runner.root / "actions.json", {"summary": {"eligible": 0}})
+                runner.source_update = {"statePath": str(root / "sources.json"), "observations": {}}
+            output = io.StringIO()
+            with mock.patch.dict(os.environ, env), mock.patch.object(jobs, "collect", side_effect=collect), \
+                 mock.patch.object(jobs.source_watch, "commit", side_effect=OSError("commit failed")) as commit, \
+                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(jobs.run(args, cycle), 1)
+            result = json.loads(output.getvalue())
+            self.assertTrue(result["retainedForReview"])
+            self.assertEqual(result["outcome"], "blocked")
+            self.assertTrue(pathlib.Path(result["worktree"]).exists())
+            self.assertTrue((root / "artifacts/state/weekly-improvement.lock.json").exists())
+            self.assertTrue(cycle.git(repository, "show-ref", "--verify", "refs/heads/codex/weekly-improvement-retained"))
+            self.assertTrue(pathlib.Path(result["report"]).exists())
+            commit.assert_called_once()
+
+    def test_corrupt_authority_cleans_resources_and_preserves_unbacked_bytes(self):
+        for failed_backup in (False, True):
+            with self.subTest(failed_backup=failed_backup), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+                manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts",
+                    worktree_root=None, run_id="corrupt", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+                run = root / "artifacts/weekly-improvements/corrupt"
+                authority = root / "artifacts/state/weekly-improvement.json"
+                original = b'\xff prior authority bytes'
+                authority.write_bytes(original)
+                options = SimpleNamespace(run_root=run, outcome="blocked", pr_url=None, state_path=None, manifest=manifest)
+                with mock.patch.object(pathlib.Path, "write_bytes", side_effect=OSError("backup failed")) if failed_backup else contextlib.nullcontext():
+                    with self.assertRaises(cycle.CycleError), contextlib.redirect_stdout(io.StringIO()):
+                        cycle.finalize(options)
+                self.assertFalse(pathlib.Path(manifest["worktree"]).exists())
+                self.assertFalse(cycle.git(repository, "show-ref", "--verify", f"refs/heads/{manifest['branch']}", check=False))
+                if failed_backup:
+                    self.assertEqual(authority.read_bytes(), original)
+                    self.assertTrue(pathlib.Path(manifest["lockPath"]).exists())
+                else:
+                    self.assertEqual((run / "previous-authority-state.txt").read_bytes(), original)
+                    self.assertFalse(pathlib.Path(manifest["lockPath"]).exists())
+                self.assertEqual(cycle.read_json(run / "run.json")["status"], "cleanup-failed" if failed_backup else "blocked")
+
+    def test_completed_retry_checks_outcome_and_uses_persisted_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+            manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts",
+                worktree_root=None, run_id="retry", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+            run = root / "artifacts/weekly-improvements/retry"
+            options = SimpleNamespace(run_root=run, outcome="blocked", pr_url=None, state_path=None, manifest=manifest)
+            with contextlib.redirect_stdout(io.StringIO()):
+                cycle.finalize(options)
+                cycle.finalize(options)  # The supplied preparation is intentionally stale.
+            self.assertEqual(len(cycle.read_json(root / "artifacts/state/weekly-improvement.json")["runs"]), 1)
+            persisted = cycle.read_json(run / "run.json")
+            persisted.update(status="draft", prUrl="https://example.com/pr/1")
+            cycle.atomic_json(run / "run.json", persisted)
+            options.outcome, options.pr_url = "ready", persisted["prUrl"]
+            with self.assertRaisesRegex(cycle.CycleError, "already finalized as draft"):
+                cycle.finalize(options)
+            self.assertEqual(cycle.read_json(run / "run.json")["status"], "draft")
+
+    def test_unreadable_authority_and_failed_backup_preserve_history_until_retry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            repository = fixtures.cycle_tests.FreshnessCycleTests().repository(root)
+            manifest = cycle.prepare_run(SimpleNamespace(repository=repository, artifact_root=root / "artifacts",
+                worktree_root=None, run_id="authority-retry", skip_remote_check=True, skip_fetch=True, ref="HEAD"))
+            authority = (root / "artifacts/state/weekly-improvement.json").resolve()
+            anchor = {"runId": "earlier", "finishedAt": "2026-11-01T00:00:00Z", "outcome": "no-change"}
+            original = {"schemaVersion": 2, "runs": [anchor], "lastCollectedRun": anchor, "lastSuccessfulRun": anchor}
+            cycle.atomic_json(authority, original)
+            original_bytes = authority.read_bytes()
+            real_read = cycle.read_json
+            def read(path, *arguments):
+                if path == authority:
+                    raise OSError("authority temporarily unreadable")
+                return real_read(path, *arguments)
+            run = root / "artifacts/weekly-improvements/authority-retry"
+            options = SimpleNamespace(run_root=run, outcome="blocked", pr_url=None, state_path=None, manifest=manifest)
+            with mock.patch.object(cycle, "read_json", side_effect=read), \
+                 mock.patch.object(pathlib.Path, "write_bytes", side_effect=OSError("backup failed")), \
+                 self.assertRaises(cycle.CycleError):
+                cycle.finalize(options)
+            self.assertEqual(authority.read_bytes(), original_bytes)
+            self.assertFalse(pathlib.Path(manifest["worktree"]).exists())
+            with contextlib.redirect_stdout(io.StringIO()):
+                cycle.finalize(options)
+                cycle.finalize(options)
+            state = real_read(authority)
+            self.assertEqual(state["lastCollectedRun"], anchor)
+            self.assertEqual(state["lastSuccessfulRun"], anchor)
+            self.assertEqual([row["runId"] for row in state["runs"]], ["earlier", "authority-retry"])
+            self.assertFalse(pathlib.Path(manifest["lockPath"]).exists())
 
     def test_explicit_remote_ref_is_refreshed_while_local_ref_and_sha_are_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -223,6 +346,39 @@ class LifecycleRepairs(unittest.TestCase):
 
 
 class CollectionRepairs(unittest.TestCase):
+    def test_real_docs_subprocess_disagreement_and_crashes(self):
+        for failure in (None, "missing-manifest", "traceback-after-manifest"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                runner = jobs.Runner(root / "run", root, cycle)
+                overview, member = root / "overview.md", root / "member.md"
+                overview.write_text("func resolve(in:)\n")
+                member.write_text("func resolved(in:)\n")
+                real_command = runner.command
+                def command(name, argv, **options):
+                    if name == "research-mirrors":
+                        argv = [sys.executable, "-c", "print('mirrors checked')"]
+                    else:
+                        argv = [sys.executable, str(fixtures.ROOT / "scripts/capture-apple-docs-watch.py"),
+                                "--output", str(runner.root / "apple-docs"), "--overview-source", str(overview),
+                                "--member-source", str(member)]
+                        if failure == "missing-manifest":
+                            argv = [sys.executable, "-c", "raise RuntimeError('capture crashed')"]
+                        elif failure == "traceback-after-manifest":
+                            argv = [sys.executable, "-c", "import runpy,sys; sys.argv=sys.argv[1:]; "
+                                    "\ntry: runpy.run_path(sys.argv[0],run_name='__main__')"
+                                    "\nexcept SystemExit: raise RuntimeError('crashed after capture')", *argv[1:]]
+                    return real_command(name, argv, **options)
+                with mock.patch.object(runner, "command", side_effect=command), runner.lane("auxiliary"):
+                    jobs.collect_auxiliary(runner, "weekly", {}, None, SimpleNamespace(skip_web=False, artifact_root=root))
+                result = next(step for step in runner.steps if step["name"] == "apple-docs-watch")
+                self.assertEqual(result["status"], "blocked" if failure else "passed")
+                if failure:
+                    self.assertIsNone(runner.source_update)
+                else:
+                    self.assertFalse(any(step["status"] == "blocked" for step in runner.steps))
+                    self.assertEqual(runner.findings[0]["kind"], "documentation-disagreement")
+
     def test_stdout_is_not_contaminated_by_stderr(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -270,7 +426,10 @@ class CollectionRepairs(unittest.TestCase):
                         captures.append({"name": n, "status": "captured", "path": f"{n}.md",
                                          "sha256": hashlib.sha256(payload).hexdigest(), "methodSpellings": [m]})
                     cycle.atomic_json(root / "apple-docs/manifest.json", {"schemaVersion": 1, "pagesAgree": False, "captures": captures})
-                return runner.record(name, "blocked" if name == "apple-docs-watch" else "passed", exitCode=1 if name == "apple-docs-watch" else 0)
+                    (root / "docs.stdout").write_bytes((root / "apple-docs/manifest.json").read_bytes())
+                    (root / "docs.stderr").write_text("")
+                return runner.record(name, "blocked" if name == "apple-docs-watch" else "passed", exitCode=1 if name == "apple-docs-watch" else 0,
+                                     stdout=str(root / "docs.stdout"), stderr=str(root / "docs.stderr"))
             with mock.patch.object(runner, "command", side_effect=command):
                 jobs.collect_auxiliary(runner, "weekly", {}, None, SimpleNamespace(skip_web=False, artifact_root=root))
             self.assertEqual(runner.findings[0]["kind"], "documentation-disagreement")
@@ -296,18 +455,80 @@ class CollectionRepairs(unittest.TestCase):
 
 
 class SourceWatchRepairs(unittest.TestCase):
-    def capture(self, root, state, docs="# Initial\n", versions=(("27.2", "27B52"),), reviewed_builds=None):
+    def capture(self, root, state, docs="# Initial\n", versions=(("27.2", "27B52"),), reviewed_builds=None, news_payload=None):
         runner = jobs.Runner(root, root, cycle)
         feed = ('<rss><channel>' + ''.join(f'<item><title>Xcode {v} ({b})</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item>' for v, b in versions) + '</channel></rss>').encode()
         def response(request, timeout):
-            return io.BytesIO(docs.encode() if request.full_url.endswith(".md") else feed)
+            return io.BytesIO(docs.encode() if request.full_url.endswith(".md") else
+                              news_payload if news_payload is not None and request.full_url == jobs.SOURCES["news"] else feed)
         baseline = {"environment": {"latestObserved": {"xcode": {"version": "27.2", "build": "27B52"}}}}
         if reviewed_builds is not None:
             baseline["environment"]["latestObserved"]["xcode"]["reviewedBuilds"] = reviewed_builds
         with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response):
             jobs.watch_sources(runner, baseline, state)
+        jobs.source_watch.commit(runner.source_update, cycle)
         jobs.write_report(runner, "daily", "findings", emit=False)
         return runner
+
+    def test_news_rebuilds_order_content_and_equivalent_acknowledgments(self):
+        def feed(build, content="first", reverse=False):
+            items = [f'<item><guid>a</guid><title>A</title><description>{content}</description></item>',
+                     '<item><guid>b</guid><title>B</title></item>']
+            if reverse:
+                items.reverse()
+            return ('<rss><channel><lastBuildDate>' + build + '</lastBuildDate>' + ''.join(items) + '</channel></rss>').encode()
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            root = pathlib.Path(directory)
+            state = root / "state/news.json"
+            self.capture(root / "one", state, news_payload=feed("one"))
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "one"), cycle)
+            self.assertEqual(self.capture(root / "two", state, news_payload=feed("two", reverse=True)).findings, [])
+            changed = self.capture(root / "three", state, news_payload=feed("three", "edited"))
+            finding = next(f for f in changed.findings if f["source"] == "news")
+            self.assertEqual([item["id"] for item in finding["updatedItems"]], ["a"])
+            self.capture(root / "four", state, news_payload=feed("four", "edited", True))
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "three"), cycle)
+            self.assertEqual(self.capture(root / "five", state, news_payload=feed("five", "edited")).findings, [])
+            self.capture(root / "six", state, news_payload=feed("six", "newer"))
+            with self.assertRaisesRegex(cycle.CycleError, "stale news"):
+                jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "three"), cycle)
+
+    def test_legacy_news_upgrade_requires_retained_capture_or_explicit_review(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            root = pathlib.Path(directory)
+            state = root / "state/news.json"
+            self.capture(root / "one", state)
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "one"), cycle)
+            original = cycle.read_json(state)
+            for item in original["reviewed"]["news"]["newsItems"]:
+                item.pop("content")
+            cycle.atomic_json(state, original)
+            self.assertEqual(self.capture(root / "two", state).findings, [])
+            original["reviewed"]["news"].pop("report")
+            cycle.atomic_json(state, original)
+            finding = next(f for f in self.capture(root / "three", state).findings if f["source"] == "news")
+            self.assertTrue(finding["migrationRequired"])
+
+    def test_bad_state_preserves_bytes_and_does_not_block_release_capture(self):
+        malformed = jobs.source_watch.empty_state()
+        malformed['reviewed']['news'] = {'sha256': 'old', 'capturedAt': 'invalid', 'url': 'url', 'report': 42}
+        for original in (b'\xff', b'{broken JSON', json.dumps(malformed).encode()):
+            with self.subTest(original=original), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                state = root / "bad.json"
+                state.write_bytes(original)
+                runner = jobs.Runner(root / "run", root, cycle)
+                feed = b'<rss><channel><item><title>Xcode 28.0 (new)</title><pubDate>Thu, 29 Oct 2026 20:00:00 GMT</pubDate></item></channel></rss>'
+                def response(request, timeout):
+                    return io.BytesIO(b'# Docs' if request.full_url.endswith('.md') else feed)
+                baseline = {"environment": {"latestObserved": {"xcode": {"version": "27.2", "build": "old"}}}}
+                with mock.patch.object(jobs.urllib.request, "urlopen", side_effect=response) as fetch:
+                    jobs.watch_sources(runner, baseline, state)
+                self.assertEqual(fetch.call_count, 3)
+                self.assertTrue(any(f["kind"] == "release-changed" for f in runner.findings))
+                with self.assertRaisesRegex(ValueError, "unreadable"):
+                    jobs.source_watch.commit(runner.source_update, cycle)
+                self.assertEqual(state.read_bytes(), original)
 
     def test_pending_survives_runs_and_stale_acknowledgment_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

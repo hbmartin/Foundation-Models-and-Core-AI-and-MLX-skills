@@ -85,8 +85,8 @@ esac
 command -v python3 >/dev/null 2>&1 || die 'python3 is required'
 
 # Shared scoped comparison includes protocol requirements and serialized bodies.
-report_drift() { # label, unified diff, baseline, candidate
-  python3 "$SCRIPT_DIR/interface_drift.py" "$3" "$4" --framework "$1" --examples "$EXAMPLES"
+report_drift() { # label, baseline, candidate
+  python3 "$SCRIPT_DIR/interface_drift.py" "$2" "$3" --framework "$1" --examples "$EXAMPLES"
 }
 
 report_help_drift() { # $1=label, $2=unified-diff file, $3=baseline filename
@@ -122,8 +122,7 @@ if [ -n "$BASELINE" ]; then
     grep -v -- "-${BASELINE}-macos.swiftinterface$" | version_sort | tail -n 1 || true)"
   [ -n "$newest" ] || die "no non-$BASELINE capture of $FRAMEWORK is tracked"
   printf '=== %s: %s -> %s ===\n' "$FRAMEWORK" "$(basename "$base")" "$(basename "$newest")"
-  diff -u "$base" "$newest" > "$TMP/diff" || true
-  report_drift "$FRAMEWORK" "$TMP/diff" "$base" "$newest"
+  report_drift "$FRAMEWORK" "$base" "$newest"
   exit 0
 fi
 
@@ -173,8 +172,7 @@ for fresh in "$FRESH_DIR"/*-"$SDK_VERSION"-macos.swiftinterface; do
     continue
   fi
   git -C "$REPO_ROOT" show "$AGAINST:$tracked_path" > "$TMP/baseline"
-  diff -u "$TMP/baseline" "$fresh" > "$TMP/diff" || true
-  report_drift "$framework" "$TMP/diff" "$TMP/baseline" "$fresh"
+  report_drift "$framework" "$TMP/baseline" "$fresh"
 done
 
 if [ "$found" -ne 1 ]; then

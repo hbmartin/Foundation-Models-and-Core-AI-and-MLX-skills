@@ -1,12 +1,62 @@
 {
   "schemaVersion": 2,
-  "reconstructedAt": "2026-11-01",
-  "normalization": "Scoped declarations; order-independent attributes; :: normalized to .; protocol requirements, accessors and inlined bodies retained. Raw captures unchanged.",
+  "reconstructedAt": "2026-11-21",
+  "normalization": "Scoped declarations including imports, macros, operators, precedence groups and extension conformances/constraints; order-independent attributes with balanced arguments; :: normalized to . outside strings; protocol requirements, accessors and inlined bodies retained. Raw captures unchanged.",
   "frameworks": [
     {
       "framework": "AppIntents",
-      "declarationsChanged": 19,
+      "declarationsChanged": 23,
       "changes": [
+        {
+          "kind": "removed",
+          "owner": "<module>",
+          "before": {
+            "owner": "<module>",
+            "declaration": "extension AppIntents.AppSchema.AppIntents.PhotosEntity",
+            "attributes": [
+              "@available(anyAppleOS 27.0, *)",
+              "@available(tvOS, unavailable)",
+              "@available(watchOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension AppIntents.AssistantSchemaEnum",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension AppIntents.IntentParameter where Value.UnwrappedType : Swift.Collection, Value.ValueType : AppIntents._IntentValueRepresentable",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension AppIntents.IntentParameter where Value.ValueType : AppIntents._IntentValueRepresentable",
+            "attributes": [
+              "@available(anyAppleOS 27.2, *)"
+            ],
+            "body": ""
+          }
+        },
         {
           "kind": "modified",
           "owner": "AppIntents.AppSchema",
@@ -356,8 +406,28 @@
     },
     {
       "framework": "Evaluations",
-      "declarationsChanged": 6,
+      "declarationsChanged": 8,
       "changes": [
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "import UniformTypeIdentifiers",
+            "attributes": [],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "import XCTest",
+            "attributes": [],
+            "body": ""
+          }
+        },
         {
           "kind": "modified",
           "owner": "<module>",
@@ -458,7 +528,7 @@
     },
     {
       "framework": "FoundationModels",
-      "declarationsChanged": 46,
+      "declarationsChanged": 53,
       "changes": [
         {
           "kind": "variant-added",
@@ -471,6 +541,94 @@
               "@available(tvOS, unavailable)",
               "@nonexhaustive"
             ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.Attachment where Content : FoundationModels.DataAttachmentRepresentable",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.LanguageModel",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.LanguageModelExecutorGenerationChannel.FoundationModels.DataEntry.FoundationModels.Action",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "variant-added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.Transcript",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "extension FoundationModels.Transcript.FoundationModels.DataEntry : Swift.CustomStringConvertible",
+            "attributes": [
+              "@available(iOS 27.2, macOS 27.2, visionOS 27.2, watchOS 27.2, *)",
+              "@available(tvOS, unavailable)"
+            ],
+            "body": ""
+          }
+        },
+        {
+          "kind": "added",
+          "owner": "<module>",
+          "after": {
+            "owner": "<module>",
+            "declaration": "public import UniformTypeIdentifiers",
+            "attributes": [],
             "body": ""
           }
         },

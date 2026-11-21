@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 2,
+  "checkedAt": "2026-11-21T17:36:03.698725+00:00",
+  "compiler": "Apple Swift version 6.4.2 (swiftlang-6.4.2.1.9 clang-2100.4.1.1)\nTarget: arm64-apple-macosx27.0.0",
+  "target": "arm64-apple-macos27.0",
+  "checks": [
+    {
+      "check": "controlled-module-version-gate",
+      "version": "2.0.68",
+      "status": "passed",
+      "expectedSymbol": "Legacy",
+      "incorrectBranchRejected": true
+    },
+    {
+      "check": "controlled-module-version-gate",
+      "version": "2.1.14",
+      "status": "passed",
+      "expectedSymbol": "AddedInNewSDK",
+      "incorrectBranchRejected": true
+    },
+    {
+      "check": "data-translation-and-capability-gates",
+      "status": "passed",
+      "runtimeExecution": false,
+      "moduleVersion": "2.1.14",
+      "expectedBranch": "new",
+      "incorrectBranchRejected": true,
+      "ungatedDataAPIsChecked": true
+    },
+    {
+      "check": "cache-policy-macos",
+      "status": "passed"
+    },
+    {
+      "check": "cache-policy-tvos",
+      "status": "passed"
+    }
+  ],
+  "sdks": {
+    "macosx": {
+      "version": "27.2",
+      "build": "26B118"
+    },
+    "appletvos": {
+      "version": "27.2",
+      "build": "24K122"
+    }
+  },
+  "runtimeExecution": false
+}
