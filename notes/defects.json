@@ -6,7 +6,7 @@
       "url": "https://github.com/apple/coreai-models/issues/49",
       "kind": "issue",
       "title": "Swift package fails to compile for the iOS Simulator (no such module 'CoreAI')",
-      "affectedVersions": "Affected-version boundary unverified; see the cited workaround.",
+      "affectedVersions": "Affected coreai-torch 0.4.0 with coreai-core 1.0.0b1; fixed in reporter retests using coreai-torch 0.4.2 with coreai-core 1.0.0b2 and coreai-torch main (7a18c00) with coreai-core 1.0.0b3.",
       "guideRefs": [
         {
           "file": "guides/part-17-migration-from-pre-ios-27/references/06-toolchain-and-asset-compatibility.md",
@@ -255,25 +255,32 @@
           "anchor": "97-the-register"
         }
       ],
-      "claimedState": "OPEN",
-      "asOf": "2026-10-07",
+      "claimedState": "CLOSED",
+      "asOf": "2026-11-21",
       "resolution": {
-        "disposition": "unknown",
+        "disposition": "fixed-with-residual",
         "evidenceUrls": [
-          "https://github.com/apple/coreai-torch/issues/10"
+          "https://github.com/apple/coreai-torch/issues/10",
+          "https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766",
+          "https://github.com/apple/coreai-torch/issues/10#issuecomment-6687727233"
         ],
-        "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state verified; remediation unverified.",
+        "evidenceDate": "2026-11-06",
+        "rationale": "Two reporter retests reproduced correct GPU results for all six operations on macOS 27.0. Keep the workaround for the originally affected 0.4.0/core 1.0.0b1 combination and any unverified deployment combination.",
         "confidence": 1.0,
         "releaseAvailability": {
-          "status": "unknown",
-          "version": null,
-          "evidenceUrls": []
+          "status": "released",
+          "version": "coreai-torch 0.4.2 / coreai-core 1.0.0b2",
+          "evidenceUrls": [
+            "https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766"
+          ]
         },
         "remediation": {
-          "status": "unverified",
-          "version": null,
-          "evidenceUrls": []
+          "status": "demonstrated",
+          "version": "coreai-torch 0.4.2 / coreai-core 1.0.0b2; coreai-torch main 7a18c00 / coreai-core 1.0.0b3",
+          "evidenceUrls": [
+            "https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766",
+            "https://github.com/apple/coreai-torch/issues/10#issuecomment-6687727233"
+          ]
         }
       }
     },
@@ -1966,15 +1973,17 @@
           "anchor": "24-apples-measured-numbers"
         }
       ],
-      "claimedState": "OPEN",
-      "asOf": "2026-10-07",
+      "claimedState": "CLOSED",
+      "asOf": "2026-11-21",
       "resolution": {
-        "disposition": "unknown",
+        "disposition": "merged-unreleased",
         "evidenceUrls": [
-          "https://github.com/ml-explore/mlx/issues/3910"
+          "https://github.com/ml-explore/mlx/issues/3910#issuecomment-6594739675",
+          "https://github.com/ml-explore/mlx/issues/4278#issuecomment-6594763810",
+          "https://github.com/ml-explore/mlx/pull/4767"
         ],
-        "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "evidenceDate": "2026-11-03",
+        "rationale": "The maintainer consolidated #3910 into #4278, then closed #4278 as fixed by merged PR #4767 (merge commit 1ba7f969ad05d86decfeeb83787cc9b79e440962). The PR adds stalled-QP liveness checks, propagates worker exceptions, and reports dead links instead of leaving peers spinning; its stated two-Mac cable-pull tests raised catchable errors on both ranks in under 300 ms. No released MLX version is identified, so the safe guidance remains until a release containing the merge is verified.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",
@@ -1982,9 +1991,11 @@
           "evidenceUrls": []
         },
         "remediation": {
-          "status": "unverified",
-          "version": null,
-          "evidenceUrls": []
+          "status": "demonstrated",
+          "version": "main@1ba7f969ad05d86decfeeb83787cc9b79e440962",
+          "evidenceUrls": [
+            "https://github.com/ml-explore/mlx/pull/4767"
+          ]
         }
       }
     },
@@ -2034,15 +2045,15 @@
           "anchor": "25-the-distributed-bug-cluster"
         }
       ],
-      "claimedState": "OPEN",
-      "asOf": "2026-10-07",
+      "claimedState": "CLOSED",
+      "asOf": "2026-11-21",
       "resolution": {
-        "disposition": "unknown",
+        "disposition": "closed-unfixed",
         "evidenceUrls": [
-          "https://github.com/ml-explore/mlx/issues/3755"
+          "https://github.com/ml-explore/mlx/issues/3755#issuecomment-6594860518"
         ],
-        "evidenceDate": "2026-10-07",
-        "rationale": "GitHub state is recorded separately from release availability and demonstrated remediation. The guide retains the report’s scoped workaround; closure alone does not prove that the supported runtime is corrected.",
+        "evidenceDate": "2026-11-03",
+        "rationale": "A maintainer closed the report because it appeared to be a network-configuration problem the project could not help resolve. No MLX patch, corrected release, or demonstrated remediation is cited. Retain the topology and reachability diagnostics; the closure is not evidence that affected configurations now connect.",
         "confidence": 1.0,
         "releaseAvailability": {
           "status": "unknown",

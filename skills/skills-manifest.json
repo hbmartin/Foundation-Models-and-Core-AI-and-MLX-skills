@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated": "2026-11-01",
+  "generated": "2026-11-21",
   "repository": {
     "url": "https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills",
     "branch": "main"
@@ -9,7 +9,7 @@
   "file_count": 121,
   "files": {
     ".generated-by-build-skills": "5c0ade55f143712122d30f0eb3a8f37fa593fc0bb161bd68c87e72ab4616ff4c",
-    "README.md": "174db03d012296f701b28f9ad01e5e7f786dac4d2389a96bce7b3b0af4ae9b64",
+    "README.md": "1fb314cad062f65e218b116ee9e2d4c73650048b2a37cb5a75e4d904ee229f13",
     "apple-ai-evaluations/SKILL.md": "8547ed78f638a84ad9a2b06f8f6c9199446792150a97b7ad600f6b63d1c1e87b",
     "apple-ai-evaluations/agents/openai.yaml": "3d50da7c0ea0fc7378a5ced991e15d9e06e72638048a58d31a660a8df4a85ccc",
     "apple-ai-evaluations/evals/eval_queries.json": "347a5ad8a564a44cc4a543101a9fb41d151b94284b4f881a0f2473ad7aa3c0c9",
@@ -18,7 +18,7 @@
     "apple-ai-evaluations/references/part-06-evaluations/references/01-foundations-and-hill-climbing.md": "42d98020f93ccac04ebf770fb38e15db868e153e78f624ae28be7d0aabaa2a85",
     "apple-ai-evaluations/references/part-06-evaluations/references/02-model-judges-and-alignment.md": "1c115ff4ba432caeacc124de069484e7896b004ac4c2d59fc15e5c192ef196bb",
     "apple-ai-evaluations/references/part-06-evaluations/references/03-synthetic-data-and-tool-trajectories.md": "cb1f58117ff1eec8b33c264bd094cb174c1733ec59cda8351f11ce9a540ef899",
-    "apple-ai-evaluations/references/part-16-adjacent-capabilities/README.md": "38ed77e0d778a2c4c081e4a0e64cd2bd95211297927d46366db97e22526f027d",
+    "apple-ai-evaluations/references/part-16-adjacent-capabilities/README.md": "1b08c66919de5f24a5a204a00e93a3b3593f840f319e76e194a3882b191e078b",
     "apple-ai-evaluations/references/part-16-adjacent-capabilities/references/05-dnikit-dataset-and-model-introspection.md": "fe4775e3b619493710672aefca7390e02253171692e9372e21a30ed35e6141c2",
     "apple-ai-migration/SKILL.md": "1bece96f6693846b31246f596baa705da8e059ef9a6ab54e6825aa47d444904b",
     "apple-ai-migration/agents/openai.yaml": "2a9e5ab2e95da56b82f1b1972f4ee637cb441b32ad09f4b154c645ce31c1677a",
@@ -42,10 +42,10 @@
     "apple-app-intents/agents/openai.yaml": "ebfefad3768a29aee7bceed798334715bf373331a69000b035b7063abc34b20a",
     "apple-app-intents/evals/eval_queries.json": "700dedafc4677f5b80d348ecc9a91d3b8e1685320d5baf0a2e12c38e292690c3",
     "apple-app-intents/references/CONVENTIONS.md": "46accad65e432ba96cf61904b831e3725034e8d042efc2ce9609f3490cfa9079",
-    "apple-app-intents/references/part-16-adjacent-capabilities/README.md": "0e3e56700b67db65ad476066242f6ad35ecbf1851f1414e348406964ce5f6251",
-    "apple-app-intents/references/part-16-adjacent-capabilities/references/02-app-schema-domains.md": "63770952ffb09a03abfe90c6bba3a8a65576c97d1eff7c7d751e261fad72b18e",
+    "apple-app-intents/references/part-16-adjacent-capabilities/README.md": "d57183b61c4556605c062a27fac22449b8bf508725a8903c3bde16f690eaa639",
+    "apple-app-intents/references/part-16-adjacent-capabilities/references/02-app-schema-domains.md": "d6f6ebceca1d4afbe9e0de3e78fc8d52bd8ec83439cbe2c35b22a9ff9e18ffa7",
     "apple-app-intents/references/part-16-adjacent-capabilities/references/03-onscreen-awareness.md": "3cef0871754b399b2e9cf52c6ea8b30f242ba996b23b422e504a4d3eb6c2f827",
-    "apple-app-intents/references/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md": "0b2ec0127b175c085f60c4dca616920a9766ff14ba9531366125176e5aa5406a",
+    "apple-app-intents/references/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md": "cce24e8098155c758ed771e14a2612bb7a08ee7f582717b22109376fa6378ab7",
     "apple-core-ai/SKILL.md": "15d4a8e5272c07c346240192efa3a1ffd492f6426265880a7c5a6349bf40a6b7",
     "apple-core-ai/agents/openai.yaml": "7e919337d3394eb000bbbd6b2057234eb92da47fea9b007bfaa54c544b67e276",
     "apple-core-ai/evals/eval_queries.json": "5322bea6a0defc81feb6c3fdb090934f0304a0bf17d4428723b18e928957a7ee",
@@ -58,7 +58,7 @@
     "apple-core-ai/references/part-07-coreai-swift-runtime/references/05-non-llm-engines-bundles-warmup-and-caching.md": "1cfabc5e45eefaecee704d8a2ac381e79e7032b918d9e86d0b4250cbcd2715ec",
     "apple-core-ai/references/part-08-coreai-pytorch-conversion/README.md": "3fdd7be1ed080a9b6986ed600554faf4dcef00931aafcf02dc10e0733a2095d1",
     "apple-core-ai/references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md": "04aac24f78a40ef9b7c4783555a50edcea279695cef6204e229c7cc62603a935",
-    "apple-core-ai/references/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md": "f5663e18f2e6fe7d7cfb5e18a977a8b4229ceafd1acacfc38ad0f72ef41e2450",
+    "apple-core-ai/references/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md": "7e6f8719c7da01346b05c1ffc0f5e524f8075218cfe0a7c72257623c27676989",
     "apple-core-ai/references/part-08-coreai-pytorch-conversion/references/03-custom-metal-kernels.md": "69283509d383736ebd58ffd8fddf836d90d3f8209dbd18431d4d6345bff669c4",
     "apple-core-ai/references/part-09-coreai-compression-numerics/README.md": "5820b99e327bd6ebc1b8f866bd3b519bf43b519a6e656f515eae83c63656d6dc",
     "apple-core-ai/references/part-09-coreai-compression-numerics/references/01-quantization.md": "53b76ad684550041fd1d4754f8b93377561b87f335f6c511cb5061fb173020a3",
@@ -108,7 +108,7 @@
     "apple-mlx/references/part-12-mlx-python/references/02-numerics-hardware-gating-and-custom-kernels.md": "56f6b7c1c60d6884a7dd21d49d6f7d2383c7bb7c6530d3079437ea5454d414f2",
     "apple-mlx/references/part-12-mlx-python/references/03-quantization.md": "1b10ef2382af82e94105ba99ed9b33f56e3f0260b731e09f7b01450c07cc7ab8",
     "apple-mlx/references/part-12-mlx-python/references/04-mlx-lm-cli-generation-and-caching.md": "f64b0d04052e5d3bf424668c517af0219a50e9ec2af1f8387c154f7b4bbbf59c",
-    "apple-mlx/references/part-12-mlx-python/references/05-serving-and-distributed.md": "497518118cdb2ebe35ab88dc73040377dc232f22f3b1bec04d1acc30c354fbc3",
+    "apple-mlx/references/part-12-mlx-python/references/05-serving-and-distributed.md": "00685262058383ac5d0a07a42f4c92afde1b5eab1e80188560ad218acbb7f152",
     "apple-mlx/references/part-12-mlx-python/references/06-finetuning-and-porting-models.md": "f833bcf817d6e8fd39469c26f45ecf226128c90ecd86c2899563fd822ff66a4d",
     "apple-mlx/references/part-13-mlx-swift/README.md": "03ff8558748bfa6781c94c100c6e194284264390d39792385ce374f20642fd1d",
     "apple-mlx/references/part-13-mlx-swift/references/01-mlx-swift-lm-in-an-app.md": "592b37e94cafb1bbe033096964c83264e7a1852f29be9303d73278e64ed579e2",
@@ -127,7 +127,7 @@
     "apple-speech/agents/openai.yaml": "4dae743238730bb94b29231651ad8a97fcaaf3afbd5b6274ef613857dd44d5b5",
     "apple-speech/evals/eval_queries.json": "9ade40d8df41034c20f52166ae59a1e4421be7bb0a299809287314d642d1a02e",
     "apple-speech/references/CONVENTIONS.md": "46accad65e432ba96cf61904b831e3725034e8d042efc2ce9609f3490cfa9079",
-    "apple-speech/references/part-16-adjacent-capabilities/README.md": "d437e9c6882fe3373ef0fb4ba8a493cd8b015e6689b24653ea45dbf7dc19ed75",
+    "apple-speech/references/part-16-adjacent-capabilities/README.md": "d64f974297babca675de479b5311f7dc47e6476627f20c70dedc6fd35538db80",
     "apple-speech/references/part-16-adjacent-capabilities/references/01-speech-analyzer-end-to-end.md": "87c7956ffee4b7344100b3327491dbcfadd724e06666c31e0fcf633c64af4f38"
   }
 }

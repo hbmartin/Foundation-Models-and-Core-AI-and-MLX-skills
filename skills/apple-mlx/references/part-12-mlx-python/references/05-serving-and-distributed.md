@@ -2937,10 +2937,13 @@ This is the newest surface in the entire 2026 stack and the issue tracker shows 
 below is **community-reported on GitHub**, read 2026-07-27, **open** at that date unless noted.
 None of it should stop you from using distributed MLX; all of it should shape how you debug it.
 
-**mlx#3910 — JACCL `MeshImpl::recv` spins forever on peer loss.** A silent hang with no timeout. If
-one node dies, sleeps, or loses a cable, the survivors do not error — they wait. Combined with
-`mlx.launch`'s "kill the rest if one fails" behaviour this is mostly survivable, but a node that
-goes *quiet* rather than *dying* produces an indefinite stall.
+**mlx#3910 — CLOSED, consolidated into #4278; fix merged but release unverified (2026-11-03).** The
+reported failure was a silent hang with no timeout after peer loss. Maintainers consolidated it into
+#4278 and closed that issue as fixed by PR #4767 (merge commit `1ba7f969`), which checks stalled queue
+pairs, propagates worker exceptions and reports a dead RDMA link instead of leaving peers spinning.
+The PR reports catchable errors on both ranks in under 300 ms across nine two-Mac cable-pull tests.
+No released MLX version containing that merge is identified, so production guidance remains:
+supervise ranks, impose an external liveness deadline, and rebuild the group after the first error.
 
 **mlx#3777 — JACCL segfaults in `ibv_reg_mr` (null protection domain) when RDMA is absent.** This
 is the crash you get if you skipped §16 on one machine. It is a segfault, not a message, so the
@@ -2948,10 +2951,13 @@ diagnostic value is nil — which is why `ibv_devices` on every node before you 
 optional.
 
 <!-- defect-ref:ml-explore.mlx:issue:3755 -->
-**mlx#3755 — ring and jaccl both fail to connect (errno 60/65) on a 4-node M3 Ultra cluster.**
-errno 60 is `ETIMEDOUT`, errno 65 is `EHOSTUNREACH`. The shape of a coordinator or per-cable
-subnet that is not reachable. Cross-check with §19.4: rank 0's IP plus `--starting-port` (32323)
-must be reachable from every node.
+**mlx#3755 — CLOSED UNFIXED as network configuration (2026-11-03).** Ring and jaccl both failed to
+connect (errno 60/65) on a 4-node M3 Ultra cluster. The reporter narrowed the failure to one host:
+the JACCL socket entered `SYN_SENT` but emitted no SYN, while `nc` to the same endpoint succeeded.
+A maintainer closed it because it appeared to be a network-configuration issue the project could
+not help resolve; no MLX patch or fixed release was cited. Keep the diagnostic: errno 60 is
+`ETIMEDOUT`, errno 65 is `EHOSTUNREACH`; verify rank 0's IP plus `--starting-port` (32323), routes,
+bind/source interface and per-cable subnets from every node.
 
 <!-- defect-ref:ml-explore.mlx:issue:3862 -->
 **mlx#3862 — ring `SocketThread` dies silently on a transient connection reset**, after which all

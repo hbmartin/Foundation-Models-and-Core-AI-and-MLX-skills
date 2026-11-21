@@ -18,6 +18,18 @@ supports draft documents that are not yet on disk, `Transferable` / `FileReprese
 Siri actions, on-screen context, Spotlight-backed retrieval. Guides 16.1–16.4 are Swift app work and
 assume no Core AI or MLX knowledge; 16.5 is for Python ML engineers and is disconnected on purpose.
 
+> 🟡 **27.3 DEVELOPER PREVIEW — observed 2026-11-03, not a shipping baseline.** Apple's announcement
+> says the iOS, iPadOS, macOS and visionOS **27.3 betas** open Siri AI integration to any app through
+> App Intents. It specifically expands the model described in 16.2–16.4 in two ways: custom actions
+> are no longer presented as limited to existing schema domains, and Siri AI can surface **any entity
+> in the Spotlight semantic index**, not only entities that fit an existing schema. Apple also
+> announces *skills* that combine several actions for complex requests, but the announcement does not
+> publish a stable API shape for them. Treat all three as preview claims until the 27.3 SDK interfaces,
+> documentation and runtime are captured on this repository's beta-event lane. The preview is
+> device-, language-, region- and age-gated; some server-backed features have daily limits; App Store
+> submission is announced for spring; and terms and usage-policy details remain forthcoming.
+> Source: [Apple Developer News, 2026-11-03](https://developer.apple.com/news/?id=gdk2umrf).
+
 ---
 
 ## ⚠️ Two things to learn before you plan anything

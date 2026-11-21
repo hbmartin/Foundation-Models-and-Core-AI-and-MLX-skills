@@ -2627,7 +2627,7 @@ Nine defects, in one table, so you can check your own model against it:
 <!-- defect-ref:apple.coreai-torch:issue:9 -->
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 <!-- defect-ref:apple.coreai-torch:issue:10 -->
-| 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` open | `torch.div(x*2., 2., rounding_mode="floor")` |
+| 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` fixed in reporter retests with 0.4.2/core b2 and main `7a18c00`/core b3; older combinations retain the defect | Upgrade; for affected combinations use `torch.div(x*2., 2., rounding_mode="floor")` |
 <!-- defect-ref:apple.coreai-torch:issue:11 -->
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
 <!-- defect-ref:apple.coreai-models:issue:66 -->
@@ -2635,12 +2635,15 @@ Nine defects, in one table, so you can check your own model against it:
 
 Two workarounds from that table are worth spelling out because they are non-obvious.
 
-> ✅ **VERIFIED** — issue **#10**, reporter-measured on GPU: `floor`, `trunc` and `ceil` are executed
+> ✅ **VERIFIED 2026-11-06** — issue **#10** was reporter-measured on GPU: `floor`, `trunc` and `ceil` are executed
 > as **identity**, and `round` uses **ties-away-from-zero** where PyTorch uses ties-to-even. **CPU is
 > correct for all four**, so the same `.aimodel` computes different mathematics on different compute
 > units. Also: `div(x, 1, rounding_mode="floor")` is **folded to identity at conversion time**, while
-> `div(2x, 2, rounding_mode="floor")` is correct. Hence the workaround — a divisor of 1 is what
-> triggers the fold, so multiply through:
+> `div(2x, 2, rounding_mode="floor")` is correct in the affected combination. Two later reporter
+> retests found all six outputs correct on macOS 27.0: first with `coreai-torch 0.4.2` /
+> `coreai-core 1.0.0b2`, then with `coreai-torch` main `7a18c00` / `coreai-core 1.0.0b3`.
+> Upgrade to a demonstrated fixed combination. For the originally affected 0.4.0/core b1 path—or
+> another unverified deployment combination—the divisor-1 workaround remains:
 >
 > ```python
 > floored = torch.div(x * 2.0, 2.0, rounding_mode="floor")   # exact in FP, and lowers correctly
