@@ -47,11 +47,7 @@ manual/pilot runs without `--watch-consumer` use isolated run-local state. Versi
 state separates `reviewed`, `latestObserved`, and `pending`; legacy shared state is retained
 as an unreviewed migration seed. First captures require review. After reviewing a durable report,
 run `./scripts/freshness-cycle.py acknowledge-sources <run-root>`. Acknowledgment verifies
-captured bytes and rejects content superseded by a newer observation. News comparison uses
-canonical item content, including descriptions, while ignoring feed build dates and item order;
-raw capture hashes still verify evidence integrity. Older reports can acknowledge semantically
-identical news rebuilds. Legacy news summaries are upgraded from hash-verified retained captures;
-missing captures require one explicit migration review. Pending findings repeat
+captured bytes and rejects a hash superseded by a newer observation. Pending findings repeat
 until acknowledged. Release build sets remain observations requiring a reviewed repository
 baseline update, including same-version respins and ambiguous simultaneous variants. A reviewed
 release may declare `reviewedBuilds` in its `latestObserved` record, including its primary `build`,
