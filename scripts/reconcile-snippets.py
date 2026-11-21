@@ -3,14 +3,15 @@
 from __future__ import annotations
 import argparse
 import collections
-import csv
 import hashlib
+import io
 import importlib.util
 import json
 import pathlib
-import shutil
+import os
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('snippet_reconciliation_verifier', ROOT / 'scripts/verify-snippets.py')
@@ -56,6 +57,55 @@ def reconcile(rows, prior, old_records, toolchains, checked_at):
     return result, records
 
 
+def serialize_tsv(rows):
+    stream = io.StringIO()
+    verifier.write_tsv(rows, stream)
+    return stream.getvalue().encode('utf-8')
+
+
+def publish(payloads):
+    """Stage every output before publication and roll back handled replace failures."""
+    staged, backups, applied = {}, {}, []
+    def stage(path, data):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.' + path.name + '-', delete=False) as stream:
+            temporary = pathlib.Path(stream.name)
+            try:
+                stream.write(data)
+                os.chmod(temporary, path.stat().st_mode & 0o777 if path.exists() else 0o644)
+            except BaseException:
+                temporary.unlink(missing_ok=True)
+                raise
+        return temporary
+    try:
+        for path, data in payloads.items():
+            staged[path] = stage(path, data)
+            backups[path] = stage(path, path.read_bytes()) if path.exists() else None
+        try:
+            for path, temporary in staged.items():
+                os.replace(temporary, path)
+                applied.append(path)
+        except BaseException:
+            recovery_errors = []
+            for path in reversed(applied):
+                backup = backups[path]
+                try:
+                    if backup is None:
+                        path.unlink(missing_ok=True)
+                    else:
+                        os.replace(backup, path)
+                except OSError as error:
+                    backups[path] = None  # Retain the recovery bytes on disk.
+                    recovery_errors.append(f'recover {path} from {backup}: {error}')
+            if recovery_errors:
+                raise OSError('rollback failed; ' + '; '.join(recovery_errors))
+            raise
+    finally:
+        for temporary in (*staged.values(), *backups.values()):
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fresh', required=True, type=pathlib.Path)
@@ -67,7 +117,7 @@ def main():
     output = ROOT / 'notes/snippet-verification'
     old = json.loads((output / 'target-provenance.json').read_text())
     prior = verifier.read_prior_results(output / 'results.tsv')
-    rows = list(csv.DictReader((args.fresh / 'results.tsv').open(), delimiter='\t'))
+    rows = list(verifier.read_prior_results(args.fresh / 'results.tsv').values())
     toolchains = json.loads((args.fresh / 'toolchains.json').read_text())
     old_records = {(r['file'], r['snippet_id']): r for r in old['records']}
     merged, records = reconcile(rows, prior, old_records, toolchains, args.checked_at)
@@ -82,12 +132,7 @@ def main():
         if fence is None or verifier.fence_identity(fence)[1] != row["content_hash"]:
             raise ValueError(f"snippet changed since fresh verification: {row['file']}:{row['line']}")
         row.update(line=str(fence.open_line), anchor=fence.anchor, info=fence.info or "-")
-    args.evidence.mkdir(parents=True, exist_ok=True)
-    for filename in ('results.tsv', 'report.md', 'toolchains.json'):
-        shutil.copyfile(args.fresh / filename, args.evidence / filename)
-    with (output / 'results.tsv').open('w') as stream:
-        writer = csv.DictWriter(stream, fieldnames=verifier.TSV_COLUMNS, delimiter='\t', lineterminator='\n', quoting=csv.QUOTE_NONE)
-        writer.writeheader();writer.writerows(merged)
+    payloads = {output / 'results.tsv': serialize_tsv(merged)}
     digest = hashlib.sha256()
     for path in sorted((ROOT / 'guides').glob('part-*/**/*.md')):
         digest.update(path.relative_to(ROOT).as_posix().encode());digest.update(b'\0');digest.update(path.read_bytes())
@@ -97,7 +142,7 @@ def main():
                   'freshIncomplete': any('unavailable' in t for t in toolchains.values()),
                   'unavailableTargets': [name for name, tc in toolchains.items() if 'unavailable' in tc],
                   'records': records}
-    (output / 'target-provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
+    payloads[output / 'target-provenance.json'] = (json.dumps(provenance, indent=2) + '\n').encode('utf-8')
     historical_count = sum(t['kind'] == 'historical-unchanged' for r in records for t in r['targets'].values())
     counts = dict(sorted(collections.Counter(r['status'] for r in merged).items()))
     summary = ' · '.join(f'{key} {value}' for key, value in counts.items())
@@ -110,13 +155,19 @@ def main():
         'individual content hashes bind compiler verdicts to the exact snippet bodies.\n'
         'The original October 30 partial evidence remains dated and unchanged in `notes/evidence/release-27.2/`.\n\n'
         '## Latest available-target compiler run\n\n')
-    (output / 'report.md').write_text(preamble + (args.fresh / 'report.md').read_text())
+    payloads[output / 'report.md'] = (preamble + (args.fresh / 'report.md').read_text()).encode('utf-8')
     state_path = ROOT / 'notes/current-state.json';state = json.loads(state_path.read_text())
     state['asOf'] = args.checked_at
     state['verification'].update(lastAvailableRun=args.checked_at, statusCounts=counts,
         freshPartialResult=(args.evidence / 'results.tsv').relative_to(ROOT).as_posix(),
         blocker=f'SDK-26 targets unavailable. Available SDK-27 targets checked {args.checked_at}; {historical_count} unchanged SDK-26 target verdicts retain historical provenance.')
-    state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + '\n')
+    payloads[state_path] = (json.dumps(state, indent=2, sort_keys=True) + '\n').encode('utf-8')
+    for filename in ('results.tsv', 'report.md', 'toolchains.json'):
+        evidence_path = args.evidence / filename
+        if evidence_path in payloads:
+            raise ValueError('evidence directory overlaps the canonical ledger')
+        payloads[evidence_path] = (args.fresh / filename).read_bytes()
+    publish(payloads)
     print(json.dumps({'fences': len(merged), 'statusCounts': counts, 'historicalTargets': historical_count}))
 
 

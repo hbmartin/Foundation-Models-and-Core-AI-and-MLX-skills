@@ -175,6 +175,21 @@ fi
         self.assertIn("arg=--package-path", log)
         self.assertIn("arg=--scratch-path", log)
 
+    def test_host_context_retains_swiftpm_selection_forms(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            shims = root / "bin"
+            shims.mkdir()
+            self.make_command_shim(shims, "swift")
+            result = self.run_runner("host", "--run-id", "selected", "--",
+                "--skip", "Excluded/first", "--skip=Excluded/second", "--filter", "Included/first",
+                "--filter=Included/second", env={"COMMAND_LOG": str(root / "command.log"),
+                "PATH": f"{shims}{os.pathsep}{os.defpath}", "PROBE_ARTIFACT_ROOT": str(root / "artifacts")})
+            self.assertEqual(result.returncode, 0, result.stderr)
+            context = json.loads((root / "artifacts/selected/run-context.json").read_text())
+            self.assertEqual(context["excludedTests"], ["Excluded/first", "Excluded/second"])
+            self.assertEqual(context["includedTests"], ["Included/first", "Included/second"])
+
     def test_simulator_preserves_tool_hosted_lane_and_environment(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

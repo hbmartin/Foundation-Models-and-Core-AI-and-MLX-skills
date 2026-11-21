@@ -4,6 +4,7 @@ import pathlib
 import unittest
 
 from scripts.probe_evidence import parse_log
+from scripts.interface_drift import compare
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -44,3 +45,17 @@ class RetainedEvidenceTests(unittest.TestCase):
         intents = frameworks['AppIntents']
         self.assertFalse(any(c['kind'] == 'removed' and 'struct AssistantSchema ' in c['before']['declaration'] for c in intents))
         self.assertTrue(any('CustomReaction' in c.get('after', {}).get('body', '') for c in intents))
+
+    def test_drift_matches_captures_and_includes_imports_and_extensions(self):
+        evidence = json.loads((ROOT / 'notes/evidence/release-27.2/interface-drift.json').read_text())
+        for framework in evidence['frameworks']:
+            name = framework['framework']
+            before = (ROOT / f'notes/sdk-interfaces/{name}-27.0-macos.swiftinterface').read_text()
+            after = (ROOT / f'notes/sdk-interfaces/{name}-27.2-macos.swiftinterface').read_text()
+            self.assertEqual(framework['changes'], compare(before, after))
+            self.assertEqual(framework['declarationsChanged'], len(framework['changes']))
+        frameworks = {row['framework']: row['changes'] for row in evidence['frameworks']}
+        self.assertTrue(any(c.get('after', {}).get('declaration') == 'import XCTest' for c in frameworks['Evaluations']))
+        fm = frameworks['FoundationModels']
+        self.assertTrue(any(c.get('after', {}).get('declaration') == 'public import UniformTypeIdentifiers' for c in fm))
+        self.assertTrue(any('DataEntry : Swift.CustomStringConvertible' in c.get('after', {}).get('declaration', '') for c in fm))

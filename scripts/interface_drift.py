@@ -13,15 +13,52 @@ import re
 
 TYPE = re.compile(r"\b(struct|enum|class|protocol|actor|extension)\s+(?!func\b|var\b|subscript\b)([\w.]+)")
 MEMBER = re.compile(r"\b(var|let|func|init|subscript|case|associatedtype|typealias)\b")
+SURFACE = re.compile(r"\b(import|macro|operator|precedencegroup)\s+([^\s({:]+)")
 TOKEN = re.compile(r'"(?:\\.|[^"\\])*"|[^"{}]+|[{}]')
 
 
 def normalize(text):
-    return re.sub(r"\s+", " ", text.replace("::", ".")).strip()
+    return "".join(token if token.startswith('"') else re.sub(r"\s+", " ", token.replace("::", "."))
+                   for token in re.findall(r'"(?:\\.|[^"\\])*"|[^"\n]+|\n', text)).strip()
+
+
+def attribute_prefix(text):
+    """Consume one attribute, balancing parentheses outside escaped string literals."""
+    match = re.match(r"@[\w.]+", text)
+    if not match:
+        raise ValueError("invalid Swift attribute")
+    end = match.end()
+    if end < len(text) and text[end] == "(":
+        depth, quoted, escaped = 0, False, False
+        for index in range(end, len(text)):
+            char = text[index]
+            if quoted:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    quoted = False
+            elif char == '"':
+                quoted = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = index + 1
+                    break
+        else:
+            raise ValueError("unterminated Swift attribute")
+    return text[:end], text[end:].strip()
 
 
 def braces(text):
     return sum(1 if token == "{" else -1 if token == "}" else 0 for token in TOKEN.findall(text))
+
+
+def syntax(text):
+    return re.sub(r'"(?:\\.|[^"\\])*"', lambda match: " " * len(match[0]), text)
 
 
 def declarations(text):
@@ -29,7 +66,7 @@ def declarations(text):
     scopes = []
     attributes = []
     depth = 0
-    lines = text.replace("::", ".").splitlines()
+    lines = text.splitlines()
     index = 0
     while index < len(lines):
         line = lines[index].strip()
@@ -38,25 +75,36 @@ def declarations(text):
             continue
         # Attributes preceding a declaration can be printed in either order.
         while line.startswith("@"):
-            match = re.match(r"(@[\w]+(?:\([^\n]*?\))?)\s*(.*)", line)
-            if not match:
-                break
-            attributes.append(normalize(match[1]))
-            line = match[2]
+            while True:
+                try:
+                    attribute, remainder = attribute_prefix(line)
+                    break
+                except ValueError:
+                    if index == len(lines):
+                        raise
+                    line += "\n" + lines[index].strip()
+                    index += 1
+            attributes.append(normalize(attribute))
+            line = remainder
         if not line:
             continue
-        kind = TYPE.search(line)
-        member = MEMBER.search(line)
+        line = normalize(line)
+        code = syntax(line)
+        surface = SURFACE.search(code)
+        kind = TYPE.search(code) if not surface else None
+        member = MEMBER.search(code)
         inherited = [a for scope in scopes for a in scope["availability"]]
         owner = scopes[-1]["owner"] if scopes else "<module>"
         if kind and (member is None or kind.start() < member.start()):
+            while "{" not in line and index < len(lines):
+                line += " " + normalize(lines[index])
+                index += 1
             name = kind[2]
             qualified = name if kind[1] == "extension" or owner == "<module>" else f"{owner}.{name}"
             header = normalize(line.split("{", 1)[0])
             record = {"owner": owner, "declaration": header,
                       "attributes": sorted(set(inherited + attributes)), "body": ""}
-            if kind[1] != "extension":
-                records[json.dumps(record, sort_keys=True)] = record
+            records[json.dumps(record, sort_keys=True)] = record
             depth += braces(line)
             scopes.append({"owner": qualified, "depth": depth,
                            "availability": [a for a in attributes if a.startswith("@available")]})
@@ -64,7 +112,7 @@ def declarations(text):
             if braces(line) == 0:
                 scopes.pop()
             continue
-        if member:
+        if member or surface:
             header, opening, body = line.partition("{")
             balance = braces(line)
             while balance > 0 and index < len(lines):
@@ -92,7 +140,9 @@ def compare(before, after):
         grouped = collections.defaultdict(list)
         for record in declarations(text):
             declaration = record["declaration"]
-            kind = TYPE.search(declaration)
+            code = syntax(declaration)
+            surface = SURFACE.search(code)
+            kind = surface or TYPE.search(code)
             identity = f"{kind[1]} {kind[2]}" if kind else declaration
             grouped[(record["owner"], identity)].append(record)
         return grouped

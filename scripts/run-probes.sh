@@ -120,11 +120,27 @@ fi
 python3 - "${context_arguments[@]}" <<'PYCONTEXT'
 import json, pathlib, sys
 arguments = sys.argv[4:]
+excluded, included = [], []
+index = 0
+while index < len(arguments):
+    value = arguments[index]
+    if sys.argv[2] == "host" and value in ("--skip", "--filter"):
+        if index + 1 == len(arguments) or arguments[index + 1].startswith("--"):
+            raise SystemExit(f"{value} requires a test selection")
+        (excluded if value == "--skip" else included).append(arguments[index + 1])
+        index += 2
+        continue
+    if sys.argv[2] == "host" and value.startswith(("--skip=", "--filter=")):
+        (excluded if value.startswith("--skip=") else included).append(value.split("=", 1)[1])
+    elif value.startswith("-skip-testing:"):
+        excluded.append(value.split(":", 1)[1])
+    elif value.startswith("-only-testing:"):
+        included.append(value.split(":", 1)[1])
+    index += 1
 pathlib.Path(sys.argv[1]).write_text(json.dumps({
     "schemaVersion": 1, "mode": sys.argv[2], "destination": sys.argv[3],
     "arguments": arguments,
-    "excludedTests": [value.split(":", 1)[1] for value in arguments if value.startswith("-skip-testing:")],
-    "includedTests": [value.split(":", 1)[1] for value in arguments if value.startswith("-only-testing:")],
+    "excludedTests": excluded, "includedTests": included,
 }, indent=2) + "\n")
 PYCONTEXT
 echo "Probe artifacts: $run_root"

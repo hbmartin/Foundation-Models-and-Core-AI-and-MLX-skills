@@ -17,14 +17,7 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n')
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--reconstructed-at', required=True)
-    parser.add_argument('--raw-runs', required=True, type=pathlib.Path)
-    parser.add_argument('--header-root', required=True, type=pathlib.Path)
-    args = parser.parse_args()
-    release = ROOT / 'notes/evidence/release-27.2'
-    validation = json.loads((release / 'validation.json').read_text())
+def refresh_interfaces(reconstructed_at):
     interfaces = ROOT / 'notes/sdk-interfaces'
     frameworks = []
     for after in sorted(interfaces.glob('*-27.2-macos.swiftinterface')):
@@ -33,9 +26,26 @@ def main():
             changes = compare(before.read_text(), after.read_text())
             frameworks.append({'framework': after.name.split('-27.2-')[0],
                                'declarationsChanged': len(changes), 'changes': changes})
-    write(release / 'interface-drift.json', {'schemaVersion': 2, 'reconstructedAt': args.reconstructed_at,
-        'normalization': 'Scoped declarations; order-independent attributes; :: normalized to .; protocol requirements, accessors and inlined bodies retained. Raw captures unchanged.',
+    write(ROOT / 'notes/evidence/release-27.2/interface-drift.json', {
+        'schemaVersion': 2, 'reconstructedAt': reconstructed_at,
+        'normalization': 'Scoped declarations including imports, macros, operators, precedence groups and extension conformances/constraints; order-independent attributes with balanced arguments; :: normalized to . outside strings; protocol requirements, accessors and inlined bodies retained. Raw captures unchanged.',
         'frameworks': frameworks})
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--reconstructed-at', required=True)
+    parser.add_argument('--raw-runs', type=pathlib.Path)
+    parser.add_argument('--header-root', type=pathlib.Path)
+    parser.add_argument('--interfaces-only', action='store_true', help='rebuild interface drift without changing runtime or header evidence')
+    args = parser.parse_args()
+    if not args.interfaces_only and (args.raw_runs is None or args.header_root is None):
+        parser.error('--raw-runs and --header-root are required unless --interfaces-only is set')
+    refresh_interfaces(args.reconstructed_at)
+    if args.interfaces_only:
+        return 0
+    release = ROOT / 'notes/evidence/release-27.2'
+    validation = json.loads((release / 'validation.json').read_text())
     provenance = json.loads((release / 'mpp-header-provenance.json').read_text())
     for header in provenance['headers']:
         data = (args.header_root / header['path']).read_bytes()

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-21T17:45:51.950880+00:00",
+  "baseRevision": "1eb4fd2b6b6eddc3d55d481c61f516c5b3e025a0",
+  "workingTreeSources": {
+    "scripts/build-skills.py": "06a795c6b545dfcc2015bec613e1c81f8ae3b6897f12ef927de9c23bdb4b3cea",
+    "scripts/diff-interfaces.sh": "7fc520eb55aa65147cb52ada8245ad1a3caaed9cc56f219cbb4d25426220ec68",
+    "scripts/freshness-cycle.py": "f9f048f12ad27d0ecbd1f5e459cbf1a5c17f2f5c423e20dccdf9ac3529c59057",
+    "scripts/freshness_jobs.py": "e1902928c8a101cc22a842ceded4a6c936cd11b31323b2f41e77a8d07a058341",
+    "scripts/interface_drift.py": "ee28867812135619ade5351d39fad5017514f211061a35b855565ae249258d24",
+    "scripts/reconcile-snippets.py": "f2080846cd6c057ae0029ed2aaabff84bee0c399210404b76a288b42ff7d9223",
+    "scripts/refresh-release-evidence.py": "94e93117b2245d2347c4ef5de22c1a7e6c9dc3d253d05a71d57539a51321a199",
+    "scripts/run-probes.sh": "f3f5a3ce381b11094f624e04f4e5d29e08a30d8d3382e88c85ce9f62e14d48a6",
+    "scripts/source_watch.py": "03a4ad25dfabf7c39f28bbcd2d418ff87019268c9856130dee67a2f79ed1bf01",
+    "scripts/tests/test_freshness_jobs.py": "00bec72473cf5ac96a4069b36a15572016fa8dc8e6c7791d1f878bcef50156ef",
+    "scripts/tests/test_freshness_repairs.py": "994a53b2f9e44d0a154b4152e77f3a0f37d20a02af91750e39bdd46c522e708e",
+    "scripts/tests/test_interface_drift.py": "0dac49ac0f6eaaa260f3936a272fcd759f114c68795ac7050241f68d47cb0468",
+    "scripts/tests/test_probe_runner.py": "f9006c6826e378f6b64d93a43edb528dab777eb23edb06827e5b796ae6180c33",
+    "scripts/tests/test_reconcile_snippets.py": "00a5d7f0a3107aa4eea0624527727d8d4e231706725c1331864de4ad34812cb7",
+    "scripts/tests/test_retained_evidence.py": "f08004783a71df0197769373845d2bc3dce626ed8106eb786d7e03f7e0b8912e",
+    "scripts/tests/test_sdk_compatibility.py": "5c94e6f733570cb252bb8fbb351097a4a303efb051cfd4aa2ee6d2de2b16905a",
+    "scripts/verify-sdk-compatibility.py": "d1658535b5ccabe346a1340743dbdae8105ef1eb5fe164797732756d05b76c0f"
+  },
+  "coverage": {
+    "interfaces": [
+      1,
+      2
+    ],
+    "compatibilityAndProbeCoverage": [
+      3,
+      12
+    ],
+    "sourceWatching": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "finalization": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "snippetLedger": [
+      13
+    ],
+    "cleanup": [
+      14,
+      15
+    ]
+  },
+  "checks": [
+    {
+      "name": "repository-tooling-suite",
+      "status": "passed",
+      "command": "python3 -m unittest discover -s scripts/tests -p 'test_*.py'",
+      "tests": 464,
+      "durationSeconds": 72.757,
+      "evidence": "tooling-tests.log"
+    },
+    {
+      "name": "native-sdk-typechecks-and-negative-controls",
+      "status": "passed",
+      "evidence": "sdk-compatibility.json"
+    },
+    {
+      "name": "automation-contracts",
+      "status": "passed",
+      "contracts": 2
+    },
+    {
+      "name": "shell-syntax-and-diff-whitespace",
+      "status": "passed"
+    },
+    {
+      "name": "retained-interface-comparison",
+      "status": "passed",
+      "framework": "FoundationModels",
+      "declarationsChanged": 53
+    },
+    {
+      "name": "sdk-capture-integration",
+      "status": "blocked",
+      "reason": "coreai-build is missing from the selected Xcode Metal Toolchain component",
+      "evidence": "sdk-capture-tests.log"
+    }
+  ]
+}

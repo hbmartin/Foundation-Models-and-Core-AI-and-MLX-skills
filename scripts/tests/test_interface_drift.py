@@ -1,8 +1,50 @@
 import unittest
-from scripts.interface_drift import compare
+from scripts.interface_drift import compare, declarations
 
 
 class InterfaceDriftTests(unittest.TestCase):
+    def test_declaration_keywords_inside_literals_do_not_change_scope(self):
+        text = 'public func f(_ text: String = "extension T; macro m")\n'
+        record = declarations(text)[0]
+        self.assertEqual(record['declaration'], text.strip())
+        self.assertEqual(record['owner'], '<module>')
+        self.assertEqual({change['kind'] for change in compare(text, text.replace('macro m', 'macro n'))}, {'added', 'removed'})
+
+    def test_previously_omitted_declaration_kinds(self):
+        for declaration in ('import XCTest', 'public import UniformTypeIdentifiers',
+                            'public macro m() = #externalMacro(module: "M", type: "T")',
+                            'infix operator +++ : AdditionPrecedence',
+                            'precedencegroup Custom {\n associativity: left\n}',
+                            'extension M.T : CustomStringConvertible {\n}'):
+            with self.subTest(declaration=declaration):
+                self.assertEqual(len(compare('', declaration)), 1)
+
+    def test_extension_conformances_constraints_and_multiline_headers(self):
+        before = 'extension M.T : P where Element : Equatable {\n public func f()\n}\n'
+        for after in (before.replace(' : P ', ' : Q '), before.replace('Equatable', 'Hashable')):
+            self.assertEqual(compare(before, after)[0]['kind'], 'modified')
+        self.assertEqual(compare(before, before.replace(' where ', '\n where ').replace(' {', '\n {')), [])
+
+    def test_nested_and_escaped_attribute_strings_retain_availability(self):
+        attribute = '@available(*, deprecated, renamed: "bar(_:)", message: "Use \\"bar()\\" instead")'
+        for separator in ('\n', ' '):
+            with self.subTest(separator=separator):
+                before = attribute + separator + 'public func f()\n'
+                record = declarations(before)[0]
+                self.assertEqual(record['attributes'], [attribute])
+                self.assertEqual(record['declaration'], 'public func f()')
+                changes = compare(before, before.replace('instead', 'now'))
+                self.assertEqual(len(changes), 1)
+                self.assertEqual(changes[0]['kind'], 'modified')
+        multiline = attribute.replace(', message:', ',\n message:') + '\npublic func f()\n'
+        self.assertEqual(compare(attribute + '\npublic func f()\n', multiline), [])
+
+    def test_precedence_and_macro_payload_changes_are_visible(self):
+        before = 'precedencegroup Custom {\n associativity: left\n}\n'
+        self.assertEqual(compare(before, before.replace('left', 'right'))[0]['kind'], 'modified')
+        before = 'public macro m() = #externalMacro(module: "M", type: "T")\n'
+        self.assertEqual(compare(before, before.replace('"T"', '"U"'))[0]['kind'], 'modified')
+
     def test_reordered_types_and_attributes_do_not_remove_declarations(self):
         a = '@available(tvOS, unavailable)\n@available(iOS 27.0, *)\npublic struct A {\n public var x: Int {\n get\n }\n}\npublic struct B {\n}\n'
         b = 'public struct B {\n}\n@available(iOS 27.0, *)\n@available(tvOS, unavailable)\npublic struct A {\n public var x: Int {\n get\n }\n}\n'

@@ -767,7 +767,20 @@ def clean_builds(root: pathlib.Path) -> list[str]:
 
 def finalize(args: argparse.Namespace) -> int:
     run_root = args.run_root.resolve()
-    manifest = dict(getattr(args, "manifest", None) or read_json(run_root / "run.json") or {})
+    supplied = getattr(args, "manifest", None)
+    errors = []
+    try:
+        persisted = read_json(run_root / "run.json") or {}
+    except (OSError, UnicodeError, CycleError) as error:
+        if not supplied:
+            raise
+        persisted = {}
+        errors.append(f"run manifest: {error}")
+    if supplied and persisted:
+        for key in ("runId", "repository", "worktree", "branch", "baseSha", "lockPath", "branchCreated"):
+            if persisted.get(key) != supplied.get(key):
+                raise CycleError(f"persisted run manifest changed resource identity: {key}")
+    manifest = dict(persisted or supplied or {})
     if not manifest:
         raise CycleError(f"missing run manifest in {run_root}")
     worktree = pathlib.Path(manifest["worktree"])
@@ -775,10 +788,12 @@ def finalize(args: argparse.Namespace) -> int:
     lock_path = pathlib.Path(manifest["lockPath"])
     lock = read_json(lock_path, {})
     if not lock and not worktree.exists() and manifest.get("status") in {"no-change", "findings", "blocked", "draft", "ready"}:
-        return 0  # A completed finalization can safely be retried.
+        if manifest["status"] != args.outcome or manifest.get("prUrl") != args.pr_url:
+            raise CycleError(f"run already finalized as {manifest['status']}; conflicting finalization request")
+        return 0
     if lock.get("runId") != manifest["runId"]:
         raise CycleError("active lock belongs to another run; refusing to finalize")
-    paths = changed_paths(worktree, manifest["baseSha"]) if worktree.exists() else []
+    paths = changed_paths(worktree, manifest["baseSha"]) if worktree.exists() else manifest.get("changedPaths", [])
     unsafe = [path for path in paths if not safe_path(path)]
     if args.outcome in {"draft", "ready"} and not args.pr_url:
         raise CycleError(f"{args.outcome} outcome requires --pr-url")
@@ -818,19 +833,26 @@ def finalize(args: argparse.Namespace) -> int:
             "ready outcome requires current generated outputs: " + "; ".join(generated_failures)
         )
     state_path = args.state_path or run_root.parents[1] / "state/weekly-improvement.json"
-    errors = []
+    authority_writable = True
     try:
         state = read_json(state_path, {"schemaVersion": 2, "runs": []})
-        if not isinstance(state, dict) or not isinstance(state.get("runs", []), list):
+        if (not isinstance(state, dict) or not isinstance(state.get("runs", []), list)
+                or any(not isinstance(row, dict) for row in state.get("runs", []))):
             raise CycleError("weekly authority state must contain a runs array")
-    except (OSError, CycleError) as error:
+    except (OSError, UnicodeError, CycleError) as error:
         # Preserve malformed authority bytes before rebuilding recoverable state.
         errors.append(f"authority state: {error}")
         state = {"schemaVersion": 2, "runs": []}
         try:
-            if state_path.exists():
-                (run_root / "previous-authority-state.txt").write_bytes(state_path.read_bytes())
+            original = state_path.read_bytes()
+            backup = run_root / "previous-authority-state.txt"
+            if backup.exists():
+                if backup.read_bytes() != original:
+                    raise OSError("existing authority backup contains different bytes")
+            else:
+                backup.write_bytes(original)
         except OSError as backup_error:
+            authority_writable = False
             errors.append(f"authority backup: {backup_error}")
     state["schemaVersion"] = 2
     previous_collection = {key: state[key] for key in ("lastCollectedRun", "lastSuccessfulRun") if key in state}
@@ -843,19 +865,22 @@ def finalize(args: argparse.Namespace) -> int:
         entry["generatedOutputFailures"] = generated_failures
     if manifest.get("preparationError"):
         entry["preparationError"] = manifest["preparationError"]
-    state.setdefault("runs", []).append(entry)
+    state["runs"] = [row for row in state.get("runs", []) if row.get("runId") != manifest["runId"]]
+    state["runs"].append(entry)
     state["runs"] = state["runs"][-20:]
     state["lastRun"] = entry
     state["pending"] = {**entry, "cleanupPending": True}
 
     def persist(path, payload):
+        if path == state_path and not authority_writable:
+            return
         try:
             atomic_json(path, payload)
         except OSError as error:
             errors.append(f"write {path.name}: {error}")
 
     persist(state_path, state)
-    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"], prUrl=args.pr_url)
+    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"], prUrl=args.pr_url, changedPaths=paths)
     persist(run_root / "run.json", manifest)
     cleanup_error = None
     try:
@@ -879,6 +904,7 @@ def finalize(args: argparse.Namespace) -> int:
         cleanup_error = str(error)
         errors.append(cleanup_error)
     if cleanup_error:
+        entry.update(outcome="blocked", errors=list(errors))
         state["pending"] = {**entry, "cleanupPending": True, "cleanupError": cleanup_error}
         manifest.update(status="cleanup-failed", cleanupError=cleanup_error)
     else:
@@ -894,10 +920,11 @@ def finalize(args: argparse.Namespace) -> int:
         manifest.update(status=entry["outcome"])
         manifest.pop("cleanupError", None)
     terminal_error_count = len(errors)
+    manifest["finalizationErrors"] = list(errors)
     persist(state_path, state)
     persist(run_root / "run.json", manifest)
     if not cleanup_error:
-        if len(errors) != terminal_error_count:
+        if not authority_writable or len(errors) != terminal_error_count:
             cleanup_error = "terminal authority state could not be persisted"
         else:
             try:
@@ -914,8 +941,10 @@ def finalize(args: argparse.Namespace) -> int:
                 else:
                     state.pop(key, None)
             entry["outcome"] = "blocked"
+            entry["errors"] = list(errors)
             state["pending"] = {**entry, "cleanupPending": True, "cleanupError": cleanup_error}
             manifest.update(status="cleanup-failed", cleanupError=cleanup_error)
+            manifest["finalizationErrors"] = list(errors)
             persist(state_path, state)
             persist(run_root / "run.json", manifest)
     if errors:
