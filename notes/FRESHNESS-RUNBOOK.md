@@ -49,8 +49,10 @@ as an unreviewed migration seed. First captures require review. After reviewing 
 run `./scripts/freshness-cycle.py acknowledge-sources <run-root>`. Acknowledgment verifies
 captured bytes and rejects content superseded by a newer observation. News comparison uses
 canonical item content, including descriptions, while ignoring feed build dates and item order;
-raw capture hashes still verify evidence integrity. Older reports can acknowledge semantically
-identical news rebuilds. Legacy news summaries are upgraded from hash-verified retained captures;
+raw capture hashes still verify evidence integrity. Equal raw hashes also permit pre-upgrade news
+acknowledgment. Identical duplicate items are deduplicated; distinct variants with one identity are
+retained and shown in review details. Older reports can acknowledge semantically identical news
+rebuilds. Reviewed, observed and pending legacy news summaries are upgraded from hash-verified retained captures;
 missing captures require one explicit migration review. Pending findings repeat
 until acknowledged. Release build sets remain observations requiring a reviewed repository
 baseline update, including same-version respins and ambiguous simultaneous variants. A reviewed
@@ -170,6 +172,14 @@ rerun the gates; never rebase, force-push, or merge automatically. A failed or c
 Build directories, and retains the evidence. The one-command runner also removes only this run's
 external probe `Build` directories; `.xcresult` bundles, logs, and attachments remain.
 
+The manifest stores the accepted `finalizationRequest` separately from its effective outcome, plus
+a versioned `validationReceipt` written before cleanup. A cleanup retry after worktree removal must
+match that request, the action/PR evidence hashes, and (for draft/ready) the validated branch revision.
+Changing a draft request to ready requires an available worktree and fresh validation. Legacy
+completed runs remain idempotent; legacy unfinished runs without receipts can perform blocked cleanup,
+but cannot become draft/ready without validation. Repeating a request downgraded to blocked reports
+the recorded failure instead of a conflicting-request error.
+
 ---
 
 ## 3. The per-event ritual (new Xcode beta, new simulator runtime, or OS update)
@@ -266,8 +276,15 @@ before resuming collection. The first named-consumer report retains legacy obser
 unreviewed seed material; review and acknowledge its documentation/news captures explicitly.
 
 Runner failures after preparation attempt blocked finalization using in-memory preparation
-identity. A recorded review handoff is the only normal `--keep-worktree` retention. If physical
+identity. Preparation progress can advance without changing run identity, and preparation errors
+remain in run-local and authority records. With `--keep-worktree`, even a failed or interrupted
+collection records `status: retained`, its collection outcome/errors and a pending retained entry;
+the worktree, branch and lock remain for manual review without advancing success anchors. If physical
 cleanup fails, authority state remains `cleanupPending` with its error and ownership lock;
 retry finalization after correcting the recorded failure. Manual draft/ready policy refusals
 remain strict. Research mirrors live under the artifact root's `cache/research-mirrors` and
 are checked against their recorded origins and commit pins on reuse.
+
+Malformed run manifests are preserved as `previous-run-manifest.txt` before recovery from trusted
+in-memory identity. Without trusted identity, manual finalization reports the invalid manifest and
+leaves ownership intact for explicit repair.

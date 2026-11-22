@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-22 01:40:51 UTC",
+  "issue": {
+    "url": "https://github.com/apple/coreai-torch/issues/10",
+    "state": "closed",
+    "createdAt": "2026-06-12T07:03:29Z",
+    "closedAt": "2026-11-06T14:53:13Z",
+    "author": "john-rocky",
+    "bodySha256": "607d9b31300605140469d73b2395759d05f2c0cd334e358e7a25fa128cb9bfe3",
+    "reportedEnvironment": {
+      "coreaiTorch": "0.4.0",
+      "coreaiCore": "1.0.0b1",
+      "torch": "2.11.0",
+      "os": "macOS 27.0 beta",
+      "osBuild": "26A5353q",
+      "hardware": "M4 Max"
+    },
+    "reportedFailure": "GPU floor/trunc/ceil behaved as identity and round used ties away from zero; conversion also discarded the rounding semantics of division by one."
+  },
+  "retests": [
+    {
+      "url": "https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766",
+      "author": "cdeil",
+      "createdAt": "2026-09-23T13:28:25Z",
+      "bodySha256": "ed2ac4a92cf980a9e983209798f296c59358b0781ac44662628313e19959619c",
+      "reportedEnvironment": {
+        "coreaiTorch": "0.4.2",
+        "coreaiCore": "1.0.0b2",
+        "os": "macOS 27.0 release",
+        "osBuild": "26A428",
+        "hardware": null
+      },
+      "reportedResult": "All six reproducer outputs matched the expected GPU/CPU results."
+    },
+    {
+      "url": "https://github.com/apple/coreai-torch/issues/10#issuecomment-6687727233",
+      "author": "john-rocky",
+      "createdAt": "2026-11-06T14:53:12Z",
+      "bodySha256": "1e76be71fb465b1cdaa5cb2a2ed0c04d3a9ad262b4963f5cf247193edde184a3",
+      "reportedEnvironment": {
+        "coreaiTorch": "7a18c005deb3e791ac35f201a3d955b77034e947",
+        "coreaiCore": "1.0.0b3",
+        "os": "macOS 27.0 release",
+        "osBuild": "26A428",
+        "hardware": "M4 Max"
+      },
+      "reportedResult": "All six reproducer outputs matched the expected GPU/CPU results.",
+      "reproducerAdjustment": "Removed the obsolete prog.optimize() call because this conversion returns an optimized program."
+    }
+  ],
+  "release": {
+    "url": "https://github.com/apple/coreai-torch/releases/tag/v0.4.4",
+    "tag": "v0.4.4",
+    "publishedAt": "2026-11-18T20:26:02Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "ancestry": {
+    "url": "https://github.com/apple/coreai-torch/compare/7a18c005deb3e791ac35f201a3d955b77034e947...v0.4.4",
+    "status": "ahead",
+    "aheadBy": 5,
+    "behindBy": 0,
+    "baseSha": "7a18c005deb3e791ac35f201a3d955b77034e947",
+    "mergeBaseSha": "7a18c005deb3e791ac35f201a3d955b77034e947"
+  },
+  "preview": {
+    "url": "https://developer.apple.com/news/?id=gdk2umrf",
+    "title": "Siri AI is now open to all developers",
+    "publishedAt": "2026-11-03",
+    "verification": "Official announcement read during triage; SDK and runtime 27.3 remain unverified."
+  },
+  "interpretation": "The OS and packages changed together. Neither package causality nor the behavior of 0.4.0/core b1 on 26A428 or 0.4.3/core b3 is established. The released tag contains the tested revision; v0.4.4 was not directly retested here."
+}

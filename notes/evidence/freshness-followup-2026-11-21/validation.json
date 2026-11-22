@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-22T01:47:41.742725+00:00",
+  "baseRevision": "2dd5e0fd58407a866b442758e52c509a55e132da",
+  "toolingRevision": "2e57fa20c6a93782414e4b9d55973a8d78dbc671",
+  "validationMode": "Working tree, bound to the source and generated-file hashes below.",
+  "checks": [
+    {
+      "name": "complete-tooling-suite",
+      "command": "env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -p 'test_*.py'",
+      "status": "passed",
+      "exitCode": 0,
+      "tests": 481,
+      "seconds": 80.115,
+      "log": "tooling-tests.log"
+    },
+    {
+      "name": "automation-contracts",
+      "status": "passed",
+      "contracts": 2,
+      "artifact": "automation-contracts.json"
+    },
+    {
+      "name": "generated-skills",
+      "status": "passed",
+      "skills": 10,
+      "files": 121,
+      "links": 2339,
+      "triggerEvaluations": 80
+    },
+    {
+      "name": "snippet-rekey",
+      "status": "passed",
+      "fences": 1327,
+      "requiresCompilerVerification": 0,
+      "bodyHashesAndCompilerVerdictsUnchanged": true
+    },
+    {
+      "name": "retained-interface-comparison",
+      "status": "passed",
+      "framework": "FoundationModels",
+      "changedDeclarations": 53,
+      "log": "interface-comparison.log"
+    },
+    {
+      "name": "current-state-blocks",
+      "status": "passed",
+      "blocks": 5
+    },
+    {
+      "name": "shell-syntax-and-diff-whitespace",
+      "status": "passed"
+    },
+    {
+      "name": "registry-isolation",
+      "status": "passed",
+      "onlyChangedRecord": "apple.coreai-torch:issue:10"
+    },
+    {
+      "name": "immutable-sdk-evidence",
+      "status": "passed",
+      "paths": [
+        "notes/sdk-interfaces/",
+        "notes/evidence/release-27.2/",
+        "notes/evidence/review-fixes-2026-11-21/"
+      ],
+      "changed": false
+    },
+    {
+      "name": "sdk-capture-preflight",
+      "status": "blocked",
+      "exitCode": 1,
+      "reason": "coreai-build is missing; the selected Xcode Metal Toolchain component is unavailable. No new SDK capture or 27.3 runtime verification is claimed.",
+      "log": "sdk-preflight.log"
+    }
+  ],
+  "regressionCoverage": [
+    "Preparation progress, duplicate branches, malformed manifests and persisted preparation diagnostics",
+    "Validated finalization receipts, cleanup retries, changed evidence/revisions and effective blocked outcomes",
+    "Intentional retention after constructor failure, interruption and SIGTERM without advancing anchors",
+    "Pre-upgrade news acknowledgment, canonical rebuilds and duplicate/conflicting feed variants",
+    "Whitespace normalization, declaration-position keywords and malformed-interface diagnostics",
+    "Probe argument usage errors without run-id consumption",
+    "Anonymous fresh TSV failures without ledger/evidence publication",
+    "Scoped issue-10 environments and version-qualified official preview guidance"
+  ],
+  "filesSha256": {
+    "guides/API-INDEX.md": "ba5220bc9a2e9efe19bea44468192628b8054be06586fa0d9ca5df33781b0895",
+    "guides/SILENT-FAILURES.md": "3cc64027e3f8c2ff6e6165bddabb75b7e9b4f94de0d13736b4c7092e7e3c8a0f",
+    "guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md": "4d2ecde14035bcea08bb262c4622f807aaffd3844e2d4762ece828b9ef481a5d",
+    "guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md": "3a6dae37814d935e76964ac446afd15355efa2591f5cd0f2220fb538acd001c8",
+    "guides/part-16-adjacent-capabilities/README.md": "8734972e83d76b806d75a6cbf60679c862591c952ea902eb6d31379a0e582b30",
+    "guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md": "2e9761968a258f6fdffa7cfb7f8d98cbad2e641bd0306e5c1ad446418dc2105a",
+    "guides/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md": "dbd863466bf262442069a0e829effec37a587f896902cc1d312e4741824b815e",
+    "guides/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md": "7534a3cd34f8168eb2aa12485f6206ac08700aa3ccd598173ca530d24b33acdd",
+    "notes/FRESHNESS-RUNBOOK.md": "da490cbdab14da5c9a1196d46b41100702482abbabd77115da9a2c7dd4a9e15b",
+    "notes/defects.json": "863a6aa39cec519a6913fc32b2a44de813c69418d356b3defce6e4f43bf97066",
+    "notes/repos/issues-coreai-stack.md": "be59a1a32dfd39a897450d31500112de52f3b7df9c580b18bed5bf865160c573",
+    "notes/snippet-verification/results.tsv": "46b80370a40009d0f5b5565f2f034e426d31768b70b9129bd0ec854a952c85d8",
+    "scripts/freshness-cycle.py": "78d7f83f1c3723042d44571141775ea2fb64ba6756fb9c2f1dd6b8a272d54962",
+    "scripts/freshness_jobs.py": "3f474288d2279700345c4fc001078c37be417d557dff4d266686df55980eff4f",
+    "scripts/interface_drift.py": "2f423b27df7220315b09ea957aec078734e10f7bc95b4208fc09eee858500e81",
+    "scripts/reconcile-snippets.py": "729db840a59f3a2d436ba5934388db6dd219cda184030d23e8008a7a18e4bb9e",
+    "scripts/run-probes.sh": "4483dfd3eda2d2b2d64ac2594dbfab6d1c5c68d68782ee08567aefa4156f9362",
+    "scripts/source_watch.py": "62078a56d509e7c8c8d13f9ef2e6615d6eb758fe4a50fdd145e0b3186b4e7779",
+    "scripts/tests/test_followup_lifecycle.py": "5828a2d944c150235f2e4f1ccda7fd7e9d004c0c375de899d54ea7e0ab22ba99",
+    "scripts/tests/test_freshness_repairs.py": "1cf561a304a339096ea9565db018f408b4a00d208138d3ca26d95f495bc6b5c6",
+    "scripts/tests/test_interface_drift.py": "f80a569967c9840bf70d6952490bae222e9e4c2b6b28cf2573fe290a16bd8635",
+    "scripts/tests/test_platform_refresh_consistency.py": "7325543c184ed126b95d516dcc4941764cecde8a7aeae3e665b3662978bac964",
+    "scripts/tests/test_probe_runner.py": "45389cf9a19d1072c815cf6557613a8ebd1b73d01b94e1ddbb465d54521837a5",
+    "scripts/tests/test_reconcile_snippets.py": "38096c0ceddfbb55ac87b342eb1e023304e4f2e2415a068d3181e499712ef87d",
+    "scripts/verify-snippets.py": "f034083f4edd13fc5acbc75078021728d14fd6a8f8ed9017b031d8f8c0a2bf20",
+    "skills/apple-ai-evaluations/references/part-16-adjacent-capabilities/README.md": "6c6fc102bad924e5c0085608935a748dd2942158d4a723b413ee6ebce2df008f",
+    "skills/apple-ai-migration/references/part-17-migration-from-pre-ios-27/references/05-coreml-to-coreai.md": "5439a032c47f4523c81b2bf467498275bbc7fdaf4edb517936a4a0a8ed15d81d",
+    "skills/apple-app-intents/SKILL.md": "4e4b1a13a95ab0dc3d3022bdadc4a92cbac9d1cae0f0653c3dd6674180914bd5",
+    "skills/apple-app-intents/references/part-16-adjacent-capabilities/README.md": "01055735b1cc0ff15a346ad936080326a9293efad0f317371495540b12b1731c",
+    "skills/apple-app-intents/references/part-16-adjacent-capabilities/references/02-app-schema-domains.md": "cb6a1ed0d9cdeeadb91304abef4b2365e181e07b6af7262cc6afb79064fd2008",
+    "skills/apple-app-intents/references/part-16-adjacent-capabilities/references/04-entities-spotlight-and-foundation-models.md": "2af8e9a2e66927f2b7b456b08abe38eca12469e94faaf8f3e9065d9874757c73",
+    "skills/apple-core-ai/references/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md": "0dcd57cce23b8e6e842b1ae79363e96206a35f75506a970a9b20306f98c4062f",
+    "skills/apple-core-ai/references/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md": "249dba6ea8b15036ee247fc934ef6e653bf9931acde6f8deeb348b5eb3f7b39d",
+    "skills/apple-speech/references/part-16-adjacent-capabilities/README.md": "2440960deda00820b4be24eb8eb0410c9e2814b7a0466686a51975e9588d5151",
+    "skills/skills-manifest.json": "6c837e8e5cbc82e8f8d55ee060f523a958a78b0832a356a82ba2f23e5b8318ff"
+  },
+  "evidenceSha256": {
+    "automation-contracts.json": "cfc06381f714e238f36b38e5053edceca748e17be05a0e4a937038b56d6a5958",
+    "interface-comparison.log": "70986ffb19ce3394220774ab0019d145c514980183b5ee750483719bf5fb79bf",
+    "sdk-preflight.log": "9f2ef70f0068bc24c4a0575a67a958f6f67d98ca96f67501fdd96d8605da16d7",
+    "tooling-tests.log": "7a8443039595dbdb0ad18c35dc5ad20ca69de908d6207742b7612e5674445bb3",
+    "upstream-review.json": "3caed349618db3fc4b857999532c3873441e7d6a82bf12d8dc34a407c30596eb"
+  }
+}

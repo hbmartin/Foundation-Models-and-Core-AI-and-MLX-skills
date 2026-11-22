@@ -18,14 +18,14 @@ supports draft documents that are not yet on disk, `Transferable` / `FileReprese
 Siri actions, on-screen context, Spotlight-backed retrieval. Guides 16.1–16.4 are Swift app work and
 assume no Core AI or MLX knowledge; 16.5 is for Python ML engineers and is disconnected on purpose.
 
-> 🟡 **27.3 DEVELOPER PREVIEW — observed 2026-11-03, not a shipping baseline.** Apple's announcement
+> ✅ **VERIFIED announcement — 27.3 DEVELOPER PREVIEW, 2026-11-03.** Apple's announcement
 > says the iOS, iPadOS, macOS and visionOS **27.3 betas** open Siri AI integration to any app through
 > App Intents. It specifically expands the model described in 16.2–16.4 in two ways: custom actions
 > are no longer presented as limited to existing schema domains, and Siri AI can surface **any entity
 > in the Spotlight semantic index**, not only entities that fit an existing schema. Apple also
 > announces *skills* that combine several actions for complex requests, but the announcement does not
-> publish a stable API shape for them. Treat all three as preview claims until the 27.3 SDK interfaces,
-> documentation and runtime are captured on this repository's beta-event lane. The preview is
+> publish a stable API shape for them. **Runtime/API verification remains a GAP:** capture the 27.3
+> SDK interfaces, documentation and runtime on this repository's beta-event lane. The preview is
 > device-, language-, region- and age-gated; some server-backed features have daily limits; App Store
 > submission is announced for spring; and terms and usage-policy details remain forthcoming.
 > Source: [Apple Developer News, 2026-11-03](https://developer.apple.com/news/?id=gdk2umrf).
@@ -89,8 +89,8 @@ index content — into a shape Apple Intelligence can use, which is where integr
 | "Users report the last sentence gets cut off" | [16.1 §9, §6.6](references/01-speech-analyzer-end-to-end.md#9-️-the-cancellation-shield) | The cancellation shield — or a missing `AnalyzerInputConverter.flush()` |
 | "My transcript reads *'I went to the I went to the store'*" | [16.1 §8.3](references/01-speech-analyzer-end-to-end.md#83-️-silent-failure-strategy-a-silently-degrades-to-append-only) | Your preset does not emit `.audioTimeRange`, so the merge always appends |
 | "Empty transcript, clean console" | [16.1 §5.5](references/01-speech-analyzer-end-to-end.md#55-what-breaks-if-you-skip-assets-entirely) | Assets before format before analyzer before audio. The analyzer converts nothing |
-| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 domains enumerated — then the categories with no domain at all |
-| "My category isn't covered. What is left?" | [16.2 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | `.system.searchInApp`, with code. Works without domains or indexing |
+| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 captured domains; check the 27.3 custom-action preview before excluding your category |
+| "My category isn't covered. What is left?" | [16.2 §8](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | 27.0: `.system.searchInApp`; 27.3 preview announces custom App Intent actions from any app |
 | "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md#141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
 | "Siri answers from my screen text and ignores my `AppEntity`" | [16.3 §1](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#1-the-two-paths) | Descriptive requests take the screenshot path and never call `entities(for:)` |
 | "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](https://github.com/hbmartin/Foundation-Models-and-Core-AI-and-MLX-skills/blob/main/guides/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#5-handing-content-to-another-app) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**; the verified export path needs a real file, while draft identifiers cover pre-materialization identity[^identifier-availability] |

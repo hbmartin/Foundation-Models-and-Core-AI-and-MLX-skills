@@ -1111,14 +1111,14 @@ overwrites, and you cannot predict which.
 
 ## 6. Consumer 1 — Siri entity resolution
 
-> 🟡 **27.3 DEVELOPER PREVIEW UPDATE (2026-11-03).** Apple says Siri AI in the 27.3 betas can surface
-> **any entity in the Spotlight semantic index, not just entities that fit an existing schema**. This
-> directly expands the captured 27.0 discovery/action boundary described below. It does not yet prove
-> the final runtime contract, deployment floor, ranking behavior or API shape: this repository has not
-> captured the 27.3 SDK/runtime, and Apple describes the feature as early access with App Store
-> submission opening in spring. Preserve the indexing hygiene in this guide and treat schema-independent
-> Siri action routing as preview-only until the beta-event ritual supplies interface and runtime
-> evidence. [Official announcement](https://developer.apple.com/news/?id=gdk2umrf).
+> ✅ **VERIFIED announcement — 27.3 DEVELOPER PREVIEW, 2026-11-03.** Apple announces **custom App
+> Intent actions from any app** in Siri AI, which relaxes the captured 27.0 action restriction in §6.2.
+> Apple separately announces surfacing **any entity in the Spotlight semantic index**. Discovery
+> through indexing was already available in the 27.0 model below; the action announcement is the
+> material change to that model. **Runtime/API verification remains a GAP:** this repository has not
+> captured the 27.3 SDK/runtime, so final contracts, deployment floors and ranking remain unverified.
+> Apple describes early access with App Store submission opening in spring. Preserve the indexing
+> hygiene below. [Official announcement](https://developer.apple.com/news/?id=gdk2umrf).
 
 The first consumer of the index is the one Apple markets: Siri, and Apple Intelligence behind it,
 finding your content by name or description when the user speaks about it.
@@ -1151,7 +1151,7 @@ the hard way, and diagnose it as a model problem.
 
 ### 6.2 What indexing does *not* buy: the discovery/action wall
 
-Restating the boundary because it is where most of the disappointment in this area comes from.
+This is the captured **27.0** boundary; the 27.3 custom-action preview is qualified above.
 
 Indexing buys **discovery**. Siri can find your entity, refer to it, disambiguate between two of
 them, and read its display representation aloud.

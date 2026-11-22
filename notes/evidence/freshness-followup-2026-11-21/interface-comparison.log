@@ -1,0 +1,5 @@
+=== FoundationModels: FoundationModels-27.0-macos.swiftinterface -> FoundationModels-27.2-macos.swiftinterface ===
+  FoundationModels: 53 changed declarations (scoped, order independent)
+    variant-added <module>: public enum LanguageModelError : Foundation.LocalizedError
+    variant-added <module>: extension FoundationModels.Attachment where Content : FoundationModels.DataAttachmentRepresentable
+    added <module>: extension FoundationModels.LanguageModel

@@ -53,8 +53,8 @@ A `N.M` label identifies a guide in the linked list below.
 
 | If your situation is… | Read | Why |
 |---|---|---|
-| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](references/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 domains enumerated — then the categories with no domain at all |
-| "My category isn't covered. What is left?" | [16.2 §8](references/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | `.system.searchInApp`, with code. Works without domains or indexing |
+| "Is there a Siri schema for what my app does?" | [16.2 §5–§6](references/part-16-adjacent-capabilities/references/02-app-schema-domains.md#5-the-complete-enumeration--all-23-domains) | All 23 captured domains; check the 27.3 custom-action preview before excluding your category |
+| "My category isn't covered. What is left?" | [16.2 §8](references/part-16-adjacent-capabilities/references/02-app-schema-domains.md#8-systemsearchinapp--the-escape-hatch) | 27.0: `.system.searchInApp`; 27.3 preview announces custom App Intent actions from any app |
 | "*'Remove the due date'* reports success and changes nothing" | [16.2 §14.1](references/part-16-adjacent-capabilities/references/02-app-schema-domains.md#141-️-silent-failure--intentparametervaluestate-clear-it-and-dont-touch-it-are-not-the-same-thing) | `IntentParameter.valueState`. A `nil` check cannot express "clear it" |
 | "Siri answers from my screen text and ignores my `AppEntity`" | [16.3 §1](references/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#1-the-two-paths) | Descriptive requests take the screenshot path and never call `entities(for:)` |
 | "*'Send this to X'* → *'I can't attach the image from your screen'*" | [16.3 §5](references/part-16-adjacent-capabilities/references/03-onscreen-awareness.md#5-handing-content-to-another-app) | `.files.file` + `FileEntityIdentifier` + **`FileRepresentation`**; the verified export path needs a real file, while draft identifiers cover pre-materialization identity |
