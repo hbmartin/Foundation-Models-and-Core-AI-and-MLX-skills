@@ -22,11 +22,17 @@ spec.loader.exec_module(verifier)
 
 def reconcile(rows, prior, old_records, toolchains, checked_at):
     result, records = [], []
+    seen = set()
     for fresh in rows:
         row = dict(fresh)
         if row['status'] in ('FAILED', 'MARKER-ERROR', 'PARSE-ERROR', 'XFAIL-ERR'):
             raise ValueError(f"fresh verification failed: {row['file']}:{row['line']}")
         key = (row['file'], row['snippet_id'])
+        if not key[1] or key[1] == '-':
+            raise ValueError(f"fresh verification has no snippet identity: {row['file']}:{row['line']}")
+        if key in seen:
+            raise ValueError(f"duplicate fresh snippet identity: {key}")
+        seen.add(key)
         previous = prior.get(key)
         targets = {}
         for target, target_spec in verifier.TARGETS.items():
@@ -117,7 +123,7 @@ def main():
     output = ROOT / 'notes/snippet-verification'
     old = json.loads((output / 'target-provenance.json').read_text())
     prior = verifier.read_prior_results(output / 'results.tsv')
-    rows = list(verifier.read_prior_results(args.fresh / 'results.tsv').values())
+    rows = verifier.read_results_rows(args.fresh / 'results.tsv')
     toolchains = json.loads((args.fresh / 'toolchains.json').read_text())
     old_records = {(r['file'], r['snippet_id']): r for r in old['records']}
     merged, records = reconcile(rows, prior, old_records, toolchains, args.checked_at)

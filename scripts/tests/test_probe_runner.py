@@ -17,6 +17,20 @@ PROBES_ROOT = ROOT / "probes"
 
 
 class ProbeRunnerTests(unittest.TestCase):
+    def test_invalid_host_selection_does_not_consume_retryable_run(self):
+        for selection in (('--skip',), ('--filter', ''), ('--filter', '--verbose'),
+                          ('--skip=',), ('--filter=--verbose',), ('--skip', '-v')):
+            with self.subTest(selection=selection), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                self.make_command_shim(root, 'swift')
+                env = {'PROBE_ARTIFACT_ROOT': str(root / 'artifacts'), 'PATH': f'{root}:{os.environ["PATH"]}',
+                       'COMMAND_LOG': str(root / 'command.log')}
+                failed = self.run_runner('host', '--run-id', 'retryable', '--', *selection, env=env)
+                self.assertEqual(failed.returncode, 64, failed.stderr)
+                self.assertFalse((root / 'artifacts/retryable').exists())
+                retry = self.run_runner('host', '--run-id', 'retryable', '--', '--filter=ValidTest', env=env)
+                self.assertEqual(retry.returncode, 0, retry.stderr)
+
     def run_runner(
         self, *arguments: str, env: dict[str, str] | None = None
     ) -> subprocess.CompletedProcess[str]:

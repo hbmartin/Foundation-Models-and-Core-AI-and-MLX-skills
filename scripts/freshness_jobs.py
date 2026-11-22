@@ -549,11 +549,18 @@ def execute(args, cycle):
     interrupted = False
     retained = args.cycle == "weekly" and args.keep_worktree
     outcome = "blocked"
+    pending_notes = []
 
     def note(name, exception):
-        if runner is not None:
+        if runner is None:
+            pending_notes.append({"name": "initialization" if name == "collection" else name,
+                                  "status": "blocked", "error": str(exception) or type(exception).__name__})
+        else:
             try:
-                runner.record(name, "blocked", error=str(exception) or type(exception).__name__)
+                if hasattr(runner, "record"):
+                    runner.record(name, "blocked", error=str(exception) or type(exception).__name__)
+                else:
+                    runner.steps.append({"name": name, "status": "blocked", "error": str(exception)})
             except OSError as recording_error:
                 print(f"{name}: {exception}; recording failed: {recording_error}", file=sys.stderr)
 
@@ -606,14 +613,34 @@ def execute(args, cycle):
                 except Exception as exception:
                     outcome = "blocked"
                     note("finalization", exception)
-                    # Policy refusals remain strict for manual callers. The runner owns
-                    # disposal and explicitly records a blocked outcome before cleanup.
+                    # Resume accepted cleanup intent; a policy refusal before acceptance
+                    # instead needs an explicit blocked disposal. Keep the original failure
+                    # as the effective outcome even if the automatic retry succeeds.
                     try:
-                        with contextlib.redirect_stdout(sys.stderr):
-                            cycle.finalize(SimpleNamespace(run_root=root, outcome="blocked", pr_url=None,
-                                                           state_path=None, manifest=manifest))
+                        try:
+                            saved = cycle.read_json(root / "run.json", {})
+                        except (OSError, UnicodeError, cycle.CycleError):
+                            saved = {}
+                        accepted = isinstance(saved, dict) and saved.get("finalizationRequest") == {
+                            "schemaVersion": 1, "outcome": final_outcome, "prUrl": None}
+                        completed = accepted and not pathlib.Path(manifest["lockPath"]).exists() and not repository.exists()
+                        if not completed:
+                            with contextlib.redirect_stdout(sys.stderr):
+                                cycle.finalize(SimpleNamespace(run_root=root, outcome=final_outcome if accepted else "blocked",
+                                    pr_url=None, state_path=None, manifest=manifest, finalization_error=str(exception)))
                     except Exception as cleanup_error:
-                        note("cleanup", cleanup_error)
+                        note("finalization-retry", cleanup_error)
+            elif retained:
+                try:
+                    failures = "; ".join(step["error"] for step in runner.steps
+                                         if step.get("status") == "blocked" and step.get("error")) if runner else ""
+                    retention = cycle.record_retention(root, manifest, "no-change" if outcome == "clean" else outcome, error or failures)
+                    if retention["outcome"] == "blocked":
+                        outcome = "blocked"
+                except Exception as exception:
+                    outcome = "blocked"
+                    error = str(exception)
+                    note("retention", exception)
             elif args.cycle == "daily":
                 manifest.update(status="no-change" if outcome == "clean" else outcome, finishedAt=cycle.iso())
                 cycle.atomic_json(root / "run.json", manifest)
@@ -623,8 +650,12 @@ def execute(args, cycle):
             if previous_int is not None:
                 signal.signal(signal.SIGINT, previous_int)
     if runner is None:
-        raise cycle.CycleError(error or "runner initialization failed; cleanup attempted")
+        # Reporting must not depend on the constructor that just failed.
+        runner = SimpleNamespace(root=root, cycle=cycle, findings=[], source_update=None,
+                                 steps=pending_notes)
     details = {"worktree": str(repository), "retainedForReview": True} if retained else {}
+    if error:
+        details["error"] = error
     try:
         write_report(runner, args.cycle, outcome, emit=False, **details)
     except Exception as exception:
