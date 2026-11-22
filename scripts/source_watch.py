@@ -23,7 +23,7 @@ def news_records(payload, fallback_url="https://developer.apple.com/news/rss/new
                 "text": (element.text or "").strip(),
                 "tail": (element.tail or "").strip(),
                 "children": [content(child) for child in element]}
-    records, identities = [], set()
+    records, seen = [], set()
     for item in items:
         title = item.findtext("title", "").strip()
         if not title:
@@ -32,12 +32,13 @@ def news_records(payload, fallback_url="https://developer.apple.com/news/rss/new
         published = item.findtext("pubDate", "").strip()
         identity = item.findtext("guid", "").strip() or url or hashlib.sha256(
             json.dumps([title, published]).encode()).hexdigest()
-        if identity in identities:
-            raise ValueError(f"duplicate news identity: {identity}")
-        identities.add(identity)
         details = [content(child) for child in item if child.tag not in {"title", "link", "pubDate", "guid"}]
-        records.append({"id": identity, "title": title, "url": url or fallback_url, "published": published,
-                        "content": sorted(details, key=lambda value: json.dumps(value, sort_keys=True))})
+        record = {"id": identity, "title": title, "url": url or fallback_url, "published": published,
+                  "content": sorted(details, key=lambda value: json.dumps(value, sort_keys=True))}
+        canonical = json.dumps(record, sort_keys=True)
+        if canonical not in seen:
+            records.append(record)
+            seen.add(canonical)
     return records
 
 
@@ -45,11 +46,13 @@ def news_hash(observation):
     items = observation.get("newsItems")
     if not isinstance(items, list) or not items or any(not isinstance(item, dict) or "content" not in item for item in items):
         return None  # Old item summaries did not retain descriptions/content.
-    canonical = sorted(json.dumps(item, sort_keys=True, ensure_ascii=False, separators=(",", ":")) for item in items)
+    canonical = sorted({json.dumps(item, sort_keys=True, ensure_ascii=False, separators=(",", ":")) for item in items})
     return hashlib.sha256(json.dumps(canonical, ensure_ascii=False).encode()).hexdigest()
 
 
 def same_content(name, before, after):
+    if before.get("sha256") and before["sha256"] == after.get("sha256"):
+        return True  # Also covers complete pre-upgrade observations of identical bytes.
     if name == "news":
         a, b = news_hash(before), news_hash(after)
         return a is not None and a == b
@@ -97,15 +100,17 @@ def load(path, cycle, legacy=None):
                         or not all(isinstance(item.get(field), str) for field in ("id", "title", "url", "published"))
                         or "content" in item and not isinstance(item["content"], list) for item in items)):
                     raise ValueError("source-watch newsItems must contain structured news records")
-    reviewed = value["reviewed"].get("news")
-    if reviewed and news_hash(reviewed) is None and reviewed.get("report"):
+    for section in ("reviewed", "latestObserved", "pending"):
+        observation = value[section].get("news")
+        if not observation or news_hash(observation) is not None or not observation.get("report"):
+            continue
         # Upgrade only from hash-verified retained bytes, never an incomplete summary.
-        relative = pathlib.PurePosixPath(reviewed.get("capturePath", "official-sources/news.txt"))
+        relative = pathlib.PurePosixPath(observation.get("capturePath", "official-sources/news.txt"))
         if not relative.is_absolute() and ".." not in relative.parts:
             try:
-                payload = (pathlib.Path(reviewed["report"]).parent / relative).read_bytes()
-                if hashlib.sha256(payload).hexdigest() == reviewed["sha256"]:
-                    reviewed["newsItems"] = news_records(payload)
+                payload = (pathlib.Path(observation["report"]).parent / relative).read_bytes()
+                if hashlib.sha256(payload).hexdigest() == observation["sha256"]:
+                    observation["newsItems"] = news_records(payload)
             except (OSError, ValueError, ET.ParseError):
                 pass  # The next observation explicitly requires migration review.
     return value
@@ -140,10 +145,20 @@ def findings(state):
             finding["semanticHash"] = news_hash(current)
             if reviewed and news_hash(reviewed) is None:
                 finding["migrationRequired"] = True
-            old = {item["id"]: item for item in reviewed.get("newsItems", [])} if reviewed else {}
+            old = {}
+            for item in reviewed.get("newsItems", []) if reviewed else []:
+                old.setdefault(item["id"], set()).add(json.dumps(item, sort_keys=True))
             items = current.get("newsItems", [])
             finding["newItems"] = [item for item in items if item["id"] not in old]
-            finding["updatedItems"] = [item for item in items if item["id"] in old and item != old[item["id"]]]
+            current_groups = {}
+            for item in items:
+                current_groups.setdefault(item["id"], set()).add(json.dumps(item, sort_keys=True))
+            finding["updatedItems"] = [item for item in items if item["id"] in old
+                                       and current_groups[item["id"]] != old[item["id"]]]
+            conflicts = sorted(identity for identity, variants in current_groups.items() if len(variants) > 1)
+            if conflicts:
+                finding["identityConflicts"] = [{"id": identity, "variants": [item for item in items if item["id"] == identity]}
+                                                for identity in conflicts]
         result.append(finding)
     return result
 

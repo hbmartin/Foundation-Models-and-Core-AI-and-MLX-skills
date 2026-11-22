@@ -11,15 +11,17 @@ import json
 import pathlib
 import re
 
-TYPE = re.compile(r"\b(struct|enum|class|protocol|actor|extension)\s+(?!func\b|var\b|subscript\b)([\w.]+)")
+MODIFIERS = r"(?:(?:public|open|package|internal|fileprivate|private|final|indirect|static|class|override|required|convenience|mutating|nonmutating|nonisolated(?:\([^)]*\))?|distributed|prefix|postfix|infix|borrowing|consuming|lazy|weak|unowned|optional|isolated)\s+)*"
+TYPE = re.compile(r"^" + MODIFIERS + r"(struct|enum|class|protocol|actor|extension)\s+(?!func\b|var\b|subscript\b)([\w.]+)")
 MEMBER = re.compile(r"\b(var|let|func|init|subscript|case|associatedtype|typealias)\b")
-SURFACE = re.compile(r"\b(import|macro|operator|precedencegroup)\s+([^\s({:]+)")
+SURFACE = re.compile(r"^" + MODIFIERS + r"(import|macro|operator|precedencegroup)\s+([^\s({:]+)")
+DECLARATION = re.compile(r"^" + MODIFIERS + r"(?:struct|enum|class|protocol|actor|extension|import|macro|operator|precedencegroup|var|let|func|init|deinit|subscript|case|associatedtype|typealias)\b")
 TOKEN = re.compile(r'"(?:\\.|[^"\\])*"|[^"{}]+|[{}]')
 
 
 def normalize(text):
     return "".join(token if token.startswith('"') else re.sub(r"\s+", " ", token.replace("::", "."))
-                   for token in re.findall(r'"(?:\\.|[^"\\])*"|[^"\n]+|\n', text)).strip()
+                   for token in re.findall(r'"(?:\\.|[^"\\])*"|[^"]+', text)).strip()
 
 
 def attribute_prefix(text):
@@ -69,6 +71,7 @@ def declarations(text):
     lines = text.splitlines()
     index = 0
     while index < len(lines):
+        line_number = index + 1
         line = lines[index].strip()
         index += 1
         if not line or line.startswith(("//", "#")):
@@ -79,9 +82,10 @@ def declarations(text):
                 try:
                     attribute, remainder = attribute_prefix(line)
                     break
-                except ValueError:
-                    if index == len(lines):
-                        raise
+                except ValueError as error:
+                    if (str(error) != "unterminated Swift attribute" or index == len(lines)
+                            or DECLARATION.match(lines[index].strip()) or lines[index].strip().startswith("@")):
+                        raise ValueError(f"line {line_number}: {error}") from error
                     line += "\n" + lines[index].strip()
                     index += 1
             attributes.append(normalize(attribute))
@@ -96,7 +100,9 @@ def declarations(text):
         inherited = [a for scope in scopes for a in scope["availability"]]
         owner = scopes[-1]["owner"] if scopes else "<module>"
         if kind and (member is None or kind.start() < member.start()):
-            while "{" not in line and index < len(lines):
+            while "{" not in syntax(line):
+                if index == len(lines) or DECLARATION.match(lines[index].strip()) or lines[index].strip().startswith("@"):
+                    raise ValueError(f"line {line_number}: missing opening brace for {kind[1]} {kind[2]}")
                 line += " " + normalize(lines[index])
                 index += 1
             name = kind[2]

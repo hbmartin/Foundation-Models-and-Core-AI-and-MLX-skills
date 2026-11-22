@@ -2,6 +2,7 @@ import importlib.util
 import pathlib
 import os
 import tempfile
+import sys
 import unittest
 from unittest import mock
 
@@ -12,6 +13,31 @@ spec.loader.exec_module(reconciler)
 
 
 class ReconciliationTests(unittest.TestCase):
+    def test_anonymous_fresh_failures_are_retained_and_rejected_before_publication(self):
+        for status in ('PARSE-ERROR', 'MARKER-ERROR'):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                row, prior, records = self.fixture()
+                row.update(snippet_id='-', status=status, line='42')
+                path = root / 'results.tsv'
+                path.write_bytes(reconciler.serialize_tsv([row]))
+                rows = reconciler.verifier.read_results_rows(path)
+                self.assertEqual(len(rows), 1)
+                ledger = root / 'notes/snippet-verification'
+                ledger.mkdir(parents=True)
+                previous, _, _ = self.fixture()
+                old = reconciler.serialize_tsv([previous])
+                (ledger / 'results.tsv').write_bytes(old)
+                (ledger / 'target-provenance.json').write_text('{"records": []}')
+                (root / 'toolchains.json').write_text('{}')
+                with mock.patch.object(reconciler, 'ROOT', root), mock.patch.object(sys, 'argv', [
+                    'reconcile-snippets.py', '--fresh', str(root), '--checked-at', '2026-11-21',
+                    '--evidence', str(root / 'evidence')]), self.assertRaisesRegex(ValueError, 'fresh verification failed: guide.md:42'):
+                    reconciler.main()
+                self.assertEqual((ledger / 'results.tsv').read_bytes(), old)
+                self.assertEqual((ledger / 'target-provenance.json').read_text(), '{"records": []}')
+                self.assertFalse((root / 'evidence').exists())
+
     def fixture(self):
         row = {column: '-' for column in reconciler.verifier.TSV_COLUMNS}
         row.update(file='guide.md', snippet_id='id', content_hash='same', info='compile:26,27',

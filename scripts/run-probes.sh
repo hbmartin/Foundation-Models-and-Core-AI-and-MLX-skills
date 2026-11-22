@@ -66,6 +66,33 @@ case "$mode" in
       echo "swift is required" >&2
       exit 69
     }
+    # Selection syntax is usage validation, before allocating a durable run.
+    selection_index=0
+    while ((selection_index < extra_argument_count)); do
+      selection="${extra_arguments[$selection_index]}"
+      case "$selection" in
+        --skip|--filter)
+          if ((selection_index + 1 >= extra_argument_count)); then
+            echo "$selection requires a test selection" >&2
+            exit 64
+          fi
+          selection_index=$((selection_index + 1))
+          selection_value="${extra_arguments[$selection_index]}"
+          if [[ -z "$selection_value" || "$selection_value" == -* ]]; then
+            echo "$selection requires a test selection" >&2
+            exit 64
+          fi
+          ;;
+        --skip=*|--filter=*)
+          selection_value="${selection#*=}"
+          if [[ -z "$selection_value" || "$selection_value" == -* ]]; then
+            echo "${selection%%=*} requires a test selection" >&2
+            exit 64
+          fi
+          ;;
+      esac
+      selection_index=$((selection_index + 1))
+    done
     ;;
   simulator)
     destination="${destination:-${PROBE_SIMULATOR_DESTINATION:-}}"
@@ -125,8 +152,6 @@ index = 0
 while index < len(arguments):
     value = arguments[index]
     if sys.argv[2] == "host" and value in ("--skip", "--filter"):
-        if index + 1 == len(arguments) or arguments[index + 1].startswith("--"):
-            raise SystemExit(f"{value} requires a test selection")
         (excluded if value == "--skip" else included).append(arguments[index + 1])
         index += 2
         continue

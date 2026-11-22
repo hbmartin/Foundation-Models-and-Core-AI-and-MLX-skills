@@ -3,6 +3,28 @@ from scripts.interface_drift import compare, declarations
 
 
 class InterfaceDriftTests(unittest.TestCase):
+    def test_blank_lines_and_indentation_do_not_change_client_bodies(self):
+        before = '@inlinable public func f() -> Int {\n let x = 1\n return x\n}\n'
+        self.assertEqual(compare(before, before.replace('\n return', '\n\n\n    return')), [])
+        self.assertTrue(compare(before, before.replace('1', '2')))
+        self.assertTrue(compare('public func f() { print("a b") }', 'public func f() { print("a  b") }'))
+
+    def test_keyword_parameter_labels_do_not_pair_unrelated_functions(self):
+        for label in ('operator', 'macro', 'import', 'precedencegroup', 'class'):
+            before = f'public func a({label} value: Int)\n'
+            after = before.replace('func a', 'func b')
+            self.assertEqual({change['kind'] for change in compare(before, after)}, {'added', 'removed'})
+
+    def test_malformed_attributes_and_type_headers_have_local_diagnostics(self):
+        for text, message in (
+            ('@available(*, message: "unclosed)\npublic func f()\n', 'unterminated Swift attribute'),
+            ('@available(*, deprecated\npublic func f()\n', 'unterminated Swift attribute'),
+            ('public protocol P\npublic func f()\npublic struct Q {}\n', 'missing opening brace'),
+            ('public struct P\n', 'missing opening brace'),
+        ):
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, f'line 1: {message}'):
+                declarations(text)
+
     def test_declaration_keywords_inside_literals_do_not_change_scope(self):
         text = 'public func f(_ text: String = "extension T; macro m")\n'
         record = declarations(text)[0]

@@ -1005,12 +1005,13 @@ output with correct shapes and no diagnostic:
 > | Issue | Silent behaviour |
 > |---|---|
 > | `coreai-torch#9` | float→int→float cast round-trips folded away, dropping truncation: `(x + 64.0).long().float() - 64.0` returns the identity instead of `floor` |
-> | `coreai-torch#10` | GPU delegate executes `floor`/`trunc`/`ceil` as identity; `round` uses away-from-zero ties |
+> | `coreai-torch#10` (CLOSED 2026-11-06) | Historical GPU `floor`/`trunc`/`ceil` identity and `round` ties-away defect; successful retests on macOS 27.0 `26A428` with 0.4.2/core b2 and `7a18c00`/core b3; see [the scoped evidence](02-op-coverage-composites-and-externalization.md#97-the-register) |
 > | `coreai-torch#11` | an int64-comparison bool-mask chain clobbers an unrelated live tensor; in a full RF-DETR decoder the output cosine was **~0.65 with no error raised** |
 > | `coreai-torch` PR#43 (MERGED) | `aten.min.dim` returned correct `values` but **silently wrong `indices`** at dtype-extremal minima |
 >
-> Between #9 and #10, **both natural in-graph `floor`
-> workarounds are removed on GPU** — worth knowing if your model quantizes coordinates.
+> In #10's original 0.4.0/core b1, macOS beta `26A5353q` environment, **both natural in-graph
+> `floor` workarounds were removed on GPU**. Do not infer that failure for untested combinations;
+> the two later successful retests also changed the OS build.
 
 ### 6.5 The const-folding escape hatch
 

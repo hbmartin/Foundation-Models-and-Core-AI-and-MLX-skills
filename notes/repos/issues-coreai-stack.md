@@ -279,15 +279,19 @@ Float-mask variant: all four `cos=1.000000`.
 
 ---
 
-### coreai-torch#10 — `GPU delegate executes aten.floor/trunc/ceil as identity; round uses away-from-zero ties; div(x,1,floor) folds to identity` — CLOSED, FIXED WITH RESIDUAL
-Same author/env as #11.
+### coreai-torch#10 — `GPU delegate executes aten.floor/trunc/ceil as identity; round uses away-from-zero ties; div(x,1,floor) folds to identity` — CLOSED, SCOPED SUCCESSFUL RETESTS
+**Original report (john-rocky, 2026-06-12):** coreai-torch 0.4.0, coreai-core 1.0.0b1,
+macOS 27.0 beta `26A5353q`, M4 Max.
 
-**Resolution (reviewed 2026-11-21):** two reporter retests found the six-operation reproducer correct
-on macOS 27.0. The first used `coreai-torch 0.4.2` with `coreai-core 1.0.0b2`; the closing confirmation
-used `coreai-torch` main `7a18c00` with `coreai-core 1.0.0b3`. The original 0.4.0/core b1 combination
-remains affected, so retain the workaround for that and any other unverified deployment combination.
+**Resolution (reviewed 2026-11-21):** [cdeil's 2026-09-23 retest](https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766)
+passed all six operations with `coreai-torch 0.4.2` / `coreai-core 1.0.0b2` on macOS 27.0 release
+`26A428`. [john-rocky's 2026-11-06 confirmation](https://github.com/apple/coreai-torch/issues/10#issuecomment-6687727233)
+passed on `26A428`, M4 Max, with `7a18c00` / core b3, then closed the issue. The revision was on
+main at the time and is included in released [v0.4.4](https://github.com/apple/coreai-torch/releases/tag/v0.4.4).
+The OS build and packages both changed, so the reports do not isolate the fixing component.
+Neither 0.4.0/core b1 on `26A428` nor the recommended 0.4.3/core b3 combination was retested here.
 
-**Measured table (GPU unit), verbatim:**
+**Original measured table (GPU unit, beta `26A5353q`), verbatim:**
 | op | got | expected |
 |---|---|---|
 | floor | `[0.3, 1.7, -0.4, -1.6, 2, -2, 0.5, -0.5]` (identity) | `[0, 1, -1, -2, 2, -2, 0, -1]` |
@@ -297,14 +301,15 @@ remains affected, so retain the workaround for that and any other unverified dep
 | div(x, 1, floor) | identity (folded at conversion) | floor |
 | **div(2x, 2, floor)** | **correct** | floor |
 
-**CPU is correct for all four.** So the same `.aimodel` gives different math on CPU vs GPU.
+**CPU was correct for all four** in the original report; that `.aimodel` gave different math on CPU vs GPU.
 
 **Impact quote:**
 > "Hit while porting RF-DETR — the deformable-attention sampling floor turned the whole decoder into noise
 > on GPU while CPU was bit-clean."
 
-**Workaround:** `torch.div(x * 2.0, 2.0, rounding_mode="floor")` — divisor ≠ 1 lowers correctly, and ×2/÷2 is
-exact in FP.
+**Historical workaround:** `torch.div(x * 2.0, 2.0, rounding_mode="floor")` — avoid divisor 1,
+which triggered the fold. Use it if the historical failure reproduces, with a shipped-asset parity
+check; the reports do not establish that every untested combination requires it.
 
 The `SpecializationOptions` selection API is shown here too:
 ```python

@@ -765,34 +765,157 @@ def clean_builds(root: pathlib.Path) -> list[str]:
     return removed
 
 
-def finalize(args: argparse.Namespace) -> int:
-    run_root = args.run_root.resolve()
-    supplied = getattr(args, "manifest", None)
+def validate_run_manifest(value):
+    if not isinstance(value, dict):
+        raise CycleError("run manifest must be an object")
+    if any(not isinstance(value.get(key), str) or not value[key]
+           for key in ("runId", "repository", "worktree", "branch", "lockPath")):
+        raise CycleError("run manifest lacks resource identity")
+    if value.get("baseSha") is not None and (not isinstance(value["baseSha"], str) or not value["baseSha"]):
+        raise CycleError("invalid run manifest baseSha")
+    if "branchCreated" in value and not isinstance(value["branchCreated"], bool):
+        raise CycleError("invalid run manifest branchCreated")
+
+
+def finalization_manifest(run_root, supplied=None):
+    """Merge trusted preparation progress without replacing persisted lifecycle state."""
     errors = []
+    if supplied is not None:
+        validate_run_manifest(supplied)
     try:
-        persisted = read_json(run_root / "run.json") or {}
+        persisted = read_json(run_root / "run.json")
+        if persisted is not None or (run_root / "run.json").exists():
+            validate_run_manifest(persisted)
     except (OSError, UnicodeError, CycleError) as error:
-        if not supplied:
-            raise
-        persisted = {}
+        if not isinstance(supplied, dict) or not supplied:
+            raise CycleError(f"cannot recover run manifest without trusted identity: {error}") from error
         errors.append(f"run manifest: {error}")
+        path = run_root / "run.json"
+        backup = run_root / "previous-run-manifest.txt"
+        if path.exists():
+            original = path.read_bytes()
+            if backup.exists() and backup.read_bytes() != original:
+                raise CycleError("existing run manifest backup contains different bytes")
+            if not backup.exists():
+                backup.write_bytes(original)
+        persisted = None
     if supplied and persisted:
-        for key in ("runId", "repository", "worktree", "branch", "baseSha", "lockPath", "branchCreated"):
+        for key in ("runId", "repository", "worktree", "branch", "lockPath"):
             if persisted.get(key) != supplied.get(key):
                 raise CycleError(f"persisted run manifest changed resource identity: {key}")
     manifest = dict(persisted or supplied or {})
     if not manifest:
         raise CycleError(f"missing run manifest in {run_root}")
+    if supplied:
+        if manifest.get("baseSha") and supplied.get("baseSha") and manifest["baseSha"] != supplied["baseSha"]:
+            raise CycleError("persisted run manifest changed resource identity: baseSha")
+        manifest["baseSha"] = manifest.get("baseSha") or supplied.get("baseSha")
+        manifest["branchCreated"] = bool(manifest.get("branchCreated") or supplied.get("branchCreated"))
+        if supplied.get("preparationError"):
+            manifest["preparationError"] = supplied["preparationError"]
+    manifest.setdefault("baseSha", None)
+    manifest.setdefault("branchCreated", False)
+    return manifest, errors
+
+
+def evidence_hash(run_root, name):
+    path = run_root / name
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+
+
+def path_snapshot(worktree, paths):
+    digest = hashlib.sha256()
+    for name in paths:
+        path = worktree / name
+        digest.update(name.encode() + b"\0")
+        if path.is_symlink():
+            data = b"symlink\0" + os.readlink(path).encode()
+        elif path.is_file():
+            data = str(path.stat().st_mode & 0o777).encode() + b"\0" + path.read_bytes()
+        else:
+            data = b"deleted"
+        digest.update(hashlib.sha256(data).digest())
+    return digest.hexdigest()
+
+
+def record_retention(run_root, supplied, outcome, error=None):
+    """Record an intentionally retained run without promoting collection anchors."""
+    manifest, errors = finalization_manifest(run_root, supplied)
+    lock = read_json(pathlib.Path(manifest["lockPath"]), {})
+    if not isinstance(lock, dict) or lock.get("runId") != manifest["runId"]:
+        raise CycleError("active lock belongs to another run; refusing retention update")
+    if error:
+        errors.append(error)
+    if errors:
+        outcome = "blocked"
+    entry = {"runId": manifest["runId"], "finishedAt": iso(), "outcome": outcome,
+             "baseSha": manifest.get("baseSha"), "branch": manifest["branch"],
+             "retainedForReview": True, "cleanupPending": True, "errors": errors}
+    manifest.update(status="retained", collectionOutcome=outcome, retainedForReview=True,
+                    collectionErrors=errors, updatedAt=entry["finishedAt"])
+    atomic_json(run_root / "run.json", manifest)
+    state_path = run_root.parents[1] / "state/weekly-improvement.json"
+    state = read_json(state_path, {"schemaVersion": 2, "runs": []})
+    if (not isinstance(state, dict) or not isinstance(state.get("runs", []), list)
+            or any(not isinstance(row, dict) for row in state.get("runs", []))):
+        raise CycleError("weekly authority state must contain a runs array")
+    state["schemaVersion"] = 2
+    state["runs"] = [row for row in state.get("runs", []) if row.get("runId") != manifest["runId"]]
+    state["runs"] = (state["runs"] + [entry])[-20:]
+    state.update(lastRun=entry, pending=dict(entry))
+    atomic_json(state_path, state)
+    return entry
+
+
+def finalize(args: argparse.Namespace) -> int:
+    run_root = args.run_root.resolve()
+    manifest, errors = finalization_manifest(run_root, getattr(args, "manifest", None))
+    if getattr(args, "finalization_error", None):
+        errors.append(args.finalization_error)
     worktree = pathlib.Path(manifest["worktree"])
     repository = pathlib.Path(manifest["repository"])
     lock_path = pathlib.Path(manifest["lockPath"])
     lock = read_json(lock_path, {})
+    request = {"schemaVersion": 1, "outcome": args.outcome, "prUrl": args.pr_url}
     if not lock and not worktree.exists() and manifest.get("status") in {"no-change", "findings", "blocked", "draft", "ready"}:
-        if manifest["status"] != args.outcome or manifest.get("prUrl") != args.pr_url:
+        prior_request = manifest.get("finalizationRequest") or {
+            "schemaVersion": 1, "outcome": manifest["status"], "prUrl": manifest.get("prUrl")}
+        if prior_request != request:
             raise CycleError(f"run already finalized as {manifest['status']}; conflicting finalization request")
+        if manifest.get("finalizationErrors"):
+            raise CycleError("previous finalization failed: " + "; ".join(manifest["finalizationErrors"]))
         return 0
-    if lock.get("runId") != manifest["runId"]:
+    if not isinstance(lock, dict) or lock.get("runId") != manifest["runId"]:
         raise CycleError("active lock belongs to another run; refusing to finalize")
+    receipt = manifest.get("validationReceipt")
+    resuming = not worktree.exists() and args.outcome != "blocked"
+    if resuming:
+        expected = {"schemaVersion": 1, "request": request, "runId": manifest["runId"],
+                    "baseSha": manifest.get("baseSha"), "branch": manifest["branch"],
+                    "actionsSha256": evidence_hash(run_root, "actions.json"),
+                    "prSha256": evidence_hash(run_root, "pr.json")}
+        if (not isinstance(receipt, dict) or manifest.get("finalizationRequest") != request
+                or any(receipt.get(key) != value for key, value in expected.items())
+                or receipt.get("accepted") is not True
+                or receipt.get("changedPaths") != manifest.get("changedPaths")
+                or not isinstance(receipt.get("changedPaths"), list)
+                or any(not isinstance(path, str) for path in receipt["changedPaths"])
+                or not isinstance(receipt.get("snapshotSha256"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", receipt["snapshotSha256"]) is None
+                or not isinstance(receipt.get("generatedOutputFailures"), list)
+                or any(not isinstance(failure, str) for failure in receipt["generatedOutputFailures"])):
+            raise CycleError("missing worktree: finalization requires the same validated request and evidence")
+        validators = [name for name, patterns, _command in GENERATED_VALIDATORS
+                      if args.outcome in {"draft", "ready"}
+                      and any(any(path_matches(path, pattern) for pattern in patterns) for path in receipt["changedPaths"])]
+        if receipt.get("validators") != validators:
+            raise CycleError("missing worktree: incomplete generated validation receipt")
+        if args.outcome in {"draft", "ready"}:
+            current_head = git(repository, "rev-parse", "--verify", f"refs/heads/{manifest['branch']}", check=False)
+            if not current_head or current_head != receipt.get("headSha"):
+                raise CycleError("missing worktree: validated branch revision changed")
+    if worktree.exists() and not manifest.get("baseSha"):
+        raise CycleError("worktree exists without a recorded base revision")
     paths = changed_paths(worktree, manifest["baseSha"]) if worktree.exists() else manifest.get("changedPaths", [])
     unsafe = [path for path in paths if not safe_path(path)]
     if args.outcome in {"draft", "ready"} and not args.pr_url:
@@ -826,12 +949,29 @@ def finalize(args: argparse.Namespace) -> int:
     generated_failures = (
         generated_validation_failures(worktree, paths)
         if worktree.exists() and args.outcome in {"draft", "ready"}
-        else []
+        else receipt.get("generatedOutputFailures", []) if resuming else []
     )
     if generated_failures and args.outcome == "ready":
         raise CycleError(
             "ready outcome requires current generated outputs: " + "; ".join(generated_failures)
         )
+    if worktree.exists():
+        receipt = {"schemaVersion": 1, "request": request, "runId": manifest["runId"],
+                   "baseSha": manifest.get("baseSha"), "branch": manifest["branch"],
+                   "headSha": git(worktree, "rev-parse", "HEAD"), "changedPaths": paths,
+                   "snapshotSha256": path_snapshot(worktree, paths),
+                   "actionsSha256": evidence_hash(run_root, "actions.json"),
+                   "prSha256": evidence_hash(run_root, "pr.json"),
+                   "validators": [name for name, patterns, _command in GENERATED_VALIDATORS
+                                  if args.outcome in {"draft", "ready"}
+                                  and any(any(path_matches(path, pattern) for pattern in patterns) for path in paths)],
+                   "generatedOutputFailures": generated_failures, "accepted": True, "validatedAt": iso()}
+    manifest.update(finalizationRequest=request, changedPaths=paths)
+    if receipt:
+        manifest["validationReceipt"] = receipt
+    # Failure here leaves resources available for validation/recovery. No cleanup
+    # may rely on a receipt that was only constructed in memory.
+    atomic_json(run_root / "run.json", manifest)
     state_path = args.state_path or run_root.parents[1] / "state/weekly-improvement.json"
     authority_writable = True
     try:
@@ -858,7 +998,7 @@ def finalize(args: argparse.Namespace) -> int:
     previous_collection = {key: state[key] for key in ("lastCollectedRun", "lastSuccessfulRun") if key in state}
     entry = {"runId": manifest["runId"], "finishedAt": iso(), "outcome": args.outcome,
              "baseSha": manifest["baseSha"], "branch": manifest["branch"],
-             "prUrl": args.pr_url, "changedPaths": paths}
+             "prUrl": args.pr_url, "changedPaths": paths, "requestedOutcome": args.outcome}
     if policy_violations:
         entry["policyViolations"] = policy_violations
     if generated_failures:
@@ -880,7 +1020,8 @@ def finalize(args: argparse.Namespace) -> int:
             errors.append(f"write {path.name}: {error}")
 
     persist(state_path, state)
-    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"], prUrl=args.pr_url, changedPaths=paths)
+    manifest.update(status="cleanup-pending", finishedAt=entry["finishedAt"], prUrl=args.pr_url,
+                    changedPaths=paths, retainedForReview=False)
     persist(run_root / "run.json", manifest)
     cleanup_error = None
     try:

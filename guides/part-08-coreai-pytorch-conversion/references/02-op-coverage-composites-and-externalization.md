@@ -2614,7 +2614,7 @@ is easy to miss.
 
 Nine defects, in one table, so you can check your own model against it:
 
-| # | Defect | Wrong on | Fix status 2026-10-02 | Cheap workaround |
+| # | Defect | Wrong on | Fix status (dates per row) | Cheap workaround |
 |---|---|---|---|---|
 <!-- defect-ref:apple.coreai-torch:pull:22 -->
 | 1 | fp16 `softplus`/`mish`/`logsumexp`/`logcumsumexp` overflow | ANE worst (`x≈10.4`), any fp16 | `apple/coreai-torch#22` open | Rewrite the module (§9.1) |
@@ -2627,7 +2627,7 @@ Nine defects, in one table, so you can check your own model against it:
 <!-- defect-ref:apple.coreai-torch:issue:9 -->
 | 6 | float→int→float cast round-trip folded to identity | every backend | `apple/coreai-torch#9` open | Avoid the round-trip idiom |
 <!-- defect-ref:apple.coreai-torch:issue:10 -->
-| 7 | GPU delegate runs `floor`/`trunc`/`ceil` as identity; `round` ties-away | **GPU only**; CPU correct | `apple/coreai-torch#10` fixed in reporter retests with 0.4.2/core b2 and main `7a18c00`/core b3; older combinations retain the defect | Upgrade; for affected combinations use `torch.div(x*2., 2., rounding_mode="floor")` |
+| 7 | Historical GPU `floor`/`trunc`/`ceil` identity and `round` ties-away defect | **GPU only** in the original 0.4.0/core b1, macOS 27.0 beta `26A5353q` report; CPU correct | `apple/coreai-torch#10` closed 2026-11-06: cdeil's 2026-09-23 0.4.2/core b2 retest and john-rocky's 2026-11-06 `7a18c00`/core b3 retest passed on macOS 27.0 `26A428`; 0.4.3/core b3 unverified for this reproducer | Test shipped-asset parity; use the non-unit-divisor workaround below if the historical failure reproduces |
 <!-- defect-ref:apple.coreai-torch:issue:11 -->
 | 8 | int64-comparison bool mask clobbers an unrelated live tensor | CPU **and** GPU | `apple/coreai-torch#11` open | Float-arithmetic masks (below) |
 <!-- defect-ref:apple.coreai-models:issue:66 -->
@@ -2635,15 +2635,21 @@ Nine defects, in one table, so you can check your own model against it:
 
 Two workarounds from that table are worth spelling out because they are non-obvious.
 
-> ✅ **VERIFIED 2026-11-06** — issue **#10** was reporter-measured on GPU: `floor`, `trunc` and `ceil` are executed
-> as **identity**, and `round` uses **ties-away-from-zero** where PyTorch uses ties-to-even. **CPU is
-> correct for all four**, so the same `.aimodel` computes different mathematics on different compute
-> units. Also: `div(x, 1, rounding_mode="floor")` is **folded to identity at conversion time**, while
-> `div(2x, 2, rounding_mode="floor")` is correct in the affected combination. Two later reporter
-> retests found all six outputs correct on macOS 27.0: first with `coreai-torch 0.4.2` /
-> `coreai-core 1.0.0b2`, then with `coreai-torch` main `7a18c00` / `coreai-core 1.0.0b3`.
-> Upgrade to a demonstrated fixed combination. For the originally affected 0.4.0/core b1 path—or
-> another unverified deployment combination—the divisor-1 workaround remains:
+> ✅ **VERIFIED community reports — original failure 2026-06-12; successful retests 2026-09-23 and
+> 2026-11-06.** In issue **#10**, john-rocky measured `floor`, `trunc` and `ceil` executing as
+> **identity** on GPU, and `round` using **ties-away-from-zero** rather than ties-to-even. The original
+> environment was `coreai-torch 0.4.0`, `coreai-core 1.0.0b1`, macOS 27.0 beta **`26A5353q`**, M4 Max;
+> CPU was correct. `div(x, 1, rounding_mode="floor")` was also folded to identity at conversion time.
+> [cdeil's 2026-09-23 retest](https://github.com/apple/coreai-torch/issues/10#issuecomment-5795720766)
+> passed all six outputs with **0.4.2/core b2 on macOS 27.0 release `26A428`**.
+> [john-rocky's 2026-11-06 closing retest](https://github.com/apple/coreai-torch/issues/10#issuecomment-6687727233)
+> passed with **`7a18c00`/core b3 on `26A428`**, M4 Max. That revision was then on main and is now
+> included in released [v0.4.4](https://github.com/apple/coreai-torch/releases/tag/v0.4.4).
+> Both the OS build and packages changed; these reports do not isolate which component corrected
+> the behavior, or show that 0.4.0/core b1 still fails on `26A428`. This guide's **0.4.3/core b3**
+> pipeline is unverified for this reproducer: retain the shipped-asset parity gate.
+> If the historical failure reproduces on your deployment, the **non-unit-divisor workaround** is
+> below. A divisor of **1** triggers the problematic fold; multiply through so the divisor is **2**:
 >
 > ```python
 > floored = torch.div(x * 2.0, 2.0, rounding_mode="floor")   # exact in FP, and lowers correctly
@@ -2662,8 +2668,9 @@ Two workarounds from that table are worth spelling out because they are non-obvi
 > reporter measured *"plausible-looking garbage rather than NaN … **output cosine ~0.65 with no error
 > raised**"*.
 
-All nine are single-reporter community findings except #1 (which has an Apple maintainer response on
-the sibling repo) and the four PR-backed ones (#2, #3, #4 and #1), whose *mechanisms* this guide
+The original issue measurements are community findings; #10 now has a second user's successful
+retest. #1 has an Apple maintainer response on the sibling repo, and the four PR-backed ones
+(#2, #3, #4 and #1) have *mechanisms* this guide
 verified directly against Apple's shipped source. Treat the **mechanisms** as verified and the
 **measured magnitudes** as community-measured.
 

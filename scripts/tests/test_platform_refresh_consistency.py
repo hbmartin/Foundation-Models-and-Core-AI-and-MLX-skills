@@ -38,6 +38,33 @@ def current_issue49_errors(root: Path) -> list[str]:
 
 
 class PlatformRefreshConsistencyTests(unittest.TestCase):
+    def test_issue10_status_and_retests_keep_their_environment_scope(self):
+        records = {row['id']: row for row in defects.load_registry(ROOT)}
+        issue = records['apple.coreai-torch:issue:10']
+        self.assertEqual(issue['claimedState'], 'CLOSED')
+        self.assertEqual(issue['resolution']['disposition'], 'fixed')
+        for environment in ('26A5353q', '26A428', '0.4.0', '0.4.3'):
+            self.assertIn(environment, issue['affectedVersions'])
+        self.assertIn('unverified', issue['affectedVersions'])
+        self.assertEqual(records['apple.coreai-models:issue:49']['affectedVersions'],
+                         'Affected-version boundary unverified; see the cited workaround.')
+        text = self.read('guides/part-08-coreai-pytorch-conversion/references/02-op-coverage-composites-and-externalization.md')
+        evidence = section(text, '### 9.7 ')
+        for fact in ('cdeil', '2026-09-23', 'john-rocky', '2026-11-06', '26A428', '26A5353q'):
+            self.assertIn(fact, evidence)
+        self.assertNotIn('older combinations retain the defect', evidence)
+        conversion = self.read('guides/part-08-coreai-pytorch-conversion/references/01-conversion-and-the-io-contract.md')
+        self.assertIn('`coreai-torch#10` (CLOSED 2026-11-06)', conversion)
+
+    def test_siri_preview_qualifies_decisions_and_separates_announcement_from_runtime(self):
+        schema = self.read('guides/part-16-adjacent-capabilities/references/02-app-schema-domains.md')
+        introduction = schema.split('## 1. Three systems', 1)[0]
+        self.assertIn('✅ **VERIFIED announcement', introduction)
+        self.assertIn('custom App Intent actions from any app', introduction)
+        self.assertIn('Runtime/API verification remains a GAP', introduction)
+        for path in ('guides/part-16-adjacent-capabilities/README.md', 'skills/apple-app-intents/SKILL.md'):
+            self.assertIn('27.3 custom-action preview before excluding your category', self.read(path))
+
     def read(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
 

@@ -1048,7 +1048,8 @@ def write_tsv(rows, out):
         out.write("\t".join(value or "-" for value in fields) + "\n")
 
 
-def read_prior_results(path):
+def read_results_rows(path):
+    """Read literal TSV, retaining anonymous diagnostic rows as well as snippets."""
     if not path or not os.path.isfile(path):
         raise SystemExit(f"error: --rekey-only prior results do not exist: {path!r}")
     with open(path, encoding="utf-8") as source:
@@ -1069,6 +1070,11 @@ def read_prior_results(path):
                     f"got {len(fields)}"
                 )
             rows.append(dict(zip(fieldnames, fields)))
+    return rows
+
+
+def read_prior_results(path):
+    rows = read_results_rows(path)
     by_id = {}
     for number, row in enumerate(rows, 2):
         key = (row.get("file", ""), row.get("snippet_id", ""))

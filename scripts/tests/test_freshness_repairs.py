@@ -104,6 +104,9 @@ class LifecycleRepairs(unittest.TestCase):
             self.assertFalse((root / "artifacts/state/weekly-improvement.lock.json").exists())
             state = real_read(root / "artifacts/state/weekly-improvement.json")
             self.assertEqual(len(state["runs"]), 1)
+            self.assertNotIn("conflicting finalization request", json.dumps(state))
+            if (root / "artifacts/weekly-improvements/repair/report.json").exists():
+                self.assertNotIn("conflicting finalization request", (root / "artifacts/weekly-improvements/repair/report.json").read_text())
             self.assertNotIn("lastSuccessfulRun", state)
             self.assertTrue((root / "artifacts/weekly-improvements/repair/run.json").exists())
             if fault not in ("lock", "prepare-sigterm", "report-always"):
@@ -493,6 +496,49 @@ class SourceWatchRepairs(unittest.TestCase):
             with self.assertRaisesRegex(cycle.CycleError, "stale news"):
                 jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "three"), cycle)
 
+    def test_pre_upgrade_observed_news_can_be_acknowledged_and_migrates_all_sections(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            root = pathlib.Path(directory)
+            state_path = root / "state/news.json"
+            self.capture(root / "one", state_path)
+            state = cycle.read_json(state_path)
+            for section in ("latestObserved", "pending"):
+                for item in state[section]["news"]["newsItems"]:
+                    item.pop("content")
+                state[section]["news"].pop("report", None)
+            cycle.atomic_json(state_path, state)
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "one"), cycle)
+            self.assertNotIn("news", cycle.read_json(state_path)["pending"])
+            state = cycle.read_json(state_path)
+            news = state["reviewed"]["news"]
+            state["latestObserved"]["news"] = dict(news)
+            state["pending"]["news"] = dict(news)
+            for section in ("reviewed", "latestObserved", "pending"):
+                state[section]["news"] = {**state[section]["news"], "newsItems": [
+                    {k: v for k, v in item.items() if k != "content"} for item in news["newsItems"]]}
+            cycle.atomic_json(state_path, state)
+            migrated = jobs.source_watch.load(state_path, cycle)
+            for section in ("reviewed", "latestObserved", "pending"):
+                self.assertIsNotNone(jobs.source_watch.news_hash(migrated[section]["news"]))
+
+    def test_duplicate_news_is_idempotent_and_conflicting_variants_remain_reviewable(self):
+        def feed(values):
+            return ('<rss><channel>' + ''.join('<item><guid>a</guid><title>A</title><description>' + value +
+                '</description></item>' for value in values) + '</channel></rss>').encode()
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            root = pathlib.Path(directory)
+            state = root / "state/news.json"
+            self.capture(root / "one", state, news_payload=feed(['first']))
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "one"), cycle)
+            self.assertEqual(self.capture(root / "two", state, news_payload=feed(['first', 'first'])).findings, [])
+            changed = self.capture(root / "three", state, news_payload=feed(['first', 'edited', 'first']))
+            finding = next(item for item in changed.findings if item['source'] == 'news')
+            self.assertEqual(len(finding['identityConflicts'][0]['variants']), 2)
+            self.assertEqual(len(finding['updatedItems']), 2)
+            jobs.source_watch.acknowledge(SimpleNamespace(run_root=root / "three"), cycle)
+            self.assertEqual(self.capture(root / "four", state, news_payload=feed(['edited', 'first'])).findings, [])
+            self.assertTrue(self.capture(root / "five", state, news_payload=feed(['edited'])).findings)
+
     def test_legacy_news_upgrade_requires_retained_capture_or_explicit_review(self):
         with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
             root = pathlib.Path(directory)
@@ -506,7 +552,10 @@ class SourceWatchRepairs(unittest.TestCase):
             self.assertEqual(self.capture(root / "two", state).findings, [])
             original["reviewed"]["news"].pop("report")
             cycle.atomic_json(state, original)
-            finding = next(f for f in self.capture(root / "three", state).findings if f["source"] == "news")
+            self.assertEqual(self.capture(root / "three", state).findings, [])
+            rebuilt = (root / "one/official-sources/news.txt").read_bytes().replace(
+                b'<channel>', b'<channel><lastBuildDate>rebuilt</lastBuildDate>')
+            finding = next(f for f in self.capture(root / "four", state, news_payload=rebuilt).findings if f["source"] == "news")
             self.assertTrue(finding["migrationRequired"])
 
     def test_bad_state_preserves_bytes_and_does_not_block_release_capture(self):

@@ -1604,7 +1604,9 @@ representative sample follows; use the linked register for current status:
 
 - **Silent miscompiles** — the historical 0.4.1 optimizer dropping broadcasting-significant axis moves
 <!-- defect-ref:apple.coreai-torch:issue:49 -->
-  (`coreai-torch` #49, closed after a 0.4.3 retest); the GPU delegate executing `floor`/`trunc`/`ceil` as identity (#10); float→int→float
+  (`coreai-torch` #49, closed after a 0.4.3 retest); the historical GPU `floor`/`trunc`/`ceil` identity
+  defect (#10, closed 2026-11-06 after successful 0.4.2/core b2 and `7a18c00`/core b3 retests on macOS
+  27.0 `26A428`; this guide's 0.4.3/core b3 combination is unverified for that reproducer); float→int→float
   cast round-trips folded away, dropping truncation semantics (#9).
 - **Numeric instability on the ANE** — fp16 overflow in `softplus`, `mish`, `logsumexp`,
   `logcumsumexp` for want of stable decompositions (#21); an fp16 discrepancy in MobileNetV3's
